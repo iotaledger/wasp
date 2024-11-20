@@ -301,12 +301,10 @@ func (env *Solo) deployChain(
 		baseTokenCoinInfo,
 	)
 
-	coins := env.makeBaseTokenCoinsWithExactly(
+	initCoinRef := env.makeBaseTokenCoin(
 		chainOriginator,
 		initBaseTokens,
-		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
 	)
-	initCoinRef, gasPayment := coins[0], coins[1:]
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
@@ -314,7 +312,7 @@ func (env *Solo) deployChain(
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
 		initCoinRef,
-		gasPayment,
+		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)

@@ -49,12 +49,12 @@ func testJustView(ctx isc.SandboxView) {
 
 func testCallPanicFullEP(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
-	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicFullEP.Hname(), nil), nil)
+	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicFullEP.Hname(), nil), isc.NewEmptyAssets())
 }
 
 func testCallPanicViewEPFromFull(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
-	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicViewEP.Hname(), nil), nil)
+	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicViewEP.Hname(), nil), isc.NewEmptyAssets())
 }
 
 func testCallPanicViewEPFromView(ctx isc.SandboxView) isc.CallArguments {
@@ -71,4 +71,8 @@ func callViewFunc(ctx isc.SandboxView) func(isc.Message) (isc.CallArguments, err
 		m.Target.Contract = ctx.Contract()
 		return ctx.CallView(m), nil
 	}
+}
+
+func stackOverflow(ctx isc.Sandbox) {
+	ctx.Call(FuncStackOverflow.Message(), isc.NewEmptyAssets())
 }

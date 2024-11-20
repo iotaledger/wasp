@@ -14,15 +14,14 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds                       = coreerrors.Register("not enough funds").Create()
-	ErrNotEnoughBaseTokensForStorageDeposit = coreerrors.Register("not enough base tokens for storage deposit").Create()
-	ErrNotEnoughAllowance                   = coreerrors.Register("not enough allowance").Create()
-	ErrBadAmount                            = coreerrors.Register("bad native asset amount").Create()
-	ErrDuplicateTreasuryCap                 = coreerrors.Register("duplicate TreasuryCap").Create()
-	ErrTreasuryCapNotFound                  = coreerrors.Register("TreasuryCap not found").Create()
-	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
-	ErrImmutableMetadataInvalid             = coreerrors.Register("IRC27 metadata is invalid: '%s'")
+	ErrNotEnoughFunds           = coreerrors.Register("not enough funds").Create()
+	ErrNotEnoughAllowance       = coreerrors.Register("not enough allowance").Create()
+	ErrBadAmount                = coreerrors.Register("bad native asset amount").Create()
+	ErrDuplicateTreasuryCap     = coreerrors.Register("duplicate TreasuryCap").Create()
+	ErrTreasuryCapNotFound      = coreerrors.Register("TreasuryCap not found").Create()
+	ErrOverflow                 = coreerrors.Register("overflow in token arithmetics").Create()
+	ErrNFTIDNotFound            = coreerrors.Register("NFTID not found").Create()
+	ErrImmutableMetadataInvalid = coreerrors.Register("IRC27 metadata is invalid: '%s'")
 )
 
 const (
