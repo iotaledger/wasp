@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
+// TODO maybe we dont need this interface
 type TransactionBuilder interface {
 	Clone() TransactionBuilder
 	ConsumeRequest(req isc.OnLedgerRequest)
@@ -15,5 +16,5 @@ type TransactionBuilder interface {
 	SendCrossChainRequest(targetPackage *iotago.Address, targetAnchor *iotago.Address, assets *isc.Assets, metadata *isc.SendMetadata)
 
 	// this will reset txb into nil
-	BuildTransactionEssence(stateMetadata []byte) iotago.ProgrammableTransaction
+	BuildTransactionEssence(stateMetadata []byte, topUpAmount uint64) iotago.ProgrammableTransaction
 }

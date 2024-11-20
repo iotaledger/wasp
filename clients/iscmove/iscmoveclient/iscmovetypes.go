@@ -52,3 +52,8 @@ func (mr *moveRequest) ToRequest() *iscmove.Request {
 		GasBudget: mr.GasBudget,
 	}
 }
+
+type MoveCoin struct {
+	ID      iotago.ObjectID
+	Balance uint64
+}

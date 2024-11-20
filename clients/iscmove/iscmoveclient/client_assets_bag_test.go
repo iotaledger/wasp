@@ -136,6 +136,71 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
+	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	client := newLocalnetClient()
+	const topUpAmount = 123
+	txnResponse, err := client.AssetsBagNew(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	require.NoError(t, err)
+
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+	mergeToCoin1 := getCoinsRes.Data[2]
+
+	_, err = client.AssetsBagPlaceCoinAmount(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		assetsBagMainRef,
+		getCoinsRes.Data[1].Ref(),
+		iotajsonrpc.IotaCoinType,
+		1000,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
+
+	assetsBagMainRef, err = client.UpdateObjectRef(context.Background(), assetsBagMainRef)
+	require.NoError(t, err)
+
+	mergeToCoinRef, err := client.UpdateObjectRef(context.Background(), mergeToCoin1.Ref())
+	require.NoError(t, err)
+
+	_, err = client.AssetsBagTakeCoinBalanceMergeTo(
+		context.Background(),
+		cryptolibSigner,
+		l1starter.ISCPackageID(),
+		assetsBagMainRef,
+		iotajsonrpc.IotaCoinType,
+		topUpAmount,
+		*mergeToCoinRef,
+		nil,
+		iotaclient.DefaultGasPrice,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(t, err)
+
+	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		ObjectID: mergeToCoin1.CoinObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+	})
+	require.NoError(t, err)
+	var mergeToCoin2 iscmoveclient.MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &mergeToCoin2)
+	require.NoError(t, err)
+	require.Equal(t, mergeToCoin1.Balance.Uint64()+topUpAmount, mergeToCoin2.Balance)
+}
+
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
 	client := newLocalnetClient()

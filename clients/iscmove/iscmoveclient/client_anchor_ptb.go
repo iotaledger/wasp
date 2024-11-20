@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func PTBStartNewChain(
@@ -46,7 +46,7 @@ func PTBTakeAndTransferCoinBalance(
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
 	target *iotago.Address,
-	assets *isc.Assets,
+	assets *iscmove.Assets,
 ) *iotago.ProgrammableTransactionBuilder {
 	argBorrow := ptb.Command(
 		iotago.Command{
@@ -71,7 +71,7 @@ func PTBTakeAndTransferCoinBalance(
 					Package:       &packageID,
 					Module:        iscmove.AssetsBagModuleName,
 					Function:      "take_coin_balance",
-					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+					TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString(coinType)},
 					Arguments: []iotago.Argument{
 						argAssets,
 						ptb.MustPure(coinBalance.Uint64()),
@@ -85,7 +85,7 @@ func PTBTakeAndTransferCoinBalance(
 					Package:       iotago.IotaPackageIdIotaFramework,
 					Module:        "coin",
 					Function:      "from_balance",
-					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+					TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString(coinType)},
 					Arguments: []iotago.Argument{
 						argBal,
 					},
@@ -199,6 +199,7 @@ func PTBReceiveRequestsAndTransition(
 	requestRefs []iotago.ObjectRef,
 	requestAssets []*iscmove.AssetsBagWithBalances,
 	stateMetadata []byte,
+	topUpAmount uint64,
 ) *iotago.ProgrammableTransactionBuilder {
 	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
@@ -278,7 +279,14 @@ func PTBReceiveRequestsAndTransition(
 			Objects: nestedResults,
 		},
 	})
-
+	// top up gas coin
+	ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
+		ptb,
+		packageID,
+		argAnchorAssets,
+		topUpAmount,
+		iotajsonrpc.IotaCoinType,
+	)
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
