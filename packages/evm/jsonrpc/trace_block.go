@@ -63,11 +63,11 @@ type TraceResult struct {
 
 // Trace types
 const (
-	CALL          = "call"
-	STATIC_CALL   = "staticcall"
-	DELEGATE_CALL = "delegatecall"
-	CREATE        = "create"
-	SUICIDE       = "suicide"
+	call         = "call"
+	staticCall   = "staticcall"
+	delegateCall = "delegatecall"
+	create       = "create"
+	suicide      = "suicide"
 )
 
 func convertToTrace(debugTrace CallFrame, blockHash *common.Hash, blockNumber uint64, txHash *common.Hash, txPosition uint64) []*Trace {
@@ -123,17 +123,17 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 
 		traceCopy := make([]int, len(traceAddress))
 		copy(traceCopy, traceAddress)
-		subTraceAddress := append(traceCopy, subCalls)
+		traceCopy = append(traceCopy, subCalls)
 		var traces []*Trace
-		traces, _ = parseTraceInternal(call, blockHash, blockNumber, txHash, txPosition, subTraceAddress)
+		traces, _ = parseTraceInternal(call, blockHash, blockNumber, txHash, txPosition, traceCopy)
 		traceResult = append(traceResult, traces...)
-		subCalls += 1
+		subCalls++
 	}
 
 	traceEntry.Subtraces = subCalls
 
 	switch traceTypeSimple {
-	case CALL:
+	case call:
 		action := CallTraceAction{}
 		action.CallType = traceType
 		action.From = &debugTrace.From
@@ -149,7 +149,7 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 		result.Output = debugTrace.Output
 
 		traceEntry.Result = result
-	case CREATE:
+	case create:
 		action := CreateTraceAction{}
 		action.From = &debugTrace.From
 		action.Gas = hexutil.Uint64(gas)
@@ -164,7 +164,7 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 		result.Address = debugTrace.To
 
 		traceEntry.Result = result
-	case SUICIDE:
+	case suicide:
 		action := SuicideTraceAction{}
 		action.Address = &debugTrace.From
 		action.RefundAddress = debugTrace.To
@@ -179,15 +179,15 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 func mapTraceType(traceType string) string {
 	switch traceType {
 	case "CALL", "CALLCODE":
-		return CALL
+		return call
 	case "STATICCALL":
-		return STATIC_CALL
+		return staticCall
 	case "DELEGATECALL":
-		return DELEGATE_CALL
+		return delegateCall
 	case "CREATE", "CREATE2":
-		return CREATE
+		return create
 	case "SELFDESTRUCT":
-		return SUICIDE
+		return suicide
 	}
 	return ""
 }
@@ -195,11 +195,11 @@ func mapTraceType(traceType string) string {
 func mapTraceTypeSimple(traceType string) string {
 	switch traceType {
 	case "CALL", "CALLCODE", "STATICCALL", "DELEGATECALL":
-		return CALL
+		return call
 	case "CREATE", "CREATE2":
-		return CREATE
+		return create
 	case "SELFDESTRUCT":
-		return SUICIDE
+		return suicide
 	}
 	return ""
 }

@@ -827,7 +827,7 @@ func TestRPCTraceBlock(t *testing.T) {
 		require.Equal(t, strings.ToLower(creatorAddress.String()), strings.ToLower(call11Action["from"].(string)))
 		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call11Action["to"].(string)))
 		require.Equal(t, "0x7b", call11Action["value"].(string))
-		expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2)) //nolint:govet
+		expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))
 		require.NoError(t, err)
 		require.Equal(t, hex.EncodeToString(expectedInput), call11Action["input"].(string)[2:])
 		require.Empty(t, call11.Error)
@@ -845,7 +845,7 @@ func TestRPCTraceBlock(t *testing.T) {
 		require.Equal(t, strings.ToLower(creatorAddress2.String()), strings.ToLower(call21Action["from"].(string)))
 		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call21Action["to"].(string)))
 		require.Equal(t, "0x141", call21Action["value"].(string))
-		expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3)) //nolint:govet
+		expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
 		require.NoError(t, err)
 		require.Equal(t, hex.EncodeToString(expectedInput), call21Action["input"].(string)[2:])
 		require.Empty(t, call21.Error)

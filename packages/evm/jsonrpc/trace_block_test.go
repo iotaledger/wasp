@@ -133,16 +133,16 @@ func TestConvertToTrace(t *testing.T) {
 			expectedAction, ok := expected[i].Action.(map[string]interface{})
 			assert.True(t, ok, "Expected action should be a map")
 
-			actionJson, err := json.Marshal(actual[i].Action)
+			actionJSON, err := json.Marshal(actual[i].Action)
 			assert.NoError(t, err)
 			actualAction := map[string]interface{}{}
-			err = json.Unmarshal(actionJson, &actualAction)
+			err = json.Unmarshal(actionJSON, &actualAction)
 			assert.NoError(t, err)
 
-			resultJson, err := json.Marshal(actual[i].Result)
+			resultJSON, err := json.Marshal(actual[i].Result)
 			assert.NoError(t, err)
 			actualResult := map[string]interface{}{}
-			err = json.Unmarshal(resultJson, &actualResult)
+			err = json.Unmarshal(resultJSON, &actualResult)
 			assert.NoError(t, err)
 
 			assert.Equal(t, expectedAction["from"], actualAction["from"])
