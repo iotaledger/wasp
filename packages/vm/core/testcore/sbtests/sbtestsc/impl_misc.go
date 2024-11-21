@@ -17,8 +17,8 @@ func callOnChain(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf(FuncCallOnChain.Name)
 	params := ctx.Params()
 	paramIn := isc.MustArgAt[uint64](params, 0)
-	hnameContract := isc.MustOptionalArgAt(params, 1, ctx.Contract())
-	hnameEP := isc.MustOptionalArgAt(params, 2, FuncCallOnChain.Hname())
+	hnameContract := isc.MustArgAt[isc.Hname](params, 1)
+	hnameEP := isc.MustArgAt[isc.Hname](params, 2)
 
 	counter := codec.StateGet[uint64](ctx.State(), VarCounter)
 	codec.StateSet(ctx.State(), VarCounter, counter+1)
@@ -52,8 +52,8 @@ func runRecursion(ctx isc.Sandbox) isc.CallArguments {
 		FuncCallOnChain.Hname(),
 		isc.NewCallArguments(
 			codec.Encode(depth-1),
-			codec.EncodeNone(),
-			codec.EncodeSome(FuncRunRecursion.Hname()),
+			codec.Encode(ctx.Contract()),
+			codec.Encode(FuncRunRecursion.Hname()),
 		),
 	), isc.NewEmptyAssets())
 }

@@ -39,8 +39,6 @@ var Processor = Contract.Processor(nil,
 	FuncGetCounter.WithHandler(getCounter),
 	FuncRunRecursion.WithHandler(runRecursion),
 
-	FuncPassTypesFull.WithHandler(passTypesFull),
-	FuncPassTypesView.WithHandler(passTypesView),
 	FuncCheckContextFromFullEP.WithHandler(testCheckContextFromFullEP),
 	FuncCheckContextFromViewEP.WithHandler(testCheckContextFromViewEP),
 
@@ -132,9 +130,6 @@ var (
 	)
 	FuncIncCounter   = coreutil.NewEP0(Contract, "incCounter")
 	FuncRunRecursion = Contract.Func("runRecursion")
-
-	FuncPassTypesFull = Contract.Func("passTypesFull")
-	FuncPassTypesView = Contract.ViewFunc("passTypesView")
 
 	FuncSplitFunds             = coreutil.NewEP0(Contract, "splitFunds")
 	FuncSplitFundsNativeTokens = coreutil.NewEP0(Contract, "splitFundsNativeTokens")

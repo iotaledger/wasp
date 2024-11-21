@@ -10,8 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
-func TestChainOwnerIDView(t *testing.T) { run2(t, testChainOwnerIDView) }
-func testChainOwnerIDView(t *testing.T) {
+func TestChainOwnerIDView(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -22,8 +21,7 @@ func testChainOwnerIDView(t *testing.T) {
 	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), chainOwnderID.Bytes())
 }
 
-func TestChainOwnerIDFull(t *testing.T) { run2(t, testChainOwnerIDFull) }
-func testChainOwnerIDFull(t *testing.T) {
+func TestChainOwnerIDFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -33,11 +31,10 @@ func testChainOwnerIDFull(t *testing.T) {
 		return chain.PostRequestSync(req, nil)
 	})
 	require.NoError(t, err)
-	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), chainOwnderID)
+	require.True(t, chain.OriginatorAgentID.Equals(chainOwnderID))
 }
 
-func TestSandboxCall(t *testing.T) { run2(t, testSandboxCall) }
-func testSandboxCall(t *testing.T) {
+func TestSandboxCall(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -46,8 +43,7 @@ func testSandboxCall(t *testing.T) {
 	require.NotNil(t, ret)
 }
 
-func TestCustomError(t *testing.T) { run2(t, testCustomError) }
-func testCustomError(t *testing.T) {
+func TestCustomError(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 

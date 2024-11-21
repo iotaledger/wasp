@@ -319,7 +319,7 @@ func TestMessageSize(t *testing.T) {
 
 	// TODO
 	// maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
-	maxRequestsPerBlock := 1
+	const maxRequestsPerBlock = 1
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {

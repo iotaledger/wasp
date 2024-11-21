@@ -23,7 +23,6 @@ var (
 	ErrEntryPointCantBeAView     = coreerrors.Register("'init' entry point can't be a view").Create()
 	ErrTooManyEvents             = coreerrors.Register("too many events issued for contract").Create()
 	ErrPrivilegedCallFailed      = coreerrors.Register("privileged call failed").Create()
-	ErrExceededPostedOutputLimit = coreerrors.Register("exceeded maximum number of %d posted outputs in one request").Create(42)
 	ErrGasBudgetExceeded         = coreerrors.Register("gas budget exceeded").Create()
 	ErrSenderUnknown             = coreerrors.Register("sender unknown").Create()
 	ErrNotEnoughTokensLeftForGas = coreerrors.Register("not enough funds left to pay for gas").Create()

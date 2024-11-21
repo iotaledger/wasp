@@ -463,6 +463,18 @@ func (ch *Chain) RunRequestBatch(maxRequestsInBlock int) (
 	return ptbRes, results
 }
 
+func (ch *Chain) RunAllReceivedRequests(maxRequestsInBlock int) int {
+	runs := 0
+	for {
+		_, res := ch.RunRequestBatch(maxRequestsInBlock)
+		if res == nil {
+			break
+		}
+		runs++
+	}
+	return runs
+}
+
 func (ch *Chain) AddMigration(m migrations.Migration) {
 	ch.migrationScheme.Migrations = append(ch.migrationScheme.Migrations, m)
 }

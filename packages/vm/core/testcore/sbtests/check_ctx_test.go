@@ -11,8 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func TestMainCallsFromFullEP(t *testing.T) { run2(t, testMainCallsFromFullEP) }
-func testMainCallsFromFullEP(t *testing.T) {
+func TestMainCallsFromFullEP(t *testing.T) {
 	_, chain := setupChain(t, nil)
 
 	user, userAgentID := setupDeployer(t, chain)
@@ -30,8 +29,7 @@ func testMainCallsFromFullEP(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestMainCallsFromViewEP(t *testing.T) { run2(t, testMainCallsFromViewEP) }
-func testMainCallsFromViewEP(t *testing.T) {
+func TestMainCallsFromViewEP(t *testing.T) {
 	_, chain := setupChain(t, nil)
 
 	user, _ := setupDeployer(t, chain)
