@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 

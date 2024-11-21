@@ -3,9 +3,10 @@ package clients
 import (
 	"context"
 	"errors"
-	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"

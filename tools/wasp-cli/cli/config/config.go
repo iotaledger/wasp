@@ -10,11 +10,10 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-
 	"github.com/spf13/viper"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
