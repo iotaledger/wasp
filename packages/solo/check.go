@@ -36,7 +36,7 @@ func (ch *Chain) AssertL2BaseTokens(agentID isc.AgentID, bal coin.Value) {
 	if h, ok := ch.Env.T.(tHelper); ok {
 		h.Helper()
 	}
-	require.Equal(ch.Env.T, bal, ch.L2Assets(agentID).BaseTokens)
+	require.Equal(ch.Env.T, bal, ch.L2Assets(agentID).BaseTokens())
 }
 
 // CheckChain checks fundamental integrity of the chain
@@ -110,7 +110,7 @@ func (env *Solo) AssertL1Coins(addr *cryptolib.Address, coinType coin.Type, expe
 	if h, ok := env.T.(tHelper); ok {
 		h.Helper()
 	}
-	require.True(env.T, env.L1CoinBalance(addr, coinType) == expected)
+	require.Equal(env.T, expected, env.L1CoinBalance(addr, coinType))
 }
 
 func (env *Solo) HasL1NFT(addr *cryptolib.Address, id iotago.ObjectID) bool {

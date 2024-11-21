@@ -54,6 +54,7 @@ var Processor = Contract.Processor(nil,
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
 	FuncSendNFTsBack.WithHandler(sendNFTsBack),
 	FuncClaimAllowance.WithHandler(claimAllowance),
+	FuncStackOverflow.WithHandler(stackOverflow),
 )
 
 var (
@@ -145,6 +146,7 @@ var (
 	FuncInfiniteLoopView = coreutil.NewViewEP0(Contract, "infiniteLoopView")
 	FuncSendNFTsBack     = coreutil.NewEP0(Contract, "sendNFTsBack")
 	FuncClaimAllowance   = coreutil.NewEP0(Contract, "claimAllowance")
+	FuncStackOverflow    = coreutil.NewEP0(Contract, "stackOverflow")
 )
 
 const (

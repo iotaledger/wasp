@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -132,12 +133,13 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			// common account is left untouched
 			require.Equal(t, commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
 			if test.SenderIsOriginator {
-				// sender deposited 1mil to L2 and spent L1 gas fee for the request and then the anchor transition
+				// sender deposited 1mil to L2 and spent L1 gas fee for the request and also
+				// the gas fee for the anchor transition
 				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee-l1AnchorTransitionGasFee, senderL1BaseTokensAfter)
 				// sender got 1mil (l2GasFee goes to originator which is the sender)
 				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million, senderL2BaseTokensAfter)
 			} else {
-				// sender deposited 1mil to L2 and spent L1 gas fees (which goes to a black hole?)
+				// sender deposited 1mil to L2 and spent L1 gas fees
 				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee, senderL1BaseTokensAfter)
 				// sender got 1mil minus l2GasFee
 				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million-l2GasFee, senderL2BaseTokensAfter)
@@ -161,6 +163,24 @@ func TestNoTargetView(t *testing.T) {
 		_, err := chain.CallViewEx(root.Contract.Name, "dummyEP")
 		require.Error(t, err)
 	})
+}
+
+func TestSandboxStackOverflow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("short mode")
+	}
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
+	chain := env.NewChain()
+	_, err := chain.PostRequestSync(
+		solo.NewCallParams(sbtestsc.FuncStackOverflow.Message()).
+			WithGasBudget(math.MaxUint64),
+		nil,
+	)
+	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
 }
 
 func TestEstimateGas(t *testing.T) {

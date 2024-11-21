@@ -28,7 +28,7 @@ func callOnChain(ctx isc.Sandbox) isc.CallArguments {
 
 	return ctx.Call(isc.NewMessage(hnameContract, hnameEP,
 		isc.NewCallArguments(codec.Encode(paramIn)),
-	), nil)
+	), isc.NewEmptyAssets())
 }
 
 func incCounter(ctx isc.Sandbox) {
@@ -55,7 +55,7 @@ func runRecursion(ctx isc.Sandbox) isc.CallArguments {
 			codec.EncodeNone(),
 			codec.EncodeSome(FuncRunRecursion.Hname()),
 		),
-	), nil)
+	), isc.NewEmptyAssets())
 }
 
 func fibonacci(n uint64) uint64 {

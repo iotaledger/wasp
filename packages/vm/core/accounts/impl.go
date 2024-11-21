@@ -69,7 +69,7 @@ func transferAllowanceTo(ctx isc.Sandbox, targetAccount isc.AgentID) {
 	// issue a "custom EVM tx" so the funds appear on the explorer
 	ctx.Call(
 		evm.FuncNewL1Deposit.Message(ctx.Caller(), targetAccount.(*isc.EthereumAddressAgentID).EthAddress(), allowance),
-		nil,
+		isc.NewEmptyAssets(),
 	)
 	ctx.Log().Debugf("accounts.transferAllowanceTo.success: target: %s\n%s", targetAccount, ctx.AllowanceAvailable())
 }

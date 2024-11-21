@@ -212,43 +212,32 @@ func (env *Solo) selectCoinsForGas(
 	targetPTB *iotago.ProgrammableTransaction,
 	gasBudget, gasPrice uint64,
 ) []*iotago.ObjectRef {
-	sum := uint64(0)
-	gasPayment := make([]*iotago.ObjectRef, 0)
-	for _, c := range env.L1AllCoins(addr) {
-		if targetPTB.IsInInputObjects(c.CoinObjectID) {
-			continue
-		}
-		gasPayment = append(gasPayment, c.Ref())
-		sum += c.Balance.Uint64()
-		if sum >= gasBudget*gasPrice {
-			break
-		}
-	}
-	return gasPayment
+	pickedCoins, err := iotajsonrpc.PickupCoinsWithFilter(
+		env.L1BaseTokenCoins(addr),
+		gasBudget*gasPrice,
+		func(c *iotajsonrpc.Coin) bool { return !targetPTB.IsInInputObjects(c.CoinObjectID) },
+	)
+	require.NoError(env.T, err)
+	return pickedCoins.CoinRefs()
 }
 
-func (env *Solo) makeBaseTokenCoinsWithExactly(
-	keyPair *cryptolib.KeyPair,
-	values ...coin.Value,
-) []*iotago.ObjectRef {
+func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value) *iotago.ObjectRef {
 	allCoins := env.L1BaseTokenCoins(keyPair.Address())
 	require.NotEmpty(env.T, allCoins)
-	coinToSplit, ok := lo.Find(allCoins, func(item *iotajsonrpc.Coin) bool {
-		return item.Balance.Uint64() >= uint64(lo.Sum(values))+iotaclient.DefaultGasBudget
-	})
-	require.True(env.T, ok, "not enough base tokens")
+
+	pickedCoins, err := iotajsonrpc.PickupCoinsSimple(
+		env.L1BaseTokenCoins(keyPair.Address()),
+		uint64(value),
+	)
+
 	tx := lo.Must(env.IotaClient().PayIota(
 		env.ctx,
 		iotaclient.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),
-			InputCoins: []*iotago.ObjectID{coinToSplit.CoinObjectID},
-			Amount: lo.Map(values, func(v coin.Value, _ int) *iotajsonrpc.BigInt {
-				return iotajsonrpc.NewBigInt(uint64(v))
-			}),
-			Recipients: lo.Map(values, func(v coin.Value, _ int) *iotago.Address {
-				return keyPair.Address().AsIotaAddress()
-			}),
-			GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			InputCoins: pickedCoins.ObjectIDs(),
+			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(uint64(value))},
+			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},
+			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
 		},
 	))
 	txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
@@ -262,15 +251,13 @@ func (env *Solo) makeBaseTokenCoinsWithExactly(
 	)
 	require.NoError(env.T, err)
 	require.True(env.T, txnResponse.Effects.Data.IsSuccess())
-	allCoins = env.L1BaseTokenCoins(keyPair.Address())
-	return lo.Map(values, func(v coin.Value, _ int) *iotago.ObjectRef {
-		c, i, ok := lo.FindIndexOf(allCoins, func(coin *iotajsonrpc.Coin) bool {
-			return coin.Balance.Uint64() == uint64(v)
-		})
-		require.True(env.T, ok)
-		allCoins = lo.DropByIndex(allCoins, i)
-		return c.Ref()
-	})
+	require.Len(env.T, txnResponse.Effects.Data.V1.Created, 1)
+	coin := txnResponse.Effects.Data.V1.Created[0]
+	return &iotago.ObjectRef{
+		ObjectID: coin.Reference.ObjectID,
+		Version:  coin.Reference.Version,
+		Digest:   &coin.Reference.Digest,
+	}
 }
 
 // SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.

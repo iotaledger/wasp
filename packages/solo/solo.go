@@ -301,12 +301,10 @@ func (env *Solo) deployChain(
 		baseTokenCoinInfo,
 	)
 
-	coins := env.makeBaseTokenCoinsWithExactly(
+	initCoinRef := env.makeBaseTokenCoin(
 		chainOriginator,
 		initBaseTokens,
-		coin.Value(iotaclient.DefaultGasBudget*iotaclient.DefaultGasPrice),
 	)
-	initCoinRef, gasPayment := coins[0], coins[1:]
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
@@ -314,7 +312,7 @@ func (env *Solo) deployChain(
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
 		initCoinRef,
-		gasPayment,
+		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)
@@ -495,7 +493,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 	return env.L1Coins(addr, coin.BaseTokenType)
 }
 
-func (env *Solo) L1AllCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
+func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
 	r, err := env.IotaClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner: addr.AsIotaAddress(),
 		Limit: math.MaxUint,
