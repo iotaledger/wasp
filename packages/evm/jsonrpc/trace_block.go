@@ -72,7 +72,7 @@ const (
 
 func convertToTrace(debugTrace CallFrame, blockHash *common.Hash, blockNumber uint64, txHash *common.Hash, txPosition uint64) []*Trace {
 	result := make([]*Trace, 0)
-	traces, _ := parseTraceInternal(debugTrace, blockHash, blockNumber, txHash, txPosition, make([]int, 0))
+	traces := parseTraceInternal(debugTrace, blockHash, blockNumber, txHash, txPosition, make([]int, 0))
 	result = append(result, traces...)
 
 	return result
@@ -84,7 +84,7 @@ func isPrecompiled(address *common.Address) bool {
 }
 
 //nolint:funlen
-func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumber uint64, txHash *common.Hash, txPosition uint64, traceAddress []int) ([]*Trace, uint64) {
+func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumber uint64, txHash *common.Hash, txPosition uint64, traceAddress []int) []*Trace {
 	traceResult := make([]*Trace, 0)
 
 	traceType := mapTraceType(debugTrace.Type.String())
@@ -126,7 +126,7 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 		copy(traceCopy, traceAddress)
 		traceCopy = append(traceCopy, subCalls)
 		var traces []*Trace
-		traces, _ = parseTraceInternal(call, blockHash, blockNumber, txHash, txPosition, traceCopy)
+		traces = parseTraceInternal(call, blockHash, blockNumber, txHash, txPosition, traceCopy)
 		traceResult = append(traceResult, traces...)
 		subCalls++
 	}
@@ -174,7 +174,7 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 		traceEntry.Action = action
 	}
 
-	return traceResult, gasUsed
+	return traceResult
 }
 
 func mapTraceType(traceType string) string {
