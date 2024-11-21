@@ -8,11 +8,12 @@ import (
 	"path"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/samber/lo"
 
 	"github.com/spf13/viper"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
@@ -111,7 +112,7 @@ func L1APIAddress() string {
 	if host != "" {
 		return host
 	}
-	return "localhost:5678"
+	return iotaconn.AlphanetEndpointURL
 }
 
 func L1FaucetAddress() string {
@@ -119,7 +120,7 @@ func L1FaucetAddress() string {
 	if address != "" {
 		return address
 	}
-	return "localhost:5679"
+	return iotaconn.AlphanetFaucetURL
 
 }
 
@@ -205,6 +206,10 @@ func GetPackageID() iotago.PackageID {
 
 	packageIDParsed := lo.Must(iotago.PackageIDFromHex(configPackageID))
 	return *packageIDParsed
+}
+
+func SetPackageID(id iotago.PackageID) {
+	Set("l1.packageId", id.String())
 }
 
 func GetUseLegacyDerivation() bool {

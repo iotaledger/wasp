@@ -26,11 +26,9 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -113,7 +111,14 @@ func (in *IotaNode) start(ctx context.Context) {
 	in.logf("Starting IotaNode... done! took: %v", time.Since(ts).Truncate(time.Millisecond))
 	in.waitAllHealthy(5 * time.Minute)
 	in.logf("Deploying ISC contracts...")
-	in.ISCPackageID = DeployISCContracts(in.Client(), ISCPackageOwner)
+
+	packageID, err := in.Client().DeployISCContracts(ctx, ISCPackageOwner)
+	if err != nil {
+		panic(fmt.Errorf("isc contract deployment failed: %w", err))
+	}
+
+	in.ISCPackageID = packageID
+
 	in.logf("IotaNode started successfully")
 }
 
@@ -242,28 +247,4 @@ func scanLog(reader io.Reader, out *os.File) {
 		line := scanner.Text()
 		_ = lo.Must(out.WriteString(fmt.Sprintln(line)))
 	}
-}
-
-func DeployISCContracts(client clients.L1Client, signer iotasigner.Signer) iotago.PackageID {
-	iscBytecode := contracts.ISC()
-	txnBytes := lo.Must(client.Publish(context.Background(), iotaclient.PublishRequest{
-		Sender:          signer.Address(),
-		CompiledModules: iscBytecode.Modules,
-		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
-	}))
-	txnResponse := lo.Must(client.SignAndExecuteTransaction(
-		context.Background(),
-		signer,
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	))
-	if !txnResponse.Effects.Data.IsSuccess() {
-		panic("publish ISC contracts failed")
-	}
-	packageID := lo.Must(txnResponse.GetPublishedPackageID())
-	return *packageID
 }

@@ -309,6 +309,7 @@ func (env *Solo) deployChain(
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		chainOriginator,
+		chainOriginator.Address(),
 		env.ISCPackageID(),
 		stateMetadata.Bytes(),
 		initCoinRef,

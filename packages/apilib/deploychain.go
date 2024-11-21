@@ -34,7 +34,7 @@ type CreateChainParams struct {
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
+func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -50,6 +50,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 	anchor, err := par.Layer1Client.L2().StartNewChain(
 		ctx,
 		par.OriginatorKeyPair,
+		stateControllerAddr,
 		par.PackageID,
 		par.StateMetadata.Bytes(),
 		nil,

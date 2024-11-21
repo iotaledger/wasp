@@ -29,7 +29,6 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 }
 
 func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
-	panic("refactor me: initRegisterERC20NativeTokenOnRemoteChainCmd")
 	var targetChain string
 
 	return buildPostRequestCmd(
@@ -42,6 +41,8 @@ func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
 			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")
 		},
 		func(cmd *cobra.Command) []string {
+			panic("refactor me: initRegisterERC20NativeTokenOnRemoteChainCmd")
+
 			chainID := codec.Encode[*cryptolib.Address](config.GetChain(targetChain).AsAddress())
 			extraArgs := []string{"string", "A", "bytes", "0x" + hex.EncodeToString(chainID)}
 			return append(getRegisterERC20NativeTokenArgs(cmd), extraArgs...)

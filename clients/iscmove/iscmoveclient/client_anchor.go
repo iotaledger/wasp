@@ -37,7 +37,8 @@ func (c *Client) FindCoinsForGasPayment(
 
 func (c *Client) StartNewChain(
 	ctx context.Context,
-	signer cryptolib.Signer,
+	cryptolibSigner cryptolib.Signer,
+	chainOwnerAddress *cryptolib.Address,
 	packageID iotago.PackageID,
 	stateMetadata []byte,
 	initCoinRef *iotago.ObjectRef,
@@ -54,11 +55,11 @@ func (c *Client) StartNewChain(
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, signer.Address())
+	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, chainOwnerAddress)
 
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
-		signer,
+		cryptolibSigner,
 		ptb.Finish(),
 		gasPayments,
 		gasPrice,
@@ -124,7 +125,7 @@ func (c *Client) GetAnchorFromObjectID(
 ) (*iscmove.AnchorWithRef, error) {
 	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
@@ -132,6 +133,7 @@ func (c *Client) GetAnchorFromObjectID(
 	return decodeAnchorBCS(
 		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,
 		getObjectResponse.Data.Ref(),
+		getObjectResponse.Data.Owner.AddressOwner,
 	)
 }
 
@@ -143,7 +145,7 @@ func (c *Client) GetPastAnchorFromObjectID(
 	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 		ObjectID: anchorObjectID,
 		Version:  version,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
@@ -154,10 +156,11 @@ func (c *Client) GetPastAnchorFromObjectID(
 	return decodeAnchorBCS(
 		getObjectResponse.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes,
 		getObjectResponse.Data.VersionFound.Ref(),
+		getObjectResponse.Data.VersionFound.Owner.AddressOwner,
 	)
 }
 
-func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef) (*iscmove.AnchorWithRef, error) {
+func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {
 	var moveAnchor moveAnchor
 	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
@@ -166,5 +169,6 @@ func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef) (*iscmove
 	return &iscmove.AnchorWithRef{
 		ObjectRef: ref,
 		Object:    moveAnchor.ToAnchor(),
+		Owner:     owner,
 	}, nil
 }

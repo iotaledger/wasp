@@ -45,7 +45,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 

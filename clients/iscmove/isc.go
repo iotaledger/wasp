@@ -39,6 +39,7 @@ const (
 type RefWithObject[T any] struct {
 	iotago.ObjectRef
 	Object *T
+	Owner  *iotago.Address
 }
 
 // Used in packages/chain/cons/bp/batch_proposal_set as key of a map

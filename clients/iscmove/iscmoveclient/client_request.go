@@ -186,7 +186,7 @@ func (c *Client) GetRequestFromObjectID(
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
 	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: reqID,
-		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get request content: %w", err)
@@ -211,6 +211,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) 
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: obj.Ref(),
 		Object:    req.ToRequest(),
+		Owner:     obj.Owner.AddressOwner,
 	}, nil
 }
 
@@ -235,7 +236,7 @@ func (c *Client) GetRequests(
 						Name:    iscmove.RequestObjectName,
 					},
 				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 			},
 			Cursor: lastSeen,
 		})

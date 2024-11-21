@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 // executed in cluster_test.go

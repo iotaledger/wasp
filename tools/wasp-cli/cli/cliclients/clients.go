@@ -2,11 +2,11 @@ package cliclients
 
 import (
 	"context"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -56,8 +56,8 @@ func L2Client() clients.L2Client {
 
 func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.LocalnetEndpointURL,
-		FaucetURL: iotaconn.LocalnetFaucetURL,
+		APIURL:    config.L1APIAddress(),
+		FaucetURL: config.L1FaucetAddress(),
 	})
 }
 

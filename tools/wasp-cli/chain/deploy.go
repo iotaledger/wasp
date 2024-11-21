@@ -12,16 +12,19 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -52,6 +55,36 @@ func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
 	return govControllerAddr
 }
 
+func initDeployMoveContractCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "deploy-move-contract",
+		Short: "Deploy a new move contract and save its package id",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+			defer cancel()
+
+			l1Client := cliclients.L1Client()
+			kp := wallet.Load()
+			packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+			log.Check(err)
+
+			config.SetPackageID(packageID)
+
+			log.Printf("Move contract deployed.\nPackageID: %v\n", packageID.String())
+		},
+	}
+
+	return cmd
+}
+
+func initializeNewChainState(stateController *cryptolib.Address) *transaction.StateMetadata {
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, isc.BaseTokenCoinInfo)
+	return stateMetadata
+}
+
 func initDeployCmd() *cobra.Command {
 	var (
 		node             string
@@ -80,37 +113,30 @@ func initDeployCmd() *cobra.Command {
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 
-			packageID := l1starter.DeployISCContracts(l1Client, cryptolib.SignerToIotaSigner(kp))
+			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
+			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+			packageID := config.GetPackageID()
 
-			govController := controllerAddrDefaultFallback(govControllerStr)
-
-			// TODO: Fixme: doDKG requires a somewhat runnable wasp node :D
-			// stateController := doDKG(ctx, node, peers, quorum)
-
-			stateController := cryptolib.NewRandomAddress()
-			initParams := origin.EncodeInitParams(isc.NewAddressAgentID(govController), evmChainID, blockKeepAmount)
-
-			stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(0), nil, gas.DefaultFeePolicy(), initParams, "")
+			stateController := doDKG(ctx, node, peers, quorum)
+			stateMetadata := initializeNewChainState(stateController)
 
 			par := apilib.CreateChainParams{
-				Layer1Client:         l1Client,
-				CommitteeAPIHosts:    config.NodeAPIURLs([]string{node}),
-				N:                    uint16(len(node)),
-				T:                    uint16(quorum),
-				OriginatorKeyPair:    wallet.Load(),
-				Textout:              os.Stdout,
-				GovernanceController: govController,
-				PackageID:            packageID,
-				StateMetadata:        *stateMetadata,
+				Layer1Client:      l1Client,
+				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
+				N:                 uint16(len(node)),
+				T:                 uint16(quorum),
+				OriginatorKeyPair: kp,
+				Textout:           os.Stdout,
+				PackageID:         packageID,
+				StateMetadata:     *stateMetadata,
 			}
 
-			chainID, err := apilib.DeployChain(ctx, par, stateController, govController)
+			chainID, err := apilib.DeployChain(ctx, par, stateController)
 			log.Check(err)
 
 			config.AddChain(chainName, chainID.String())
 
-			// TODO: Fixme: This requires a runnable node as well.
-			// activateChain(node, chainName, chainID)
+			activateChain(node, chainName, chainID)
 		},
 	}
 

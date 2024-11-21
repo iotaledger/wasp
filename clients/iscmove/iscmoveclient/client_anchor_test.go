@@ -26,6 +26,7 @@ func TestStartNewChain(t *testing.T) {
 	anchor1, err := client.StartNewChain(
 		context.Background(),
 		signer,
+		signer.Address(),
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
 		getCoinsRes.Data[1].Ref(),
@@ -122,6 +123,7 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
+		signer.Address(),
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
 		getCoinsRes.Data[1].Ref(),

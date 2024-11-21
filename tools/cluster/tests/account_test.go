@@ -16,8 +16,8 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 // executed in cluster_test.go
@@ -74,10 +74,10 @@ func testAccounts(e *ChainEnv) {
 	require.NoError(e.t, err)
 
 	transferBaseTokens := coin.Value(1 * isc.Million)
-	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client().L2(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorClient().IscPackageID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
-	reqTx, err := chClient.PostRequest(inccounter.FuncIncCounter.Message(nil), *par)
+	reqTx, err := chClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(e.t, err)
 
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 10*time.Second)

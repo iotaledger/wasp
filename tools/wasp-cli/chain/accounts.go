@@ -141,7 +141,7 @@ func initDepositCmd() *cobra.Command {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
 
-				util.WithSCTransaction(config.GetChain(chain), node, func() (iotajsonrpc.ParsedTransactionResponse, error) {
+				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					client := cliclients.WaspClient(node)
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
@@ -172,7 +172,7 @@ func initDepositCmd() *cobra.Command {
 					}
 				}
 
-				util.WithSCTransaction(config.GetChain(chain), node, func() (iotajsonrpc.ParsedTransactionResponse, error) {
+				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					client := cliclients.WaspClient(node)
 					return cliclients.ChainClient(client, chainID).PostRequest(
 						ctx,

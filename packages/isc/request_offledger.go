@@ -37,6 +37,30 @@ var (
 	_ Calldata                 = new(OffLedgerRequestData)
 )
 
+type ImpersonatedOffLedgerRequestData struct {
+	OffLedgerRequestData
+	address *cryptolib.Address
+}
+
+func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) ImpersonatedOffLedgerRequest {
+	copyReq := *request
+	copyReq.signature = cryptolib.NewEmptySignature()
+
+	return &ImpersonatedOffLedgerRequestData{
+		OffLedgerRequestData: copyReq,
+		address:              nil,
+	}
+}
+
+func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *cryptolib.Address) OffLedgerRequest {
+	r.address = address
+	return r
+}
+
+func (r *ImpersonatedOffLedgerRequestData) SenderAccount() AgentID {
+	return NewAddressAgentID(r.address)
+}
+
 func NewOffLedgerRequest(
 	chainID ChainID,
 	msg Message,

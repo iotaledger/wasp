@@ -1,11 +1,13 @@
 package apiextensions
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -47,24 +49,29 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 	return APIArgsToCallArgs(res)
 }
 
-func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx iotajsonrpc.ParsedTransactionResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
-	panic("refactor me: APIWaitUntilAllRequestsProcessed")
-	/*reqs, err := isc.Requests(tx)
+func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.ChainID, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+	req, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
 		return nil, err
 	}
+
+	// TODO: In theory we can pass multiple requests into a PTB call, but we don't right now.
+	// For now fake old behavior and just create an array with a length of 1
+
+	reqs := []isc.RequestID{isc.RequestID(req.ObjectID.Data())}
+
 	ret := make([]*apiclient.ReceiptResponse, len(reqs))
-	for i, req := range reqs[chainID] {
+	for i, req := range reqs {
 		receipt, _, err := client.ChainsApi.
-			WaitForRequest(context.Background(), chainID.String(), req.ID().String()).
+			WaitForRequest(context.Background(), chainID.String(), req.String()).
 			TimeoutSeconds(int32(timeout.Seconds())).
 			WaitForL1Confirmation(waitForL1Confirmation).
 			Execute()
 		if err != nil {
-			return nil, fmt.Errorf("Error in WaitForRequest, reqID=%v: %w", req.ID(), err)
+			return nil, fmt.Errorf("Error in WaitForRequest, reqID=%v: %w", req.String(), err)
 		}
 
 		ret[i] = receipt
 	}
-	return ret, nil*/
+	return ret, nil
 }
