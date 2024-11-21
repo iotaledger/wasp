@@ -43,7 +43,8 @@ type L2Client interface {
 		anchorRef *iotago.ObjectRef,
 		reqs []iotago.ObjectRef,
 		stateMetadata []byte,
-		gasPayments []*iotago.ObjectRef, // optional
+		topUpAmount uint64,
+		gasPayments *iotago.ObjectRef, // optional
 		gasPrice uint64,
 		gasBudget uint64,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)

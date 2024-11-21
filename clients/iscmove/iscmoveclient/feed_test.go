@@ -99,6 +99,9 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainOwner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+
 	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
 		chainOwner,
@@ -106,7 +109,8 @@ func TestRequestsFeed(t *testing.T) {
 		&anchor.ObjectRef,
 		[]iotago.ObjectRef{*requestRef},
 		[]byte{1, 2, 3},
-		nil,
+		100,
+		getCoinsRes.Data[0].Ref(),
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,
 	)

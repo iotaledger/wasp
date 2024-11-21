@@ -83,7 +83,8 @@ func (c *Client) ReceiveRequestsAndTransition(
 	anchorRef *iotago.ObjectRef,
 	reqs []iotago.ObjectRef,
 	stateMetadata []byte,
-	gasPayments []*iotago.ObjectRef, // optional
+	topUpAmount uint64,
+	gasPayment *iotago.ObjectRef,
 	gasPrice uint64,
 	gasBudget uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
@@ -108,12 +109,13 @@ func (c *Client) ReceiveRequestsAndTransition(
 		reqs,
 		reqAssetsBags,
 		stateMetadata,
+		topUpAmount,
 	)
 	return c.SignAndExecutePTB(
 		ctx,
 		signer,
 		ptb.Finish(),
-		gasPayments,
+		[]*iotago.ObjectRef{gasPayment},
 		gasPrice,
 		gasBudget,
 	)
