@@ -5,6 +5,7 @@ package jsonrpctest
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"math/big"
 	"slices"
@@ -790,6 +791,74 @@ func TestRPCTraceBlock(t *testing.T) {
 			require.NoError(t, err)
 			require.NotEmpty(t, p)
 		}
+	})
+	t.Run("trace_block", func(t *testing.T) {
+		var res json.RawMessage
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res,
+			"trace_block",
+			rpc.BlockNumber(env.BlockNumber()),
+		)
+		require.NoError(t, err)
+
+		var result jsonrpc.TraceBlock
+		err = json.Unmarshal(res, &result)
+		require.NoError(t, err)
+		require.Len(t, result.Result, 4)
+
+		traceTx1Index := slices.IndexFunc(result.Result, func(v *jsonrpc.Trace) bool {
+			return *v.TransactionHash == tx1.Hash()
+		})
+		traceTx2Index := slices.IndexFunc(result.Result, func(v *jsonrpc.Trace) bool {
+			return *v.TransactionHash == tx2.Hash()
+		})
+
+		call11 := result.Result[traceTx1Index]
+		call12 := result.Result[traceTx1Index+1]
+		call21 := result.Result[traceTx2Index]
+		call22 := result.Result[traceTx2Index+1]
+
+		call11Action := call11.Action.(map[string]interface{})
+		call12Action := call12.Action.(map[string]interface{})
+		call21Action := call21.Action.(map[string]interface{})
+		call22Action := call22.Action.(map[string]interface{})
+
+		require.Equal(t, strings.ToLower(creatorAddress.String()), strings.ToLower(call11Action["from"].(string)))
+		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call11Action["to"].(string)))
+		require.Equal(t, "0x7b", call11Action["value"].(string))
+		expectedInput, err := contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))
+		require.NoError(t, err)
+		require.Equal(t, hex.EncodeToString(expectedInput), call11Action["input"].(string)[2:])
+		require.Empty(t, call11.Error)
+		require.Equal(t, 1, call11.Subtraces)
+		require.Equal(t, []int{}, call11.TraceAddress)
+
+		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call12Action["from"].(string)))
+		require.Equal(t, common.Address{0x1}.String(), strings.ToLower(call12Action["to"].(string)))
+		require.Equal(t, "0x2", call12Action["value"].(string))
+		require.Equal(t, "0x", call12Action["input"])
+		require.Empty(t, call12.Error)
+		require.Equal(t, 0, call12.Subtraces)
+		require.Equal(t, []int{0}, call12.TraceAddress)
+
+		require.Equal(t, strings.ToLower(creatorAddress2.String()), strings.ToLower(call21Action["from"].(string)))
+		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call21Action["to"].(string)))
+		require.Equal(t, "0x141", call21Action["value"].(string))
+		expectedInput, err = contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))
+		require.NoError(t, err)
+		require.Equal(t, hex.EncodeToString(expectedInput), call21Action["input"].(string)[2:])
+		require.Empty(t, call21.Error)
+		require.Equal(t, 1, call21.Subtraces)
+		require.Equal(t, []int{}, call21.TraceAddress)
+
+		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call22Action["from"].(string)))
+		require.Equal(t, common.Address{0x2}.String(), strings.ToLower(call22Action["to"].(string)))
+		require.Equal(t, "0x3", call22Action["value"].(string))
+		require.Equal(t, "0x", call22Action["input"])
+		require.Empty(t, call22.Error)
+		require.Equal(t, 0, call22.Subtraces)
+		require.Equal(t, []int{0}, call22.TraceAddress)
 	})
 }
 

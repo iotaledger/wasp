@@ -593,6 +593,25 @@ func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (interfa
 	})
 }
 
+type TraceService struct {
+	evmChain *EVMChain
+	metrics  *metrics.ChainWebAPIMetrics
+}
+
+func NewTraceService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *TraceService {
+	return &TraceService{
+		evmChain: evmChain,
+		metrics:  metrics,
+	}
+}
+
+// Block implements the `trace_block` RPC.
+func (d *TraceService) Block(bn rpc.BlockNumber) (interface{}, error) {
+	return withMetrics(d.metrics, "trace_block", func() (interface{}, error) {
+		return d.evmChain.TraceBlock(bn)
+	})
+}
+
 type EVMService struct {
 	evmChain *EVMChain
 }
