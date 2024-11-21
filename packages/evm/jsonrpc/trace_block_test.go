@@ -17,8 +17,10 @@ var debugTraceBlockSample string
 //go:embed trace_block_sample.json
 var traceBlockSample string
 
-var blockNumber = uint64(21130085)
-var blockHash = common.HexToHash("0x914d99596812741f99a64012e4422f1446c83b77fd8c00ff12076af6b0c3bf89")
+var (
+	blockNumber = uint64(21130085)
+	blockHash   = common.HexToHash("0x914d99596812741f99a64012e4422f1446c83b77fd8c00ff12076af6b0c3bf89")
+)
 
 func TestConvertToTrace(t *testing.T) {
 	var debugTraces struct {
@@ -54,12 +56,12 @@ func TestConvertToTrace(t *testing.T) {
 		actualTraces = append(actualTraces, traces...)
 	}
 
-	var actualTracesMap = make(map[string][]*Trace)
+	actualTracesMap := make(map[string][]*Trace)
 	for _, trace := range actualTraces {
 		actualTracesMap[trace.TransactionHash.String()] = append(actualTracesMap[trace.TransactionHash.String()], trace)
 	}
 
-	var expectedTracesMap = make(map[string][]*Trace)
+	expectedTracesMap := make(map[string][]*Trace)
 	for _, trace := range expectedTraces.Result {
 		expectedTracesMap[trace.TransactionHash.String()] = append(expectedTracesMap[trace.TransactionHash.String()], trace)
 	}
