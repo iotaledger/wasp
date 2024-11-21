@@ -723,7 +723,7 @@ func (e *EVMChain) traceTransaction(
 	return tracer.GetResult()
 }
 
-func (e *EVMChain) traceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
+func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
 	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(block.NumberU64())
 	if err != nil {
 		return nil, err
@@ -791,7 +791,7 @@ func (e *EVMChain) TraceBlockByHash(blockHash common.Hash, config *tracers.Trace
 		return nil, fmt.Errorf("block not found: %s", blockHash.String())
 	}
 
-	return e.traceBlock(config, block)
+	return e.debugTraceBlock(config, block)
 }
 
 func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceConfig) (any, error) {
@@ -802,7 +802,7 @@ func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceC
 		return nil, fmt.Errorf("block not found: %d", blockNumber)
 	}
 
-	return e.traceBlock(config, block)
+	return e.debugTraceBlock(config, block)
 }
 
 func (e *EVMChain) getBlockByNumberOrHash(blockNrOrHash rpc.BlockNumberOrHash) (*types.Block, error) {
@@ -849,6 +849,55 @@ func (e *EVMChain) GetBlockReceipts(blockNrOrHash rpc.BlockNumberOrHash) ([]*typ
 	db := blockchainDB(chainState)
 
 	return db.GetReceiptsByBlockNumber(block.NumberU64()), db.GetTransactionsByBlockNumber(block.NumberU64()), nil
+}
+
+func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
+	e.log.Debugf("TraceBlock(blockNumber=%v)", bn)
+
+	block, err := e.getBlockByNumberOrHash(rpc.BlockNumberOrHashWithNumber(bn))
+	if err != nil {
+		return nil, err
+	}
+	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(block.NumberU64())
+	if err != nil {
+		return nil, err
+	}
+
+	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
+	if err != nil {
+		return nil, err
+	}
+
+	results := TraceBlock{
+		Jsonrpc: "2.0",
+		Result:  make([]*Trace, 0),
+		ID:      1,
+	}
+
+	for i, tx := range blockTxs {
+		debugResultJSON, err := e.traceTransaction(
+			&tracers.TraceConfig{},
+			iscBlock,
+			iscRequestsInBlock,
+			tx,
+			uint64(i),
+			block.Hash(),
+		)
+
+		if err == nil {
+			var debugResult CallFrame
+			err = json.Unmarshal(debugResultJSON, &debugResult)
+			if err != nil {
+				return nil, err
+			}
+
+			blockHash := block.Hash()
+			txHash := tx.Hash()
+			results.Result = append(results.Result, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, uint64(i))...)
+		}
+	}
+
+	return results, nil
 }
 
 var maxUint32 = big.NewInt(math.MaxUint32)
