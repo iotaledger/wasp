@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"os"
 	"strconv"
 	"time"
@@ -76,6 +77,13 @@ func initDeployMoveContractCmd() *cobra.Command {
 	return cmd
 }
 
+func initializeNewChainState(stateController *cryptolib.Address) *transaction.StateMetadata {
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, isc.BaseTokenCoinInfo)
+	return stateMetadata
+}
+
 func initDeployCmd() *cobra.Command {
 	var (
 		node             string
@@ -103,18 +111,13 @@ func initDeployCmd() *cobra.Command {
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
+
+			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
 			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
-			log.Printf("PackageID: %v", packageID.String())
-
 			stateController := doDKG(ctx, node, peers, quorum)
-
-			initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
-			db := mapdb.NewMapDB()
-			store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-
-			_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, isc.BaseTokenCoinInfo)
+			stateMetadata := initializeNewChainState(stateController)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
