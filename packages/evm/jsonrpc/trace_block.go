@@ -83,6 +83,7 @@ func isPrecompiled(address *common.Address) bool {
 	return ok
 }
 
+//nolint:funlen
 func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumber uint64, txHash *common.Hash, txPosition uint64, traceAddress []int) ([]*Trace, uint64) {
 	traceResult := make([]*Trace, 0)
 
