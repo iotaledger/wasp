@@ -64,15 +64,6 @@ func (f *ChainFeed) SubscribeToUpdates(
 	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
 }
 
-func (f *ChainFeed) GetAssets(ctx context.Context, anchor *iscmove.AnchorWithRef) ([]*iotago.ObjectRef, error) {
-	coins, err := f.wsClient.GetCoinObjsForTargetAmount(ctx, &anchor.Object.Assets.ID, iotaclient.DefaultGasPrice)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch assets: %w", err)
-	}
-
-	return coins.CoinRefs(), err
-}
-
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
 	anchorID iotago.ObjectID,
