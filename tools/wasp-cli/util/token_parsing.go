@@ -24,18 +24,12 @@ func ArgsToFungibleTokensStr(args []string) []string {
 }
 
 func ParseFungibleTokens(args []string) *isc.Assets {
-
 	tokens := isc.NewEmptyAssets()
+
 	for _, tr := range args {
 		parts := strings.Split(tr, "|")
 		if len(parts) != 2 {
 			log.Fatal("fungible tokens syntax: <token-id>|<amount>, <token-id|amount>... -- Example: base|100")
-		}
-		// In the past we would indicate base tokens as 'IOTA:nnn'
-		// Now we can simply use ':nnn', but let's keep it
-		// backward compatible for now and allow both
-		if strings.ToLower(parts[0]) != BaseTokenStr {
-			log.Fatalf("invalid token id: %s", parts[0])
 		}
 
 		amount, err := coin.ValueFromString(parts[1])
@@ -43,13 +37,17 @@ func ParseFungibleTokens(args []string) *isc.Assets {
 			log.Fatalf("error parsing token amount: %v", err)
 		}
 
-		tokens.AddBaseTokens(amount)
-
-		/*
-			nativeTokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
+		// In the past we would indicate base tokens as 'IOTA:nnn'
+		// Now we can simply use ':nnn', but let's keep it
+		// backward compatible for now and allow both
+		if strings.ToLower(parts[0]) == BaseTokenStr || coin.BaseTokenType.MatchesStringType(parts[0]) {
+			tokens.AddBaseTokens(amount)
+		} else {
+			coinID, err := coin.TypeFromString(parts[0])
 			log.Check(err)
-
-			tokens.AddNativeTokens(nativeTokenID, amount)*/
+			tokens.AddCoin(coinID, amount)
+		}
 	}
+
 	return tokens
 }
