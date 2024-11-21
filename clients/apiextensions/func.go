@@ -55,7 +55,7 @@ func APIWaitUntilAllRequestsProcessed(client *apiclient.APIClient, chainID isc.C
 		return nil, err
 	}
 
-	// TODO: Clarify if we ever want to have multiple requests in a TX or if one Request per TX is enough.
+	// TODO: In theory we can pass multiple requests into a PTB call, but we don't right now.
 	// For now fake old behavior and just create an array with a length of 1
 
 	reqs := []isc.RequestID{isc.RequestID(req.ObjectID.Data())}
