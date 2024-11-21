@@ -158,7 +158,8 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (isc.CallArgumen
 	if err != nil {
 		return nil, err
 	}
-	return ch.RunOffLedgerRequest(req)
+	_, res, err := ch.RunOffLedgerRequest(req)
+	return res, err
 }
 
 var EthereumAccounts [10]*ecdsa.PrivateKey

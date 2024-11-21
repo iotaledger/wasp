@@ -124,19 +124,7 @@ func sendLargeRequest(ctx isc.Sandbox, x uint64) {
 				isc.NewCallArguments(codec.Encode(x)),
 			),
 		},
-
 		Assets: ctx.AllowanceAvailable(),
 	}
-
-	panic("TODO: fix EstimateRequiredStorageDeposit")
-	storageDeposit := coin.Value(0)
-	// storageDeposit := ctx.EstimateRequiredStorageDeposit(req)
-
-	provided := ctx.AllowanceAvailable().BaseTokens()
-	if provided < storageDeposit {
-		panic("not enough funds for storage deposit")
-	}
-	ctx.TransferAllowedFunds(ctx.AccountID(), isc.NewAssets(storageDeposit))
-	req.Assets.Coins[coin.BaseTokenType] = storageDeposit
 	ctx.Send(req)
 }

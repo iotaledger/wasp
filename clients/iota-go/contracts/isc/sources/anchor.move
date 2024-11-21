@@ -86,6 +86,7 @@ module isc::anchor {
         };
         receipts.destroy_empty();
         self.state_metadata = new_state_metadata;
+        self.state_index = self.state_index + 1;
     }
 
     // === Test Functions ===

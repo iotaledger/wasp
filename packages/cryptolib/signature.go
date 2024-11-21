@@ -49,7 +49,6 @@ func NewSignature(publicKey *PublicKey, signature []byte) *Signature {
 	result := Signature{
 		publicKey: publicKey,
 	}
-	// copy(result.publicKey[:], publicKey.AsBytes())
 	copy(result.signature[:], signature)
 	return &result
 }
@@ -58,11 +57,6 @@ func NewSignature(publicKey *PublicKey, signature []byte) *Signature {
 func (s *Signature) GetPublicKey() *PublicKey {
 	return s.publicKey
 }
-
-/*// TODO: is it really needed?
-func (s *Signature) GetSignature() [SignatureSize]byte {
-	return s.signature
-}*/
 
 // Validate reports whether sig is a valid signature of message by publicKey.
 // It uses precisely-specified validation criteria (ZIP 215) suitable for use in consensus-critical contexts.
@@ -131,6 +125,10 @@ func (s *Signature) Write(w io.Writer) error {
 	ww.Write(s.publicKey)
 	ww.WriteBytes(s.signature[:])
 	return ww.Err
+}
+
+func (s *Signature) Bytes() []byte {
+	return rwutil.WriteToBytes(s)
 }
 
 func (s *Signature) AsIotaSignature() *iotasigner.Signature {

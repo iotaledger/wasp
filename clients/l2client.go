@@ -36,7 +36,7 @@ type L2Client interface {
 		gasPrice uint64,
 		gasBudget uint64,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
-	ReceiveRequestAndTransition(
+	ReceiveRequestsAndTransition(
 		ctx context.Context,
 		cryptolibSigner cryptolib.Signer,
 		packageID iotago.PackageID,

@@ -1,8 +1,11 @@
 package iscmoveclient
 
 import (
+	"slices"
+
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 )
 
@@ -16,13 +19,12 @@ func PTBCreateAndSendRequest(
 	allowance *iscmove.Assets,
 	onchainGasBudget uint64,
 ) *iotago.ProgrammableTransactionBuilder {
-	allowanceCoinTypes := make([]iotajsonrpc.CoinType, len(allowance.Coins))
-	allowanceBalances := make([]uint64, len(allowance.Coins))
-	i := 0
-	for k, v := range allowance.Coins {
-		allowanceCoinTypes[i] = k
-		allowanceBalances[i] = v.Uint64()
-	}
+	allowanceCoinTypes := lo.Keys(allowance.Coins)
+	slices.Sort(allowanceCoinTypes)
+	allowanceBalances := lo.Map(allowanceCoinTypes, func(t string, i int) uint64 {
+		return allowance.Coins[t].Uint64()
+	})
+
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{

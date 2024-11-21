@@ -55,6 +55,14 @@ type AssetsBag struct {
 	Size uint64
 }
 
+func (ab *AssetsBag) Equals(other *AssetsBag) bool {
+	if (ab == nil) || (other == nil) {
+		return (ab == nil) && (other == nil)
+	}
+	return ab.ID.Equals(other.ID) &&
+		ab.Size == other.Size
+}
+
 type AssetsBagBalances map[iotajsonrpc.CoinType]*iotajsonrpc.Balance
 
 type AssetsBagWithBalances struct {

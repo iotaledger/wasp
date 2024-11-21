@@ -11,7 +11,7 @@ type referent[T any] struct {
 	Value *T `bcs:"optional"`
 }
 
-// moveAnchor is the BCS equivalent for the move type moveAnchor
+// moveAnchor is the BCS equivalent for the move type Anchor
 type moveAnchor struct {
 	ID            iotago.ObjectID
 	Assets        referent[iscmove.AssetsBag]

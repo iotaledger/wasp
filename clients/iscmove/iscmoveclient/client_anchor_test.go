@@ -23,7 +23,7 @@ func TestStartNewChain(t *testing.T) {
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
-	anchor, err := client.StartNewChain(
+	anchor1, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		signer.Address(),
@@ -35,27 +35,7 @@ func TestStartNewChain(t *testing.T) {
 		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
-	t.Log("anchor: ", anchor)
-}
-
-func TestGetAnchorFromObjectID(t *testing.T) {
-	client := newLocalnetClient()
-	signer := newSignerWithFunds(t, testSeed, 0)
-
-	anchor1, err := client.StartNewChain(
-		context.Background(),
-		signer,
-		signer.Address(),
-		l1starter.ISCPackageID(),
-		[]byte{1, 2, 3, 4},
-		nil,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
-	)
-	require.NoError(t, err)
 	t.Log("anchor1: ", anchor1)
-
 	anchor2, err := client.GetAnchorFromObjectID(context.Background(), &anchor1.Object.ID)
 	require.NoError(t, err)
 	require.Equal(t, anchor1, anchor2)
@@ -111,7 +91,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			Function: uint32(isc.Hn("test_isc_func")),
 			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
 		},
-		nil,
+		iscmove.NewAssets(0),
 		0,
 		nil,
 		iotaclient.DefaultGasPrice,
@@ -123,7 +103,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	requestRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	_, err = client.ReceiveRequestAndTransition(
+	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
 		chainSigner,
 		l1starter.ISCPackageID(),
@@ -138,13 +118,15 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 }
 
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	require.NoError(t, err)
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		signer,
 		signer.Address(),
 		l1starter.ISCPackageID(),
 		[]byte{1, 2, 3, 4},
-		nil,
+		getCoinsRes.Data[1].Ref(),
 		nil,
 		iotaclient.DefaultGasPrice,
 		iotaclient.DefaultGasBudget,

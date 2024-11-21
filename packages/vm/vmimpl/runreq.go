@@ -94,6 +94,7 @@ func (reqctx *requestContext) consumeRequest() {
 		// off ledger request does not bring any deposit
 		return
 	}
+	reqctx.vm.task.Log.Debugf("consumeRequest: %s with %s", req.ID(), req.Assets())
 	reqctx.vm.txbuilder.ConsumeRequest(req)
 
 	// if sender is specified, all assets goes to sender's sender
@@ -480,6 +481,6 @@ func (vmctx *vmContext) checkTransactionSize() error {
 	// * max_size_written_objects
 	// * max_serialized_tx_effects_size_bytes
 	// * max_pure_argument_size
-	vmctx.task.Log.Warn("TODO: checkTransactionSize")
+	vmctx.task.Log.Info("TODO: checkTransactionSize")
 	return nil
 }

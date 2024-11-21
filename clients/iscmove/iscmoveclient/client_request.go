@@ -14,47 +14,27 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-// CreateAndSendRequest calls <packageID>::request::create_and_send_request() and transfers the created
-// Request to the signer.
-func (c *Client) CreateAndSendRequest(
+func (c *Client) SignAndExecutePTB(
 	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
-	packageID iotago.PackageID,
-	anchorAddress *iotago.ObjectID,
-	assetsBagRef *iotago.ObjectRef,
-	msg *iscmove.Message,
-	allowance *iscmove.Assets,
-	onchainGasBudget uint64,
+	pt iotago.ProgrammableTransaction,
 	gasPayments []*iotago.ObjectRef, // optional
 	gasPrice uint64,
 	gasBudget uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
-
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: anchorAddress})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
-	}
-	anchorRef := anchorRes.Data.Ref()
-
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = PTBCreateAndSendRequest(
-		ptb,
-		packageID,
-		*anchorRef.ObjectID,
-		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-		msg,
-		allowance,
-		onchainGasBudget,
-	)
-	pt := ptb.Finish()
-
+	var err error
 	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
+		gasPayments, err = c.FindCoinsForGasPayment(
+			ctx,
+			signer.Address(),
+			pt,
+			gasPrice,
+			gasBudget,
+		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
+			return nil, err
 		}
-		gasPayments = []*iotago.ObjectRef{coinPage.Data[0].Ref()}
 	}
 
 	tx := iotago.NewProgrammable(
@@ -84,9 +64,50 @@ func (c *Client) CreateAndSendRequest(
 	return txnResponse, nil
 }
 
+// CreateAndSendRequest calls <packageID>::request::create_and_send_request() and transfers the created
+// Request to the signer.
+func (c *Client) CreateAndSendRequest(
+	ctx context.Context,
+	signer cryptolib.Signer,
+	packageID iotago.PackageID,
+	anchorAddress *iotago.ObjectID,
+	assetsBagRef *iotago.ObjectRef,
+	msg *iscmove.Message,
+	allowance *iscmove.Assets,
+	onchainGasBudget uint64,
+	gasPayments []*iotago.ObjectRef, // optional
+	gasPrice uint64,
+	gasBudget uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: anchorAddress})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
+	}
+	anchorRef := anchorRes.Data.Ref()
+
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBCreateAndSendRequest(
+		ptb,
+		packageID,
+		*anchorRef.ObjectID,
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+		msg,
+		allowance,
+		onchainGasBudget,
+	)
+	return c.SignAndExecutePTB(
+		ctx,
+		signer,
+		ptb.Finish(),
+		gasPayments,
+		gasPrice,
+		gasBudget,
+	)
+}
+
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
-	cryptolibSigner cryptolib.Signer,
+	signer cryptolib.Signer,
 	packageID iotago.PackageID,
 	anchorAddress *iotago.ObjectID,
 	assets *iscmove.Assets,
@@ -97,15 +118,13 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	gasPrice uint64,
 	gasBudget uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
-
 	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: anchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
@@ -113,7 +132,15 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	// assume we can find it in the first page
 	for cointype, bal := range assets.Coins {
 		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
-			return lo.Must(iotago.IsSameResource(cointype, coin.CoinType)) && coin.Balance.Uint64() >= bal.Uint64()
+			if !lo.Must(iotago.IsSameResource(cointype, coin.CoinType)) {
+				return false
+			}
+			if lo.ContainsBy(gasPayments, func(ref *iotago.ObjectRef) bool {
+				return ref.ObjectID.Equals(*coin.CoinObjectID)
+			}) {
+				return false
+			}
+			return coin.Balance.Uint64() >= bal.Uint64()
 		})
 		if !ok {
 			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
@@ -122,7 +149,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = PTBAssetsBagNew(ptb, packageID, cryptolibSigner.Address())
+	ptb = PTBAssetsBagNew(ptb, packageID, signer.Address())
 	argAssetsBag := ptb.LastCommandResultArg()
 	for _, tuple := range placedCoins {
 		ptb = PTBAssetsBagPlaceCoinWithAmount(
@@ -143,51 +170,14 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		allowance,
 		onchainGasBudget,
 	)
-	pt := ptb.Finish()
-
-	if len(gasPayments) == 0 {
-		coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{Owner: signer.Address()})
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
-		}
-		coins := lo.Filter(coinPage.Data, func(coin *iotajsonrpc.Coin, _ int) bool {
-			return !pt.IsInInputObjects(coin.CoinObjectID)
-		})
-		tokensForGas := uint64(0)
-		for _, coin := range coins {
-			gasPayments = append(gasPayments, coin.Ref())
-			tokensForGas += coin.Balance.Uint64()
-			if tokensForGas >= gasPrice*gasBudget {
-				break
-			}
-		}
-	}
-
-	tx := iotago.NewProgrammable(
-		signer.Address(),
-		pt,
-		gasPayments,
-		gasBudget,
-		gasPrice,
-	)
-
-	txnBytes, err := bcs.Marshal(&tx)
-	if err != nil {
-		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-	}
-	txnResponse, err := c.SignAndExecuteTransaction(
+	return c.SignAndExecutePTB(
 		ctx,
 		signer,
-		txnBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		ptb.Finish(),
+		gasPayments,
+		gasPrice,
+		gasBudget,
 	)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
-	}
-	return txnResponse, nil
 }
 
 func (c *Client) GetRequestFromObjectID(
@@ -199,11 +189,17 @@ func (c *Client) GetRequestFromObjectID(
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get anchor content: %w", err)
+		return nil, fmt.Errorf("failed to get request content: %w", err)
 	}
+	if getObjectResponse.Data == nil {
+		return nil, fmt.Errorf("request %s not found", *reqID)
+	}
+	return c.parseRequestAndFetchAssetsBag(getObjectResponse.Data)
+}
 
+func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
 	var req moveRequest
-	err = iotaclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
@@ -213,8 +209,51 @@ func (c *Client) GetRequestFromObjectID(
 	}
 	req.AssetsBag.Value = bals
 	return &iscmove.RefWithObject[iscmove.Request]{
-		ObjectRef: getObjectResponse.Data.Ref(),
+		ObjectRef: obj.Ref(),
 		Object:    req.ToRequest(),
 		Owner:     getObjectResponse.Data.Owner.AddressOwner,
 	}, nil
+}
+
+func (c *Client) GetRequests(
+	ctx context.Context,
+	packageID iotago.PackageID,
+	anchorAddress *iotago.ObjectID,
+) (
+	[]*iscmove.RefWithObject[iscmove.Request],
+	error,
+) {
+	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	var lastSeen *iotago.ObjectID
+	for {
+		res, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+			Address: anchorAddress,
+			Query: &iotajsonrpc.IotaObjectResponseQuery{
+				Filter: &iotajsonrpc.IotaObjectDataFilter{
+					StructType: &iotago.StructTag{
+						Address: &packageID,
+						Module:  iscmove.RequestModuleName,
+						Name:    iscmove.RequestObjectName,
+					},
+				},
+				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
+			},
+			Cursor: lastSeen,
+		})
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("failed to fetch requests: %w", err)
+		}
+		if len(res.Data) == 0 {
+			break
+		}
+		lastSeen = res.NextCursor
+		for _, reqData := range res.Data {
+			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decode request: %w", err)
+			}
+			reqs = append(reqs, req)
+		}
+	}
+	return reqs, nil
 }
