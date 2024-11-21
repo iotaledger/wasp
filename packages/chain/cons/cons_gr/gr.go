@@ -15,7 +15,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
