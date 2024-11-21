@@ -125,8 +125,7 @@ func parseTraceInternal(debugTrace CallFrame, blockHash *common.Hash, blockNumbe
 		traceCopy := make([]int, len(traceAddress))
 		copy(traceCopy, traceAddress)
 		traceCopy = append(traceCopy, subCalls)
-		var traces []*Trace
-		traces = parseTraceInternal(call, blockHash, blockNumber, txHash, txPosition, traceCopy)
+		traces := parseTraceInternal(call, blockHash, blockNumber, txHash, txPosition, traceCopy)
 		traceResult = append(traceResult, traces...)
 		subCalls++
 	}
