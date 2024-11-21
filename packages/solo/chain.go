@@ -264,15 +264,6 @@ func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex ui
 	return ret
 }
 
-func (ch *Chain) GetRequestReceiptsForBlockRangeAsStrings(fromBlockIndex, toBlockIndex uint32) []string {
-	recs := ch.GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex)
-	ret := make([]string, len(recs))
-	for i := range ret {
-		ret[i] = recs[i].String()
-	}
-	return ret
-}
-
 // AddAllowedStateController adds the address to the allowed state controlled address list
 func (ch *Chain) AddAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
 	req := NewCallParams(governance.FuncAddAllowedStateControllerAddress.Message(addr)).

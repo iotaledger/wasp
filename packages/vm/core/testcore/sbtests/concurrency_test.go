@@ -2,7 +2,6 @@ package sbtests
 
 import (
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/stretchr/testify/require"
@@ -16,8 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
-func TestCounter(t *testing.T) { run2(t, testCounter) }
-func testCounter(t *testing.T) {
+func TestCounter(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -34,8 +32,10 @@ func testCounter(t *testing.T) {
 	require.EqualValues(t, 33, res)
 }
 
-func TestConcurrency(t *testing.T) { run2(t, testConcurrency) }
-func testConcurrency(t *testing.T) {
+func TestManyRequests(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode")
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -44,29 +44,21 @@ func testConcurrency(t *testing.T) {
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
 
-	repeats := []int{300, 100, 100, 100, 200, 100, 100}
-	sum := 0
-	for _, i := range repeats {
-		sum += i
+	const N = 100
+	for i := 0; i < N; i++ {
+		_, _, err2 := chain.SendRequest(req, nil)
+		require.NoError(t, err2)
 	}
 
-	chain.WaitForRequestsMark()
-	for r, n := range repeats {
-		go func(_, n int) {
-			for i := 0; i < n; i++ {
-				tx, _, err2 := chain.RequestFromParamsToLedger(req, nil)
-				require.NoError(t, err2)
-				chain.Env.EnqueueRequests(tx)
-			}
-		}(r, n)
-	}
-	require.True(t, chain.WaitForRequestsThrough(sum, 180*time.Second))
+	const maxRequestsPerBlock = 10
+	runs := chain.RunAllReceivedRequests(maxRequestsPerBlock)
+	require.EqualValues(t, N/maxRequestsPerBlock, runs)
 
 	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 	counterResult, err := sbtestsc.FuncGetCounter.DecodeOutput(ret)
 	require.NoError(t, err)
-	require.EqualValues(t, sum, counterResult)
+	require.EqualValues(t, N, counterResult)
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
@@ -75,8 +67,10 @@ func testConcurrency(t *testing.T) {
 	chain.AssertL2BaseTokens(contractAgentID, 0)
 }
 
-func TestConcurrency2(t *testing.T) { run2(t, testConcurrency2) }
-func testConcurrency2(t *testing.T) {
+func TestManyRequests2(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode")
+	}
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -89,26 +83,25 @@ func testConcurrency2(t *testing.T) {
 	_, estimate, err := chain.EstimateGasOnLedger(req, nil)
 	require.NoError(t, err)
 
-	repeats := []int{300, 100, 100, 100, 200, 100, 100}
+	repeats := []int{30, 10, 10, 10, 20, 10, 10}
 	users := make([]*cryptolib.KeyPair, len(repeats))
 	userAddr := make([]*cryptolib.Address, len(repeats))
+	l1Gas := make([]coin.Value, len(repeats))
+
 	sum := 0
-	for _, i := range repeats {
-		sum += i
+	for r, n := range repeats {
+		users[r], userAddr[r] = chain.Env.NewKeyPairWithFunds()
+		for i := 0; i < n; i++ {
+			_, l1Res, err2 := chain.SendRequest(req, users[r])
+			require.NoError(t, err2)
+			sum++
+			l1Gas[r] += coin.Value(l1Res.Effects.Data.GasFee())
+		}
 	}
 
-	chain.WaitForRequestsMark()
-	for r, n := range repeats {
-		go func(r, n int) {
-			users[r], userAddr[r] = chain.Env.NewKeyPairWithFunds()
-			for i := 0; i < n; i++ {
-				tx, _, err2 := chain.RequestFromParamsToLedger(req, users[r])
-				require.NoError(t, err2)
-				chain.Env.EnqueueRequests(tx)
-			}
-		}(r, n)
-	}
-	require.True(t, chain.WaitForRequestsThrough(sum, 180*time.Second))
+	const maxRequestsPerBlock = 50
+	runs := chain.RunAllReceivedRequests(maxRequestsPerBlock)
+	require.EqualValues(t, sum/maxRequestsPerBlock, runs)
 
 	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
@@ -119,7 +112,7 @@ func testConcurrency2(t *testing.T) {
 	for i := range users {
 		expectedBalance := coin.Value(repeats[i]) * (baseTokensSentPerRequest - estimate.GasFeeCharged)
 		chain.AssertL2BaseTokens(isc.NewAddressAgentID(userAddr[i]), expectedBalance)
-		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest)
+		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
 	}
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())

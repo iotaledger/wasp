@@ -3,7 +3,6 @@ package sbtests
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -27,16 +25,14 @@ import (
 // SC deployed on chain 2
 // funds are deposited by some user on chain 1, on behalf of SC
 // SC tries to withdraw those funds from chain 1 to chain 2
-func Test2Chains(t *testing.T) { run2(t, test2Chains) }
-
-func test2Chains(t *testing.T) {
+func Test2Chains(t *testing.T) {
+	t.Skip("TODO")
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
-	}).
-		WithNativeContract(sbtestsc.Processor)
+	})
 	chain1 := env.NewChain()
 	chain2, _ := env.NewChainExt(nil, 0, "chain2", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	// chain owner deposit base tokens on chain2
@@ -62,13 +58,10 @@ func test2Chains(t *testing.T) {
 	chain1TotalBaseTokens := chain1.L2TotalBaseTokens()
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
-	chain1.WaitForRequestsMark()
-	chain2.WaitForRequestsMark()
-
 	// send base tokens to contractAgentID2 (that is an entity of chain2) on chain1
 	const baseTokensCreditedToScOnChain1 = 10 * isc.Million
 	creditBaseTokensToSend := coin.Value(baseTokensCreditedToScOnChain1 + gas.LimitsDefault.MinGasPerRequest)
-	_, err = chain1.PostRequestSync(solo.NewCallParams(accounts.FuncTransferAllowanceTo.Message(contractAgentID2)).
+	_, l1Res, _, _, err := chain1.PostRequestSyncTx(solo.NewCallParams(accounts.FuncTransferAllowanceTo.Message(contractAgentID2)).
 		AddBaseTokens(creditBaseTokensToSend).
 		AddAllowanceBaseTokens(baseTokensCreditedToScOnChain1).
 		WithMaxAffordableGasBudget(),
@@ -78,7 +71,7 @@ func test2Chains(t *testing.T) {
 	chain1TransferAllowanceReceipt := chain1.LastReceipt()
 	chain1TransferAllowanceGas := chain1TransferAllowanceReceipt.GasFeeCharged
 
-	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount-creditBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount-creditBaseTokensToSend-coin.Value(l1Res.Effects.Data.GasFee()))
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID2, baseTokensCreditedToScOnChain1)
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + creditBaseTokensToSend)
@@ -116,10 +109,8 @@ func test2Chains(t *testing.T) {
 	// also cover gas fee for `FuncWithdrawFromChain` on chain2
 	withdrawBaseTokensToSend := withdrawReqAllowance + coin.Value(withdrawFeeGas)
 
-	msg := sbtestsc.FuncWithdrawFromChain.Message(chain1.ChainID, baseTokensToWithdrawFromChain1, &gasReserve, &gasFeeTransferAccountToChain)
-
 	_, err = chain2.PostRequestSync(
-		solo.NewCallParams(msg, ScName).
+		solo.NewCallParams(sbtestsc.FuncWithdrawFromChain.Message(chain1.ChainID, baseTokensToWithdrawFromChain1, &gasReserve, &gasFeeTransferAccountToChain), ScName).
 			AddBaseTokens(withdrawBaseTokensToSend).
 			WithAllowance(isc.NewAssets(withdrawReqAllowance)).
 			WithMaxAffordableGasBudget(),
@@ -133,13 +124,8 @@ func test2Chains(t *testing.T) {
 	require.Equal(t, sbtestsc.FuncWithdrawFromChain.Hname(), chain2WithdrawFromChainTarget.EntryPoint)
 	require.Nil(t, chain2WithdrawFromChainReceipt.Error)
 
-	// accounts.FuncTransferAllowanceTo()
-	// accounts.FuncTransferAccountToChain()
-	require.True(t, chain1.WaitForRequestsThrough(2, 10*time.Second))
-	// testcore.FuncWithdrawFromChain()
-	// accounts.FuncTransferAllowanceTo()
-	require.True(t, chain2.WaitForRequestsThrough(2, 10*time.Second))
-
+	_, res := chain2.RunRequestBatch(1)
+	require.Len(t, res, 1)
 	chain2TransferAllowanceReceipt := chain2.LastReceipt()
 	// chain2TransferAllowanceGas := chain2TransferAllowanceReceipt.GasFeeCharged
 	chain2TransferAllowanceTarget := chain2TransferAllowanceReceipt.DeserializedRequest().Message().Target

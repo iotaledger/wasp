@@ -11,8 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
-func TestGetSet(t *testing.T) { run2(t, testGetSet) }
-func testGetSet(t *testing.T) {
+func TestGetSet(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -28,12 +27,11 @@ func testGetSet(t *testing.T) {
 	require.EqualValues(t, 314, ret)
 }
 
-func TestCallRecursive(t *testing.T) { run2(t, testCallRecursive) }
-func testCallRecursive(t *testing.T) {
+func TestCallRecursive(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	depth := 27
+	depth := uint64(27)
 	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OriginatorAgentID))
 	req := solo.NewCallParams(
 		sbtestsc.FuncCallOnChain.Message(isc.NewCallArguments(
@@ -64,8 +62,7 @@ func fibonacci(n int64) int64 {
 	return fibonacci(n-1) + fibonacci(n-2)
 }
 
-func TestCallFibonacci(t *testing.T) { run2(t, testCallFibonacci) }
-func testCallFibonacci(t *testing.T) {
+func TestCallFibonacci(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -77,8 +74,7 @@ func testCallFibonacci(t *testing.T) {
 	require.EqualValues(t, fibonacci(fiboN), ret)
 }
 
-func TestCallFibonacciIndirect(t *testing.T) { run2(t, testCallFibonacciIndirect) }
-func testCallFibonacciIndirect(t *testing.T) {
+func TestCallFibonacciIndirect(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
@@ -90,15 +86,14 @@ func testCallFibonacciIndirect(t *testing.T) {
 	require.EqualValues(t, fibonacci(fiboN), ret)
 }
 
-func TestIndirectCallFibonacci(t *testing.T) { run2(t, testIndirectCallFibonacci) }
-func testIndirectCallFibonacci(t *testing.T) { //nolint:dupl
+func TestIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name, isc.NewCallArguments(
 		codec.Encode(fiboN),
-		codec.EncodeSome(HScName),
-		codec.EncodeSome(sbtestsc.FuncGetFibonacci.Hname()),
+		codec.Encode(HScName),
+		codec.Encode(sbtestsc.FuncGetFibonacci.Hname()),
 	)).
 		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
@@ -115,15 +110,14 @@ func testIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	require.EqualValues(t, 1, r)
 }
 
-func TestIndirectCallFibonacciIndirect(t *testing.T) { run2(t, testIndirectCallFibonacciIndirect) }
-func testIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
+func TestIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name, isc.NewCallArguments(
 		codec.Encode(fiboN),
-		codec.EncodeSome(HScName),
-		codec.EncodeSome(sbtestsc.FuncGetFibonacciIndirect.Hname()),
+		codec.Encode(HScName),
+		codec.Encode(sbtestsc.FuncGetFibonacciIndirect.Hname()),
 	)).
 		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)

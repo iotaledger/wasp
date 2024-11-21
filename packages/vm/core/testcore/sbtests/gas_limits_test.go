@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -20,7 +19,7 @@ func infiniteLoopRequest(ch *solo.Chain, gasBudget ...uint64) (*solo.CallParams,
 		budget = gasBudget[0]
 	}
 	wallet, address := ch.Env.NewKeyPairWithFunds()
-	baseTokensToSend := ch.Env.L1BaseTokens(address)
+	baseTokensToSend := ch.Env.L1BaseTokens(address) / 10
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncInfiniteLoop.Name).
 		AddBaseTokens(baseTokensToSend).
@@ -28,8 +27,7 @@ func infiniteLoopRequest(ch *solo.Chain, gasBudget ...uint64) (*solo.CallParams,
 	return req, wallet
 }
 
-func TestTxWithGasOverLimit(t *testing.T) { run2(t, testTxWithGasOverLimit) }
-func testTxWithGasOverLimit(t *testing.T) {
+func TestTxWithGasOverLimit(t *testing.T) {
 	// create a TX that would use more than max gas limit, assert that only the maximum will be used
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil)
@@ -44,8 +42,11 @@ func testTxWithGasOverLimit(t *testing.T) {
 	require.GreaterOrEqual(t, receipt.GasBurned, ch.GetGasLimits().MaxGasPerRequest) // should exceed MaxGasPerRequest() by 1 operation
 }
 
-func TestBlockGasOverflow(t *testing.T) { run2(t, testBlockGasOverflow) }
-func testBlockGasOverflow(t *testing.T) {
+func TestBlockGasOverflow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping in short mode")
+	}
+
 	// queue many transactions with enough gas to fill a block, assert that they are split across blocks
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil)
@@ -54,17 +55,14 @@ func testBlockGasOverflow(t *testing.T) {
 	// produce 1 request over the block gas limit (each request uses the maximum amount of gas a call can use)
 	limits := ch.GetGasLimits()
 	nRequests := int(limits.MaxGasPerBlock/limits.MaxGasPerRequest) + 1
-	reqs := make([]isc.Request, nRequests)
 
 	for i := 0; i < nRequests; i++ {
 		req, wallet := infiniteLoopRequest(ch)
-		iscReq, err := solo.ISCRequestFromCallParams(ch, req, wallet)
-		require.NoError(t, err)
-		reqs[i] = iscReq
+		ch.SendRequest(req, wallet)
 	}
 
-	ch.Env.AddRequestsToMempool(ch, reqs)
-	ch.WaitUntilMempoolIsEmpty()
+	const maxRequestsPerBlock = 50
+	ch.RunAllReceivedRequests(maxRequestsPerBlock)
 
 	// we should have produced 2 blocks
 	require.EqualValues(t, initialBlockInfo.BlockIndex+2, ch.LatestBlockIndex())
@@ -82,8 +80,7 @@ func testBlockGasOverflow(t *testing.T) {
 	require.Equal(t, uint16(1), followingBlockInfo.TotalRequests)
 }
 
-func TestGasBudget(t *testing.T) { run2(t, testGasBudget) }
-func testGasBudget(t *testing.T) {
+func TestGasBudget(t *testing.T) {
 	// create a TX with not enough gas, assert the receipt is as expected
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil)
@@ -107,8 +104,7 @@ func testGasBudget(t *testing.T) {
 	require.EqualValues(t, limits.MinGasPerRequest, receipt.GasBudget) // gas budget should be adjusted to the minimum
 }
 
-func TestViewGasLimit(t *testing.T) { run2(t, testViewGasLimit) }
-func testViewGasLimit(t *testing.T) {
+func TestViewGasLimit(t *testing.T) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil)
 	_, err := ch.CallViewEx(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
