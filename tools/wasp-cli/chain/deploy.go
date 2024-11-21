@@ -102,7 +102,7 @@ func createGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.
 		return iotago.ObjectID{}, errors.New("no coins found")
 	}
 
-	splitCoins, err := client.SplitCoin(ctx, iotaclient.SplitCoinRequest{
+	splitCoinTX, err := client.SplitCoin(ctx, iotaclient.SplitCoinRequest{
 		Coin:      coins[0].CoinObjectID,
 		Signer:    wallet.Address().AsIotaAddress(),
 		GasBudget: iotajsonrpc.NewBigInt(10 * isc.Million),
@@ -115,7 +115,7 @@ func createGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.
 		return iotago.ObjectID{}, err
 	}
 
-	result, err := client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), splitCoins.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
+	result, err := client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), splitCoinTX.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
 		ShowEffects:        true,
 		ShowBalanceChanges: true,
 	})
