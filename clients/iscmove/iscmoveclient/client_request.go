@@ -211,7 +211,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) 
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: obj.Ref(),
 		Object:    req.ToRequest(),
-		Owner:     getObjectResponse.Data.Owner.AddressOwner,
+		Owner:     obj.Owner.AddressOwner,
 	}, nil
 }
 

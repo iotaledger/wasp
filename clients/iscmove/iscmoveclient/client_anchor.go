@@ -36,7 +36,7 @@ func (c *Client) FindCoinsForGasPayment(
 }
 
 func (c *Client) StartNewChain(
-	ctx context.Context,	
+	ctx context.Context,
 	cryptolibSigner cryptolib.Signer,
 	chainOwnerAddress *cryptolib.Address,
 	packageID iotago.PackageID,
@@ -59,7 +59,7 @@ func (c *Client) StartNewChain(
 
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
-		signer,
+		cryptolibSigner,
 		ptb.Finish(),
 		gasPayments,
 		gasPrice,
