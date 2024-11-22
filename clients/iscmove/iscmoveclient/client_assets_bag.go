@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
@@ -97,6 +96,36 @@ func (c *Client) AssetsDestroyEmpty(
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsDestroyEmpty(ptb, packageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}))
+	return c.SignAndExecutePTB(
+		ctx,
+		signer,
+		ptb.Finish(),
+		gasPayments,
+		gasPrice,
+		gasBudget,
+	)
+}
+
+func (c *Client) AssetsBagTakeCoinBalanceMergeTo(
+	ctx context.Context,
+	signer cryptolib.Signer,
+	packageID iotago.PackageID,
+	assetsBagRef *iotago.ObjectRef,
+	coinType iotajsonrpc.CoinType,
+	amount uint64,
+	mergeToCoin iotago.ObjectRef,
+	gasPayments []*iotago.ObjectRef, // optional
+	gasPrice uint64,
+	gasBudget uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
+		ptb,
+		packageID,
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+		amount,
+		coinType,
+	)
 	return c.SignAndExecutePTB(
 		ctx,
 		signer,

@@ -363,17 +363,25 @@ type StateAnchor struct {
 	Anchor     *iscmove.AnchorWithRef
 	Owner      *cryptolib.Address
 	ISCPackage iotago.Address
+	GasCoin    *iotago.ObjectRef
 }
 
+// Every time changing the L1 state of the Anchor object, the nodes should create
+// a latest StateAnchor, and remember to update the latest ObjectRef of GasCoin
+// "changing the L1 state of the Anchor object" includes the following 'txbuilder' operations
+// * BuildTransactionEssence (update the anchor commitment)
+// * RotationTransaction
 func NewStateAnchor(
 	anchor *iscmove.AnchorWithRef,
 	owner *cryptolib.Address,
 	iscPackage iotago.Address,
+	gasCoin *iotago.ObjectRef,
 ) StateAnchor {
 	return StateAnchor{
 		Anchor:     anchor,
 		Owner:      owner,
 		ISCPackage: iscPackage,
+		GasCoin:    gasCoin,
 	}
 }
 

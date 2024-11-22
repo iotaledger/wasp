@@ -171,3 +171,52 @@ func PTBAssetsDestroyEmpty(ptb *iotago.ProgrammableTransactionBuilder, packageID
 	)
 	return ptb
 }
+
+func PTBAssetsBagTakeCoinBalanceMergeTo(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAssetsBag iotago.Argument,
+	amount uint64,
+	coinType string,
+) *iotago.ProgrammableTransactionBuilder {
+	typeTag, err := iotago.TypeTagFromString(coinType)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
+	}
+	takenBalArg := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "take_coin_balance",
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
+					argAssetsBag,
+					ptb.MustForceSeparatePure(amount),
+				},
+			},
+		},
+	)
+	createdCoin := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       iotago.IotaPackageIdIotaFramework,
+				Module:        "coin",
+				Function:      "from_balance",
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
+					takenBalArg,
+				},
+			},
+		},
+	)
+	ptb.Command(
+		iotago.Command{
+			MergeCoins: &iotago.ProgrammableMergeCoins{
+				Destination: iotago.GetArgumentGasCoin(),
+				Sources:     []iotago.Argument{createdCoin},
+			},
+		},
+	)
+	return ptb
+}

@@ -76,7 +76,7 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		target,
-		assets,
+		assets.AsISCMove(),
 	)
 }
 
@@ -107,7 +107,7 @@ func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *iotago
 	)
 }
 
-func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte) iotago.ProgrammableTransaction {
+func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte, topUpAmount uint64) iotago.ProgrammableTransaction {
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
@@ -120,6 +120,8 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
 		stateMetadata,
+		// txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GasCoin}),
+		topUpAmount,
 	)
 	return ptb.Finish()
 }
