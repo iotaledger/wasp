@@ -131,6 +131,10 @@ func TypeFromBytes(b []byte) (Type, error) {
 	return r, err
 }
 
+func (t Type) ToIotaJSONRPC() iotajsonrpc.CoinType {
+	return iotajsonrpc.CoinType(t.String())
+}
+
 func CompareTypes(a, b Type) int {
 	return strings.Compare(a.s, b.s)
 }

@@ -71,10 +71,10 @@ func PTBTakeAndTransferCoinBalance(
 					Package:       &packageID,
 					Module:        iscmove.AssetsBagModuleName,
 					Function:      "take_coin_balance",
-					TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString(coinType)},
+					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 					Arguments: []iotago.Argument{
 						argAssets,
-						ptb.MustPure(coinBalance.Uint64()),
+						ptb.MustPure(coinBalance),
 					},
 				},
 			},
@@ -85,7 +85,7 @@ func PTBTakeAndTransferCoinBalance(
 					Package:       iotago.IotaPackageIdIotaFramework,
 					Module:        "coin",
 					Function:      "from_balance",
-					TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString(coinType)},
+					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 					Arguments: []iotago.Argument{
 						argBal,
 					},
@@ -238,18 +238,14 @@ func PTBReceiveRequestsAndTransition(
 
 		assetsBag := requestAssets[i]
 		argAssetsBag := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
-		for _, bal := range assetsBag.Balances {
-			typeTag, err := iotago.TypeTagFromString(bal.CoinType)
-			if err != nil {
-				panic(fmt.Sprintf("can't parse Balance's Coin TypeTag: %s", err))
-			}
+		for coinType := range assetsBag.Balances {
 			argBal := ptb.Command(
 				iotago.Command{
 					MoveCall: &iotago.ProgrammableMoveCall{
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "take_all_coin_balance",
-						TypeArguments: []iotago.TypeTag{*typeTag},
+						TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 						Arguments:     []iotago.Argument{argAssetsBag},
 					},
 				},
@@ -260,7 +256,7 @@ func PTBReceiveRequestsAndTransition(
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "place_coin_balance",
-						TypeArguments: []iotago.TypeTag{*typeTag},
+						TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 						Arguments:     []iotago.Argument{argAnchorAssets, argBal},
 					},
 				},

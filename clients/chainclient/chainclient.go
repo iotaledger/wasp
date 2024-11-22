@@ -100,7 +100,7 @@ func (c *Client) postSingleRequest(
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	assets := iscmove.NewAssets(0)
 	for cointype, coinbal := range params.Transfer.Coins {
-		assets.AddCoin(cointype.String(), iotajsonrpc.CoinValue(coinbal.Uint64()))
+		assets.AddCoin(iotajsonrpc.CoinTypeFromString(cointype.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
 	}
 	msg := &iscmove.Message{
 		Contract: uint32(iscmsg.Target.Contract),
@@ -109,7 +109,7 @@ func (c *Client) postSingleRequest(
 	}
 	allowances := iscmove.NewAssets(0)
 	for cointype, coinbal := range params.Allowance.Coins {
-		allowances.AddCoin(cointype.String(), iotajsonrpc.CoinValue(coinbal))
+		allowances.AddCoin(iotajsonrpc.CoinTypeFromString(cointype.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
 	}
 	referenceGasPrice, err := c.L1Client.GetReferenceGasPrice(ctx)
 	if err != nil {

@@ -87,7 +87,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	// assume we can find it in the first page
 	for cointype, bal := range req.Assets.Coins {
 		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
-			if !lo.Must(iotago.IsSameResource(cointype, coin.CoinType)) {
+			if !lo.Must(iotago.IsSameResource(cointype.String(), string(coin.CoinType))) {
 				return false
 			}
 			if lo.ContainsBy(req.GasPayments, func(ref *iotago.ObjectRef) bool {
@@ -112,7 +112,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			req.PackageID,
 			argAssetsBag,
 			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: tuple.A.Ref()}),
-			tuple.B,
+			iotajsonrpc.CoinValue(tuple.B),
 			tuple.A.CoinType,
 		)
 	}
