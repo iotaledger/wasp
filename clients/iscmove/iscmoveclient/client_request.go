@@ -51,9 +51,14 @@ func (c *Client) SignAndExecutePTB(
 	}
 	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
-		signer,
-		txnBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)

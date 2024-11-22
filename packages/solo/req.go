@@ -242,11 +242,13 @@ func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value)
 	))
 	txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
 		env.ctx,
-		cryptolib.SignerToIotaSigner(keyPair),
-		tx.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: tx.TxBytes,
+			Signer:      cryptolib.SignerToIotaSigner(keyPair),
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
 		},
 	)
 	require.NoError(env.T, err)

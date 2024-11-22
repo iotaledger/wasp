@@ -34,30 +34,34 @@ func (c *Client) GetCoinObjsForTargetAmount(
 	return pickedCoins.Coins, nil
 }
 
+type SignAndExecuteTransactionRequest struct {
+	TxDataBytes iotago.Base64Data
+	Signer      iotasigner.Signer
+	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
+}
+
 func (c *Client) SignAndExecuteTransaction(
 	ctx context.Context,
-	signer iotasigner.Signer,
-	txBytes iotago.Base64Data,
-	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+	req *SignAndExecuteTransactionRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	// FIXME we need to support other intent
-	signature, err := signer.SignTransactionBlock(txBytes, iotasigner.DefaultIntent())
+	signature, err := req.Signer.SignTransactionBlock(req.TxDataBytes, iotasigner.DefaultIntent())
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign transaction block: %w", err)
 	}
 	resp, err := c.ExecuteTransactionBlock(
 		ctx,
 		ExecuteTransactionBlockRequest{
-			TxDataBytes: txBytes,
+			TxDataBytes: req.TxDataBytes,
 			Signatures:  []*iotasigner.Signature{signature},
-			Options:     options,
+			Options:     req.Options,
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
 	}
-	if options.ShowEffects && !resp.Effects.Data.IsSuccess() {
+	if req.Options.ShowEffects && !resp.Effects.Data.IsSuccess() {
 		return resp, fmt.Errorf("failed to execute transaction: %v", resp.Effects.Data.V1.Status)
 	}
 	return resp, nil
@@ -83,7 +87,13 @@ func (c *Client) PublishContract(
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to publish move contract: %w", err)
 	}
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		&SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options:     options,
+		})
 	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
 		return nil, nil, fmt.Errorf("failed to sign move contract tx: %w", err)
 	}
@@ -141,7 +151,11 @@ func (c *Client) MintToken(
 		return nil, fmt.Errorf("failed to call mint() move call: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, signer, txnBytes.TxBytes, options)
+	txnResponse, err := c.SignAndExecuteTransaction(ctx, &SignAndExecuteTransactionRequest{
+		TxDataBytes: txnBytes.TxBytes,
+		Signer:      signer,
+		Options:     options,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}

@@ -128,9 +128,7 @@ type L1Client interface {
 	) (iotajsonrpc.Coins, error)
 	SignAndExecuteTransaction(
 		ctx context.Context,
-		signer iotasigner.Signer,
-		txBytes iotago.Base64Data,
-		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+		req *iotaclient.SignAndExecuteTransactionRequest,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	PublishContract(
 		ctx context.Context,
@@ -234,11 +232,13 @@ func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Sig
 	}))
 	txnResponse := lo.Must(c.SignAndExecuteTransaction(
 		ctx,
-		signer,
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
 		},
 	))
 	if !txnResponse.Effects.Data.IsSuccess() {

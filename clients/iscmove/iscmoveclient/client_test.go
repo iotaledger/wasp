@@ -47,11 +47,13 @@ func TestKeys(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(cryptolibSigner),
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
 		},
 	)
 	require.NoError(t, err)

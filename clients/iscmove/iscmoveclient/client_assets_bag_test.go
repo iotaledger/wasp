@@ -365,10 +365,16 @@ func borrowAnchorAssetsAndPlaceCoin(
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(t, err)
 
-	execRes, err := client.SignAndExecuteTransaction(ctx, signer, txnBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	execRes, err := client.SignAndExecuteTransaction(
+		ctx,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects: true,
+			},
+		},
+	)
 	require.NoError(t, err)
 	require.True(t, execRes.Effects.Data.IsSuccess())
 }

@@ -74,11 +74,12 @@ func TestMoveCall(t *testing.T) {
 	require.NoError(t, err)
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		signer,
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects: true,
+			},
 		},
 	)
 	require.NoError(t, err)
@@ -104,11 +105,12 @@ func TestMoveCall(t *testing.T) {
 	require.NoError(t, err)
 	txnResponse, err = client.SignAndExecuteTransaction(
 		context.Background(),
-		signer,
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects: true,
+			},
 		},
 	)
 	require.NoError(t, err)
@@ -340,10 +342,12 @@ func TestPublish(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		signer,
-		txnBytes.TxBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects: true,
+			},
 		},
 	)
 	require.NoError(t, err)
