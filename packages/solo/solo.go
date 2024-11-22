@@ -293,10 +293,17 @@ func (env *Solo) deployChain(
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+
+	gasCoinRef := env.makeBaseTokenCoin(
+		chainOriginator,
+		initBaseTokens,
+	)
+
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
+		*gasCoinRef.ObjectID,
 		initBaseTokens,
 		baseTokenCoinInfo,
 	)

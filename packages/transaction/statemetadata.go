@@ -1,6 +1,7 @@
 package transaction
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -9,26 +10,29 @@ import (
 
 // StateMetadata contains the information stored in the Anchor object on L1
 type StateMetadata struct {
-	SchemaVersion isc.SchemaVersion
-	L1Commitment  *state.L1Commitment
-	GasFeePolicy  *gas.FeePolicy
-	InitParams    isc.CallArguments
-	PublicURL     string
+	SchemaVersion   isc.SchemaVersion
+	L1Commitment    *state.L1Commitment
+	GasCoinObjectID iotago.ObjectID
+	GasFeePolicy    *gas.FeePolicy
+	InitParams      isc.CallArguments
+	PublicURL       string
 }
 
 func NewStateMetadata(
 	schemaVersion isc.SchemaVersion,
 	l1Commitment *state.L1Commitment,
+	gasCoinObjectID iotago.ObjectID,
 	gasFeePolicy *gas.FeePolicy,
 	initParams isc.CallArguments,
 	publicURL string,
 ) *StateMetadata {
 	return &StateMetadata{
-		SchemaVersion: schemaVersion,
-		L1Commitment:  l1Commitment,
-		GasFeePolicy:  gasFeePolicy,
-		PublicURL:     publicURL,
-		InitParams:    initParams,
+		SchemaVersion:   schemaVersion,
+		L1Commitment:    l1Commitment,
+		GasCoinObjectID: gasCoinObjectID,
+		GasFeePolicy:    gasFeePolicy,
+		PublicURL:       publicURL,
+		InitParams:      initParams,
 	}
 }
 

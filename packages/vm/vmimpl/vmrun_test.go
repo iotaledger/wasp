@@ -75,6 +75,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		schemaVersion,
 		store,
 		initParams,
+		iotago.ObjectID{},
 		originDeposit,
 		baseTokenCoinInfo,
 	)
@@ -162,6 +163,7 @@ func transitionAnchor(
 	newStateMetadata := transaction.NewStateMetadata(
 		stateMetadata.SchemaVersion,
 		block.L1Commitment(),
+		stateMetadata.GasCoinObjectID,
 		chainInfo.GasFeePolicy,
 		stateMetadata.InitParams,
 		chainInfo.PublicURL,

@@ -2,6 +2,7 @@ package origin_test
 
 import (
 	"errors"
+	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,9 +28,9 @@ import (
 var baseTokenCoinInfo = &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 
 func TestOrigin(t *testing.T) {
-	l1commitment := origin.L1Commitment(0, nil, 0, baseTokenCoinInfo)
+	l1commitment := origin.L1Commitment(0, nil, iotago2.ObjectID{}, 0, baseTokenCoinInfo)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	initBlock, _ := origin.InitChain(0, store, nil, 0, baseTokenCoinInfo)
+	initBlock, _ := origin.InitChain(0, store, nil, iotago2.ObjectID{}, 0, baseTokenCoinInfo)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
@@ -103,7 +104,9 @@ func TestCreateOrigin(t *testing.T) {
 				isc.NewCallArguments(isc.NewAddressAgentID(anchor.GovernanceController).Bytes()),
 				governance.DefaultMinBaseTokensOnCommonAccount,
 				baseTokenCoinInfo,
+				iotago2.ObjectID{},
 			),
+			iotago2.ObjectID{},
 			gas.DefaultFeePolicy(),
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			"",

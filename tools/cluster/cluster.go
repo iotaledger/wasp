@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"io"
 	"math/rand"
 	"net/http"
@@ -273,9 +274,11 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		origin.L1Commitment(
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
+			iotago2.ObjectID{},
 			governance.DefaultMinBaseTokensOnCommonAccount,
 			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
 		),
+		iotago2.ObjectID{},
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
 		"",

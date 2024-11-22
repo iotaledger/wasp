@@ -83,7 +83,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, &tokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, &tokenCoinInfo)
 
 	ao0x := isctest.RandomStateAnchorWithStateMetadata(stateMetadata)
 	ao0 := &ao0x

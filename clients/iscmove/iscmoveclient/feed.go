@@ -3,6 +3,7 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
@@ -41,16 +42,30 @@ func (f *ChainFeed) WaitUntilStopped() {
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.RefWithObject[iscmove.Request], error) {
+func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.RefWithObject[iscmove.Request], iotago.ObjectRef, error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
+		return nil, nil, iotago.ObjectRef{}, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
+
 	reqs, err := f.wsClient.GetRequests(ctx, f.iscPackageID, &f.anchorAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
+		return nil, nil, iotago.ObjectRef{}, fmt.Errorf("failed to fetch requests: %w", err)
 	}
-	return anchor, reqs, nil
+
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	if err != nil {
+		return nil, nil, iotago.ObjectRef{}, fmt.Errorf("failed to decode statemetadata: %w", err)
+	}
+
+	gasCoin, err := f.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+		ObjectID: &stateMetadata.GasCoinObjectID,
+	})
+	if err != nil {
+		return nil, nil, iotago.ObjectRef{}, fmt.Errorf("failed to fetch gas coin: %w", err)
+	}
+
+	return anchor, reqs, gasCoin.Data.Ref(), nil
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.

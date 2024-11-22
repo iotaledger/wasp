@@ -2,6 +2,7 @@ package origin
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"time"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -73,6 +74,7 @@ func DecodeInitParams(args isc.CallArguments) (*InitParams, error) {
 func L1Commitment(
 	v isc.SchemaVersion,
 	args isc.CallArguments,
+	gasCoinObjectID iotago.ObjectID,
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) *state.L1Commitment {
@@ -80,6 +82,7 @@ func L1Commitment(
 		v,
 		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
 		args,
+		gasCoinObjectID,
 		originDeposit,
 		baseTokenCoinInfo,
 	)
@@ -98,6 +101,7 @@ func L1CommitmentFromAnchorStateMetadata(
 	l1c := L1Commitment(
 		stateMetadata.SchemaVersion,
 		stateMetadata.InitParams,
+		stateMetadata.GasCoinObjectID,
 		originDeposit,
 		baseTokenCoinInfo,
 	)
@@ -108,6 +112,7 @@ func InitChain(
 	v isc.SchemaVersion,
 	store state.Store,
 	args isc.CallArguments,
+	gasCoinObjectID iotago.ObjectID,
 	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, *transaction.StateMetadata) {
@@ -153,6 +158,7 @@ func InitChain(
 	return block, transaction.NewStateMetadata(
 		v,
 		block.L1Commitment(),
+		gasCoinObjectID,
 		gas.DefaultFeePolicy(),
 		args,
 		"",
@@ -173,6 +179,7 @@ func InitChainByAnchor(
 		stateMetadata.SchemaVersion,
 		chainStore,
 		stateMetadata.InitParams,
+		stateMetadata.GasCoinObjectID,
 		originDeposit,
 		baseTokenCoinInfo,
 	)

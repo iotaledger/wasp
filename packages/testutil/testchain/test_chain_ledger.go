@@ -66,10 +66,11 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, originDepositVal, isc.BaseTokenCoinInfo)
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
+		iotago.ObjectID{},
 		&gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
@@ -89,6 +90,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
 		tcl.governor,
+		tcl.governor.Address(),
 		*tcl.iscPackage,
 		stateMetadata.Bytes(),
 		originDeposit.Ref(),
@@ -97,7 +99,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(tcl.t, err)
-	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
+	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage, &iotago.ObjectRef{})
 	require.NotNil(tcl.t, stateAnchor)
 	tcl.chainID = stateAnchor.ChainID()
 

@@ -84,11 +84,10 @@ func initDeployMoveContractCmd() *cobra.Command {
 	return cmd
 }
 
-func initializeNewChainState(stateController *cryptolib.Address, gasCoinObjectID iotago.ObjectID) *transaction.StateMetadata {
+func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	// TODO: Place GasCoinObjectID into here once VMs part is done
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, 0, isc.BaseTokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, 0, isc.BaseTokenCoinInfo)
 	return stateMetadata
 }
 
@@ -172,7 +171,7 @@ func initDeployCmd() *cobra.Command {
 			packageID := config.GetPackageID()
 
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
-			
+
 			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
 			log.Check(err)
 

@@ -1,6 +1,7 @@
 package sm_gpa
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
 
 	"github.com/samber/lo"
@@ -29,7 +30,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
 	require.True(t, ok)
-	origin.InitChain(0, store, bf.GetChainInitParameters(), 0, isc.BaseTokenCoinInfo)
+	origin.InitChain(0, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	return log, bf, store, sm
 }
 

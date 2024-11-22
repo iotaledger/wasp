@@ -1,6 +1,7 @@
 package isctest
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -19,7 +20,7 @@ func RandomStateAnchorWithStateMetadata(metadata *transaction.StateMetadata) isc
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &anchor,
 	}
-	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
+	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress(), &iotago.ObjectRef{})
 }
 
 func RandomStateAnchor() isc.StateAnchor {
@@ -28,7 +29,7 @@ func RandomStateAnchor() isc.StateAnchor {
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &anchor,
 	}
-	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
+	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress(), &iotago.ObjectRef{})
 }
 
 // RandomChainID creates a random chain ID. Used for testing only

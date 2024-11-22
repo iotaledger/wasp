@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"sync"
 	"time"
 
@@ -112,6 +113,10 @@ func (nc *nodeConnection) AttachChain(
 		util.ExecuteIfNotNil(onChainDisconnect)
 		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
+}
+
+func (nc *nodeConnection) ConsensusGasPriceProposal() <-chan cons_gr.NodeConnGasInfo {
+	return make(<-chan cons_gr.NodeConnGasInfo)
 }
 
 func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {

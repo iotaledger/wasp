@@ -6,6 +6,7 @@ package nodeconn
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"sync"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -116,12 +117,13 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
+	moveAnchor, reqs, gasCoinObject, err := ncc.feed.FetchCurrentState(ctx)
 	if err != nil {
 		return err
 	}
-	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
+	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID(), &gasCoinObject)
 	ncc.anchorHandler(&anchor)
+
 	for _, req := range reqs {
 		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
 		if err != nil {
@@ -129,6 +131,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 		}
 		ncc.requestHandler(onledgerReq)
 	}
+
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil
 }
@@ -146,8 +149,15 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 			case <-ctx.Done():
 				return
 			case moveAnchor := <-anchorUpdates:
-				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
+				stateMetadata, err := transaction.StateMetadataFromBytes(moveAnchor.Object.StateMetadata)
+				if err != nil {
+					panic(err)
+				}
+
+				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID(), &stateMetadata.GasCoinObjectID)
 				ncc.anchorHandler(&anchor)
+
+				// Emit gascoin proposal here, every time a new anchor gets into it here?
 			case req := <-newRequests:
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
 				if err != nil {
