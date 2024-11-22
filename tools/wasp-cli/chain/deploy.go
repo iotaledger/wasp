@@ -171,12 +171,10 @@ func initDeployCmd() *cobra.Command {
 			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
-			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, cryptolib.NewRandomAddress().AsIotaAddress())
-			log.Check(err)
-
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
-			//gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
-			//log.Check(err)
+			
+			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			log.Check(err)
 
 			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
 
