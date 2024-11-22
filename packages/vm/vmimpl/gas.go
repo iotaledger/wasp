@@ -1,11 +1,15 @@
 package vmimpl
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
+
+// TODO Add the comprehensive top up calculation logic, then we can remvoe this constant
+const TopUpFee = iotaclient.DefaultGasBudget * 5
 
 func (reqctx *requestContext) GasBurnEnable(enable bool) {
 	if enable && !reqctx.shouldChargeGasFee() {
