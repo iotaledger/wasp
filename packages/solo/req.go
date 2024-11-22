@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -269,20 +270,21 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 	}
 	res, err := ch.Env.ISCMoveClient().CreateAndSendRequestWithAssets(
 		ch.Env.ctx,
-		keyPair,
-		ch.Env.ISCPackageID(),
-		ch.ID().AsAddress().AsIotaAddress(),
-		req.assets.AsISCMove(),
-		&iscmove.Message{
-			Contract: uint32(req.msg.Target.Contract),
-			Function: uint32(req.msg.Target.EntryPoint),
-			Args:     req.msg.Params,
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:        keyPair,
+			PackageID:     ch.Env.ISCPackageID(),
+			AnchorAddress: ch.ID().AsAddress().AsIotaAddress(),
+			Assets:        req.assets.AsISCMove(),
+			Message: &iscmove.Message{
+				Contract: uint32(req.msg.Target.Contract),
+				Function: uint32(req.msg.Target.EntryPoint),
+				Args:     req.msg.Params,
+			},
+			Allowance:        req.allowance.AsISCMove(),
+			OnchainGasBudget: req.gasBudget,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
 		},
-		req.allowance.AsISCMove(),
-		req.gasBudget,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	if err != nil {
 		return nil, nil, err
