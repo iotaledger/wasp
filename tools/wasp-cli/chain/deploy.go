@@ -5,7 +5,6 @@ package chain
 
 import (
 	"context"
-	"errors"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"os"
 	"strconv"
@@ -94,7 +93,7 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObjectID
 }
 
 func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), 10*isc.Million)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinMaxValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -104,7 +103,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(1 * isc.Million)},
+				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinMaxValue)},
 			},
 		},
 	)
@@ -114,26 +113,30 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	txData := iotago.NewProgrammable(
 		wallet.Address().AsIotaAddress(),
 		txb.Finish(),
-		[]*iotago.ObjectRef{coins[1].Ref()},
+		[]*iotago.ObjectRef{coins[0].Ref()},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)
+	if err != nil {
+		return iotago.ObjectID{}, err
+	}
 
 	result, err := client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), txnBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
-		ShowEffects:        true,
-		ShowBalanceChanges: true,
+		ShowEffects:       true,
+		ShowObjectChanges: true,
 	})
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
 
-	if len(result.Effects.Data.V1.Created) != 1 {
-		return iotago.ObjectID{}, errors.New("mom, help")
+	gasCoin, err := result.GetCreatedCoin("iota", "IOTA")
+	if err != nil {
+		return iotago.ObjectID{}, err
 	}
 
-	return *result.Effects.Data.V1.Created[0].Reference.ObjectID, nil
+	return *gasCoin.ObjectID, nil
 }
 
 func initDeployCmd() *cobra.Command {
@@ -168,9 +171,12 @@ func initDeployCmd() *cobra.Command {
 			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
-			stateControllerAddress := doDKG(ctx, node, peers, quorum)
-			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, cryptolib.NewRandomAddress().AsIotaAddress())
 			log.Check(err)
+
+			stateControllerAddress := doDKG(ctx, node, peers, quorum)
+			//gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			//log.Check(err)
 
 			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
 
