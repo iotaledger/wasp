@@ -6,6 +6,7 @@ package chain
 import (
 	"context"
 	"errors"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"os"
 	"strconv"
 	"time"
@@ -92,30 +93,35 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObjectID
 	return stateMetadata
 }
 
-func createGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet) (iotago.ObjectID, error) {
+func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
 	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), 10*isc.Million)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
 
-	if len(coins) == 0 {
-		return iotago.ObjectID{}, errors.New("no coins found")
-	}
-
-	splitCoinTX, err := client.SplitCoin(ctx, iotaclient.SplitCoinRequest{
-		Coin:      coins[0].CoinObjectID,
-		Signer:    wallet.Address().AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigInt(10 * isc.Million),
-		Gas:       coins[1].CoinObjectID,
-		SplitAmounts: []*iotajsonrpc.BigInt{
-			iotajsonrpc.NewBigInt(1 * isc.Million),
+	txb := iotago.NewProgrammableTransactionBuilder()
+	splitCoinCmd := txb.Command(
+		iotago.Command{
+			SplitCoins: &iotago.ProgrammableSplitCoins{
+				Coin:    iotago.GetArgumentGasCoin(),
+				Amounts: []iotago.Argument{txb.MustPure(1 * isc.Million)},
+			},
 		},
-	})
-	if err != nil {
-		return iotago.ObjectID{}, err
-	}
+	)
 
-	result, err := client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), splitCoinTX.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
+	txb.TransferArg(committeeAddress, splitCoinCmd)
+
+	txData := iotago.NewProgrammable(
+		wallet.Address().AsIotaAddress(),
+		txb.Finish(),
+		[]*iotago.ObjectRef{coins[1].Ref()},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+
+	txnBytes, err := bcs.Marshal(&txData)
+
+	result, err := client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), txnBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
 		ShowEffects:        true,
 		ShowBalanceChanges: true,
 	})
@@ -128,26 +134,6 @@ func createGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.
 	}
 
 	return *result.Effects.Data.V1.Created[0].Reference.ObjectID, nil
-}
-
-func transferGasCoinToCommittee(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, coinObjectID iotago.ObjectID, committeeAddress *cryptolib.Address) error {
-	transferTx, err := client.TransferObject(ctx, iotaclient.TransferObjectRequest{
-		ObjectID:  &coinObjectID,
-		Recipient: committeeAddress.AsIotaAddress(),
-		GasBudget: iotajsonrpc.NewBigInt(10 * isc.Million),
-		Signer:    wallet.Address().AsIotaAddress(),
-	})
-
-	if err != nil {
-		return err
-	}
-
-	_, err = client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), transferTx.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func initDeployCmd() *cobra.Command {
@@ -178,16 +164,15 @@ func initDeployCmd() *cobra.Command {
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 
-			gasCoin, err := createGasCoin(ctx, l1Client, kp)
-			log.Check(err)
-
 			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
 			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
-			stateController := doDKG(ctx, node, peers, quorum)
+			stateControllerAddress := doDKG(ctx, node, peers, quorum)
+			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			log.Check(err)
 
-			stateMetadata := initializeNewChainState(stateController, gasCoin)
+			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
@@ -200,12 +185,7 @@ func initDeployCmd() *cobra.Command {
 				StateMetadata:     *stateMetadata,
 			}
 
-			// Transfer Gas Coin to Committee
-			err = transferGasCoinToCommittee(ctx, l1Client, kp, gasCoin, stateController)
-			log.Check(err)
-
-			// Deploy final chain
-			chainID, err := apilib.DeployChain(ctx, par, stateController)
+			chainID, err := apilib.DeployChain(ctx, par, stateControllerAddress)
 			log.Check(err)
 
 			config.AddChain(chainName, chainID.String())
