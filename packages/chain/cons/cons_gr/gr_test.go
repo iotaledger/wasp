@@ -116,12 +116,17 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
 	})
-	iscPackage := l1starter.DeployISCContracts(l1client, cryptolib.SignerToIotaSigner(originator))
+
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
+
+	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
+	require.NoError(t, err)
+
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
 	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	defer ctxCancel()
+
 	logIndex := cmt_log.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {

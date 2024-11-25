@@ -4,6 +4,7 @@
 package chainmanager_test
 
 import (
+	"context"
 	"fmt"
 	iotago "github.com/iotaledger/iota.go/v3"
 	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -218,6 +219,8 @@ func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
 	})
-	iscPackage := testchain.BuildAndDeployISCContracts(t, l1client, originator)
+	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
+	require.NoError(t, err)
+
 	return testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 }
