@@ -179,7 +179,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 }
-
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	client := newLocalnetClient()
 	signer := newSignerWithFunds(t, testSeed, 0)
@@ -223,11 +222,10 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
-	selectedGasCoin := coins.CoinRefs()[2]
 	tx1 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt1,
-		[]*iotago.ObjectRef{selectedGasCoin},
+		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -300,11 +298,10 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	stateMetadata3 := []byte("dummy stateMetadata3")
 	pt3 := txb3.BuildTransactionEssence(stateMetadata3, 123)
 
-	selectedGasCoin = coins.CoinRefs()[0]
 	tx3 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt3,
-		[]*iotago.ObjectRef{selectedGasCoin},
+		[]*iotago.ObjectRef{coins.CoinRefs()[0]},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
