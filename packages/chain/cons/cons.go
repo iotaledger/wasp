@@ -117,7 +117,7 @@ type Output struct {
 	NeedStateMgrStateProposal *isc.StateAnchor  // Query for a proposal for Virtual State (it will go to the batch proposal).
 	NeedStateMgrDecidedState  *isc.StateAnchor  // Query for a decided Virtual State to be used by VM.
 	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
-	NeedNodeConnGasInfo       bool              // Ask NodeConn for the GasInfo.
+	NeedNodeConnGasInfo       *isc.StateAnchor  // Ask NodeConn for the GasInfo related to this anchor.
 	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
@@ -318,6 +318,7 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputProposal:
 		c.log.Infof("Consensus started, received %v", input.String())
 		return gpa.NoMessages().
+			AddAll(c.subNC.HaveInputAnchor(input.baseAliasOutput)).
 			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subDSS.InitialInputReceived())
@@ -455,13 +456,13 @@ func (c *consImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMessage
 ////////////////////////////////////////////////////////////////////////////////
 // NC
 
-func (c *consImpl) uponNCInputsReady() gpa.OutMessages {
-	c.output.NeedNodeConnGasInfo = true
+func (c *consImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
+	c.output.NeedNodeConnGasInfo = anchor
 	return nil
 }
 
 func (c *consImpl) uponNCOutputReady(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages {
-	c.output.NeedNodeConnGasInfo = false
+	c.output.NeedNodeConnGasInfo = nil
 	return c.subACS.GasInfoReceived(gasCoins, gasPrice)
 }
 

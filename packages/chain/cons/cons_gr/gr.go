@@ -82,7 +82,10 @@ type NodeConnGasInfo interface {
 }
 
 type NodeConn interface {
-	ConsensusGasPriceProposal() <-chan NodeConnGasInfo
+	ConsensusGasPriceProposal(
+		ctx context.Context,
+		anchor *isc.StateAnchor,
+	) <-chan NodeConnGasInfo
 }
 
 type VM interface {
@@ -414,8 +417,8 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.ConsensusProducedBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
 		cgr.stateMgrSaveBlockAsked = true
 	}
-	if output.NeedNodeConnGasInfo && !cgr.nodeConnGasInfoAsked {
-		cgr.nodeConnGasInfoRespCh = cgr.nodeConn.ConsensusGasPriceProposal()
+	if output.NeedNodeConnGasInfo != nil && !cgr.nodeConnGasInfoAsked {
+		cgr.nodeConnGasInfoRespCh = cgr.nodeConn.ConsensusGasPriceProposal(cgr.ctx, output.NeedNodeConnGasInfo)
 		cgr.nodeConnGasInfoAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
