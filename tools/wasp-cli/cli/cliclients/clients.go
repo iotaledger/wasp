@@ -65,7 +65,7 @@ func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chaincli
 	iscPackageID := config.GetPackageID()
 
 	return chainclient.New(
-		L2Client(),
+		L1Client(),
 		waspClient,
 		chainID,
 		iscPackageID,

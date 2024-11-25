@@ -5,7 +5,6 @@ package chain
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"os"
 	"strconv"
 	"time"
@@ -14,12 +13,11 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
-
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -28,12 +26,14 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -96,6 +96,10 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
+	referenceGasPrice, err := client.GetReferenceGasPrice(ctx)
+	if err != nil {
+		return iotago.ObjectID{}, err
+	}
 
 	txb := iotago.NewProgrammableTransactionBuilder()
 	splitCoinCmd := txb.Command(
@@ -114,7 +118,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
 		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
+		referenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)

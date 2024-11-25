@@ -48,6 +48,21 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
+	referenceGasPrice, err := par.Layer1Client.GetReferenceGasPrice(ctx)
+	if err != nil {
+		return isc.ChainID{}, err
+	}
+
+	var gasPayments []*iotago.ObjectRef
+	if par.StateMetadata.GasCoinObjectID != nil {
+		resGetObj, err := par.Layer1Client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: par.StateMetadata.GasCoinObjectID})
+		if err != nil {
+			return isc.ChainID{}, err
+		}
+		ref := resGetObj.Data.Ref()
+		gasPayments = append(gasPayments, &ref)
+	}
+
 	anchor, err := par.Layer1Client.L2().StartNewChain(
 		ctx,
 		&iscmoveclient.StartNewChainRequest{
@@ -55,8 +70,8 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 			ChainOwnerAddress: stateControllerAddr,
 			PackageID:         par.PackageID,
 			StateMetadata:     par.StateMetadata.Bytes(),
-			GasPayments:       nil, // Add gasPayments here (or not)
-			GasPrice:          iotaclient.DefaultGasPrice,
+			GasPayments:       gasPayments,
+			GasPrice:          referenceGasPrice.Uint64(),
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},
 	)

@@ -8,11 +8,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"sync"
-	"time"
 
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -144,15 +145,20 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 		}
 
 		gasCoin, err := nc.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
-			ObjectID: &stateMetadata.GasCoinObjectID,
+			ObjectID: stateMetadata.GasCoinObjectID,
 		})
+		if err != nil {
+			panic(err)
+		}
+
+		referenceGasPrice, err := nc.wsClient.GetReferenceGasPrice(ctx)
 		if err != nil {
 			panic(err)
 		}
 
 		var coinInfo cons_gr.NodeConnGasInfo = &SingleGasCoinInfo{
 			gasCoin.Data.Ref(),
-			iotaclient.DefaultGasPrice,
+			referenceGasPrice.Uint64(),
 		}
 
 		t <- coinInfo
