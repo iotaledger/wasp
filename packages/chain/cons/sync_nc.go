@@ -6,9 +6,11 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type SyncNC interface {
+	HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages
 	HaveState() gpa.OutMessages
 	HaveRequests() gpa.OutMessages
 	HaveGasInfo(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages
@@ -16,9 +18,10 @@ type SyncNC interface {
 }
 
 type syncNCImpl struct {
-	haveState    bool
-	haveRequests bool
-	inputCB      func() gpa.OutMessages
+	haveInputAnchor *isc.StateAnchor
+	haveState       bool
+	haveRequests    bool
+	inputCB         func(anchor *isc.StateAnchor) gpa.OutMessages
 
 	gasCoins []*iotago.ObjectRef
 	gasPrice uint64
@@ -26,7 +29,7 @@ type syncNCImpl struct {
 }
 
 func NewSyncNC(
-	inputCB func() gpa.OutMessages,
+	inputCB func(anchor *isc.StateAnchor) gpa.OutMessages,
 	outputCB func(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages,
 ) SyncNC {
 	return &syncNCImpl{inputCB: inputCB, outputCB: outputCB}
@@ -40,6 +43,9 @@ func (sync *syncNCImpl) String() string {
 		str += "/WAIT[NC to respond]"
 	} else {
 		wait := []string{}
+		if sync.haveInputAnchor == nil {
+			wait = append(wait, "InputAnchor")
+		}
 		if !sync.haveState {
 			wait = append(wait, "StateProposal")
 		}
@@ -49,6 +55,14 @@ func (sync *syncNCImpl) String() string {
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
 	}
 	return str
+}
+
+func (sync *syncNCImpl) HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages {
+	if sync.haveInputAnchor != nil || anchor == nil {
+		return nil
+	}
+	sync.haveInputAnchor = anchor
+	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) HaveState() gpa.OutMessages {
@@ -68,12 +82,12 @@ func (sync *syncNCImpl) HaveRequests() gpa.OutMessages {
 }
 
 func (sync *syncNCImpl) tryCompleteInputs() gpa.OutMessages {
-	if !sync.haveState || !sync.haveRequests || sync.inputCB == nil {
+	if sync.haveInputAnchor == nil || !sync.haveState || !sync.haveRequests || sync.inputCB == nil {
 		return nil
 	}
 	cb := sync.inputCB
 	sync.inputCB = nil
-	return cb()
+	return cb(sync.haveInputAnchor)
 }
 
 func (sync *syncNCImpl) HaveGasInfo(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages {

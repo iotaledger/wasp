@@ -6,6 +6,7 @@ package cons_gr_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -36,6 +38,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+	os.Exit(m.Run())
+}
 
 func TestGrBasic(t *testing.T) {
 	t.Parallel()
@@ -73,6 +80,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Create ledger accounts.
 	originator := cryptolib.NewKeyPair()
+	err := iotaclient.RequestFundsFromFaucet(context.TODO(), originator.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
+	require.NoError(t, err)
+
 	//
 	// Create a fake network and keys for the tests.
 	peeringURL, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -109,7 +119,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	iscPackage := l1starter.DeployISCContracts(l1client, cryptolib.SignerToIotaSigner(originator))
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
-	anchor, _ := tcl.MakeTxChainOrigin(cmtAddress)
+	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
 	logIndex := cmt_log.LogIndex(0)
@@ -118,7 +128,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStore, anchor, 0, isc.BaseTokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
