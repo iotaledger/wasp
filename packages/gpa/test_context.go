@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"math/rand"
 	"sort"
+
+	"github.com/samber/lo"
 )
 
 // Imitates a cluster of nodes and the medium performing the message exchange.
@@ -19,6 +21,7 @@ type TestContext struct {
 	inputCount      int                                // Number if inputs still not delivered.
 	outputHandler   func(nodeID NodeID, output Output) // User can check outputs w/o synchronizing other parts.
 	msgDeliveryProb float64                            // A probability to deliver a message (to not discard/loose it).
+	msgSerialize    bool                               // Use serialization/deserialization when delivering the messages?
 	msgCh           <-chan Message                     // A way to provide additional messages w/o synchronizing other parts.
 	msgs            []Message                          // Not yet delivered messages.
 	msgsSent        int                                // Stats.
@@ -39,6 +42,11 @@ func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 		msgs:            []Message{},
 	}
 	return &tc
+}
+
+func (tc *TestContext) WithSerialization() *TestContext {
+	tc.msgSerialize = true
+	return tc
 }
 
 func (tc *TestContext) MsgCounts() (int, int) {
@@ -192,6 +200,10 @@ func (tc *TestContext) tryProcessMessage() {
 	tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
 	tc.msgsRecv++
 	if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
+		if tc.msgSerialize {
+			msgBytes := lo.Must(MarshalMessage(msg))
+			msg = lo.Must(tc.nodes[nid].UnmarshalMessage(msgBytes))
+		}
 		newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(msg))
 		if newMsgs != nil {
 			tc.msgsSent += len(newMsgs)
