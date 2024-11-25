@@ -150,8 +150,6 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 			case moveAnchor := <-anchorUpdates:
 				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
-
-				// Emit gascoin proposal here, every time a new anchor gets into it here?
 			case req := <-newRequests:
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
 				if err != nil {
