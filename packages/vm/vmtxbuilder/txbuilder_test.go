@@ -70,10 +70,13 @@ func TestTxBuilderBasic(t *testing.T) {
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(chainSigner),
-		txnBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			TxDataBytes: txnBytes,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
 	)
+
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
@@ -131,10 +134,13 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(chainSigner),
-		txnBytes1,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			TxDataBytes: txnBytes1,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
 	)
+
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
 
@@ -169,10 +175,13 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(chainSigner),
-		txnBytes2,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			TxDataBytes: txnBytes2,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
 	)
+
 	require.NoError(t, err)
 	require.True(t, txnResponse2.Effects.Data.IsSuccess())
 
@@ -234,10 +243,13 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(signer),
-		txnBytes1,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(signer),
+			TxDataBytes: txnBytes1,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
 	)
+
 	require.NoError(t, err)
 	require.True(t, txnResponse1.Effects.Data.IsSuccess())
 
@@ -274,9 +286,11 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(signer),
-		txnBytes2,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(signer),
+			TxDataBytes: txnBytes2,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
 	)
 	require.NoError(t, err)
 	require.True(t, txnResponse2.Effects.Data.IsSuccess())
@@ -311,10 +325,13 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	txnResponse3, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToIotaSigner(signer),
-		txnBytes3,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(signer),
+			TxDataBytes: txnBytes3,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
 	)
+	
 	require.NoError(t, err)
 	require.True(t, txnResponse3.Effects.Data.IsSuccess())
 }
