@@ -165,11 +165,9 @@ func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, p
 	_, err = tcl.l1client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      signer,
 			TxDataBytes: txBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
-			},
+			Signer:      signer,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
 		},
 	)
 
@@ -223,8 +221,8 @@ func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitte
 	txnResponse, err := tcl.l1client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      signer,
 			TxDataBytes: txnBytes,
+			Signer:      signer,
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
