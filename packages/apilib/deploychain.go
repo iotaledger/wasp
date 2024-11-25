@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -49,14 +50,15 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 
 	anchor, err := par.Layer1Client.L2().StartNewChain(
 		ctx,
-		par.OriginatorKeyPair,
-		stateControllerAddr,
-		par.PackageID,
-		par.StateMetadata.Bytes(),
-		nil,
-		nil, // Add gasPayments here (or not)
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            par.OriginatorKeyPair,
+			ChainOwnerAddress: stateControllerAddr,
+			PackageID:         par.PackageID,
+			StateMetadata:     par.StateMetadata.Bytes(),
+			GasPayments:       nil, // Add gasPayments here (or not)
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
 	if err != nil {
 		return isc.ChainID{}, err

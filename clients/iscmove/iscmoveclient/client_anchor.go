@@ -32,38 +32,42 @@ func (c *Client) FindCoinsForGasPayment(
 		gasBudget*gasPrice,
 		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 	)
-	return gasPayments.CoinRefs(), nil
+	return gasPayments.CoinRefs(), err
+}
+
+type StartNewChainRequest struct {
+	Signer            cryptolib.Signer
+	ChainOwnerAddress *cryptolib.Address
+	PackageID         iotago.PackageID
+	StateMetadata     []byte
+	InitCoinRef       *iotago.ObjectRef
+	GasPayments       []*iotago.ObjectRef
+	GasPrice          uint64
+	GasBudget         uint64
 }
 
 func (c *Client) StartNewChain(
 	ctx context.Context,
-	cryptolibSigner cryptolib.Signer,
-	chainOwnerAddress *cryptolib.Address,
-	packageID iotago.PackageID,
-	stateMetadata []byte,
-	initCoinRef *iotago.ObjectRef,
-	gasPayments []*iotago.ObjectRef, // optional
-	gasPrice uint64,
-	gasBudget uint64,
+	req *StartNewChainRequest,
 ) (*iscmove.AnchorWithRef, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argInitCoin iotago.Argument
-	if initCoinRef != nil {
-		ptb = PTBOptionSomeIotaCoin(ptb, initCoinRef)
+	if req.InitCoinRef != nil {
+		ptb = PTBOptionSomeIotaCoin(ptb, req.InitCoinRef)
 	} else {
 		ptb = PTBOptionNoneIotaCoin(ptb)
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, packageID, stateMetadata, argInitCoin, chainOwnerAddress)
+	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
 
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
-		cryptolibSigner,
+		req.Signer,
 		ptb.Finish(),
-		gasPayments,
-		gasPrice,
-		gasBudget,
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("start new chain PTB failed: %w", err)
@@ -76,20 +80,24 @@ func (c *Client) StartNewChain(
 	return c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
 }
 
+type ReceiveRequestsAndTransitionRequest struct {
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorRef     *iotago.ObjectRef
+	Reqs          []iotago.ObjectRef
+	StateMetadata []byte
+	TopUpAmount   uint64
+	GasPayment    *iotago.ObjectRef
+	GasPrice      uint64
+	GasBudget     uint64
+}
+
 func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
-	signer cryptolib.Signer,
-	packageID iotago.PackageID,
-	anchorRef *iotago.ObjectRef,
-	reqs []iotago.ObjectRef,
-	stateMetadata []byte,
-	topUpAmount uint64,
-	gasPayment *iotago.ObjectRef,
-	gasPrice uint64,
-	gasBudget uint64,
+	req *ReceiveRequestsAndTransitionRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var reqAssetsBags []*iscmove.AssetsBagWithBalances
-	for _, reqRef := range reqs {
+	for _, reqRef := range req.Reqs {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
 			return nil, err
@@ -104,20 +112,20 @@ func (c *Client) ReceiveRequestsAndTransition(
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBReceiveRequestsAndTransition(
 		ptb,
-		packageID,
-		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchorRef}),
-		reqs,
+		req.PackageID,
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}),
+		req.Reqs,
 		reqAssetsBags,
-		stateMetadata,
-		topUpAmount,
+		req.StateMetadata,
+		req.TopUpAmount,
 	)
 	return c.SignAndExecutePTB(
 		ctx,
-		signer,
+		req.Signer,
 		ptb.Finish(),
-		[]*iotago.ObjectRef{gasPayment},
-		gasPrice,
-		gasBudget,
+		[]*iotago.ObjectRef{req.GasPayment},
+		req.GasPrice,
+		req.GasBudget,
 	)
 }
 

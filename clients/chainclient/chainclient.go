@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -112,16 +113,17 @@ func (c *Client) postSingleRequest(
 	}
 	return c.L2Client.CreateAndSendRequestWithAssets(
 		ctx,
-		c.KeyPair,
-		c.IscPackageID,
-		c.ChainID.AsAddress().AsIotaAddress(),
-		assets,
-		msg,
-		allowances,
-		params.gasBudget,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:           c.KeyPair,
+			PackageID:        c.IscPackageID,
+			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
+			Assets:           assets,
+			Message:          msg,
+			Allowance:        allowances,
+			OnchainGasBudget: params.gasBudget,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
+		},
 	)
 }
 
