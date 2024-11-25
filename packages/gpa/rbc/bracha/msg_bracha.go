@@ -10,6 +10,9 @@ import (
 type msgBrachaType byte
 
 const (
+	// The type for message kinds (only one of these in this case).
+	msgType gpa.MessageType = iota
+
 	msgBrachaTypePropose msgBrachaType = iota
 	msgBrachaTypeEcho
 	msgBrachaTypeReady
@@ -24,5 +27,5 @@ type msgBracha struct {
 var _ gpa.Message = new(msgBracha)
 
 func (msg *msgBracha) MsgType() gpa.MessageType {
-	return msg.MsgType()
+	return msgType
 }
