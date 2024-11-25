@@ -643,11 +643,13 @@ func (env *Solo) executePTB(
 
 	execRes, err := env.IotaClient().SignAndExecuteTransaction(
 		env.ctx,
-		cryptolib.SignerToIotaSigner(wallet),
-		txnBytes,
-		&iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes,
+			Signer:      cryptolib.SignerToIotaSigner(wallet),
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
 		},
 	)
 	require.NoError(env.T, err)
