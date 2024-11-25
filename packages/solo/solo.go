@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
@@ -315,14 +316,15 @@ func (env *Solo) deployChain(
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
-		chainOriginator,
-		chainOriginator.Address(),
-		env.ISCPackageID(),
-		stateMetadata.Bytes(),
-		initCoinRef,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            chainOriginator,
+			ChainOwnerAddress: chainOriginator.Address(),
+			PackageID:         env.ISCPackageID(),
+			StateMetadata:     stateMetadata.Bytes(),
+			InitCoinRef:       initCoinRef,
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
 	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)

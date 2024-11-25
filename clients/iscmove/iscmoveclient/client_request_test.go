@@ -8,7 +8,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
@@ -18,39 +19,23 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
-	txnResponse, err := client.AssetsBagNew(
-		context.Background(),
-		cryptolibSigner,
-		l1starter.ISCPackageID(),
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
-	)
+	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
-		cryptolibSigner,
-		l1starter.ISCPackageID(),
-		anchor.ObjectID,
-		assetsBagRef,
-		&iscmove.Message{
-			Contract: uint32(isc.Hn("test_isc_contract")),
-			Function: uint32(isc.Hn("test_isc_func")),
-			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		&iscmoveclient.CreateAndSendRequestRequest{
+			Signer:        cryptolibSigner,
+			PackageID:     l1starter.ISCPackageID(),
+			AnchorAddress: anchor.ObjectID,
+			AssetsBagRef:  assetsBagRef,
+			Message:       iscmovetest.RandomMessage(),
+			Allowance:     iscmove.NewAssets(100),
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
-		&iscmove.Assets{
-			Coins: iscmove.CoinBalances{
-				"0x1::iota::IOTA":    11,
-				"0xa::testa::TEST_A": 12,
-			},
-		},
-		0,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
 
@@ -64,29 +49,23 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
-	assets := iscmove.NewAssets(100)
-
 	createAndSendRequestRes, err := client.CreateAndSendRequestWithAssets(
 		context.Background(),
-		cryptolibSigner,
-		l1starter.ISCPackageID(),
-		anchor.ObjectID,
-		assets,
-		&iscmove.Message{
-			Contract: uint32(isc.Hn("test_isc_contract")),
-			Function: uint32(isc.Hn("test_isc_func")),
-			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		},
-		&iscmove.Assets{
-			Coins: iscmove.CoinBalances{
-				"0x1::iota::IOTA":    11,
-				"0xa::testa::TEST_A": 12,
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:        cryptolibSigner,
+			PackageID:     l1starter.ISCPackageID(),
+			AnchorAddress: anchor.ObjectID,
+			Assets:        iscmove.NewAssets(100),
+			Message:       iscmovetest.RandomMessage(),
+			Allowance: &iscmove.Assets{
+				Coins: iscmove.CoinBalances{
+					"0x1::iota::IOTA":    11,
+					"0xa::testa::TEST_A": 12,
+				},
 			},
+			GasPrice:  iotaclient.DefaultGasPrice,
+			GasBudget: iotaclient.DefaultGasBudget,
 		},
-		0,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
 
@@ -100,39 +79,28 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
-	txnResponse, err := client.AssetsBagNew(
-		context.Background(),
-		cryptolibSigner,
-		l1starter.ISCPackageID(),
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
-	)
+	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
-		cryptolibSigner,
-		l1starter.ISCPackageID(),
-		anchor.ObjectID,
-		assetsBagRef,
-		&iscmove.Message{
-			Contract: uint32(isc.Hn("test_isc_contract")),
-			Function: uint32(isc.Hn("test_isc_func")),
-			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
-		},
-		&iscmove.Assets{
-			Coins: iscmove.CoinBalances{
-				"0x1::iota::IOTA":    21,
-				"0xa::testa::TEST_A": 12,
+		&iscmoveclient.CreateAndSendRequestRequest{
+			Signer:        cryptolibSigner,
+			PackageID:     l1starter.ISCPackageID(),
+			AnchorAddress: anchor.ObjectID,
+			AssetsBagRef:  assetsBagRef,
+			Message:       iscmovetest.RandomMessage(),
+			Allowance: &iscmove.Assets{
+				Coins: iscmove.CoinBalances{
+					"0x1::iota::IOTA":    21,
+					"0xa::testa::TEST_A": 12,
+				},
 			},
+			GasPrice:  iotaclient.DefaultGasPrice,
+			GasBudget: iotaclient.DefaultGasBudget,
 		},
-		0,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
 

@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -28,14 +28,7 @@ func TestRequestsFeed(t *testing.T) {
 	defer cancel()
 
 	// create AssetsBag owned by iscOwner
-	txnResponse, err := client.AssetsBagNew(
-		ctx,
-		iscOwner,
-		l1starter.ISCPackageID(),
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
-	)
+	txnResponse, err := newAssetsBag(client, iscOwner)
 	require.NoError(t, err)
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
@@ -69,20 +62,16 @@ func TestRequestsFeed(t *testing.T) {
 	// create a Request and send to anchor
 	txnResponse, err = client.CreateAndSendRequest(
 		ctx,
-		iscOwner,
-		l1starter.ISCPackageID(),
-		anchor.ObjectID,
-		assetsBagRef,
-		&iscmove.Message{
-			Contract: uint32(isc.Hn("test_isc_contract")),
-			Function: uint32(isc.Hn("test_isc_func")),
-			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		&iscmoveclient.CreateAndSendRequestRequest{
+			Signer:        iscOwner,
+			PackageID:     l1starter.ISCPackageID(),
+			AnchorAddress: anchor.ObjectID,
+			AssetsBagRef:  assetsBagRef,
+			Message:       iscmovetest.RandomMessage(),
+			Allowance:     iscmove.NewAssets(100),
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
-		nil,
-		0,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
 	requestRef, err := txnResponse.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
@@ -104,15 +93,17 @@ func TestRequestsFeed(t *testing.T) {
 
 	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
-		chainOwner,
-		l1starter.ISCPackageID(),
-		&anchor.ObjectRef,
-		[]iotago.ObjectRef{*requestRef},
-		[]byte{1, 2, 3},
-		100,
-		getCoinsRes.Data[0].Ref(),
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.ReceiveRequestsAndTransitionRequest{
+			Signer:        chainOwner,
+			PackageID:     l1starter.ISCPackageID(),
+			AnchorRef:     &anchor.ObjectRef,
+			Reqs:          []iotago.ObjectRef{*requestRef},
+			StateMetadata: []byte{1, 2, 3},
+			TopUpAmount:   100,
+			GasPayment:    getCoinsRes.Data[0].Ref(),
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
+		},
 	)
 	require.NoError(t, err)
 

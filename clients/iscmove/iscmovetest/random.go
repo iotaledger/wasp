@@ -60,9 +60,18 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 		StateIndex:    stateIndex,
 	}
 }
+
 func RandomAssetsBag() iscmove.AssetsBag {
 	return iscmove.AssetsBag{
 		ID:   *iotatest.RandomAddress(),
 		Size: 0,
+	}
+}
+
+func RandomMessage() *iscmove.Message {
+	return &iscmove.Message{
+		Contract: uint32(isc.Hn("test_isc_contract")),
+		Function: uint32(isc.Hn("test_isc_func")),
+		Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
 	}
 }

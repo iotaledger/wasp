@@ -9,6 +9,8 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/stretchr/testify/require"
@@ -28,14 +30,14 @@ func TestTxBuilderBasic(t *testing.T) {
 
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
-		chainSigner,
-		chainSigner.Address(),
-		iscPackage,
-		[]byte{1, 2, 3, 4},
-		nil,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            chainSigner,
+			ChainOwnerAddress: chainSigner.Address(),
+			PackageID:         iscPackage,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
 	require.NoError(t, err)
 
@@ -71,8 +73,8 @@ func TestTxBuilderBasic(t *testing.T) {
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
 			TxDataBytes: txnBytes,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
@@ -99,14 +101,16 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
-		chainSigner,
-		chainSigner.Address(),
-		iscPackage,
-		[]byte{1, 2, 3, 4},
-		getCoinsRes.Data[1].Ref(),
-		[]*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            chainSigner,
+			ChainOwnerAddress: chainSigner.Address(),
+			PackageID:         iscPackage,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			InitCoinRef:       getCoinsRes.Data[1].Ref(),
+			GasPayments:       []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
 	require.NoError(t, err)
 
@@ -135,8 +139,8 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
 			TxDataBytes: txnBytes1,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
@@ -176,8 +180,8 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
 			TxDataBytes: txnBytes2,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
@@ -196,26 +200,26 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 
 	anchor1, err := client.L2().StartNewChain(
 		context.Background(),
-		signer,
-		signer.Address(),
-		iscPackage1,
-		[]byte{1, 2, 3, 4},
-		nil,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            signer,
+			ChainOwnerAddress: signer.Address(),
+			PackageID:         iscPackage1,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
 	require.NoError(t, err)
 	anchor2, err := client.L2().StartNewChain(
 		context.Background(),
-		signer,
-		signer.Address(),
-		iscPackage1,
-		[]byte{1, 2, 3, 4},
-		nil,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            signer,
+			ChainOwnerAddress: signer.Address(),
+			PackageID:         iscPackage1,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
 	require.NoError(t, err)
 
@@ -244,8 +248,8 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	txnResponse1, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(signer),
 			TxDataBytes: txnBytes1,
+			Signer:      cryptolib.SignerToIotaSigner(signer),
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
@@ -287,8 +291,8 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	txnResponse2, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(signer),
 			TxDataBytes: txnBytes2,
+			Signer:      cryptolib.SignerToIotaSigner(signer),
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
@@ -326,8 +330,8 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	txnResponse3, err := client.SignAndExecuteTransaction(
 		context.Background(),
 		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(signer),
 			TxDataBytes: txnBytes3,
+			Signer:      cryptolib.SignerToIotaSigner(signer),
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
@@ -362,57 +366,20 @@ func createIscmoveReq(
 ) isc.OnLedgerRequest {
 	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
-	getCoinsRes, err := client.GetCoins(
-		context.Background(),
-		iotaclient.GetCoinsRequest{
-			Owner: signer.Address().AsIotaAddress(),
-		},
-	)
-	require.NoError(t, err)
-	_ = getCoinsRes
-	assetsBagNewRes, err := client.L2().AssetsBagNew(
-		context.Background(),
-		signer,
-		iscPackage,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
-	)
-	require.NoError(t, err)
-	assetsBagRef, err := assetsBagNewRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
-	require.NoError(t, err)
-	_, err = client.L2().AssetsBagPlaceCoinAmount(
-		context.Background(),
-		signer,
-		iscPackage,
-		assetsBagRef,
-		getCoinsRes.Data[len(getCoinsRes.Data)-1].Ref(),
-		iotajsonrpc.IotaCoinType,
-		111,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
-	)
-	require.NoError(t, err)
-	assetsBagRef, err = client.UpdateObjectRef(context.Background(), assetsBagRef)
-	require.NoError(t, err)
 
-	createAndSendRequestRes, err := client.L2().CreateAndSendRequest(
+	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
 		context.Background(),
-		signer,
-		iscPackage,
-		anchor.ObjectID,
-		assetsBagRef,
-		&iscmove.Message{
-			Contract: uint32(isc.Hn("test_isc_contract")),
-			Function: uint32(isc.Hn("test_isc_func")),
-			Args:     [][]byte{[]byte("one"), []byte("two"), []byte("three")},
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:           signer,
+			PackageID:        iscPackage,
+			AnchorAddress:    anchor.ObjectID,
+			Assets:           iscmove.NewAssets(111),
+			Message:          iscmovetest.RandomMessage(),
+			Allowance:        iscmove.NewAssets(100),
+			OnchainGasBudget: 100,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
 		},
-		iscmove.NewAssets(0),
-		10,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	require.NoError(t, err)
 	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)

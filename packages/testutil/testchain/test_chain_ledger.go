@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -85,19 +86,23 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		initParams,
 		"https://iota.org",
 	)
-
+	gasCoin := resGetCoins.Data[0].Ref()
 	// FIXME this may refer to the ObjectRef with older version, and trigger panic
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
-		tcl.governor,
-		tcl.governor.Address(),
-		*tcl.iscPackage,
-		stateMetadata.Bytes(),
-		originDeposit.Ref(),
-		[]*iotago.ObjectRef{resGetCoins.Data[0].Ref()},
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            tcl.governor,
+			ChainOwnerAddress: tcl.governor.Address(),
+			PackageID:         *tcl.iscPackage,
+			StateMetadata:     stateMetadata.Bytes(),
+			InitCoinRef:       originDeposit.Ref(),
+			GasPayments:       []*iotago.ObjectRef{gasCoin},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
 	)
+	require.NoError(tcl.t, err)
+	gasCoin, err = tcl.l1client.UpdateObjectRef(context.Background(), gasCoin)
 	require.NoError(tcl.t, err)
 	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
 	require.NotNil(tcl.t, stateAnchor)
@@ -109,19 +114,20 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (isc.Request, error) {
 	resp, err := tcl.l1client.L2().CreateAndSendRequestWithAssets(
 		context.Background(),
-		account,
-		*tcl.iscPackage,
-		tcl.chainID.AsAddress().AsIotaAddress(),
-		iscmove.NewAssets(100_000_00),
-		&iscmove.Message{
-			Contract: uint32(isc.Hn("accounts")),
-			Function: uint32(isc.Hn("deposit")),
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:        account,
+			PackageID:     *tcl.iscPackage,
+			AnchorAddress: tcl.chainID.AsAddress().AsIotaAddress(),
+			Assets:        iscmove.NewAssets(100_000_00),
+			Message: &iscmove.Message{
+				Contract: uint32(isc.Hn("accounts")),
+				Function: uint32(isc.Hn("deposit")),
+			},
+			Allowance:        iscmove.NewAssets(100_000_000),
+			OnchainGasBudget: 1000,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
 		},
-		iscmove.NewAssets(100_000_000),
-		1000,
-		nil,
-		iotaclient.DefaultGasPrice,
-		iotaclient.DefaultGasBudget,
 	)
 	if err != nil {
 		return nil, err
@@ -232,6 +238,7 @@ func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitte
 
 	anchorRef, err := tcl.l1client.L2().GetAnchorFromObjectID(context.Background(), anchor.GetObjectID())
 	require.NoError(tcl.t, err)
+
 	tmp := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
 	return &tmp
 }
