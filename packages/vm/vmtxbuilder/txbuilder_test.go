@@ -42,7 +42,9 @@ func TestTxBuilderBasic(t *testing.T) {
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
-	stateAnchor := isc.NewStateAnchor(anchor, chainSigner.Address(), iscPackage, getCoinsRes.Data[0].Ref())
+	selectedGasCoin := getCoinsRes.Data[0].Ref()
+
+	stateAnchor := isc.NewStateAnchor(anchor, chainSigner.Address(), iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -54,12 +56,12 @@ func TestTxBuilderBasic(t *testing.T) {
 	stateMetadata := []byte("dummy stateMetadata")
 	pt := txb.BuildTransactionEssence(stateMetadata, 123)
 
-	// getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
-	// require.NoError(t, err)
+	getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
 	tx := iotago.NewProgrammable(
 		chainSigner.Address().AsIotaAddress(),
 		pt,
-		[]*iotago.ObjectRef{stateAnchor.GasCoin},
+		[]*iotago.ObjectRef{selectedGasCoin},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -105,7 +107,8 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	stateAnchor := isc.NewStateAnchor(anchor, chainSigner.Address(), iscPackage, getCoinsRes.Data[2].Ref())
+	selectedGasCoin := getCoinsRes.Data[2].Ref()
+	stateAnchor := isc.NewStateAnchor(anchor, chainSigner.Address(), iscPackage)
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -119,7 +122,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	tx1 := iotago.NewProgrammable(
 		chainSigner.Address().AsIotaAddress(),
 		ptb1,
-		[]*iotago.ObjectRef{stateAnchor.GasCoin},
+		[]*iotago.ObjectRef{selectedGasCoin},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -208,10 +211,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
-	require.NoError(t, err)
-
-	stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage1, getCoinsRes.Data[2].Ref())
+	stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage1)
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor1, signer.Address())
 
 	req1 := createIscmoveReq(t, client, signer, iscPackage1, anchor1)
@@ -223,10 +223,11 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
+	selectedGasCoin := coins.CoinRefs()[2]
 	tx1 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt1,
-		[]*iotago.ObjectRef{coins.CoinRefs()[2]},
+		[]*iotago.ObjectRef{selectedGasCoin},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -284,7 +285,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	crossChainRequestRef, err := txnResponse2.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	stateAnchor2 := isc.NewStateAnchor(anchor2, signer.Address(), iscPackage1, getCoinsRes.Data[3].Ref())
+	stateAnchor2 := isc.NewStateAnchor(anchor2, signer.Address(), iscPackage1)
 	txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor2, signer.Address())
 
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), crossChainRequestRef.ObjectID)
@@ -299,10 +300,11 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	stateMetadata3 := []byte("dummy stateMetadata3")
 	pt3 := txb3.BuildTransactionEssence(stateMetadata3, 123)
 
+	selectedGasCoin = coins.CoinRefs()[0]
 	tx3 := iotago.NewProgrammable(
 		signer.Address().AsIotaAddress(),
 		pt3,
-		[]*iotago.ObjectRef{coins.CoinRefs()[0]},
+		[]*iotago.ObjectRef{selectedGasCoin},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)

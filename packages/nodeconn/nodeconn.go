@@ -116,7 +116,8 @@ func (nc *nodeConnection) AttachChain(
 }
 
 func (nc *nodeConnection) ConsensusGasPriceProposal() <-chan cons_gr.NodeConnGasInfo {
-	return make(<-chan cons_gr.NodeConnGasInfo)
+	t := make(<-chan cons_gr.NodeConnGasInfo)
+	return t
 }
 
 func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {

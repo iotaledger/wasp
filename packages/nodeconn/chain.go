@@ -6,7 +6,6 @@ package nodeconn
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"sync"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -117,11 +116,11 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	moveAnchor, reqs, gasCoinObject, err := ncc.feed.FetchCurrentState(ctx)
+	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
 	if err != nil {
 		return err
 	}
-	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID(), &gasCoinObject)
+	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
 
 	for _, req := range reqs {
@@ -149,12 +148,7 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 			case <-ctx.Done():
 				return
 			case moveAnchor := <-anchorUpdates:
-				stateMetadata, err := transaction.StateMetadataFromBytes(moveAnchor.Object.StateMetadata)
-				if err != nil {
-					panic(err)
-				}
-
-				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID(), &stateMetadata.GasCoinObjectID)
+				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
 
 				// Emit gascoin proposal here, every time a new anchor gets into it here?
