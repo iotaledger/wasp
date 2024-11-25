@@ -10,10 +10,11 @@ import (
 	"io/fs"
 	"os"
 	"path"
-	"regexp"
+	"strings"
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	iotago "github.com/iotaledger/iota.go/v3"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -21,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-const comparableChainCommitteeIDKeyLength = isc.ChainIDLength + iotago.Ed25519AddressBytesLength
+const comparableChainCommitteeIDKeyLength = isc.ChainIDLength + iotago.AddressLen
 
 type comparableChainCommitteeIDKey [comparableChainCommitteeIDKeyLength]byte
 
@@ -121,22 +122,20 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 type ConsensusStateRegistry struct {
 	onChangeMap *onchangemap.OnChangeMap[comparableChainCommitteeIDKey, *comparableChainCommitteeID, *consensusState]
 
-	folderPath    string
-	networkPrefix iotago.NetworkPrefix
+	folderPath string
 }
 
 var _ cmt_log.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
-func NewConsensusStateRegistry(folderPath string, networkPrefix iotago.NetworkPrefix) (*ConsensusStateRegistry, error) {
+func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, error) {
 	// create the target directory during initialization
 	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
 		return nil, err
 	}
 
 	registry := &ConsensusStateRegistry{
-		folderPath:    folderPath,
-		networkPrefix: networkPrefix,
+		folderPath: folderPath,
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(
@@ -162,24 +161,13 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 		return nil
 	}
 
-	// regex example: atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx
-	foldersRegex := regexp.MustCompile(`[a-z]{1,4}1[a-z0-9]{59}`)
-
-	// regex example: atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx.json
-	filesRegex := regexp.MustCompile(`([a-z]{1,4}1[a-z0-9]{59}).json`)
-
 	checkSubFolderFiles := func(chainID isc.ChainID, subFolderPath string, subFolderFile fs.DirEntry) error {
 		if subFolderFile.IsDir() {
 			// ignore folders
 			return nil
 		}
 
-		if !filesRegex.MatchString(subFolderFile.Name()) {
-			// ignore unknown files
-			return nil
-		}
-		panic("refactor me: Bech32 regex and validation")
-		committeeAddressHex := filesRegex.FindStringSubmatch(subFolderFile.Name())[1]
+		committeeAddressHex := strings.Replace(subFolderFile.Name(), ".json", "", -1)
 		committeeAddress, err := cryptolib.NewAddressFromHexString(committeeAddressHex)
 		if err != nil {
 			return fmt.Errorf("unable to parse committee hex address (%s), error: %w", committeeAddressHex, err)
@@ -227,22 +215,10 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 			continue
 		}
 
-		if !foldersRegex.MatchString(rootFolderFile.Name()) {
-			// ignore unknown folders
-			continue
-		}
-
-		chainAddressHex := foldersRegex.FindStringSubmatch(rootFolderFile.Name())[0]
-		panic("refactor me: Bech32 regex and validation (FindStringSubmatch)")
-
-		chainAddress, err := cryptolib.NewAddressFromHexString(chainAddressHex)
+		chainAddress, err := cryptolib.NewAddressFromHexString(rootFolderFile.Name())
 		if err != nil {
-			return fmt.Errorf("unable to parse consensus state hex address (%s), error: %w", chainAddressHex, err)
+			return fmt.Errorf("unable to parse consensus state hex address (%s), error: %w", rootFolderFile.Name(), err)
 		}
-
-		/*if chainAddress.Type() != iotago.AddressAlias {
-			return fmt.Errorf("chainID bech32 address is not an alias address (%s), error: %w", chainAddressHex, err)
-		}*/ // TODO: is it needed?
 
 		chainID := isc.ChainIDFromAddress(chainAddress)
 
