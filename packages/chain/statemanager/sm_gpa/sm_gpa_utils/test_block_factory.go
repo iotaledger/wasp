@@ -50,11 +50,12 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	chainID := isctest.RandomChainID()
 	chainIDObjID := chainID.AsObjectID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, 0, isc.BaseTokenCoinInfo)
+	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	originCommitment := originBlock.L1Commitment()
 	originStateMetadata := transaction.NewStateMetadata(
 		allmigrations.LatestSchemaVersion,
 		originBlock.L1Commitment(),
+		iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		isc.NewCallArguments(),
 		"",
@@ -129,11 +130,11 @@ func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 }
 
 func (bfT *BlockFactory) GetOriginAnchor() *isc.StateAnchor {
-	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0, isc.BaseTokenCoinInfo))
+	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 }
 
 func (bfT *BlockFactory) GetOriginBlock() state.Block {
-	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(0, bfT.chainInitParams, 0, isc.BaseTokenCoinInfo).TrieRoot())
+	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(0, bfT.chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo).TrieRoot())
 	require.NoError(bfT.t, err)
 	return block
 }

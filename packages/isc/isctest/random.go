@@ -19,7 +19,7 @@ func RandomStateAnchorWithStateMetadata(metadata *transaction.StateMetadata) isc
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &anchor,
 	}
-	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress(), iotatest.RandomObjectRef())
+	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
 }
 
 func RandomStateAnchor() isc.StateAnchor {
@@ -28,7 +28,7 @@ func RandomStateAnchor() isc.StateAnchor {
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &anchor,
 	}
-	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress(), iotatest.RandomObjectRef())
+	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
 }
 
 // RandomChainID creates a random chain ID. Used for testing only

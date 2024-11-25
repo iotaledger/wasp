@@ -5,6 +5,8 @@ package chainmanager_test
 
 import (
 	"fmt"
+	iotago "github.com/iotaledger/iota.go/v3"
+	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -127,7 +129,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(0, fake2ST, nil, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(0, fake2ST, nil, iotago2.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
 		// TODO: Commit a block to the store, if needed.

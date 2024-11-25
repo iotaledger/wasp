@@ -122,6 +122,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	}
 	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
+
 	for _, req := range reqs {
 		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
 		if err != nil {
@@ -129,6 +130,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 		}
 		ncc.requestHandler(onledgerReq)
 	}
+
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil
 }

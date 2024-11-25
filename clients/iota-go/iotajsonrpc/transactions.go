@@ -334,6 +334,35 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objec
 	return nil, fmt.Errorf("not found")
 }
 
+// requires `ShowObjectChanges: true`
+func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType string) (
+	*iotago.ObjectRef,
+	error,
+) {
+	if r.ObjectChanges == nil {
+		return nil, errors.New("no ObjectChanges")
+	}
+	for _, change := range r.ObjectChanges {
+		if change.Data.Created != nil {
+			resource, err := iotago.NewResourceType(change.Data.Created.ObjectType)
+			if err != nil {
+				return nil, fmt.Errorf("invalid resource string: %w", err)
+			}
+			if resource.Module == "coin" && resource.SubType1 != nil {
+				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
+					ref := iotago.ObjectRef{
+						ObjectID: &change.Data.Created.ObjectID,
+						Version:  change.Data.Created.Version.Uint64(),
+						Digest:   &change.Data.Created.Digest,
+					}
+					return &ref, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("not found")
+}
+
 type (
 	ReturnValueType            interface{}
 	MutableReferenceOutputType interface{}

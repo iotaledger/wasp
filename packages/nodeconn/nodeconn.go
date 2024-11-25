@@ -8,6 +8,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"sync"
 	"time"
 
@@ -31,6 +34,19 @@ const (
 )
 
 var ErrOperationAborted = errors.New("operation was aborted")
+
+type SingleGasCoinInfo struct {
+	gasCoinObject iotago.ObjectRef
+	gasPrice      uint64
+}
+
+func (g *SingleGasCoinInfo) GetGasCoins() []*iotago.ObjectRef {
+	return []*iotago.ObjectRef{&g.gasCoinObject}
+}
+
+func (g *SingleGasCoinInfo) GetGasPrice() uint64 {
+	return g.gasPrice
+}
 
 // nodeConnection implements chain.NodeConnection.
 // Single Wasp node is expected to connect to a single L1 node, thus
@@ -112,6 +128,37 @@ func (nc *nodeConnection) AttachChain(
 		util.ExecuteIfNotNil(onChainDisconnect)
 		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
+}
+
+func (nc *nodeConnection) ConsensusGasPriceProposal(
+	ctx context.Context,
+	anchor *isc.StateAnchor,
+) <-chan cons_gr.NodeConnGasInfo {
+	t := make(chan cons_gr.NodeConnGasInfo)
+
+	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
+	go func() {
+		stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+		if err != nil {
+			panic(err)
+		}
+
+		gasCoin, err := nc.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+			ObjectID: &stateMetadata.GasCoinObjectID,
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		var coinInfo cons_gr.NodeConnGasInfo = &SingleGasCoinInfo{
+			gasCoin.Data.Ref(),
+			iotaclient.DefaultGasPrice,
+		}
+
+		t <- coinInfo
+	}()
+
+	return t
 }
 
 func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {

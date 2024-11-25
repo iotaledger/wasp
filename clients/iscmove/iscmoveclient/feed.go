@@ -46,10 +46,12 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
+
 	reqs, err := f.wsClient.GetRequests(ctx, f.iscPackageID, &f.anchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
 	}
+
 	return anchor, reqs, nil
 }
 
