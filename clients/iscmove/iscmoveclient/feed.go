@@ -52,18 +52,6 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithR
 		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
 	}
 
-	/*	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
-		if err != nil {
-			return nil, nil, iotago.ObjectRef{}, fmt.Errorf("failed to decode statemetadata: %w", err)
-		}
-
-		gasCoin, err := f.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
-			ObjectID: &stateMetadata.GasCoinObjectID,
-		})
-		if err != nil {
-			return nil, nil, iotago.ObjectRef{}, fmt.Errorf("failed to fetch gas coin: %w", err)
-		}*/
-
 	return anchor, reqs, nil
 }
 
