@@ -122,10 +122,18 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		return iotago.ObjectID{}, err
 	}
 
-	result, err := client.SignAndExecuteTransaction(ctx, cryptolib.SignerToIotaSigner(wallet), txnBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
-		ShowEffects:       true,
-		ShowObjectChanges: true,
-	})
+	result, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(wallet),
+			TxDataBytes: txnBytes,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
+
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}

@@ -43,10 +43,17 @@ func initSendFundsCmd() *cobra.Command {
 			})
 			log.Check(err)
 
-			res, err := client.SignAndExecuteTransaction(context.Background(), cryptolib.SignerToIotaSigner(myWallet), tx.TxBytes, &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowObjectChanges: true,
-				ShowEvents:        true,
-			})
+			res, err := client.SignAndExecuteTransaction(
+				context.Background(),
+				&iotaclient.SignAndExecuteTransactionRequest{
+					Signer:      cryptolib.SignerToIotaSigner(myWallet),
+					TxDataBytes: tx.TxBytes,
+					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+						ShowEffects:       true,
+						ShowObjectChanges: true,
+					},
+				},
+			)
 
 			log.Check(err)
 			fmt.Printf("%v", res)

@@ -331,7 +331,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
-	
+
 	require.NoError(t, err)
 	require.True(t, txnResponse3.Effects.Data.IsSuccess())
 }
