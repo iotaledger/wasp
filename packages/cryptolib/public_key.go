@@ -11,7 +11,6 @@ import (
 
 	"github.com/minio/blake2b-simd"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -101,7 +100,7 @@ func (pkT *PublicKey) Verify(message, sig []byte) bool {
 }
 
 func (pkT *PublicKey) String() string {
-	return iotago.EncodeHex(pkT.key)
+	return EncodeHex(pkT.key)
 }
 
 func (pkT *PublicKey) Read(r io.Reader) error {

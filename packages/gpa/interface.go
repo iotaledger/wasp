@@ -8,7 +8,8 @@ import (
 	"bytes"
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -39,11 +40,11 @@ func (niT NodeID) Equals(other NodeID) bool {
 }
 
 func (niT NodeID) String() string {
-	return iotago.EncodeHex(niT[:])
+	return hexutil.Encode(niT[:])
 }
 
 func (niT NodeID) ShortString() string {
-	return iotago.EncodeHex(niT[:4]) // 4 bytes - 8 hexadecimal digits
+	return hexutil.Encode(niT[:4]) // 4 bytes - 8 hexadecimal digits
 }
 
 type Message interface {

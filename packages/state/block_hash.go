@@ -4,7 +4,8 @@ import (
 	"crypto/rand"
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -36,7 +37,7 @@ func (bh BlockHash) Bytes() []byte {
 }
 
 func (bh BlockHash) String() string {
-	return iotago.EncodeHex(bh[:])
+	return hexutil.Encode(bh[:])
 }
 
 func (bh BlockHash) Equals(other BlockHash) bool {

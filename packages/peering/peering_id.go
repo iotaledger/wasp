@@ -13,7 +13,9 @@ import (
 	"crypto/rand"
 	"io"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -38,7 +40,7 @@ func HashPeeringIDFromBytes(src []byte, additional ...[]byte) PeeringID {
 }
 
 func (pid *PeeringID) String() string {
-	return iotago.EncodeHex(pid[:])
+	return hexutil.Encode(pid[:])
 }
 
 func (pid *PeeringID) Read(r io.Reader) error {

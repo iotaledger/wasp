@@ -6,7 +6,9 @@ package vmimpl
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -38,7 +40,7 @@ func (s *contractSandbox) Call(msg isc.Message, allowance *isc.Assets) isc.CallA
 func (s *contractSandbox) Event(topic string, payload []byte) {
 	s.Ctx.GasBurn(gas.BurnCodeEmitEvent1P, uint64(len(topic)+len(payload)))
 	hContract := s.reqctx.CurrentContractHname()
-	hex := iotago.EncodeHex(payload)
+	hex := hexutil.Encode(payload)
 	if len(hex) > 80 {
 		hex = hex[:40] + "..."
 	}

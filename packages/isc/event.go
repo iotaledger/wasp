@@ -1,7 +1,8 @@
 package isc
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -42,6 +43,6 @@ func (e *Event) ToJSONStruct() *EventJSON {
 		ContractID: e.ContractID,
 		Topic:      e.Topic,
 		Timestamp:  e.Timestamp,
-		Payload:    iotago.EncodeHex(e.Payload),
+		Payload:    hexutil.Encode(e.Payload),
 	}
 }
