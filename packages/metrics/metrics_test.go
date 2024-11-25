@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package metrics
+package metrics_test
 
 import (
 	"testing"
@@ -17,13 +17,14 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/packages/metrics"
 )
 
 func TestRegister(t *testing.T) {
 	chainID1 := isctest.RandomChainID()
 	chainID2 := isctest.RandomChainID()
 	chainID3 := isctest.RandomChainID()
-	ncm := NewChainMetricsProvider()
+	ncm := metrics.NewChainMetricsProvider()
 
 	require.Equal(t, []isc.ChainID{}, ncm.RegisteredChains())
 
@@ -102,22 +103,22 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 }
 
 func TestMessageMetrics(t *testing.T) {
-	p := NewChainMetricsProvider()
+	p := metrics.NewChainMetricsProvider()
 	ncm := p.Message
 	cncm1 := p.GetChainMetrics(isctest.RandomChainID()).Message
 	cncm2 := p.GetChainMetrics(isctest.RandomChainID()).Message
 
 	// IN State output
-	outputID1 := &InStateOutput{OutputID: iotago.OutputID{1}}
-	outputID2 := &InStateOutput{OutputID: iotago.OutputID{2}}
-	outputID3 := &InStateOutput{OutputID: iotago.OutputID{3}}
+	outputID1 := &metrics.InStateOutput{OutputID: iotago.OutputID{1}}
+	outputID2 := &metrics.InStateOutput{OutputID: iotago.OutputID{2}}
+	outputID3 := &metrics.InStateOutput{OutputID: iotago.OutputID{3}}
 
 	cncm1.InStateOutput().IncMessages(outputID1)
 	cncm1.InStateOutput().IncMessages(outputID2)
 	cncm1.InStateOutput().IncMessages(outputID3)
 
 	checkMetricsValues(t, 3, outputID3, cncm1.InStateOutput())
-	checkMetricsValues(t, 0, new(InStateOutput), cncm2.InStateOutput())
+	checkMetricsValues(t, 0, new(metrics.InStateOutput), cncm2.InStateOutput())
 	checkMetricsValues(t, 3, outputID3, ncm.InStateOutput())
 
 	// IN Alias output
@@ -134,9 +135,9 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, aliasOutput3, ncm.InAliasOutput())
 
 	// IN Output
-	inOutput1 := &InOutput{OutputID: iotago.OutputID{1}}
-	inOutput2 := &InOutput{OutputID: iotago.OutputID{2}}
-	inOutput3 := &InOutput{OutputID: iotago.OutputID{3}}
+	inOutput1 := &metrics.InOutput{OutputID: iotago.OutputID{1}}
+	inOutput2 := &metrics.InOutput{OutputID: iotago.OutputID{2}}
+	inOutput3 := &metrics.InOutput{OutputID: iotago.OutputID{3}}
 
 	cncm1.InOutput().IncMessages(inOutput1)
 	cncm2.InOutput().IncMessages(inOutput2)
@@ -147,9 +148,9 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, inOutput3, ncm.InOutput())
 
 	// IN Transaction inclusion state
-	txInclusionState1 := &TxInclusionStateMsg{TxID: iotago.TransactionID{1}}
-	txInclusionState2 := &TxInclusionStateMsg{TxID: iotago.TransactionID{2}}
-	txInclusionState3 := &TxInclusionStateMsg{TxID: iotago.TransactionID{3}}
+	txInclusionState1 := &metrics.TxInclusionStateMsg{TxID: iotago.TransactionID{1}}
+	txInclusionState2 := &metrics.TxInclusionStateMsg{TxID: iotago.TransactionID{2}}
+	txInclusionState3 := &metrics.TxInclusionStateMsg{TxID: iotago.TransactionID{3}}
 
 	cncm1.InTxInclusionState().IncMessages(txInclusionState1)
 	cncm1.InTxInclusionState().IncMessages(txInclusionState2)
@@ -174,9 +175,9 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 3, onLedgerRequest3, ncm.InOnLedgerRequest())
 
 	// OUT Publish state transaction
-	stateTransaction1 := &StateTransaction{StateIndex: 1}
-	stateTransaction2 := &StateTransaction{StateIndex: 1}
-	stateTransaction3 := &StateTransaction{StateIndex: 1}
+	stateTransaction1 := &metrics.StateTransaction{StateIndex: 1}
+	stateTransaction2 := &metrics.StateTransaction{StateIndex: 1}
+	stateTransaction3 := &metrics.StateTransaction{StateIndex: 1}
 
 	cncm1.OutPublishStateTransaction().IncMessages(stateTransaction1)
 	cncm2.OutPublishStateTransaction().IncMessages(stateTransaction2)
@@ -253,7 +254,7 @@ func TestMessageMetrics(t *testing.T) {
 	checkMetricsValues(t, 2, milestoneInfo2, ncm.InMilestone())
 }
 
-func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expectedLastMessage V, metrics IMessageMetric[T]) {
+func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expectedLastMessage V, metrics metrics.IMessageMetric[T]) {
 	require.Equal(t, expectedTotal, metrics.MessagesTotal())
 	if expectedTotal == 0 {
 		var zeroValue V
@@ -264,7 +265,7 @@ func checkMetricsValues[T any, V any](t *testing.T, expectedTotal uint32, expect
 }
 
 func TestPeeringMetrics(t *testing.T) {
-	pmp := NewPeeringMetricsProvider()
+	pmp := metrics.NewPeeringMetricsProvider()
 
 	pmp.RecvEnqueued(100, 1)
 	pmp.RecvEnqueued(1009, 2)
