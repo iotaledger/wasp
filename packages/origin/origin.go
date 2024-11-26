@@ -2,8 +2,9 @@ package origin
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -101,7 +102,7 @@ func L1CommitmentFromAnchorStateMetadata(
 	l1c := L1Commitment(
 		stateMetadata.SchemaVersion,
 		stateMetadata.InitParams,
-		stateMetadata.GasCoinObjectID,
+		*stateMetadata.GasCoinObjectID,
 		originDeposit,
 		baseTokenCoinInfo,
 	)
@@ -158,7 +159,7 @@ func InitChain(
 	return block, transaction.NewStateMetadata(
 		v,
 		block.L1Commitment(),
-		gasCoinObjectID,
+		&gasCoinObjectID,
 		gas.DefaultFeePolicy(),
 		args,
 		"",
@@ -179,7 +180,7 @@ func InitChainByAnchor(
 		stateMetadata.SchemaVersion,
 		chainStore,
 		stateMetadata.InitParams,
-		stateMetadata.GasCoinObjectID,
+		*stateMetadata.GasCoinObjectID,
 		originDeposit,
 		baseTokenCoinInfo,
 	)
