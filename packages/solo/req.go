@@ -452,7 +452,7 @@ func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message)
 	defer ch.runVMMutex.Unlock()
 
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		chainState,
 		ch.proc,
 		ch.log,
@@ -474,7 +474,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		latestState,
 		ch.proc,
 		ch.log,
@@ -496,7 +496,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		latestState,
 		ch.proc,
 		ch.log,
@@ -537,7 +537,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		latestState,
 		ch.proc,
 		ch.log,
