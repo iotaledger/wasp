@@ -3,12 +3,13 @@ package blocklog_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/stretchr/testify/require"
 )
 
 func TestOutputRequestReceiptCodec(t *testing.T) {
@@ -17,7 +18,7 @@ func TestOutputRequestReceiptCodec(t *testing.T) {
 			isc.Hn("0")), 123, 456).Sign(cryptolib.NewKeyPair()),
 		Error: &isc.UnresolvedVMError{
 			ErrorCode: blocklog.ErrBlockNotFound.Code(),
-			Params:    []isc.VMParam{int16(1), uint64(2), "string"},
+			Params:    []isc.VMErrorParam{int16(1), uint64(2), "string"},
 		},
 		GasBudget:     123,
 		GasBurned:     456,
@@ -49,7 +50,7 @@ func TestOutputRequestReceiptsCodec(t *testing.T) {
 					isc.Hn("0")), 123, 456).Sign(cryptolib.NewKeyPair()),
 				Error: &isc.UnresolvedVMError{
 					ErrorCode: blocklog.ErrBlockNotFound.Code(),
-					Params:    []isc.VMParam{int16(1), uint64(2), "string"},
+					Params:    []isc.VMErrorParam{int16(1), uint64(2), "string"},
 				},
 				GasBudget:     123,
 				GasBurned:     456,
@@ -70,7 +71,7 @@ func TestOutputRequestReceiptsCodec(t *testing.T) {
 					isc.Hn("0")), 123, 456).Sign(cryptolib.NewKeyPair()),
 				Error: &isc.UnresolvedVMError{
 					ErrorCode: blocklog.ErrBlockNotFound.Code(),
-					Params:    []isc.VMParam{int16(1), uint64(2), "string"},
+					Params:    []isc.VMErrorParam{int16(1), uint64(2), "string"},
 				},
 				GasBudget:     123,
 				GasBurned:     456,

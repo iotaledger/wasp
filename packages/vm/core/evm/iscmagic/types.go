@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -168,4 +169,14 @@ func (i ISCSendMetadata) Unwrap() *isc.SendMetadata {
 		Allowance: i.Allowance.Unwrap(),
 		GasBudget: i.GasBudget,
 	}
+}
+
+func init() {
+	if cryptolib.AddressSize != 32 {
+		panic("static check: address length != 32")
+	}
+}
+
+func WrapIotaAddress(addr *cryptolib.Address) (ret [32]byte) {
+	return *addr
 }

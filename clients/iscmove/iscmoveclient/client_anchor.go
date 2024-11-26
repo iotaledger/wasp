@@ -29,7 +29,7 @@ func (c *Client) FindCoinsForGasPayment(
 	}
 	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
 		coinPage.Data,
-		gasBudget*gasPrice,
+		gasBudget,
 		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 	)
 	return gasPayments.CoinRefs(), err

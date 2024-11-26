@@ -330,26 +330,17 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {
-	// find a deterministic L1 address that has 0 balance
-	walletKey, walletAddr := func() (*cryptolib.KeyPair, *cryptolib.Address) {
-		masterSeed := []byte("GetL2FundsFromFaucet")
-		i := uint32(0)
-		for {
-			ss := cryptolib.SubSeed(masterSeed, i)
-			key, addr := ch.Env.NewKeyPair(&ss)
-			ch.Env.GetFundsFromFaucet(addr)
-			if ch.L2BaseTokens(isc.NewAddressAgentID(addr)) == 0 {
-				return key, addr
-			}
-			i++
-		}
-	}()
+	seed := cryptolib.SeedFromBytes([]byte("GetL2FundsFromFaucet" + ch.Env.T.Name()))
+	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
+	if ch.Env.L1BaseTokens(walletAddr) == 0 {
+		ch.Env.GetFundsFromFaucet(walletAddr)
+	}
 
 	var amount coin.Value
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
-		amount = ch.Env.L1BaseTokens(walletAddr) - TransferAllowanceToGasBudgetBaseTokens
+		amount = ch.Env.L1BaseTokens(walletAddr) / 10
 	}
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
