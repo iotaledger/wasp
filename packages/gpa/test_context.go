@@ -22,8 +22,8 @@ type TestContext struct {
 	outputHandler   func(nodeID NodeID, output Output) // User can check outputs w/o synchronizing other parts.
 	msgDeliveryProb float64                            // A probability to deliver a message (to not discard/loose it).
 	msgSerialize    bool                               // Use serialization/deserialization when delivering the messages?
-	msgCh           <-chan Message                     // A way to provide additional messages w/o synchronizing other parts.
-	msgs            []Message                          // Not yet delivered messages.
+	msgCh           <-chan SenderMessage               // A way to provide additional messages w/o synchronizing other parts.
+	msgs            []SenderMessage                    // Not yet delivered messages.
 	msgsSent        int                                // Stats.
 	msgsRecv        int                                // Stats.
 }
@@ -34,12 +34,13 @@ func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 		inputs[n] = []Input{}
 	}
 	tc := TestContext{
+		msgSerialize:    true, // TODO: Remove.
 		nodes:           nodes,
 		inputs:          inputs,
 		inputProb:       1.0,
 		inputCount:      0,
 		msgDeliveryProb: 1.0,
-		msgs:            []Message{},
+		msgs:            []SenderMessage{},
 	}
 	return &tc
 }
@@ -87,19 +88,19 @@ func (tc *TestContext) WithMessageDeliveryProbability(msgDeliveryProb float64) *
 	return tc
 }
 
-func (tc *TestContext) WithMessages(msgs []Message) *TestContext {
+func (tc *TestContext) WithMessages(sender NodeID, msgs []Message) *TestContext {
 	tc.msgsSent += len(msgs)
-	tc.msgs = append(tc.msgs, msgs...)
+	tc.msgs = append(tc.msgs, tc.setMessageSender(sender, NoMessages().AddMany(msgs))...)
 	return tc
 }
 
-func (tc *TestContext) WithMessage(msg Message) *TestContext {
+func (tc *TestContext) WithMessage(sender NodeID, msg Message) *TestContext {
 	tc.msgsSent++
-	tc.msgs = append(tc.msgs, msg)
+	tc.msgs = append(tc.msgs, tc.setMessageSender(sender, NoMessages().Add(msg))...)
 	return tc
 }
 
-func (tc *TestContext) WithMessageChannel(msgCh <-chan Message) *TestContext {
+func (tc *TestContext) WithMessageChannel(msgCh <-chan SenderMessage) *TestContext {
 	tc.msgCh = msgCh
 	return tc
 }
@@ -109,9 +110,9 @@ func (tc *TestContext) WithOutputHandler(outputHandler func(nodeID NodeID, outpu
 	return tc
 }
 
-func (tc *TestContext) WithCall(call func() []Message) *TestContext {
+func (tc *TestContext) WithCall(sender NodeID, call func() []Message) *TestContext {
 	msgs := call()
-	return tc.WithMessages(msgs)
+	return tc.WithMessages(sender, msgs)
 }
 
 func (tc *TestContext) RunUntil(predicate func() bool) {
@@ -196,20 +197,29 @@ func (tc *TestContext) tryProcessMessage() {
 	}
 	msgIdx := rand.Intn(len(tc.msgs))
 	msg := tc.msgs[msgIdx]
-	nid := msg.Recipient()
+	nid := msg.Message.Recipient()
 	tc.msgs = append(tc.msgs[:msgIdx], tc.msgs[msgIdx+1:]...)
 	tc.msgsRecv++
 	if rand.Float64() <= tc.msgDeliveryProb { // Deliver some messages.
+		gpaMsg := msg.Message
 		if tc.msgSerialize {
-			msgBytes := lo.Must(MarshalMessage(msg))
-			msg = lo.Must(tc.nodes[nid].UnmarshalMessage(msgBytes))
+			msgBytes := lo.Must(MarshalMessage(msg.Message))
+			if m, err := tc.nodes[nid].UnmarshalMessage(msgBytes); err == nil {
+				gpaMsg = m
+				gpaMsg.SetSender(msg.Sender)
+			} else {
+				// E.g. silent node cannot decode messages.
+				gpaMsg = nil
+			}
 		}
-		newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(msg))
-		if newMsgs != nil {
-			tc.msgsSent += len(newMsgs)
-			tc.msgs = append(tc.msgs, newMsgs...)
+		if gpaMsg != nil {
+			newMsgs := tc.setMessageSender(nid, tc.nodes[nid].Message(gpaMsg))
+			if newMsgs != nil {
+				tc.msgsSent += len(newMsgs)
+				tc.msgs = append(tc.msgs, newMsgs...)
+			}
+			tc.tryCallOutputHandler(nid)
 		}
-		tc.tryCallOutputHandler(nid)
 	}
 }
 
@@ -247,15 +257,17 @@ func (tc *TestContext) OutOfMessagesPredicate() func() bool {
 	return func() bool { return false }
 }
 
-func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []Message {
+func (tc *TestContext) setMessageSender(sender NodeID, msgs OutMessages) []SenderMessage {
 	if msgs == nil {
 		return nil
 	}
 	msgArray := msgs.AsArray()
+	result := make([]SenderMessage, len(msgArray))
 	for i := range msgArray {
 		msgArray[i].SetSender(sender)
+		result[i] = SenderMessage{Sender: sender, Message: msgArray[i]}
 	}
-	return msgArray
+	return result
 }
 
 func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format string, args ...any)) {
@@ -271,4 +283,9 @@ func (tc *TestContext) PrintAllStatusStrings(prefix string, logFunc func(format 
 	for _, nidStr := range keys {
 		logFunc("TC[%p] %v [node=%v]: %v", tc, prefix, nidStr, tc.nodes[nidStr].StatusString())
 	}
+}
+
+type SenderMessage struct {
+	Sender  NodeID
+	Message Message
 }

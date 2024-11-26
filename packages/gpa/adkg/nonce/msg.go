@@ -20,6 +20,12 @@ func (n *nonceDKGImpl) subsystemFunc(subsystem byte, index int) (gpa.GPA, error)
 }
 
 func (n *nonceDKGImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	// All non-node-local messages are from the ACSS, so just pass it there.
-	return n.wrapper.UnmarshalMessage(data)
+	// TODO: This should be improved pronbably considering the new serialization framework.
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty msg")
+	}
+	if data[0] != msgTypeWrapped {
+		return nil, fmt.Errorf("unexpected msg type: %v", data[0])
+	}
+	return n.wrapper.UnmarshalMessage(data[1:])
 }
