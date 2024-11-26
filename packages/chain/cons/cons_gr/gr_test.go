@@ -127,6 +127,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
 	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
+	gasCoin := iotatest.RandomObjectRef()
 
 	logIndex := cmt_log.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
@@ -141,7 +142,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		chainMetrics := chainMetricsProvider.GetChainMetrics(isc.EmptyChainID())
 		nodes[i] = consGR.New(
 			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
-			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(),
+			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
 			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
@@ -387,8 +388,8 @@ type testNodeConn struct {
 
 var _ consGR.NodeConn = &testNodeConn{}
 
-func newTestNodeConn() *testNodeConn {
-	return &testNodeConn{gasCoin: iotatest.RandomObjectRef()}
+func newTestNodeConn(gasCoin *iotago.ObjectRef) *testNodeConn {
+	return &testNodeConn{gasCoin: gasCoin}
 }
 
 func (t *testNodeConn) ConsensusGasPriceProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnGasInfo {
