@@ -25,7 +25,6 @@ func TestAckHandler(t *testing.T) {
 		inputs[nid] = nil
 	}
 	tc := NewTestContext(nodes).
-		WithoutSerialization().
 		WithInputs(inputs).
 		WithInputProbability(0.5).
 		WithMessageDeliveryProbability(0.5) // NOTE: The AckHandler has to compensate this.

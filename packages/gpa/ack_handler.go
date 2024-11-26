@@ -104,10 +104,14 @@ func (a *ackHandler) StatusString() string {
 }
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
-	return UnmarshalMessage(data, Mapper{
+	msg, err := UnmarshalMessage(data, Mapper{
 		msgTypeAckHandlerReset: func() Message { return &ackHandlerReset{} },
 		msgTypeAckHandlerBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
 	})
+	if err != nil {
+		fmt.Printf("ack, err=%v\n", err) // TODO: Clean this up.
+	}
+	return msg, err
 }
 
 func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
@@ -342,7 +346,9 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 	msg.id = nil
 
 	if hasID := d.ReadOptionalFlag(); hasID {
-		d.Decode(&msg.id)
+		if err = d.Decode(&msg.id); err != nil {
+			return err
+		}
 	}
 
 	msgsBytes := bcs.Decode[[][]byte](d)
