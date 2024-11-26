@@ -317,9 +317,9 @@ func (msg *ackHandlerReset) MsgType() MessageType {
 type ackHandlerBatch struct {
 	sender    NodeID
 	recipient NodeID
-	id        *int       `bcs:"export,optional"`                       // That's ACK only, if nil.
-	msgs      []Message  `bcs:"export,len_bytes=2" bcs_elem:"bytearr"` // Messages in the batch.
-	acks      []int      `bcs:"export,len_bytes=2"`                    // Acknowledged batches.
+	id        *int       // That's ACK only, if nil.
+	msgs      []Message  // Messages in the batch.
+	acks      []int      // Acknowledged batches.
 	sent      *time.Time // Transient, only used for outgoing messages, not sent to the outside.
 	nestedGPA GPA        // Transient, for un-marshaling only.
 }
@@ -341,20 +341,30 @@ func (msg *ackHandlerBatch) SetSender(sender NodeID) {
 	}
 }
 
+func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
+	e.EncodeOptional(msg.id)
+
+	msgsBytes, err := MarshalMessages(msg.msgs)
+	if err != nil {
+		return fmt.Errorf("msgs: %w", err)
+	}
+
+	e.Encode(msgsBytes)
+	e.Encode(msg.acks)
+
+	return e.Err()
+}
+
 func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
-	var err error
 	msg.id = nil
 
-	if hasID := d.ReadOptionalFlag(); hasID {
-		if err = d.Decode(&msg.id); err != nil {
-			return err
-		}
-	}
+	d.DecodeOptional(&msg.id)
 
 	msgsBytes := bcs.Decode[[][]byte](d)
 	msg.msgs = make([]Message, len(msgsBytes))
 
 	for i := range msgsBytes {
+		var err error
 		msg.msgs[i], err = msg.nestedGPA.UnmarshalMessage(msgsBytes[i])
 		if err != nil {
 			return err

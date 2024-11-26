@@ -128,7 +128,7 @@ type (
 
 func MarshalMessage(msg Message) ([]byte, error) {
 	e := bcs.NewBytesEncoder()
-	e.WriteEnumIdx(int(msg.MsgType()))
+	e.WriteByte(msg.MsgType())
 	e.Encode(msg)
 
 	return e.Bytes(), e.Err()
@@ -163,6 +163,20 @@ func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message
 	}
 
 	return unmarshaler(data[1:])
+}
+
+func MarshalMessages(msgs []Message) ([][]byte, error) {
+	msgsBytes := make([][]byte, len(msgs))
+	var err error
+
+	for i := range msgs {
+		msgsBytes[i], err = MarshalMessage(msgs[i])
+		if err != nil {
+			return nil, fmt.Errorf("msgs[%d]: %w", i, err)
+		}
+	}
+
+	return msgsBytes, nil
 }
 
 type Logger interface {
