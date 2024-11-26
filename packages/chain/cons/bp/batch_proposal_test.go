@@ -47,7 +47,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 			Digest:   &digest,
 		},
 		Object: &anchor,
-	}, cryptolib.NewEmptyAddress(), *iotatest.RandomAddress())
+	}, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
 
 	coinRef := iotatest.RandomObjectRef()
 
