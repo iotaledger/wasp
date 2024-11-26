@@ -2,8 +2,9 @@ package origin_test
 
 import (
 	"errors"
-	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
+
+	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
@@ -98,18 +99,22 @@ func TestCreateOrigin(t *testing.T) {
 		require.True(t, stateAddr.Equals(anchor.StateController))
 		require.True(t, stateAddr.Equals(anchor.GovernanceController))
 
+		schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
+		initParams := isc.NewCallArguments([]byte{1, 2, 3})
+		gasCoin := &iotago2.ObjectID{}
 		originStateMetadata := transaction.NewStateMetadata(
+			schemaVersion,
 			origin.L1Commitment(
 				allmigrations.DefaultScheme.LatestSchemaVersion(),
 				isc.NewCallArguments(isc.NewAddressAgentID(anchor.GovernanceController).Bytes()),
-				governance.DefaultMinBaseTokensOnCommonAccount,
+				*gasCoin,
+				governance.DefaultMinBaseTokensOnCommonAccount, // FIXME
 				baseTokenCoinInfo,
-				iotago2.ObjectID{},
 			),
-			iotago2.ObjectID{},
+			gasCoin,
 			gas.DefaultFeePolicy(),
-			allmigrations.DefaultScheme.LatestSchemaVersion(),
-			"",
+			initParams,
+			"http://url",
 		)
 
 		require.EqualValues(t, anchor.StateData, originStateMetadata.Bytes())

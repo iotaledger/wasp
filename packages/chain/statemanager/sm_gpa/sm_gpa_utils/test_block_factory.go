@@ -55,7 +55,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	originStateMetadata := transaction.NewStateMetadata(
 		allmigrations.LatestSchemaVersion,
 		originBlock.L1Commitment(),
-		iotago.ObjectID{},
+		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		isc.NewCallArguments(),
 		"",

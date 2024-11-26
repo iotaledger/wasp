@@ -71,7 +71,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
-		iotago.ObjectID{},
+		&iotago.ObjectID{},
 		&gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
