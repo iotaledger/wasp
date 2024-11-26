@@ -15,7 +15,9 @@ import (
 )
 
 func ParseReceipt(chain chainpkg.Chain, receipt *blocklog.RequestReceipt) (*isc.Receipt, error) {
-	state, err := chain.Store().StateByIndex(receipt.BlockIndex)
+	// Using latest state instead state of request.BlockIndex to avoid
+	// possibility of referencing a state that has been pruned.
+	state, err := chain.LatestState(chainpkg.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err
 	}
@@ -31,12 +33,8 @@ func ParseReceipt(chain chainpkg.Chain, receipt *blocklog.RequestReceipt) (*isc.
 }
 
 func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.CallArguments, error) {
-	anchor, err := ch.LatestAnchor(chainpkg.ActiveOrCommittedState)
-	if err != nil {
-		return nil, fmt.Errorf("error getting latest anchor: %w", err)
-	}
-
 	var chainState state.State
+	var err error
 
 	switch {
 	case blockIndexOrHash == "":
@@ -73,7 +71,7 @@ func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.
 		}
 	}
 
-	return chainutil.CallView(anchor, chainState, ch.Processors(), ch.Log(), msg)
+	return chainutil.CallView(ch.ID(), chainState, ch.Processors(), ch.Log(), msg)
 }
 
 func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
