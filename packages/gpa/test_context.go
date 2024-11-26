@@ -34,7 +34,7 @@ func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 		inputs[n] = []Input{}
 	}
 	tc := TestContext{
-		msgSerialize:    true, // TODO: Remove.
+		msgSerialize:    true,
 		nodes:           nodes,
 		inputs:          inputs,
 		inputProb:       1.0,
@@ -45,8 +45,8 @@ func NewTestContext(nodes map[NodeID]GPA) *TestContext {
 	return &tc
 }
 
-func (tc *TestContext) WithSerialization() *TestContext {
-	tc.msgSerialize = true
+func (tc *TestContext) WithoutSerialization() *TestContext {
+	tc.msgSerialize = false
 	return tc
 }
 

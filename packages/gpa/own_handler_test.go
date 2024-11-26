@@ -20,7 +20,7 @@ func TestOwnHandler(t *testing.T) {
 		nodes[nid] = NewTestRound(nodeIDs, nid)
 		inputs[nid] = nil
 	}
-	tc := NewTestContext(nodes).WithInputs(inputs).WithInputProbability(0.5)
+	tc := NewTestContext(nodes).WithoutSerialization().WithInputs(inputs).WithInputProbability(0.5)
 	tc.RunAll()
 	for _, n := range nodes {
 		require.NotNil(t, n.Output())

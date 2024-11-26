@@ -25,7 +25,7 @@ func TestBasic(t *testing.T) {
 		for _, nid := range nodeIDs {
 			nodes[nid] = bracha.New(nodeIDs, f, nid, leader, math.MaxInt, func(b []byte) bool { return true }, gpa.NewPanicLogger())
 		}
-		gpa.NewTestContext(nodes).WithSerialization().WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
+		gpa.NewTestContext(nodes).WithInputs(map[gpa.NodeID]gpa.Input{leader: gpa.Input(input)}).RunAll()
 		for _, n := range nodes {
 			o := n.Output()
 			require.NotNil(tt, o)
