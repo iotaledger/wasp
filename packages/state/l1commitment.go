@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -47,15 +46,4 @@ func (s *L1Commitment) Bytes() []byte {
 
 func (s *L1Commitment) String() string {
 	return fmt.Sprintf("<%s;%s>", s.TrieRoot(), s.BlockHash())
-}
-
-// PseudoRandL1Commitment is for testing only
-func NewPseudoRandL1Commitment() *L1Commitment {
-	d := make([]byte, L1CommitmentSize)
-	_, _ = util.NewPseudoRand().Read(d)
-	ret, err := NewL1CommitmentFromBytes(d)
-	if err != nil {
-		panic(err)
-	}
-	return ret
 }
