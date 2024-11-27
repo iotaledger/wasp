@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -31,7 +31,7 @@ func (h HashValue) String() string {
 }
 
 func (h HashValue) Hex() string {
-	return iotago.EncodeHex(h[:])
+	return hexutil.Encode(h[:])
 }
 
 func (h *HashValue) MarshalJSON() ([]byte, error) {

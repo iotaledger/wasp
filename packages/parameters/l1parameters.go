@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/tpkg"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
@@ -28,16 +29,7 @@ type BaseToken struct {
 	CoinType        iotajsonrpc.CoinType `json:"coinType"`
 }
 
-// NetworkPrefix denotes the different network prefixes.
-type NetworkPrefix string
-
-// Network prefixes.
 const (
-	PrefixMainnet NetworkPrefix = "iotago"
-)
-
-const (
-	Bech32Hrp   = PrefixMainnet
 	Decimals    = 9
 	NetworkName = "testnet"
 )

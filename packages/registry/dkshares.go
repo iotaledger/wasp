@@ -11,7 +11,7 @@ import (
 	"regexp"
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -21,22 +21,20 @@ import (
 type DKSharesRegistry struct {
 	onChangeMap *onchangemap.OnChangeMap[cryptolib.AddressKey, *util.ComparableAddress, tcrypto.DKShare]
 
-	folderPath    string
-	networkPrefix iotago.NetworkPrefix
+	folderPath string
 }
 
 var _ DKShareRegistryProvider = &DKSharesRegistry{}
 
 // NewDKSharesRegistry creates new instance of the DKShare registry implementation.
-func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey, networkPrefix iotago.NetworkPrefix) (*DKSharesRegistry, error) {
+func NewDKSharesRegistry(folderPath string, nodePrivKey *cryptolib.PrivateKey) (*DKSharesRegistry, error) {
 	// create the target directory during initialization
 	if err := ioutils.CreateDirectory(folderPath, 0o770); err != nil {
 		return nil, err
 	}
 
 	registry := &DKSharesRegistry{
-		folderPath:    folderPath,
-		networkPrefix: networkPrefix,
+		folderPath: folderPath,
 	}
 
 	registry.onChangeMap = onchangemap.NewOnChangeMap(

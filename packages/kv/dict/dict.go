@@ -7,8 +7,9 @@ import (
 	"io"
 	"sort"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/iotaledger/hive.go/lo"
-	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -235,8 +236,8 @@ func (d Dict) MarshalJSON() ([]byte, error) {
 	j := jsonDict{Items: make([]item, len(d))}
 
 	for i, k := range d.KeysSorted() {
-		j.Items[i].Key = iotago.EncodeHex([]byte(k))
-		j.Items[i].Value = iotago.EncodeHex(d[k])
+		j.Items[i].Key = hexutil.Encode([]byte(k))
+		j.Items[i].Value = hexutil.Encode(d[k])
 	}
 
 	return json.Marshal(j)

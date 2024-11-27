@@ -3,18 +3,18 @@ package node
 import (
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/webapi/models"
 
 	"github.com/labstack/echo/v4"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 )
 
 func (c *Controller) nodeOwnerCertificate(e echo.Context) error {
 	certificateBytes := c.nodeService.NodeOwnerCertificate()
 
 	response := models.NodeOwnerCertificateResponse{
-		Certificate: iotago.EncodeHex(certificateBytes),
+		Certificate: hexutil.Encode(certificateBytes),
 	}
 
 	return e.JSON(http.StatusOK, response)
