@@ -66,7 +66,7 @@ func (c *Client) SignAndExecutePTB(
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	var err error
-	if len(gasPayments) == 0 {
+	if len(gasPayments) == 0 || gasPayments[0] == nil {
 		gasPayments, err = c.FindCoinsForGasPayment(
 			ctx,
 			signer.Address(),

@@ -121,6 +121,34 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.Equal(t, gasCoin1.Balance.Int64()+topUpAmount-txnResponse.Effects.Data.GasFee(), int64(gasCoin2.Balance))
 }
 
+func TestRotationTransaction(t *testing.T) {
+	client := newLocalnetClient()
+	recipientSigner := newSignerWithFunds(t, testSeed, 0)
+	chainSigner := newSignerWithFunds(t, testSeed, 1)
+
+	anchor := startNewChain(t, client, chainSigner)
+
+	_, err := client.RotationTransaction(
+		context.Background(),
+		&iscmoveclient.RotationTransactionRequest{
+			Signer:          chainSigner,
+			PackageID:       l1starter.ISCPackageID(),
+			AnchorRef:       &anchor.ObjectRef,
+			RotationAddress: recipientSigner.Address().AsIotaAddress(),
+			GasPrice:        iotaclient.DefaultGasPrice,
+			GasBudget:       iotaclient.DefaultGasBudget,
+		},
+	)
+	require.NoError(t, err)
+
+	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		ObjectID: anchor.ObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+	})
+	require.NoError(t, err)
+	require.Equal(t, recipientSigner.Address().AsIotaAddress(), getObjRes.Data.Owner.AddressOwner)
+}
+
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)

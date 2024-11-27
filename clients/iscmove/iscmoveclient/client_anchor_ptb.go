@@ -320,3 +320,19 @@ func PTBReceiveRequestsAndTransition(
 	)
 	return ptb
 }
+
+func PTBRotationTransaction(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	anchorArg iotago.Argument,
+	rotationAddressArg iotago.Argument,
+) *iotago.ProgrammableTransactionBuilder {
+	ptb.Command(
+		iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{anchorArg},
+				Address: rotationAddressArg,
+			},
+		},
+	)
+	return ptb
+}

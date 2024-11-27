@@ -129,6 +129,35 @@ func (c *Client) ReceiveRequestsAndTransition(
 	)
 }
 
+type RotationTransactionRequest struct {
+	Signer          cryptolib.Signer
+	PackageID       iotago.PackageID
+	AnchorRef       *iotago.ObjectRef
+	RotationAddress *iotago.Address
+	GasPayment      *iotago.ObjectRef
+	GasPrice        uint64
+	GasBudget       uint64
+}
+
+func (c *Client) RotationTransaction(
+	ctx context.Context,
+	req *RotationTransactionRequest,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBRotationTransaction(ptb,
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}),
+		ptb.MustForceSeparatePure(req.RotationAddress),
+	)
+	return c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		[]*iotago.ObjectRef{req.GasPayment},
+		req.GasPrice,
+		req.GasBudget,
+	)
+}
+
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
