@@ -8,27 +8,19 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestVarLocalView(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
-	j := cmt_log.NewVarLocalView(-1, func(ao *iscmove.Anchor) {}, log)
+	j := cmt_log.NewVarLocalView(-1, func(anchor *isc.StateAnchor) {}, log)
 	require.Nil(t, j.Value())
-	tipAO, ok, _ := j.AliasOutputConfirmed(
-		isc.NewAliasOutputWithID(
-			&iotago.AliasOutput{
-				StateMetadata: []byte{},
-			},
-			iotago.ObjectID{},
-		),
-	)
+	randAnchor := isctest.RandomStateAnchor()
+	tipAO, ok, _ := j.AliasOutputConfirmed(&randAnchor)
 	require.True(t, ok)
 	require.NotNil(t, tipAO)
 	require.NotNil(t, j.Value())
