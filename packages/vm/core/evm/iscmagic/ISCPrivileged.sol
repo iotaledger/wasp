@@ -27,7 +27,7 @@ interface ISCPrivileged {
      * @dev This function allows privileged contracts to set the allowance of base tokens from one account to another.
      * @param from The address of the account from which tokens are allowed
      * @param to The address of the account to which tokens are allowed
-     * @param numTokens The number of base tokens to be allowed
+     * @param amount The number of base tokens to be allowed
      */
     function setAllowanceBaseTokens(
         address from,
@@ -35,6 +35,14 @@ interface ISCPrivileged {
         uint64 amount
     ) external;
 
+    /**
+     * @dev This function allows privileged contracts to set the allowance of a
+     *      given coin from one account to another.
+     * @param from The address of the account from which tokens are allowed
+     * @param to The address of the account to which tokens are allowed
+     * @param coinType The coin type
+     * @param amount The number of base tokens to be allowed
+     */
     function setAllowanceCoin(
         address from,
         address to,

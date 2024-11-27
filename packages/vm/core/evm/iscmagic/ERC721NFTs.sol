@@ -67,13 +67,14 @@ contract ERC721NFTs {
         return __iscAccounts.getL2ObjectsCount(owner);
     }
 
-    // virtual function meant to be overridden. ERC721NFTs manages all NFTs, regardless of
-    // whether they belong to any collection or not.
-    function _isManagedByThisContract(
-        ISCNFT memory
-    ) internal view virtual returns (bool) {
-        return true;
-    }
+    // TODO
+    // // virtual function meant to be overridden. ERC721NFTs manages all NFTs, regardless of
+    // // whether they belong to any collection or not.
+    // function _isManagedByThisContract(
+    //     ISCNFT memory
+    // ) internal view virtual returns (bool) {
+    //     return true;
+    // }
 
     /**
      * @dev Returns the number of tokens owned by a specific address.
@@ -91,14 +92,15 @@ contract ERC721NFTs {
      * @return The address of the owner of the token.
      */
     function ownerOf(uint256 tokenId) public view returns (address) {
-        try __iscSandbox.getNFTData(tokenId.asObjectID()) returns (
-            ISCNFT memory nft
-        ) {
-            require(_isManagedByThisContract(nft));
-            return nft.owner.ethAddress();
-        } catch {
-            revert("ERC721NonexistentToken");
-        }
+        assert(false); // TODO
+        // try __iscSandbox.getNFTData(tokenId.asObjectID()) returns (
+        //     ISCNFT memory nft
+        // ) {
+        //     require(_isManagedByThisContract(nft));
+        //     return nft.owner.ethAddress();
+        // } catch {
+        //     revert("ERC721NonexistentToken");
+        // }
     }
 
     function _requireNftExists(uint256 tokenId) internal view {

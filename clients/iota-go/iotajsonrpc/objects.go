@@ -2,8 +2,7 @@ package iotajsonrpc
 
 import (
 	"encoding/json"
-	"strconv"
-	"strings"
+	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
@@ -233,18 +232,24 @@ type VersionNotFoundData struct {
 }
 
 func (c *VersionNotFoundData) UnmarshalJSON(data []byte) error {
-	var err error
-	input := data[1 : len(data)-2]
-	elts := strings.Split(string(input), ",")
-	c.ObjectID, err = iotago.ObjectIDFromHex(elts[0][1 : len(elts[0])-2])
+	var vals []any
+	err := json.Unmarshal(data, &vals)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse VersionNotFound content: %w", err)
 	}
-	seq, err := strconv.ParseUint(elts[1], 10, 64)
+	if len(vals) != 2 {
+		return fmt.Errorf("failed to parse VersionNotFound content: expected 2 elements, got %d", len(vals))
+	}
+	objIDHex, ok := vals[0].(string)
+	if !ok {
+		return fmt.Errorf("failed to parse VersionNotFound content: expected string, got %T", vals[0])
+	}
+	c.ObjectID, err = iotago.ObjectIDFromHex(objIDHex)
+	seq, ok := vals[1].(int)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse VersionNotFound content: %w", err)
 	}
-	c.SequenceNumber = seq
+	c.SequenceNumber = uint64(seq)
 	return nil
 }
 

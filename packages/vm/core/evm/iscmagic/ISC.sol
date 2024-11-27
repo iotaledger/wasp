@@ -7,7 +7,6 @@ import "./ISCSandbox.sol";
 import "./ISCAccounts.sol";
 import "./ISCUtil.sol";
 import "./ISCPrivileged.sol";
-import "./ERC20BaseTokens.sol";
 import "./ERC20Coin.sol";
 import "./ERC721NFTs.sol";
 import "./ERC721NFTCollection.sol";
@@ -15,7 +14,7 @@ import "./ERC721NFTCollection.sol";
 /**
  * @title ISC Library
  * @dev This library contains various interfaces and functions related to the IOTA Smart Contracts (ISC) system.
- * It provides access to the ISCSandbox, ISCAccounts, ISCUtil, ERC20BaseTokens,
+ * It provides access to the ISCSandbox, ISCAccounts, ISCUtil,
  * ERC20Coin, ERC721NFTs, and ERC721NFTCollection contracts.
  */
 library ISC {
@@ -24,8 +23,6 @@ library ISC {
     ISCAccounts constant accounts = __iscAccounts;
 
     ISCUtil constant util = __iscUtil;
-
-    ERC20BaseTokens constant baseTokens = __erc20BaseTokens;
 
     // Get the ERC20Coin contract for the given foundry serial number
     function erc20Coin(string memory coinType) internal view returns (ERC20Coin) {
