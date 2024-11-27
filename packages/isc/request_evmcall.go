@@ -99,5 +99,5 @@ func (req *evmOffLedgerCallRequest) EVMCallMsg() *ethereum.CallMsg {
 }
 
 func (req *evmOffLedgerCallRequest) GasPrice() *big.Int {
-	return req.callMsg.GasPrice
+	return new(big.Int).Set(req.callMsg.GasPrice)
 }

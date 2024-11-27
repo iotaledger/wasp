@@ -75,7 +75,7 @@ func (e *VMErrorTemplate) Code() VMErrorCode {
 	return e.code
 }
 
-func (e *VMErrorTemplate) Create(params ...VMParam) *VMError {
+func (e *VMErrorTemplate) Create(params ...VMErrorParam) *VMError {
 	validateParams(params)
 	return &VMError{
 		template: e,
@@ -95,8 +95,8 @@ func (e *VMErrorTemplate) MessageFormat() string {
 }
 
 type UnresolvedVMError struct {
-	ErrorCode VMErrorCode `json:"code"`
-	Params    []VMParam   `json:"params"`
+	ErrorCode VMErrorCode    `json:"code"`
+	Params    []VMErrorParam `json:"params"`
 }
 
 var _ VMErrorBase = &UnresolvedVMError{}
@@ -140,7 +140,7 @@ func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
 	}
 }
 
-func humanlyReadableParams(params []VMParam) []string {
+func humanlyReadableParams(params []VMErrorParam) []string {
 	res := make([]string, len(params))
 	for i, param := range params {
 		res[i] = fmt.Sprintf("%v:%s", param, reflect.TypeOf(param).String())
@@ -150,7 +150,7 @@ func humanlyReadableParams(params []VMParam) []string {
 
 type VMError struct {
 	template *VMErrorTemplate `bcs:"export"`
-	params   []VMParam        `bcs:"export"`
+	params   []VMErrorParam   `bcs:"export"`
 }
 
 var _ VMErrorBase = &VMError{}
@@ -187,7 +187,7 @@ func (e *VMError) Error() string {
 		return ""
 	}
 
-	anyArr := lo.Map(e.params, func(p VMParam, _ int) any { return p })
+	anyArr := lo.Map(e.params, func(p VMErrorParam, _ int) any { return p })
 
 	return fmt.Sprintf(e.MessageFormat(), anyArr...)
 }
@@ -196,7 +196,7 @@ func (e *VMError) MessageFormat() string {
 	return e.template.messageFormat
 }
 
-func (e *VMError) Params() []VMParam {
+func (e *VMError) Params() []VMErrorParam {
 	return e.params
 }
 
@@ -226,7 +226,7 @@ func VMErrorMustBe(err error, expected VMErrorBase) {
 	}
 }
 
-func validateParams(params []VMParam) {
+func validateParams(params []VMErrorParam) {
 	if len(params) > 255 {
 		panic("params too long")
 	}
@@ -258,8 +258,8 @@ func validateParams(params []VMParam) {
 	}
 }
 
-type VMParam any
+type VMErrorParam any
 
 func init() {
-	bcs.RegisterEnumType9[VMParam, int8, uint8, int16, uint16, int32, uint32, int64, uint64, string]()
+	bcs.RegisterEnumType9[VMErrorParam, int8, uint8, int16, uint16, int32, uint32, int64, uint64, string]()
 }

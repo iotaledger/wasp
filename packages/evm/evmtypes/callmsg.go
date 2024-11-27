@@ -14,7 +14,7 @@ func init() {
 		e.Encode(msg.From)
 		e.EncodeOptional(msg.To)
 		e.WriteCompactUint(msg.Gas)
-		e.Encode(msg.Value)
+		e.EncodeOptional(msg.Value)
 		e.Encode(msg.Data)
 
 		return e.Err()
@@ -24,7 +24,7 @@ func init() {
 		d.Decode(&msg.From)
 		d.DecodeOptional(&msg.To)
 		msg.Gas = d.ReadCompactUint()
-		d.Decode(&msg.Value)
+		d.DecodeOptional(&msg.Value)
 		d.Decode(&msg.Data)
 
 		return d.Err()

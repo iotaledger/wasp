@@ -131,7 +131,7 @@ func (reqctx *requestContext) txGasPrice() *big.Int {
 	if callMsg.GasPrice == nil {
 		return big.NewInt(0)
 	}
-	return callMsg.GasPrice
+	return new(big.Int).Set(callMsg.GasPrice)
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance

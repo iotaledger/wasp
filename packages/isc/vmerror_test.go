@@ -16,18 +16,18 @@ func TestVMErrorCodeSerialization(t *testing.T) {
 
 	bcs.TestCodec(t, isc.UnresolvedVMError{
 		ErrorCode: blocklog.ErrBlockNotFound.Code(),
-		Params:    []isc.VMParam{int32(1), int8(2), "string"},
+		Params:    []isc.VMErrorParam{int32(1), int8(2), "string"},
 	})
 }
 
 func TestVMParamCodec(t *testing.T) {
-	bcs.TestCodec(t, isc.VMParam(int8(123)))
-	bcs.TestCodec(t, isc.VMParam(int16(123)))
-	bcs.TestCodec(t, isc.VMParam(int32(123)))
-	bcs.TestCodec(t, isc.VMParam(int64(123)))
-	bcs.TestCodec(t, isc.VMParam(uint8(123)))
-	bcs.TestCodec(t, isc.VMParam(uint16(123)))
-	bcs.TestCodec(t, isc.VMParam(uint32(123)))
-	bcs.TestCodec(t, isc.VMParam(uint64(123)))
-	bcs.TestCodec(t, isc.VMParam("string"))
+	bcs.TestCodec(t, isc.VMErrorParam(int8(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(int16(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(int32(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(int64(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(uint8(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(uint16(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(uint32(123)))
+	bcs.TestCodec(t, isc.VMErrorParam(uint64(123)))
+	bcs.TestCodec(t, isc.VMErrorParam("string"))
 }

@@ -29,7 +29,7 @@ func (c *Client) FindCoinsForGasPayment(
 	}
 	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
 		coinPage.Data,
-		gasBudget*gasPrice,
+		gasBudget,
 		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
 	)
 	return gasPayments.CoinRefs(), err
@@ -160,8 +160,17 @@ func (c *Client) GetPastAnchorFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
-	if getObjectResponse.Data.VersionFound == nil {
-		return nil, fmt.Errorf("failed to get anchor content")
+	if getObjectResponse.Data.ObjectDeleted != nil {
+		return nil, fmt.Errorf("failed to get anchor content: deleted")
+	}
+	if getObjectResponse.Data.ObjectNotExists != nil {
+		return nil, fmt.Errorf("failed to get anchor content: object does not exist")
+	}
+	if getObjectResponse.Data.VersionNotFound != nil {
+		return nil, fmt.Errorf("failed to get anchor content: version not found")
+	}
+	if getObjectResponse.Data.VersionTooHigh != nil {
+		return nil, fmt.Errorf("failed to get anchor content: version too high")
 	}
 	return decodeAnchorBCS(
 		getObjectResponse.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes,

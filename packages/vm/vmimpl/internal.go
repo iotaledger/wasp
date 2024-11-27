@@ -152,6 +152,8 @@ func (reqctx *requestContext) writeReceiptToBlockLog(vmError *isc.VMError) *bloc
 		GasBurned:     reqctx.gas.burned,
 		GasFeeCharged: reqctx.gas.feeCharged,
 		GasBurnLog:    reqctx.gas.burnLog,
+		BlockIndex:    reqctx.vm.stateDraft.BlockIndex(),
+		RequestIndex:  reqctx.requestEventIndex,
 	}
 
 	if vmError != nil {
