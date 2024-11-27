@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -45,10 +46,24 @@ func TestReceiptCodecEVM(t *testing.T) {
 	)
 	ethKey := lo.Must(crypto.GenerateKey())
 	tx := lo.Must(types.SignTx(unsignedTx, evmutil.Signer(big.NewInt(int64(42))), ethKey))
-	bcs.TestCodec(t, blocklog.RequestReceipt{
+
+	rec := blocklog.RequestReceipt{
 		Request: lo.Must(isc.NewEVMOffLedgerTxRequest(
 			isctest.RandomChainID(),
 			tx,
 		)),
-	})
+	}
+
+	recEnc := bcs.MustMarshal(&rec)
+	recDec := bcs.MustUnmarshal[blocklog.RequestReceipt](recEnc)
+
+	// We can't compare the receipts directly because go-ethereum Transaction
+	// contains unexporeted time field, which changes internally after RPL encode/decode.
+	// So instead we compare string representantion of requests.
+	reqStr := rec.Request.String()
+	reqDecStr := recDec.Request.String()
+	require.Equal(t, reqStr, reqDecStr)
+	rec.Request = nil
+	recDec.Request = nil
+	require.Equal(t, rec, recDec)
 }
