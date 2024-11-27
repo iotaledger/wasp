@@ -127,7 +127,7 @@ func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (i
 		return nil, err
 	}
 	return chainutil.CallView(
-		latestAnchor,
+		latestAnchor.ChainID(),
 		chainState,
 		b.chain.Processors(),
 		b.chain.Log(),

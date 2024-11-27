@@ -33,7 +33,7 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		&state.L1Commitment{}, // FIXME properly set trieRoot, blockHash
-		iotago.ObjectID{},
+		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		initParams,
 		"http://url",

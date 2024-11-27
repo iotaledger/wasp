@@ -1,8 +1,9 @@
 package transaction_test
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -16,7 +17,7 @@ func TestStateMetadataSerialization(t *testing.T) {
 	s := transaction.NewStateMetadata(
 		1,
 		state.NewPseudoRandL1Commitment(),
-		iotago.ObjectID{},
+		&iotago.ObjectID{},
 		&gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
