@@ -765,6 +765,11 @@ func (d *Decoder) decodeInterface(v reflect.Value, couldBeEnum bool) error {
 	e := v.Elem()
 
 	if e.Kind() == reflect.Ptr {
+		if e.IsNil() {
+			v.Set(reflect.New(e.Type().Elem()))
+			e = v.Elem()
+		}
+
 		return d.decodeValue(e, nil, nil)
 	}
 
