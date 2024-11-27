@@ -258,6 +258,16 @@ func TestMultiPtrCodec(t *testing.T) {
 	require.Equal(t, v, ***vDec)
 }
 
+func TestPtrWrapperInInterface(t *testing.T) {
+	var infVal any = "hello"
+	infEnc := bcs.MustMarshal(&infVal)
+
+	// Checking case when interface has underlaying ptr value
+	var decDestination any = (*string)(nil)
+	bcs.MustUnmarshalInto(infEnc, &decDestination)
+	require.Equal(t, infVal, *decDestination.(*string))
+}
+
 func TestStringCodec(t *testing.T) {
 	bcs.TestCodecAndBytesVsRef(t, "", []byte{0x0})
 	bcs.TestCodecAndBytesVsRef(t, "qwerty", []byte{0x6, 0x71, 0x77, 0x65, 0x72, 0x74, 0x79})
