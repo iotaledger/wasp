@@ -56,7 +56,9 @@ func (tr *testRound) StatusString() string {
 }
 
 func (tr *testRound) UnmarshalMessage(data []byte) (Message, error) {
-	panic(errors.New("not implemented"))
+	return UnmarshalMessage(data, Mapper{
+		msgTypeTestRound: func() Message { return new(testRoundMsg) },
+	})
 }
 
 type testRoundMsg struct {
