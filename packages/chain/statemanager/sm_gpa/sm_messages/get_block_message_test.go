@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/statetest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -23,7 +23,7 @@ func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {
 func TestGetBlockMessageSerialization(t *testing.T) {
 	msg := &GetBlockMessage{
 		gpa.BasicMessage{},
-		state.NewPseudoRandL1Commitment(),
+		statetest.NewRandL1Commitment(),
 	}
 
 	bcs.TestCodec(t, msg)

@@ -102,8 +102,6 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		},
 	)
 	require.NoError(tcl.t, err)
-	gasCoin, err = tcl.l1client.UpdateObjectRef(context.Background(), gasCoin)
-	require.NoError(tcl.t, err)
 	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
 	require.NotNil(tcl.t, stateAnchor)
 	tcl.chainID = stateAnchor.ChainID()
