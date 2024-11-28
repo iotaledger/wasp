@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -408,11 +409,9 @@ func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
 		uint64(stateIndex),
 	)
 	require.NoError(ch.Env.T, err)
-	return &isc.StateAnchor{
-		Anchor:     anchor,
-		Owner:      ch.OriginatorAddress,
-		ISCPackage: ch.Env.ISCPackageID(),
-	}
+
+	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
+	return &stateAnchor
 }
 
 func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
@@ -421,16 +420,14 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 		ch.ChainID.AsAddress().AsIotaAddress(),
 	)
 	require.NoError(ch.Env.T, err)
-	return &isc.StateAnchor{
-		Anchor:     anchor,
-		Owner:      ch.OriginatorAddress,
-		ISCPackage: ch.Env.ISCPackageID(),
-	}
+
+	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
+	return &stateAnchor
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 	anchor := ch.GetLatestAnchor()
-	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.Anchor.Object.Assets.ID)
+	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.Anchor().Object.Assets.ID)
 	require.NoError(ch.Env.T, err)
 	return anchor, lo.Must(isc.AssetsFromAssetsBagWithBalances(bals))
 }

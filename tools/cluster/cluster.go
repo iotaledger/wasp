@@ -27,6 +27,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -297,7 +298,6 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			Prefix:            "[cluster] ",
 			StateMetadata:     stateMetaData,
 		},
-		stateAddr,
 		stateAddr,
 	)
 	if err != nil {
