@@ -15,6 +15,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -187,7 +188,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 type anchorKey = string
 
 func anchorKeyFromAnchor(anchor *isc.StateAnchor) anchorKey {
-	return anchor.Anchor.ObjectRef.String()
+	return anchor.Anchor().ObjectRef.String()
 }
 
 func anchorKeyFromAnchorRef(objectRef *iotago.ObjectRef) anchorKey {
