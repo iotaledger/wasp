@@ -190,8 +190,8 @@ func (tcl *TestChainLedger) UpdateAnchor(anchor *isc.StateAnchor) (*isc.StateAnc
 	if err != nil {
 		return nil, err
 	}
-	anchor.Anchor = anchorWithRef
-	return anchor, nil
+	stateAnchor := isc.NewStateAnchor(anchorWithRef, anchor.ISCPackage())
+	return &stateAnchor, nil
 }
 
 func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitteeAddr *cryptolib.Address) *isc.StateAnchor {
