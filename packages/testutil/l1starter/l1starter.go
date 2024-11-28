@@ -59,6 +59,14 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func TestInSingleTestFunc(t *testing.T) {
+	flag.Parse()
+	iotaNode := Start(context.Background(), DefaultConfig)
+	t.Cleanup(func() {
+		iotaNode.Stop()
+	})
+}
+
 func ISCPackageID() iotago.PackageID {
 	return Instance().ISCPackageID
 }

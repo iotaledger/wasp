@@ -732,6 +732,7 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000}},
 			GasBudget: 100000,
 		},
+		Owner: sender.AsIotaAddress(),
 	}
 	onReq, err := isc.OnLedgerFromRequest(&req, sender)
 	if err != nil {
