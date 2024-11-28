@@ -9,7 +9,7 @@ import (
 
 type msgDone struct {
 	gpa.BasicMessage
-	round int `bcs:"type=u16"`
+	round int `bcs:"type=u16,export"`
 }
 
 var _ gpa.Message = new(msgDone)

@@ -373,6 +373,10 @@ func NewStateAnchor(
 	anchor *iscmove.AnchorWithRef,
 	iscPackage iotago.Address,
 ) StateAnchor {
+	if anchor.Owner == nil {
+		// TODO: Review if this is a hack or a way to go.
+		anchor.Owner = owner.AsIotaAddress()
+	}
 	return StateAnchor{
 		anchor:     anchor,
 		iscPackage: iscPackage,
