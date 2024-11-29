@@ -242,8 +242,8 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultCommonAccountBaseTokens   = 5 * isc.Million
-	DefaultChainOriginatorBaseTokens = 5 * isc.Million
+	DefaultCommonAccountBaseTokens   = 50 * isc.Million
+	DefaultChainOriginatorBaseTokens = 50 * isc.Million
 )
 
 // NewChain deploys new default chain instance.
