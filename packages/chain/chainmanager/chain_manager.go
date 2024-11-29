@@ -536,10 +536,6 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
-	if cmi.output.LatestConfirmedAliasOutput() == nil || cmi.output.LatestActiveAliasOutput() == nil {
-		return ""
-	}
-
 	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
 		cmi.output.LatestConfirmedAliasOutput().GetObjectID().String(),
 		cmi.output.LatestActiveAliasOutput().GetObjectID().String(),
