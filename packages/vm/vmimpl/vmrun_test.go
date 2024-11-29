@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -89,16 +90,17 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 			Size: 1,
 		},
 	}
-	return &isc.StateAnchor{
-		Anchor: &iscmove.AnchorWithRef{
-			ObjectRef: iotago.ObjectRef{
-				ObjectID: &anchor.ID,
-				Version:  0,
-			},
-			Object: &anchor,
+
+	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		ObjectRef: iotago.ObjectRef{
+			ObjectID: &anchor.ID,
+			Version:  0,
 		},
-		Owner: chainCreator.Address(),
-	}
+		Object: &anchor,
+		Owner:  chainCreator.Address().AsIotaAddress(),
+	}, iotago.ObjectID{})
+
+	return &stateAnchor
 }
 
 // makeOnLedgerRequest creates a fake OnLedgerRequest
@@ -150,9 +152,9 @@ func transitionAnchor(
 	store indexedstore.IndexedStore,
 	block state.Block,
 ) *isc.StateAnchor {
-	require.EqualValues(t, anchor.Anchor.Version+1, block.StateIndex())
+	require.EqualValues(t, anchor.Anchor().Version+1, block.StateIndex())
 
-	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(anchor.Anchor.Object.StateMetadata))
+	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(anchor.Anchor().Object.StateMetadata))
 
 	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
 	chainInfo := governance.NewStateReaderFromChainState(state).
@@ -168,24 +170,25 @@ func transitionAnchor(
 		stateMetadata.InitParams,
 		chainInfo.PublicURL,
 	)
-	return &isc.StateAnchor{
-		Anchor: &iscmove.AnchorWithRef{
-			ObjectRef: iotago.ObjectRef{
-				ObjectID: anchor.Anchor.ObjectID,
-				Version:  anchor.Anchor.Version + 1,
-			},
-			Object: &iscmove.Anchor{
-				ID: *anchor.Anchor.ObjectID,
-				Assets: iscmove.AssetsBag{
-					ID:   anchor.Anchor.Object.Assets.ID,
-					Size: uint64(len(allCoinBalances)),
-				},
-				StateMetadata: newStateMetadata.Bytes(),
-				StateIndex:    block.StateIndex(),
-			},
+
+	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		ObjectRef: iotago.ObjectRef{
+			ObjectID: anchor.Anchor().ObjectID,
+			Version:  anchor.Anchor().Version + 1,
 		},
-		Owner: anchor.Owner,
-	}
+		Object: &iscmove.Anchor{
+			ID: *anchor.Anchor().ObjectID,
+			Assets: iscmove.AssetsBag{
+				ID:   anchor.Anchor().Object.Assets.ID,
+				Size: uint64(len(allCoinBalances)),
+			},
+			StateMetadata: newStateMetadata.Bytes(),
+			StateIndex:    block.StateIndex(),
+		},
+		Owner: anchor.Owner().AsIotaAddress(),
+	}, iotago.ObjectID{})
+
+	return &stateAnchor
 }
 
 func runRequestsAndTransitionAnchor(
@@ -253,7 +256,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 		store,
 		[]isc.Request{req},
 	)
-	require.Equal(t, block.StateIndex(), nextAnchor.Anchor.Object.StateIndex)
+	require.Equal(t, block.StateIndex(), nextAnchor.Anchor().Object.StateIndex)
 
 	{
 		state := lo.Must(store.LatestState())

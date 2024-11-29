@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -20,7 +22,7 @@ import (
 )
 
 type cmtLogTestRapidSM struct {
-	aliasID         iotago.AliasID
+	anchorRef       iotago.ObjectRef
 	chainID         isc.ChainID
 	governorAddress *cryptolib.Address
 	stateAddress    *cryptolib.Address
@@ -40,8 +42,8 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 	log := testlogger.NewLogger(t)
 	//
 	// Chain identifiers.
-	sm.aliasID = testiotago.RandAliasID()
-	sm.chainID = isc.ChainIDFromAliasID(sm.aliasID)
+	sm.anchorRef = *iotatest.RandomObjectRef()
+	sm.chainID = isc.ChainIDFromObjectID(*sm.anchorRef.ObjectID)
 	sm.governorAddress = cryptolib.NewKeyPair().Address()
 	//
 	// Node identities.
@@ -83,16 +85,16 @@ func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.State
 	sm.genAOSerial++
 	var outputID iotago.ObjectID // TODO -> ObjectRef
 	binary.BigEndian.PutUint32(outputID[:], sm.genAOSerial)
-	aliasOutput := &iotago.AliasOutput{
-		AliasID:       sm.aliasID,
-		StateIndex:    stateIndex,
-		StateMetadata: []byte{},
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: sm.stateAddress.AsIotagoAddress()},
-			&iotago.GovernorAddressUnlockCondition{Address: sm.governorAddress.AsIotagoAddress()},
-		},
-	}
-	return isc.NewAliasOutputWithID(aliasOutput, outputID)
+
+	anchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &[]byte{}, StateIndex: &stateIndex})
+	stateAnchor := isc.NewStateAnchor(
+		&iscmove.AnchorWithRef{
+			Object:    &anchor,
+			ObjectRef: sm.anchorRef,
+			Owner:     sm.stateAddress.AsIotaAddress(),
+		}, *cryptolib.NewRandomAddress().AsIotaAddress())
+
+	return &stateAnchor
 }
 
 // func (sm *cmtLogTestRapidSM) ConsDone(t *rapid.T) {

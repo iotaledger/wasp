@@ -6,7 +6,6 @@ package cons_gr_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -40,13 +40,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func TestMain(m *testing.M) {
-	l1starter.TestMain(m)
-	os.Exit(m.Run())
-}
-
 func TestGrBasic(t *testing.T) {
-	t.Parallel()
+	l1starter.TestInSingleTestFunc(t)
+
 	type test struct {
 		n        int
 		f        int
@@ -66,22 +62,32 @@ func TestGrBasic(t *testing.T) {
 			test{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
 		)
 	}
+
+	t.Parallel()
+
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testGrBasic(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) {
+				testGrBasic(tt, tst.n, tst.f, tst.reliable)
+			},
 		)
 	}
+
 }
 
 func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
+
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
+
 	//
 	// Create ledger accounts.
 	originator := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(context.TODO(), originator.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 
 	//
@@ -117,9 +123,6 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
 	})
-
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	defer ctxCancel()
 
 	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
@@ -189,7 +192,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 type anchorKey = string
 
 func anchorKeyFromAnchor(anchor *isc.StateAnchor) anchorKey {
-	return anchor.Anchor.ObjectRef.String()
+	return anchor.GetObjectRef().String()
 }
 
 func anchorKeyFromAnchorRef(objectRef *iotago.ObjectRef) anchorKey {

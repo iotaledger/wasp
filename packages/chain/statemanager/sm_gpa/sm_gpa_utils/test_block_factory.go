@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
@@ -197,12 +198,12 @@ func (bfT *BlockFactory) GetNextBlock(
 
 	consumedAnchor := bfT.GetAnchor(commitment)
 	newAnchor := *consumedAnchor
-	consumedMetadata, err := transaction.StateMetadataFromBytes(consumedAnchor.Anchor.Object.StateMetadata)
+	consumedMetadata, err := transaction.StateMetadataFromBytes(consumedAnchor.Anchor().Object.StateMetadata)
 	require.NoError(bfT.t, err)
 	consumedMetadata.L1Commitment, err = state.NewL1CommitmentFromBytes(newCommitment.Bytes())
 	require.NoError(bfT.t, err)
-	newAnchor.Anchor.Object.StateIndex = newAnchor.Anchor.Object.StateIndex + 1
-	bfT.anchorData[newCommitment.BlockHash()] = *newAnchor.Anchor
+	newAnchor.Anchor().Object.StateIndex = newAnchor.Anchor().Object.StateIndex + 1
+	bfT.anchorData[newCommitment.BlockHash()] = *newAnchor.Anchor()
 
 	return block
 }
@@ -222,9 +223,7 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *isc.StateAnc
 	anchor, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
 
-	return &isc.StateAnchor{
-		Anchor:     &anchor,
-		Owner:      nil,                               //FIXME
-		ISCPackage: *iotago.MustAddressFromHex("0x0"), //FIXME,
-	}
+	stateAnchor := isc.NewStateAnchor(&anchor, *iotago.MustAddressFromHex("0x0")) //FIXME,
+
+	return &stateAnchor
 }

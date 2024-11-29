@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -120,7 +121,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
+	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
 
 	for _, req := range reqs {
@@ -148,7 +149,7 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 			case <-ctx.Done():
 				return
 			case moveAnchor := <-anchorUpdates:
-				anchor := isc.NewStateAnchor(moveAnchor, cryptolib.NewAddressFromIota(moveAnchor.Owner), ncc.feed.GetISCPackageID())
+				anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
 			case req := <-newRequests:
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))

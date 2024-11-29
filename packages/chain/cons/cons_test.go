@@ -11,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -89,9 +90,9 @@ func testConsBasic(t *testing.T, n, f int) {
 	ao0 := &ao0x
 
 	reqs := []isc.Request{
-		RandomOnLedgerDepositRequest(ao0.Owner),
-		RandomOnLedgerDepositRequest(ao0.Owner),
-		RandomOnLedgerDepositRequest(ao0.Owner),
+		RandomOnLedgerDepositRequest(ao0.Owner()),
+		RandomOnLedgerDepositRequest(ao0.Owner()),
+		RandomOnLedgerDepositRequest(ao0.Owner()),
 	}
 	reqRefs := isc.RequestRefsFromRequests(reqs)
 
@@ -731,6 +732,7 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000}},
 			GasBudget: 100000,
 		},
+		Owner: sender.AsIotaAddress(),
 	}
 	onReq, err := isc.OnLedgerFromRequest(&req, sender)
 	if err != nil {

@@ -30,6 +30,7 @@ type CreateChainParams struct {
 	Textout              io.Writer
 	Prefix               string
 	StateMetadata        transaction.StateMetadata
+	GasCoinObjectID      *iotago.ObjectID
 	GovernanceController *cryptolib.Address
 	PackageID            iotago.PackageID
 }
@@ -54,7 +55,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 	}
 
 	var gasPayments []*iotago.ObjectRef
-	if par.StateMetadata.GasCoinObjectID != nil {
+	if par.GasCoinObjectID != nil {
 		resGetObj, err := par.Layer1Client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: par.StateMetadata.GasCoinObjectID})
 		if err != nil {
 			return isc.ChainID{}, err

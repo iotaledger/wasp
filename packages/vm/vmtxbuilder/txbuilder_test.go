@@ -47,7 +47,7 @@ func TestTxBuilderBasic(t *testing.T) {
 
 	selectedGasCoin := getCoinsRes.Data[0].Ref()
 
-	stateAnchor := isc.NewStateAnchor(anchor, chainSigner.Address(), iscPackage)
+	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -114,7 +114,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	selectedGasCoin := getCoinsRes.Data[2].Ref()
-	stateAnchor := isc.NewStateAnchor(anchor, chainSigner.Address(), iscPackage)
+	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
 	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
@@ -222,7 +222,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage1)
+	stateAnchor1 := isc.NewStateAnchor(anchor1, iscPackage1)
 	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor1, signer.Address())
 
 	req1 := createIscmoveReq(t, client, signer, iscPackage1, anchor1)
@@ -300,7 +300,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	crossChainRequestRef, err := txnResponse2.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
-	stateAnchor2 := isc.NewStateAnchor(anchor2, signer.Address(), iscPackage1)
+	stateAnchor2 := isc.NewStateAnchor(anchor2, iscPackage1)
 	txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor2, signer.Address())
 
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), crossChainRequestRef.ObjectID)

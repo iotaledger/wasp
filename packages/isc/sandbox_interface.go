@@ -360,9 +360,8 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	Anchor     *iscmove.AnchorWithRef
-	Owner      *cryptolib.Address
-	ISCPackage iotago.Address
+	anchor     *iscmove.AnchorWithRef
+	iscPackage iotago.Address
 }
 
 // Every time changing the L1 state of the Anchor object, the nodes should create
@@ -372,42 +371,78 @@ type StateAnchor struct {
 // * RotationTransaction
 func NewStateAnchor(
 	anchor *iscmove.AnchorWithRef,
-	owner *cryptolib.Address,
 	iscPackage iotago.Address,
 ) StateAnchor {
-	if anchor.Owner == nil {
-		// TODO: Review if this is a hack or a way to go.
-		anchor.Owner = owner.AsIotaAddress()
-	}
 	return StateAnchor{
-		Anchor:     anchor,
-		Owner:      owner,
-		ISCPackage: iscPackage,
+		anchor:     anchor,
+		iscPackage: iscPackage,
 	}
+}
+
+func (s *StateAnchor) MarshalBCS(e *bcs.Encoder) error {
+	err := e.Encode(s.anchor)
+	if err != nil {
+		return err
+	}
+
+	err = e.Encode(s.iscPackage)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StateAnchor) UnmarshalBCS(d *bcs.Decoder) error {
+	s.anchor = nil
+	err := d.Decode(&s.anchor)
+	if err != nil {
+		return err
+	}
+
+	s.iscPackage = iotago.Address{}
+	err = d.Decode(&s.iscPackage)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StateAnchor) ISCPackage() iotago.Address {
+	return s.iscPackage
+}
+
+func (s StateAnchor) Anchor() *iscmove.AnchorWithRef {
+	return s.anchor
+}
+
+func (s StateAnchor) Owner() *cryptolib.Address {
+	return cryptolib.NewAddressFromIota(s.anchor.Owner)
 }
 
 func (s StateAnchor) GetObjectRef() *iotago.ObjectRef {
-	return &s.Anchor.ObjectRef
+	return &s.anchor.ObjectRef
 }
 
 func (s StateAnchor) GetObjectID() *iotago.ObjectID {
-	return s.Anchor.ObjectID
+	return s.anchor.ObjectID
 }
 
 func (s StateAnchor) GetStateMetadata() []byte {
-	return s.Anchor.Object.StateMetadata
+	return s.anchor.Object.StateMetadata
 }
 
 func (s StateAnchor) GetStateIndex() uint32 {
-	return s.Anchor.Object.StateIndex
+	return s.anchor.Object.StateIndex
 }
 
 func (s StateAnchor) ChainID() ChainID {
-	return ChainIDFromObjectID(*s.Anchor.ObjectID)
+	return ChainIDFromObjectID(*s.anchor.ObjectID)
 }
 
 func (s StateAnchor) Hash() hashing.HashValue {
-	return s.Anchor.Hash()
+	return s.anchor.Hash()
 }
 
 func (s StateAnchor) Equals(input *StateAnchor) bool {
@@ -415,7 +450,7 @@ func (s StateAnchor) Equals(input *StateAnchor) bool {
 		return false
 	}
 
-	return iscmove.AnchorWithRefEquals(*s.Anchor, *input.Anchor)
+	return iscmove.AnchorWithRefEquals(*s.anchor, *input.Anchor())
 }
 
 type SendOptions struct {

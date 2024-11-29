@@ -89,7 +89,7 @@ func TestCreateOrigin(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	oriAnchor := isc.NewStateAnchor(anchorRef, stateSigner.Address(), l1starter.ISCPackageID())
+	oriAnchor := isc.NewStateAnchor(anchorRef, l1starter.ISCPackageID())
 	require.NotNil(t, oriAnchor)
 	anchor, err := client.GetAnchorFromObjectID(context.TODO(), oriAnchor.GetObjectID())
 	require.NoError(t, err)
