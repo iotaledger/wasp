@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -118,20 +119,40 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
 	incCount := 10
-	incRequests := make([]isc.Request, incCount)
+	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
+
 	for i := 0; i < incCount; i++ {
-		scRequest := isc.NewOffLedgerRequest(
-			te.chainID,
-			inccounter.FuncIncCounter.Message(nil),
-			uint64(i),
-			2000000,
-		).Sign(scClient)
-		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
-		incRequests[i] = scRequest
+		ref := iotatest.RandomObjectRef()
+
+		scRequest := iscmove.Request{
+			ID:        *ref.ObjectID,
+			Message:   iscmove.Message{},
+			AssetsBag: iscmove.AssetsBagWithBalances{},
+			Sender:    scClient.Address(),
+			Allowance: iscmove.Assets{},
+			GasBudget: 0,
+		}
+
+		incRequests[i] = iscmove.RefWithObject[iscmove.Request]{
+			Owner:     scClient.Address().AsIotaAddress(),
+			Object:    &scRequest,
+			ObjectRef: *ref,
+		}
 	}
 
-	// Check if all requests were processed.
-	awaitRequestsProcessed(ctxTimeout, te, incRequests, "incRequests")
+	collectedRequests := make([]isc.Request, 0)
+	for _, tnc := range te.nodeConns {
+		for _, req := range incRequests {
+			onLedgerRequest, err := isc.OnLedgerFromRequest(&req, tnc.chainID.AsAddress())
+			require.NoError(t, err)
+			collectedRequests = append(collectedRequests, onLedgerRequest)
+			tnc.recvRequest(
+				onLedgerRequest,
+			)
+		}
+	}
+
+	awaitRequestsProcessed(ctxTimeout, te, collectedRequests, "incRequests")
 
 	// assert state
 	for i, node := range te.nodes {
@@ -289,7 +310,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	res, err := tnc.l1Client.ExecuteTransactionBlock(context.Background(), iotaclient.ExecuteTransactionBlockRequest{
+	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotaclient.ExecuteTransactionBlockRequest{
 		TxDataBytes: txBytes,
 		Signatures:  tx.Signatures,
 		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
@@ -303,7 +324,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	anchor, err := tnc.l2Client.GetAnchorFromObjectID(context.Background(), anchorRef.ObjectID)
+	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
 	if err != nil {
 		return err
 	}
