@@ -1,4 +1,4 @@
-package state
+package state_test
 
 import (
 	"testing"
@@ -9,11 +9,12 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
 )
 
 type stateSM struct {
-	store Store
-	draft StateDraft
+	store state.Store
+	draft state.StateDraft
 	model kvstore.KVStore
 }
 
@@ -22,7 +23,7 @@ var _ rapid.StateMachine = &stateSM{}
 // State Machine initialization.
 func newStateSM() *stateSM {
 	sm := new(stateSM)
-	sm.store = NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	sm.store = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
 	sm.model = mapdb.NewMapDB()
 	return sm
@@ -100,7 +101,7 @@ func TestRapid(t *testing.T) {
 
 func TestRapidReproduced(t *testing.T) {
 	var err error
-	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})
@@ -124,7 +125,7 @@ func TestRapidReproduced(t *testing.T) {
 }
 
 func TestRapidReproduced2(t *testing.T) {
-	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})

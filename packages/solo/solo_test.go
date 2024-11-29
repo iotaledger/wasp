@@ -1,10 +1,11 @@
-package solo
+package solo_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
@@ -13,11 +14,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestSoloBasic1(t *testing.T) {
-	env := New(t, &InitOptions{Debug: true, PrintStackTrace: true})
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain(false)
-	require.EqualValues(env.T, DefaultCommonAccountBaseTokens, ch.L2CommonAccountAssets().Coins.BaseTokens())
+	require.EqualValues(env.T, solo.DefaultCommonAccountBaseTokens, ch.L2CommonAccountAssets().Coins.BaseTokens())
 
-	err := ch.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, nil)
+	err := ch.DepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
 	require.NoError(env.T, err)
-	require.EqualValues(env.T, DefaultChainOriginatorBaseTokens, ch.L2BaseTokens(ch.OriginatorAgentID))
+	require.EqualValues(env.T, solo.DefaultChainOriginatorBaseTokens, ch.L2BaseTokens(ch.OriginatorAgentID))
 }

@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -21,8 +24,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"math/big"
-	"testing"
 )
 
 var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
@@ -58,16 +59,18 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 			Size: 1,
 		},
 	}
-	return &isc.StateAnchor{
-		Anchor: &iscmove.AnchorWithRef{
+	stateAnchor := isc.NewStateAnchor(
+		&iscmove.AnchorWithRef{
 			ObjectRef: iotago.ObjectRef{
 				ObjectID: &anchor.ID,
 				Version:  0,
 			},
 			Object: &anchor,
 		},
-		Owner: chainCreator.Address(),
-	}
+		*chainCreator.Address().AsIotaAddress(),
+	)
+	return &stateAnchor
+
 }
 
 func TestEVMCall(t *testing.T) {

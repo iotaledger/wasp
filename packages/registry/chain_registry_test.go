@@ -1,24 +1,25 @@
-package registry
+package registry_test
 
 import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewChainStateDatabaseManager(t *testing.T) {
-	chainRecordRegistry, err := NewChainRecordRegistryImpl("")
+	chainRecordRegistry, err := registry.NewChainRecordRegistryImpl("")
 	require.NoError(t, err)
 
 	chainID := isctest.RandomChainID()
 
-	err = chainRecordRegistry.AddChainRecord(NewChainRecord(chainID, false, nil))
+	err = chainRecordRegistry.AddChainRecord(registry.NewChainRecord(chainID, false, nil))
 	require.NoError(t, err)
 
 	modified := false
 	active := false
-	chainRecordModified := func(ev *ChainRecordModifiedEvent) {
+	chainRecordModified := func(ev *registry.ChainRecordModifiedEvent) {
 		modified = true
 		active = ev.ChainRecord.Active
 	}
