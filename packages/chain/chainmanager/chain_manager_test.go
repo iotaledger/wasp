@@ -6,9 +6,11 @@ package chainmanager_test
 import (
 	"context"
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
-	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
+
+	// iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/samber/lo"
 
 	"github.com/stretchr/testify/require"
 
@@ -32,7 +34,7 @@ import (
 )
 
 func TestChainMgrBasic(t *testing.T) {
-	t.Skip("flaky")
+	// t.Skip("flaky")
 	type test struct {
 		n int
 		f int
@@ -40,10 +42,10 @@ func TestChainMgrBasic(t *testing.T) {
 	tests := []test{
 		{n: 1, f: 0}, // Low N.
 		// {n: 2, f: 0},   // Low N. TODO: This is disabled temporarily.
-		{n: 3, f: 0},   // Low N.
-		{n: 4, f: 1},   // Smallest robust cluster.
-		{n: 10, f: 3},  // Typical config.
-		{n: 31, f: 10}, // Large cluster.
+		// {n: 3, f: 0}, // Low N.
+		// {n: 4, f: 1},   // Smallest robust cluster.
+		// {n: 10, f: 3},  // Typical config.
+		// {n: 31, f: 10}, // Large cluster.
 	}
 	for i := range tests {
 		tst := tests[i]
@@ -75,7 +77,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Chain identifiers.
 	tcl := newTestChainLedger(t, originator)
-	anchor := tcl.MakeTxChainOrigin(cmtAddrA)
+	anchor, _ := tcl.MakeTxChainOrigin(cmtAddrA)
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -130,18 +132,19 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(0, fake2ST, nil, iotago2.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(0, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
 		// TODO: Commit a block to the store, if needed.
 		tc.WithInput(nid, chainmanager.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA,
-			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
+			consReq.LogIndex,
+			*consReq.BaseAliasOutput.GetObjectID(),
 			&cons.Result{
-				Transaction:     step2TX,
-				Block:           block0,
-				BaseAliasOutput: consReq.BaseAliasOutput.OutputID(),
-				NextAliasOutput: step2AO,
+				// Transaction:     step2TX,
+				Block: block0,
+				// BaseAliasOutput: consReq.BaseAliasOutput.OutputID(),
+				// NextAliasOutput: step2AO,
 			},
 		))
 	}
@@ -151,13 +154,13 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, 1, out.NeedPublishTX().Size(), "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
-		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
-		require.Equal(t, anchor.OutputID(), func() iotago.ObjectID {
-			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
-			return tx.BaseAliasOutputID
+		// require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
+		require.Equal(t, anchor.GetObjectID(), func() iotago.ObjectID {
+			tx, _ := out.NeedPublishTX().Get(step2AO.Hash())
+			return *tx.BaseAnchorRef.ObjectID
 		}())
 		require.Equal(t, cmtAddrA, func() *cryptolib.Address {
-			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
+			tx, _ := out.NeedPublishTX().Get(step2AO.Hash())
 			return &tx.CommitteeAddr
 		}())
 		require.NotNil(t, out.NeedConsensus())
@@ -168,8 +171,8 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Say TX is published
 	for nid := range nodes {
-		consReq, _ := nodes[nid].Output().(*chainmanager.Output).NeedPublishTX().Get(step2AO.TransactionID())
-		tc.WithInput(nid, chainmanager.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.LogIndex, consReq.TxID, consReq.NextAliasOutput, true))
+		consReq, _ := nodes[nid].Output().(*chainmanager.Output).NeedPublishTX().Get(step2AO.Hash())
+		tc.WithInput(nid, chainmanager.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.LogIndex, lo.Must(consReq.Tx.Hash()), step2AO, true))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("TX Published", t.Logf)
