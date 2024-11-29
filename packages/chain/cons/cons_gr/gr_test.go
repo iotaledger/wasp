@@ -5,7 +5,6 @@ package cons_gr_test
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"sync"
 	"testing"
@@ -42,7 +41,6 @@ import (
 )
 
 func TestGrBasic(t *testing.T) {
-	flag.Parse()
 	l1starter.TestInSingleTestFunc(t)
 
 	type test struct {
