@@ -120,7 +120,6 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
 		stateMetadata,
-		// txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GasCoin}),
 		topUpAmount,
 	)
 	return ptb.Finish()

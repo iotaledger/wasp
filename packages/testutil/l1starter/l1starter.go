@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"syscall"
 	"testing"
@@ -52,20 +53,36 @@ func Instance() *IotaNode {
 	return in
 }
 
+var (
+	iotaNode   *IotaNode
+	serverOnce sync.Once
+)
+
+func getIotaNode() *IotaNode {
+	serverOnce.Do(func() {
+		iotaNode = Start(context.Background(), DefaultConfig)
+	})
+	return iotaNode
+}
+
 func TestMain(m *testing.M) {
 	flag.Parse()
-	iotaNode := Start(context.Background(), DefaultConfig)
-	defer iotaNode.Stop()
+	getIotaNode()
 	m.Run()
 }
 
-func TestInSingleTestFunc(t *testing.T) *IotaNode {
-	flag.Parse()
-	iotaNode := Start(context.Background(), DefaultConfig)
-	t.Cleanup(func() {
-		iotaNode.Stop()
-	})
-	return iotaNode
+func SingleTest(t *testing.T) {
+	if iotaNode == nil {
+		flag.Parse()
+		getIotaNode()
+	}
+
+	/*
+		TODO: Find better solution than this, because it wont work with multiple tests.
+		Maybe just dont worry, IOTA Node will be killed when all tests are done regardless, just not as gentle.
+		t.Cleanup(func() {
+			iotaNode.Stop()
+		})*/
 }
 
 func ISCPackageID() iotago.PackageID {
@@ -142,6 +159,7 @@ func (in *IotaNode) execCmd() {
 		fmt.Sprintf("--epoch-duration-ms=%d", 60000),
 		fmt.Sprintf("--fullnode-rpc-port=%d", in.Config.RPCPort),
 		fmt.Sprintf("--with-faucet=%d", in.Config.FaucetPort),
+		fmt.Sprintf("--faucet-amount=%d", iotaclient.FundsFromFaucetAmount), // We need a lot. For now.
 	)
 
 	// also kill the iotago process if the go process dies
@@ -150,6 +168,7 @@ func (in *IotaNode) execCmd() {
 	testValidatorCmd.Env = os.Environ()
 	in.Cmd = testValidatorCmd
 	in.redirectOutput()
+
 	lo.Must0(testValidatorCmd.Start())
 }
 

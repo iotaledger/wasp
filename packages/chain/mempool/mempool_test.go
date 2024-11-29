@@ -52,7 +52,7 @@ type tc struct {
 }
 
 func TestMempoolBasic(t *testing.T) {
-	l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 
 	t.Parallel()
 	tests := []tc{

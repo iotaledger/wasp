@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -242,8 +243,8 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultCommonAccountBaseTokens   = 50 * isc.Million
-	DefaultChainOriginatorBaseTokens = 50 * isc.Million
+	DefaultCommonAccountBaseTokens   = 100 * isc.Million
+	DefaultChainOriginatorBaseTokens = 100 * isc.Million
 )
 
 // NewChain deploys new default chain instance.
@@ -251,7 +252,7 @@ func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, nil)
+		err := ret.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, ret.OriginatorPrivateKey)
 		require.NoError(env.T, err)
 	}
 	return ret
@@ -277,6 +278,7 @@ func (env *Solo) deployChain(
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
 		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
+		env.GetFundsFromFaucet(originatorAddr)
 		env.GetFundsFromFaucet(originatorAddr)
 	}
 
@@ -648,9 +650,13 @@ func (env *Solo) executePTB(
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowEffects:       true,
 				ShowObjectChanges: true,
+				ShowEvents:        true,
 			},
 		},
 	)
+	env.T.Logf("%v", execRes.Digest.String())
+	fmt.Printf("%v", execRes.Digest.String())
+
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes
