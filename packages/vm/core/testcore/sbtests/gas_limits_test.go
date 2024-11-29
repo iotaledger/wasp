@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -46,6 +47,8 @@ func TestBlockGasOverflow(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
+
+	l1starter.TestInSingleTestFunc(t)
 
 	// queue many transactions with enough gas to fill a block, assert that they are split across blocks
 	_, ch := setupChain(t, nil)
