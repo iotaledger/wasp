@@ -73,7 +73,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	gpaTC.PrintAllStatusStrings("Initial", t.Logf)
 	//
 	// Provide first alias output. Consensus should be sent now.
-	ao1 := randomAliasOutputWithID(*aliasRef.ObjectID, committeeAddress, 1)
+	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
 	t.Logf("AO1=%v", ao1)
 	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
@@ -84,7 +84,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Consensus results received (consumed ao1, produced ao2).
-	ao2 := randomAliasOutputWithID(*aliasRef.ObjectID, committeeAddress, 2)
+	ao2 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 2)
 	t.Logf("AO2=%v", ao2)
 	gpaTC.WithInputs(inputConsensusOutput(gpaNodes, cons1, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
@@ -127,7 +127,7 @@ func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Outp
 	return inputs
 }
 
-func randomAliasOutputWithID(anchorID iotago.ObjectID, stateAddress *cryptolib.Address, stateIndex uint32) *isc.StateAnchor {
+func randomAnchorWithID(anchorID iotago.ObjectID, stateAddress *cryptolib.Address, stateIndex uint32) *isc.StateAnchor {
 	anchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &[]byte{}, StateIndex: &stateIndex, ID: &anchorID})
 	stateAnchor := isc.NewStateAnchor(
 		&iscmove.AnchorWithRef{

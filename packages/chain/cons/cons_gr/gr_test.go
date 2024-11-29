@@ -192,7 +192,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 type anchorKey = string
 
 func anchorKeyFromAnchor(anchor *isc.StateAnchor) anchorKey {
-	return anchor.Anchor().ObjectRef.String()
+	return anchor.GetObjectRef().String()
 }
 
 func anchorKeyFromAnchorRef(objectRef *iotago.ObjectRef) anchorKey {

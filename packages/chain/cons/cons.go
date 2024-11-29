@@ -625,8 +625,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		decidedAnchorRef := vmResult.Task.Anchor.Anchor().ObjectRef
-		rotationTX, err := vmtxbuilder.NewRotationTransaction(&decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
+		decidedAnchorRef := vmResult.Task.Anchor.GetObjectRef()
+		rotationTX, err := vmtxbuilder.NewRotationTransaction(decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped

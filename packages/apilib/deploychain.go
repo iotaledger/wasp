@@ -30,7 +30,7 @@ type CreateChainParams struct {
 	Textout              io.Writer
 	Prefix               string
 	StateMetadata        transaction.StateMetadata
-	GasCoinObjectID      *iotago.ObjectID `bcs:"optional"`
+	GasCoinObjectID      *iotago.ObjectID
 	GovernanceController *cryptolib.Address
 	PackageID            iotago.PackageID
 }
