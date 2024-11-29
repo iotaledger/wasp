@@ -280,13 +280,6 @@ func (env *Solo) deployChain(
 		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 		env.GetFundsFromFaucet(originatorAddr)
 		env.GetFundsFromFaucet(originatorAddr)
-		env.GetFundsFromFaucet(originatorAddr)
-		env.GetFundsFromFaucet(originatorAddr)
-		env.GetFundsFromFaucet(originatorAddr)
-		env.GetFundsFromFaucet(originatorAddr)
-		env.GetFundsFromFaucet(originatorAddr)
-		env.GetFundsFromFaucet(originatorAddr)
-
 	}
 
 	initParams := origin.NewInitParams(

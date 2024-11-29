@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
-const FundsFromFaucetAmount = 999_999_999_999_99
+const FundsFromFaucetAmount = 999_999_999_999_9
 
 func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetUrl string) error {
 	paramJson := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)
