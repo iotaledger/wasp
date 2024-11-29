@@ -68,7 +68,7 @@ contract ISCTest {
 
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, assets, true, metadata, options);
+        ISC.sandbox.send(receiver, assets, metadata, options);
     }
 
     function sendNFT(IotaAddress receiver, IotaObjectID id, uint64 storageDeposit) public {
@@ -86,7 +86,7 @@ contract ISCTest {
         assets.objects[0] = id;
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, assets, true, metadata, options);
+        ISC.sandbox.send(receiver, assets, metadata, options);
     }
 
     function callInccounter() public {

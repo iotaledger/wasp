@@ -95,6 +95,7 @@ func (h *magicContractHandler) call(msg isc.Message, allowance *isc.Assets) isc.
 func (h *magicContractHandler) callView(msg isc.Message) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
-		msg, nil,
+		msg,
+		isc.NewEmptyAssets(),
 	)
 }
