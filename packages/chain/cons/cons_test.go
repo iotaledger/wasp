@@ -86,13 +86,13 @@ func testConsBasic(t *testing.T, n, f int) {
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, &tokenCoinInfo)
 
-	ao0x := isctest.RandomStateAnchorWithStateMetadata(stateMetadata)
-	ao0 := &ao0x
+	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
+	stateAnchor0 := &stateAnchor0x
 
 	reqs := []isc.Request{
-		RandomOnLedgerDepositRequest(ao0.Owner()),
-		RandomOnLedgerDepositRequest(ao0.Owner()),
-		RandomOnLedgerDepositRequest(ao0.Owner()),
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
 	}
 	reqRefs := isc.RequestRefsFromRequests(reqs)
 
@@ -119,7 +119,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	// require.NoError(t, err)
 	// require.NotNil(t, stateAnchor)
 	// require.NotNil(t, aliasOutput)
-	// ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
+	// stateAnchor0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
 	// err = utxoDB.AddToLedger(originTX)
 	// require.NoError(t, err)
 
@@ -161,7 +161,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStates[nid], ao0, 0, &tokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, &tokenCoinInfo)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
@@ -172,7 +172,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	now := time.Now()
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for _, nid := range nodeIDs {
-		inputs[nid] = cons.NewInputProposal(ao0)
+		inputs[nid] = cons.NewInputProposal(stateAnchor0)
 	}
 	tc.WithInputs(inputs).RunAll()
 	tc.PrintAllStatusStrings("After Inputs", t.Logf)

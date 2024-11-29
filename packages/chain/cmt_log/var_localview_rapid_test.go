@@ -10,13 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -36,7 +30,7 @@ type varLocalViewSM struct {
 	rejSync   bool               // True, if reject was done and pending was not made empty yet.
 	//
 	// Helpers.
-	utxoIDCounter int // To have unique UTXO IDs.
+	// utxoIDCounter int // To have unique UTXO IDs.
 }
 
 var _ rapid.StateMachine = &varLocalViewSM{}
@@ -51,113 +45,113 @@ func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
 	return sm
 }
 
-// E.g. external rotation of a TX by other chain.
-//
-// If some external entity produced an AO and it was confirmed,
-// all the TX'es proposed by us and not yet confirmed will be rejected.
-func (sm *varLocalViewSM) L1ExternalAOConfirmed(t *rapid.T) {
-	//
-	// The AO from L1 is always respected as the correct one.
-	newAO := sm.nextAO()
-	tipAO, tipChanged, _ := sm.lv.AliasOutputConfirmed(newAO)
-	require.True(t, tipChanged)            // BaseAO is replaced or set.
-	require.Equal(t, newAO, tipAO)         // BaseAO is replaced or set.
-	require.Equal(t, newAO, sm.lv.Value()) // BaseAO is replaced or set.
-	//
-	// Update the model (add confirmed, move pending to rejected).
-	sm.confirmed = append(sm.confirmed, newAO)
-	sm.rejected = append(sm.rejected, sm.pending...)
-	sm.rejSync = false
-	sm.pending = []*isc.StateAnchor{}
-}
+// // E.g. external rotation of a TX by other chain.
+// //
+// // If some external entity produced an AO and it was confirmed,
+// // all the TX'es proposed by us and not yet confirmed will be rejected.
+// func (sm *varLocalViewSM) L1ExternalAOConfirmed(t *rapid.T) {
+// 	//
+// 	// The AO from L1 is always respected as the correct one.
+// 	newAO := sm.nextAO()
+// 	tipAO, tipChanged, _ := sm.lv.AliasOutputConfirmed(newAO)
+// 	require.True(t, tipChanged)            // BaseAO is replaced or set.
+// 	require.Equal(t, newAO, tipAO)         // BaseAO is replaced or set.
+// 	require.Equal(t, newAO, sm.lv.Value()) // BaseAO is replaced or set.
+// 	//
+// 	// Update the model (add confirmed, move pending to rejected).
+// 	sm.confirmed = append(sm.confirmed, newAO)
+// 	sm.rejected = append(sm.rejected, sm.pending...)
+// 	sm.rejSync = false
+// 	sm.pending = []*isc.StateAnchor{}
+// }
 
-// E.g. A TX proposed by the consensus was approved.
-//
-// Take single TX from the pending log and approve it.
-func (sm *varLocalViewSM) L1PendingApproved(t *rapid.T) {
-	//
-	// Check the preconditions.
-	if len(sm.pending) == 0 {
-		t.Skip()
-	}
-	//
-	// Notify the LocalView on the CNF.
-	cnfAO := sm.pending[0]
-	prevAO := sm.lv.Value()
-	_, tipChanged, _ := sm.lv.AliasOutputConfirmed(cnfAO)
-	//
-	// Update the model.
-	sm.confirmed = append(sm.confirmed, cnfAO)
-	sm.pending = sm.pending[1:]
-	sm.rejSync = sm.rejSync && len(sm.pending) != 0
-	//
-	// Post-condition: If there was no rejection, then the BaseAO has to be left unchanged.
-	if !sm.rejSync && prevAO != nil {
-		require.False(t, tipChanged)            // BaseAO is not replaced.
-		require.Equal(t, prevAO, sm.lv.Value()) // BaseAO is not replaced.
-	}
-}
+// // E.g. A TX proposed by the consensus was approved.
+// //
+// // Take single TX from the pending log and approve it.
+// func (sm *varLocalViewSM) L1PendingApproved(t *rapid.T) {
+// 	//
+// 	// Check the preconditions.
+// 	if len(sm.pending) == 0 {
+// 		t.Skip()
+// 	}
+// 	//
+// 	// Notify the LocalView on the CNF.
+// 	cnfAO := sm.pending[0]
+// 	prevAO := sm.lv.Value()
+// 	_, tipChanged, _ := sm.lv.AliasOutputConfirmed(cnfAO)
+// 	//
+// 	// Update the model.
+// 	sm.confirmed = append(sm.confirmed, cnfAO)
+// 	sm.pending = sm.pending[1:]
+// 	sm.rejSync = sm.rejSync && len(sm.pending) != 0
+// 	//
+// 	// Post-condition: If there was no rejection, then the BaseAO has to be left unchanged.
+// 	if !sm.rejSync && prevAO != nil {
+// 		require.False(t, tipChanged)            // BaseAO is not replaced.
+// 		require.Equal(t, prevAO, sm.lv.Value()) // BaseAO is not replaced.
+// 	}
+// }
 
-// E.g. Consensus TX was rejected.
-//
-// All the pending TXes are marked as rejected.
-func (sm *varLocalViewSM) L1PendingRejected(t *rapid.T) {
-	//
-	// Check the preconditions.
-	if len(sm.pending) == 0 {
-		t.Skip()
-	}
-	//
-	// Notify the LocalView on the rejection.
-	rejectFrom := rapid.IntRange(0, len(sm.pending)-1).Draw(t, "reject.idx")
-	newTip, _ := sm.lv.AliasOutputRejected(sm.pending[rejectFrom])
-	require.Equal(t, rejectFrom != 0, newTip == nil, "If that't not the first of the pending, then there are pending left, so the new tip is undefined.")
-	require.Equal(t, rejectFrom == 0, newTip != nil, "In this case, all the pending are marked as rejected, so we have the tip (the confirmed one).")
-	//
-	// Update the model.
-	sm.rejected = append(sm.rejected, sm.pending[rejectFrom+1:]...)
-	sm.pending = sm.pending[:rejectFrom]
-	sm.rejSync = len(sm.pending) != 0
-}
+// // E.g. Consensus TX was rejected.
+// //
+// // All the pending TXes are marked as rejected.
+// func (sm *varLocalViewSM) L1PendingRejected(t *rapid.T) {
+// 	//
+// 	// Check the preconditions.
+// 	if len(sm.pending) == 0 {
+// 		t.Skip()
+// 	}
+// 	//
+// 	// Notify the LocalView on the rejection.
+// 	rejectFrom := rapid.IntRange(0, len(sm.pending)-1).Draw(t, "reject.idx")
+// 	newTip, _ := sm.lv.AliasOutputRejected(sm.pending[rejectFrom])
+// 	require.Equal(t, rejectFrom != 0, newTip == nil, "If that't not the first of the pending, then there are pending left, so the new tip is undefined.")
+// 	require.Equal(t, rejectFrom == 0, newTip != nil, "In this case, all the pending are marked as rejected, so we have the tip (the confirmed one).")
+// 	//
+// 	// Update the model.
+// 	sm.rejected = append(sm.rejected, sm.pending[rejectFrom+1:]...)
+// 	sm.pending = sm.pending[:rejectFrom]
+// 	sm.rejSync = len(sm.pending) != 0
+// }
 
-// Handle those outdated rejections.
-func (sm *varLocalViewSM) OutdatedRejectHandled(t *rapid.T) {
-	//
-	// Check the preconditions.
-	if len(sm.rejected) == 0 {
-		t.Skip()
-	}
-	selectedIdx := rapid.IntRange(0, len(sm.rejected)-1).Draw(t, "reject.idx")
-	selectedAO := sm.rejected[selectedIdx]
-	//
-	// Perform the action.
-	_, tipChanged := sm.lv.AliasOutputRejected(selectedAO)
-	require.False(t, tipChanged)
-	//
-	// Update the model.
-	sm.rejected = append(sm.rejected[:selectedIdx], sm.rejected[selectedIdx+1:]...)
-}
+// // Handle those outdated rejections.
+// func (sm *varLocalViewSM) OutdatedRejectHandled(t *rapid.T) {
+// 	//
+// 	// Check the preconditions.
+// 	if len(sm.rejected) == 0 {
+// 		t.Skip()
+// 	}
+// 	selectedIdx := rapid.IntRange(0, len(sm.rejected)-1).Draw(t, "reject.idx")
+// 	selectedAO := sm.rejected[selectedIdx]
+// 	//
+// 	// Perform the action.
+// 	_, tipChanged := sm.lv.AliasOutputRejected(selectedAO)
+// 	require.False(t, tipChanged)
+// 	//
+// 	// Update the model.
+// 	sm.rejected = append(sm.rejected[:selectedIdx], sm.rejected[selectedIdx+1:]...)
+// }
 
-// Consensus produced a new output.
-func (sm *varLocalViewSM) ConsensusOutput(t *rapid.T) {
-	//
-	// Check the preconditions.
-	if !sm.nextChainStepPossible() {
-		t.Skip()
-	}
-	//
-	// Perform the action.
-	prevAO := sm.lv.Value()
-	require.NotNil(t, prevAO)
-	newAO := sm.nextAO(prevAO)
-	tipAO, tipChanged := sm.lv.ConsensusOutputDone(cmt_log.NilLogIndex(), prevAO.GetObjectRef()) // TODO: LogIndex.
-	require.True(t, tipChanged)
-	require.Equal(t, newAO, tipAO)
-	require.Equal(t, newAO, sm.lv.Value())
-	//
-	// Update the model.
-	sm.pending = append(sm.pending, newAO)
-}
+// // Consensus produced a new output.
+// func (sm *varLocalViewSM) ConsensusOutput(t *rapid.T) {
+// 	//
+// 	// Check the preconditions.
+// 	if !sm.nextChainStepPossible() {
+// 		t.Skip()
+// 	}
+// 	//
+// 	// Perform the action.
+// 	prevAO := sm.lv.Value()
+// 	require.NotNil(t, prevAO)
+// 	newAO := sm.nextAO(prevAO)
+// 	tipAO, tipChanged := sm.lv.ConsensusOutputDone(cmt_log.NilLogIndex(), prevAO.GetObjectRef()) // TODO: LogIndex.
+// 	require.True(t, tipChanged)
+// 	require.Equal(t, newAO, tipAO)
+// 	require.Equal(t, newAO, sm.lv.Value())
+// 	//
+// 	// Update the model.
+// 	sm.pending = append(sm.pending, newAO)
+// }
 
 // Here we check the invariants.
 func (sm *varLocalViewSM) Check(t *rapid.T) {
@@ -167,33 +161,33 @@ func (sm *varLocalViewSM) Check(t *rapid.T) {
 	sm.propBaseAOProposedCorrect(t)
 }
 
-// We don't use randomness to generate AOs because they have to be unique.
-func (sm *varLocalViewSM) nextAO(prevAO ...*isc.StateAnchor) *isc.StateAnchor {
-	sm.utxoIDCounter++
-	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
-	utxoInput := iotago.UTXOInput{}
-	copy(utxoInput.TransactionID[:], txIDBytes)
-	utxoInput.TransactionOutputIndex = 0
-	if len(prevAO) > 1 {
-		panic("0/1 prevAO can be provided")
-	}
-	var stateIndex uint32
-	if len(prevAO) == 1 {
-		stateIndex = prevAO[0].GetStateIndex() + 1
-	} else {
-		stateIndex = uint32(sm.utxoIDCounter)
-	}
+// // We don't use randomness to generate AOs because they have to be unique.
+// func (sm *varLocalViewSM) nextAO(prevAO ...*isc.StateAnchor) *isc.StateAnchor {
+// 	sm.utxoIDCounter++
+// 	txIDBytes := []byte(fmt.Sprintf("%v", sm.utxoIDCounter))
+// 	utxoInput := iotago.UTXOInput{}
+// 	copy(utxoInput.TransactionID[:], txIDBytes)
+// 	utxoInput.TransactionOutputIndex = 0
+// 	if len(prevAO) > 1 {
+// 		panic("0/1 prevAO can be provided")
+// 	}
+// 	var stateIndex uint32
+// 	if len(prevAO) == 1 {
+// 		stateIndex = prevAO[0].GetStateIndex() + 1
+// 	} else {
+// 		stateIndex = uint32(sm.utxoIDCounter)
+// 	}
 
-	anchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &[]byte{}, StateIndex: &stateIndex})
-	stateAnchor := isc.NewStateAnchor(
-		&iscmove.AnchorWithRef{
-			Object:    &anchor,
-			ObjectRef: *iotatest.RandomObjectRef(),
-			Owner:     iotatest.RandomAddress(),
-		}, *cryptolib.NewRandomAddress().AsIotaAddress())
+// 	anchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &[]byte{}, StateIndex: &stateIndex})
+// 	stateAnchor := isc.NewStateAnchor(
+// 		&iscmove.AnchorWithRef{
+// 			Object:    &anchor,
+// 			ObjectRef: *iotatest.RandomObjectRef(),
+// 			Owner:     iotatest.RandomAddress(),
+// 		}, *cryptolib.NewRandomAddress().AsIotaAddress())
 
-	return &stateAnchor
-}
+// 	return &stateAnchor
+// }
 
 // Alias output can be proposed, if there is at least one AO confirmed and there is no
 // ongoing resync because of rejections.

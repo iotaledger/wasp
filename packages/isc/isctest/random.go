@@ -1,6 +1,7 @@
 package isctest
 
 import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -8,29 +9,82 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state/statetest"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func RandomStateAnchorWithStateMetadata(metadata *transaction.StateMetadata) isc.StateAnchor {
-	anchor := iscmovetest.RandomAnchor()
-	anchor.StateMetadata = metadata.Bytes()
-
-	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
-		ObjectRef: *iotatest.RandomObjectRef(),
-		Object:    &anchor,
-		Owner:     cryptolib.NewRandomAddress().AsIotaAddress(),
-	}
-	return isc.NewStateAnchor(&anchorRef, *iotatest.RandomAddress())
+type RandomAnchorOption struct {
+	ID            *iotago.ObjectID
+	Assets        *iscmove.AssetsBag
+	StateMetadata *transaction.StateMetadata
+	StateIndex    *uint32
+	ObjectRef     *iotago.ObjectRef
+	Owner         *iotago.Address
 }
 
-func RandomStateAnchor() isc.StateAnchor {
-	anchor := iscmovetest.RandomAnchor()
-	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
-		ObjectRef: *iotatest.RandomObjectRef(),
-		Object:    &anchor,
-		Owner:     cryptolib.NewRandomAddress().AsIotaAddress(),
+func RandomStateAnchor(opts ...RandomAnchorOption) isc.StateAnchor {
+	var anchorOpts iscmovetest.RandomAnchorOption
+	anchorRef := iotatest.RandomObjectRef()
+	owner := iotatest.RandomAddress()
+	if len(opts) == 1 {
+		var stateMetadata []byte
+		if opts[0].StateMetadata != nil {
+			stateMetadata = opts[0].StateMetadata.Bytes()
+		}
+		anchorOpts = iscmovetest.RandomAnchorOption{
+			ID:            opts[0].ID,
+			Assets:        opts[0].Assets,
+			StateMetadata: &stateMetadata,
+			StateIndex:    opts[0].StateIndex,
+		}
+		if opts[0].Owner != nil {
+			owner = iotatest.RandomAddress()
+		}
+		if opts[0].ObjectRef != nil {
+			anchorRef = opts[0].ObjectRef
+		}
+		if opts[0].ID != nil {
+			anchorRef.ObjectID = opts[0].ID
+		}
 	}
-	return isc.NewStateAnchor(&anchorRef, *iotatest.RandomAddress())
+	anchor := iscmovetest.RandomAnchor(anchorOpts)
+
+	anchorRefWithObject := iscmove.RefWithObject[iscmove.Anchor]{
+		ObjectRef: *anchorRef,
+		Object:    &anchor,
+		Owner:     owner,
+	}
+	return isc.NewStateAnchor(&anchorRefWithObject, *iotatest.RandomAddress())
+}
+
+// simualte how StateAnchor is updated (state transition)
+// assume the AssetsBag keep unchanged
+func UpdateStateAnchor(anchor *isc.StateAnchor, stateMetadata ...[]byte) *isc.StateAnchor {
+	// a := anchor.Clone()
+	a := iscmove.AnchorWithRef{
+		ObjectRef: *anchor.GetObjectRef(),
+		Object: &iscmove.Anchor{
+			ID:         *anchor.Anchor().ObjectID,
+			Assets:     *anchor.GetAssetsBag(),
+			StateIndex: anchor.GetStateIndex() + 1,
+		},
+	}
+	if len(stateMetadata) == 1 {
+		a.Object.StateMetadata = stateMetadata[0]
+	} else {
+		a.Object.StateMetadata = transaction.NewStateMetadata(
+			allmigrations.LatestSchemaVersion,
+			statetest.NewRandL1Commitment(),
+			&iotago.ObjectID{},
+			gas.DefaultFeePolicy(),
+			isc.NewCallArguments([]byte{1, 2, 3}),
+			"http://url",
+		).Bytes()
+	}
+	newStatAnchor := isc.NewStateAnchor(&a, anchor.ISCPackage())
+	return &newStatAnchor
 }
 
 // RandomChainID creates a random chain ID. Used for testing only
