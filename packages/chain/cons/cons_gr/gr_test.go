@@ -63,6 +63,8 @@ func TestGrBasic(t *testing.T) {
 		)
 	}
 
+	t.Parallel()
+
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
