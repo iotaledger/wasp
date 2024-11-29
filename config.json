@@ -28,6 +28,12 @@
     "maxConnectionAttempts": 30,
     "targetNetworkName": ""
   },
+  "l1": {
+    "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe",
+    "packageID": "0x8b31b5d4da553399c70b87f055efc99327e3705356f2cdb751187aafd4b37a8a",
+    "maxConnectionAttempts": 30,
+    "targetNetworkName": "IOTA"
+  },
   "db": {
     "engine": "rocksdb",
     "chainState": {
