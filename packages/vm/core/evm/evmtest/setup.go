@@ -230,11 +230,11 @@ func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	}
 }
 
-func (e *SoloChainEnv) registerERC20Coin(foundryOwner *cryptolib.KeyPair, coinType coin.Type) error {
+func (e *SoloChainEnv) registerERC20Coin(kp *cryptolib.KeyPair, coinType coin.Type) error {
 	_, err := e.Chain.PostRequestOffLedger(
 		solo.NewCallParams(evm.FuncRegisterERC20Coin.Message(coinType)).
 			WithMaxAffordableGasBudget(),
-		foundryOwner,
+		kp,
 	)
 	return err
 }

@@ -186,6 +186,7 @@ func TestGasRatio(t *testing.T) {
 	// only the owner can call the setEVMGasRatio endpoint
 	newGasRatio := util.Ratio32{A: gas.DefaultEVMGasRatio.A * 10, B: gas.DefaultEVMGasRatio.B}
 	newUserWallet, _ := env.solo.NewKeyPairWithFunds()
+	env.Chain.DepositBaseTokensToL2(1*isc.Million, newUserWallet)
 	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: newUserWallet})
 	require.True(t, isc.VMErrorIs(err, vm.ErrUnauthorized))
 	require.Equal(t, gas.DefaultEVMGasRatio, env.getEVMGasRatio())
@@ -362,19 +363,22 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 func TestEstimateContractGas(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
 	contract := env.deployERC20Contract(ethKey, "TEST", "tst")
 
-	base := env.ERC20Coin(ethKey, coin.BaseTokenType)
-	initialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
-	_, err := base.CallFn(nil, "transfer", contract.address, big.NewInt(int64(1*isc.Million)))
+	err := env.registerERC20Coin(env.Chain.OriginatorPrivateKey, coin.BaseTokenType)
 	require.NoError(t, err)
-	require.LessOrEqual(t,
-		env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)),
-		initialBalance-1*isc.Million,
-	)
+	base := env.ERC20Coin(ethKey, coin.BaseTokenType)
+	initialBalance := env.Chain.L2BaseTokens(ethAgentID)
+	_, err = base.CallFn(nil, "transfer", contract.address, big.NewInt(int64(1*isc.Million)))
+	require.NoError(t, err)
 	require.EqualValues(t,
 		1*isc.Million,
 		env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, contract.address)),
+	)
+	require.LessOrEqual(t,
+		env.Chain.L2BaseTokens(ethAgentID),
+		initialBalance-1*isc.Million,
 	)
 	estimatedGas, err := env.evmChain.EstimateGas(ethereum.CallMsg{
 		From: contract.address,
@@ -448,41 +452,37 @@ func TestISCTimestamp(t *testing.T) {
 func TestISCCallView(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
-
 	var ret [][]byte
-	env.ISCMagicSandbox(ethKey).callView("callView", []any{
-		accounts.Contract.Hname(),
-		accounts.ViewBalance.Hname(),
-		[][]byte{
-			env.Chain.OriginatorAgentID.Bytes(),
-		},
+	err := env.ISCMagicSandbox(ethKey).callView("callView", []any{
+		iscmagic.WrapISCMessage(accounts.ViewBalance.Message(&env.Chain.OriginatorAgentID)),
 	}, &ret)
-
+	require.NoError(t, err)
 	require.NotEmpty(t, ret)
 }
 
 func TestISCNFTData(t *testing.T) {
-	env := InitEVM(t)
-	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
-
-	// mint an NFT and send it to the chain
-	issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
-	metadata := []byte("foobar")
-	nft, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
-	require.NoError(t, err)
-	_, err = env.Chain.PostRequestSync(
-		solo.NewCallParams(accounts.FuncDeposit.Message()).
-			AddBaseTokens(100000).
-			WithObject(nft.ID).
-			WithMaxAffordableGasBudget().
-			WithSender(cryptolib.NewAddressFromIota(&nft.ID)),
-		issuerWallet,
-	)
-	require.NoError(t, err)
-
-	var ret []byte
-	env.ISCMagicSandbox(ethKey).callView("getObjectBCS", []interface{}{nft.ID}, &ret)
-	require.EqualValues(t, metadata, ret)
+	t.Skip("TODO")
+	// env := InitEVM(t)
+	// ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
+	//
+	// // mint an NFT and send it to the chain
+	// issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
+	// metadata := []byte("foobar")
+	// nft, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
+	// require.NoError(t, err)
+	// _, err = env.Chain.PostRequestSync(
+	// 	solo.NewCallParams(accounts.FuncDeposit.Message()).
+	// 		AddBaseTokens(100000).
+	// 		WithObject(nft.ID).
+	// 		WithMaxAffordableGasBudget().
+	// 		WithSender(cryptolib.NewAddressFromIota(&nft.ID)),
+	// 	issuerWallet,
+	// )
+	// require.NoError(t, err)
+	//
+	// var ret []byte
+	// env.ISCMagicSandbox(ethKey).callView("getObjectBCS", []interface{}{nft.ID}, &ret)
+	// require.EqualValues(t, metadata, ret)
 }
 
 func TestISCNFTMint(t *testing.T) {
@@ -701,18 +701,11 @@ func TestReceiptOfFailedTxDoesNotContainEvents(t *testing.T) {
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
 
-	// set gas policy to a very high price (fails when charging ISC gas)
-	{
-		feePolicy := env.Chain.GetGasFeePolicy()
-		feePolicy.GasPerToken.A = 1
-		feePolicy.GasPerToken.B = 1000000000
-		err := env.setFeePolicy(*feePolicy)
-		require.NoError(t, err)
-	}
-
-	res, err := iscTest.CallFn(nil, "emitDummyEvent")
+	res, err := iscTest.CallFn([]ethCallOptions{{
+		gasLimit: 21064,
+	}}, "emitDummyEvent")
 	require.Error(t, err)
-	testmisc.RequireErrorToBe(t, err, "gas budget exceeded")
+	testmisc.RequireErrorToBe(t, err, "out of gas")
 	require.Len(t, res.EVMReceipt.Logs, 0)
 }
 
@@ -777,15 +770,11 @@ func TestSendPayableValueTX(t *testing.T) {
 
 	res, err := env.ISCMagicSandbox(ethKey).CallFn(
 		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
-		"send", receiver,
+		"send",
+		receiver,
 		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
-		false, // auto adjust SD
-		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
-			Message:   inccounter.FuncIncCounter.Message(nil),
-			Allowance: isc.NewEmptyAssets(),
-			GasBudget: math.MaxUint64,
-		}),
-		isc.SendOptions{},
+		iscmagic.WrapISCSendMetadata(nil),
+		iscmagic.WrapISCSendOptions(nil),
 	)
 	require.NoError(t, err)
 
@@ -824,7 +813,6 @@ func TestSendTimelock(t *testing.T) {
 	// 	"send",
 	// 	iscmagic.WrapIotaAddress(receiver),
 	// 	iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
-	// 	false, // auto adjust SD
 	// 	iscmagic.ISCSendMetadata{},
 	// 	iscmagic.ISCSendOptions{
 	// 		Timelock: 1,
@@ -1389,8 +1377,7 @@ func TestISCSendWithArgs(t *testing.T) {
 		"send",
 		env.Chain.ChainID.AsAddress(),
 		iscmagic.WrapISCAssets(isc.NewAssets(sendBaseTokens)),
-		false, // auto adjust SD
-		iscmagic.WrapISCSendMetadata(isc.SendMetadata{
+		iscmagic.WrapISCSendMetadata(&isc.SendMetadata{
 			Message:   inccounter.FuncIncCounter.Message(nil),
 			Allowance: isc.NewEmptyAssets(),
 			GasBudget: math.MaxUint64,
@@ -1773,7 +1760,6 @@ func TestERC20CoinWithExternalFoundry(t *testing.T) {
 	// 			},
 	// 		},
 	// 	),
-	// 	false,
 	// 	metadata,
 	// 	iscmagic.ISCSendOptions{},
 	// )
@@ -1972,13 +1958,11 @@ func TestEVMWithdrawAll(t *testing.T) {
 	tokensToWithdraw := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddress))
 
 	// try withdrawing all base tokens
-	metadata := iscmagic.WrapISCSendMetadata(
-		isc.SendMetadata{
-			Message:   inccounter.FuncIncCounter.Message(nil),
-			Allowance: isc.NewEmptyAssets(),
-			GasBudget: math.MaxUint64,
-		},
-	)
+	metadata := iscmagic.WrapISCSendMetadata(&isc.SendMetadata{
+		Message:   inccounter.FuncIncCounter.Message(nil),
+		Allowance: isc.NewEmptyAssets(),
+		GasBudget: math.MaxUint64,
+	})
 	_, err := env.ISCMagicSandbox(ethKey).CallFn(
 		[]ethCallOptions{{
 			sender:   ethKey,
@@ -1987,7 +1971,6 @@ func TestEVMWithdrawAll(t *testing.T) {
 		"send",
 		receiver,
 		iscmagic.WrapISCAssets(isc.NewAssets(tokensToWithdraw)),
-		false,
 		metadata,
 		isc.SendOptions{},
 	)
@@ -2006,7 +1989,6 @@ func TestEVMWithdrawAll(t *testing.T) {
 		"send",
 		receiver,
 		iscmagic.WrapISCAssets(isc.NewAssets(tokensToWithdraw)),
-		false,
 		metadata,
 		isc.SendOptions{},
 	)

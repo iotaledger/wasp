@@ -48,7 +48,6 @@ interface ISCSandbox {
     function send(
         IotaAddress targetAddress,
         ISCAssets memory assets,
-        bool adjustToMinimumStorageDeposit,
         ISCSendMetadata memory metadata,
         ISCSendOptions memory sendOptions
     ) external payable;

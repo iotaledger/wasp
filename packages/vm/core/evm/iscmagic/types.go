@@ -5,6 +5,7 @@ package iscmagic
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -20,10 +21,15 @@ func init() {
 	}
 }
 
+type (
+	CoinType  = string
+	CoinValue = uint64
+)
+
 // CoinBalance matches the struct definition in ISCTypes.sol
 type CoinBalance struct {
-	CoinType coin.Type
-	Amount   coin.Value
+	CoinType CoinType
+	Amount   CoinValue
 }
 
 // ISCAgentID matches the struct definition in ISCTypes.sol
@@ -75,8 +81,8 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 	var ret ISCAssets
 	a.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
 		ret.Coins = append(ret.Coins, CoinBalance{
-			CoinType: coinType,
-			Amount:   amount,
+			CoinType: CoinType(coinType.String()),
+			Amount:   CoinValue(amount),
 		})
 		return true
 	})
@@ -90,7 +96,7 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 func (a ISCAssets) Unwrap() *isc.Assets {
 	assets := isc.NewEmptyAssets()
 	for _, b := range a.Coins {
-		assets.AddCoin(b.CoinType, b.Amount)
+		assets.AddCoin(coin.MustTypeFromString(string(b.CoinType)), coin.Value(b.Amount))
 	}
 	for _, id := range a.Objects {
 		assets.AddObject(id)
@@ -125,9 +131,11 @@ func (d ISCDict) Unwrap() dict.Dict {
 	return ret
 }
 
+type ISCHname = uint32
+
 type ISCCallTarget struct {
-	Contract   isc.Hname
-	EntryPoint isc.Hname
+	ContractHname ISCHname
+	EntryPoint    ISCHname
 }
 
 type ISCMessage struct {
@@ -138,15 +146,15 @@ type ISCMessage struct {
 func WrapISCMessage(msg isc.Message) ISCMessage {
 	return ISCMessage{
 		Target: ISCCallTarget{
-			Contract:   msg.Target.Contract,
-			EntryPoint: msg.Target.EntryPoint,
+			ContractHname: ISCHname(msg.Target.Contract),
+			EntryPoint:    ISCHname(msg.Target.EntryPoint),
 		},
 		Params: msg.Params,
 	}
 }
 
 func (m ISCMessage) Unwrap() isc.Message {
-	return isc.NewMessage(m.Target.Contract, m.Target.EntryPoint, m.Params)
+	return isc.NewMessage(isc.Hname(m.Target.ContractHname), isc.Hname(m.Target.EntryPoint), m.Params)
 }
 
 type ISCSendMetadata struct {
@@ -155,7 +163,10 @@ type ISCSendMetadata struct {
 	GasBudget uint64
 }
 
-func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
+func WrapISCSendMetadata(metadata *isc.SendMetadata) ISCSendMetadata {
+	if metadata == nil {
+		return ISCSendMetadata{}
+	}
 	return ISCSendMetadata{
 		Message:   WrapISCMessage(metadata.Message),
 		Allowance: WrapISCAssets(metadata.Allowance),
@@ -164,11 +175,53 @@ func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
 }
 
 func (i ISCSendMetadata) Unwrap() *isc.SendMetadata {
+	if i.Message.Target.ContractHname == 0 {
+		return nil
+	}
 	return &isc.SendMetadata{
 		Message:   i.Message.Unwrap(),
 		Allowance: i.Allowance.Unwrap(),
 		GasBudget: i.GasBudget,
 	}
+}
+
+type ISCSendOptions struct {
+	Timelock   int64
+	Expiration struct {
+		Time          int64
+		ReturnAddress cryptolib.Address
+	}
+}
+
+func WrapISCSendOptions(options *isc.SendOptions) ISCSendOptions {
+	var ret ISCSendOptions
+	if options == nil {
+		return ret
+	}
+	ret.Timelock = options.Timelock.Unix()
+	if options.Expiration == nil {
+		return ret
+	}
+	ret.Expiration.Time = options.Expiration.Time.Unix()
+	ret.Expiration.ReturnAddress = *options.Expiration.ReturnAddress
+	return ret
+}
+
+func (i *ISCSendOptions) Unwrap() isc.SendOptions {
+	var timeLock time.Time
+	if i.Timelock > 0 {
+		timeLock = time.Unix(i.Timelock, 0)
+	}
+	ret := isc.SendOptions{
+		Timelock: timeLock,
+	}
+	if i.Expiration.Time > 0 {
+		ret.Expiration = &isc.Expiration{
+			Time:          time.Unix(i.Expiration.Time, 0),
+			ReturnAddress: &i.Expiration.ReturnAddress,
+		}
+	}
+	return ret
 }
 
 func init() {

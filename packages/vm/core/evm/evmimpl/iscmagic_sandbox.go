@@ -82,13 +82,13 @@ func (h *magicContractHandler) Send(
 	targetAddress iotago.Address,
 	assets iscmagic.ISCAssets,
 	metadata iscmagic.ISCSendMetadata,
-	sendOptions isc.SendOptions,
+	sendOptions iscmagic.ISCSendOptions,
 ) {
 	req := isc.RequestParameters{
 		TargetAddress: cryptolib.NewAddressFromIota(&targetAddress),
 		Assets:        assets.Unwrap(),
 		Metadata:      metadata.Unwrap(),
-		Options:       sendOptions,
+		Options:       sendOptions.Unwrap(),
 	}
 
 	if h.callValue.BitLen() > 0 {
@@ -98,7 +98,7 @@ func (h *magicContractHandler) Send(
 
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
-	if !req.Assets.Clone().Spend(req.Metadata.Allowance) {
+	if req.Metadata != nil && !req.Assets.Clone().Spend(req.Metadata.Allowance) {
 		panic(errInvalidAllowance)
 	}
 
