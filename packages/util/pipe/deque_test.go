@@ -1,13 +1,14 @@
-package pipe
+package pipe_test
 
 import (
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimple(t *testing.T) {
-	deque := NewDeque[int]()
+	deque := pipe.NewDeque[int]()
 	require.Equal(t, 0, deque.Length())
 	for i := 0; i < 100; i++ {
 		elem := i * 2
