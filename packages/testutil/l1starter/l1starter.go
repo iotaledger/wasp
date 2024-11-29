@@ -71,7 +71,7 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
-func TestInSingleTestFunc(t *testing.T) {
+func SingleTest(t *testing.T) {
 	if iotaNode == nil {
 		flag.Parse()
 		getIotaNode()

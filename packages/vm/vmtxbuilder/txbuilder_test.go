@@ -25,7 +25,7 @@ import (
 )
 
 func TestTxBuilderBasic(t *testing.T) {
-	l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 	client := clients.NewLocalnetClient()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 1)
@@ -91,7 +91,7 @@ func TestTxBuilderBasic(t *testing.T) {
 }
 
 func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
-	l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 
 	client := clients.NewLocalnetClient()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
@@ -198,7 +198,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 }
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	t.Skipf("Broken test for now")
-	l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 
 	client := clients.NewLocalnetClient()
 	signer := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)

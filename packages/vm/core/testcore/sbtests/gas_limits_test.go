@@ -48,7 +48,7 @@ func TestBlockGasOverflow(t *testing.T) {
 		t.Skip("skipping in short mode")
 	}
 
-	l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 
 	// queue many transactions with enough gas to fill a block, assert that they are split across blocks
 	_, ch := setupChain(t, nil)
