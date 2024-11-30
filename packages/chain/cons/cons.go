@@ -138,7 +138,7 @@ func (r *Result) String() string {
 		if err != nil {
 			txID = iotago.TransactionID{}
 		}
-		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseAliasOutput.ToHex(), r.NextAliasOutput)
+		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseStateAnchor.ToHex(), r.NextAliasOutput)
 	*/
 }
 

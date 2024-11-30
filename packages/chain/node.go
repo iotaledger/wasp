@@ -779,14 +779,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			*out.request.BaseAliasOutput.GetObjectID(),
+			*out.request.BaseStateAnchor.GetObjectID(),
 			out.output.Result,
 		)
 	case cons.Skipped:
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseAliasOutput.GetObjectRef(),
+			out.request.BaseStateAnchor.GetObjectRef(),
 		)
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
@@ -819,8 +819,8 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput, true)
-		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
+		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseStateAnchor, true)
+		ci.consensus.Input(needConsensus.BaseStateAnchor, outputCB, recoverCB)
 	}
 }
 

@@ -74,6 +74,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -86,16 +87,16 @@ type VarLocalView interface {
 	Value() *isc.StateAnchor
 	//
 	// Corresponds to the `tx_posted` event in the specification.
-	// Returns true, if the proposed BaseAliasOutput has changed.
+	// Returns true, if the proposed BaseStateAnchor has changed.
 	ConsensusOutputDone(logIndex LogIndex, consumed *iotago.ObjectRef) (*isc.StateAnchor, bool) // TODO: Recheck, if consumed AO is the decided one.
 	//
 	// Corresponds to the `ao_received` event in the specification.
-	// Returns true, if the proposed BaseAliasOutput has changed.
+	// Returns true, if the proposed BaseStateAnchor has changed.
 	// Also it returns confirmed log index, if a received AO confirms it, or NIL otherwise.
 	AliasOutputConfirmed(confirmed *isc.StateAnchor) (*isc.StateAnchor, bool, LogIndex)
 	//
 	// Corresponds to the `tx_rejected` event in the specification.
-	// Returns true, if the proposed BaseAliasOutput has changed.
+	// Returns true, if the proposed BaseStateAnchor has changed.
 	AliasOutputRejected(rejected *isc.StateAnchor) (*isc.StateAnchor, bool)
 	//
 	// Support functions.

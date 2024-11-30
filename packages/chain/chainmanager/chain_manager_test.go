@@ -6,8 +6,6 @@ package chainmanager_test
 import (
 	"context"
 	"fmt"
-	iotago "github.com/iotaledger/iota.go/v3"
-	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,6 +14,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -26,13 +26,15 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
 func TestChainMgrBasic(t *testing.T) {
-	t.Skip("flaky")
+	l1starter.TestInSingleTestFunc(t)
+
 	type test struct {
 		n int
 		f int
@@ -75,7 +77,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Chain identifiers.
 	tcl := newTestChainLedger(t, originator)
-	anchor := tcl.MakeTxChainOrigin(cmtAddrA)
+	anchor, deposit := tcl.MakeTxChainOrigin(cmtAddrA)
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -83,7 +85,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAnchor(stores[nid], anchor, 0, isc.BaseTokenCoinInfo)
+		_, err := origin.InitChainByAnchor(stores[nid], anchor, deposit, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
@@ -120,28 +122,28 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
-		require.Equal(t, anchor, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, anchor, out.NeedConsensus().BaseStateAnchor)
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
 	}
 	//
 	// Provide consensus output.
 	step2AO := tcl.FakeRotationTX(anchor, cmtAddrA)
+	step2TX := &iotasigner.SignedTransaction{}
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(0, fake2ST, nil, iotago2.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(0, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
+
 		// TODO: Commit a block to the store, if needed.
 		tc.WithInput(nid, chainmanager.NewInputConsensusOutputDone( // TODO: Consider the SKIP cases as well.
 			*cmtAddrA,
-			consReq.LogIndex, consReq.BaseAliasOutput.OutputID(),
+			consReq.LogIndex, *consReq.BaseStateAnchor.GetObjectID(),
 			&cons.Result{
-				Transaction:     step2TX,
-				Block:           block0,
-				BaseAliasOutput: consReq.BaseAliasOutput.OutputID(),
-				NextAliasOutput: step2AO,
+				Transaction: step2TX,
+				Block:       block0,
 			},
 		))
 	}
@@ -151,25 +153,28 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		t.Logf("node=%v should have 1 TX to publish, have out=%v", nodeID, out)
 		require.Equal(t, 1, out.NeedPublishTX().Size(), "node=%v should have 1 TX to publish, have out=%v", nodeID, out)
-		require.Equal(t, step2TX, func() *iotago.Transaction { tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID()); return tx.Tx }())
-		require.Equal(t, anchor.OutputID(), func() iotago.ObjectID {
-			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
-			return tx.BaseAliasOutputID
+		require.Equal(t, step2TX, func() *iotasigner.SignedTransaction {
+			tx, _ := out.NeedPublishTX().Get(step2AO.Hash())
+			return tx.Tx
+		}())
+		require.Equal(t, anchor.GetObjectID(), func() iotago.ObjectID {
+			tx, _ := out.NeedPublishTX().Get(step2AO.Hash())
+			return *tx.BaseAnchorRef.ObjectID
 		}())
 		require.Equal(t, cmtAddrA, func() *cryptolib.Address {
-			tx, _ := out.NeedPublishTX().Get(step2AO.TransactionID())
+			tx, _ := out.NeedPublishTX().Get(step2AO.Hash())
 			return &tx.CommitteeAddr
 		}())
 		require.NotNil(t, out.NeedConsensus())
-		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, step2AO, out.NeedConsensus().BaseStateAnchor)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
 	}
 	//
 	// Say TX is published
 	for nid := range nodes {
-		consReq, _ := nodes[nid].Output().(*chainmanager.Output).NeedPublishTX().Get(step2AO.TransactionID())
-		tc.WithInput(nid, chainmanager.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.LogIndex, consReq.TxID, consReq.NextAliasOutput, true))
+		consReq, _ := nodes[nid].Output().(*chainmanager.Output).NeedPublishTX().Get(step2AO.Hash())
+		tc.WithInput(nid, chainmanager.NewInputChainTxPublishResult(consReq.CommitteeAddr, consReq.LogIndex, consReq.BaseAnchorRef.Hash(), nil, true))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("TX Published", t.Logf)
@@ -177,7 +182,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
-		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, step2AO, out.NeedConsensus().BaseStateAnchor)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
 	}
@@ -192,7 +197,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
-		require.Equal(t, step2AO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, step2AO, out.NeedConsensus().BaseStateAnchor)
 		require.Equal(t, uint32(2), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
 	}
@@ -208,7 +213,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		out := n.Output().(*chainmanager.Output)
 		require.Equal(t, 0, out.NeedPublishTX().Size())
 		require.NotNil(t, out.NeedConsensus())
-		require.Equal(t, rotateAO, out.NeedConsensus().BaseAliasOutput)
+		require.Equal(t, rotateAO, out.NeedConsensus().BaseStateAnchor)
 		require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
 		require.Equal(t, cmtAddrB, &out.NeedConsensus().CommitteeAddr)
 	}
@@ -219,6 +224,7 @@ func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
 	})
+	l1client.RequestFunds(context.Background(), *originator.Address())
 	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
 

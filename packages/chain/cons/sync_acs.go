@@ -28,7 +28,7 @@ type SyncACS interface {
 // >     Produce a batch proposal.
 // >     Start the ACS.
 type syncACSImpl struct {
-	BaseAliasOutput  *isc.StateAnchor
+	BaseStateAnchor  *isc.StateAnchor
 	RequestRefs      []*isc.RequestRef
 	DSSIndexProposal []int
 	TimeData         time.Time
@@ -72,10 +72,10 @@ func NewSyncACS(
 }
 
 func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if sub.BaseAliasOutput != nil {
+	if sub.BaseStateAnchor != nil {
 		return nil
 	}
-	sub.BaseAliasOutput = proposedBaseAliasOutput
+	sub.BaseStateAnchor = proposedBaseAliasOutput
 	return sub.tryCompleteInput()
 }
 
@@ -114,11 +114,11 @@ func (sub *syncACSImpl) GasInfoReceived(gasCoins []*iotago.ObjectRef, gasPrice u
 }
 
 func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
-	if sub.inputsReady || sub.BaseAliasOutput == nil || sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.gasPrice == 0 {
+	if sub.inputsReady || sub.BaseStateAnchor == nil || sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.gasPrice == 0 {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.BaseAliasOutput, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.gasPrice)
+	return sub.inputsReadyCB(sub.BaseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.gasPrice)
 }
 
 func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
@@ -149,8 +149,8 @@ func (sub *syncACSImpl) String() string {
 		str += "/WAIT[ACS to complete]"
 	} else {
 		wait := []string{}
-		if sub.BaseAliasOutput == nil {
-			wait = append(wait, "BaseAliasOutput")
+		if sub.BaseStateAnchor == nil {
+			wait = append(wait, "BaseStateAnchor")
 		}
 		if sub.RequestRefs == nil {
 			wait = append(wait, "RequestRefs")
