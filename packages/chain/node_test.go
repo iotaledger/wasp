@@ -16,8 +16,14 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
@@ -33,11 +39,11 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil"
-	testparameters "github.com/iotaledger/wasp/packages/testutil/parameters"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -52,6 +58,7 @@ type tc struct {
 }
 
 func TestNodeBasic(t *testing.T) {
+	node := l1starter.TestInSingleTestFunc(t)
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
@@ -72,15 +79,15 @@ func TestNodeBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout) },
+			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout, node) },
 		)
 	}
 }
 
 //nolint:gocyclo
-func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration) {
+func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration, node *l1starter.IotaNode) {
 	t.Parallel()
-	te := newEnv(t, n, f, reliable)
+	te := newEnv(t, n, f, reliable, node)
 	defer te.close()
 
 	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
@@ -96,8 +103,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 			if te.ctx.Err() != nil {
 				return
 			}
-			for _, tnc := range te.nodeConns {
-				tnc.recvMilestone(time.Now())
+			for _, _ = range te.nodeConns {
+				// TODO: What do we do with milestones here?
 			}
 			time.Sleep(100 * time.Millisecond)
 		}
@@ -105,26 +112,47 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 
 	// Create SC Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), scClient.Address().AsIotaAddress(), te.faucetURL)
+	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
+
 	require.NoError(t, err)
 
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
 	incCount := 10
-	incRequests := make([]isc.Request, incCount)
+	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
+
 	for i := 0; i < incCount; i++ {
-		scRequest := isc.NewOffLedgerRequest(
-			te.chainID,
-			inccounter.FuncIncCounter.Message(nil),
-			uint64(i),
-			2000000,
-		).Sign(scClient)
-		te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
-		incRequests[i] = scRequest
+		ref := iotatest.RandomObjectRef()
+
+		scRequest := iscmove.Request{
+			ID:        *ref.ObjectID,
+			Message:   iscmove.Message{},
+			AssetsBag: iscmove.AssetsBagWithBalances{},
+			Sender:    scClient.Address(),
+			Allowance: iscmove.Assets{},
+			GasBudget: 0,
+		}
+
+		incRequests[i] = iscmove.RefWithObject[iscmove.Request]{
+			Owner:     scClient.Address().AsIotaAddress(),
+			Object:    &scRequest,
+			ObjectRef: *ref,
+		}
 	}
 
-	// Check if all requests were processed.
-	awaitRequestsProcessed(ctxTimeout, te, incRequests, "incRequests")
+	collectedRequests := make([]isc.Request, 0)
+	for _, tnc := range te.nodeConns {
+		for _, req := range incRequests {
+			onLedgerRequest, err := isc.OnLedgerFromRequest(&req, tnc.chainID.AsAddress())
+			require.NoError(t, err)
+			collectedRequests = append(collectedRequests, onLedgerRequest)
+			tnc.recvRequest(
+				onLedgerRequest,
+			)
+		}
+	}
+
+	awaitRequestsProcessed(ctxTimeout, te, collectedRequests, "incRequests")
 
 	// assert state
 	for i, node := range te.nodes {
@@ -171,8 +199,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration)
 			activeAO, err := node.LatestAnchor(chain.ActiveState)
 			require.NoError(t, err)
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
-			lastPublishedAO, err := isc.AliasOutputWithIDFromTx(lastPublishedTX, te.chainID.AsAddress())
-			require.NoError(t, err)
+			lastPublishedAO := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
 			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
 				te.log.Debugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
 				return false
@@ -233,22 +260,33 @@ func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate fun
 // testNodeConn
 
 type testNodeConn struct {
-	t               *testing.T
-	chainID         isc.ChainID
-	published       []*iotago.Transaction
-	recvRequestCB   chain.RequestOutputHandler
-	recvAliasOutput chain.AliasOutputHandler
-	recvMilestone   chain.MilestoneHandler
-	attachWG        *sync.WaitGroup
+	t           *testing.T
+	chainID     isc.ChainID
+	published   []*iscmove.AnchorWithRef
+	recvRequest chain.RequestHandler
+	recvAnchor  chain.AnchorHandler
+	attachWG    *sync.WaitGroup
+
+	l1Client     clients.L1Client
+	l2Client     clients.L2Client
+	iscPackageID iotago.PackageID
+}
+
+func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
+	//TODO implement me
+	panic("implement me")
 }
 
 var _ chain.NodeConnection = &testNodeConn{}
 
-func newTestNodeConn(t *testing.T) *testNodeConn {
+func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotago.PackageID) *testNodeConn {
 	tnc := &testNodeConn{
-		t:         t,
-		published: []*iotago.Transaction{},
-		attachWG:  &sync.WaitGroup{},
+		t:            t,
+		published:    []*iscmove.AnchorWithRef{},
+		attachWG:     &sync.WaitGroup{},
+		l1Client:     l1Client,
+		l2Client:     l1Client.L2(),
+		iscPackageID: iscPackageID,
 	}
 	tnc.attachWG.Add(1)
 	return tnc
@@ -257,7 +295,7 @@ func newTestNodeConn(t *testing.T) *testNodeConn {
 func (tnc *testNodeConn) PublishTX(
 	ctx context.Context,
 	chainID isc.ChainID,
-	tx *iotago.Transaction,
+	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	if tnc.chainID.Empty() {
@@ -266,47 +304,64 @@ func (tnc *testNodeConn) PublishTX(
 	if !tnc.chainID.Equals(chainID) {
 		tnc.t.Error("unexpected chain id")
 	}
-	txID, err := tx.ID()
-	require.NoError(tnc.t, err)
-	existing := lo.ContainsBy(tnc.published, func(publishedTX *iotago.Transaction) bool {
-		publishedID, err2 := publishedTX.ID()
-		require.NoError(tnc.t, err2)
-		return txID == publishedID
-	})
-	if existing {
-		tnc.t.Logf("Already seen a TX with ID=%v", txID)
-		return nil
-	}
-	tnc.published = append(tnc.published, tx)
-	callback(tx, true)
 
-	stateAnchor, aoNoID, err := transaction.GetAnchorFromTransaction(tx)
+	txBytes, err := bcs.Marshal(tx.Data)
 	if err != nil {
 		return err
 	}
-	tnc.recvAliasOutput(
-		isc.NewOutputInfo(stateAnchor.OutputID, aoNoID, iotago.TransactionID{}),
-	)
 
+	res, err := tnc.l1Client.ExecuteTransactionBlock(ctx, iotaclient.ExecuteTransactionBlockRequest{
+		TxDataBytes: txBytes,
+		Signatures:  tx.Signatures,
+		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowEffects: true,
+		},
+		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
+	})
+
+	anchorRef, err := res.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	if err != nil {
+		return err
+	}
+
+	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
+	if err != nil {
+		return err
+	}
+
+	existing := lo.ContainsBy(tnc.published, func(publishedAnchor *iscmove.AnchorWithRef) bool {
+		publishedID := publishedAnchor.Hash()
+		return anchor.Hash() == publishedID
+	})
+	if existing {
+		tnc.t.Logf("Already seen an Anchor with ID=%v", anchor.Hash())
+		return nil
+	}
+
+	tnc.published = append(tnc.published, anchor)
+	callback(tx, nil)
+
+	stateAnchor := isc.NewStateAnchor(anchor, tnc.iscPackageID)
+
+	tnc.recvAnchor(&stateAnchor)
 	return nil
 }
 
 func (tnc *testNodeConn) AttachChain(
 	ctx context.Context,
 	chainID isc.ChainID,
-	recvRequestCB chain.RequestOutputHandler,
-	recvAliasOutput chain.AliasOutputHandler,
-	recvMilestone chain.MilestoneHandler,
+	recvRequest chain.RequestHandler,
+	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
 ) {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
 	}
+
 	tnc.chainID = chainID
-	tnc.recvRequestCB = recvRequestCB
-	tnc.recvAliasOutput = recvAliasOutput
-	tnc.recvMilestone = recvMilestone
+	tnc.recvAnchor = recvAnchor
+	tnc.recvRequest = recvRequest
 	tnc.attachWG.Done()
 }
 
@@ -320,14 +375,6 @@ func (tnc *testNodeConn) waitAttached() {
 
 func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 	panic("should be unused in test")
-}
-
-func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
-	return testparameters.GetL1ParamsForTesting()
-}
-
-func (tnc *testNodeConn) GetL1ProtocolParams() *iotago.ProtocolParameters {
-	return testparameters.GetL1ProtocolParamsForTesting()
 }
 
 // RefreshOnLedgerRequests implements chain.NodeConnection.
@@ -356,24 +403,29 @@ type testEnv struct {
 	cmtAddress       *cryptolib.Address
 	chainID          isc.ChainID
 	anchor           *isc.StateAnchor
-	originTx         *iotago.Transaction
+	originTx         *iotago.TransactionData
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain
+
+	l1Client     clients.L1Client
+	l2Client     clients.L2Client
+	iscPackageID iotago.PackageID
 }
 
-func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
+func newEnv(t *testing.T, n, f int, reliable bool, node *l1starter.IotaNode) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
-	//
-	// Create ledger accounts.
-	//te.utxoDB = utxodb.New(utxodb.DefaultInitParams())
+
+	te.iscPackageID = node.ISCPackageID
+	te.l1Client = node.Client()
+	te.l2Client = te.l1Client.L2()
+
 	te.governor = cryptolib.NewKeyPair()
 	te.originator = cryptolib.NewKeyPair()
-	_, err := te.utxoDB.GetFundsFromFaucet(te.governor.Address())
-	require.NoError(t, err)
-	_, err = te.utxoDB.GetFundsFromFaucet(te.originator.Address())
-	require.NoError(t, err)
+	require.NoError(t, node.Client().RequestFunds(context.Background(), *te.governor.Address()))
+	require.NoError(t, node.Client().RequestFunds(context.Background(), *te.originator.Address()))
+
 	//
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
@@ -396,15 +448,17 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.tcl = testchain.NewTestChainLedger(t, te.utxoDB, te.originator)
-	te.anchor = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.tcl = testchain.NewTestChainLedger(t, te.originator, &node.ISCPackageID, te.l1Client)
+	te.anchor, _ = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))
 	te.nodes = make([]chain.Chain, len(te.peerIdentities))
-	require.NoError(t, err)
+
+	var err error
+
 	for i := range te.peerIdentities {
-		te.nodeConns[i] = newTestNodeConn(t)
+		te.nodeConns[i] = newTestNodeConn(t, te.l1Client, te.iscPackageID)
 		log := te.log.Named(fmt.Sprintf("N#%v", i))
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.nodes[i], err = chain.New(

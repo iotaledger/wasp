@@ -197,20 +197,21 @@ library ISCTypes {
         return IotaObjectID.wrap(bytes32(tokenID));
     }
 
-    /**
-     * @dev Check if an NFT is part of a given collection.
-     * @param nft The NFT to check.
-     * @param collectionId The collection ID to check against.
-     * @return True if the NFT is part of the collection, false otherwise.
-     */
-    function isInCollection(
-        ISCNFT memory,
-        IotaObjectID
-    ) internal pure returns (bool) {
-        assert(false); // TODO
-        // return nft.issuer == collectionId;
-        return false;
-    }
+    // TODO
+    // /**
+    //  * @dev Check if an NFT is part of a given collection.
+    //  * @param nft The NFT to check.
+    //  * @param collectionId The collection ID to check against.
+    //  * @return True if the NFT is part of the collection, false otherwise.
+    //  */
+    // function isInCollection(
+    //     ISCNFT nft,
+    //     IotaObjectID collectionId
+    // ) internal pure returns (bool) {
+    //     assert(false); // TODO
+    //     // return nft.issuer == collectionId;
+    //     return false;
+    // }
 
     function getCoinAmount(
         CoinBalance[] memory coins,

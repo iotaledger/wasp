@@ -6,6 +6,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 
@@ -50,7 +51,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 
 	prevL1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(task.Anchor))
 	stateDraft := lo.Must(task.Store.NewStateDraft(task.Timestamp, prevL1Commitment))
-	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage, task.Anchor, task.Anchor.Owner)
+	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage(), task.Anchor, task.Anchor.Owner())
 	vmctx := newVmContext(task, stateDraft, txbuilder)
 	vmctx.init()
 

@@ -48,7 +48,6 @@ interface ISCSandbox {
     function send(
         IotaAddress targetAddress,
         ISCAssets memory assets,
-        bool adjustToMinimumStorageDeposit,
         ISCSendMetadata memory metadata,
         ISCSendOptions memory sendOptions
     ) external payable;
@@ -81,9 +80,10 @@ interface ISCSandbox {
     // Get information about an on-chain object
     function getObjectBCS(IotaObjectID id) external view returns (bytes memory);
 
-    // Get information about an on-chain IRC27 NFT
-    // NOTE: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form
-    function getIRC27NFTData(IotaObjectID id) external view returns (IRC27NFT memory);
+    // TODO
+    // // Get information about an on-chain IRC27 NFT
+    // // NOTE: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form
+    // function getIRC27NFTData(IotaObjectID id) external view returns (IRC27NFT memory);
 
     // Get information about an on-chain IRC27 NFT
     // returns a JSON file encoded with the following format:

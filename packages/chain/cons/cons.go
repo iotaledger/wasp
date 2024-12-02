@@ -63,6 +63,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -137,7 +138,7 @@ func (r *Result) String() string {
 		if err != nil {
 			txID = iotago.TransactionID{}
 		}
-		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseAliasOutput.ToHex(), r.NextAliasOutput)
+		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseStateAnchor.ToHex(), r.NextAliasOutput)
 	*/
 }
 
@@ -593,11 +594,11 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
 	// The decided base alias output can be different from that we have proposed!
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
+	stateAnchor := isc.NewStateAnchor(decidedBaseAliasOutput.Anchor(), decidedBaseAliasOutput.ISCPackage())
+
 	c.output.NeedVMResult = &vm.VMTask{
-		Processors: c.processorCache,
-		Anchor: &isc.StateAnchor{
-			Anchor: decidedBaseAliasOutput.Anchor,
-		},
+		Processors:           c.processorCache,
+		Anchor:               &stateAnchor,
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		Timestamp:            aggregatedProposals.AggregatedTime(),
@@ -624,8 +625,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 
 	if vmResult.RotationAddress != nil {
 		// Rotation by the Self-Governed Committee.
-		decidedAnchorRef := vmResult.Task.Anchor.Anchor.ObjectRef
-		rotationTX, err := vmtxbuilder.NewRotationTransaction(&decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
+		decidedAnchorRef := vmResult.Task.Anchor.GetObjectRef()
+		rotationTX, err := vmtxbuilder.NewRotationTransaction(decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
 		if err != nil {
 			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
 			c.output.Status = Skipped

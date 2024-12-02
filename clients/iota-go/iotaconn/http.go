@@ -66,11 +66,11 @@ func (c *HTTPClient) CallContext(
 	}
 	msg, err := c.newMessage(method.String(), args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not create JSON-RPC message: %w", err)
 	}
 	resp, err := c.doRequest(ctx, msg)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not perform request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -84,12 +84,17 @@ func (c *HTTPClient) CallContext(
 		return fmt.Errorf("could not unmarshal response body: %w", err)
 	}
 	if respmsg.Error != nil {
-		return respmsg.Error
+		return fmt.Errorf("server returned error: %w", respmsg.Error)
 	}
 	if len(respmsg.Result) == 0 {
 		return ErrNoResult
 	}
-	return json.Unmarshal(respmsg.Result, result)
+	err = json.Unmarshal(respmsg.Result, result)
+	if err != nil {
+		fmt.Println(string(respmsg.Result))
+		return fmt.Errorf("could not unmarshal response result: %w", err)
+	}
+	return nil
 }
 
 // BatchCall sends all given requests as a single batch and waits for the server

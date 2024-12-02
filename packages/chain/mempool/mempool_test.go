@@ -31,6 +31,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -51,6 +52,8 @@ type tc struct {
 }
 
 func TestMempoolBasic(t *testing.T) {
+	l1starter.SingleTest(t)
+
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true},  // Low N

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 type (
@@ -55,6 +56,11 @@ type ObjectRef struct {
 	ObjectID *ObjectID      `json:"objectId"`
 	Version  SequenceNumber `json:"version"`
 	Digest   *ObjectDigest  `json:"digest"`
+}
+
+func (o ObjectRef) Hash() hashing.HashValue {
+	res, _ := hashing.HashValueFromBytes(o.Bytes())
+	return res
 }
 
 func ObjectRefFromBytes(b []byte) *ObjectRef {

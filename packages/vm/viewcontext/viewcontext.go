@@ -44,13 +44,12 @@ type ViewContext struct {
 var _ execution.WaspCallContext = &ViewContext{}
 
 func New(
-	anchor *isc.StateAnchor,
+	chainID isc.ChainID,
 	stateReader state.State,
 	processors *processors.Config,
 	log *logger.Logger,
 	gasBurnLoggingEnabled bool,
 ) (*ViewContext, error) {
-	chainID := anchor.ChainID()
 	return &ViewContext{
 		processors:            processors,
 		stateReader:           stateReader,

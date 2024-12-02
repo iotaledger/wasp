@@ -3,9 +3,9 @@ package services
 import (
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -83,7 +83,7 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 			return nil, err
 		}
 
-		pubKeySharesHex[i] = iotago.EncodeHex(publicKeyShare)
+		pubKeySharesHex[i] = hexutil.Encode(publicKeyShare)
 	}
 
 	peerIdentities := dkShare.GetNodePubKeys()
@@ -96,7 +96,7 @@ func (d *DKGService) createDKModel(dkShare tcrypto.DKShare) (*models.DKSharesInf
 		Address:         dkShare.GetAddress().String(),
 		PeerIdentities:  peerIdentitiesHex,
 		PeerIndex:       dkShare.GetIndex(),
-		PublicKey:       iotago.EncodeHex(publicKey),
+		PublicKey:       hexutil.Encode(publicKey),
 		PublicKeyShares: pubKeySharesHex,
 		Threshold:       dkShare.GetT(),
 	}

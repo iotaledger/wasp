@@ -1,4 +1,4 @@
-package registry
+package registry_test
 
 import (
 	"testing"
@@ -6,10 +6,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/registry"
 )
 
 func TestTrustedPeer(t *testing.T) {
-	trustedPeersRegistry, err := NewTrustedPeersRegistryImpl("")
+	trustedPeersRegistry, err := registry.NewTrustedPeersRegistryImpl("")
 	require.NoError(t, err)
 
 	tpList, err := trustedPeersRegistry.TrustedPeers()

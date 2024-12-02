@@ -32,5 +32,5 @@ func (s *silentNode) StatusString() string {
 }
 
 func (s *silentNode) UnmarshalMessage(data []byte) (Message, error) {
-	panic(errors.New("not implemented"))
+	return nil, errors.New("not implemented")
 }

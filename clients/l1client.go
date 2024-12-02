@@ -258,3 +258,10 @@ func NewL1Client(l1Config L1Config) L1Client {
 		l1Config,
 	}
 }
+
+func NewLocalnetClient() L1Client {
+	return NewL1Client(L1Config{
+		APIURL:    iotaconn.LocalnetEndpointURL,
+		FaucetURL: iotaconn.LocalnetFaucetURL,
+	})
+}

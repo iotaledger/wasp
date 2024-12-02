@@ -97,7 +97,6 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 		ch.OriginatorAddress,
 		&res.UnsignedTransaction,
 		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
 	)
 	if os.Getenv("DEBUG") != "" {
 		res.UnsignedTransaction.Print("-- ")

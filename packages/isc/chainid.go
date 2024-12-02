@@ -4,7 +4,6 @@
 package isc
 
 import (
-	iotago2 "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -66,10 +65,6 @@ func (id ChainID) AsAddress() *cryptolib.Address {
 	return &addr
 }
 
-func (id ChainID) AsAliasID() iotago2.AliasID {
-	return iotago2.AliasID(id)
-}
-
 func (id ChainID) Bytes() []byte {
 	return id[:]
 }
@@ -83,7 +78,7 @@ func (id ChainID) Equals(other ChainID) bool {
 }
 
 func (id ChainID) Key() ChainIDKey {
-	return ChainIDKey(id.AsAliasID().String())
+	return ChainIDKey(id.AsObjectID().String())
 }
 
 func (id ChainID) IsSameChain(agentID AgentID) bool {

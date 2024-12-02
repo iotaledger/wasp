@@ -1,10 +1,12 @@
 package models
 
 import (
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/iotaledger/hive.go/objectstorage/typeutils"
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 )
@@ -22,7 +24,7 @@ func OutputFromIotaGoOutput(output iotago.Output) *Output {
 	bytes, _ := output.Serialize(serializer.DeSeriModeNoValidation, nil)
 	return &Output{
 		OutputType: output.Type(),
-		Raw:        iotago.EncodeHex(bytes),
+		Raw:        hexutil.Encode(bytes),
 	}
 }
 
@@ -44,7 +46,7 @@ func OnLedgerRequestFromISC(request isc.OnLedgerRequest) *OnLedgerRequest {
 		ID:       request.ID().String(),
 		OutputID: request.ID().String(),
 		//Output:   OutputFromIotaGoOutput(request.Output()),
-		Raw: iotago.EncodeHex(request.Bytes()),
+		Raw: hexutil.Encode(request.Bytes()),
 	}
 }
 

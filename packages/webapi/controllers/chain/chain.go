@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -146,7 +146,7 @@ func (c *Controller) getState(e echo.Context) error {
 	}
 
 	response := models.StateResponse{
-		State: iotago.EncodeHex(state),
+		State: hexutil.Encode(state),
 	}
 
 	return e.JSON(http.StatusOK, response)

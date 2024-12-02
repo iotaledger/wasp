@@ -3,7 +3,8 @@ package util
 import (
 	"encoding"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -13,7 +14,7 @@ func EncodeHexBinaryMarshaled(value encoding.BinaryMarshaler) (string, error) {
 		return "", err
 	}
 
-	return iotago.EncodeHex(data), nil
+	return hexutil.Encode(data), nil
 }
 
 func DecodeHexBinaryMarshaled(dataHex string, value encoding.BinaryUnmarshaler) error {
@@ -58,7 +59,7 @@ func PrefixHex(data []byte, prefixLen int) string {
 		return "<nil>"
 	}
 	if len(data) <= prefixLen {
-		return iotago.EncodeHex(data)
+		return hexutil.Encode(data)
 	}
-	return iotago.EncodeHex(data[0:prefixLen]) + "..."
+	return hexutil.Encode(data[0:prefixLen]) + "..."
 }

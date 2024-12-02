@@ -18,8 +18,9 @@ func RandomStateAnchorWithStateMetadata(metadata *transaction.StateMetadata) isc
 	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &anchor,
+		Owner:     cryptolib.NewRandomAddress().AsIotaAddress(),
 	}
-	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
+	return isc.NewStateAnchor(&anchorRef, *iotatest.RandomAddress())
 }
 
 func RandomStateAnchor() isc.StateAnchor {
@@ -27,8 +28,9 @@ func RandomStateAnchor() isc.StateAnchor {
 	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &anchor,
+		Owner:     cryptolib.NewRandomAddress().AsIotaAddress(),
 	}
-	return isc.NewStateAnchor(&anchorRef, cryptolib.NewRandomAddress(), *iotatest.RandomAddress())
+	return isc.NewStateAnchor(&anchorRef, *iotatest.RandomAddress())
 }
 
 // RandomChainID creates a random chain ID. Used for testing only
@@ -64,7 +66,7 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 111, "TEST_A": 222}},
+			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 111, "0x3::threeota::THREEOTA": 222}},
 			GasBudget: 1000,
 		},
 	}

@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -47,15 +46,12 @@ type ethCallOptions struct {
 	gasPrice *big.Int
 }
 
-func InitEVM(t testing.TB, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
+func InitEVM(t testing.TB) *SoloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
 		Debug:             true,
 		PrintStackTrace:   true,
 		GasBurnLogEnabled: false,
 	})
-	for _, c := range nativeContracts {
-		env = env.WithNativeContract(c)
-	}
 	return InitEVMWithSolo(t, env)
 }
 
@@ -234,11 +230,11 @@ func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	}
 }
 
-func (e *SoloChainEnv) registerERC20Coin(foundryOwner *cryptolib.KeyPair, coinType coin.Type) error {
+func (e *SoloChainEnv) registerERC20Coin(kp *cryptolib.KeyPair, coinType coin.Type) error {
 	_, err := e.Chain.PostRequestOffLedger(
 		solo.NewCallParams(evm.FuncRegisterERC20Coin.Message(coinType)).
 			WithMaxAffordableGasBudget(),
-		foundryOwner,
+		kp,
 	)
 	return err
 }

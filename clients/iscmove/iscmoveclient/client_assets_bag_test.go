@@ -20,11 +20,11 @@ import (
 )
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 
-	txnResponse, err := iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	txnResponse, err := PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -39,8 +39,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	assetsDestroyEmptyRes, err := iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	assetsDestroyEmptyRes, err := PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -58,8 +58,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 }
 
 func TestAssetsBagPlaceCoin(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -79,8 +79,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
 	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
-	_, err = iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	_, err = PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -101,8 +101,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 }
 
 func TestAssetsBagPlaceCoinAmount(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -123,8 +123,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 	require.NoError(t, err)
 	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
 
-	_, err = iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	_, err = PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -146,8 +146,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 }
 
 func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -171,8 +171,8 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	assetsBagMainRef, err = client.UpdateObjectRef(context.Background(), assetsBagMainRef)
 	require.NoError(t, err)
 
-	txnResponse, err = iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	txnResponse, err = PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:      client,
 			Signer:      cryptolibSigner,
 			PackageID:   l1starter.ISCPackageID(),
@@ -204,11 +204,11 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 
-	txnResponse, err := iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	txnResponse, err := PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -236,8 +236,8 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
 	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
-	_, err = iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	_, err = PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -267,8 +267,8 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -393,8 +393,8 @@ func borrowAnchorAssetsAndPlaceCoin(
 }
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewLocalnetClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -417,8 +417,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
-	_, err = iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	_, err = PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    cryptolibSigner,
 			PackageID: l1starter.ISCPackageID(),
@@ -480,8 +480,8 @@ func newAssetsBag(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	return iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	return PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    signer,
 			PackageID: l1starter.ISCPackageID(),
@@ -502,8 +502,8 @@ func assetsBagPlaceCoinAmount(
 	coinType iotajsonrpc.CoinType,
 	amount uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	return iscmoveclienttest.PTBTestWrapper(
-		&iscmoveclienttest.PTBTestWrapperRequest{
+	return PTBTestWrapper(
+		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    signer,
 			PackageID: l1starter.ISCPackageID(),

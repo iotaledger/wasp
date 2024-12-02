@@ -12,16 +12,17 @@ import (
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestRequestsFeed(t *testing.T) {
-	client := newLocalnetClient()
+	client := iscmoveclienttest.NewLocalnetClient()
 
-	iscOwner := newSignerWithFunds(t, testcommon.TestSeed, 0)
-	chainOwner := newSignerWithFunds(t, testcommon.TestSeed, 1)
+	iscOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	chainOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 
 	anchor := startNewChain(t, client, chainOwner)
 

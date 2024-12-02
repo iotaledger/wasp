@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -61,5 +62,5 @@ func EVMCall(
 		}
 		return nil, vmerr
 	}
-	return res.Return.Bytes(), nil
+	return bcs.Unmarshal[[]byte](res.Return[0])
 }

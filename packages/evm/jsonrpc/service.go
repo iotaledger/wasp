@@ -284,10 +284,6 @@ func (e *EthService) Accounts() []common.Address {
 
 func (e *EthService) GasPrice() (*hexutil.Big, error) {
 	return withMetrics(e.metrics, "eth_gasPrice", func() (*hexutil.Big, error) {
-		// expressed in wei
-		// 1 Ether =
-		// 1_000_000_000 Gwei
-		// 1_000_000_000_000_000_000 wei
 		return (*hexutil.Big)(e.evmChain.GasPrice()), nil
 	})
 }

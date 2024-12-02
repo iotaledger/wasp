@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
@@ -63,8 +64,8 @@ func (b *BufferedKVStore) DangerouslyDumpToString() string {
 		ret += fmt.Sprintf(
 			"           [%s] %s: %s\n",
 			b.flag(k),
-			slice(iotago.EncodeHex([]byte(k))),
-			slice(iotago.EncodeHex(v)),
+			slice(hexutil.Encode([]byte(k))),
+			slice(hexutil.Encode(v)),
 		)
 	}
 	return ret

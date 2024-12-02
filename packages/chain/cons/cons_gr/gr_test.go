@@ -6,7 +6,6 @@ package cons_gr_test
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 	"testing"
 	"time"
@@ -15,10 +14,12 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -39,13 +40,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func TestMain(m *testing.M) {
-	l1starter.TestMain(m)
-	os.Exit(m.Run())
-}
-
 func TestGrBasic(t *testing.T) {
-	t.Parallel()
+	l1starter.SingleTest(t)
+
 	type test struct {
 		n        int
 		f        int
@@ -65,22 +62,32 @@ func TestGrBasic(t *testing.T) {
 			test{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
 		)
 	}
+
+	t.Parallel()
+
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testGrBasic(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) {
+				testGrBasic(tt, tst.n, tst.f, tst.reliable)
+			},
 		)
 	}
+
 }
 
 func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
+
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
+
 	//
 	// Create ledger accounts.
 	originator := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(context.TODO(), originator.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
 	require.NoError(t, err)
 
 	//
@@ -117,15 +124,13 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		FaucetURL: iotaconn.LocalnetFaucetURL,
 	})
 
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	defer ctxCancel()
-
 	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
 
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
 	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
+	gasCoin := iotatest.RandomObjectRef()
 
 	logIndex := cmt_log.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
@@ -140,7 +145,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		chainMetrics := chainMetricsProvider.GetChainMetrics(isc.EmptyChainID())
 		nodes[i] = consGR.New(
 			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
-			procConfig, mempools[i], stateMgrs[i], nil, // TODO: Pass the NodeConn.
+			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
 			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
@@ -187,7 +192,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 type anchorKey = string
 
 func anchorKeyFromAnchor(anchor *isc.StateAnchor) anchorKey {
-	return anchor.Anchor.ObjectRef.String()
+	return anchor.GetObjectRef().String()
 }
 
 func anchorKeyFromAnchorRef(objectRef *iotago.ObjectRef) anchorKey {
@@ -370,6 +375,34 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 		close(qDecided)
 		delete(tsm.qDecided, hash)
 	}
+}
+
+type testNodeConnGasInfo struct {
+	gasCoins []*iotago.ObjectRef
+	gasPrice uint64
+}
+
+func (tgi *testNodeConnGasInfo) GetGasCoins() []*iotago.ObjectRef { return tgi.gasCoins }
+func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
+
+type testNodeConn struct {
+	gasCoin *iotago.ObjectRef
+}
+
+var _ consGR.NodeConn = &testNodeConn{}
+
+func newTestNodeConn(gasCoin *iotago.ObjectRef) *testNodeConn {
+	return &testNodeConn{gasCoin: gasCoin}
+}
+
+func (t *testNodeConn) ConsensusGasPriceProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnGasInfo {
+	ch := make(chan consGR.NodeConnGasInfo, 1)
+	ch <- &testNodeConnGasInfo{
+		gasCoins: []*iotago.ObjectRef{t.gasCoin},
+		gasPrice: 123,
+	}
+	close(ch)
+	return ch
 }
 
 func commitmentHashFromAO(anchor *isc.StateAnchor) hashing.HashValue {

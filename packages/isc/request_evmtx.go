@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	_ "github.com/iotaledger/wasp/packages/evm/evmtypes" // register BCS custom encoder for Transaction
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
@@ -43,7 +44,6 @@ func (req *evmOffLedgerTxRequest) BCSInit() error {
 		return err
 	}
 	req.sender = NewEthereumAddressAgentID(req.chainID, sender)
-
 	return nil
 }
 

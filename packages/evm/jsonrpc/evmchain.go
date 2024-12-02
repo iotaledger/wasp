@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -194,30 +195,28 @@ func (e *EVMChain) SendTransaction(tx *types.Transaction) error {
 }
 
 func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, tx *types.Transaction, gasFeePolicy *gas.FeePolicy) error {
-	gasRatio := gasFeePolicy.EVMGasRatio
-	balance, err := e.Balance(sender, nil)
+	balanceFullDecimals, err := e.Balance(sender, nil)
 	if err != nil {
 		return fmt.Errorf("could not fetch sender balance: %w", err)
 	}
 
 	gasLimits := e.gasLimits()
-
 	iscGasBudgetAffordable := min(
-		gasFeePolicy.GasBudgetFromTokensFullDecimals(balance, tx.GasPrice()),
+		gasFeePolicy.GasBudgetFromTokensFullDecimals(balanceFullDecimals, tx.GasPrice()),
+		gasLimits.MaxGasPerRequest,
+	)
+	iscGasBudgetTx := min(
+		gas.EVMGasToISC(tx.Gas(), &gasFeePolicy.EVMGasRatio),
 		gasLimits.MaxGasPerRequest,
 	)
 
-	iscGasBudgetTx := gas.EVMGasToISC(tx.Gas(), &gasRatio)
-
-	if iscGasBudgetTx > gasLimits.MaxGasPerRequest {
-		iscGasBudgetTx = gasLimits.MaxGasPerRequest
-	}
-
 	if iscGasBudgetAffordable < iscGasBudgetTx {
 		return fmt.Errorf(
-			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %v, expected: %d",
-			balance.String(),
-			gasFeePolicy.FeeFromGas(iscGasBudgetTx, tx.GasPrice(), parameters.Decimals),
+			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %d (can afford %d ISC gas units), expected: %d (%d ISC gas units)",
+			balanceFullDecimals,
+			iscGasBudgetAffordable,
+			util.BaseTokensDecimalsToEthereumDecimals(gasFeePolicy.FeeFromGas(iscGasBudgetTx, tx.GasPrice(), parameters.Decimals), parameters.Decimals),
+			iscGasBudgetTx,
 		)
 	}
 	return nil
@@ -248,6 +247,30 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 	blockHash, _ := blockNumberOrHash.Hash()
 	block := e.BlockByHash(blockHash)
 	return e.iscStateFromEVMBlockNumber(block.Number())
+}
+
+func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.StateAnchor, error) {
+	if blockNumberOrHash == nil {
+		return e.backend.ISCLatestAnchor()
+	}
+	if blockNumber, ok := blockNumberOrHash.Number(); ok {
+		bn := parseBlockNumber(blockNumber)
+		if bn == nil {
+			return e.backend.ISCLatestAnchor()
+		}
+		return e.backend.ISCAnchor(blockNumberToStateIndex(bn))
+	}
+	blockHash, _ := blockNumberOrHash.Hash()
+	block := e.BlockByHash(blockHash)
+	return e.backend.ISCAnchor(blockNumberToStateIndex(block.Number()))
+}
+
+func blockNumberToStateIndex(blockNumber *big.Int) uint32 {
+	n := blockNumber.Uint64()
+	if n > math.MaxUint32 {
+		panic("block number too large")
+	}
+	return uint32(n)
 }
 
 func (e *EVMChain) accountsState(chainState state.State) *accounts.StateReader {
@@ -425,27 +448,19 @@ func (e *EVMChain) TransactionCount(address common.Address, blockNumberOrHash *r
 }
 
 func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) ([]byte, error) {
-	e.log.Debugf("CallContract(callMsg=..., blockNumberOrHash=%v)", blockNumberOrHash)
-	panic("TODO")
-	/*
-		aliasOutput, err := e.iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash)
-		if err != nil {
-			return nil, err
-		}
-		return e.backend.EVMCall(aliasOutput, callMsg)
-	*/
+	anchor, err := e.iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash)
+	if err != nil {
+		return nil, err
+	}
+	return e.backend.EVMCall(anchor, callMsg)
 }
 
 func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
-	e.log.Debugf("EstimateGas(callMsg=..., blockNumberOrHash=%v)", blockNumberOrHash)
-	panic("TODO")
-	/*
-		aliasOutput, err := e.iscAliasOutputFromEVMBlockNumberOrHash(blockNumberOrHash)
-		if err != nil {
-			return 0, err
-		}
-		return e.backend.EVMEstimateGas(aliasOutput, callMsg)
-	*/
+	anchor, err := e.iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash)
+	if err != nil {
+		return 0, err
+	}
+	return e.backend.EVMEstimateGas(anchor, callMsg)
 }
 
 func (e *EVMChain) GasPrice() *big.Int {

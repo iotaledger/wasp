@@ -28,6 +28,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -680,7 +681,7 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc
 	cni.stateTrackerCnf.TrackAliasOutput(&aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(&aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputAliasOutputConfirmed(aliasOutput.Owner, &aliasOutput),
+		chainmanager.NewInputAliasOutputConfirmed(aliasOutput.Owner(), &aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -778,14 +779,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			*out.request.BaseAliasOutput.GetObjectID(),
+			*out.request.BaseStateAnchor.GetObjectID(),
 			out.output.Result,
 		)
 	case cons.Skipped:
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseAliasOutput.GetObjectRef(),
+			out.request.BaseStateAnchor.GetObjectRef(),
 		)
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
@@ -818,8 +819,8 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput, true)
-		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
+		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseStateAnchor, true)
+		ci.consensus.Input(needConsensus.BaseStateAnchor, outputCB, recoverCB)
 	}
 }
 

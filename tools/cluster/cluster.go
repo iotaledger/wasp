@@ -8,7 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"io"
 	"math/rand"
 	"net/http"
@@ -22,10 +21,13 @@ import (
 	"text/template"
 	"time"
 
+	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -278,7 +280,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			governance.DefaultMinBaseTokensOnCommonAccount,
 			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
 		),
-		iotago2.ObjectID{},
+		&iotago2.ObjectID{},
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
 		"",
@@ -296,7 +298,6 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			Prefix:            "[cluster] ",
 			StateMetadata:     stateMetaData,
 		},
-		stateAddr,
 		stateAddr,
 	)
 	if err != nil {

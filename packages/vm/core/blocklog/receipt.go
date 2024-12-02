@@ -22,10 +22,10 @@ type RequestReceipt struct {
 	GasBudget     uint64                 `json:"gasBudget" bcs:"compact"`
 	GasBurned     uint64                 `json:"gasBurned" bcs:"compact"`
 	GasFeeCharged coin.Value             `json:"gasFeeCharged" bcs:"compact"`
+	GasBurnLog    *gas.BurnLog           `json:"-" bcs:"optional"`
 	// not persistent
-	BlockIndex   uint32       `json:"blockIndex" bcs:"-"`
-	RequestIndex uint16       `json:"requestIndex" bcs:"-"`
-	GasBurnLog   *gas.BurnLog `json:"-" bcs:"optional"`
+	BlockIndex   uint32 `json:"blockIndex" bcs:"-"`
+	RequestIndex uint16 `json:"requestIndex" bcs:"-"`
 }
 
 func RequestReceiptFromBytes(data []byte, blockIndex uint32, reqIndex uint16) (*RequestReceipt, error) {

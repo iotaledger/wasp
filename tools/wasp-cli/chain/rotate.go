@@ -5,20 +5,12 @@ package chain
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -34,12 +26,7 @@ func initRotateCmd() *cobra.Command {
 
 			newStateControllerAddr, err := cryptolib.NewAddressFromHexString(args[0])
 			log.Check(err)
-			panic("refactor me: what are we doing without network prefixes here?")
 
-			/*
-				if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
-					log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
-				}*/
 			rotateTo(chain, newStateControllerAddr)
 		},
 	}
@@ -89,52 +76,54 @@ func initRotateWithDKGCmd() *cobra.Command {
 }
 
 func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
-
-	myWallet := wallet.Load()
-	aliasID := config.GetChain(chain).AsAliasID()
-
 	panic("refactor me: l1Client.GetAliasOutput")
-	var chainOutputID iotago.OutputID
-	var chainOutput iotago.Output
-	err := errors.New("refactor me: rotateTo")
-	// chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
-	log.Check(err)
+	/*
+		myWallet := wallet.Load()
+		aliasID := config.GetChain(chain).AsObjectID()
 
-	tx, err := transaction.NewRotateChainStateControllerTx(
-		aliasID,
-		newStateControllerAddr,
-		chainOutputID,
-		chainOutput,
-		myWallet,
-	)
-	log.Check(err)
+		var chainOutputID iotago.OutputID
+		var chainOutput iotago.Output
+		err := errors.New("refactor me: rotateTo")
+		// chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
+		log.Check(err)
 
-	// debug logging
-	if log.DebugFlag {
-		s, err2 := chainOutput.MarshalJSON()
-		log.Check(err2)
-		minSD := parameters.L1().Protocol.RentStructure.MinRent(chainOutput)
-		log.Printf("original chain output: %s, minSD: %d\n", s, minSD)
+		tx, err := transaction.NewRotateChainStateControllerTx(
+			aliasID,
+			newStateControllerAddr,
+			chainOutputID,
+			chainOutput,
+			myWallet,
+		)
+		log.Check(err)
 
-		rotOut := tx.Essence.Outputs[0]
-		s, err2 = rotOut.MarshalJSON()
-		log.Check(err2)
-		minSD = parameters.L1().Protocol.RentStructure.MinRent(rotOut)
-		log.Printf("new chain output: %s, minSD: %d\n", s, minSD)
+		// debug logging
+		if log.DebugFlag {
+			s, err2 := chainOutput.MarshalJSON()
+			log.Check(err2)
+			minSD := parameters.L1().Protocol.RentStructure.MinRent(chainOutput)
+			log.Printf("original chain output: %s, minSD: %d\n", s, minSD)
 
-		json, err2 := tx.MarshalJSON()
-		log.Check(err2)
-		log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().String())
-		log.Printf("rotation tx: %s", string(json))
-	}
+			rotOut := tx.Essence.Outputs[0]
+			s, err2 = rotOut.MarshalJSON()
+			log.Check(err2)
+			minSD = parameters.L1().Protocol.RentStructure.MinRent(rotOut)
+			log.Printf("new chain output: %s, minSD: %d\n", s, minSD)
 
-	panic("refactor me: l1Client.PostTxAndWaitUntilConfirmation")
+			json, err2 := tx.MarshalJSON()
+			log.Check(err2)
+			log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().String())
+			log.Printf("rotation tx: %s", string(json))
+		}
 
-	log.Check(err)
+		panic("refactor me: l1Client.PostTxAndWaitUntilConfirmation")
 
-	txID, err := tx.ID()
-	log.Check(err)
-	fmt.Fprintf(os.Stdout, "Chain rotation transaction issued successfully.\nTXID: %s\n", txID.ToHex())
+		log.Check(err)
+
+		txID, err := tx.ID()
+		log.Check(err)
+		fmt.Fprintf(os.Stdout, "Chain rotation transaction issued successfully.\nTXID: %s\n", txID.ToHex())
+
+	*/
 }
 
 func setMaintenanceStatus(chain, node string, status bool, offledger bool) {
@@ -153,31 +142,32 @@ func initChangeGovControllerCmd() *cobra.Command {
 		Short: "Changes the governance controller for a given chain (WARNING: you will lose control over the chain)",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			chain := config.GetChain(defaultChainFallback(chain))
-
-			_, newGovController, err := iotago.ParseBech32(args[0])
-			log.Check(err)
-
-			myWallet := wallet.Load()
-
 			panic("refactor me: l1connection.OutputMap")
-			//outputSet, err := client.OutputMap(myWallet.Address())
-			var outputSet iotago.OutputSet
-			err = errors.New("refactor me: initChangeGovControllerCmd")
-			log.Check(err)
+			/*
+				chain := config.GetChain(defaultChainFallback(chain))
 
-			tx, err := transaction.NewChangeGovControllerTx(
-				chain.AsAliasID(),
-				newGovController,
-				outputSet,
-				myWallet,
-			)
-			_ = tx
-			log.Check(err)
+				_, newGovController, err := iotago.ParseBech32(args[0])
+				log.Check(err)
 
-			panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
+				myWallet := wallet.Load()
 
-			log.Check(err)
+				//outputSet, err := client.OutputMap(myWallet.Address())
+				var outputSet iotago.OutputSet
+				err = errors.New("refactor me: initChangeGovControllerCmd")
+				log.Check(err)
+
+				tx, err := transaction.NewChangeGovControllerTx(
+					chain.AsAliasID(),
+					newGovController,
+					outputSet,
+					myWallet,
+				)
+				_ = tx
+				log.Check(err)
+
+				panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
+
+				log.Check(err)*/
 		},
 	}
 

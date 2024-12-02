@@ -71,7 +71,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
-		iotago.ObjectID{},
+		&iotago.ObjectID{},
 		&gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
@@ -102,9 +102,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 		},
 	)
 	require.NoError(tcl.t, err)
-	gasCoin, err = tcl.l1client.UpdateObjectRef(context.Background(), gasCoin)
-	require.NoError(tcl.t, err)
-	stateAnchor := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
+	stateAnchor := isc.NewStateAnchor(anchorRef, *tcl.iscPackage)
 	require.NotNil(tcl.t, stateAnchor)
 	tcl.chainID = stateAnchor.ChainID()
 
@@ -192,8 +190,8 @@ func (tcl *TestChainLedger) UpdateAnchor(anchor *isc.StateAnchor) (*isc.StateAnc
 	if err != nil {
 		return nil, err
 	}
-	anchor.Anchor = anchorWithRef
-	return anchor, nil
+	stateAnchor := isc.NewStateAnchor(anchorWithRef, anchor.ISCPackage())
+	return &stateAnchor, nil
 }
 
 func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitteeAddr *cryptolib.Address) *isc.StateAnchor {
@@ -239,6 +237,6 @@ func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitte
 	anchorRef, err := tcl.l1client.L2().GetAnchorFromObjectID(context.Background(), anchor.GetObjectID())
 	require.NoError(tcl.t, err)
 
-	tmp := isc.NewStateAnchor(anchorRef, tcl.governor.Address(), *tcl.iscPackage)
+	tmp := isc.NewStateAnchor(anchorRef, *tcl.iscPackage)
 	return &tmp
 }

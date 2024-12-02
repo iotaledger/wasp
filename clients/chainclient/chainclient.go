@@ -20,7 +20,7 @@ import (
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	L2Client     clients.L2Client
+	L1Client     clients.L1Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
 	IscPackageID iotago.PackageID
@@ -29,14 +29,14 @@ type Client struct {
 
 // New creates a new chainclient.Client
 func New(
-	l2Client clients.L2Client,
+	l1Client clients.L1Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
 	iscPackageID iotago.PackageID,
 	keyPair cryptolib.Signer,
 ) *Client {
 	return &Client{
-		L2Client:     l2Client,
+		L1Client:     l1Client,
 		WaspClient:   waspClient,
 		ChainID:      chainID,
 		IscPackageID: iscPackageID,
@@ -111,7 +111,11 @@ func (c *Client) postSingleRequest(
 	for cointype, coinbal := range params.Allowance.Coins {
 		allowances.AddCoin(cointype.String(), iotajsonrpc.CoinValue(coinbal))
 	}
-	return c.L2Client.CreateAndSendRequestWithAssets(
+	referenceGasPrice, err := c.L1Client.GetReferenceGasPrice(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return c.L1Client.L2().CreateAndSendRequestWithAssets(
 		ctx,
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:           c.KeyPair,
@@ -121,7 +125,7 @@ func (c *Client) postSingleRequest(
 			Message:          msg,
 			Allowance:        allowances,
 			OnchainGasBudget: params.gasBudget,
-			GasPrice:         iotaclient.DefaultGasPrice,
+			GasPrice:         referenceGasPrice.Uint64(),
 			GasBudget:        iotaclient.DefaultGasBudget,
 		},
 	)

@@ -16,8 +16,6 @@ import "./ERC721NFTs.sol";
  * For more information about IRC27, refer to: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
  */
 contract ERC721NFTCollection is ERC721NFTs {
-    using ISCTypes for ISCNFT;
-
     IotaObjectID private _collectionId;
     string private _collectionName; // extracted from the IRC27 metadata
 
@@ -32,16 +30,17 @@ contract ERC721NFTCollection is ERC721NFTs {
         return __iscAccounts.getL2ObjectsCountInCollection(owner, _collectionId);
     }
 
-    /**
-     * @dev Checks if the given NFT is managed by this contract.
-     * @param nft The NFT to check.
-     * @return True if the NFT is managed by this contract, false otherwise.
-     */
-    function _isManagedByThisContract(
-        ISCNFT memory nft
-    ) internal view virtual override returns (bool) {
-        return nft.isInCollection(_collectionId);
-    }
+    // TODO
+    // /**
+    //  * @dev Checks if the given NFT is managed by this contract.
+    //  * @param nft The NFT to check.
+    //  * @return True if the NFT is managed by this contract, false otherwise.
+    //  */
+    // function _isManagedByThisContract(
+    //     ISCNFT memory nft
+    // ) internal view virtual override returns (bool) {
+    //     return nft.isInCollection(_collectionId);
+    // }
 
     /**
      * @dev Returns the ID of the collection.

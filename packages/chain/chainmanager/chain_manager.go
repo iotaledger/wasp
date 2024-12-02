@@ -81,6 +81,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -104,7 +105,7 @@ func (o *Output) LatestActiveAliasOutput() *isc.StateAnchor {
 	if o.cmi.needConsensus == nil {
 		return nil
 	}
-	return o.cmi.needConsensus.BaseAliasOutput
+	return o.cmi.needConsensus.BaseStateAnchor
 }
 func (o *Output) LatestConfirmedAliasOutput() *isc.StateAnchor { return o.cmi.latestConfirmedAO }
 func (o *Output) NeedConsensus() *NeedConsensus                { return o.cmi.needConsensus }
@@ -125,19 +126,19 @@ type NeedConsensus struct {
 	CommitteeAddr   cryptolib.Address
 	LogIndex        cmt_log.LogIndex
 	DKShare         tcrypto.DKShare
-	BaseAliasOutput *isc.StateAnchor
+	BaseStateAnchor *isc.StateAnchor
 }
 
 func (nc *NeedConsensus) IsFor(output *cmt_log.Output) bool {
-	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(nc.BaseAliasOutput)
+	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(nc.BaseStateAnchor)
 }
 
 func (nc *NeedConsensus) String() string {
 	return fmt.Sprintf(
-		"{chainMgr.NeedConsensus, CommitteeAddr=%v, LogIndex=%v, BaseAliasOutput=%v}",
+		"{chainMgr.NeedConsensus, CommitteeAddr=%v, LogIndex=%v, BaseStateAnchor=%v}",
 		nc.CommitteeAddr.String(),
 		nc.LogIndex,
-		nc.BaseAliasOutput,
+		nc.BaseStateAnchor,
 	)
 }
 
@@ -524,7 +525,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 		CommitteeAddr:   cli.committeeAddr,
 		LogIndex:        output.GetLogIndex(),
 		DKShare:         dkShare,
-		BaseAliasOutput: output.GetBaseAliasOutput(),
+		BaseStateAnchor: output.GetBaseAliasOutput(),
 	}
 }
 

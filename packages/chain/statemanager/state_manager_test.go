@@ -2,7 +2,6 @@ package statemanager
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"math/rand"
 	"sync/atomic"
 	"testing"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"

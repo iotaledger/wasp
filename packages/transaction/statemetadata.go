@@ -12,7 +12,7 @@ import (
 type StateMetadata struct {
 	SchemaVersion   isc.SchemaVersion
 	L1Commitment    *state.L1Commitment
-	GasCoinObjectID iotago.ObjectID
+	GasCoinObjectID *iotago.ObjectID `bcs:"optional"`
 	GasFeePolicy    *gas.FeePolicy
 	InitParams      isc.CallArguments
 	PublicURL       string
@@ -21,7 +21,7 @@ type StateMetadata struct {
 func NewStateMetadata(
 	schemaVersion isc.SchemaVersion,
 	l1Commitment *state.L1Commitment,
-	gasCoinObjectID iotago.ObjectID,
+	gasCoinObjectID *iotago.ObjectID,
 	gasFeePolicy *gas.FeePolicy,
 	initParams isc.CallArguments,
 	publicURL string,

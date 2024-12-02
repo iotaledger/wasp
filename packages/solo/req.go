@@ -211,11 +211,11 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) 
 func (env *Solo) selectCoinsForGas(
 	addr *cryptolib.Address,
 	targetPTB *iotago.ProgrammableTransaction,
-	gasBudget, gasPrice uint64,
+	gasBudget uint64,
 ) []*iotago.ObjectRef {
 	pickedCoins, err := iotajsonrpc.PickupCoinsWithFilter(
 		env.L1BaseTokenCoins(addr),
-		gasBudget*gasPrice,
+		gasBudget,
 		func(c *iotajsonrpc.Coin) bool { return !targetPTB.IsInInputObjects(c.CoinObjectID) },
 	)
 	require.NoError(env.T, err)
@@ -226,9 +226,11 @@ func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value)
 	allCoins := env.L1BaseTokenCoins(keyPair.Address())
 	require.NotEmpty(env.T, allCoins)
 
+	const gasBudget = iotaclient.DefaultGasBudget
+
 	pickedCoins, err := iotajsonrpc.PickupCoinsSimple(
 		env.L1BaseTokenCoins(keyPair.Address()),
-		uint64(value),
+		uint64(value+gasBudget),
 	)
 
 	tx := lo.Must(env.IotaClient().PayIota(
@@ -238,7 +240,7 @@ func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value)
 			InputCoins: pickedCoins.ObjectIDs(),
 			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(uint64(value))},
 			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},
-			GasBudget:  iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+			GasBudget:  iotajsonrpc.NewBigInt(gasBudget),
 		},
 	))
 	txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
@@ -452,7 +454,7 @@ func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message)
 	defer ch.runVMMutex.Unlock()
 
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		chainState,
 		ch.proc,
 		ch.log,
@@ -474,7 +476,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		latestState,
 		ch.proc,
 		ch.log,
@@ -496,7 +498,7 @@ func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.Me
 	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		latestState,
 		ch.proc,
 		ch.log,
@@ -537,7 +539,7 @@ func (ch *Chain) GetContractStateCommitment(hn isc.Hname) ([]byte, error) {
 	latestState, err := ch.LatestState()
 	require.NoError(ch.Env.T, err)
 	vmctx, err := viewcontext.New(
-		ch.GetLatestAnchor(),
+		ch.ChainID,
 		latestState,
 		ch.proc,
 		ch.log,
