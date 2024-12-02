@@ -13,48 +13,48 @@ import (
 )
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// assetsResponse := &models.AssetsResponse{
-	// 	BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-	// 	NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
-	// }
+	assetsResponse := &models.AssetsResponse{
+		BaseTokens: iotago.EncodeUint64(assets.BaseTokens().Uint64()),
+		// TODO: fix this when native tokens reimplemented
+		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+	}
 
-	// return e.JSON(http.StatusOK, assetsResponse)
+	return e.JSON(http.StatusOK, assetsResponse)
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// agentID, err := params.DecodeAgentID(e)
-	// if err != nil {
-	// 	return err
-	// }
+	agentID, err := params.DecodeAgentID(e)
+	if err != nil {
+		return err
+	}
 
-	// assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// assetsResponse := &models.AssetsResponse{
-	// 	BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-	// 	NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
-	// }
+	assetsResponse := &models.AssetsResponse{
+		BaseTokens: iotago.EncodeUint64(assets.BaseTokens().Uint64()),
+		// TODO: fix this when native tokens reimplemented
+		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+	}
 
-	// return e.JSON(http.StatusOK, assetsResponse)
+	return e.JSON(http.StatusOK, assetsResponse)
 }
 
 func (c *Controller) getAccountNFTs(e echo.Context) error {
@@ -85,7 +85,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 }
 
 func (c *Controller) getAccountFoundries(e echo.Context) error {
-	panic("TODO")
+	panic("TODO: implement this when foundries reimplemented")
 	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	// if err != nil {
 	// 	return c.handleViewCallError(err)
