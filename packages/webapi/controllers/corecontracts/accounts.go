@@ -85,7 +85,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 }
 
 func (c *Controller) getAccountFoundries(e echo.Context) error {
-	panic("TODO: implement this when foundries reimplemented")
+	panic("TODO")
 	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	// if err != nil {
 	// 	return c.handleViewCallError(err)
