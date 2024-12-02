@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -55,7 +56,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 
 func TestDryRunTransaction(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	signer := testAddress
+	signer := iotago.MustAddressFromHex(testcommon.TestAddress)
 	coins, err := api.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: signer,

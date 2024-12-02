@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
@@ -15,7 +16,7 @@ import (
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := newLocalnetClient()
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -45,7 +46,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
 	client := newLocalnetClient()
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -75,7 +76,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 
 func TestGetRequestFromObjectID(t *testing.T) {
 	client := newLocalnetClient()
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -19,7 +20,7 @@ import (
 )
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 
 	txnResponse, err := iscmoveclienttest.PTBTestWrapper(
@@ -57,7 +58,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 }
 
 func TestAssetsBagPlaceCoin(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
@@ -100,7 +101,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 }
 
 func TestAssetsBagPlaceCoinAmount(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
@@ -145,7 +146,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 }
 
 func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
@@ -203,7 +204,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 
 	txnResponse, err := iscmoveclienttest.PTBTestWrapper(
@@ -266,7 +267,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
@@ -392,7 +393,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 }
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
+	cryptolibSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	client := newLocalnetClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)

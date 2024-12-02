@@ -15,6 +15,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,8 +24,8 @@ import (
 
 func TestTxBuilderBasic(t *testing.T) {
 	client := newLocalnetClient()
-	chainSigner := newSignerWithFunds(t, testSeed, 0)
-	senderSigner := newSignerWithFunds(t, testSeed, 1)
+	chainSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := newSignerWithFunds(t, testcommon.TestSeed, 1)
 	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
@@ -90,9 +91,9 @@ func TestTxBuilderBasic(t *testing.T) {
 
 func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	client := newLocalnetClient()
-	chainSigner := newSignerWithFunds(t, testSeed, 0)
-	senderSigner := newSignerWithFunds(t, testSeed, 1)
-	recipientSigner := newSignerWithFunds(t, testSeed, 2)
+	chainSigner := newSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := newSignerWithFunds(t, testcommon.TestSeed, 1)
+	recipientSigner := newSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
@@ -194,7 +195,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 }
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	client := newLocalnetClient()
-	signer := newSignerWithFunds(t, testSeed, 0)
+	signer := newSignerWithFunds(t, testcommon.TestSeed, 0)
 	iscPackage1, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(signer))
 	require.NoError(t, err)
 
@@ -339,8 +340,6 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, txnResponse3.Effects.Data.IsSuccess())
 }
-
-var testSeed = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116, 90, 172, 148, 59, 33, 88, 252, 134, 42, 231, 198, 208, 141, 209, 116, 78, 21, 216, 24}
 
 func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seed[0] = seed[0] + byte(index)
