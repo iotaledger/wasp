@@ -11,11 +11,12 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 )
 
 func TestGetAllBalances(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	balances, err := api.GetAllBalances(context.TODO(), testAddress)
+	balances, err := api.GetAllBalances(context.TODO(), iotago.MustAddressFromHex(testcommon.TestAddress))
 	require.NoError(t, err)
 	for _, balance := range balances {
 		t.Logf(
@@ -46,7 +47,7 @@ func TestGetAllCoins(t *testing.T) {
 			a:    iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL),
 			args: args{
 				ctx:     context.TODO(),
-				address: testAddress,
+				address: iotago.MustAddressFromHex(testcommon.TestAddress),
 				cursor:  nil,
 				limit:   3,
 			},
@@ -57,7 +58,7 @@ func TestGetAllCoins(t *testing.T) {
 			a:    iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL),
 			args: args{
 				ctx:     context.TODO(),
-				address: testAddress,
+				address: iotago.MustAddressFromHex(testcommon.TestAddress),
 				cursor:  nil,
 				limit:   0,
 			},
@@ -89,7 +90,7 @@ func TestGetAllCoins(t *testing.T) {
 
 func TestGetBalance(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	balance, err := api.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: testAddress})
+	balance, err := api.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: iotago.MustAddressFromHex(testcommon.TestAddress)})
 	require.NoError(t, err)
 	t.Logf(
 		"Coin Name: %v, Count: %v, Total: %v, Locked: %v",
@@ -111,7 +112,7 @@ func TestGetCoins(t *testing.T) {
 	defaultCoinType := iotajsonrpc.IotaCoinType
 	coins, err := api.GetCoins(
 		context.TODO(), iotaclient.GetCoinsRequest{
-			Owner:    testAddress,
+			Owner:    iotago.MustAddressFromHex(testcommon.TestAddress),
 			CoinType: &defaultCoinType,
 			Limit:    3,
 		},

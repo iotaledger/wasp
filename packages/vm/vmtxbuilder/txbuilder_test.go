@@ -18,6 +18,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -27,8 +28,8 @@ import (
 func TestTxBuilderBasic(t *testing.T) {
 	l1starter.SingleTest(t)
 	client := clients.NewLocalnetClient()
-	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 1)
+	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
@@ -94,9 +95,9 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	l1starter.SingleTest(t)
 
 	client := clients.NewLocalnetClient()
-	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 1)
-	recipientSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 2)
+	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+	recipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
@@ -201,7 +202,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	l1starter.SingleTest(t)
 
 	client := clients.NewLocalnetClient()
-	signer := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	signer := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	iscPackage1, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(signer))
 	require.NoError(t, err)
 

@@ -10,24 +10,21 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 )
 
-var testMnemonic = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
-
 func TestNewSigner(t *testing.T) {
-	testMnemonic := "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
 	testIotaAddress := iotago.MustAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
-	testEd25519Address := iotago.MustAddressFromHex("0xe54d993cf56be93ba0764c7ee2c817085b70f0e6d3ad1a71c3335ee3529b4a48")
-	signer, err := iotasigner.NewSignerWithMnemonic(testMnemonic, iotasigner.KeySchemeFlagIotaEd25519)
+	signer, err := iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagIotaEd25519)
 	require.NoError(t, err)
 	require.Equal(t, testIotaAddress, signer.Address())
-	signer, err = iotasigner.NewSignerWithMnemonic(testMnemonic, iotasigner.KeySchemeFlagEd25519)
+	signer, err = iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagEd25519)
 	require.NoError(t, err)
-	require.Equal(t, testEd25519Address, signer.Address())
+	require.Equal(t, testcommon.TestAddress, signer.Address())
 }
 
 func TestSignatureMarshalUnmarshal(t *testing.T) {
-	signer, err := iotasigner.NewSignerWithMnemonic(testMnemonic, iotasigner.KeySchemeFlagDefault)
+	signer, err := iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagDefault)
 	require.NoError(t, err)
 
 	msg := "I want to have some bubble tea"
@@ -48,8 +45,7 @@ func TestSignatureMarshalUnmarshal(t *testing.T) {
 
 func ExampleSigner() {
 	// Create a iotasigner.InMemorySigner with mnemonic
-	mnemonic := "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
-	signer1, _ := iotasigner.NewSignerWithMnemonic(mnemonic, iotasigner.KeySchemeFlagDefault)
+	signer1, _ := iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagDefault)
 	fmt.Printf("address   : %v\n", signer1.Address())
 
 	// Create iotasigner.InMemorySigner with private key

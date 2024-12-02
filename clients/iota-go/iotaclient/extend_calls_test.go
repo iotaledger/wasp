@@ -11,8 +11,10 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 )
 
 func TestMintToken(t *testing.T) {
@@ -58,7 +60,8 @@ func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
 		ShowContent: true,
 	}
 	coinType := fmt.Sprintf("0x2::coin::Coin<%v>", iotajsonrpc.IotaCoinType)
-	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.TODO(), testAddress, &options, coinType)
+	address := iotago.MustAddressFromHex(testcommon.TestAddress)
+	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.TODO(), address, &options, coinType)
 	require.NoError(t, err)
 	t.Log(filterObject)
 }

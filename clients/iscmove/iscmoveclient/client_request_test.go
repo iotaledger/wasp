@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -16,7 +17,7 @@ import (
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := iscmoveclienttest.NewLocalnetClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -46,7 +47,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
 	client := iscmoveclienttest.NewLocalnetClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -76,7 +77,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 
 func TestGetRequestFromObjectID(t *testing.T) {
 	client := iscmoveclienttest.NewLocalnetClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 

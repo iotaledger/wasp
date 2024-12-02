@@ -12,7 +12,7 @@ const (
 )
 
 const (
-	ChainIdentifierAlphanet = "ed959793"
+	ChainIdentifierAlphanet = "c065f131"
 	// localnet doesn't have a fixed ChainIdentifier
 )
 
