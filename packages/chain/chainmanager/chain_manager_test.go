@@ -33,7 +33,7 @@ import (
 )
 
 func TestChainMgrBasic(t *testing.T) {
-	l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 
 	type test struct {
 		n int
