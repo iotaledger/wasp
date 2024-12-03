@@ -8,17 +8,15 @@ import (
 )
 
 func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
-	panic("TODO")
-	// aliasOutputID, err := ch.LatestAnchor(chain.ConfirmedState)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// aliasOutput := aliasOutputID.Object
-	// return &isc.ControlAddresses{
-	// 	StateAddress:     cryptolib.NewAddressFromIota(aliasOutput.StateAddress()),
-	// 	GoverningAddress: cryptolib.NewAddressFromIota(aliasOutput.GovernorAddress()),
-	// 	SinceBlockIndex:  aliasOutput.StateIndex,
-	// }, nil
+	anchor, err := ch.LatestAnchor(chain.ConfirmedState)
+	if err != nil {
+		return nil, err
+	}
+	return &isc.ControlAddresses{
+		StateAddress:     ch.GetCommitteeInfo().Address,
+		GoverningAddress: ch.GetCommitteeInfo().Address,
+		SinceBlockIndex:  anchor.GetStateIndex(),
+	}, nil
 }
 
 func GetLatestBlockInfo(ch chain.Chain, blockIndexOrTrieRoot string) (uint32, *blocklog.BlockInfo, error) {
