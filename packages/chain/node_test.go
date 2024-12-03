@@ -58,7 +58,7 @@ type tc struct {
 }
 
 func TestNodeBasic(t *testing.T) {
-	node := l1starter.TestInSingleTestFunc(t)
+	l1starter.SingleTest(t)
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
