@@ -389,7 +389,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, baseAnchorRef))
+		return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult))
 	}))
 	return msgs
 }

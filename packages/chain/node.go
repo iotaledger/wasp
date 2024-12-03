@@ -779,7 +779,7 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			*out.request.BaseStateAnchor.GetObjectID(),
+			out.request.BaseStateAnchor,
 			out.output.Result,
 		)
 	case cons.Skipped:

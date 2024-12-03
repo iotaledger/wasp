@@ -127,6 +127,7 @@ type Output struct {
 }
 
 type Result struct {
+	DecidedAO   *isc.StateAnchor              // The consumed state anchor.
 	Transaction *iotasigner.SignedTransaction // The TX for committing the block.
 	Block       state.Block                   // The state diff produced.
 }
@@ -593,12 +594,11 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
 	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
 	// The decided base alias output can be different from that we have proposed!
-	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
-	stateAnchor := isc.NewStateAnchor(decidedBaseAliasOutput.Anchor(), decidedBaseAliasOutput.ISCPackage())
+	decidedAO := aggregatedProposals.DecidedBaseAliasOutput()
 
 	c.output.NeedVMResult = &vm.VMTask{
 		Processors:           c.processorCache,
-		Anchor:               &stateAnchor,
+		Anchor:               decidedAO,
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		Timestamp:            aggregatedProposals.AggregatedTime(),
@@ -609,7 +609,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		Log:                  c.log.Named("VM"),
 		Migrations:           allmigrations.DefaultScheme,
 	}
-	return nil
+	return c.subTX.AnchorDecided(decidedAO)
 }
 
 func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
@@ -663,10 +663,11 @@ func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggre
 }
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
+func (c *consImpl) uponTXInputsReady(decidedAO *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
 	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsIotaSignature()
 	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
+		DecidedAO:   decidedAO,
 		Transaction: signedTX,
 		Block:       block,
 	}

@@ -13,8 +13,6 @@
 // >            All the previous can be left uncompleted.
 // >       - b) confirmed alias output is received from L1, that we haven't posted in this node.
 // >       - and we have a tip AO (from the local view).
-// >   - If there is a single clean chain, we can use pipelining (consider consDone event
-// >     instead of waiting for confirmed | rejected).
 // >   - We start a consensus instance whenever VLI reports a quorum and we have not started it yet.
 // >     Even if we provided no proposal for that LI.
 //
@@ -283,14 +281,16 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 // > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
 // >   ...
 func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
-	_, tipUpdated, cnfLogIndex := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput)
-	if tipUpdated {
-		cl.varOutput.Suspended(false)
-		return cl.varLogIndex.L1ReplacedBaseAliasOutput()
-	}
-	if !cnfLogIndex.IsNil() {
-		return cl.varLogIndex.L1ConfirmedAliasOutput(cnfLogIndex)
-	}
+	cl.varLocalView.AnchorObjectConfirmed(input.aliasOutput)
+	// TODO: ...
+	// _, tipUpdated, cnfLogIndex := cl.varLocalView.AnchorObjectConfirmed(input.aliasOutput)
+	// if tipUpdated {
+	// 	cl.varOutput.Suspended(false)
+	// 	return cl.varLogIndex.L1ReplacedBaseAliasOutput()
+	// }
+	// if !cnfLogIndex.IsNil() {
+	// 	return cl.varLogIndex.L1ConfirmedAliasOutput(cnfLogIndex)
+	// }
 	return nil
 }
 
@@ -313,7 +313,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOu
 // > ON ConsensusOutput/DONE (CD)
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAnchorRef)
+	cl.varLocalView.TransactionProduced(input.consensusResult.DecidedAO, input.consensusResult.Transaction)
 	return cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
 }
 
