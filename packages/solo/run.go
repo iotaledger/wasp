@@ -108,11 +108,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
-	if res.RotationAddress != nil {
-		panic("TODO")
-	} else {
-		ch.settleStateTransition(res.StateDraft)
-	}
+	ch.settleStateTransition(res.StateDraft)
 	return ptbRes, res.RequestResults
 }
 

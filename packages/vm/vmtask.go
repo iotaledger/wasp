@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -42,8 +41,6 @@ type VMTaskResult struct {
 
 	// StateDraft is the uncommitted state resulting from the execution of the requests
 	StateDraft state.StateDraft
-	// RotationAddress is the next address after a rotation, or nil if there is no rotation
-	RotationAddress *cryptolib.Address
 	// PTB is the ProgrammableTransaction to be sent to L1 for the next anchor
 	// transition, or nil if the task does not produce a normal block
 	UnsignedTransaction iotago.ProgrammableTransaction

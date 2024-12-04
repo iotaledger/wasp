@@ -27,6 +27,8 @@ type AnchorTransactionBuilder struct {
 	ptb *iotago.ProgrammableTransactionBuilder
 
 	ownerAddr *cryptolib.Address
+
+	rotateToAddr *iotago.Address
 }
 
 var _ TransactionBuilder = &AnchorTransactionBuilder{}
@@ -107,12 +109,14 @@ func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *iotago
 	)
 }
 
+func (txb *AnchorTransactionBuilder) RotationTransaction(rotationAddress *iotago.Address) {
+	txb.rotateToAddr = rotationAddress
+}
+
 func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byte, topUpAmount uint64) iotago.ProgrammableTransaction {
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
-	// we have to discard the current txb to avoid reusing an ObjectRef
-	defer func() { txb.ptb = nil }()
 	ptb := iscmoveclient.PTBReceiveRequestsAndTransition(
 		txb.ptb,
 		txb.iscPackage,
@@ -122,14 +126,16 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		stateMetadata,
 		topUpAmount,
 	)
-	return ptb.Finish()
-}
 
-func NewRotationTransaction(anchorRef *iotago.ObjectRef, rotationAddress *iotago.Address) (*iotago.ProgrammableTransaction, error) {
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	if err := ptb.TransferObject(rotationAddress, anchorRef); err != nil {
-		return nil, err
+	if txb.rotateToAddr != nil {
+		ptb.Command(iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+				},
+				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+			},
+		})
 	}
-	pt := ptb.Finish()
-	return &pt, nil
+	return ptb.Finish()
 }
