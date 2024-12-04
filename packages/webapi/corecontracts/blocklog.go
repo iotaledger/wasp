@@ -12,9 +12,12 @@ func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	committeeAddr := ch.GetCommitteeInfo().Address
+
 	return &isc.ControlAddresses{
-		StateAddress:     ch.GetCommitteeInfo().Address,
-		GoverningAddress: ch.GetCommitteeInfo().Address,
+		StateAddress:     committeeAddr,
+		GoverningAddress: committeeAddr,
 		SinceBlockIndex:  anchor.GetStateIndex(),
 	}, nil
 }
