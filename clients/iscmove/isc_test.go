@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -21,6 +22,7 @@ func TestIscCodec(t *testing.T) {
 	bcs.TestCodec(t, iscmove.RefWithObject[ExampleObj]{
 		ObjectRef: *iotatest.RandomObjectRef(),
 		Object:    &ExampleObj{A: 42},
+		Owner:     iotago.MustAddressFromHex(testcommon.TestAddress),
 	})
 
 	anchor := iscmovetest.RandomAnchor()
@@ -36,6 +38,7 @@ func TestIscCodec(t *testing.T) {
 			Digest:   &digest,
 		},
 		Object: &anchor,
+		Owner:  iotago.MustAddressFromHex(testcommon.TestAddress),
 	}
 
 	bcs.TestCodec(t, anchorRef)
