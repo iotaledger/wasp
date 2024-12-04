@@ -7,8 +7,7 @@ import (
 )
 
 type ReceiptResponse struct {
-	// TODO: fix this when mocks are fixed
-	//Request       isc.RequestJSON            `json:"request" swagger:"required"`
+	Request       isc.RequestJSON            `json:"request" swagger:"required"`
 	RawError      *isc.UnresolvedVMErrorJSON `json:"rawError,omitempty"`
 	ErrorMessage  string                     `json:"errorMessage,omitempty"`
 	GasBudget     string                     `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
@@ -27,14 +26,13 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		burnRecords = append(burnRecords, receipt.GasBurnLog.Records...)
 	}
 
-	panic("TODO: fix this when mocks are fixed")
-	// req, err := isc.RequestFromBytes(receipt.Request)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	req, err := isc.RequestFromBytes(receipt.Request)
+	if err != nil {
+		panic(err)
+	}
 
 	return &ReceiptResponse{
-		//Request:       isc.RequestToJSONObject(req),
+		Request:       isc.RequestToJSONObject(req),
 		RawError:      receipt.Error.ToJSONStruct(),
 		ErrorMessage:  receipt.ResolvedError,
 		BlockIndex:    receipt.BlockIndex,

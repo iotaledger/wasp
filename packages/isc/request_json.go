@@ -6,9 +6,9 @@ import (
 )
 
 type RequestJSON struct {
-	Allowance     *Assets        `json:"allowance" swagger:"required"`
+	Allowance     AssetsJSON     `json:"allowance" swagger:"required"`
 	CallTarget    CallTargetJSON `json:"callTarget" swagger:"required"`
-	Assets        *Assets        `json:"assets" swagger:"required"`
+	Assets        AssetsJSON     `json:"assets" swagger:"required"`
 	GasBudget     string         `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
 	IsEVM         bool           `json:"isEVM" swagger:"required"`
 	IsOffLedger   bool           `json:"isOffLedger" swagger:"required"`
@@ -23,9 +23,9 @@ func RequestToJSONObject(request Request) RequestJSON {
 	msg := request.Message()
 
 	return RequestJSON{
-		Allowance:     request.Allowance(),
+		Allowance:     AssetsToAssetsJSON(request.Allowance()),
 		CallTarget:    callTargetToJSONObject(msg.Target),
-		Assets:        request.Assets(),
+		Assets:        AssetsToAssetsJSON(request.Assets()),
 		GasBudget:     strconv.FormatUint(gasBudget, 10),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),

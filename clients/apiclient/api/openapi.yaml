@@ -2268,6 +2268,44 @@ components:
       type: object
       xml:
         name: AliasOutputMetricItem
+    AssetsJSON:
+      example:
+        coins:
+        - coinType:
+            s: s
+          balance: balance
+        - coinType:
+            s: s
+          balance: balance
+        objects:
+        - - 5
+          - 5
+        - - 5
+          - 5
+      properties:
+        coins:
+          items:
+            $ref: '#/components/schemas/CoinJSON'
+          type: array
+          xml:
+            name: Coins
+            wrapped: true
+        objects:
+          items:
+            items:
+              format: int32
+              type: integer
+            type: array
+          type: array
+          xml:
+            name: Objects
+            wrapped: true
+      required:
+      - coins
+      - objects
+      type: object
+      xml:
+        name: AssetsJSON
     AssetsResponse:
       example:
         baseTokens: baseTokens
@@ -2464,6 +2502,29 @@ components:
       type: object
       xml:
         name: BurnRecord
+    CallTargetJSON:
+      example:
+        contractHName: contractHName
+        functionHName: functionHName
+      properties:
+        contractHName:
+          description: The contract name as HName (Hex)
+          format: string
+          type: string
+          xml:
+            name: ContractHName
+        functionHName:
+          description: The function name as HName (Hex)
+          format: string
+          type: string
+          xml:
+            name: FunctionHName
+      required:
+      - contractHName
+      - functionHName
+      type: object
+      xml:
+        name: CallTargetJSON
     ChainInfoResponse:
       example:
         chainOwnerId: chainOwnerId
@@ -3084,7 +3145,6 @@ components:
         name: ContractCallViewRequest
     ContractInfoResponse:
       example:
-        programHash: programHash
         name: name
         hName: hName
       properties:
@@ -3100,16 +3160,9 @@ components:
           type: string
           xml:
             name: Name
-        programHash:
-          description: The hash of the contract. (Hex encoded)
-          format: string
-          type: string
-          xml:
-            name: ProgramHash
       required:
       - hName
       - name
-      - programHash
       type: object
       xml:
         name: ContractInfoResponse
@@ -4483,6 +4536,47 @@ components:
           gasBurned: 1
         - code: 6
           gasBurned: 1
+        request:
+          senderAccount: senderAccount
+          assets:
+            coins:
+            - coinType:
+                s: s
+              balance: balance
+            - coinType:
+                s: s
+              balance: balance
+            objects:
+            - - 5
+              - 5
+            - - 5
+              - 5
+          isOffLedger: true
+          requestId: requestId
+          callTarget:
+            contractHName: contractHName
+            functionHName: functionHName
+          gasBudget: gasBudget
+          targetAddress: targetAddress
+          allowance:
+            coins:
+            - coinType:
+                s: s
+              balance: balance
+            - coinType:
+                s: s
+              balance: balance
+            objects:
+            - - 5
+              - 5
+            - - 5
+              - 5
+          params:
+          - - 5
+            - 5
+          - - 5
+            - 5
+          isEVM: true
         blockIndex: 1
         rawError:
           code: code
@@ -4534,6 +4628,8 @@ components:
             name: GasFeeCharged
         rawError:
           $ref: '#/components/schemas/UnresolvedVMErrorJSON'
+        request:
+          $ref: '#/components/schemas/RequestJSON'
         requestIndex:
           format: int32
           minimum: 1
@@ -4552,6 +4648,7 @@ components:
       - gasBurnLog
       - gasBurned
       - gasFeeCharged
+      - request
       - requestIndex
       - storageDepositCharged
       type: object
@@ -4608,6 +4705,110 @@ components:
       type: object
       xml:
         name: RequestIDsResponse
+    RequestJSON:
+      example:
+        senderAccount: senderAccount
+        assets:
+          coins:
+          - coinType:
+              s: s
+            balance: balance
+          - coinType:
+              s: s
+            balance: balance
+          objects:
+          - - 5
+            - 5
+          - - 5
+            - 5
+        isOffLedger: true
+        requestId: requestId
+        callTarget:
+          contractHName: contractHName
+          functionHName: functionHName
+        gasBudget: gasBudget
+        targetAddress: targetAddress
+        allowance:
+          coins:
+          - coinType:
+              s: s
+            balance: balance
+          - coinType:
+              s: s
+            balance: balance
+          objects:
+          - - 5
+            - 5
+          - - 5
+            - 5
+        params:
+        - - 5
+          - 5
+        - - 5
+          - 5
+        isEVM: true
+      properties:
+        allowance:
+          $ref: '#/components/schemas/AssetsJSON'
+        assets:
+          $ref: '#/components/schemas/AssetsJSON'
+        callTarget:
+          $ref: '#/components/schemas/CallTargetJSON'
+        gasBudget:
+          description: The gas budget (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: GasBudget
+        isEVM:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsEVM
+        isOffLedger:
+          format: boolean
+          type: boolean
+          xml:
+            name: IsOffLedger
+        params:
+          items:
+            items:
+              format: int32
+              type: integer
+            type: array
+          type: array
+          xml:
+            name: Params
+            wrapped: true
+        requestId:
+          format: string
+          type: string
+          xml:
+            name: RequestID
+        senderAccount:
+          format: string
+          type: string
+          xml:
+            name: SenderAccount
+        targetAddress:
+          format: string
+          type: string
+          xml:
+            name: TargetAddress
+      required:
+      - allowance
+      - assets
+      - callTarget
+      - gasBudget
+      - isEVM
+      - isOffLedger
+      - params
+      - requestId
+      - senderAccount
+      - targetAddress
+      type: object
+      xml:
+        name: RequestJSON
     RequestProcessedResponse:
       example:
         chainId: chainId

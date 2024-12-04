@@ -3,11 +3,13 @@ export * from '../models/AccountNFTsResponse';
 export * from '../models/AccountNonceResponse';
 export * from '../models/AddUserRequest';
 export * from '../models/AliasOutputMetricItem';
+export * from '../models/AssetsJSON';
 export * from '../models/AssetsResponse';
 export * from '../models/AuthInfoModel';
 export * from '../models/BaseToken';
 export * from '../models/BlockInfoResponse';
 export * from '../models/BurnRecord';
+export * from '../models/CallTargetJSON';
 export * from '../models/ChainInfoResponse';
 export * from '../models/ChainMessageMetrics';
 export * from '../models/ChainRecord';
@@ -62,6 +64,7 @@ export * from '../models/Ratio32';
 export * from '../models/ReceiptResponse';
 export * from '../models/RentStructure';
 export * from '../models/RequestIDsResponse';
+export * from '../models/RequestJSON';
 export * from '../models/RequestProcessedResponse';
 export * from '../models/StateResponse';
 export * from '../models/StateTransaction';
@@ -84,11 +87,13 @@ import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
+import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
+import { CallTargetJSON } from '../models/CallTargetJSON';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
@@ -143,6 +148,7 @@ import { Ratio32 } from '../models/Ratio32';
 import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
+import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
@@ -188,11 +194,13 @@ let typeMap: {[index: string]: any} = {
     "AccountNonceResponse": AccountNonceResponse,
     "AddUserRequest": AddUserRequest,
     "AliasOutputMetricItem": AliasOutputMetricItem,
+    "AssetsJSON": AssetsJSON,
     "AssetsResponse": AssetsResponse,
     "AuthInfoModel": AuthInfoModel,
     "BaseToken": BaseToken,
     "BlockInfoResponse": BlockInfoResponse,
     "BurnRecord": BurnRecord,
+    "CallTargetJSON": CallTargetJSON,
     "ChainInfoResponse": ChainInfoResponse,
     "ChainMessageMetrics": ChainMessageMetrics,
     "ChainRecord": ChainRecord,
@@ -247,6 +255,7 @@ let typeMap: {[index: string]: any} = {
     "ReceiptResponse": ReceiptResponse,
     "RentStructure": RentStructure,
     "RequestIDsResponse": RequestIDsResponse,
+    "RequestJSON": RequestJSON,
     "RequestProcessedResponse": RequestProcessedResponse,
     "StateResponse": StateResponse,
     "StateTransaction": StateTransaction,

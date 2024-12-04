@@ -23,19 +23,16 @@ type ContractInfoResponse struct {
 	HName string `json:"hName"`
 	// The name of the contract.
 	Name string `json:"name"`
-	// The hash of the contract. (Hex encoded)
-	ProgramHash string `json:"programHash"`
 }
 
 // NewContractInfoResponse instantiates a new ContractInfoResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewContractInfoResponse(hName string, name string, programHash string) *ContractInfoResponse {
+func NewContractInfoResponse(hName string, name string) *ContractInfoResponse {
 	this := ContractInfoResponse{}
 	this.HName = hName
 	this.Name = name
-	this.ProgramHash = programHash
 	return &this
 }
 
@@ -95,30 +92,6 @@ func (o *ContractInfoResponse) SetName(v string) {
 	o.Name = v
 }
 
-// GetProgramHash returns the ProgramHash field value
-func (o *ContractInfoResponse) GetProgramHash() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ProgramHash
-}
-
-// GetProgramHashOk returns a tuple with the ProgramHash field value
-// and a boolean to check if the value has been set.
-func (o *ContractInfoResponse) GetProgramHashOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ProgramHash, true
-}
-
-// SetProgramHash sets field value
-func (o *ContractInfoResponse) SetProgramHash(v string) {
-	o.ProgramHash = v
-}
-
 func (o ContractInfoResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -131,7 +104,6 @@ func (o ContractInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["hName"] = o.HName
 	toSerialize["name"] = o.Name
-	toSerialize["programHash"] = o.ProgramHash
 	return toSerialize, nil
 }
 

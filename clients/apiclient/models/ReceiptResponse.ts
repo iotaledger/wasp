@@ -11,6 +11,7 @@
  */
 
 import { BurnRecord } from '../models/BurnRecord';
+import { RequestJSON } from '../models/RequestJSON';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { HttpFile } from '../http/http';
 
@@ -31,6 +32,7 @@ export class ReceiptResponse {
     */
     'gasFeeCharged': string;
     'rawError'?: UnresolvedVMErrorJSON;
+    'request': RequestJSON;
     'requestIndex': number;
     /**
     * Storage deposit charged (uint64 as string)
@@ -80,6 +82,12 @@ export class ReceiptResponse {
             "name": "rawError",
             "baseName": "rawError",
             "type": "UnresolvedVMErrorJSON",
+            "format": ""
+        },
+        {
+            "name": "request",
+            "baseName": "request",
+            "type": "RequestJSON",
             "format": ""
         },
         {

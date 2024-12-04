@@ -16,12 +16,14 @@ docs/AccountNFTsResponse.md
 docs/AccountNonceResponse.md
 docs/AddUserRequest.md
 docs/AliasOutputMetricItem.md
+docs/AssetsJSON.md
 docs/AssetsResponse.md
 docs/AuthApi.md
 docs/AuthInfoModel.md
 docs/BaseToken.md
 docs/BlockInfoResponse.md
 docs/BurnRecord.md
+docs/CallTargetJSON.md
 docs/ChainInfoResponse.md
 docs/ChainMessageMetrics.md
 docs/ChainRecord.md
@@ -81,6 +83,7 @@ docs/Ratio32.md
 docs/ReceiptResponse.md
 docs/RentStructure.md
 docs/RequestIDsResponse.md
+docs/RequestJSON.md
 docs/RequestProcessedResponse.md
 docs/RequestsApi.md
 docs/StateResponse.md
@@ -106,11 +109,13 @@ model_account_nfts_response.go
 model_account_nonce_response.go
 model_add_user_request.go
 model_alias_output_metric_item.go
+model_assets_json.go
 model_assets_response.go
 model_auth_info_model.go
 model_base_token.go
 model_block_info_response.go
 model_burn_record.go
+model_call_target_json.go
 model_chain_info_response.go
 model_chain_message_metrics.go
 model_chain_record.go
@@ -165,6 +170,7 @@ model_ratio32.go
 model_receipt_response.go
 model_rent_structure.go
 model_request_ids_response.go
+model_request_json.go
 model_request_processed_response.go
 model_state_response.go
 model_state_transaction.go

@@ -116,6 +116,19 @@ type CoinJSON struct {
 	Balance  string    `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
 }
 
+func (c *CoinBalances) JSON() []CoinJSON {
+	var coins []CoinJSON
+	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
+		coins = append(coins, CoinJSON{
+			CoinType: t,
+			Balance:  v.String(),
+		})
+		return true
+	})
+
+	return coins
+}
+
 func (c *CoinBalances) UnmarshalJSON(b []byte) error {
 	var coins []CoinJSON
 	err := json.Unmarshal(b, &coins)
@@ -131,15 +144,7 @@ func (c *CoinBalances) UnmarshalJSON(b []byte) error {
 }
 
 func (c CoinBalances) MarshalJSON() ([]byte, error) {
-	var coins []CoinJSON
-	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
-		coins = append(coins, CoinJSON{
-			CoinType: t,
-			Balance:  v.String(),
-		})
-		return true
-	})
-	return json.Marshal(coins)
+	return json.Marshal(c.JSON())
 }
 
 func (c CoinBalances) Equals(b CoinBalances) bool {
