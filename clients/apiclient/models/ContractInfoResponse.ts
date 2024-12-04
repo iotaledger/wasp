@@ -21,10 +21,6 @@ export class ContractInfoResponse {
     * The name of the contract.
     */
     'name': string;
-    /**
-    * The hash of the contract. (Hex encoded)
-    */
-    'programHash': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -38,12 +34,6 @@ export class ContractInfoResponse {
         {
             "name": "name",
             "baseName": "name",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "programHash",
-            "baseName": "programHash",
             "type": "string",
             "format": "string"
         }    ];
