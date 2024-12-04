@@ -20,7 +20,7 @@ func TestNewSigner(t *testing.T) {
 	require.Equal(t, testIotaAddress, signer.Address())
 	signer, err = iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagEd25519)
 	require.NoError(t, err)
-	require.Equal(t, testcommon.TestAddress, signer.Address())
+	require.Equal(t, iotago.MustAddressFromHex(testcommon.TestAddress), signer.Address())
 }
 
 func TestSignatureMarshalUnmarshal(t *testing.T) {
