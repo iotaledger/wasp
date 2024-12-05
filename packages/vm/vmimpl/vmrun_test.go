@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -152,15 +153,13 @@ func transitionAnchor(
 	store indexedstore.IndexedStore,
 	block state.Block,
 ) *isc.StateAnchor {
-	require.EqualValues(t, anchor.Anchor().Version+1, block.StateIndex())
+	require.EqualValues(t, anchor.GetStateIndex()+1, block.StateIndex())
 
-	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(anchor.Anchor().Object.StateMetadata))
+	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(anchor.GetStateMetadata()))
 
 	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
 	chainInfo := governance.NewStateReaderFromChainState(state).
 		GetChainInfo(anchor.ChainID())
-	allCoinBalances := accounts.NewStateReaderFromChainState(stateMetadata.SchemaVersion, state).
-		GetTotalL2FungibleTokens()
 
 	newStateMetadata := transaction.NewStateMetadata(
 		stateMetadata.SchemaVersion,
@@ -171,24 +170,7 @@ func transitionAnchor(
 		chainInfo.PublicURL,
 	)
 
-	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-		ObjectRef: iotago.ObjectRef{
-			ObjectID: anchor.Anchor().ObjectID,
-			Version:  anchor.Anchor().Version + 1,
-		},
-		Object: &iscmove.Anchor{
-			ID: *anchor.Anchor().ObjectID,
-			Assets: iscmove.AssetsBag{
-				ID:   anchor.Anchor().Object.Assets.ID,
-				Size: uint64(len(allCoinBalances)),
-			},
-			StateMetadata: newStateMetadata.Bytes(),
-			StateIndex:    block.StateIndex(),
-		},
-		Owner: anchor.Owner().AsIotaAddress(),
-	}, iotago.ObjectID{})
-
-	return &stateAnchor
+	return isctest.UpdateStateAnchor(anchor, newStateMetadata.Bytes())
 }
 
 func runRequestsAndTransitionAnchor(
@@ -256,7 +238,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 		store,
 		[]isc.Request{req},
 	)
-	require.Equal(t, block.StateIndex(), nextAnchor.Anchor().Object.StateIndex)
+	require.Equal(t, block.StateIndex(), nextAnchor.GetStateIndex())
 
 	{
 		state := lo.Must(store.LatestState())

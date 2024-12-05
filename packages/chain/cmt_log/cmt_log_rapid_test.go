@@ -1,7 +1,6 @@
 package cmt_log_test
 
 import (
-	"encoding/binary"
 	"fmt"
 	"testing"
 
@@ -10,12 +9,11 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -74,26 +72,25 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 	sm.genNodeID = rapid.SampledFrom(gpaNodeIDs)
 	//
 	// Start it.
-	sm.l1Chain = append(sm.l1Chain, sm.nextAliasOutputWithID(0))
+	sm.l1Chain = append(sm.l1Chain, sm.nextStateAnchorWithStateIndex(0))
 	for _, nid := range gpaNodeIDs {
 		sm.l1Delivered[nid] = -1
 	}
 	return sm
 }
 
-func (sm *cmtLogTestRapidSM) nextAliasOutputWithID(stateIndex uint32) *isc.StateAnchor {
-	sm.genAOSerial++
-	var outputID iotago.ObjectID // TODO -> ObjectRef
-	binary.BigEndian.PutUint32(outputID[:], sm.genAOSerial)
-
-	anchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &[]byte{}, StateIndex: &stateIndex})
-	stateAnchor := isc.NewStateAnchor(
-		&iscmove.AnchorWithRef{
-			Object:    &anchor,
-			ObjectRef: sm.anchorRef,
-			Owner:     sm.stateAddress.AsIotaAddress(),
-		}, *cryptolib.NewRandomAddress().AsIotaAddress())
-
+// simulate StateAnchor to state transition
+func (sm *cmtLogTestRapidSM) nextStateAnchorWithStateIndex(stateIndex uint32) *isc.StateAnchor {
+	newAnchor := iotago.ObjectRef{
+		ObjectID: sm.anchorRef.ObjectID,
+		Version:  sm.anchorRef.Version + 1,
+		Digest:   iotatest.RandomDigest(), // This should change update time ObjectRef has changed
+	}
+	stateAnchor := isctest.RandomStateAnchor(isctest.RandomAnchorOption{
+		StateIndex: &stateIndex,
+		ObjectRef:  &newAnchor,
+		Owner:      sm.stateAddress.AsIotaAddress(),
+	})
 	return &stateAnchor
 }
 

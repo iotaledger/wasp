@@ -429,7 +429,7 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 	anchor := ch.GetLatestAnchor()
-	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.Anchor().Object.Assets.ID)
+	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.GetAssetsBag().ID)
 	require.NoError(ch.Env.T, err)
 	return anchor, lo.Must(isc.AssetsFromAssetsBagWithBalances(bals))
 }
