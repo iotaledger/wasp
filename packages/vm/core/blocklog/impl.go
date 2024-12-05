@@ -22,6 +22,8 @@ var Processor = Contract.Processor(nil,
 var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
 
 func (s *StateWriter) SetInitialState() {
+	// TODO: Should we also set Anchor field here?
+
 	s.SaveNextBlockInfo(&BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
 		BlockIndex:            0,

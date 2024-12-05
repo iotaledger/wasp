@@ -144,7 +144,10 @@ func InitChain(
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, baseTokenCoinInfo)
+
+	// TODO: Should we pass anchor into SetInitialState? Where is the anchor, who creates it?
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
+
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, initParams.BlockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
