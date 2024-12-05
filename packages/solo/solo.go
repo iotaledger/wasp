@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -654,9 +653,6 @@ func (env *Solo) executePTB(
 			},
 		},
 	)
-	env.T.Logf("%v", execRes.Digest.String())
-	fmt.Printf("%v", execRes.Digest.String())
-
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes

@@ -28,19 +28,19 @@ func (h *magicContractHandler) MoveBetweenAccounts(
 func (h *magicContractHandler) SetAllowanceBaseTokens(
 	from common.Address,
 	to common.Address,
-	amount coin.Value,
+	amount iscmagic.CoinValue,
 ) {
-	setAllowanceBaseTokens(h.ctx, from, to, amount)
+	setAllowanceBaseTokens(h.ctx, from, to, coin.Value(amount))
 }
 
 // handler for ISCPrivileged::setAllowanceCoin
 func (h *magicContractHandler) SetAllowanceCoin(
 	from common.Address,
 	to common.Address,
-	coinType coin.Type,
-	amount coin.Value,
+	coinType iscmagic.CoinType,
+	amount iscmagic.CoinValue,
 ) {
-	setAllowanceCoin(h.ctx, from, to, coinType, amount)
+	setAllowanceCoin(h.ctx, from, to, coin.MustTypeFromString(coinType), coin.Value(amount))
 }
 
 // handler for ISCPrivileged::moveAllowedFunds

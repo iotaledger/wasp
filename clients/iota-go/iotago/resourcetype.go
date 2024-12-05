@@ -60,6 +60,9 @@ func NewResourceType(str string) (*ResourceType, error) {
 	if err != nil {
 		return nil, err
 	}
+	if len(parts) < 3 {
+		return nil, fmt.Errorf("invalid resource type string: %q", str)
+	}
 	module := parts[1]
 	var objectName string
 	if strings.Contains(parts[2], "<") {

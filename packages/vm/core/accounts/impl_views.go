@@ -12,8 +12,8 @@ import (
 
 // viewBalance returns the balances of the account belonging to the AgentID
 func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) isc.CoinBalances {
-	ctx.Log().Debugf("accounts.viewBalance")
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
+	ctx.Log().Debugf("accounts.viewBalance %s", aid)
 	return NewStateReaderFromSandbox(ctx).getFungibleTokens(accountKey(aid, ctx.ChainID()))
 }
 
