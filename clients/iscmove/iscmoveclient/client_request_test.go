@@ -16,7 +16,7 @@ import (
 )
 
 func TestCreateAndSendRequest(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
+	client := iscmoveclienttest.NewHTTPClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
@@ -46,7 +46,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 }
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
+	client := iscmoveclienttest.NewHTTPClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
@@ -76,7 +76,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 }
 
 func TestGetRequestFromObjectID(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
+	client := iscmoveclienttest.NewHTTPClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)

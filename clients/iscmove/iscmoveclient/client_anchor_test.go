@@ -19,7 +19,7 @@ import (
 )
 
 func TestStartNewChain(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
+	client := iscmoveclienttest.NewHTTPClient()
 	signer := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
@@ -45,7 +45,7 @@ func TestStartNewChain(t *testing.T) {
 }
 
 func TestReceiveRequestAndTransition(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
+	client := iscmoveclienttest.NewHTTPClient()
 	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	const topUpAmount = 123

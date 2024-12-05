@@ -19,7 +19,6 @@ import (
 type L1Config struct {
 	APIURL    string
 	FaucetURL string
-	GraphURL  string
 }
 
 type L1Client interface {

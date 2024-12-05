@@ -26,15 +26,12 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
 
 func TestChainMgrBasic(t *testing.T) {
-	l1starter.SingleTest(t)
-
 	type test struct {
 		n int
 		f int
@@ -221,8 +218,8 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 
 func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.TestChainLedger {
 	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.LocalnetEndpointURL,
-		FaucetURL: iotaconn.LocalnetFaucetURL,
+		APIURL:    iotaconn.AlphanetEndpointURL,
+		FaucetURL: iotaconn.AlphanetFaucetURL,
 	})
 	l1client.RequestFunds(context.Background(), *originator.Address())
 	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))

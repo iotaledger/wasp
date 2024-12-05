@@ -29,6 +29,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
+func TestMain(m *testing.M) {
+	l1starter.StartNode(context.Background())
+}
+
 func TestOrigin(t *testing.T) {
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
@@ -43,9 +47,7 @@ func TestOrigin(t *testing.T) {
 }
 
 func TestCreateOrigin(t *testing.T) {
-	iotaNode := l1starter.Start(context.TODO(), l1starter.DefaultConfig)
-	defer iotaNode.Stop()
-	client := iscmoveclienttest.NewLocalnetClient()
+	client := iscmoveclienttest.NewHTTPClient()
 	sentSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	stateSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
