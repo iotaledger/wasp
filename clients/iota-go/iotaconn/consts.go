@@ -1,14 +1,29 @@
 package iotaconn
 
 const (
-	AlphanetEndpointURL = "https://api.iota-rebased-alphanet.iota.cafe"
 	LocalnetEndpointURL = "http://localhost:9000"
+	AlphanetEndpointURL = "https://api.iota-rebased-alphanet.iota.cafe"
+	TestnetEndpointURL  = "https://api.testnet.iota.cafe"
+	DevnetEndpointURL   = "https://api.devnet.iota.cafe"
 
-	AlphanetWebsocketEndpointURL = "wss://api.iota-rebased-alphanet.iota.cafe"
 	LocalnetWebsocketEndpointURL = "ws://localhost:9000"
+	AlphanetWebsocketEndpointURL = "wss://api.iota-rebased-alphanet.iota.cafe"
+	TestnetWebsocketEndpointURL  = "wss://api.testnet.iota.cafe"
+	DevnetWebsocketEndpointURL   = "wss://api.devnet.iota.cafe"
 
-	AlphanetFaucetURL = "https://faucet.iota-rebased-alphanet.iota.cafe/gas"
 	LocalnetFaucetURL = "http://localhost:9123/gas"
+	AlphanetFaucetURL = "https://faucet.iota-rebased-alphanet.iota.cafe/gas"
+	TestnetFaucetURL  = "https://faucet.testnet.iota.cafe/gas"
+	DevnetFaucetURL   = "https://faucet.devnet.iota.cafe/gas"
+)
+
+type Host string
+
+var (
+	Localnet Host = "localhost"
+	AlphaNet Host = "alphanet"
+	DevNet   Host = "devnet"
+	TestNet  Host = "testnet"
 )
 
 const (

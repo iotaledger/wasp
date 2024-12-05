@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmtest"
 )
@@ -107,4 +108,8 @@ func TestEntropy(t *testing.T) {
 	var entropy2 [32]byte
 	instance.CallFnExpectEvent(nil, "EntropyEvent", &entropy2, "emitEntropy")
 	assert.NotEqual(t, entropy, entropy2)
+}
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
 }

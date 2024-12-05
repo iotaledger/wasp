@@ -67,7 +67,6 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 	coreacc = isc.NewContractAgentID(ch.ChainID, accounts.Contract.Hname())
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
-	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 
 	_, bals := ch.GetLatestAnchorWithBalances()
 	require.True(ch.Env.T, bals.Equals(total))

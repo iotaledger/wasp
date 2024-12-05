@@ -24,9 +24,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
 func TestTxBuilderBasic(t *testing.T) {
-	l1starter.SingleTest(t)
-	client := clients.NewLocalnetClient()
+	client := l1starter.Instance().L1Client()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
@@ -88,9 +91,7 @@ func TestTxBuilderBasic(t *testing.T) {
 }
 
 func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
-	l1starter.SingleTest(t)
-
-	client := clients.NewLocalnetClient()
+	client := l1starter.Instance().L1Client()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	recipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
@@ -193,7 +194,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 }
-
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	t.Skip("we may not need to support Cross Chain Request now")
 	// client := newLocalnetClient()
@@ -344,7 +344,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 }
 
 func TestRotateAndBuildTx(t *testing.T) {
-	client := clients.NewLocalnetClient()
+	client := l1starter.Instance().L1Client()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
@@ -422,7 +422,7 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(

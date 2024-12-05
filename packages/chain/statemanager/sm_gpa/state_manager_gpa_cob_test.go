@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 func initTestChainOfBlocks(t *testing.T) (
@@ -30,7 +32,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
 	require.True(t, ok)
-	origin.InitChain(0, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+	origin.InitChain(allmigrations.LatestSchemaVersion, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	return log, bf, store, sm
 }
 
