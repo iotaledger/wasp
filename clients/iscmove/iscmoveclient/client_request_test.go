@@ -112,6 +112,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, uint64(12), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A")])
-	require.Equal(t, uint64(21), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA")])
+	require.Equal(t, iotajsonrpc.CoinValue(12), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A")])
+	require.Equal(t, iotajsonrpc.CoinValue(21), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA")])
 }

@@ -90,7 +90,10 @@ func TestGetAllCoins(t *testing.T) {
 
 func TestGetBalance(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	balance, err := api.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: iotago.MustAddressFromHex(testcommon.TestAddress)})
+	balance, err := api.GetBalance(
+		context.TODO(),
+		iotaclient.GetBalanceRequest{Owner: iotago.MustAddressFromHex(testcommon.TestAddress)},
+	)
 	require.NoError(t, err)
 	t.Logf(
 		"Coin Name: %v, Count: %v, Total: %v, Locked: %v",
@@ -122,7 +125,7 @@ func TestGetCoins(t *testing.T) {
 	require.Greater(t, len(coins.Data), 0)
 
 	for _, data := range coins.Data {
-		require.Equal(t, iotajsonrpc.IotaCoinType, data.CoinType)
+		require.Equal(t, iotajsonrpc.CoinType(iotajsonrpc.IotaCoinType), data.CoinType)
 		require.Greater(t, data.Balance.Int64(), int64(0))
 	}
 }

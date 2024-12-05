@@ -262,7 +262,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
-	require.Equal(t, uint64(1000000), bal)
+	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
@@ -300,7 +300,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.Equal(t, uint64(2), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
-	require.Equal(t, uint64(1000000), bal)
+	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
 
 func borrowAnchorAssetsAndPlaceCoin(
@@ -470,7 +470,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
-	require.Equal(t, uint64(1000000), bal)
+	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
 
 func newAssetsBag(
