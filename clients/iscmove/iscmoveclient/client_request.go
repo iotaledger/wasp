@@ -79,28 +79,34 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
+	gotAllCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	placedCoins := []lo.Tuple2[*iotajsonrpc.Coin, uint64]{}
 	// assume we can find it in the first page
 	for cointype, bal := range req.Assets.Coins {
-		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
-			if !lo.Must(iotago.IsSameResource(cointype, coin.CoinType)) {
-				return false
+		cumulativedBal := uint64(0)
+		tmpPlacedCoins := []lo.Tuple2[*iotajsonrpc.Coin, uint64]{}
+		for _, gotCoin := range gotAllCoins.Data {
+			if !lo.Must(iotago.IsSameResource(cointype, gotCoin.CoinType)) {
+				continue
 			}
 			if lo.ContainsBy(req.GasPayments, func(ref *iotago.ObjectRef) bool {
-				return ref.ObjectID.Equals(*coin.CoinObjectID)
+				return ref.ObjectID.Equals(*gotCoin.CoinObjectID)
 			}) {
-				return false
+				continue
 			}
-			return coin.Balance.Uint64() >= bal.Uint64()
-		})
-		if !ok {
+			if bal.Uint64() > cumulativedBal {
+				gotCoin := gotCoin
+				tmpPlacedCoins = append(tmpPlacedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: gotCoin, B: gotCoin.Balance.Uint64()})
+				cumulativedBal += gotCoin.Balance.Uint64()
+			}
+		}
+		if bal.Uint64() > cumulativedBal {
 			return nil, fmt.Errorf("cannot find coin for type %s", cointype)
 		}
-		placedCoins = append(placedCoins, lo.Tuple2[*iotajsonrpc.Coin, uint64]{A: coin, B: bal.Uint64()})
+		placedCoins = append(placedCoins, tmpPlacedCoins...)
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
