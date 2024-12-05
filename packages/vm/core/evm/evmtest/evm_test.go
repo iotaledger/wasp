@@ -852,7 +852,7 @@ func TestSendBaseTokens(t *testing.T) {
 	// attempt the operation without first calling `allow`
 	_, err := iscTest.CallFn([]ethCallOptions{{
 		gasLimit: 100_000, // skip estimate gas (which will fail)
-	}}, "sendBaseTokens", receiver, transfer)
+	}}, "sendBaseTokens", receiver, uint64(transfer))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "remaining allowance insufficient")
 

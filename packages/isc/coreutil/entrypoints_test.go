@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 var _ isc.SandboxBase = MockSandBox{}
@@ -49,7 +48,7 @@ func (m MockSandBox) Request() isc.Calldata {
 	panic("implement me")
 }
 
-func (m MockSandBox) Call(msg isc.Message, allowance *isc.Assets) dict.Dict {
+func (m MockSandBox) Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	// TODO implement me
 	panic("implement me")
 }
