@@ -142,6 +142,7 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
 		BlockIndex:            vmctx.stateDraft.BlockIndex(),
 		Timestamp:             vmctx.stateDraft.Timestamp(),
+		Anchor:                vmctx.task.Anchor,
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,

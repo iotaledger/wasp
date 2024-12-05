@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -18,6 +19,7 @@ type BlockInfo struct {
 	SchemaVersion         uint8
 	BlockIndex            uint32
 	Timestamp             time.Time
+	Anchor                *isc.StateAnchor
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
@@ -38,6 +40,8 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("\tBlock index: %d\n", bi.BlockIndex)
 	ret += fmt.Sprintf("\tSchemaVersion: %d\n", bi.SchemaVersion)
 	ret += fmt.Sprintf("\tTimestamp: %d\n", bi.Timestamp.Unix())
+	ret += fmt.Sprintf("\tPackageID: %v\n", bi.Anchor.ISCPackage())
+	ret += fmt.Sprintf("\tAnchor: %v\n", bi.Anchor.Anchor().String())
 	ret += fmt.Sprintf("\tTotal requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("\toff-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("\tSuccessful requests: %d\n", bi.NumSuccessfulRequests)
