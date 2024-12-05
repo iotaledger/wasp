@@ -1,9 +1,9 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -33,8 +33,8 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 		TotalRequests:         info.TotalRequests,
 		NumSuccessfulRequests: info.NumSuccessfulRequests,
 		NumOffLedgerRequests:  info.NumOffLedgerRequests,
-		GasBurned:             iotago.EncodeUint64(info.GasBurned),
-		GasFeeCharged:         iotago.EncodeUint64(uint64(info.GasFeeCharged)),
+		GasBurned:             fmt.Sprint(info.GasBurned),
+		GasFeeCharged:         fmt.Sprint(info.GasFeeCharged),
 	}
 }
 

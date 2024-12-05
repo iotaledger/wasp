@@ -1,7 +1,8 @@
 package models
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -37,10 +38,10 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		ErrorMessage:  receipt.ResolvedError,
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,
-		GasBudget:     iotago.EncodeUint64(receipt.GasBudget),
-		GasBurned:     iotago.EncodeUint64(receipt.GasBurned),
-		GasFeeCharged: iotago.EncodeUint64(uint64(receipt.GasFeeCharged)),
-		SDCharged:     iotago.EncodeUint64(uint64(receipt.SDCharged)),
+		GasBudget:     fmt.Sprint(receipt.GasBudget),
+		GasBurned:     fmt.Sprint(receipt.GasBurned),
+		GasFeeCharged: receipt.GasFeeCharged.String(),
+		SDCharged:     receipt.SDCharged.String(),
 		GasBurnLog:    burnRecords,
 	}
 }

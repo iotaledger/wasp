@@ -1,11 +1,11 @@
 package corecontracts
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -24,7 +24,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 	}
 
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: iotago.EncodeUint64(assets.BaseTokens().Uint64()),
+		BaseTokens: assets.BaseTokens().String(),
 		// TODO: fix this when native tokens reimplemented
 		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
 	}
@@ -49,7 +49,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 	}
 
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: iotago.EncodeUint64(assets.BaseTokens().Uint64()),
+		BaseTokens: assets.BaseTokens().String(),
 		// TODO: fix this when native tokens reimplemented
 		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
 	}
@@ -122,7 +122,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 	}
 
 	nonceResponse := &models.AccountNonceResponse{
-		Nonce: iotago.EncodeUint64(nonce),
+		Nonce: fmt.Sprint(nonce),
 	}
 
 	return e.JSON(http.StatusOK, nonceResponse)

@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -165,7 +164,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 				feePolicy.ValidatorFeeShare = validatorFeeShare
 			}
 
-			log.Printf(iotago.EncodeHex(feePolicy.Bytes()))
+			log.Printf(cryptolib.EncodeHex(feePolicy.Bytes()))
 		},
 	}
 
