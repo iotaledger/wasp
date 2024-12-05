@@ -124,12 +124,8 @@ func makeOnLedgerRequest(
 					ID:   *requestAssetsBagRef.ObjectID,
 					Size: 1,
 				},
-				Balances: map[string]*iotajsonrpc.Balance{
-					coin.BaseTokenType.String(): {
-						CoinType:        coin.BaseTokenType.String(),
-						CoinObjectCount: iotajsonrpc.NewBigInt(1),
-						TotalBalance:    iotajsonrpc.NewBigInt(baseTokens),
-					},
+				Balances: iscmove.AssetsBagBalances{
+					iotajsonrpc.IotaCoinType: iotajsonrpc.CoinValue(baseTokens),
 				},
 			},
 			Message: iscmove.Message{

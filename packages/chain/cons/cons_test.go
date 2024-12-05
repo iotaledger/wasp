@@ -2,6 +2,7 @@ package cons_test
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -718,7 +719,7 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
 		Balances:  make(iscmove.AssetsBagBalances),
 	}
-	a.Balances[iotajsonrpc.IotaCoinType] = &iotajsonrpc.Balance{CoinType: iotajsonrpc.IotaCoinType, TotalBalance: iotajsonrpc.NewBigInt(1000)}
+	a.Balances[iotajsonrpc.IotaCoinType] = iotajsonrpc.CoinValue(rand.Int63())
 	req := iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{

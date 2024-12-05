@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
@@ -83,16 +82,12 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					ID:   *iotatest.RandomAddress(),
 					Size: 1,
 				},
-				Balances: map[string]*iotajsonrpc.Balance{
-					coin.BaseTokenType.String(): {
-						CoinType:        coin.BaseTokenType.String(),
-						CoinObjectCount: iotajsonrpc.NewBigInt(1),
-						TotalBalance:    iotajsonrpc.NewBigInt(tokensForGas),
-					},
+				Balances: iscmove.AssetsBagBalances{
+					iotajsonrpc.IotaCoinType: iotajsonrpc.CoinValue(tokensForGas),
 				},
 			},
 			Allowance: iscmove.Assets{
-				Coins: iscmove.CoinBalances{coin.BaseTokenType.String(): 1},
+				Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 1},
 			},
 			GasBudget: 1000,
 		},

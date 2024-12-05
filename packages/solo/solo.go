@@ -557,7 +557,7 @@ func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
-		cb.Add(lo.Must(coin.TypeFromString(b.CoinType)), coin.Value(b.TotalBalance.Uint64()))
+		cb.Add(lo.Must(coin.TypeFromString(b.CoinType.String())), coin.Value(b.TotalBalance.Uint64()))
 	}
 	return cb
 }

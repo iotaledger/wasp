@@ -9,7 +9,7 @@ import (
 )
 
 type Coin struct {
-	CoinType     string               `json:"coinType"`
+	CoinType     CoinType             `json:"coinType"`
 	CoinObjectID *iotago.ObjectID     `json:"coinObjectID"`
 	Version      *BigInt              `json:"version"`
 	Digest       *iotago.ObjectDigest `json:"digest"`

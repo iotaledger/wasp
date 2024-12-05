@@ -6,6 +6,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 )
 
@@ -21,7 +22,7 @@ func PTBCreateAndSendRequest(
 ) *iotago.ProgrammableTransactionBuilder {
 	allowanceCoinTypes := lo.Keys(allowance.Coins)
 	slices.Sort(allowanceCoinTypes)
-	allowanceBalances := lo.Map(allowanceCoinTypes, func(t string, i int) uint64 {
+	allowanceBalances := lo.Map(allowanceCoinTypes, func(t iotajsonrpc.CoinType, i int) uint64 {
 		return allowance.Coins[t].Uint64()
 	})
 
