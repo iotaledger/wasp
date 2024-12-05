@@ -55,7 +55,7 @@ func (p *FeePolicy) FeeFromGasBurned(gasUnits uint64, availableTokens coin.Value
 // FeeFromGasWithGasPrice calculates the gas fee using the given evmGasPrice
 // (expressed in ISC base tokens with 'full decimals').
 func FeeFromGasWithGasPrice(gasUnits uint64, evmGasPrice *big.Int, l1BaseTokenDecimals uint8) coin.Value {
-	feeFullDecimals := evmGasPrice
+	feeFullDecimals := new(big.Int).Set(evmGasPrice)
 	feeFullDecimals.Mul(feeFullDecimals, big.NewInt(0).SetUint64(gasUnits))
 	fee, remainder := util.EthereumDecimalsToBaseTokenDecimals(feeFullDecimals, l1BaseTokenDecimals)
 	if remainder != nil && remainder.Sign() != 0 {

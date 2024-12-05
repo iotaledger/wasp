@@ -233,3 +233,25 @@ func init() {
 func WrapIotaAddress(addr *cryptolib.Address) (ret [32]byte) {
 	return *addr
 }
+
+type IotaCoinInfo struct {
+	CoinType    CoinType
+	Decimals    uint8
+	Name        string
+	Symbol      string
+	Description string
+	IconUrl     string
+	TotalSupply CoinValue
+}
+
+func WrapIotaCoinInfo(info *isc.IotaCoinInfo) IotaCoinInfo {
+	return IotaCoinInfo{
+		CoinType:    CoinType(info.CoinType.String()),
+		Decimals:    info.Decimals,
+		Name:        info.Name,
+		Symbol:      info.Symbol,
+		Description: info.Description,
+		IconUrl:     info.IconURL,
+		TotalSupply: CoinValue(info.TotalSupply),
+	}
+}

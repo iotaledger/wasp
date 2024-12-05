@@ -15,19 +15,19 @@ import (
 )
 
 // handler for ISCAccounts::getL2BalanceBaseTokens
-func (h *magicContractHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentID) coin.Value {
+func (h *magicContractHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentID) iscmagic.CoinValue {
 	aid := lo.Must(agentID.Unwrap())
 	r := h.callView(accounts.ViewBalanceBaseToken.Message(&aid))
-	return lo.Must(accounts.ViewBalanceBaseToken.DecodeOutput(r))
+	return iscmagic.CoinValue(lo.Must(accounts.ViewBalanceBaseToken.DecodeOutput(r)))
 }
 
 // handler for ISCAccounts::getL2BalanceCoin
 func (h *magicContractHandler) GetL2BalanceCoin(
-	coinType coin.Type,
+	coinType iscmagic.CoinType,
 	agentID iscmagic.ISCAgentID,
 ) coin.Value {
 	aid := lo.Must(agentID.Unwrap())
-	r := h.callView(accounts.ViewBalanceCoin.Message(&aid, coinType))
+	r := h.callView(accounts.ViewBalanceCoin.Message(&aid, coin.MustTypeFromString(coinType)))
 	return lo.Must(accounts.ViewBalanceCoin.DecodeOutput(r))
 }
 
