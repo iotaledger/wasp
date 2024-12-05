@@ -14,6 +14,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/iota.go/v3/builder"
 	"github.com/iotaledger/iota.go/v3/nodeclient"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -92,8 +93,29 @@ func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 	defer cancelContext()
 
 	bech32Addr := myAddress.Bech32(parameters.L1().Protocol.Bech32HRP)
+	falseParam := false
+	trueParam := true
+
 	queries := []nodeclient.IndexerQuery{
-		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
+		&nodeclient.BasicOutputsQuery{
+			AddressBech32: bech32Addr,
+			IndexerTimelockParas: nodeclient.IndexerTimelockParas{
+				HasTimelock:      &trueParam,
+				TimelockedBefore: uint32(time.Now().Unix()),
+			},
+			IndexerNativeTokenParas: nodeclient.IndexerNativeTokenParas{
+				HasNativeTokens: &falseParam,
+			},
+		},
+		&nodeclient.BasicOutputsQuery{
+			AddressBech32: bech32Addr,
+			IndexerTimelockParas: nodeclient.IndexerTimelockParas{
+				HasTimelock: &falseParam,
+			},
+			IndexerNativeTokenParas: nodeclient.IndexerNativeTokenParas{
+				HasNativeTokens: &falseParam,
+			},
+		},
 		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
 		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
 		&nodeclient.AliasesQuery{GovernorBech32: bech32Addr},
