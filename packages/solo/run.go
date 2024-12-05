@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -119,7 +120,7 @@ func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
 		panic(err)
 	}
 
-	latestState := lo.Must(ch.LatestState())
+	latestState := lo.Must(ch.LatestState(chain.ActiveOrCommittedState))
 
 	ch.Env.Publisher().BlockApplied(ch.ChainID, block, latestState)
 

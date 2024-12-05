@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 
@@ -44,7 +43,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 	_ "github.com/iotaledger/wasp/packages/vm/sandbox"
@@ -69,49 +67,6 @@ type Solo struct {
 	mockTime             time.Time
 
 	l1Config L1Config
-}
-
-// data to be persisted in the snapshot
-type chainData struct {
-	// Name is the name of the chain
-	Name string
-
-	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
-	ChainID isc.ChainID
-
-	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
-	// It is a default key pair in many of Solo calls which require private key.
-	OriginatorPrivateKey *cryptolib.KeyPair
-
-	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
-	ValidatorFeeTarget isc.AgentID
-
-	db kvstore.KVStore
-
-	migrationScheme *migrations.MigrationScheme
-}
-
-// Chain represents state of individual chain.
-// There may be several parallel instances of the chain in the 'solo' test
-type Chain struct {
-	chainData
-
-	OriginatorAddress *cryptolib.Address
-	OriginatorAgentID isc.AgentID
-
-	// Env is a pointer to the global structure of the 'solo' test
-	Env *Solo
-
-	// Store is where the chain data (blocks, state) is stored
-	store indexedstore.IndexedStore
-	// Log is the named logger of the chain
-	log *logger.Logger
-	// global processor cache
-	proc *processors.Config
-	// related to asynchronous backlog processing
-	runVMMutex sync.Mutex
-
-	migrationScheme *migrations.MigrationScheme
 }
 
 type InitOptions struct {
@@ -416,17 +371,6 @@ func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
 	return &stateAnchor
 }
 
-func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
-	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
-		ch.Env.ctx,
-		ch.ChainID.AsAddress().AsIotaAddress(),
-	)
-	require.NoError(ch.Env.T, err)
-
-	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
-	return &stateAnchor
-}
-
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 	anchor := ch.GetLatestAnchor()
 	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.Anchor().Object.Assets.ID)
@@ -482,22 +426,6 @@ func (ch *Chain) RunAllReceivedRequests(maxRequestsInBlock int) int {
 		runs++
 	}
 	return runs
-}
-
-func (ch *Chain) AddMigration(m migrations.Migration) {
-	ch.migrationScheme.Migrations = append(ch.migrationScheme.Migrations, m)
-}
-
-func (ch *Chain) ID() isc.ChainID {
-	return ch.ChainID
-}
-
-func (ch *Chain) Log() *logger.Logger {
-	return ch.log
-}
-
-func (ch *Chain) Processors() *processors.Config {
-	return ch.proc
 }
 
 // ---------------------------------------------

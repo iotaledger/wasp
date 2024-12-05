@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -109,7 +110,7 @@ func (b *jsonRPCSoloBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, err
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
-	return b.Chain.LatestState()
+	return b.Chain.LatestState(chain.ActiveOrCommittedState)
 }
 
 func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {

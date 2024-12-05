@@ -8,12 +8,14 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
 func TestOffLedger(t *testing.T) {
+	l1starter.SingleTest(t)
 	env := solo.New(t, &solo.InitOptions{
 		GasBurnLogEnabled: true,
 	})

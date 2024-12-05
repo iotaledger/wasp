@@ -4,10 +4,13 @@
 package solo
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"io"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -17,11 +20,16 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -30,9 +38,143 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 )
+
+// Chain represents state of individual chain.
+// There may be several parallel instances of the chain in the 'solo' test
+type Chain struct {
+	chainData
+
+	OriginatorAddress *cryptolib.Address
+	OriginatorAgentID isc.AgentID
+
+	// Env is a pointer to the global structure of the 'solo' test
+	Env *Solo
+
+	// Store is where the chain data (blocks, state) is stored
+	store indexedstore.IndexedStore
+	// Log is the named logger of the chain
+	log *logger.Logger
+	// global processor cache
+	proc *processors.Config
+	// related to asynchronous backlog processing
+	runVMMutex sync.Mutex
+
+	migrationScheme *migrations.MigrationScheme
+}
+
+var _ chain.Chain = &Chain{}
+
+// data to be persisted in the snapshot
+type chainData struct {
+	// Name is the name of the chain
+	Name string
+
+	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
+	ChainID isc.ChainID
+
+	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
+	// It is a default key pair in many of Solo calls which require private key.
+	OriginatorPrivateKey *cryptolib.KeyPair
+
+	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
+	ValidatorFeeTarget isc.AgentID
+
+	db kvstore.KVStore
+
+	migrationScheme *migrations.MigrationScheme
+}
+
+func (ch *Chain) ID() isc.ChainID {
+	return ch.ChainID
+}
+
+func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
+	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
+		ch.Env.ctx,
+		ch.ChainID.AsAddress().AsIotaAddress(),
+	)
+	require.NoError(ch.Env.T, err)
+
+	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
+	return &stateAnchor
+}
+
+func (ch *Chain) LatestAnchor(freshness chain.StateFreshness) (*isc.StateAnchor, error) {
+	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
+		ch.Env.ctx,
+		ch.ChainID.AsAddress().AsIotaAddress(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
+	return &stateAnchor, nil
+}
+
+func (ch *Chain) LatestState(freshness chain.StateFreshness) (state.State, error) {
+	return ch.store.LatestState()
+}
+
+func (ch *Chain) GetCommitteeInfo() *chain.CommitteeInfo {
+	panic("TODO")
+}
+
+func (ch *Chain) Store() indexedstore.IndexedStore {
+	return ch.store
+}
+
+func (ch *Chain) Processors() *processors.Config {
+	return ch.proc
+}
+
+func (ch *Chain) GetChainNodes() []peering.PeerStatusProvider {
+	panic("TODO")
+}
+
+func (ch *Chain) GetCandidateNodes() []*governance.AccessNodeInfo {
+	panic("TODO")
+}
+
+func (ch *Chain) Log() *logger.Logger {
+	return ch.log
+}
+
+func (ch *Chain) ReceiveOffLedgerRequest(request isc.OffLedgerRequest, sender *cryptolib.PublicKey) error {
+	panic("TODO")
+}
+
+func (ch *Chain) AwaitRequestProcessed(ctx context.Context, requestID isc.RequestID, confirmed bool) <-chan *blocklog.RequestReceipt {
+	panic("TODO")
+}
+
+func (ch *Chain) ConfigUpdated(accessNodesPerNode []*cryptolib.PublicKey) {
+	panic("TODO")
+}
+func (ch *Chain) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
+	panic("TODO")
+}
+func (ch *Chain) GetChainMetrics() *metrics.ChainMetrics {
+	panic("TODO")
+}
+func (ch *Chain) GetConsensusPipeMetrics() chain.ConsensusPipeMetrics {
+	panic("TODO")
+}
+func (ch *Chain) GetConsensusWorkflowStatus() chain.ConsensusWorkflowStatus {
+	panic("TODO")
+}
+func (ch *Chain) GetMempoolContents() io.Reader {
+	panic("TODO")
+}
+
+func (ch *Chain) AddMigration(m migrations.Migration) {
+	ch.migrationScheme.Migrations = append(ch.migrationScheme.Migrations, m)
+}
 
 // String is string representation for main parameters of the chain
 func (ch *Chain) String() string {
@@ -348,14 +490,6 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
-}
-
-func (ch *Chain) Store() indexedstore.IndexedStore {
-	return ch.store
-}
-
-func (ch *Chain) LatestState() (state.State, error) {
-	return ch.store.LatestState()
 }
 
 func (ch *Chain) LatestBlock() state.Block {
