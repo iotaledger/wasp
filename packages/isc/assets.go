@@ -264,12 +264,8 @@ func NewAssets(baseTokens coin.Value) *Assets {
 
 func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (*Assets, error) {
 	assets := NewEmptyAssets()
-	for k, v := range assetsBag.Balances {
-		ct, err := coin.TypeFromString(k)
-		if err != nil {
-			return nil, err
-		}
-		assets.Coins.Add(ct, coin.Value(v.TotalBalance.Uint64()))
+	for cointype, coinval := range assetsBag.Balances {
+		assets.Coins.Add(coin.MustTypeFromString(cointype.String()), coin.Value(coinval))
 	}
 	return assets, nil
 }
@@ -277,11 +273,7 @@ func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (
 func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
 	ret := NewEmptyAssets()
 	for k, v := range assets.Coins {
-		ct, err := coin.TypeFromString(k)
-		if err != nil {
-			return nil, err
-		}
-		ret.Coins.Add(ct, coin.Value(v.Uint64()))
+		ret.Coins.Add(coin.MustTypeFromString(k.String()), coin.Value(v))
 	}
 	return ret, nil
 }
@@ -395,7 +387,7 @@ func (a *Assets) BaseTokens() coin.Value {
 func (a *Assets) AsISCMove() *iscmove.Assets {
 	r := iscmove.NewEmptyAssets()
 	for coinType, amount := range a.Coins {
-		r.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(amount))
+		r.AddCoin(coinType.ToIotaJSONRPC(), iotajsonrpc.CoinValue(amount))
 	}
 	if len(a.Objects) > 0 {
 		panic("TODO")
@@ -408,11 +400,8 @@ func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBa
 		AssetsBag: *b,
 		Balances:  make(iscmove.AssetsBagBalances),
 	}
-	for k, v := range a.Coins {
-		ret.Balances[iotajsonrpc.CoinType(k.String())] = &iotajsonrpc.Balance{
-			CoinType:     iotajsonrpc.CoinType(k.String()),
-			TotalBalance: iotajsonrpc.NewBigInt(v.Uint64()),
-		}
+	for cointype, coinval := range a.Coins {
+		ret.Balances[cointype.ToIotaJSONRPC()] = iotajsonrpc.CoinValue(coinval)
 	}
 	return ret
 }

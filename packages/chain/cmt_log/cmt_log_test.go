@@ -73,6 +73,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	gpaTC.PrintAllStatusStrings("Initial", t.Logf)
 	//
 	// Provide first alias output. Consensus should be sent now.
+	// FIXME is should be anchor state transition, instead of random anchor
 	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
 	t.Logf("AO1=%v", ao1)
 	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao1)).RunAll()
@@ -84,6 +85,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Consensus results received (consumed ao1, produced ao2).
+	// FIXME is should be anchor state transition, instead of random anchor
 	ao2 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 2)
 	t.Logf("AO2=%v", ao2)
 	gpaTC.WithInputs(inputConsensusOutput(gpaNodes, cons1, ao2)).RunAll()

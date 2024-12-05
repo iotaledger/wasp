@@ -630,7 +630,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, evmAddr.String(), trace.To.String())
-	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(coin.Value(1000)).BaseTokens().Uint64()*1e12), trace.Value.String())
+	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(1000).BaseTokens().Uint64()*1e12), trace.Value.String())
 
 	prestate, err := env.traceTransactionWithPrestate(tx.Hash())
 	require.NoError(t, err)

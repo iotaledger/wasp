@@ -20,3 +20,12 @@ func MustNewDigest(str string) *Digest {
 	}
 	return digest
 }
+
+func (d Digest) Bytes() []byte {
+	return d.Data()
+}
+
+func DigestFromBytes(b []byte) *Digest {
+	ret := Digest(b)
+	return &ret
+}

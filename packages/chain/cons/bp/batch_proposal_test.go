@@ -4,7 +4,6 @@
 package bp
 
 import (
-	"crypto/rand"
 	"testing"
 	"time"
 
@@ -13,8 +12,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -33,25 +30,8 @@ func TestBatchProposal1Serialization(t *testing.T) {
 		})
 	}
 
-	anchor := iscmovetest.RandomAnchor()
-
-	// TODO: how to properly generate digest?
-	var digest iotago.Base58
-	_, err := rand.Read(digest)
-	require.NoError(t, err)
-
-	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-		ObjectRef: iotago.ObjectRef{
-			ObjectID: &anchor.ID,
-			Version:  13,
-			Digest:   &digest,
-		},
-		Object: &anchor,
-		Owner:  cryptolib.NewRandomAddress().AsIotaAddress(),
-	}, *iotatest.RandomAddress())
-
+	stateAnchor := isctest.RandomStateAnchor()
 	coinRef := iotatest.RandomObjectRef()
-
 	batchProposal := NewBatchProposal(
 		10,
 		&stateAnchor,
