@@ -1381,10 +1381,10 @@ pub fn func_activate(ctx: &ScFuncContext, f: &ActivateContext) {
     testwasmlib::ScFuncs::deactivate(ctx).func.delay(delay).post();
 }
 
-pub fn func_deactivate(ctx: &ScFuncContext, f: &DeactivateContext) {
+pub fn func_deactivate(_ctx: &ScFuncContext, f: &DeactivateContext) {
     f.state.active().set_value(false);
 }
 
-pub fn view_get_active(ctx: &ScViewContext, f: &GetActiveContext) {
+pub fn view_get_active(_ctx: &ScViewContext, f: &GetActiveContext) {
     f.results.active().set_value(f.state.active().value());
 }
