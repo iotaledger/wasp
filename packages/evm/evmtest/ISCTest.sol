@@ -6,8 +6,6 @@ pragma solidity >=0.8.5;
 import "@iscmagic/ISC.sol";
 
 contract ISCTest {
-    uint64 public constant TokensForGas = 500;
-
     function getChainID() public view returns (ISCChainID) {
         return ISC.sandbox.getChainID();
     }
@@ -63,8 +61,9 @@ contract ISCTest {
         ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
 
         ISCAssets memory assets;
-        require(allowance.coins[0].amount > TokensForGas);
-        assets.coins[0].amount = allowance.coins[0].amount - TokensForGas;
+        assets.coins = new CoinBalance[](1);
+        assets.coins[0].coinType = allowance.coins[0].coinType;
+        assets.coins[0].amount = allowance.coins[0].amount;
 
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
@@ -91,7 +90,7 @@ contract ISCTest {
 
     function callInccounter() public {
         bytes[] memory params = new bytes[](1);
-        params[0] = hex"2A00000000000000"; // 42 encoded as int64
+        params[0] = hex"012A00000000000000"; // optional int64(42) BCS-encoded
         ISC.sandbox.call(
             ISCMessage({
                 target: ISCTarget({
@@ -157,9 +156,9 @@ contract ISCTest {
             hex"0000000000000000000000000000000000000000" // From address
             hex"01" // Optional field ToAddr exists
             , bytes20(uint160(address(this))), // Put our own address as ToAddr
-            hex"0000000000000000" // Gas limit
+            hex"00" // Gas limit
             hex"00" // Optional field value does not exist
-            hex"04000000" // Data length
+            hex"04" // Data length
             hex"b3ee6942" // Function to call: sha3.keccak_256(b'testStackOverflow()').hexdigest()[0:8]
         );
         ISC.sandbox.callView(
@@ -211,13 +210,15 @@ contract ISCTest {
 
     function testCallViewCaller() public view returns (bytes memory) {
         // test that the caller is set to this contract's address
+        bytes[] memory params = new bytes[](1);
+        params[0] = hex"00"; // Optional field agentID
         bytes[] memory r = ISC.sandbox.callView(
             ISCMessage({
                 target: ISCTarget({
                     contractHname: ISC.util.hn("accounts"),
                     entryPoint: ISC.util.hn("balance")
                 }),
-                params: new bytes[](0)
+                params: params
             })
         );
         return r[0];

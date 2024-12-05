@@ -72,20 +72,20 @@ func (h *magicContractHandler) GetAllowance(from, to common.Address) iscmagic.IS
 }
 
 // handler for ISCSandbox::getBaseTokenInfo
-func (h *magicContractHandler) GetBaseTokenInfo() *isc.IotaCoinInfo {
-	return h.GetCoinInfo(coin.BaseTokenType)
+func (h *magicContractHandler) GetBaseTokenInfo() iscmagic.IotaCoinInfo {
+	return h.GetCoinInfo(iscmagic.CoinType(coin.BaseTokenType.String()))
 }
 
 // handler for ISCSandbox::getCoinInfo
-func (h *magicContractHandler) GetCoinInfo(coinType coin.Type) *isc.IotaCoinInfo {
+func (h *magicContractHandler) GetCoinInfo(coinType iscmagic.CoinType) iscmagic.IotaCoinInfo {
 	info, ok := h.ctx.GetCoinInfo(coin.BaseTokenType)
 	h.ctx.Requiref(ok, errUnknownCoin.Error())
-	return info
+	return iscmagic.WrapIotaCoinInfo(info)
 }
 
 // handler for ISCSandbox::ERC20CoinAddress
-func (h *magicContractHandler) ERC20CoinAddress(coinType coin.Type) common.Address {
-	return iscmagic.ERC20CoinAddress(coinType)
+func (h *magicContractHandler) ERC20CoinAddress(coinType iscmagic.CoinType) common.Address {
+	return iscmagic.ERC20CoinAddress(coin.MustTypeFromString(coinType))
 }
 
 // handler for ISCSandbox::erc721NFTCollectionAddress
