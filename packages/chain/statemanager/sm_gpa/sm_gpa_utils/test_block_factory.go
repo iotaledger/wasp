@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -43,7 +42,9 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	var chainInitParams isc.CallArguments
 	agentId := isctest.NewRandomAgentID()
 	if len(chainInitParamsOpt) > 0 {
-		chainInitParams = isc.NewCallArguments(agentId.Bytes(), codec.Encode[uint16](evm.DefaultChainID), codec.Encode[int32](int32(chainInitParamsOpt[0].BlockKeepAmount)))
+		initParams := origin.DefaultInitParams(agentId)
+		initParams.BlockKeepAmount = chainInitParamsOpt[0].BlockKeepAmount
+		chainInitParams = initParams.Encode()
 	} else {
 		chainInitParams = origin.DefaultInitParams(agentId).Encode()
 
