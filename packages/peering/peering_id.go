@@ -10,11 +10,11 @@
 package peering
 
 import (
+	"crypto/ed25519"
 	"crypto/rand"
 	"io"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -23,7 +23,7 @@ import (
 // PeeringID is relates peers in different nodes for a particular
 // communication group. E.g. PeeringID identifies a committee in
 // the consensus, etc.
-type PeeringID [iotago.Ed25519AddressBytesLength]byte
+type PeeringID [ed25519.PublicKeySize]byte
 
 func RandomPeeringID(seed ...[]byte) PeeringID {
 	var pid PeeringID

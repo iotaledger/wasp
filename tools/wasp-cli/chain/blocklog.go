@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -108,7 +108,7 @@ func hexLenFromByteLen(length int) int {
 
 func reqIDFromString(s string) isc.RequestID {
 	switch len(s) {
-	case hexLenFromByteLen(iotago.OutputIDLength):
+	case hexLenFromByteLen(iotago.AddressLen):
 		// isc ReqID
 		reqID, err := isc.RequestIDFromString(s)
 		log.Check(err)
