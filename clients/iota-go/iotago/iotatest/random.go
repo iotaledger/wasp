@@ -36,8 +36,8 @@ func RandomTransactionData() *iotago.TransactionData {
 				Package:       RandomAddress(),
 				Module:        "test_module",
 				Function:      "test_func",
-				TypeArguments: []iotago.TypeTag{},
-				Arguments:     []iotago.Argument{},
+				TypeArguments: nil,
+				Arguments:     nil,
 			},
 		},
 	)

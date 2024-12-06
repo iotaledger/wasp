@@ -222,6 +222,8 @@ func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.
 		FaucetURL: iotaconn.AlphanetFaucetURL,
 	})
 	l1client.RequestFunds(context.Background(), *originator.Address())
+	l1client.RequestFunds(context.Background(), *originator.Address())
+
 	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
 

@@ -40,15 +40,15 @@ type BlockFactoryCallArguments struct {
 
 func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallArguments) *BlockFactory {
 	var chainInitParams isc.CallArguments
-	agentId := isctest.NewRandomAgentID()
+	agentID := isctest.NewRandomAgentID()
 	if len(chainInitParamsOpt) > 0 {
-		initParams := origin.DefaultInitParams(agentId)
+		initParams := origin.DefaultInitParams(agentID)
 		initParams.BlockKeepAmount = chainInitParamsOpt[0].BlockKeepAmount
 		chainInitParams = initParams.Encode()
 	} else {
-		chainInitParams = origin.DefaultInitParams(agentId).Encode()
-
+		chainInitParams = origin.DefaultInitParams(agentID).Encode()
 	}
+
 	chainID := isctest.RandomChainID()
 	chainIDObjID := chainID.AsObjectID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
@@ -59,14 +59,14 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 		originBlock.L1Commitment(),
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
-		isc.NewCallArguments(),
+		chainInitParams,
 		"",
 	)
 	originAnchorData := iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: iotago.ObjectRef{
 			ObjectID: &chainIDObjID,
 			Version:  0,
-			Digest:   nil, // TODO
+			Digest:   nil,
 		},
 		Object: &iscmove.Anchor{
 			ID:            chainIDObjID,
@@ -194,16 +194,25 @@ func (bfT *BlockFactory) GetNextBlock(
 	counterBin = codec.Encode[uint64](counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
-	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
 	newCommitment := block.L1Commitment()
 
 	consumedAnchor := bfT.GetAnchor(commitment)
-	newAnchor := *consumedAnchor
 	consumedMetadata, err := transaction.StateMetadataFromBytes(consumedAnchor.Anchor().Object.StateMetadata)
 	require.NoError(bfT.t, err)
 	consumedMetadata.L1Commitment, err = state.NewL1CommitmentFromBytes(newCommitment.Bytes())
 	require.NoError(bfT.t, err)
-	newAnchor.Anchor().Object.StateIndex = newAnchor.Anchor().Object.StateIndex + 1
+
+	newAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		Owner:     consumedAnchor.Anchor().Owner,
+		ObjectRef: consumedAnchor.Anchor().ObjectRef,
+		Object: &iscmove.Anchor{
+			consumedAnchor.Anchor().Object.ID,
+			consumedAnchor.Anchor().Object.Assets,
+			consumedMetadata.Bytes(),
+			consumedAnchor.Anchor().Object.StateIndex + 1,
+		},
+	}, consumedAnchor.ISCPackage())
+
 	bfT.anchorData[newCommitment.BlockHash()] = *newAnchor.Anchor()
 
 	return block

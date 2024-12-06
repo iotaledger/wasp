@@ -2,7 +2,7 @@ package sm_gpa
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+
 	"math/rand"
 	"testing"
 	"time"
@@ -11,6 +11,8 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
@@ -23,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 type testEnv struct {
@@ -123,7 +126,7 @@ func (teT *testEnv) addVariedNodes(
 		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
-		origin.InitChain(0, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	}
 	teT.nodeIDs = nodeIDs
 	teT.sms = sms

@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestInitiatorMsgSerialization(t *testing.T) {
@@ -36,13 +36,13 @@ func TestInitiatorMsgSerialization(t *testing.T) {
 		timeout:      time.Duration(time.Now().UnixNano()),
 		roundRetry:   time.Duration(time.Now().UnixNano() + 1),
 	}
-	rwutil.ReadWriteTest(t, msg, new(initiatorInitMsg))
+	bcs.TestCodec(t, msg)
 
 	// Test with a 1-item peerPubs array.
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey2}
-	rwutil.ReadWriteTest(t, msg, new(initiatorInitMsg))
+	bcs.TestCodec(t, msg)
 
 	// Test with a 3-item peerPubs array.
 	msg.peerPubs = []*cryptolib.PublicKey{pubKey3, pubKey2, pubKey1}
-	rwutil.ReadWriteTest(t, msg, new(initiatorInitMsg))
+	bcs.TestCodec(t, msg)
 }

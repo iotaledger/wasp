@@ -169,14 +169,14 @@ type initiatorInitMsgIn struct {
 // This is a message sent by the initiator to all the peers to
 // initiate the DKG process.
 type initiatorInitMsg struct {
-	step         byte
-	dkgRef       string // Some unique string to identify duplicate initialization.
-	peeringID    peering.PeeringID
-	peerPubs     []*cryptolib.PublicKey
-	initiatorPub *cryptolib.PublicKey
-	threshold    uint16
-	timeout      time.Duration
-	roundRetry   time.Duration
+	step         byte                   `bcs:"export"`
+	dkgRef       string                 `bcs:"export"` // Some unique string to identify duplicate initialization.
+	peeringID    peering.PeeringID      `bcs:"export"`
+	peerPubs     []*cryptolib.PublicKey `bcs:"export"`
+	initiatorPub *cryptolib.PublicKey   `bcs:"export"`
+	threshold    uint16                 `bcs:"export"`
+	timeout      time.Duration          `bcs:"export"`
+	roundRetry   time.Duration          `bcs:"export"`
 }
 
 var _ initiatorMsg = new(initiatorInitMsg)
