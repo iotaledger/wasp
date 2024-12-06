@@ -27,7 +27,6 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"

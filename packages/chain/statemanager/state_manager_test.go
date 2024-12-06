@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 func TestCruelWorld(t *testing.T) { //nolint:gocyclo
@@ -86,7 +87,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 		logNode := log.Named(peeringURLs[i])
 		stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
-		origin.InitChain(0, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
 			context.Background(),
