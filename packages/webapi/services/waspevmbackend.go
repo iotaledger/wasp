@@ -33,6 +33,7 @@ type WaspEVMBackend struct {
 	baseToken  *parameters.BaseToken
 }
 
+// Returns the anchor, which was used to form state of given index.
 func (b *WaspEVMBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
 	state, err := b.chain.LatestState(chain.ConfirmedState)
 	if err != nil {
@@ -46,7 +47,7 @@ func (b *WaspEVMBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) 
 		return nil, fmt.Errorf("block %d not found", stateIndex)
 	}
 
-	return block.Anchor, nil
+	return block.PreviousAnchor, nil
 }
 
 var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
