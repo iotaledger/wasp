@@ -7,11 +7,11 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestPeeringIDSerialization(t *testing.T) {
 	peeringID := peering.RandomPeeringID()
 
-	rwutil.ReadWriteTest(t, &peeringID, new(peering.PeeringID))
+	bcs.TestCodec(t, &peeringID)
 }
