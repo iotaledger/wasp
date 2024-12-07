@@ -52,6 +52,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -505,6 +506,8 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 		return false
 	}
 	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
+		mpi.log.Warn("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
+
 		return mpi.addOffledger(offLedgerReq)
 	}
 	return false

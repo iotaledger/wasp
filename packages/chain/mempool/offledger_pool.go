@@ -14,6 +14,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -134,6 +135,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 	deleted := p.LimitPoolSize()
 	if lo.Contains(deleted, entry) {
 		// this exact request was deleted from the pool, do not update metrics, or mark available
+		p.log.Debugf("NOT ADDED, was removed already. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
 		return false
 	}
 
