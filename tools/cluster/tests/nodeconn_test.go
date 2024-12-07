@@ -8,6 +8,9 @@ package tests
 
 import (
 	"context"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"testing"
 	"time"
 
@@ -27,32 +30,14 @@ import (
 
 func createChain(t *testing.T) isc.ChainID {
 	originator := cryptolib.NewKeyPair()
-	layer2Client := l2connection.NewClient(l1.Config, testlogger.NewLogger(t))
-	err := layer2Client.RequestFunds(originator.Address())
+	address := originator.Address()
+	layer2Client := l1.L1Client()
+	err := layer2Client.RequestFunds(context.Background(), *address)
 	require.NoError(t, err)
 
-	utxoMap, err := layer2Client.OutputMap(originator.Address())
-	require.NoError(t, err)
-
-	var utxoIDs iotago.OutputIDs
-	for id := range utxoMap {
-		utxoIDs = append(utxoIDs, id)
-	}
-
-	originTx, _, chainID, err := origin.NewChainOriginTransaction(
-		originator,
-		originator.Address(),
-		originator.Address(),
-		0,
-		nil,
-		utxoMap,
-		utxoIDs,
-		allmigrations.DefaultScheme.LatestSchemaVersion(),
-	)
-	require.NoError(t, err)
-	_, err = layer2Client.PostTxAndWaitUntilConfirmation(originTx)
-	require.NoError(t, err)
-
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(originator.Address())).Encode()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, 0, isc.BaseTokenCoinInfo)
 	return chainID
 }
 

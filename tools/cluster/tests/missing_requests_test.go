@@ -32,7 +32,7 @@ func TestMissingRequests(t *testing.T) {
 	require.NoError(t, err)
 
 	// deposit funds before sending the off-ledger request
-	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
+	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, clu.Config.ISCPackageID(), userWallet)
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)

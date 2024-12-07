@@ -88,6 +88,24 @@ func TestMain(m *testing.M) {
 	m.Run()
 }
 
+func ClusterStart(config L1EndpointConfig) IotaNodeEndpoint {
+	if !config.IsLocal {
+		iotaNode := NewRemoteIotaNode(config.APIURL, config.FaucetURL, ISCPackageOwner)
+		iotaNode.start(context.Background())
+
+		var iotaNodeEndpoint IotaNodeEndpoint = iotaNode
+		instance.Store(&iotaNodeEndpoint)
+	} else {
+		node, cancel := StartNode(context.Background())
+		panic("handle clean up properly")
+		defer cancel()
+
+		instance.Store(&node)
+	}
+
+	return *instance.Load()
+}
+
 func ISCPackageID() iotago.PackageID {
 	return Instance().ISCPackageID()
 }

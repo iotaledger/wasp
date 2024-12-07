@@ -3,10 +3,12 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"os"
 	"path"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -34,7 +36,7 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 
 type ClusterConfig struct {
 	Wasp []templates.WaspConfigParams
-	L1   clients.L1Config
+	L1   l1starter.IotaNodeEndpoint
 }
 
 func DefaultWaspConfig() WaspConfig {
@@ -51,7 +53,7 @@ func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
 }
 
-func NewConfig(waspConfig WaspConfig, l1Config clients.L1Config, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
+func NewConfig(waspConfig WaspConfig, l1Config l1starter.IotaNodeEndpoint, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
 	nodesConfigs := make([]templates.WaspConfigParams, waspConfig.NumNodes)
 	for i := 0; i < waspConfig.NumNodes; i++ {
 		// generate template from waspconfigs
@@ -160,9 +162,19 @@ func (c *ClusterConfig) PeeringPort(nodeIndex int) int {
 	return c.Wasp[nodeIndex].PeeringPort
 }
 
-func (c *ClusterConfig) L1APIAddress(nodeIndex int) string {
-	return c.L1.APIURL
+func (c *ClusterConfig) L1APIAddress() string {
+	return c.L1.APIURL()
 }
+
+func (c *ClusterConfig) L1FaucetAddress() string {
+	return c.L1.FaucetURL()
+}
+
+func (c *ClusterConfig) L1Client() clients.L1Client {
+	return c.L1.L1Client()
+}
+
+func (c *ClusterConfig) ISCPackageID() iotago.PackageID { return c.L1.ISCPackageID() }
 
 func (c *ClusterConfig) ProfilingPort(nodeIndex int) int {
 	return c.Wasp[nodeIndex].ProfilingPort

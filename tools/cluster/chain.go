@@ -68,6 +68,7 @@ func (ch *Chain) Client(keyPair *cryptolib.KeyPair, nodeIndex ...int) *chainclie
 		ch.Cluster.L1Client(),
 		ch.Cluster.WaspClient(idx),
 		ch.ChainID,
+		ch.Cluster.Config.ISCPackageID(),
 		keyPair,
 	)
 }
