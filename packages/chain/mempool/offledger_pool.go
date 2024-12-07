@@ -67,7 +67,7 @@ func (p *OffLedgerPool) Get(reqRef *isc.RequestRef) isc.OffLedgerRequest {
 	return entry.req
 }
 
-func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
+func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 	ref := isc.RequestRefFromRequest(request)
 	entry := &OrderedPoolEntry{req: request, ts: time.Now()}
 	account := request.SenderAccount().String()
@@ -76,7 +76,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 	// add the request to the "request ref" Lookup Table
 	if !p.refLUT.Set(ref.AsKey(), entry) {
 		p.log.Debugf("NOT ADDED, already exists. reqID: %v as key=%v, senderAccount: ", request.ID(), ref, account)
-		return // not added already exists
+		return true // not added already exists
 	}
 
 	//
@@ -134,7 +134,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 	deleted := p.LimitPoolSize()
 	if lo.Contains(deleted, entry) {
 		// this exact request was deleted from the pool, do not update metrics, or mark available
-		return
+		return false
 	}
 
 	//
@@ -142,6 +142,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) {
 	p.log.Debugf("ADD %v as key=%v, senderAccount: %s", request.ID(), ref, account)
 	p.sizeMetric(p.refLUT.Size())
 	p.waitReq.MarkAvailable(request)
+	return true
 }
 
 // LimitPoolSize drops the txs with the lowest price if the total number of requests is too big
