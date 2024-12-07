@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
@@ -19,7 +18,7 @@ func TestRequestAddDelegation(t *testing.T) {
 	if l1starter.Instance().IsLocal() {
 		t.Skipf("Skipped test as the configured local node does not support this test case")
 	}
-	
+
 	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
@@ -35,7 +34,7 @@ func TestRequestAddDelegation(t *testing.T) {
 	pickedCoins, err := iotajsonrpc.PickupCoins(coins, new(big.Int).SetUint64(amount), 0, 0, 0)
 	require.NoError(t, err)
 
-	validator, err := testcommon.GetValidatorAddress(context.Background())
+	validator, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 
 	txBytes, err := iotaclient.BCS_RequestAddStake(
@@ -60,7 +59,7 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 	}
 
 	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
-	signer, err := testcommon.GetValidatorAddressWithCoins(context.Background())
+	signer, err := GetValidatorAddressWithCoins(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &signer)
 	require.NoError(t, err)

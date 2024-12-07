@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
@@ -39,7 +38,7 @@ func TestGetReferenceGasPrice(t *testing.T) {
 
 func TestGetStakes(t *testing.T) {
 	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
-	address, err := testcommon.GetValidatorAddress(context.Background())
+	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &address)
 	require.NoError(t, err)
@@ -59,7 +58,7 @@ func TestGetStakes(t *testing.T) {
 
 func TestGetStakesByIds(t *testing.T) {
 	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
-	address, err := testcommon.GetValidatorAddress(context.Background())
+	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := api.GetStakes(context.Background(), &address)
 	require.NoError(t, err)

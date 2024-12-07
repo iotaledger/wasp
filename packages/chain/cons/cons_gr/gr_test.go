@@ -15,9 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -29,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -84,9 +83,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	originator := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
-	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 
 	//
@@ -118,10 +117,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	stateMgrs := make([]*testStateMgr, len(peerIdentities))
 	procConfig := coreprocessors.NewConfigWithTestContracts()
 
-	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.AlphanetEndpointURL,
-		FaucetURL: iotaconn.AlphanetFaucetURL,
-	})
+	l1client := l1starter.Instance().L1Client()
 
 	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
