@@ -1,9 +1,12 @@
 run:
     tests: true
-    skip-dirs:
-        - contracts/wasm
+
 
 issues:
+    exclude-dirs:
+      - contracts/wasm
+      - tools/cluster
+      - documentation
     exclude-use-default: false
     # Maximum issues count per one linter.
     # Set to 0 to disable.
@@ -76,8 +79,11 @@ linters-settings:
             mnd:
                 # don't include the "operation" and "assign"
                 checks: [argument, case, condition, return]
+
     govet:
-        check-shadowing: true
+        enable:
+          - shadow
+
     misspell:
         locale: US
     nolintlint:
@@ -143,11 +149,10 @@ linters:
         - bodyclose # Checks whether HTTP response body is closed successfully.
         - dupl # Tool for code clone detection.
         - errcheck # Errcheck is a program for checking for unchecked errors in go programs. These unchecked errors can be critical bugs in some cases
-        - exportloopref # Checks for pointers to enclosing loop variables.
+        - copyloopvar # Checks for pointers to enclosing loop variables.
         - funlen # Tool for detection of long functions.
         - gocritic # Provides many diagnostics that check for bugs, performance and style issues.
         - gocyclo # Computes and checks the cyclomatic complexity of functions.
-        - goerr113 # Golang linter to check the errors handling expressions.
         - gofmt # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification.
         - gofumpt # Gofumpt checks whether code was gofumpt-ed. A more strict version of gofmt.
         - goimports # Sorts and format imports.
@@ -171,7 +176,6 @@ linters:
         - bidichk # Checks for dangerous unicode character sequences
         - contextcheck # check the function whether use a non-inherited context
         - decorder # check declaration order and count of types, constants, variables and functions
-        - execinquery # execinquery is a linter about query string checker in Query function which reads your Go src files and warning it finds
         - goheader # Checks is file header matches to pattern [fast: true, auto-fix: false]
         - gomodguard # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations. [fast: true, auto-fix: false]
         - grouper # An analyzer to analyze expression groups.
