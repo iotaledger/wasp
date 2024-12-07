@@ -48,6 +48,7 @@ type IotaNodeEndpoint interface {
 	APIURL() string
 	FaucetURL() string
 	L1Client() clients.L1Client
+	IsLocal() bool
 }
 
 func init() {

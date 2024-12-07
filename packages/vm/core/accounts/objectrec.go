@@ -8,7 +8,7 @@ import (
 
 // ObjectRecord represents a L1 generic object owned by the chain (e.g. NFT)
 type ObjectRecord struct {
-	ID  iotago.ObjectID `bcs:"-"` // transient
+	ID  iotago.ObjectID // transient
 	BCS []byte
 }
 
