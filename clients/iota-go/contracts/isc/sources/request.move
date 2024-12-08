@@ -9,8 +9,8 @@ module isc::request {
     use std::string::String;
     use isc::assets_bag::AssetsBag;
 
-    // The allowance coin_types vector and balances vector are not in the same size
-    const EAllowanceVecUnequal: u64 = 0;
+    #[error]
+    const EAllowanceVecUnequal: vector<u8> = b"The allowance's coin_types and balances vector are not in the same size";
 
     // === Main structs ===
 

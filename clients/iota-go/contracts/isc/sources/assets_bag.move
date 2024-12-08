@@ -11,7 +11,8 @@ module isc::assets_bag {
     };
 
     // Attempted to destroy a non-empty assets bag
-    const EBagNotEmpty: u64 = 0;
+    #[error]
+    const EBagNotEmpty: vector<u8> = b"Can't destroy AssetsBag: it still contains assets.";
 
     // === Main structs ===
 
