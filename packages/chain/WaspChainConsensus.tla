@@ -315,7 +315,7 @@ The committee has to handle rejects and reorgs in L1, agree on the next
 log entry by choosing an alias output to use as an input for the next TX.
 
 The main idea is that if the nodes consider different alias outputs to use,
-after some time they will get synchronized, because L1 here the the source
+after some time they will get synchronized, because L1 here the source
 of this information, and it will be synchronized to all the correct nodes
 after some time.
 *)

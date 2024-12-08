@@ -4,7 +4,7 @@ type Cloneable[T any] interface {
 	Clone() T
 }
 
-// CloneSlice clones every element in the the slice into cloned and returns the cloned slice.
+// CloneSlice clones every element in the slice into cloned and returns the cloned slice.
 func CloneSlice[T Cloneable[T]](base []T) []T {
 	cloned := make([]T, len(base))
 
@@ -15,7 +15,7 @@ func CloneSlice[T Cloneable[T]](base []T) []T {
 	return cloned
 }
 
-// CloneMap clones every element in the the map into cloned and returns the cloned map.
+// CloneMap clones every element in the map into cloned and returns the cloned map.
 func CloneMap[K comparable, T Cloneable[T]](base map[K]T) map[K]T {
 	cloned := make(map[K]T, len(base))
 

@@ -756,7 +756,7 @@ func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, 
 		smT.chainOfBlocks = cob
 	} else if bi == nil { // origin block has been reached
 		smT.chainOfBlocks = cob
-	} else if bi.trieRoot.Equals(lastKnownBi.trieRoot) { // Here is the the place to merge newest blocks chain with currently known blocks chain
+	} else if bi.trieRoot.Equals(lastKnownBi.trieRoot) { // Here is the place to merge newest blocks chain with currently known blocks chain
 		// Normally newest blocks chain should contain only several (usually, 1)
 		// block infos and currently known blocks chain should contain at least
 		// `PruningMinStatesToKeep` block infos, but on a sudden enabling of pruning

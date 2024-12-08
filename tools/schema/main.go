@@ -359,7 +359,7 @@ func runGenerator() error {
 	}
 	if !generated {
 		flag.Usage()
-		return fmt.Errorf("schema.yaml not found")
+		return errors.New("schema.yaml not found")
 	}
 	return nil
 }

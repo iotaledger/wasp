@@ -320,7 +320,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	postTransaction := func(pendingTx *pendingTransaction, isReattachment bool) error {
 		debugInfoChaining := ""
 
-		// check if the the transaction should be chained with another pending transaction
+		// check if the transaction should be chained with another pending transaction
 		chainedTxBlockIDs := iotago.BlockIDs{}
 		if pendingTx.lastPendingTx != nil {
 			// check if the chained pending transaction is still being tracked.

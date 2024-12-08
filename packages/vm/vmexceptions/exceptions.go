@@ -24,7 +24,7 @@ var (
 
 // not a protocol limit error, but something went wrong after request execution
 var (
-	ErrPostExecutionPanic = fmt.Errorf("post execution error")
+	ErrPostExecutionPanic = errors.New("post execution error")
 )
 
 var SkipRequestErrors = []error{

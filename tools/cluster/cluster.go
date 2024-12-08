@@ -906,5 +906,5 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target iotago.Address, i
 		}
 	}
 
-	return iotago.OutputID{}, nil, fmt.Errorf("inconsistency: couldn't find newly minted NFT in tx")
+	return iotago.OutputID{}, nil, errors.New("inconsistency: couldn't find newly minted NFT in tx")
 }

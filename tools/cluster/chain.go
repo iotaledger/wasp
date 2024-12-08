@@ -3,6 +3,7 @@ package cluster
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -148,7 +149,7 @@ func (ch *Chain) DeployWasmContract(name string, progBinary []byte, initParams m
 		return hashing.NilHash, err
 	}
 	if !bytes.Equal(progBinary, progBinaryBack) {
-		return hashing.NilHash, fmt.Errorf("!bytes.Equal(progBinary, progBinaryBack)")
+		return hashing.NilHash, errors.New("!bytes.Equal(progBinary, progBinaryBack)")
 	}
 	fmt.Printf("---- blob installed correctly len = %d\n", len(progBinaryBack))
 
