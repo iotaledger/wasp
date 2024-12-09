@@ -22,13 +22,14 @@ const (
 	ProviderUnsafeInMemoryTestingSeed WalletProvider = "unsafe_inmemory_testing_seed"
 	ProviderKeyChain                  WalletProvider = "keychain"
 	ProviderLedger                    WalletProvider = "ledger"
+	ProviderLedgerDebug               WalletProvider = "ledger_debug"
 )
 
 func GetWalletProvider() WalletProvider {
 	provider := WalletProvider(config.GetWalletProviderString())
 
 	switch provider {
-	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger:
+	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug:
 		return provider
 	}
 	return ProviderKeyChain
@@ -36,7 +37,7 @@ func GetWalletProvider() WalletProvider {
 
 func SetWalletProvider(provider WalletProvider) error {
 	switch provider {
-	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger:
+	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug:
 		config.SetWalletProviderString(string(provider))
 		return nil
 	}
@@ -45,22 +46,24 @@ func SetWalletProvider(provider WalletProvider) error {
 
 var loadedWallet wallets.Wallet
 
-func initializeLedger() *hw_ledger.HWLedger {
-	log.Printf("Trying to open Ledger\n")
-
-	debug := false
-
+func initializeLedger(walletProvider WalletProvider) *hw_ledger.HWLedger {
 	var ledgerDevice *hw_ledger.HWLedger
 	var err error
 
-	if debug {
+	switch walletProvider {
+	case ProviderLedgerDebug:
+		log.Printf("Trying to open Speculos debug mode\n")
+
 		dev, err := ledger_go.NewSpeculosTransport(ledger_go.DefaultSpeculosTransportOpts())
 		log.Check(err)
 		ledgerDevice = hw_ledger.NewHWLedger(dev)
+	case ProviderLedger:
+		log.Printf("Trying to open Ledger\n")
 
-	} else {
 		ledgerDevice, err = hw_ledger.TryAndConnect()
 		log.Check(err)
+	default:
+		panic("incorrect wallet provider")
 	}
 
 	return ledgerDevice
@@ -71,8 +74,9 @@ func Load() wallets.Wallet {
 
 	if loadedWallet == nil {
 		switch walletProvider {
-		case ProviderLedger:
-			loadedWallet = providers.NewExternalWallet(initializeLedger(), AddressIndex, iotasigner.IotaCoinType)
+		case ProviderLedger, ProviderLedgerDebug:
+			loadedWallet = providers.NewExternalWallet(initializeLedger(walletProvider), AddressIndex, iotasigner.IotaCoinType)
+
 		case ProviderKeyChain:
 			loadedWallet = providers.LoadKeyChain(AddressIndex)
 		case ProviderUnsafeInMemoryTestingSeed:
