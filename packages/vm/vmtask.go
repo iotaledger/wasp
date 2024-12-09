@@ -5,6 +5,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -19,6 +20,7 @@ import (
 type VMTask struct {
 	Processors         *processors.Config
 	Anchor             *isc.StateAnchor
+	GasCoin            *coin.CoinWithRef
 	Store              state.Store
 	Requests           []isc.Request
 	Timestamp          time.Time

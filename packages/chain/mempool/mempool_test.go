@@ -447,8 +447,9 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 
 	store := te.stores[0]
 	vmTask := &vm.VMTask{
-		Processors:           coreprocessors.NewConfigWithTestContracts(),
-		Anchor:               anchor,
+		Processors: coreprocessors.NewConfigWithTestContracts(),
+		Anchor:     anchor,
+		// FIXME GasCoinBalance
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            tangleTime,

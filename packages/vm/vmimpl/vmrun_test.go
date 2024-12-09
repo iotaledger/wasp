@@ -179,8 +179,9 @@ func runRequestsAndTransitionAnchor(
 	*isc.StateAnchor,
 ) {
 	task := &vm.VMTask{
-		Processors:           coreprocessors.NewConfigWithTestContracts(),
-		Anchor:               anchor,
+		Processors: coreprocessors.NewConfigWithTestContracts(),
+		Anchor:     anchor,
+		// FIXME GasCoinBalance
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            time.Time{},

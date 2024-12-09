@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -24,7 +24,7 @@ type AggregatedBatchProposals struct {
 	decidedBaseAliasOutput *isc.StateAnchor
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
-	aggregatedGasCoins     []*iotago.ObjectRef
+	aggregatedGasCoins     []*coin.CoinWithRef
 	aggregatedGasPrice     uint64
 }
 
@@ -175,7 +175,7 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 	return sorted
 }
 
-func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*iotago.ObjectRef {
+func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*coin.CoinWithRef {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
