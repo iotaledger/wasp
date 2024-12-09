@@ -1,12 +1,5 @@
 package hw_ledger
 
-type LedgerError int
-
-var (
-	LedgerErrorNotSupported = 0x6808
-)
-
-// LedgerToHost represents commands sent from Ledger to Host
 type LedgerToHost byte
 
 const (
@@ -16,7 +9,6 @@ const (
 	PutChunk                               // 3
 )
 
-// HostToLedger represents commands sent from Host to Ledger
 type HostToLedger byte
 
 const (
