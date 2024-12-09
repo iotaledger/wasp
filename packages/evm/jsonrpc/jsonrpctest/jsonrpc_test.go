@@ -11,7 +11,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -33,8 +32,10 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -44,6 +45,10 @@ type soloTestEnv struct {
 	Env
 	solo      *solo.Solo
 	soloChain *solo.Chain
+}
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
 }
 
 func newSoloTestEnv(t testing.TB) *soloTestEnv {
@@ -64,7 +69,7 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 	rpcsrv, err := jsonrpc.NewServer(
 		chain.EVM(),
 		accounts,
-		chain.GetChainMetrics().WebAPI,
+		metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
 		jsonrpc.ParametersDefault(),
 	)
 	require.NoError(t, err)
@@ -551,9 +556,8 @@ func TestRPCTraceTx(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
-	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+
+	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
@@ -672,9 +676,7 @@ func TestRPCTraceBlock(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
-	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
@@ -882,9 +884,7 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 		})
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1})
-	require.True(t, env.soloChain.WaitForRequestsThrough(1, 180*time.Second))
+	env.soloChain.RunRequestsSync([]isc.Request{req1})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
@@ -979,9 +979,7 @@ func TestRPCBlockReceipt(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
-	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)

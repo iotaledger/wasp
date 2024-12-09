@@ -34,7 +34,7 @@ type contractWithMessageCounterEnv struct {
 func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, inccounter.Contract.Hname())
-	tx, err := env.NewChainClient().PostRequest(accounts.FuncTransferAllowanceTo.Message(contractAgentID), chainclient.PostRequestParams{
+	tx, err := env.NewChainClient().PostRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(contractAgentID), chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(1_500_000),
 		Allowance: isc.NewAssets(1_000_000),
 	})
@@ -44,8 +44,7 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 
 	return &contractWithMessageCounterEnv{
 		contractEnv: &contractEnv{
-			ChainEnv:    env,
-			programHash: inccounter.Contract.ProgramHash,
+			ChainEnv: env,
 		},
 	}
 }
@@ -56,7 +55,7 @@ func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hna
 	if transfer != nil {
 		b = transfer
 	}
-	tx, err := e.NewChainClient().PostRequest(isc.NewMessage(contract, entryPoint, codec.MakeDict(params)), chainclient.PostRequestParams{
+	tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(contract, entryPoint, codec.MakeDict(params)), chainclient.PostRequestParams{
 		Transfer: b,
 	})
 	require.NoError(e.t, err)
@@ -86,7 +85,6 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.EqualValues(e.t, len(corecontracts.All)+1, len(contractRegistry))
 
 		cr := contractRegistry[inccounter.Contract.Hname()]
-		require.EqualValues(e.t, e.programHash, cr.ProgramHash)
 		require.EqualValues(e.t, inccounter.Contract.Name, cr.Name)
 	}
 }
@@ -106,7 +104,7 @@ func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
 	numRequests := 6
 	entryPoint := isc.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := e.NewChainClient().PostRequest(isc.NewMessage(inccounter.Contract.Hname(), entryPoint))
+		tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(inccounter.Contract.Hname(), entryPoint), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
@@ -126,7 +124,7 @@ func testIncrement(t *testing.T, env *ChainEnv) {
 
 	entryPoint := isc.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := e.NewChainClient().PostRequest(isc.NewMessage(inccounter.Contract.Hname(), entryPoint))
+		tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(inccounter.Contract.Hname(), entryPoint), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)

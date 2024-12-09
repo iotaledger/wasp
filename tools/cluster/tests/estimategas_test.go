@@ -51,6 +51,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	par.WithGasBudget(gasBudget)
 
 	tx, err := client.PostRequest(
+		context.Background(),
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		par,
 	)

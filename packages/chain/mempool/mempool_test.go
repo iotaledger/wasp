@@ -16,9 +16,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -31,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -523,8 +522,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	te.governor = cryptolib.NewKeyPair()
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL))
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL))
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
 
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
@@ -547,10 +546,13 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 
-	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.AlphanetEndpointURL,
-		FaucetURL: iotaconn.AlphanetFaucetURL,
+	l1client := l1starter.Instance().L1Client()
+
+	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
+		Owner: te.governor.Address().AsIotaAddress(),
 	})
+
+	fmt.Println(objs)
 
 	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.governor))
 	require.NoError(t, err)

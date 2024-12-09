@@ -1,4 +1,4 @@
-package iotaclient_test
+package iotaclienttest
 
 import (
 	"context"
@@ -9,26 +9,25 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func TestMintToken(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	signer := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
-	tokenPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
+	tokenPackageID, treasuryCap := DeployCoinPackage(
 		t,
 		client,
 		signer,
 		contracts.Testcoin(),
 	)
 	mintAmount := uint64(1000000)
-	_ = iotaclienttest.MintCoins(
+	_ = MintCoins(
 		t,
 		client,
 		signer,
@@ -38,7 +37,12 @@ func TestMintToken(t *testing.T) {
 		treasuryCap.ObjectID,
 		mintAmount,
 	)
-	coinType := fmt.Sprintf("%s::%s::%s", tokenPackageID.String(), contracts.TestcoinModuleName, contracts.TestcoinTypeTag)
+	coinType := fmt.Sprintf(
+		"%s::%s::%s",
+		tokenPackageID.String(),
+		contracts.TestcoinModuleName,
+		contracts.TestcoinTypeTag,
+	)
 
 	// all the minted tokens were sent to the signer, so we should find a single object contains all the minted token
 	coins, err := client.GetCoins(
@@ -53,7 +57,7 @@ func TestMintToken(t *testing.T) {
 }
 
 func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 
 	options := iotajsonrpc.IotaObjectDataOptions{
 		ShowType:    true,

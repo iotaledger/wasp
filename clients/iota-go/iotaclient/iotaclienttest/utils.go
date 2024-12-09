@@ -1,16 +1,16 @@
-package testcommon
+package iotaclienttest
 
 import (
 	"context"
 	"errors"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func GetValidatorAddress(ctx context.Context) (iotago.Address, error) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	apy, err := client.GetValidatorsApy(ctx)
 	if err != nil {
 		return iotago.Address{}, err
@@ -25,17 +25,19 @@ func GetValidatorAddress(ctx context.Context) (iotago.Address, error) {
 }
 
 func GetValidatorAddressWithCoins(ctx context.Context) (iotago.Address, error) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	apy, err := client.GetValidatorsApy(ctx)
 	if err != nil {
 		return iotago.Address{}, err
 	}
 
 	for _, apy := range apy.Apys {
-		coins, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
-			Owner: iotago.MustAddressFromHex(apy.Address),
-			Limit: 10,
-		})
+		coins, err := client.GetCoins(
+			ctx, iotaclient.GetCoinsRequest{
+				Owner: iotago.MustAddressFromHex(apy.Address),
+				Limit: 10,
+			},
+		)
 		if err != nil {
 			return iotago.Address{}, err
 		}

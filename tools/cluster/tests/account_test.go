@@ -62,7 +62,6 @@ func testAccounts(e *ChainEnv) {
 		})
 		require.True(e.t, ok)
 
-		require.EqualValues(e.t, inccounter.Contract.ProgramHash.Hex(), cr.ProgramHash)
 		require.EqualValues(e.t, inccounter.Contract.Name, cr.Name)
 
 		counterValue, err2 := e.Chain.GetCounterValue(i)
@@ -74,7 +73,7 @@ func testAccounts(e *ChainEnv) {
 	require.NoError(e.t, err)
 
 	transferBaseTokens := coin.Value(1 * isc.Million)
-	chClient := chainclient.New(e.Clu.L1Client().L2(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorClient().IscPackageID, myWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Chain.OriginatorClient().IscPackageID, myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
 	reqTx, err := chClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), *par)
@@ -123,7 +122,6 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 		require.True(t, ok)
 		require.NotNil(t, cr)
 
-		require.EqualValues(t, inccounter.Contract.ProgramHash.Hex(), cr.ProgramHash)
 		require.EqualValues(t, inccounter.Contract.Name, cr.Name)
 
 		counterValue, err2 := chain.GetCounterValue(i)
@@ -138,10 +136,10 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	transferBaseTokens := coin.Value(1 * isc.Million)
-	myWalletClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, myWallet)
+	myWalletClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, env.Clu.Config.ISCPackageID(), myWallet)
 
 	par := chainclient.NewPostRequestParams().WithBaseTokens(transferBaseTokens)
-	reqTx, err := myWalletClient.PostRequest(inccounter.FuncIncCounter.Message(nil), *par)
+	reqTx, err := myWalletClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(t, err)
 
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, false, 30*time.Second)
@@ -159,7 +157,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	// withdraw back 500 base tokens to originator address
 	fmt.Printf("\norig address from sigsheme: %s\n", originatorAddress.String())
 	origL1Balance := env.Clu.AddressBalances(originatorAddress).BaseTokens()
-	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, originatorSigScheme)
+	originatorClient := chainclient.New(env.Clu.L1Client(), env.Clu.WaspClient(0), chain.ChainID, env.Clu.Config.ISCPackageID(), originatorSigScheme)
 	allowanceBaseTokens := coin.Value(uint64(800_000))
 	req2, err := originatorClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
 		chainclient.PostRequestParams{

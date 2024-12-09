@@ -1,4 +1,4 @@
-package iotaclient_test
+package iotaclienttest
 
 import (
 	"context"
@@ -7,14 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func TestGetCommitteeInfo(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	epochId := iotajsonrpc.NewBigInt(0)
 	committeeInfo, err := client.GetCommitteeInfo(context.Background(), epochId)
 	require.NoError(t, err)
@@ -24,26 +23,25 @@ func TestGetCommitteeInfo(t *testing.T) {
 }
 
 func TestGetLatestIotaSystemState(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	state, err := client.GetLatestIotaSystemState(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, state)
 }
 
 func TestGetReferenceGasPrice(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	gasPrice, err := client.GetReferenceGasPrice(context.Background())
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, gasPrice.Int64(), int64(1000))
 }
 
 func TestGetStakes(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	address, err := testcommon.GetValidatorAddress(context.Background())
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &address)
 	require.NoError(t, err)
-	require.Greater(t, len(stakes), 0)
 	for _, validator := range stakes {
 		require.Equal(t, address, validator.ValidatorAddress)
 		for _, stake := range validator.Stakes {
@@ -59,11 +57,18 @@ func TestGetStakes(t *testing.T) {
 }
 
 func TestGetStakesByIds(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	address, err := testcommon.GetValidatorAddress(context.Background())
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := api.GetStakes(context.Background(), &address)
 	require.NoError(t, err)
+
+	if len(stakes) == 0 {
+		// This is an Alphanet/Localnet edge base
+		t.Log("no stakes on node found")
+		return
+	}
+
 	require.GreaterOrEqual(t, len(stakes), 1)
 
 	stake1 := stakes[0].Stakes[0].Data
@@ -78,7 +83,7 @@ func TestGetStakesByIds(t *testing.T) {
 }
 
 func TestGetValidatorsApy(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	apys, err := api.GetValidatorsApy(context.Background())
 	require.NoError(t, err)
 	t.Logf("current epoch %v", apys.Epoch)

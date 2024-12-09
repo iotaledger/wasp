@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -422,7 +421,7 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
