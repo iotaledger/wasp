@@ -3,8 +3,6 @@ package vmimpl
 import (
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -12,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -142,10 +139,10 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
 		BlockIndex:            vmctx.stateDraft.BlockIndex(),
 		Timestamp:             vmctx.stateDraft.Timestamp(),
+		PreviousAnchor:        vmctx.task.Anchor,
 		TotalRequests:         numRequests,
 		NumSuccessfulRequests: numSuccess,
 		NumOffLedgerRequests:  numOffLedger,
-		PreviousL1Commitment:  lo.Must(transaction.L1CommitmentFromAnchor(vmctx.task.Anchor)),
 		GasBurned:             vmctx.blockGas.burned,
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}
