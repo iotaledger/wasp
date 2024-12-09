@@ -39,7 +39,6 @@ func (e *ChainEnv) checkCoreContracts() {
 			cr := contractRegistry[rec.Hname()]
 			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
 
-			require.EqualValues(e.t, rec.ProgramHash, cr.B.ProgramHash)
 			require.EqualValues(e.t, rec.Name, cr.B.Name)
 		}
 	}
@@ -51,7 +50,6 @@ func (e *ChainEnv) checkRootsOutside() {
 		require.NoError(e.t, err)
 		require.NotNil(e.t, recBack)
 		require.EqualValues(e.t, rec.Name, recBack.Name)
-		require.EqualValues(e.t, rec.ProgramHash, recBack.ProgramHash)
 	}
 }
 

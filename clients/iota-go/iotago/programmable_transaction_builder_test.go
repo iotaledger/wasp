@@ -8,19 +8,23 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
 func TestPTBMoveCall(t *testing.T) {
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
-			client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-			sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
+			client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 			_, packageID, err := client.PublishContract(
 				context.Background(),
@@ -90,9 +94,9 @@ func TestPTBMoveCall(t *testing.T) {
 }
 
 func TestPTBTransferObject(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
@@ -136,9 +140,9 @@ func TestPTBTransferObject(t *testing.T) {
 }
 
 func TestPTBTransferIota(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
@@ -182,9 +186,9 @@ func TestPTBTransferIota(t *testing.T) {
 }
 
 func TestPTBPayAllIota(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
-	recipient := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
@@ -226,10 +230,10 @@ func TestPTBPayAllIota(t *testing.T) {
 }
 
 func TestPTBPayIota(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
-	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
-	recipient2 := iotatest.MakeSignerWithFunds(2, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{
@@ -297,10 +301,10 @@ func TestPTBPayIota(t *testing.T) {
 }
 
 func TestPTBPay(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
-	recipient1 := iotatest.MakeSignerWithFunds(1, iotaconn.AlphanetFaucetURL)
-	recipient2 := iotatest.MakeSignerWithFunds(2, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
+	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
+	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
 
 	coinPages, err := client.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{

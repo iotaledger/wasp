@@ -121,6 +121,10 @@ func (in *LocalIotaNode) L1Client() clients.L1Client {
 	})
 }
 
+func (in *LocalIotaNode) IsLocal() bool {
+	return true
+}
+
 func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(in.ctx, timeout)
 	defer cancel()

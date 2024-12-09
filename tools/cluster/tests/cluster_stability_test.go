@@ -5,6 +5,8 @@ This test will test the recovery capabilities of the clusterized nodes, where so
 package tests
 
 import (
+	"context"
+	"github.com/iotaledger/wasp/clients/chainclient"
 	"sync"
 	"testing"
 	"time"
@@ -38,7 +40,7 @@ func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) {
 	client := e.chainEnv.createNewClient()
 	for i := 0; i < numRequests; i++ {
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+		_, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 		require.NoError(e.chainEnv.t, err)
 
 		time.Sleep(messageDelay)

@@ -8,6 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"io"
 	"math/rand"
 	"net/http"
@@ -21,12 +23,9 @@ import (
 	"text/template"
 	"time"
 
-	iotago2 "github.com/iotaledger/wasp/clients/iota-go/iotago"
-
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -85,7 +84,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                clients.NewL1Client(config.L1),
+		l1:                config.L1Client(),
 		DataPath:          dataPath,
 	}
 }
@@ -276,11 +275,11 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		origin.L1Commitment(
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
-			iotago2.ObjectID{},
+			iotago.ObjectID{},
 			governance.DefaultMinBaseTokensOnCommonAccount,
 			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
 		),
-		&iotago2.ObjectID{},
+		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
 		"",
@@ -347,7 +346,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	//
 	// Register all nodes as access nodes.
-	addAccessNodesTxs := make([]*iotago.Transaction, len(accessNodes))
+	addAccessNodesTxs := make([]*iotajsonrpc.IotaTransactionBlockResponse, len(accessNodes))
 	for i, a := range accessNodes {
 		tx, err := clu.addAccessNode(a, chain)
 		if err != nil {
@@ -367,7 +366,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		}
 	}
 
-	pubKeys := []lo.Tuple2[*cryptolib.PublicKey, *governance.ChangeAccessNodeAction]{}
+	pubKeys := []lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction]{}
 	for _, a := range accessNodes {
 		waspClient := clu.WaspClient(a)
 
@@ -382,12 +381,12 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 			return err
 		}
 
-		pubKeys = append(pubKeys, governance.AcceptAccessNodeAction(accessNodePubKey))
+		pubKeys = append(pubKeys, lo.T2(accessNodePubKey, governance.ChangeAccessNodeActionAccept))
 	}
 	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
 	govClient := chain.Client(chain.OriginatorKeyPair)
 
-	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Message(pubKeys), *scParams)
+	tx, err := govClient.PostRequest(context.Background(), governance.FuncChangeAccessNodes.Message(pubKeys), *scParams)
 	if err != nil {
 		return err
 	}
@@ -402,7 +401,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // addAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
+func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
@@ -440,6 +439,7 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 
 	govClient := chain.Client(validatorKeyPair)
 	tx, err := govClient.PostRequest(
+		context.Background(),
 		governance.FuncAddCandidateNode.Message(accessNodePubKey, decodedCert, accessAPI, forCommittee),
 		*chainclient.NewPostRequestParams().WithBaseTokens(1000),
 	)
@@ -447,13 +447,8 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	txID, err := tx.ID()
-	if err != nil {
-		return nil, err
-	}
-
 	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
-		txID, accessNodePubKey, decodedCert, accessAPI, forCommittee)
+		tx.Digest, accessNodePubKey, decodedCert, accessAPI, forCommittee)
 	return tx, nil
 }
 
@@ -855,12 +850,10 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balance := isc.NewEmptyAssets()
 	for _, out := range balances {
-		panic("refactor me: AddressBalances (Fix isc.Assets to use BigInt)")
-
-		if out.CoinType == parameters.Token.CoinType {
-			//	balance.BaseTokens = out.TotalBalance
+		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.Token.CoinType) == 0 {
+			balance.SetBaseTokens(coin.Value(out.TotalBalance.Uint64()))
 		} else {
-			//	balance.NativeTokens = out
+			balance.AddCoin(coin.MustTypeFromString(out.CoinType.String()), coin.Value(out.TotalBalance.Uint64()))
 		}
 	}
 
@@ -876,6 +869,7 @@ func (clu *Cluster) AssertAddressBalances(addr *cryptolib.Address, expected *isc
 	return clu.AddressBalances(addr).Equals(expected)
 }
 
+/*
 func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Address, issuerKeypair *cryptolib.KeyPair) (iotago.OutputID, *iotago.NFTOutput, error) {
 	panic("refactor me: transaction.NewMintNFTsTransaction")
 	/*outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
@@ -905,6 +899,7 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Addres
 			return oID, oNFT, nil
 		}
 	}
-	*/
+
 	return iotago.OutputID{}, nil, fmt.Errorf("inconsistency: couldn't find newly minted NFT in tx")
 }
+*/

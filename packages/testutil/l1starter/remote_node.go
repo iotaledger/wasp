@@ -44,6 +44,10 @@ func (r *RemoteIotaNode) L1Client() clients.L1Client {
 	})
 }
 
+func (in *RemoteIotaNode) IsLocal() bool {
+	return false
+}
+
 func (r *RemoteIotaNode) start(ctx context.Context) {
 	client := r.L1Client()
 
