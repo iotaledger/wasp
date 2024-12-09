@@ -95,7 +95,7 @@ func (l *HWLedger) handleBlocksProtocol(
 		}
 
 		rvInstruction := LedgerToHost(response[0])
-		rvPayload := response[1 : len(response)-2] // Last two bytes are return code
+		rvPayload := response[1:] // Last two bytes are return code
 
 		// Validate instruction
 		if rvInstruction > PutChunk {

@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 // SpeculosTransportOpts contains configuration for the transport
@@ -23,17 +21,18 @@ type SpeculosTransport struct {
 	apduSocket       net.Conn
 	opts             SpeculosTransportOpts
 	automationSocket net.Conn
-	// Note: Go doesn't have direct equivalent to Subject/Observable
-	// You might want to use channels instead
 	automationEvents chan map[string]interface{}
+}
+
+func DefaultSpeculosTransportOpts() SpeculosTransportOpts {
+	return SpeculosTransportOpts{
+		ApduPort: 40000,
+		Host:     "127.0.0.1",
+	}
 }
 
 // NewSpeculosTransport creates a new transport instance
 func NewSpeculosTransport(opts SpeculosTransportOpts) (*SpeculosTransport, error) {
-	if opts.Host == "" {
-		opts.Host = "127.0.0.1"
-	}
-
 	// Connect to APDU socket
 	apduSocket, err := net.Dial("tcp", fmt.Sprintf("%s:%d", opts.Host, opts.ApduPort))
 	if err != nil {
@@ -82,11 +81,9 @@ func (t *SpeculosTransport) Button(command string) error {
 
 // Exchange sends an APDU command and receives the response
 func (t *SpeculosTransport) Exchange(apdu []byte) ([]byte, error) {
+
 	// Encode and send APDU
 	encoded := encodeAPDU(apdu)
-
-	fmt.Printf("Before Encode: %s, Encoded APDU: %s\n", hexutil.Encode(apdu), hexutil.Encode(encoded))
-	fmt.Printf("Before Encode: %v\nEncoded APDU:  %v\n", apdu, encoded)
 
 	_, err := t.apduSocket.Write(encoded)
 	if err != nil {
@@ -100,8 +97,7 @@ func (t *SpeculosTransport) Exchange(apdu []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response size: %w", err)
 	}
 
-	fmt.Printf("Response Size: %v", sizeBuf)
-
+	//
 	size := binary.BigEndian.Uint32(sizeBuf)
 	response := make([]byte, size+2) // +2 for status code
 	_, err = t.apduSocket.Read(response)
@@ -109,7 +105,12 @@ func (t *SpeculosTransport) Exchange(apdu []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	return response, nil
+	status := codec.Uint16(response[size:])
+	if status != 0x9000 {
+		return nil, fmt.Errorf("invalid status response: %x", status)
+	}
+
+	return response[:len(response)-2], nil
 }
 
 // Close closes all connections

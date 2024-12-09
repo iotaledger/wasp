@@ -27,7 +27,7 @@ func NewHWLedger(device ledgergo.LedgerDevice) *HWLedger {
 }
 
 func TryAndConnect() (*HWLedger, error) {
-	l := ledgergo.NewLedgerAdmin()
+	l := ledgergo.NewLedgerHIDTransport()
 
 	if l.CountDevices() == 0 {
 		return nil, ErrDeviceNotFound

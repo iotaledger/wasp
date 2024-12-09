@@ -1,6 +1,3 @@
-//go:build !ledger_mock && !ledger_zemu
-// +build !ledger_mock,!ledger_zemu
-
 /*******************************************************************************
 *   (c) Zondax AG
 *
@@ -55,6 +52,9 @@ var supportedLedgerProductID = map[uint8]int{
 }
 
 func NewLedgerAdmin() LedgerAdmin {
+	return &LedgerAdminHID{}
+}
+func NewLedgerHIDTransport() LedgerAdmin {
 	return &LedgerAdminHID{}
 }
 
@@ -138,7 +138,10 @@ func (admin *LedgerAdminHID) Connect(requiredIndex int) (LedgerDevice, error) {
 		}
 	}
 
-	return nil, fmt.Errorf("LedgerHID device (idx %d) not found: device may be locked or in use by another application", requiredIndex)
+	return nil, fmt.Errorf(
+		"LedgerHID device (idx %d) not found: device may be locked or in use by another application",
+		requiredIndex,
+	)
 }
 
 func (ledger *LedgerDeviceHID) write(buffer []byte) (int, error) {
@@ -216,7 +219,6 @@ func (ledger *LedgerDeviceHID) drainRead() {
 }
 
 func (ledger *LedgerDeviceHID) Exchange(command []byte) ([]byte, error) {
-	log.Printf("Sending command: %X", command)
 	// Purge messages that arrived after previous exchange completed
 	ledger.drainRead()
 
@@ -257,7 +259,6 @@ func (ledger *LedgerDeviceHID) Exchange(command []byte) ([]byte, error) {
 		return response[:swOffset], errors.New(ErrorMessage(sw))
 	}
 
-	log.Printf("Received response: %X", response)
 	return response[:swOffset], nil
 }
 
