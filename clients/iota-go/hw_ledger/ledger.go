@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	ErrDeviceNotFound    = errors.New("device not found")
-	ErrConnectionFailure = errors.New("failed to connect to device")
+	ErrDeviceNotFound        = errors.New("device not found")
+	ErrConnectionFailure     = errors.New("failed to connect to device")
+	ErrInvalidResponseLength = errors.New("invalid response length")
 )
 
 type HWLedger struct {
@@ -49,13 +50,20 @@ func (l *HWLedger) log(args ...interface{}) {
 }
 
 func (l *HWLedger) GetVersion() (VersionResult, error) {
-	result, err := l.sendChunks(
-		0x00, 0x00, 0x00, 0x00, [][]byte{
-			{0x0},
-		}, nil,
+	const (
+		cla = uint8(0x00)
+		ins = uint8(0x00)
+		p1  = uint8(0x00)
+		p2  = uint8(0x00)
 	)
+
+	result, err := l.sendChunks(cla, ins, p1, p2, [][]byte{{0x0}})
 	if err != nil {
 		return VersionResult{}, err
+	}
+
+	if len(result) != VersionExpectedSize {
+		return VersionResult{}, ErrInvalidResponseLength
 	}
 
 	return VersionResult{
@@ -66,70 +74,63 @@ func (l *HWLedger) GetVersion() (VersionResult, error) {
 	}, nil
 }
 
-func (h *HWLedger) GetPublicKey(path string, displayOnDevice bool) (*PublicKeyResult, error) {
-	cla := uint8(0x00)
-	var ins uint8
+func (l *HWLedger) GetPublicKey(path string, displayOnDevice bool) (PublicKeyResult, error) {
+	// Determine instruction based on displayOnDevice
+	const (
+		cla = uint8(0x00)
+		p1  = uint8(0)
+		p2  = uint8(0)
+	)
+
+	ins := uint8(0x02)
 	if displayOnDevice {
 		ins = 0x01
-	} else {
-		ins = 0x02
 	}
-	p1 := uint8(0)
-	p2 := uint8(0)
 
+	// Build BIP32 key payload
 	payload, err := buildBip32KeyPayload(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to build payload: %w", err)
+		return PublicKeyResult{}, fmt.Errorf("failed to build payload: %w", err)
 	}
 
-	response, err := h.sendChunks(
-		cla, ins, p1, p2, [][]byte{
-			payload,
-		},
-		nil,
-	)
+	// Send chunks to get public key
+	response, err := l.sendChunks(cla, ins, p1, p2, [][]byte{payload})
 	if err != nil {
-		return nil, fmt.Errorf("failed to send chunks: %w", err)
+		return PublicKeyResult{}, fmt.Errorf("failed to send chunks: %w", err)
 	}
 
-	if len(response) < 1 {
-		return nil, errors.New("response too short")
+	if len(response) != PublicKeyExpectedSize+2 { // +2 for the length of each item
+		return PublicKeyResult{}, ErrInvalidResponseLength
 	}
 
-	keySize := response[0]
-	if len(response) < int(keySize)+1 {
-		return nil, errors.New("response shorter than key size")
+	const keySize = 32
+
+	if response[0] != keySize || response[33] != keySize {
+		return PublicKeyResult{}, ErrInvalidResponseLength
 	}
 
 	publicKey := response[1 : keySize+1]
-	var address []byte
+	address := response[keySize+2 : keySize+2+keySize]
 
-	if len(response) > int(keySize)+2 {
-		addressSize := response[keySize+1]
-		if len(response) >= int(keySize)+2+int(addressSize) {
-			address = response[keySize+2 : keySize+2+addressSize]
-		}
-	}
-
-	return &PublicKeyResult{
-		PublicKey: publicKey,
-		Address:   address,
+	// Return public key result
+	return PublicKeyResult{
+		PublicKey: [32]byte(publicKey),
+		Address:   [32]byte(address),
 	}, nil
 }
 
-func (h *HWLedger) SignTransaction(path string, txDataBytes []byte) (*SignTransactionResult, error) {
+func (l *HWLedger) SignTransaction(path string, txDataBytes []byte) (*SignTransactionResult, error) {
 	const (
 		cla = uint8(0x00)
 		ins = uint8(0x03)
-		p1  = uint8(0)
-		p2  = uint8(0)
+		p1  = uint8(0x00)
+		p2  = uint8(0x00)
 	)
 
 	// Create hash size buffer (uint32 little-endian)
 	hashSize := make([]byte, 4)
 	binary.LittleEndian.PutUint32(hashSize, uint32(len(txDataBytes)))
 
-	// Get BIP32 key payload
 	bip32KeyPayload, err := buildBip32KeyPayload(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build BIP32 key payload: %w", err)
@@ -137,16 +138,22 @@ func (h *HWLedger) SignTransaction(path string, txDataBytes []byte) (*SignTransa
 
 	// Combine hash size and raw transaction
 	payloadTxn := append(hashSize, txDataBytes...)
-	h.log("Payload Txn", payloadTxn)
+	l.log("Payload Txn", payloadTxn)
 
 	// Send chunks and get signature
-	signature, err := h.sendChunks(cla, ins, p1, p2, [][]byte{payloadTxn, bip32KeyPayload}, nil)
+	signature, err := l.sendChunks(cla, ins, p1, p2, [][]byte{payloadTxn, bip32KeyPayload})
 	if err != nil {
 		return nil, fmt.Errorf("failed to send chunks: %w", err)
 	}
 
+	fmt.Println(signature)
+
+	if len(signature) != SignTransactionExpectedSize {
+		return nil, ErrInvalidResponseLength
+	}
+
 	return &SignTransactionResult{
-		Signature: signature,
+		Signature: [64]byte(signature),
 	}, nil
 }
 

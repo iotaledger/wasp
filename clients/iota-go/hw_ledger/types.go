@@ -1,5 +1,11 @@
 package hw_ledger
 
+type LedgerError int
+
+var (
+	LedgerErrorNotSupported = 0x6808
+)
+
 // LedgerToHost represents commands sent from Ledger to Host
 type LedgerToHost byte
 
@@ -9,22 +15,6 @@ const (
 	GetChunk                               // 2
 	PutChunk                               // 3
 )
-
-// String provides a string representation of LedgerToHost
-func (l LedgerToHost) String() string {
-	switch l {
-	case ResultAccumulating:
-		return "RESULT_ACCUMULATING"
-	case ResultFinal:
-		return "RESULT_FINAL"
-	case GetChunk:
-		return "GET_CHUNK"
-	case PutChunk:
-		return "PUT_CHUNK"
-	default:
-		return "UNKNOWN"
-	}
-}
 
 // HostToLedger represents commands sent from Host to Ledger
 type HostToLedger byte
@@ -37,24 +27,7 @@ const (
 	ResultAccumulatingResponse                     // 4
 )
 
-// String provides a string representation of HostToLedger
-func (h HostToLedger) String() string {
-	switch h {
-	case START:
-		return "START"
-	case GetChunkResponseSuccess:
-		return "GET_CHUNK_RESPONSE_SUCCESS"
-	case GetChunkResponseFailure:
-		return "GET_CHUNK_RESPONSE_FAILURE"
-	case PutChunkResponse:
-		return "PUT_CHUNK_RESPONSE"
-	case ResultAccumulatingResponse:
-		return "RESULT_ACCUMULATING_RESPONSE"
-	default:
-		return "UNKNOWN"
-	}
-}
-
+const VersionExpectedSize = 3 + 4 // 3 version bytes + 4 bytes as string (iota)
 type VersionResult struct {
 	Major byte
 	Minor byte
@@ -62,11 +35,15 @@ type VersionResult struct {
 	Name  string
 }
 
+const PublicKeyExpectedSize = 32 + 32
+
 type PublicKeyResult struct {
-	PublicKey []byte
-	Address   []byte
+	PublicKey [32]byte
+	Address   [32]byte
 }
 
+const SignTransactionExpectedSize = 64
+
 type SignTransactionResult struct {
-	Signature []byte
+	Signature [64]byte
 }
