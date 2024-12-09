@@ -3,16 +3,17 @@ package transaction
 import (
 	"errors"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func NewChangeGovControllerTx(
-	chainID iotago.AliasID,
+	chainID isc.ChainID,
 	newGovController iotago.Address,
-	utxos iotago.OutputSet,
+	// utxos iotago.OutputSet,
 	wallet cryptolib.Signer,
-) (*iotago.Transaction, error) {
+) (*iotago.ObjectID, error) {
 	panic("refactor me: Reimplement GovController")
 	/*
 		// find the correct chain UTXO

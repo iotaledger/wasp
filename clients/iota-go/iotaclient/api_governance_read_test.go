@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 )
 
 func TestGetCommitteeInfo(t *testing.T) {
@@ -37,17 +38,14 @@ func TestGetReferenceGasPrice(t *testing.T) {
 }
 
 func TestGetStakes(t *testing.T) {
-	// FIXME change the valid staking iotago address
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-
-	// This address has been taken from https://explorer.iota.cafe/validator/0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754
-	address, err := iotago.AddressFromHex("0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754")
+	address, err := testcommon.GetValidatorAddress(context.Background())
 	require.NoError(t, err)
-	stakes, err := client.GetStakes(context.Background(), address)
+	stakes, err := client.GetStakes(context.Background(), &address)
 	require.NoError(t, err)
 	require.Greater(t, len(stakes), 0)
 	for _, validator := range stakes {
-		require.Equal(t, address, &validator.ValidatorAddress)
+		require.Equal(t, address, validator.ValidatorAddress)
 		for _, stake := range validator.Stakes {
 			if stake.Data.StakeStatus.Data.Active != nil {
 				t.Logf(
@@ -62,10 +60,9 @@ func TestGetStakes(t *testing.T) {
 
 func TestGetStakesByIds(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	// This address has been taken from https://explorer.iota.cafe/validator/0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754
-	owner, err := iotago.AddressFromHex("0x02e1df479da7b51573248016db5f460586aad4d4c93315a1a8ed3c1a7fac1754")
+	address, err := testcommon.GetValidatorAddress(context.Background())
 	require.NoError(t, err)
-	stakes, err := api.GetStakes(context.Background(), owner)
+	stakes, err := api.GetStakes(context.Background(), &address)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(stakes), 1)
 

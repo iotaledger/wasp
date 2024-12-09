@@ -63,7 +63,7 @@ func (ab *AssetsBag) Equals(other *AssetsBag) bool {
 		ab.Size == other.Size
 }
 
-type AssetsBagBalances map[iotajsonrpc.CoinType]*iotajsonrpc.Balance
+type AssetsBagBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
 
 type AssetsBagWithBalances struct {
 	AssetsBag
@@ -139,8 +139,8 @@ func NewEmptyAssets() *Assets {
 	return &Assets{Coins: make(CoinBalances)}
 }
 
-func NewAssets(baseTokens iotajsonrpc.CoinValue) *Assets {
-	return NewEmptyAssets().AddCoin(iotajsonrpc.IotaCoinType, baseTokens)
+func NewAssets(baseTokens uint64) *Assets {
+	return NewEmptyAssets().AddCoin(iotajsonrpc.IotaCoinType, iotajsonrpc.CoinValue(baseTokens))
 }
 
 func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {

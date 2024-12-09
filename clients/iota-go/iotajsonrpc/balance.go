@@ -8,7 +8,24 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
-type CoinType = string
+// this type "CoinType" is used only in iota-go and iscmoveclient
+type CoinType string
+
+func CoinTypeFromString(s string) CoinType {
+	return CoinType(s)
+}
+
+func (t CoinType) String() string {
+	return string(t)
+}
+
+func (t CoinType) TypeTag() iotago.TypeTag {
+	coinTypeTag, err := iotago.TypeTagFromString(t.String())
+	if err != nil {
+		panic(err)
+	}
+	return *coinTypeTag
+}
 
 type CoinValue uint64
 

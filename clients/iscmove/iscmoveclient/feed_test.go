@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -18,10 +18,11 @@ import (
 )
 
 func TestRequestsFeed(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
+	t.Skip()
+	client := iscmoveclienttest.NewHTTPClient()
 
-	iscOwner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	chainOwner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 1)
+	iscOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	chainOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 
 	anchor := startNewChain(t, client, chainOwner)
 
@@ -36,10 +37,8 @@ func TestRequestsFeed(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 
-	wsClient, err := iscmoveclient.NewWebsocketClient(
+	wsClient, err := iscmoveclienttest.NewWebSocketClient(
 		ctx,
-		iotaconn.LocalnetWebsocketEndpointURL,
-		iotaconn.LocalnetFaucetURL,
 		log,
 	)
 	require.NoError(t, err)

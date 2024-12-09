@@ -30,7 +30,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOnledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOnledger{
-		OutputBytes: iotago.EncodeHex(outputBytes),
+		OutputBytes: cryptolib.EncodeHex(outputBytes),
 	}).Execute()
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)
@@ -88,7 +88,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOnledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOnledger{
-		OutputBytes: iotago.EncodeHex(outputBytes),
+		OutputBytes: cryptolib.EncodeHex(outputBytes),
 	}).Execute()
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)
@@ -130,13 +130,13 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOffledger{
-		RequestBytes: iotago.EncodeHex(estimationReq.Bytes()),
+		RequestBytes: cryptolib.EncodeHex(estimationReq.Bytes()),
 	}).Execute()
 	require.Error(t, err)
 	require.Nil(t, estimatedReceiptFail)
 	///
 
-	requestHex := iotago.EncodeHex(estimationReq.Bytes())
+	requestHex := cryptolib.EncodeHex(estimationReq.Bytes())
 
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
 		env.Chain.ChainID.String(),

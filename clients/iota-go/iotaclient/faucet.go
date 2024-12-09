@@ -13,7 +13,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
-const FundsFromFaucetAmount = 9_999_999_999_999
+// We can set a certain amount of coin returned from the faucet. However,
+// you get this value 5 times with 5 coins. Therefore,
+// we need to assert account balances faucetamount * 5
+const SingleCoinFundsFromFaucetAmount = 2_000_000_000
+const FundsFromFaucetAmount = SingleCoinFundsFromFaucetAmount * 5
 
 func RequestFundsFromFaucet(ctx context.Context, address *iotago.Address, faucetUrl string) error {
 	paramJson := fmt.Sprintf(`{"FixedAmountRequest":{"recipient":"%v"}}`, address)

@@ -1,14 +1,14 @@
 package models
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 type ReceiptResponse struct {
-	// TODO: fix this when mocks are fixed
-	//Request       isc.RequestJSON            `json:"request" swagger:"required"`
+	Request       isc.RequestJSON            `json:"request" swagger:"required"`
 	RawError      *isc.UnresolvedVMErrorJSON `json:"rawError,omitempty"`
 	ErrorMessage  string                     `json:"errorMessage,omitempty"`
 	GasBudget     string                     `json:"gasBudget" swagger:"required,desc(The gas budget (uint64 as string))"`
@@ -27,22 +27,21 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		burnRecords = append(burnRecords, receipt.GasBurnLog.Records...)
 	}
 
-	panic("TODO: fix this when mocks are fixed")
-	// req, err := isc.RequestFromBytes(receipt.Request)
-	// if err != nil {
-	// 	panic(err)
-	// }
+	req, err := isc.RequestFromBytes(receipt.Request)
+	if err != nil {
+		panic(err)
+	}
 
 	return &ReceiptResponse{
-		//Request:       isc.RequestToJSONObject(req),
+		Request:       isc.RequestToJSONObject(req),
 		RawError:      receipt.Error.ToJSONStruct(),
 		ErrorMessage:  receipt.ResolvedError,
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,
-		GasBudget:     iotago.EncodeUint64(receipt.GasBudget),
-		GasBurned:     iotago.EncodeUint64(receipt.GasBurned),
-		GasFeeCharged: iotago.EncodeUint64(uint64(receipt.GasFeeCharged)),
-		SDCharged:     iotago.EncodeUint64(uint64(receipt.SDCharged)),
+		GasBudget:     fmt.Sprint(receipt.GasBudget),
+		GasBurned:     fmt.Sprint(receipt.GasBurned),
+		GasFeeCharged: receipt.GasFeeCharged.String(),
+		SDCharged:     receipt.SDCharged.String(),
 		GasBurnLog:    burnRecords,
 	}
 }

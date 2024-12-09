@@ -1,11 +1,11 @@
 package corecontracts
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -13,48 +13,48 @@ import (
 )
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	assets, err := corecontracts.GetTotalAssets(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// assetsResponse := &models.AssetsResponse{
-	// 	BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-	// 	NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
-	// }
+	assetsResponse := &models.AssetsResponse{
+		BaseTokens: assets.BaseTokens().String(),
+		// TODO: fix this when native tokens reimplemented
+		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+	}
 
-	// return e.JSON(http.StatusOK, assetsResponse)
+	return e.JSON(http.StatusOK, assetsResponse)
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// agentID, err := params.DecodeAgentID(e)
-	// if err != nil {
-	// 	return err
-	// }
+	agentID, err := params.DecodeAgentID(e)
+	if err != nil {
+		return err
+	}
 
-	// assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	assets, err := corecontracts.GetAccountBalance(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// assetsResponse := &models.AssetsResponse{
-	// 	BaseTokens:   iotago.EncodeUint64(assets.BaseTokens),
-	// 	NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
-	// }
+	assetsResponse := &models.AssetsResponse{
+		BaseTokens: assets.BaseTokens().String(),
+		// TODO: fix this when native tokens reimplemented
+		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+	}
 
-	// return e.JSON(http.StatusOK, assetsResponse)
+	return e.JSON(http.StatusOK, assetsResponse)
 }
 
 func (c *Controller) getAccountNFTs(e echo.Context) error {
@@ -122,7 +122,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 	}
 
 	nonceResponse := &models.AccountNonceResponse{
-		Nonce: iotago.EncodeUint64(nonce),
+		Nonce: fmt.Sprint(nonce),
 	}
 
 	return e.JSON(http.StatusOK, nonceResponse)

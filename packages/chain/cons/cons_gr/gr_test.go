@@ -29,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -41,8 +40,6 @@ import (
 )
 
 func TestGrBasic(t *testing.T) {
-	l1starter.SingleTest(t)
-
 	type test struct {
 		n        int
 		f        int
@@ -85,9 +82,11 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	defer ctxCancel()
 
 	//
-	// Create ledger accounts.
+	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	originator := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	require.NoError(t, err)
+	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
 	require.NoError(t, err)
 
 	//
@@ -120,8 +119,8 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	procConfig := coreprocessors.NewConfigWithTestContracts()
 
 	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.LocalnetEndpointURL,
-		FaucetURL: iotaconn.LocalnetFaucetURL,
+		APIURL:    iotaconn.AlphanetEndpointURL,
+		FaucetURL: iotaconn.AlphanetFaucetURL,
 	})
 
 	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))

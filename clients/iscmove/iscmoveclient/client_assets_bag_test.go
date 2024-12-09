@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -19,8 +20,8 @@ import (
 )
 
 func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 
 	txnResponse, err := PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -57,8 +58,8 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 }
 
 func TestAssetsBagPlaceCoin(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -77,7 +78,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 	_, err = PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
@@ -92,7 +93,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 				l1starter.ISCPackageID(),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagMainRef}),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
-				string(testCointype),
+				testCointype,
 			)
 		},
 	)
@@ -100,8 +101,8 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 }
 
 func TestAssetsBagPlaceCoinAmount(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -120,7 +121,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 
 	_, err = PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -145,8 +146,8 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 }
 
 func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -203,8 +204,8 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 }
 
 func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 
 	txnResponse, err := PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -234,7 +235,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 	_, err = PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
@@ -249,7 +250,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 				l1starter.ISCPackageID(),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagMainRef}),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
-				string(testCointype),
+				testCointype,
 			)
 		},
 	)
@@ -261,13 +262,12 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
-	require.Equal(t, testCointype, bal.CoinType)
-	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
 
 func TestGetAssetsBagFromAnchorID(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -283,7 +283,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 
 	borrowAnchorAssetsAndPlaceCoin(
 		t,
@@ -300,8 +300,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	require.Equal(t, uint64(2), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
-	require.Equal(t, testCointype, bal.CoinType)
-	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
 
 func borrowAnchorAssetsAndPlaceCoin(
@@ -392,8 +391,8 @@ func borrowAnchorAssetsAndPlaceCoin(
 }
 
 func TestGetAssetsBagFromRequestID(t *testing.T) {
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
-	client := iscmoveclienttest.NewLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -409,7 +408,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinType(coinResource.SubType1.String())
+	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -430,7 +429,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 				l1starter.ISCPackageID(),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
-				string(testCointype),
+				testCointype,
 			)
 		},
 	)
@@ -450,8 +449,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 			Message:       iscmovetest.RandomMessage(),
 			Allowance: &iscmove.Assets{
 				Coins: iscmove.CoinBalances{
-					"0x1::iota::IOTA":    11,
-					"0xa::testa::TEST_A": 12,
+					iotajsonrpc.CoinType("0x1::iota::IOTA"):    11,
+					iotajsonrpc.CoinType("0xa::testa::TEST_A"): 12,
 				},
 			},
 			GasPrice:  iotaclient.DefaultGasPrice,
@@ -471,8 +470,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.Equal(t, uint64(1), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]
 	require.True(t, ok)
-	require.Equal(t, testCointype, bal.CoinType)
-	require.Equal(t, uint64(1000000), bal.TotalBalance.Uint64())
+	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
 
 func newAssetsBag(
@@ -497,7 +495,7 @@ func assetsBagPlaceCoinAmount(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 	assetsBagRef *iotago.ObjectRef,
-	coin *iotago.ObjectRef,
+	coinRef *iotago.ObjectRef,
 	coinType iotajsonrpc.CoinType,
 	amount uint64,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
@@ -514,9 +512,9 @@ func assetsBagPlaceCoinAmount(
 				ptb,
 				l1starter.ISCPackageID(),
 				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coin}),
-				amount,
-				string(coinType),
+				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+				iotajsonrpc.CoinValue(amount),
+				coinType,
 			)
 		},
 	)

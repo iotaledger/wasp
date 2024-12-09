@@ -12,45 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-)
-
-var (
-	testMnemonic = "ordinary cry margin host traffic bulb start zone mimic wage fossil eight diagram clay say remove add atom"
-	testSeed     = []byte{
-		50,
-		230,
-		119,
-		9,
-		86,
-		155,
-		106,
-		30,
-		245,
-		81,
-		234,
-		122,
-		116,
-		90,
-		172,
-		148,
-		59,
-		33,
-		88,
-		252,
-		134,
-		42,
-		231,
-		198,
-		208,
-		141,
-		209,
-		116,
-		78,
-		21,
-		216,
-		24,
-	}
-	testAddress = iotago.MustAddressFromHex("0xe54d993cf56be93ba0764c7ee2c817085b70f0e6d3ad1a71c3335ee3529b4a48")
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 )
 
 func TestGetChainIdentifier(t *testing.T) {
@@ -219,7 +181,7 @@ func TestGetObject(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	coins, err := api.GetCoins(
 		context.TODO(), iotaclient.GetCoinsRequest{
-			Owner: testAddress,
+			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
 			Limit: 1,
 		},
 	)
@@ -286,8 +248,7 @@ func TestGetTotalTransactionBlocks(t *testing.T) {
 }
 
 func TestGetTransactionBlock(t *testing.T) {
-	// t.Skip("TODO: fix it when we have proper transaction blocks. Currently error is returned: no tag[kind] value <\"ConsensusCommitPrologueV1\"> in struct fields")
-
+	t.Skip("TODO: fix it when the chain is stable. Currently addresses are not stable")
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	digest, err := iotago.NewDigest("FGpDhznVR2RpUZG7qB5ZEtME3dH3VL81rz2wFRCuoAv9")
 	require.NoError(t, err)
@@ -315,7 +276,7 @@ func TestMultiGetObjects(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	coins, err := api.GetCoins(
 		context.TODO(), iotaclient.GetCoinsRequest{
-			Owner: testAddress,
+			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
 			Limit: 1,
 		},
 	)

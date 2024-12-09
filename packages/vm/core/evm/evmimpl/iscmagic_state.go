@@ -53,7 +53,11 @@ func keyAllowance(from, to common.Address) kv.Key {
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	key := keyAllowance(from, to)
-	return lo.Must(isc.AssetsFromBytes(state.Get(key)))
+	b := state.Get(key)
+	if b == nil {
+		return isc.NewEmptyAssets()
+	}
+	return lo.Must(isc.AssetsFromBytes(b))
 }
 
 var errBaseTokensMustBeUint64 = coreerrors.Register("base tokens amount must be an uint64").Create()
@@ -77,22 +81,22 @@ func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Assets) {
 }
 
 func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)) {
+	allowance := getAllowance(ctx, from, to)
+	f(allowance)
 	state := evm.ISCMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
-	allowance := lo.Must(isc.AssetsFromBytes(state.Get(key)))
-	f(allowance)
 	state.Set(key, allowance.Bytes())
 }
 
 var errFundsNotAllowed = coreerrors.Register("remaining allowance insufficient").Create()
 
 func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.Assets) {
-	state := evm.ISCMagicSubrealm(ctx.State())
-	key := keyAllowance(from, to)
-	remaining := lo.Must(isc.AssetsFromBytes(state.Get(key)))
+	remaining := getAllowance(ctx, from, to)
 	if ok := remaining.Spend(taken); !ok {
 		panic(errFundsNotAllowed)
 	}
+	state := evm.ISCMagicSubrealm(ctx.State())
+	key := keyAllowance(from, to)
 	if remaining.IsEmpty() {
 		state.Del(key)
 	} else {

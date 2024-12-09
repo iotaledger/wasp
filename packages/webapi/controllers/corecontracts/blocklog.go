@@ -3,10 +3,12 @@ package corecontracts
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
@@ -36,68 +38,66 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 }
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-	// var blockInfo *blocklog.BlockInfo
-	// blockIndex := e.Param(params.ParamBlockIndex)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
+	var blockInfo *blocklog.BlockInfo
+	blockIndex := e.Param(params.ParamBlockIndex)
 
-	// if blockIndex == "" {
-	// 	blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// } else {
-	// 	var blockIndexNum uint64
-	// 	blockIndexNum, err = strconv.ParseUint(e.Param(params.ParamBlockIndex), 10, 64)
-	// 	if err != nil {
-	// 		return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
-	// 	}
+	if blockIndex == "" {
+		_, blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	} else {
+		var blockIndexNum uint64
+		blockIndexNum, err = strconv.ParseUint(e.Param(params.ParamBlockIndex), 10, 64)
+		if err != nil {
+			return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
+		}
 
-	// 	blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// }
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+		_, blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	}
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// blockInfoResponse := models.MapBlockInfoResponse(blockInfo)
+	blockInfoResponse := models.MapBlockInfoResponse(blockInfo)
 
-	// return e.JSON(http.StatusOK, blockInfoResponse)
+	return e.JSON(http.StatusOK, blockInfoResponse)
 }
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-	// var requestIDs []isc.RequestID
-	// blockIndex := e.Param(params.ParamBlockIndex)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
+	var requestIDs []isc.RequestID
+	blockIndex := e.Param(params.ParamBlockIndex)
 
-	// if blockIndex == "" {
-	// 	requestIDs, err = corecontracts.GetRequestIDsForLatestBlock(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// } else {
-	// 	var blockIndexNum uint64
-	// 	blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	if blockIndex == "" {
+		_, requestIDs, err = corecontracts.GetRequestIDsForLatestBlock(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	} else {
+		var blockIndexNum uint64
+		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
+		if err != nil {
+			return err
+		}
 
-	// 	requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// }
+		_, requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	}
 
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// requestIDsResponse := &models.RequestIDsResponse{
-	// 	RequestIDs: make([]string, len(requestIDs)),
-	// }
+	requestIDsResponse := &models.RequestIDsResponse{
+		RequestIDs: make([]string, len(requestIDs)),
+	}
 
-	// for k, v := range requestIDs {
-	// 	requestIDsResponse.RequestIDs[k] = v.String()
-	// }
+	for k, v := range requestIDs {
+		requestIDsResponse.RequestIDs[k] = v.String()
+	}
 
-	// return e.JSON(http.StatusOK, requestIDsResponse)
+	return e.JSON(http.StatusOK, requestIDsResponse)
 }
 
 func GetRequestReceipt(e echo.Context, c interfaces.ChainService) error {
@@ -131,47 +131,46 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 }
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-	// var blocklogReceipts []*blocklog.RequestReceipt
-	// blockIndex := e.Param(params.ParamBlockIndex)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
+	var blocklogReceipts *blocklog.RequestReceiptsResponse
+	blockIndex := e.Param(params.ParamBlockIndex)
 
-	// if blockIndex == "" {
-	// 	var blockInfo *blocklog.BlockInfo
-	// 	blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// 	if err != nil {
-	// 		return c.handleViewCallError(err)
-	// 	}
+	if blockIndex == "" {
+		var blockInfo *blocklog.BlockInfo
+		_, blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		if err != nil {
+			return c.handleViewCallError(err)
+		}
 
-	// 	blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockInfo.BlockIndex(), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// } else {
-	// 	var blockIndexNum uint64
-	// 	blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockInfo.BlockIndex, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	} else {
+		var blockIndexNum uint64
+		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
+		if err != nil {
+			return err
+		}
 
-	// 	blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// }
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	}
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
 
-	// receiptsResponse := make([]*models.ReceiptResponse, len(blocklogReceipts))
+	receiptsResponse := make([]*models.ReceiptResponse, len(blocklogReceipts.Receipts))
 
-	// for i, blocklogReceipt := range blocklogReceipts {
-	// 	parsedReceipt, err := common.ParseReceipt(ch, blocklogReceipt)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	receiptResp := models.MapReceiptResponse(parsedReceipt)
-	// 	receiptsResponse[i] = receiptResp
-	// }
+	for i, blocklogReceipt := range blocklogReceipts.Receipts {
+		parsedReceipt, err := common.ParseReceipt(ch, blocklogReceipt)
+		if err != nil {
+			panic(err)
+		}
+		receiptResp := models.MapReceiptResponse(parsedReceipt)
+		receiptsResponse[i] = receiptResp
+	}
 
-	// return e.JSON(http.StatusOK, receiptsResponse)
+	return e.JSON(http.StatusOK, receiptsResponse)
 }
 
 func (c *Controller) getIsRequestProcessed(e echo.Context) error {
@@ -209,36 +208,35 @@ func eventsResponse(e echo.Context, events []*isc.Event) error {
 }
 
 func (c *Controller) getBlockEvents(e echo.Context) error {
-	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-	// var events []*isc.Event
-	// blockIndex := e.Param(params.ParamBlockIndex)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	if err != nil {
+		return c.handleViewCallError(err)
+	}
+	var events []*isc.Event
+	blockIndex := e.Param(params.ParamBlockIndex)
 
-	// if blockIndex != "" {
-	// 	blockIndexNum, err := params.DecodeUInt(e, params.ParamBlockIndex)
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	if blockIndex != "" {
+		blockIndexNum, err := params.DecodeUInt(e, params.ParamBlockIndex)
+		if err != nil {
+			return err
+		}
 
-	// 	events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// 	if err != nil {
-	// 		return c.handleViewCallError(err)
-	// 	}
-	// } else {
-	// 	blockInfo, err := corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// 	if err != nil {
-	// 		return c.handleViewCallError(err)
-	// 	}
+		_, events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		if err != nil {
+			return c.handleViewCallError(err)
+		}
+	} else {
+		_, blockInfo, err := corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		if err != nil {
+			return c.handleViewCallError(err)
+		}
 
-	// 	events, err = corecontracts.GetEventsForBlock(ch, blockInfo.BlockIndex(), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// 	if err != nil {
-	// 		return c.handleViewCallError(err)
-	// 	}
-	// }
-	// return eventsResponse(e, events)
+		_, events, err = corecontracts.GetEventsForBlock(ch, blockInfo.BlockIndex, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		if err != nil {
+			return c.handleViewCallError(err)
+		}
+	}
+	return eventsResponse(e, events)
 }
 
 func (c *Controller) getRequestEvents(e echo.Context) error {

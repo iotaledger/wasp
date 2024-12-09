@@ -22,7 +22,7 @@ type RandomAnchorOption struct {
 	StateIndex    *uint32
 }
 
-func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
+func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 	id := *iotatest.RandomAddress()
 	assets := iscmove.AssetsBag{
 		ID:   *iotatest.RandomAddress(),
@@ -39,18 +39,18 @@ func RandomAnchor(opt ...RandomAnchorOption) iscmove.Anchor {
 		"http://url",
 	).Bytes()
 	stateIndex := uint32(rand.Int31())
-	if len(opt) > 0 {
-		if opt[0].ID != nil {
-			id = *opt[0].ID
+	if len(opts) > 0 {
+		if opts[0].ID != nil {
+			id = *opts[0].ID
 		}
-		if opt[0].Assets != nil {
-			assets = *opt[0].Assets
+		if opts[0].Assets != nil {
+			assets = *opts[0].Assets
 		}
-		if opt[0].StateMetadata != nil {
-			stateMetadata = *opt[0].StateMetadata
+		if opts[0].StateMetadata != nil {
+			stateMetadata = *opts[0].StateMetadata
 		}
-		if opt[0].StateIndex != nil {
-			stateIndex = *opt[0].StateIndex
+		if opts[0].StateIndex != nil {
+			stateIndex = *opts[0].StateIndex
 		}
 	}
 	return iscmove.Anchor{

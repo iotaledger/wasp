@@ -78,7 +78,8 @@ func TestMoveCall(t *testing.T) {
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
+				ShowEffects:       true,
+				ShowObjectChanges: true,
 			},
 		},
 	)

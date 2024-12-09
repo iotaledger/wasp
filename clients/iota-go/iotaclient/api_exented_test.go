@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
@@ -63,60 +64,9 @@ func TestGetDynamicFieldObject(t *testing.T) {
 	}
 }
 
-func TestGetDynamicFields(t *testing.T) {
-	t.Skip("refactor me: provide address of deepbook object")
-
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	limit := 5
-	type args struct {
-		ctx            context.Context
-		parentObjectID *iotago.ObjectID
-		cursor         *iotago.ObjectID
-		limit          *uint
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *iotajsonrpc.DynamicFieldPage
-		wantErr error
-	}{
-		{
-			name: "a deepbook shared object",
-			args: args{
-				ctx:            context.TODO(),
-				parentObjectID: iotago.MustAddressFromHex("0xa9d09452bba939b3172c0242d022274845cfe4e58648b73dd33b3d5b823dc8ae"),
-				cursor:         nil,
-				limit:          func() *uint { tmpLimit := uint(limit); return &tmpLimit }(),
-			},
-			wantErr: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(
-			tt.name, func(t *testing.T) {
-				got, err := client.GetDynamicFields(
-					tt.args.ctx, iotaclient.GetDynamicFieldsRequest{
-						ParentObjectID: tt.args.parentObjectID,
-						Cursor:         tt.args.cursor,
-						Limit:          tt.args.limit,
-					},
-				)
-				require.ErrorIs(t, err, tt.wantErr)
-				// object ID is '0x4405b50d791fd3346754e8171aaab6bc2ed26c2c46efdd033c14b30ae507ac33'
-				// it has 'internal_nodes' field in type '0x2::table::Table<u64, 0xdee9::critbit::InternalNode'
-				require.Len(t, got.Data, limit)
-				for _, field := range got.Data {
-					require.Equal(t, "u64", field.Name.Type)
-					require.Equal(t, "0xdee9::critbit::InternalNode", field.ObjectType)
-				}
-			},
-		)
-	}
-}
-
 func TestGetOwnedObjects(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	signer := iotasigner.NewSignerByIndex(testSeed, iotasigner.KeySchemeFlagEd25519, 0)
+	signer := iotasigner.NewSignerByIndex(testcommon.TestSeed, iotasigner.KeySchemeFlagEd25519, 0)
 	t.Run(
 		"struct tag", func(t *testing.T) {
 			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")
@@ -195,67 +145,6 @@ func TestGetOwnedObjects(t *testing.T) {
 	// require.Equal(t, "1000000000", fields.Balance.String())
 }
 
-func TestQueryEvents(t *testing.T) {
-	t.Skip("refactor me: provide address of deepbook object")
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	limit := 10
-
-	type args struct {
-		ctx             context.Context
-		query           *iotajsonrpc.EventFilter
-		cursor          *iotajsonrpc.EventId
-		limit           *uint
-		descendingOrder bool
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *iotajsonrpc.EventPage
-		wantErr error
-	}{
-		{
-			name: "event in deepbook.batch_cancel_order()",
-			args: args{
-				ctx: context.TODO(),
-				query: &iotajsonrpc.EventFilter{
-					Sender: iotago.MustAddressFromHex("0xf0f13f7ef773c6246e87a8f059a684d60773f85e992e128b8272245c38c94076"),
-				},
-				cursor:          nil,
-				limit:           func() *uint { tmpLimit := uint(limit); return &tmpLimit }(),
-				descendingOrder: false,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(
-			tt.name, func(t *testing.T) {
-				got, err := api.QueryEvents(
-					tt.args.ctx,
-					iotaclient.QueryEventsRequest{
-						Query:           tt.args.query,
-						Cursor:          tt.args.cursor,
-						Limit:           tt.args.limit,
-						DescendingOrder: tt.args.descendingOrder,
-					},
-				)
-				require.ErrorIs(t, err, tt.wantErr)
-				require.Len(t, got.Data, int(limit))
-
-				for _, event := range got.Data {
-					// FIXME we should change other filter to, so we can verify each fields of event more detailed.
-					require.Equal(
-						t,
-						iotago.MustPackageIDFromHex("0x000000000000000000000000000000000000000000000000000000000000dee9"),
-						event.PackageId,
-					)
-					require.Equal(t, "clob_v2", event.TransactionModule)
-					require.Equal(t, tt.args.query.Sender, event.Sender)
-				}
-			},
-		)
-	}
-}
-
 func TestQueryTransactionBlocks(t *testing.T) {
 	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
 	limit := uint(10)
@@ -278,7 +167,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 				ctx: context.TODO(),
 				query: &iotajsonrpc.IotaTransactionBlockResponseQuery{
 					Filter: &iotajsonrpc.TransactionFilter{
-						FromAddress: testAddress,
+						FromAddress: iotago.MustAddressFromHex(testcommon.TestAddress),
 					},
 					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 						ShowInput:   true,

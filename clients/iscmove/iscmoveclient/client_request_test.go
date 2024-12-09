@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -15,8 +17,8 @@ import (
 )
 
 func TestCreateAndSendRequest(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -45,8 +47,8 @@ func TestCreateAndSendRequest(t *testing.T) {
 }
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -60,8 +62,8 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 			Message:       iscmovetest.RandomMessage(),
 			Allowance: &iscmove.Assets{
 				Coins: iscmove.CoinBalances{
-					"0x1::iota::IOTA":    11,
-					"0xa::testa::TEST_A": 12,
+					iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA"):    11,
+					iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A"): 12,
 				},
 			},
 			GasPrice:  iotaclient.DefaultGasPrice,
@@ -75,8 +77,8 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 }
 
 func TestGetRequestFromObjectID(t *testing.T) {
-	client := iscmoveclienttest.NewLocalnetClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, iscmoveclienttest.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -95,8 +97,8 @@ func TestGetRequestFromObjectID(t *testing.T) {
 			Message:       iscmovetest.RandomMessage(),
 			Allowance: &iscmove.Assets{
 				Coins: iscmove.CoinBalances{
-					"0x1::iota::IOTA":    21,
-					"0xa::testa::TEST_A": 12,
+					iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA"):    21,
+					iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A"): 12,
 				},
 			},
 			GasPrice:  iotaclient.DefaultGasPrice,
@@ -110,6 +112,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, uint64(12), req.Object.Allowance.Coins["0xa::testa::TEST_A"].Uint64())
-	require.Equal(t, uint64(21), req.Object.Allowance.Coins["0x1::iota::IOTA"].Uint64())
+	require.Equal(t, iotajsonrpc.CoinValue(12), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A")])
+	require.Equal(t, iotajsonrpc.CoinValue(21), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA")])
 }

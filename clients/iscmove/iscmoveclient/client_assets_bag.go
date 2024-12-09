@@ -42,11 +42,8 @@ func (c *Client) GetAssetsBagWithBalances(
 			return nil, fmt.Errorf("failed to unmarshal fields in Balance: %w", err)
 		}
 
-		cointype := iotajsonrpc.CoinType("0x" + data.Name.Value.(string))
-		bag.Balances[cointype] = &iotajsonrpc.Balance{
-			CoinType:     cointype,
-			TotalBalance: iotajsonrpc.NewBigInt(moveBalance.Value.Uint64()),
-		}
+		cointype := iotajsonrpc.CoinTypeFromString("0x" + data.Name.Value.(string))
+		bag.Balances[cointype] = iotajsonrpc.CoinValue(moveBalance.Value.Uint64())
 	}
 
 	return &bag, nil

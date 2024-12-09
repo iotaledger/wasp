@@ -193,7 +193,6 @@ package cmt_log_test
 // 			ObjectRef: *iotatest.RandomObjectRef(),
 // 			Owner:     iotatest.RandomAddress(),
 // 		}, *cryptolib.NewRandomAddress().AsIotaAddress())
-
 // 	return &stateAnchor
 // }
 

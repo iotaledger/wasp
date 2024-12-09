@@ -57,8 +57,11 @@ type tc struct {
 	timeout  time.Duration
 }
 
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
 func TestNodeBasic(t *testing.T) {
-	node := l1starter.TestInSingleTestFunc(t)
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
@@ -79,13 +82,13 @@ func TestNodeBasic(t *testing.T) {
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout, node) },
+			func(tt *testing.T) { testNodeBasic(tt, tst.n, tst.f, tst.reliable, tst.timeout, l1starter.Instance()) },
 		)
 	}
 }
 
 //nolint:gocyclo
-func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration, node *l1starter.IotaNode) {
+func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration, node l1starter.IotaNodeEndpoint) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable, node)
 	defer te.close()
@@ -110,7 +113,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		}
 	}()
 
-	// Create SC Client account with some deposit
+	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
 	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
 
@@ -412,19 +415,20 @@ type testEnv struct {
 	iscPackageID iotago.PackageID
 }
 
-func newEnv(t *testing.T, n, f int, reliable bool, node *l1starter.IotaNode) *testEnv {
+func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 
-	te.iscPackageID = node.ISCPackageID
-	te.l1Client = node.Client()
+	te.iscPackageID = node.ISCPackageID()
+	te.l1Client = node.L1Client()
 	te.l2Client = te.l1Client.L2()
 
 	te.governor = cryptolib.NewKeyPair()
 	te.originator = cryptolib.NewKeyPair()
-	require.NoError(t, node.Client().RequestFunds(context.Background(), *te.governor.Address()))
-	require.NoError(t, node.Client().RequestFunds(context.Background(), *te.originator.Address()))
+	
+	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.governor.Address()))
+	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.originator.Address()))
 
 	//
 	// Create a fake network and keys for the tests.
@@ -448,7 +452,8 @@ func newEnv(t *testing.T, n, f int, reliable bool, node *l1starter.IotaNode) *te
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
-	te.tcl = testchain.NewTestChainLedger(t, te.originator, &node.ISCPackageID, te.l1Client)
+	iscPackageID := node.ISCPackageID()
+	te.tcl = testchain.NewTestChainLedger(t, te.originator, &iscPackageID, te.l1Client)
 	te.anchor, _ = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 	//
 	// Initialize the nodes.

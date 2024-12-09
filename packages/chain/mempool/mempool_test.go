@@ -31,7 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -52,8 +51,6 @@ type tc struct {
 }
 
 func TestMempoolBasic(t *testing.T) {
-	l1starter.SingleTest(t)
-
 	t.Parallel()
 	tests := []tc{
 		{n: 1, f: 0, reliable: true},  // Low N
@@ -524,10 +521,10 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
 	te.log = testlogger.NewLogger(t)
 
-	// Create ledger accounts.
+	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	te.governor = cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), iotaconn.LocalnetFaucetURL)
-	require.NoError(t, err)
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL))
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL))
 
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
@@ -551,8 +548,8 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 
 	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.LocalnetEndpointURL,
-		FaucetURL: iotaconn.LocalnetFaucetURL,
+		APIURL:    iotaconn.AlphanetEndpointURL,
+		FaucetURL: iotaconn.AlphanetFaucetURL,
 	})
 
 	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.governor))

@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -23,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -154,9 +152,9 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 
 	if opt.L1Config == nil {
 		opt.L1Config = &L1Config{
-			IotaRPCURL:    iotaconn.LocalnetEndpointURL,
-			IotaFaucetURL: iotaconn.LocalnetFaucetURL,
-			ISCPackageID:  l1starter.ISCPackageID(),
+			IotaRPCURL:    l1starter.Instance().APIURL(),
+			IotaFaucetURL: l1starter.Instance().FaucetURL(),
+			ISCPackageID:  l1starter.Instance().ISCPackageID(),
 		}
 	}
 
@@ -170,7 +168,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		chains:               make(map[isc.ChainID]*Chain),
 		processorConfig:      coreprocessors.NewConfigWithTestContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
-		seed:                 cryptolib.SeedFromBytes([]byte(t.Name())),
+		seed:                 cryptolib.NewSeed(),
 		publisher:            publisher.New(opt.Log.Named("publisher")),
 		ctx:                  ctx,
 	}
@@ -243,8 +241,8 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultCommonAccountBaseTokens   = 100 * isc.Million
-	DefaultChainOriginatorBaseTokens = 100 * isc.Million
+	DefaultCommonAccountBaseTokens   = 50 * isc.Million
+	DefaultChainOriginatorBaseTokens = 50 * isc.Million
 )
 
 // NewChain deploys new default chain instance.
@@ -278,7 +276,6 @@ func (env *Solo) deployChain(
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
 		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-		env.GetFundsFromFaucet(originatorAddr)
 		env.GetFundsFromFaucet(originatorAddr)
 	}
 
@@ -429,7 +426,7 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 	anchor := ch.GetLatestAnchor()
-	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.Anchor().Object.Assets.ID)
+	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.GetAssetsBag().ID)
 	require.NoError(ch.Env.T, err)
 	return anchor, lo.Must(isc.AssetsFromAssetsBagWithBalances(bals))
 }
@@ -557,7 +554,7 @@ func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
-		cb.Add(lo.Must(coin.TypeFromString(b.CoinType)), coin.Value(b.TotalBalance.Uint64()))
+		cb.Add(lo.Must(coin.TypeFromString(b.CoinType.String())), coin.Value(b.TotalBalance.Uint64()))
 	}
 	return cb
 }
@@ -654,9 +651,6 @@ func (env *Solo) executePTB(
 			},
 		},
 	)
-	env.T.Logf("%v", execRes.Digest.String())
-	fmt.Printf("%v", execRes.Digest.String())
-
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes

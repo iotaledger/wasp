@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
@@ -51,19 +52,15 @@ func PTBAssetsBagPlaceCoin(
 	packageID iotago.PackageID,
 	argAssetsBag iotago.Argument,
 	argCoin iotago.Argument,
-	coinType string,
+	coinType iotajsonrpc.CoinType,
 ) *iotago.ProgrammableTransactionBuilder {
-	typeTag, err := iotago.TypeTagFromString(coinType)
-	if err != nil {
-		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
-	}
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin",
-				TypeArguments: []iotago.TypeTag{*typeTag},
+				TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 				Arguments: []iotago.Argument{
 					argAssetsBag,
 					argCoin,
@@ -101,18 +98,14 @@ func PTBAssetsBagPlaceCoinWithAmount(
 	packageID iotago.PackageID,
 	argAssetsBag iotago.Argument,
 	argCoin iotago.Argument,
-	amount uint64,
-	coinType string,
+	amount iotajsonrpc.CoinValue,
+	coinType iotajsonrpc.CoinType,
 ) *iotago.ProgrammableTransactionBuilder {
-	typeTag, err := iotago.TypeTagFromString(coinType)
-	if err != nil {
-		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
-	}
 	splitCoinArg := ptb.Command(
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    argCoin,
-				Amounts: []iotago.Argument{ptb.MustForceSeparatePure(amount)},
+				Amounts: []iotago.Argument{ptb.MustForceSeparatePure(amount.Uint64())},
 			},
 		},
 	)
@@ -122,7 +115,7 @@ func PTBAssetsBagPlaceCoinWithAmount(
 				Package:       &packageID,
 				Module:        iscmove.AssetsBagModuleName,
 				Function:      "place_coin",
-				TypeArguments: []iotago.TypeTag{*typeTag},
+				TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 				Arguments: []iotago.Argument{
 					argAssetsBag,
 					splitCoinArg,

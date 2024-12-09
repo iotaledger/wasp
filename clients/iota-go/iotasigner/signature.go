@@ -42,6 +42,8 @@ func (s Signature) Bytes() []byte {
 	}
 }
 
+func (s Signature) IsBcsEnum() {}
+
 func (s Signature) MarshalJSON() ([]byte, error) {
 	switch {
 	case s.Ed25519Signature != nil:

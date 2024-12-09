@@ -80,7 +80,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
 type Cons interface {
@@ -621,20 +620,6 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
-	}
-
-	if vmResult.RotationAddress != nil {
-		// Rotation by the Self-Governed Committee.
-		decidedAnchorRef := vmResult.Task.Anchor.GetObjectRef()
-		rotationTX, err := vmtxbuilder.NewRotationTransaction(decidedAnchorRef, vmResult.RotationAddress.AsIotaAddress())
-		if err != nil {
-			c.log.Warnf("Cannot create rotation TX, failed to make TX essence: %w", err)
-			c.output.Status = Skipped
-			c.term.haveOutputProduced()
-			return nil
-		}
-		vmResult.UnsignedTransaction = *rotationTX
-		vmResult.StateDraft = nil
 	}
 
 	// Make sure all the fields in the TX are ordered properly.

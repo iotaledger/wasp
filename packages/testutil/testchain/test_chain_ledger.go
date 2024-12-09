@@ -63,7 +63,8 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	coinType := iotajsonrpc.IotaCoinType
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.governor.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
-	originDeposit := resGetCoins.Data[2]
+
+	originDeposit := resGetCoins.Data[1]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	originDepositVal := coin.Value(originDeposit.Balance.Uint64())

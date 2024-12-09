@@ -293,19 +293,13 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 	}
 
 	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
-	if err != nil {
-		return nil, nil, err
-	}
+	require.NoError(ch.Env.T, err)
 
 	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, reqRef.ObjectID)
-	if err != nil {
-		return nil, nil, err
-	}
+	require.NoError(ch.Env.T, err)
 
 	r, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
-	if err != nil {
-		return nil, nil, err
-	}
+	require.NoError(ch.Env.T, err)
 	return r, res, nil
 }
 

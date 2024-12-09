@@ -6,7 +6,6 @@ import (
 	"github.com/awnumar/memguard"
 	"github.com/zalando/go-keyring"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -34,7 +33,7 @@ func IsKeyChainAvailable() bool {
 }
 
 func (k *KeyChainZalando) SetSeed(seed cryptolib.Seed) error {
-	err := keyring.Set(WaspCliServiceName, seedKey, iotago.EncodeHex(seed[:]))
+	err := keyring.Set(WaspCliServiceName, seedKey, cryptolib.EncodeHex(seed[:]))
 	return err
 }
 

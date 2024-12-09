@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -66,8 +67,9 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 				Version:  0,
 			},
 			Object: &anchor,
+			Owner:  chainCreator.Address().AsIotaAddress(),
 		},
-		*chainCreator.Address().AsIotaAddress(),
+		iotago.PackageID{},
 	)
 	return &stateAnchor
 
@@ -102,7 +104,7 @@ func TestEVMCall(t *testing.T) {
 		t.Fatalf("failed to call EVM: %v", err)
 	}
 
-	if !bytes.Equal(result[3:], anchor.ChainID().Bytes()) {
+	if !bytes.Equal(result[:], anchor.ChainID().Bytes()) {
 		t.Fatalf("received wrong chain ID from evm. expected: %x, got: %x", anchor.ChainID().Bytes(), result[3:])
 	}
 }
