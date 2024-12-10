@@ -1,4 +1,4 @@
-name: Go
+name: Clients-IotaGo
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
 
-  TestAndBuildIotaGo:
+  TestAndBuild:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
