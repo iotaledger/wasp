@@ -1,3 +1,6 @@
+//go:build ledger_speculos
+// +build ledger_speculos
+
 package hw_ledger
 
 import (
