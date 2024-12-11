@@ -71,7 +71,8 @@ type CreateAndSendRequestWithAssetsRequest struct {
 }
 
 func (c *Client) pickIotaCoinWithBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (*iotajsonrpc.Coin, uint64, error) {
-	expectedBalance := req.Assets.Coins[iotajsonrpc.IotaCoinType].Uint64() + iotaclient.DefaultGasBudget
+	iotaBalance := req.Assets.BaseToken()
+	expectedBalance := iotaBalance + iotaclient.DefaultGasBudget
 	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), expectedBalance)
 	if err != nil {
 		return nil, 0, err
@@ -82,7 +83,7 @@ func (c *Client) pickIotaCoinWithBalance(ctx context.Context, req *CreateAndSend
 		return nil, 0, err
 	}
 
-	return coin, req.Assets.Coins[iotajsonrpc.IotaCoinType].Uint64(), nil
+	return coin, iotaBalance, nil
 }
 
 func (c *Client) CreateAndSendRequestWithAssets(
@@ -139,7 +140,6 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		req.PackageID,
 		argAssetsBag,
 		iotago.GetArgumentGasCoin(),
-		//ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: iotaCoin.Ref()}),
 		iotajsonrpc.CoinValue(balance),
 		iotajsonrpc.IotaCoinType,
 	)

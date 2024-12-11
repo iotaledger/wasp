@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -321,7 +322,7 @@ func (env *Solo) deployChain(
 			ChainOwnerAddress: chainOriginator.Address(),
 			PackageID:         env.ISCPackageID(),
 			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       initCoinRef,
+			ChainGasCoin:      initCoinRef,
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},
@@ -645,12 +646,17 @@ func (env *Solo) executePTB(
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-				ShowEvents:        true,
+				ShowEffects:        true,
+				ShowObjectChanges:  true,
+				ShowEvents:         true,
+				ShowInput:          true,
+				ShowBalanceChanges: true,
+				ShowRawEffects:     true,
+				ShowRawInput:       true,
 			},
 		},
 	)
+	fmt.Print(execRes.Digest.String())
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes

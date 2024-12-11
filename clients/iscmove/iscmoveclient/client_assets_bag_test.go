@@ -491,6 +491,34 @@ func newAssetsBag(
 	)
 }
 
+func assetsBagPlaceCoinAmountWithGasCoin(
+	client *iscmoveclient.Client,
+	signer cryptolib.Signer,
+	assetsBagRef *iotago.ObjectRef,
+	coinType iotajsonrpc.CoinType,
+	amount uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return PTBTestWrapper(
+		&PTBTestWrapperRequest{
+			Client:    client,
+			Signer:    signer,
+			PackageID: l1starter.ISCPackageID(),
+			GasPrice:  iotaclient.DefaultGasPrice,
+			GasBudget: iotaclient.DefaultGasBudget,
+		},
+		func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder {
+			return iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
+				ptb,
+				l1starter.ISCPackageID(),
+				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+				iotago.GetArgumentGasCoin(),
+				iotajsonrpc.CoinValue(amount),
+				coinType,
+			)
+		},
+	)
+}
+
 func assetsBagPlaceCoinAmount(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,

@@ -107,7 +107,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 			ChainOwnerAddress: chainSigner.Address(),
 			PackageID:         iscPackage,
 			StateMetadata:     []byte{1, 2, 3, 4},
-			InitCoinRef:       getCoinsRes.Data[1].Ref(),
+			ChainGasCoin:      getCoinsRes.Data[1].Ref(),
 			GasPayments:       []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,

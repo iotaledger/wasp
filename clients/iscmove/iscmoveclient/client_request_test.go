@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
@@ -90,62 +89,15 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 	}
 }
 
-func ensureCoinSplit(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
-	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), cryptolibSigner.Address().AsIotaAddress(), isc.GasCoinMaxValue)
-	require.NoError(t, err)
-
-	referenceGasPrice, err := client.GetReferenceGasPrice(context.TODO())
-	require.NoError(t, err)
-
-	txb := iotago.NewProgrammableTransactionBuilder()
-
-	splitCmd := txb.Command(
-		iotago.Command{
-			SplitCoins: &iotago.ProgrammableSplitCoins{
-				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(coins[0].Balance.Uint64() / 2)},
-			},
-		},
-	)
-	txb.TransferArg(cryptolibSigner.Address().AsIotaAddress(), splitCmd)
-
-	txData := iotago.NewProgrammable(
-		cryptolibSigner.Address().AsIotaAddress(),
-		txb.Finish(),
-		[]*iotago.ObjectRef{coins[0].Ref()},
-		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
-	)
-
-	txnBytes, err := bcs.Marshal(&txData)
-	require.NoError(t, err)
-
-	result, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
-			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
-	)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-}
-
-func TestProperCoinSplit(t *testing.T) {
+func TestProperCoinUse(t *testing.T) {
 	l1 := l1starter.Instance().L1Client()
 	client := iscmoveclienttest.NewHTTPClient()
 	chainOwnerSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
-	ensureCoinSplit(t, chainOwnerSigner, l1)
-
 	anchor := startNewChain(t, client, chainOwnerSigner)
 
 	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
-	// Ensure we only have one actual gas coin.
 
+	// Ensure we only have one actual gas coin. Merge all coins into one - if needed.
 	ensureSingleCoin(t, cryptolibSigner, l1)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequestWithAssets(
@@ -156,7 +108,7 @@ func TestProperCoinSplit(t *testing.T) {
 			AnchorAddress: anchor.ObjectID,
 			Assets:        iscmove.NewAssets(100000),
 			Message:       iscmovetest.RandomMessage(),
-			Allowance:     iscmove.NewAssets(10000),
+			Allowance:     iscmove.NewAssets(100000),
 			GasPrice:      iotaclient.DefaultGasPrice,
 			GasBudget:     iotaclient.DefaultGasBudget,
 		},
@@ -167,9 +119,11 @@ func TestProperCoinSplit(t *testing.T) {
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
+	anchorSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
+	anchor := startNewChain(t, client, anchorSigner)
 
-	anchor := startNewChain(t, client, cryptolibSigner)
+	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
+	ensureSingleCoin(t, cryptolibSigner, l1starter.Instance().L1Client())
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)

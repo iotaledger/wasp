@@ -148,6 +148,17 @@ func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinV
 	return a
 }
 
+func (a *Assets) BaseToken() uint64 {
+	source, err := iotago.NewResourceType(iotajsonrpc.IotaCoinType)
+	if err != nil {
+		// If this happens count your blessings.
+		panic(err)
+	}
+
+	iotaBalance := a.Coins[iotajsonrpc.CoinType(source.String())].Uint64()
+	return iotaBalance
+}
+
 type Request struct {
 	ID     iotago.ObjectID
 	Sender *cryptolib.Address
