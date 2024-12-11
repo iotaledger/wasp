@@ -318,9 +318,6 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORR
 github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
 github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
-github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 h1:UH//fgunKIs4JdUbpDl1VZCDaL56wXCB/5+wF6uHfaI=
-github.com/grpc-ecosystem/go-grpc-middleware v1.4.0/go.mod h1:g5qyo/la0ALbONm6Vbp88Yd8NsDy6rZz+RcrMPxvld8=
-github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 h1:Ovs26xHkKqVztRpIrF/92BcuyuQ/YW4NSIpoGtfXNho=
 github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0/go.mod h1:8NvIoxWQoOIhqOTXgfV/d3M/q6VIi02HzZEHgUlZvzk=
 github.com/grpc-ecosystem/grpc-gateway v1.5.0/go.mod h1:RSKVYQBd5MCa4OVpNdGskqpgL2+G+NZTnrVHpWWfpdw=
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
@@ -412,8 +409,6 @@ github.com/iotaledger/hive.go/web v0.0.0-20240319170702-c7591bb5f9f2 h1:ktsf1IDn
 github.com/iotaledger/hive.go/web v0.0.0-20240319170702-c7591bb5f9f2/go.mod h1:/s0gZqYPQeUvz11QJl0QNDHh8QM4EX+S3yQTxsYPQVc=
 github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a h1:mVYBXnSSVl9xRxzZReRdRQN43gUz3IMOxb+IEMQFTp4=
 github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a/go.mod h1:9AA+oDJv4WGM0YdDm7Lh24XK5O9Jd9SPw3ApMJSSv7k=
-github.com/iotaledger/inx/go v1.0.0-rc.2 h1:SjHGHQ1pEe7/B0bnVIHCa1zQBvcC0QRwcYPzUGarrJU=
-github.com/iotaledger/inx/go v1.0.0-rc.2/go.mod h1:PYijAQs5lgAzLENkpvdSoLM8Iq4KAg+CdU5Smxj01lI=
 github.com/iotaledger/iota.go v1.0.0 h1:tqm1FxJ/zOdzbrAaQ5BQpVF8dUy2eeGlSeWlNG8GoXY=
 github.com/iotaledger/iota.go v1.0.0/go.mod h1:RiKYwDyY7aCD1L0YRzHSjOsJ5mUR9yvQpvhZncNcGQI=
 github.com/iotaledger/iota.go/v3 v3.0.0-rc.3 h1:/2gH+AlsWX2T7f4uHvD7oAHmPRsW+SkjR29txzqpi5M=

@@ -19,7 +19,7 @@ func (c *Client) FindCoinsForGasPayment(
 	gasPrice uint64,
 	gasBudget uint64,
 ) ([]*iotago.ObjectRef, error) {
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    owner,

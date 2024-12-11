@@ -73,14 +73,13 @@ type CreateAndSendRequestWithAssetsRequest struct {
 
 func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (*iotajsonrpc.Coin, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
-	expectedBalance := iotaBalance + iotaclient.DefaultGasBudget
 
-	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), expectedBalance)
+	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance, iotaclient.DefaultGasBudget)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coin, err := coinOptions.PickCoinNoLess(expectedBalance)
+	coin, err := coinOptions.PickCoinNoLess(iotaBalance)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -105,7 +104,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	var placedCoins []lo.Tuple2[*iotajsonrpc.Coin, uint64]
 	// assume we can find it in the first page
 	for cointype, bal := range req.Assets.Coins {
-		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType)) {
+		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType.String())) {
 			continue
 		}
 

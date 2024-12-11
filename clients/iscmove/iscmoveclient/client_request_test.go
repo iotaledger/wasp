@@ -22,7 +22,7 @@ import (
 )
 
 func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	coinObjects, err := client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
@@ -165,8 +165,8 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 			Message:       iscmovetest.RandomMessage(),
 			Allowance: &iscmove.Assets{
 				Coins: iscmove.CoinBalances{
-					iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA"):    11,
-					iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A"): 12,
+					iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"):    11,
+					iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"): 12,
 				},
 			},
 			GasPrice:  iotaclient.DefaultGasPrice,
@@ -200,8 +200,8 @@ func TestGetRequestFromObjectID(t *testing.T) {
 			Message:       iscmovetest.RandomMessage(),
 			Allowance: &iscmove.Assets{
 				Coins: iscmove.CoinBalances{
-					iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA"):    21,
-					iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A"): 12,
+					iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"):    21,
+					iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"): 12,
 				},
 			},
 			GasPrice:  iotaclient.DefaultGasPrice,
@@ -215,6 +215,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, iotajsonrpc.CoinValue(12), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0xa::testa::TEST_A")])
-	require.Equal(t, iotajsonrpc.CoinValue(21), req.Object.Allowance.Coins[iotajsonrpc.CoinTypeFromString("0x1::iota::IOTA")])
+	require.Equal(t, iotajsonrpc.CoinValue(12), req.Object.Allowance.Coins[iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")])
+	require.Equal(t, iotajsonrpc.CoinValue(21), req.Object.Allowance.Coins[iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA")])
 }

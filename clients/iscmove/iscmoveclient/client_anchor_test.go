@@ -134,7 +134,7 @@ func ensureCoinSplit(t *testing.T, cryptolibSigner cryptolib.Signer, client clie
 		return
 	}
 
-	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), cryptolibSigner.Address().AsIotaAddress(), isc.GasCoinMaxValue)
+	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), cryptolibSigner.Address().AsIotaAddress(), isc.GasCoinMaxValue, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	referenceGasPrice, err := client.GetReferenceGasPrice(context.TODO())
@@ -181,7 +181,7 @@ func ensureCoinSplit(t *testing.T, cryptolibSigner cryptolib.Signer, client clie
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
 	ensureCoinSplit(t, signer, l1starter.Instance().L1Client())
 
-	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinMaxValue)
+	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinMaxValue, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
 	chainGasCoins, gasCoin, err := coinObjects.PickIOTACoinsWithGas(iotajsonrpc.NewBigInt(isc.GasCoinMaxValue).Int, iotaclient.DefaultGasBudget, iotajsonrpc.PickMethodSmaller)

@@ -9,9 +9,9 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
-const (
-	IotaCoinType   = "0x2::iota::IOTA"
-	IotaCoinSupply = 5380677226936000000
+var (
+	IotaCoinType   CoinType = CoinType(iotago.MustNewResourceType("0x2::iota::IOTA").String())
+	IotaCoinSupply          = 5380677226936000000
 )
 
 // ShortString Returns the address with leading zeros trimmed, e.g. 0x2

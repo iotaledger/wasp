@@ -17,6 +17,7 @@ func (c *Client) GetCoinObjsForTargetAmount(
 	ctx context.Context,
 	address *iotago.Address,
 	targetAmount uint64,
+	gasAmount uint64,
 ) (iotajsonrpc.Coins, error) {
 	coins, err := c.GetCoins(
 		ctx, GetCoinsRequest{
@@ -27,7 +28,7 @@ func (c *Client) GetCoinObjsForTargetAmount(
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetCoins(): %w", err)
 	}
-	pickedCoins, err := iotajsonrpc.PickupCoins(coins, new(big.Int).SetUint64(targetAmount), 0, 0, 0)
+	pickedCoins, err := iotajsonrpc.PickupCoins(coins, new(big.Int).SetUint64(targetAmount), gasAmount, 0, 25)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,8 @@ func (c *Client) PublishContract(
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
 			Options:     options,
-		})
+		},
+	)
 	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
 		return nil, nil, fmt.Errorf("failed to sign move contract tx: %w", err)
 	}
@@ -151,11 +153,13 @@ func (c *Client) MintToken(
 		return nil, fmt.Errorf("failed to call mint() move call: %w", err)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(ctx, &SignAndExecuteTransactionRequest{
-		TxDataBytes: txnBytes.TxBytes,
-		Signer:      signer,
-		Options:     options,
-	})
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx, &SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      signer,
+			Options:     options,
+		},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("can't execute the transaction: %w", err)
 	}

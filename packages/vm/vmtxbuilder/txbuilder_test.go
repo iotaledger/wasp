@@ -2,6 +2,7 @@ package vmtxbuilder_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/iotaledger/wasp/clients"
@@ -81,6 +82,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	)
 
 	require.NoError(t, err)
+	fmt.Print(txnResponse.Digest.String())
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
 	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})

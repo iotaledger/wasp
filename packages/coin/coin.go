@@ -51,7 +51,7 @@ func ValueFromString(s string) (Value, error) {
 }
 
 // TODO: maybe it is not ok to consider this constant?
-var BaseTokenType = lo.Must(TypeFromString(iotajsonrpc.IotaCoinType))
+var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
 // Two instances of Type are equal iif they represent the same coin type.
@@ -103,6 +103,10 @@ func (t Type) MatchesStringType(s string) bool {
 
 func (t Type) String() string {
 	return t.s
+}
+
+func (t Type) AsRPCCoinType() iotajsonrpc.CoinType {
+	return iotajsonrpc.CoinType(t.String())
 }
 
 func (t Type) ShortString() string {
