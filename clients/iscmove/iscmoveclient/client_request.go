@@ -137,14 +137,16 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		return nil, fmt.Errorf("failed to find an IOTA coin with proper balance ref: %w", err)
 	}
 
-	ptb = PTBAssetsBagPlaceCoinWithAmount(
-		ptb,
-		req.PackageID,
-		argAssetsBag,
-		iotago.GetArgumentGasCoin(),
-		iotajsonrpc.CoinValue(balance),
-		iotajsonrpc.IotaCoinType,
-	)
+	if balance > 0 {
+		ptb = PTBAssetsBagPlaceCoinWithAmount(
+			ptb,
+			req.PackageID,
+			argAssetsBag,
+			iotago.GetArgumentGasCoin(),
+			iotajsonrpc.CoinValue(balance),
+			iotajsonrpc.IotaCoinType,
+		)
+	}
 
 	// Then the rest of the coins
 	for _, tuple := range placedCoins {

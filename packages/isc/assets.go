@@ -387,7 +387,9 @@ func (a *Assets) BaseTokens() coin.Value {
 func (a *Assets) AsISCMove() *iscmove.Assets {
 	r := iscmove.NewEmptyAssets()
 	for coinType, amount := range a.Coins {
-		r.AddCoin(coinType.ToIotaJSONRPC(), iotajsonrpc.CoinValue(amount))
+		if amount > 0 {
+			r.AddCoin(coinType.ToIotaJSONRPC(), iotajsonrpc.CoinValue(amount))
+		}
 	}
 	if len(a.Objects) > 0 {
 		panic("TODO")
