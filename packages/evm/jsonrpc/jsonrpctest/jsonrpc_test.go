@@ -101,15 +101,12 @@ func TestRPCGetBalance(t *testing.T) {
 	_, emptyAddress := solo.NewEthereumAccount()
 	require.Zero(t, env.Balance(emptyAddress).Uint64())
 
-	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits signle coin object allocated from faucet
-
+	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits single coin object allocated from faucet
 	wallet, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds(initialBalance)
 	initialBalanceEth := env.Balance(nonEmptyAddress)
+	initialBalanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress)))
 	require.Equal(t, initialBalance.Uint64()*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
-
-	balanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress)))
-	balanceEth := env.Balance(nonEmptyAddress).Uint64()
-	require.Equal(t, balanceNative*nativeToEthDigitsConversionRate, balanceEth)
+	require.Equal(t, initialBalanceNative*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
 
 	// 18 decimals
 	toSend := new(big.Int).SetUint64(1_111_111_111_111_111_111) // use all 18 decimals
