@@ -3,6 +3,7 @@ package coin
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,10 @@ type Value uint64
 
 func (v Value) Uint64() uint64 {
 	return uint64(v)
+}
+
+func (v Value) BigInt() *big.Int {
+	return new(big.Int).SetUint64(uint64(v))
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
