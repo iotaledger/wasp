@@ -2,11 +2,11 @@ package iscmoveclient_test
 
 import (
 	"context"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestStartNewChain(t *testing.T) {
@@ -126,60 +125,8 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	require.Equal(t, gasCoin1.Balance.Int64()+topUpAmount-txnResponse.Effects.Data.GasFee(), int64(gasCoin2.Balance))
 }
 
-func ensureCoinSplit(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
-	require.NoError(t, err)
-
-	if len(getCoinsRes.Data) > 1 {
-		return
-	}
-
-	coins, err := client.GetCoinObjsForTargetAmount(context.Background(), cryptolibSigner.Address().AsIotaAddress(), isc.GasCoinMaxValue, iotaclient.DefaultGasBudget)
-	require.NoError(t, err)
-
-	referenceGasPrice, err := client.GetReferenceGasPrice(context.TODO())
-	require.NoError(t, err)
-
-	txb := iotago.NewProgrammableTransactionBuilder()
-
-	splitCmd := txb.Command(
-		iotago.Command{
-			SplitCoins: &iotago.ProgrammableSplitCoins{
-				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinMaxValue)},
-			},
-		},
-	)
-	txb.TransferArg(cryptolibSigner.Address().AsIotaAddress(), splitCmd)
-
-	txData := iotago.NewProgrammable(
-		cryptolibSigner.Address().AsIotaAddress(),
-		txb.Finish(),
-		[]*iotago.ObjectRef{coins[0].Ref()},
-		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
-	)
-
-	txnBytes, err := bcs.Marshal(&txData)
-	require.NoError(t, err)
-
-	result, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
-			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
-			TxDataBytes: txnBytes,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-			},
-		},
-	)
-	require.NoError(t, err)
-	require.NotNil(t, result)
-}
-
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
-	ensureCoinSplit(t, signer, l1starter.Instance().L1Client())
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinMaxValue)
 
 	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinMaxValue, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)

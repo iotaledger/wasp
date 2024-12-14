@@ -96,7 +96,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(output.Deposit()),
+		Transfer:  isc.NewAssets(coin.Value(output.Deposit())),
 		Allowance: isc.NewEmptyAssets().AddObject(nft.ID),
 		NFT:       nft,
 	}
@@ -104,7 +104,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	par.WithGasBudget(gasBudget)
 
-	tx, err := client.PostRequest(accounts.FuncTransferAllowanceTo.Message(targetAgentID), par)
+	tx, err := client.PostRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(targetAgentID), par)
 	require.NoError(t, err)
 	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(t, err)

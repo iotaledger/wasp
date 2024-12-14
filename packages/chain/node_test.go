@@ -6,6 +6,7 @@ package chain_test
 import (
 	"context"
 	"fmt"
+	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"math/rand"
 	"sync"
 	"testing"
@@ -19,7 +20,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
@@ -433,7 +434,10 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.originator = cryptolib.NewKeyPair()
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.governor.Address()))
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.governor), node.L1Client(), isc.GasCoinMaxValue*10)
+
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.originator.Address()))
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.originator), node.L1Client(), isc.GasCoinMaxValue*10)
 
 	//
 	// Create a fake network and keys for the tests.

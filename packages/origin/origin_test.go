@@ -30,7 +30,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	l1starter.StartNode(context.Background())
+	l1starter.TestMain(m)
 }
 
 func TestOrigin(t *testing.T) {
