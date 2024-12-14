@@ -95,6 +95,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
 		ObjectRef: iotago.ObjectRef{
 			ObjectID: &anchor.ID,
+			Digest:   lo.Must(iotago.NewDigest("foo")),
 			Version:  0,
 		},
 		Object: &anchor,
@@ -179,8 +180,13 @@ func runRequestsAndTransitionAnchor(
 	*isc.StateAnchor,
 ) {
 	task := &vm.VMTask{
-		Processors:           coreprocessors.NewConfigWithTestContracts(),
-		Anchor:               anchor,
+		Processors: coreprocessors.NewConfigWithTestContracts(),
+		Anchor:     anchor,
+		GasCoin: &coin.CoinWithRef{
+			Value: isc.GasCoinMaxValue,
+			Type:  coin.BaseTokenType,
+			Ref:   iotatest.RandomObjectRef(),
+		},
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            time.Time{},

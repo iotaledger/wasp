@@ -6,7 +6,7 @@ package bp
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -19,7 +19,7 @@ type BatchProposal struct {
 	timeData                time.Time           `bcs:"export"` // Our view of time.
 	validatorFeeDestination isc.AgentID         `bcs:"export"` // Proposed destination for fees.
 	requestRefs             []*isc.RequestRef   `bcs:"export"` // Requests we propose to include into the execution.
-	gasCoins                []*iotago.ObjectRef `bcs:"export"` // Coins to use for gas payment.
+	gasCoins                []*coin.CoinWithRef `bcs:"export"` // Coins to use for gas payment.
 	gasPrice                uint64              `bcs:"export"` // The gas price to use.
 }
 
@@ -30,7 +30,7 @@ func NewBatchProposal(
 	timeData time.Time,
 	validatorFeeDestination isc.AgentID,
 	requestRefs []*isc.RequestRef,
-	gasCoins []*iotago.ObjectRef,
+	gasCoins []*coin.CoinWithRef,
 	gasPrice uint64,
 ) *BatchProposal {
 	return &BatchProposal{

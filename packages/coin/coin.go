@@ -148,3 +148,13 @@ var (
 	Zero     = Value(0)
 	MaxValue = Value(math.MaxUint64)
 )
+
+type CoinWithRef struct {
+	Type  Type
+	Value Value
+	Ref   *iotago.ObjectRef
+}
+
+func (c CoinWithRef) Bytes() []byte {
+	return bcs.MustMarshal(&c)
+}

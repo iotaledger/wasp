@@ -95,8 +95,13 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 }
 
 func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
+	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
+	if err != nil {
+		return nil, err
+	}
 	return chainutil.EVMCall(
 		anchor,
+		gasCoin,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
@@ -105,8 +110,13 @@ func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallM
 }
 
 func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
+	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
+	if err != nil {
+		return 0, err
+	}
 	return chainutil.EVMEstimateGas(
 		anchor,
+		gasCoin,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
@@ -122,8 +132,13 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
+	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
+	if err != nil {
+		return err
+	}
 	return chainutil.EVMTraceTransaction(
 		anchor,
+		gasCoin,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),

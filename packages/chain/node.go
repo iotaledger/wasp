@@ -39,6 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -163,6 +164,7 @@ type chainNodeImpl struct {
 	latestActiveAO         *isc.StateAnchor       // This is the AO the chain is build on.
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
+	gasCoin                *coin.CoinWithRef      // Set only when the corresponding state is retrieved.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -587,6 +589,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
 	cni.latestActiveStateAO = till
+	// FIXME cni.gasCoin
 	latestConfirmedAO := cni.latestConfirmedAO
 	cni.accessLock.Unlock()
 
@@ -1067,6 +1070,10 @@ func (cni *chainNodeImpl) LatestAnchor(freshness StateFreshness) (*isc.StateAnch
 	default:
 		panic(fmt.Errorf("unexpected StateFreshness: %v", freshness))
 	}
+}
+
+func (cni *chainNodeImpl) LatestGasCoin(freshness StateFreshness) (*coin.CoinWithRef, error) {
+	return cni.nodeConn.GetGasCoinRef(context.Background(), cni.chainID)
 }
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {

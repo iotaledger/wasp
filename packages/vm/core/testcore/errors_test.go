@@ -22,7 +22,7 @@ import (
 func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{Debug: true})
-	chain, _ := env.NewChainExt(nil, 100_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	chain, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	chain.MustDepositBaseTokensToL2(10_000_000, nil)
 	defer chain.Log().Sync()

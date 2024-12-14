@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -42,7 +42,6 @@ func TestOffLedgerOrdering(t *testing.T) {
 	rs := []isc.Request{r3, r1, r0, r2} // Out of order.
 	//
 	// Construct the batch proposal, and aggregate it.
-	gasCoin := iotatest.RandomObjectRef()
 	bp0 := bp.NewBatchProposal(
 		0,
 		&ao0,
@@ -50,7 +49,11 @@ func TestOffLedgerOrdering(t *testing.T) {
 		time.Now(),
 		isctest.NewRandomAgentID(),
 		isc.RequestRefsFromRequests(rs),
-		[]*iotago.ObjectRef{gasCoin},
+		[]*coin.CoinWithRef{{
+			Type:  coin.BaseTokenType,
+			Value: coin.Value(100),
+			Ref:   iotatest.RandomObjectRef(),
+		}},
 		154,
 	)
 	bp0.Bytes()

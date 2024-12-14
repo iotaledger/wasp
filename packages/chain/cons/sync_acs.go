@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acs"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -19,7 +19,7 @@ type SyncACS interface {
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
-	GasInfoReceived(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages
+	GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
 	ACSOutputReceived(output gpa.Output) gpa.OutMessages
 	String() string
 }
@@ -32,7 +32,7 @@ type syncACSImpl struct {
 	RequestRefs      []*isc.RequestRef
 	DSSIndexProposal []int
 	TimeData         time.Time
-	gasCoins         []*iotago.ObjectRef
+	gasCoins         []*coin.CoinWithRef
 	gasPrice         uint64
 
 	inputsReady   bool
@@ -41,7 +41,7 @@ type syncACSImpl struct {
 		requestRefs []*isc.RequestRef,
 		dssIndexProposal []int,
 		timeData time.Time,
-		gasCoins []*iotago.ObjectRef,
+		gasCoins []*coin.CoinWithRef,
 		gasPrice uint64,
 	) gpa.OutMessages
 
@@ -58,7 +58,7 @@ func NewSyncACS(
 		requestRefs []*isc.RequestRef,
 		dssIndexProposal []int,
 		timeData time.Time,
-		gasCoins []*iotago.ObjectRef,
+		gasCoins []*coin.CoinWithRef,
 		gasPrice uint64,
 	) gpa.OutMessages,
 	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages,
@@ -103,7 +103,7 @@ func (sub *syncACSImpl) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 	return nil
 }
 
-func (sub *syncACSImpl) GasInfoReceived(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages {
+func (sub *syncACSImpl) GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
 	if gasCoins != nil {
 		sub.gasCoins = gasCoins
 	}

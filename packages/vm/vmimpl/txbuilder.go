@@ -1,6 +1,7 @@
 package vmimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -9,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
+func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment, gasCoin *coin.CoinWithRef) []byte {
 	stateMetadata := transaction.StateMetadata{
 		L1Commitment: l1Commitment,
 	}
@@ -20,6 +21,7 @@ func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment) []byte {
 	govState := governance.NewStateReaderFromChainState(vmctx.stateDraft)
 	stateMetadata.PublicURL = govState.GetPublicURL()
 	stateMetadata.GasFeePolicy = govState.GetGasFeePolicy()
+	stateMetadata.GasCoinObjectID = gasCoin.Ref.ObjectID
 
 	return stateMetadata.Bytes()
 }

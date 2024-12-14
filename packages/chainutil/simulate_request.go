@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -12,6 +13,7 @@ import (
 
 func SimulateRequest(
 	anchor *isc.StateAnchor,
+	gasCoin *coin.CoinWithRef,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
@@ -20,6 +22,7 @@ func SimulateRequest(
 ) (*blocklog.RequestReceipt, error) {
 	res, err := runISCRequest(
 		anchor,
+		gasCoin,
 		store,
 		processors,
 		log,

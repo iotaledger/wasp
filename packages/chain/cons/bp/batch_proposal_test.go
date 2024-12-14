@@ -10,8 +10,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +31,6 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	}
 
 	stateAnchor := isctest.RandomStateAnchor()
-	coinRef := iotatest.RandomObjectRef()
 	batchProposal := NewBatchProposal(
 		10,
 		&stateAnchor,
@@ -39,7 +38,11 @@ func TestBatchProposal1Serialization(t *testing.T) {
 		time.Now(),
 		isctest.NewRandomAgentID(),
 		reqRefs,
-		[]*iotago.ObjectRef{coinRef},
+		[]*coin.CoinWithRef{{
+			Type:  coin.BaseTokenType,
+			Value: coin.Value(100),
+			Ref:   iotatest.RandomObjectRef(),
+		}},
 		10,
 	)
 

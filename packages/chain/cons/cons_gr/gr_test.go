@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -125,7 +126,11 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
 	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
-	gasCoin := iotatest.RandomObjectRef()
+	gasCoin := &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
 
 	logIndex := cmt_log.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
@@ -373,27 +378,27 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 }
 
 type testNodeConnGasInfo struct {
-	gasCoins []*iotago.ObjectRef
+	gasCoins []*coin.CoinWithRef
 	gasPrice uint64
 }
 
-func (tgi *testNodeConnGasInfo) GetGasCoins() []*iotago.ObjectRef { return tgi.gasCoins }
+func (tgi *testNodeConnGasInfo) GetGasCoins() []*coin.CoinWithRef { return tgi.gasCoins }
 func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
 
 type testNodeConn struct {
-	gasCoin *iotago.ObjectRef
+	gasCoin *coin.CoinWithRef
 }
 
 var _ consGR.NodeConn = &testNodeConn{}
 
-func newTestNodeConn(gasCoin *iotago.ObjectRef) *testNodeConn {
+func newTestNodeConn(gasCoin *coin.CoinWithRef) *testNodeConn {
 	return &testNodeConn{gasCoin: gasCoin}
 }
 
 func (t *testNodeConn) ConsensusGasPriceProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnGasInfo {
 	ch := make(chan consGR.NodeConnGasInfo, 1)
 	ch <- &testNodeConnGasInfo{
-		gasCoins: []*iotago.ObjectRef{t.gasCoin},
+		gasCoins: []*coin.CoinWithRef{t.gasCoin},
 		gasPrice: 123,
 	}
 	close(ch)

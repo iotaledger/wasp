@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 type ChainFeed struct {
@@ -213,4 +214,29 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 func (f *ChainFeed) GetISCPackageID() iotago.PackageID {
 	return f.iscPackageID
+}
+
+func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uint64, error) {
+	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
+	}
+	metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
+	}
+	getObjRes, err := f.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+		ObjectID: metadata.GasCoinObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch gas coin object: %w", err)
+	}
+	var moveGasCoin MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to decode gas coin object: %w", err)
+	}
+	gasCoinRef := getObjRes.Data.Ref()
+	return &gasCoinRef, moveGasCoin.Balance, nil
 }
