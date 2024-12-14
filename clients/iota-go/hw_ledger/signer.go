@@ -11,6 +11,8 @@ type Signer struct {
 	askForPublicKeyConfirmation bool
 }
 
+var _ iotasigner.Signer = &Signer{}
+
 func NewLedgerSigner(device *HWLedger, bip32Path string, askForPublicKeyConfirmation bool) *Signer {
 	return &Signer{
 		device:                      device,

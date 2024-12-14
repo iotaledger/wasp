@@ -146,8 +146,6 @@ func (l *HWLedger) SignTransaction(path string, txDataBytes []byte) (*SignTransa
 		return nil, fmt.Errorf("failed to send chunks: %w", err)
 	}
 
-	fmt.Println(signature)
-
 	if len(signature) != SignTransactionExpectedSize {
 		return nil, ErrInvalidResponseLength
 	}
@@ -175,6 +173,7 @@ func buildBip32KeyPayload(path string) ([]byte, error) {
 	return payload, nil
 }
 
+// splitPath splits a supplied bip32 path into separate path elements
 func splitPath(path string) ([]uint32, error) {
 	if path == "" {
 		return nil, errors.New("empty path")

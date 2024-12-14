@@ -105,7 +105,7 @@ func (t *SpeculosTransport) Exchange(apdu []byte) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	status := codec.Uint16(response[size:])
+	status := binary.BigEndian.Uint16(response[size:])
 	if status != 0x9000 {
 		return nil, fmt.Errorf("invalid status response: %x", status)
 	}
