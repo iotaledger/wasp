@@ -6,6 +6,7 @@ package mempool_test
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"math/rand"
 	"slices"
 	"testing"
@@ -449,7 +450,11 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 	vmTask := &vm.VMTask{
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
-		// FIXME GasCoinBalance
+		GasCoin: &coin.CoinWithRef{
+			Value: isc.TopUpFeeMin,
+			Type:  coin.BaseTokenType,
+			Ref:   iotatest.RandomObjectRef(),
+		},
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            tangleTime,
