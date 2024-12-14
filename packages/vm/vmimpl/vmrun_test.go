@@ -183,7 +183,7 @@ func runRequestsAndTransitionAnchor(
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
-			Value: isc.TopUpFeeMin,
+			Value: isc.GasCoinMaxValue,
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},
