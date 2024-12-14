@@ -95,6 +95,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 	stateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
 		ObjectRef: iotago.ObjectRef{
 			ObjectID: &anchor.ID,
+			Digest:   lo.Must(iotago.NewDigest("foo")),
 			Version:  0,
 		},
 		Object: &anchor,
@@ -181,7 +182,15 @@ func runRequestsAndTransitionAnchor(
 	task := &vm.VMTask{
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
-		// FIXME GasCoinBalance
+		GasCoin: &coin.CoinWithRef{
+			Value: 100000,
+			Type:  coin.Type{},
+			Ref: &iotago.ObjectRef{
+				ObjectID: &iotago.ObjectID{},
+				Version:  0,
+				Digest:   lo.Must(iotago.NewDigest("")),
+			},
+		},
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            time.Time{},
