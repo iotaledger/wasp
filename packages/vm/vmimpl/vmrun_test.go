@@ -184,12 +184,8 @@ func runRequestsAndTransitionAnchor(
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
 			Value: isc.TopUpFeeMin,
-			Type:  coin.Type{},
-			Ref: &iotago.ObjectRef{
-				ObjectID: &iotago.ObjectID{},
-				Version:  0,
-				Digest:   lo.Must(iotago.NewDigest("")),
-			},
+			Type:  coin.BaseTokenType,
+			Ref:   iotatest.RandomObjectRef(),
 		},
 		Store:                store,
 		Requests:             reqs,
