@@ -175,7 +175,6 @@ func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, p
 			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
 		},
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to SignAndExecuteTransaction: %w", err)
 	}

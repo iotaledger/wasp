@@ -27,14 +27,13 @@ import (
 )
 
 func Test_SerializePacket_EmptyCommand(t *testing.T) {
-	var command = make([]byte, 1)
+	command := make([]byte, 1)
 
 	_, _, err := SerializePacket(0x0101, command, 64, 0)
 	assert.Nil(t, err, "Commands smaller than 3 bytes should return error")
 }
 
 func Test_SerializePacket_PacketSize(t *testing.T) {
-
 	var packetSize = 64
 	type header struct {
 		channel     uint16
@@ -45,7 +44,7 @@ func Test_SerializePacket_PacketSize(t *testing.T) {
 
 	h := header{channel: 0x0101, tag: 0x05, sequenceIdx: 0, commandLen: 32}
 
-	var command = make([]byte, h.commandLen)
+	command := make([]byte, h.commandLen)
 
 	result, _, _ := SerializePacket(
 		h.channel,
@@ -57,7 +56,6 @@ func Test_SerializePacket_PacketSize(t *testing.T) {
 }
 
 func Test_SerializePacket_Header(t *testing.T) {
-
 	var packetSize = 64
 	type header struct {
 		channel     uint16
@@ -68,7 +66,7 @@ func Test_SerializePacket_Header(t *testing.T) {
 
 	h := header{channel: 0x0101, tag: 0x05, sequenceIdx: 0, commandLen: 32}
 
-	var command = make([]byte, h.commandLen)
+	command := make([]byte, h.commandLen)
 
 	result, _, _ := SerializePacket(
 		h.channel,
@@ -83,7 +81,6 @@ func Test_SerializePacket_Header(t *testing.T) {
 }
 
 func Test_SerializePacket_Offset(t *testing.T) {
-
 	var packetSize = 64
 	type header struct {
 		channel     uint16
@@ -94,7 +91,7 @@ func Test_SerializePacket_Offset(t *testing.T) {
 
 	h := header{channel: 0x0101, tag: 0x05, sequenceIdx: 0, commandLen: 100}
 
-	var command = make([]byte, h.commandLen)
+	command := make([]byte, h.commandLen)
 
 	_, offset, _ := SerializePacket(
 		h.channel,
@@ -106,7 +103,6 @@ func Test_SerializePacket_Offset(t *testing.T) {
 }
 
 func Test_WrapCommandAPDU_NumberOfPackets(t *testing.T) {
-
 	var packetSize = 64
 	type firstHeader struct {
 		channel     uint16
@@ -117,7 +113,7 @@ func Test_WrapCommandAPDU_NumberOfPackets(t *testing.T) {
 
 	h1 := firstHeader{channel: 0x0101, tag: 0x05, sequenceIdx: 0, commandLen: 100}
 
-	var command = make([]byte, h1.commandLen)
+	command := make([]byte, h1.commandLen)
 
 	result, _ := WrapCommandAPDU(
 		h1.channel,
@@ -128,7 +124,6 @@ func Test_WrapCommandAPDU_NumberOfPackets(t *testing.T) {
 }
 
 func Test_WrapCommandAPDU_CheckHeaders(t *testing.T) {
-
 	var packetSize = 64
 	type firstHeader struct {
 		channel     uint16
@@ -139,7 +134,7 @@ func Test_WrapCommandAPDU_CheckHeaders(t *testing.T) {
 
 	h1 := firstHeader{channel: 0x0101, tag: 0x05, sequenceIdx: 0, commandLen: 100}
 
-	var command = make([]byte, h1.commandLen)
+	command := make([]byte, h1.commandLen)
 
 	result, _ := WrapCommandAPDU(
 		h1.channel,
@@ -151,14 +146,13 @@ func Test_WrapCommandAPDU_CheckHeaders(t *testing.T) {
 	assert.Equal(t, 0, int(codec.Uint16(result[3:])), "SequenceIdx not properly serialized")
 	assert.Equal(t, int(h1.commandLen), int(codec.Uint16(result[5:])), "Command len not properly serialized")
 
-	var offsetOfSecondPacket = packetSize
+	offsetOfSecondPacket := packetSize
 	assert.Equal(t, h1.channel, codec.Uint16(result[offsetOfSecondPacket:]), "Channel not properly serialized")
 	assert.Equal(t, h1.tag, result[offsetOfSecondPacket+2], "Tag not properly serialized")
 	assert.Equal(t, 1, int(codec.Uint16(result[offsetOfSecondPacket+3:])), "SequenceIdx not properly serialized")
 }
 
 func Test_WrapCommandAPDU_CheckData(t *testing.T) {
-
 	var packetSize = 64
 	type firstHeader struct {
 		channel     uint16
@@ -169,7 +163,7 @@ func Test_WrapCommandAPDU_CheckData(t *testing.T) {
 
 	h1 := firstHeader{channel: 0x0101, tag: 0x05, sequenceIdx: 0, commandLen: 200}
 
-	var command = make([]byte, h1.commandLen)
+	command := make([]byte, h1.commandLen)
 
 	for i := range command {
 		command[i] = byte(i % 256)
@@ -205,7 +199,6 @@ func Test_WrapCommandAPDU_CheckData(t *testing.T) {
 }
 
 func Test_DeserializePacket_FirstPacket(t *testing.T) {
-
 	var sampleCommand = []byte{'H', 'e', 'l', 'l', 'o', 0}
 
 	var packetSize = 64
@@ -222,10 +215,10 @@ func Test_DeserializePacket_FirstPacket(t *testing.T) {
 }
 
 func Test_DeserializePacket_SecondMessage(t *testing.T) {
-	var sampleCommand = []byte{'H', 'e', 'l', 'l', 'o', 0}
+	sampleCommand := []byte{'H', 'e', 'l', 'l', 'o', 0}
 
-	var packetSize = 64
-	var firstPacketHeaderSize = 5 // second packet does not have responseLength (uint16) in the header
+	packetSize := 64
+	firstPacketHeaderSize := 5 // second packet does not have responseLength (uint16) in the header
 	packet, _, _ := SerializePacket(0x0101, sampleCommand, packetSize, 1)
 
 	output, totalSize, isSequenceZero, err := DeserializePacket(0x0101, packet, 1)
@@ -241,10 +234,10 @@ func Test_UnwrapApdu_SmokeTest(t *testing.T) {
 	const channel uint16 = 0x8002
 
 	inputSize := 200
-	var packetSize = 64
+	packetSize := 64
 
 	// Initialize some dummy input
-	var input = make([]byte, inputSize)
+	input := make([]byte, inputSize)
 	for i := range input {
 		input[i] = byte(i % 256)
 	}

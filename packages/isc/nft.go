@@ -7,8 +7,8 @@ import (
 )
 
 type NFT struct {
-	ID     iotago.ObjectID
-	Issuer *cryptolib.Address
+	ID       iotago.ObjectID
+	Issuer   *cryptolib.Address
 	Metadata []byte
 	Owner    AgentID // can be nil
 }

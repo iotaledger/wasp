@@ -2,7 +2,6 @@ package iscmoveclient_test
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"

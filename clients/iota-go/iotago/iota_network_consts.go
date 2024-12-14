@@ -17,9 +17,7 @@ var (
 	IotaObjectIdDenyList           = MustObjectIDFromHex("0x403")
 )
 
-var (
-	IotaSystemModuleName Identifier = "iota_system"
-)
+var IotaSystemModuleName Identifier = "iota_system"
 
 var (
 	IotaSystemStateObjectSharedVersion        = SequenceNumber(1)

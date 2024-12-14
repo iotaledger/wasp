@@ -46,7 +46,7 @@ func (c *Client) GetAssetsBagWithBalances(
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
 		}
-		
+
 		bag.Balances[cointype] = iotajsonrpc.CoinValue(moveBalance.Value.Uint64())
 	}
 

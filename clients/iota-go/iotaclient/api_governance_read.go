@@ -10,7 +10,6 @@ import (
 func (c *Client) GetCommitteeInfo(
 	ctx context.Context,
 	epoch *iotajsonrpc.BigInt, // optional
-
 ) (*iotajsonrpc.CommitteeInfo, error) {
 	var resp iotajsonrpc.CommitteeInfo
 	return &resp, c.transport.Call(ctx, &resp, getCommitteeInfo, epoch)

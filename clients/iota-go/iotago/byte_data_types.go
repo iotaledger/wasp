@@ -26,6 +26,7 @@ func NewBytes(bytes []byte) Bytes {
 func (b Bytes) GetHexData() HexData {
 	return HexData(b)
 }
+
 func (b Bytes) GetBase64Data() Base64Data {
 	return Base64Data(b)
 }
@@ -47,9 +48,11 @@ func NewHexData(str string) (*HexData, error) {
 func (h HexData) Data() []byte {
 	return h
 }
+
 func (h HexData) Length() int {
 	return len(h)
 }
+
 func (h HexData) String() string {
 	return "0x" + hex.EncodeToString(h)
 }
@@ -97,9 +100,11 @@ func MustNewBase64Data(str string) *Base64Data {
 func (h Base64Data) Data() []byte {
 	return h
 }
+
 func (h Base64Data) Length() int {
 	return len(h)
 }
+
 func (h Base64Data) String() string {
 	return base64.StdEncoding.EncodeToString(h)
 }
@@ -131,9 +136,11 @@ func NewBase58(str string) (*Base58, error) {
 func (b Base58) Data() []byte {
 	return b
 }
+
 func (b Base58) Length() int {
 	return len(b)
 }
+
 func (b Base58) String() string {
 	return base58.Encode(b)
 }

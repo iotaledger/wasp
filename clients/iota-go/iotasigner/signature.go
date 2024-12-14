@@ -34,9 +34,9 @@ func (s Signature) Bytes() []byte {
 	case s.Ed25519Signature != nil:
 		return s.Ed25519Signature.Signature[:]
 	case s.Secp256k1Signature != nil:
-		return s.Secp256k1Signature.Signature[:]
+		return s.Secp256k1Signature.Signature
 	case s.Secp256r1Signature != nil:
-		return s.Secp256r1Signature.Signature[:]
+		return s.Secp256r1Signature.Signature
 	default:
 		return nil
 	}
@@ -49,9 +49,9 @@ func (s Signature) MarshalJSON() ([]byte, error) {
 	case s.Ed25519Signature != nil:
 		return json.Marshal(s.Ed25519Signature.Signature[:])
 	case s.Secp256k1Signature != nil:
-		return json.Marshal(s.Secp256k1Signature.Signature[:])
+		return json.Marshal(s.Secp256k1Signature.Signature)
 	case s.Secp256r1Signature != nil:
-		return json.Marshal(s.Secp256r1Signature.Signature[:])
+		return json.Marshal(s.Secp256r1Signature.Signature)
 	default:
 		return nil, errors.New("nil signature")
 	}

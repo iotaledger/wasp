@@ -6,7 +6,6 @@ package mempool_test
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"math/rand"
 	"slices"
 	"testing"
@@ -18,6 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"

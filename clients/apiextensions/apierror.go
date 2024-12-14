@@ -5,7 +5,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 )
- 
+
 type APIDetailError struct {
 	Message string
 	Error   string

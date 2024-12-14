@@ -68,7 +68,7 @@ type InMemorySigner struct {
 }
 
 func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
-	prikey := ed25519.NewKeyFromSeed(seed[:])
+	prikey := ed25519.NewKeyFromSeed(seed)
 	pubkey := prikey.Public().(ed25519.PublicKey)
 
 	// IOTA_DIFF iotago ignore flag when signature scheme is ed25519

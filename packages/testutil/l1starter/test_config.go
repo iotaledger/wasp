@@ -17,7 +17,6 @@ type L1EndpointConfig struct {
 }
 
 func GetRootDir() string {
-
 	// Start from current working directory
 	dir, err := os.Getwd()
 	if err != nil {

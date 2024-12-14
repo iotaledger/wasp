@@ -7,7 +7,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// Upon serialization the types are checked for the presense of customizations. This make take significant time.
+// Upon serialization the types are checked for the presence of customizations. This make take significant time.
 // To improve that, the type information is stored in cache.
 // To avoid global mutex locks when reading/writing cache, atomic swapping is used instead.
 // It works like that:
@@ -68,7 +68,7 @@ func (c *localTypeInfoCache) Save() {
 	}
 
 	// Refreshing shared version of cache in case it was extended by somebody else while we were working on our local copy.
-	// This is not mandatory, but may be useful in cases e.g. when two coders are used in parallel on two independant sets of types.
+	// This is not mandatory, but may be useful in cases e.g. when two coders are used in parallel on two independent sets of types.
 	// In that case without this line they would overwrite each others cache entries on every save.
 	// Still, even with this line there is a teeny-tiny chance of that happening, but on a long run its not a problem.
 	c.prevCacheEntries = *c.sharedCache.entries.Load()

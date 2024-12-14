@@ -70,7 +70,6 @@ func FieldOptional[T any]() optionalField[T] {
 	return optionalField[T]{}
 }
 
-type optionalField[T any] struct {
-}
+type optionalField[T any] struct{}
 
 var _ CallArgsCodec[*any] = (*optionalField[any])(nil)

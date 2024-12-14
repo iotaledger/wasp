@@ -2,6 +2,7 @@ package coreutil
 
 import (
 	"fmt"
+
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -381,11 +382,9 @@ func (e EP01[S, T1, O1]) Message() isc.Message {
 
 func (e EP01[S, T1, O1]) WithHandler(f func(S) T1) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		return isc.NewCallArguments(output1)
-
 	})
 }
 
@@ -456,13 +455,11 @@ func (e EP02[S, T1, T2, O1, O2]) Message() isc.Message {
 
 func (e EP02[S, T1, T2, O1, O2]) WithHandler(f func(S) (T1, T2)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
 
 		return isc.NewCallArguments(output1, output2)
-
 	})
 }
 
@@ -548,14 +545,12 @@ func (e EP03[S, T1, T2, T3, O1, O2, O3]) Message() isc.Message {
 
 func (e EP03[S, T1, T2, T3, O1, O2, O3]) WithHandler(f func(S) (T1, T2, T3)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
 		output3 := e.Output3.Encode(r3)
 
 		return isc.NewCallArguments(output1, output2, output3)
-
 	})
 }
 
@@ -656,7 +651,6 @@ func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) Message() isc.Message {
 
 func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) WithHandler(f func(S) (T1, T2, T3, T4)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -664,7 +658,6 @@ func (e EP04[S, T1, T2, T3, T4, O1, O2, O3, O4]) WithHandler(f func(S) (T1, T2, 
 		output4 := e.Output4.Encode(r4)
 
 		return isc.NewCallArguments(output1, output2, output3, output4)
-
 	})
 }
 
@@ -780,7 +773,6 @@ func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) Message() isc.Message {
 
 func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) WithHandler(f func(S) (T1, T2, T3, T4, T5)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4, r5 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -789,7 +781,6 @@ func (e EP05[S, T1, T2, T3, T4, T5, O1, O2, O3, O4, O5]) WithHandler(f func(S) (
 		output5 := e.Output5.Encode(r5)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
 	})
 }
 
@@ -920,7 +911,6 @@ func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) Message() isc.M
 
 func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4, r5, r6 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -930,7 +920,6 @@ func (e EP06[S, T1, T2, T3, T4, T5, T6, O1, O2, O3, O4, O5, O6]) WithHandler(f f
 		output6 := e.Output6.Encode(r6)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6)
-
 	})
 }
 
@@ -1076,7 +1065,6 @@ func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) Message
 
 func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4, r5, r6, r7 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -1087,7 +1075,6 @@ func (e EP07[S, T1, T2, T3, T4, T5, T6, T7, O1, O2, O3, O4, O5, O6, O7]) WithHan
 		output7 := e.Output7.Encode(r7)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7)
-
 	})
 }
 
@@ -1248,7 +1235,6 @@ func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8])
 
 func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4, r5, r6, r7, r8 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -1260,7 +1246,6 @@ func (e EP08[S, T1, T2, T3, T4, T5, T6, T7, T8, O1, O2, O3, O4, O5, O6, O7, O8])
 		output8 := e.Output8.Encode(r8)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8)
-
 	})
 }
 
@@ -1436,7 +1421,6 @@ func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, 
 
 func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, O8, O9]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8, T9)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4, r5, r6, r7, r8, r9 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -1449,7 +1433,6 @@ func (e EP09[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, O1, O2, O3, O4, O5, O6, O7, 
 		output9 := e.Output9.Encode(r9)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9)
-
 	})
 }
 
@@ -1640,7 +1623,6 @@ func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6
 
 func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6, O7, O8, O9, O10]) WithHandler(f func(S) (T1, T2, T3, T4, T5, T6, T7, T8, T9, T10)) *EntryPointHandler[S] {
 	return e.EntryPointInfo.WithHandler(func(ctx S) isc.CallArguments {
-
 		r1, r2, r3, r4, r5, r6, r7, r8, r9, r10 := f(ctx)
 		output1 := e.Output1.Encode(r1)
 		output2 := e.Output2.Encode(r2)
@@ -1654,7 +1636,6 @@ func (e EP010[S, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, O1, O2, O3, O4, O5, O6
 		output10 := e.Output10.Encode(r10)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5, output6, output7, output8, output9, output10)
-
 	})
 }
 
@@ -1805,7 +1786,6 @@ type EP10[S isc.SandboxBase, T1 any, I1 CallArgsCodec[T1]] struct {
 func NewEP10[T1 any, I1 CallArgsCodec[T1]](
 	contract *ContractInfo, name string,
 	in1 I1,
-
 ) EP10[isc.Sandbox, T1, I1] {
 	return EP10[isc.Sandbox, T1, I1]{
 		EP1: NewEP1(contract, name, in1),
@@ -1815,7 +1795,6 @@ func NewEP10[T1 any, I1 CallArgsCodec[T1]](
 func NewViewEP10[T1 any, I1 CallArgsCodec[T1]](
 	contract *ContractInfo, name string,
 	in1 I1,
-
 ) EP10[isc.SandboxView, T1, I1] {
 	return EP10[isc.SandboxView, T1, I1]{
 		EP1: NewViewEP1(contract, name, in1),
@@ -1835,7 +1814,6 @@ func (e EP10[S, T1, I1]) WithHandler(f func(S, T1)) *EntryPointHandler[S] {
 
 		f(ctx, p1)
 		return isc.NewCallArguments()
-
 	})
 }
 
@@ -1897,7 +1875,6 @@ func (e EP11[S, T1, R1, I1, O1]) WithHandler(f func(S, T1) R1) *EntryPointHandle
 		r1 := f(ctx, p1)
 		output1 := e.Output1.Encode(r1)
 		return isc.NewCallArguments(output1)
-
 	})
 }
 
@@ -1980,7 +1957,6 @@ func (e EP12[S, T1, R1, R2, I1, O1, O2]) WithHandler(f func(S, T1) (R1, R2)) *En
 		output2 := e.Output2.Encode(r2)
 
 		return isc.NewCallArguments(output1, output2)
-
 	})
 }
 
@@ -2079,7 +2055,6 @@ func (e EP13[S, T1, R1, R2, R3, I1, O1, O2, O3]) WithHandler(f func(S, T1) (R1, 
 		output3 := e.Output3.Encode(r3)
 
 		return isc.NewCallArguments(output1, output2, output3)
-
 	})
 }
 
@@ -2194,7 +2169,6 @@ func (e EP14[S, T1, R1, R2, R3, R4, I1, O1, O2, O3, O4]) WithHandler(f func(S, T
 		output4 := e.Output4.Encode(r4)
 
 		return isc.NewCallArguments(output1, output2, output3, output4)
-
 	})
 }
 
@@ -2325,7 +2299,6 @@ func (e EP15[S, T1, R1, R2, R3, R4, R5, I1, O1, O2, O3, O4, O5]) WithHandler(f f
 		output5 := e.Output5.Encode(r5)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
 	})
 }
 
@@ -2418,7 +2391,6 @@ func NewEP20[T1 any, T2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2]](
 	contract *ContractInfo, name string,
 	in1 I1,
 	in2 I2,
-
 ) EP20[isc.Sandbox, T1, T2, I1, I2] {
 	return EP20[isc.Sandbox, T1, T2, I1, I2]{
 		EP2: NewEP2(contract, name, in1, in2),
@@ -2429,7 +2401,6 @@ func NewViewEP20[T1 any, T2 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2]](
 	contract *ContractInfo, name string,
 	in1 I1,
 	in2 I2,
-
 ) EP20[isc.SandboxView, T1, T2, I1, I2] {
 	return EP20[isc.SandboxView, T1, T2, I1, I2]{
 		EP2: NewViewEP2(contract, name, in1, in2),
@@ -2451,7 +2422,6 @@ func (e EP20[S, T1, T2, I1, I2]) WithHandler(f func(S, T1, T2)) *EntryPointHandl
 
 		f(ctx, p1, p2)
 		return isc.NewCallArguments()
-
 	})
 }
 
@@ -2517,7 +2487,6 @@ func (e EP21[S, T1, T2, R1, I1, I2, O1]) WithHandler(f func(S, T1, T2) R1) *Entr
 		r1 := f(ctx, p1, p2)
 		output1 := e.Output1.Encode(r1)
 		return isc.NewCallArguments(output1)
-
 	})
 }
 
@@ -2604,7 +2573,6 @@ func (e EP22[S, T1, T2, R1, R2, I1, I2, O1, O2]) WithHandler(f func(S, T1, T2) (
 		output2 := e.Output2.Encode(r2)
 
 		return isc.NewCallArguments(output1, output2)
-
 	})
 }
 
@@ -2707,7 +2675,6 @@ func (e EP23[S, T1, T2, R1, R2, R3, I1, I2, O1, O2, O3]) WithHandler(f func(S, T
 		output3 := e.Output3.Encode(r3)
 
 		return isc.NewCallArguments(output1, output2, output3)
-
 	})
 }
 
@@ -2826,7 +2793,6 @@ func (e EP24[S, T1, T2, R1, R2, R3, R4, I1, I2, O1, O2, O3, O4]) WithHandler(f f
 		output4 := e.Output4.Encode(r4)
 
 		return isc.NewCallArguments(output1, output2, output3, output4)
-
 	})
 }
 
@@ -2961,7 +2927,6 @@ func (e EP25[S, T1, T2, R1, R2, R3, R4, R5, I1, I2, O1, O2, O3, O4, O5]) WithHan
 		output5 := e.Output5.Encode(r5)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
 	})
 }
 
@@ -3055,7 +3020,6 @@ func NewEP30[T1 any, T2 any, T3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[T2],
 	in1 I1,
 	in2 I2,
 	in3 I3,
-
 ) EP30[isc.Sandbox, T1, T2, T3, I1, I2, I3] {
 	return EP30[isc.Sandbox, T1, T2, T3, I1, I2, I3]{
 		EP3: NewEP3(contract, name, in1, in2, in3),
@@ -3067,7 +3031,6 @@ func NewViewEP30[T1 any, T2 any, T3 any, I1 CallArgsCodec[T1], I2 CallArgsCodec[
 	in1 I1,
 	in2 I2,
 	in3 I3,
-
 ) EP30[isc.SandboxView, T1, T2, T3, I1, I2, I3] {
 	return EP30[isc.SandboxView, T1, T2, T3, I1, I2, I3]{
 		EP3: NewViewEP3(contract, name, in1, in2, in3),
@@ -3091,7 +3054,6 @@ func (e EP30[S, T1, T2, T3, I1, I2, I3]) WithHandler(f func(S, T1, T2, T3)) *Ent
 
 		f(ctx, p1, p2, p3)
 		return isc.NewCallArguments()
-
 	})
 }
 
@@ -3161,7 +3123,6 @@ func (e EP31[S, T1, T2, T3, R1, I1, I2, I3, O1]) WithHandler(f func(S, T1, T2, T
 		r1 := f(ctx, p1, p2, p3)
 		output1 := e.Output1.Encode(r1)
 		return isc.NewCallArguments(output1)
-
 	})
 }
 
@@ -3252,7 +3213,6 @@ func (e EP32[S, T1, T2, T3, R1, R2, I1, I2, I3, O1, O2]) WithHandler(f func(S, T
 		output2 := e.Output2.Encode(r2)
 
 		return isc.NewCallArguments(output1, output2)
-
 	})
 }
 
@@ -3359,7 +3319,6 @@ func (e EP33[S, T1, T2, T3, R1, R2, R3, I1, I2, I3, O1, O2, O3]) WithHandler(f f
 		output3 := e.Output3.Encode(r3)
 
 		return isc.NewCallArguments(output1, output2, output3)
-
 	})
 }
 
@@ -3482,7 +3441,6 @@ func (e EP34[S, T1, T2, T3, R1, R2, R3, R4, I1, I2, I3, O1, O2, O3, O4]) WithHan
 		output4 := e.Output4.Encode(r4)
 
 		return isc.NewCallArguments(output1, output2, output3, output4)
-
 	})
 }
 
@@ -3621,7 +3579,6 @@ func (e EP35[S, T1, T2, T3, R1, R2, R3, R4, R5, I1, I2, I3, O1, O2, O3, O4, O5])
 		output5 := e.Output5.Encode(r5)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
 	})
 }
 
@@ -3716,7 +3673,6 @@ func NewEP40[T1 any, T2 any, T3 any, T4 any, I1 CallArgsCodec[T1], I2 CallArgsCo
 	in2 I2,
 	in3 I3,
 	in4 I4,
-
 ) EP40[isc.Sandbox, T1, T2, T3, T4, I1, I2, I3, I4] {
 	return EP40[isc.Sandbox, T1, T2, T3, T4, I1, I2, I3, I4]{
 		EP4: NewEP4(contract, name, in1, in2, in3, in4),
@@ -3729,7 +3685,6 @@ func NewViewEP40[T1 any, T2 any, T3 any, T4 any, I1 CallArgsCodec[T1], I2 CallAr
 	in2 I2,
 	in3 I3,
 	in4 I4,
-
 ) EP40[isc.SandboxView, T1, T2, T3, T4, I1, I2, I3, I4] {
 	return EP40[isc.SandboxView, T1, T2, T3, T4, I1, I2, I3, I4]{
 		EP4: NewViewEP4(contract, name, in1, in2, in3, in4),
@@ -3755,7 +3710,6 @@ func (e EP40[S, T1, T2, T3, T4, I1, I2, I3, I4]) WithHandler(f func(S, T1, T2, T
 
 		f(ctx, p1, p2, p3, p4)
 		return isc.NewCallArguments()
-
 	})
 }
 
@@ -3829,7 +3783,6 @@ func (e EP41[S, T1, T2, T3, T4, R1, I1, I2, I3, I4, O1]) WithHandler(f func(S, T
 		r1 := f(ctx, p1, p2, p3, p4)
 		output1 := e.Output1.Encode(r1)
 		return isc.NewCallArguments(output1)
-
 	})
 }
 
@@ -3924,7 +3877,6 @@ func (e EP42[S, T1, T2, T3, T4, R1, R2, I1, I2, I3, I4, O1, O2]) WithHandler(f f
 		output2 := e.Output2.Encode(r2)
 
 		return isc.NewCallArguments(output1, output2)
-
 	})
 }
 
@@ -4035,7 +3987,6 @@ func (e EP43[S, T1, T2, T3, T4, R1, R2, R3, I1, I2, I3, I4, O1, O2, O3]) WithHan
 		output3 := e.Output3.Encode(r3)
 
 		return isc.NewCallArguments(output1, output2, output3)
-
 	})
 }
 
@@ -4162,7 +4113,6 @@ func (e EP44[S, T1, T2, T3, T4, R1, R2, R3, R4, I1, I2, I3, I4, O1, O2, O3, O4])
 		output4 := e.Output4.Encode(r4)
 
 		return isc.NewCallArguments(output1, output2, output3, output4)
-
 	})
 }
 
@@ -4305,7 +4255,6 @@ func (e EP45[S, T1, T2, T3, T4, R1, R2, R3, R4, R5, I1, I2, I3, I4, O1, O2, O3, 
 		output5 := e.Output5.Encode(r5)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
 	})
 }
 
@@ -4401,7 +4350,6 @@ func NewEP50[T1 any, T2 any, T3 any, T4 any, T5 any, I1 CallArgsCodec[T1], I2 Ca
 	in3 I3,
 	in4 I4,
 	in5 I5,
-
 ) EP50[isc.Sandbox, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5] {
 	return EP50[isc.Sandbox, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]{
 		EP5: NewEP5(contract, name, in1, in2, in3, in4, in5),
@@ -4415,7 +4363,6 @@ func NewViewEP50[T1 any, T2 any, T3 any, T4 any, T5 any, I1 CallArgsCodec[T1], I
 	in3 I3,
 	in4 I4,
 	in5 I5,
-
 ) EP50[isc.SandboxView, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5] {
 	return EP50[isc.SandboxView, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]{
 		EP5: NewViewEP5(contract, name, in1, in2, in3, in4, in5),
@@ -4443,7 +4390,6 @@ func (e EP50[S, T1, T2, T3, T4, T5, I1, I2, I3, I4, I5]) WithHandler(f func(S, T
 
 		f(ctx, p1, p2, p3, p4, p5)
 		return isc.NewCallArguments()
-
 	})
 }
 
@@ -4521,7 +4467,6 @@ func (e EP51[S, T1, T2, T3, T4, T5, R1, I1, I2, I3, I4, I5, O1]) WithHandler(f f
 		r1 := f(ctx, p1, p2, p3, p4, p5)
 		output1 := e.Output1.Encode(r1)
 		return isc.NewCallArguments(output1)
-
 	})
 }
 
@@ -4620,7 +4565,6 @@ func (e EP52[S, T1, T2, T3, T4, T5, R1, R2, I1, I2, I3, I4, I5, O1, O2]) WithHan
 		output2 := e.Output2.Encode(r2)
 
 		return isc.NewCallArguments(output1, output2)
-
 	})
 }
 
@@ -4735,7 +4679,6 @@ func (e EP53[S, T1, T2, T3, T4, T5, R1, R2, R3, I1, I2, I3, I4, I5, O1, O2, O3])
 		output3 := e.Output3.Encode(r3)
 
 		return isc.NewCallArguments(output1, output2, output3)
-
 	})
 }
 
@@ -4866,7 +4809,6 @@ func (e EP54[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, I1, I2, I3, I4, I5, O1, O2, 
 		output4 := e.Output4.Encode(r4)
 
 		return isc.NewCallArguments(output1, output2, output3, output4)
-
 	})
 }
 
@@ -5013,7 +4955,6 @@ func (e EP55[S, T1, T2, T3, T4, T5, R1, R2, R3, R4, R5, I1, I2, I3, I4, I5, O1, 
 		output5 := e.Output5.Encode(r5)
 
 		return isc.NewCallArguments(output1, output2, output3, output4, output5)
-
 	})
 }
 

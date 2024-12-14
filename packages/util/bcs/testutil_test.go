@@ -3,9 +3,10 @@ package bcs_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestEmpty(t *testing.T) {

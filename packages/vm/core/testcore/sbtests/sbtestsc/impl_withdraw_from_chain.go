@@ -1,11 +1,12 @@
 package sbtestsc
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/samber/lo"
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain

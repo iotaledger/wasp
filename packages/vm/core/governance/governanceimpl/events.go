@@ -1,10 +1,11 @@
 package governanceimpl
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/samber/lo"
 )
 
 func eventRotate(ctx isc.Sandbox, newAddr *cryptolib.Address, oldAddr *cryptolib.Address) {

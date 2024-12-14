@@ -8,6 +8,7 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bdn"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"

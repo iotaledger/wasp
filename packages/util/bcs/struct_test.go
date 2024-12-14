@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BasicStruct struct {
@@ -201,8 +202,7 @@ func TestStructWithContainers(t *testing.T) {
 	bcs.TestCodecAndBytes(t, MapPtrOptional{A: nil}, []byte{0x0})
 }
 
-type WithCustomCodec struct {
-}
+type WithCustomCodec struct{}
 
 func (w WithCustomCodec) MarshalBCS(e *bcs.Encoder) error {
 	e.Write([]byte{1, 2, 3})
@@ -222,8 +222,7 @@ func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	return nil
 }
 
-type WithRwUtilCodec struct {
-}
+type WithRwUtilCodec struct{}
 
 func (v WithRwUtilCodec) Write(w io.Writer) error {
 	w.Write([]byte{1, 2, 3})

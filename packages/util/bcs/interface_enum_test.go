@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	ref_bcs "github.com/fardream/go-bcs/bcs"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type InfEnum1 interface{}

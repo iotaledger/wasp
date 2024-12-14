@@ -6,7 +6,6 @@ package chainmanager_test
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 func TestChainMgrBasic(t *testing.T) {
