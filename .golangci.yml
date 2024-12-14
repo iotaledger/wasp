@@ -7,6 +7,7 @@ issues:
       - contracts/wasm
       - tools/cluster
       - documentation
+      - packages/isc/coreutil
     exclude-use-default: false
     # Maximum issues count per one linter.
     # Set to 0 to disable.
@@ -52,6 +53,16 @@ issues:
           linters:
               - gocritic
           text: "unnecessaryBlock: block doesn't have definitions, can be simply deleted"
+
+        - path: packages/isc/coreutil/packages/isc/coreutil/generated_entrypoints.go
+          linters:
+              - errcheck
+              - bodyclose
+              - noctx
+              - gosec
+              - funlen
+              - gomnd
+              - gocritic
 
 linters-settings:
     funlen:

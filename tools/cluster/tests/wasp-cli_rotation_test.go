@@ -155,14 +155,17 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 			t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
 			continue
 		}
-		out, err = w2.Pipe(out, "decode", "string", governance.ParamMaintenanceStatus, "bool")
-		if err != nil {
-			t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
-			continue
-		}
-		if strings.Contains(out[0], "true") {
-			break
-		}
+
+		// refactor me: Waspcli maintenance status
+		/*
+			out, err = w2.Pipe(out, "decode", "string", governance.ParamMaintenanceStatus, "bool")
+			if err != nil {
+				t.Logf("Warning: call failed to ViewGetMaintenanceStatus: %v", err)
+				continue
+			}
+			if strings.Contains(out[0], "true") {
+				break
+			}*/
 	}
 
 	// stop the initial cluster

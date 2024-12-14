@@ -55,7 +55,8 @@ func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hna
 	if transfer != nil {
 		b = transfer
 	}
-	tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(contract, entryPoint, codec.MakeDict(params)), chainclient.PostRequestParams{
+	panic("refactor me: params is nil, used to be codec.MakeDict(params)")
+	tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(contract, entryPoint, nil), chainclient.PostRequestParams{
 		Transfer: b,
 	})
 	require.NoError(e.t, err)
@@ -85,7 +86,8 @@ func (e *contractEnv) checkSC(numRequests int) {
 		require.EqualValues(e.t, len(corecontracts.All)+1, len(contractRegistry))
 
 		cr := contractRegistry[inccounter.Contract.Hname()]
-		require.EqualValues(e.t, inccounter.Contract.Name, cr.Name)
+		panic("refactor me: this equal check")
+		require.EqualValues(e.t, inccounter.Contract.Name, cr.B)
 	}
 }
 
