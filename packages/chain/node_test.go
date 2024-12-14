@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -280,6 +281,10 @@ func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
 	panic("implement me")
 }
 
+func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
+	panic("implement me")
+}
+
 var _ chain.NodeConnection = &testNodeConn{}
 
 func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotago.PackageID) *testNodeConn {
@@ -426,7 +431,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 
 	te.governor = cryptolib.NewKeyPair()
 	te.originator = cryptolib.NewKeyPair()
-	
+
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.governor.Address()))
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.originator.Address()))
 

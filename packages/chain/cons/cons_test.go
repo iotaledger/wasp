@@ -96,8 +96,11 @@ func testConsBasic(t *testing.T, n, f int) {
 		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
 	}
 	reqRefs := isc.RequestRefsFromRequests(reqs)
-
-	gasCoin := iotatest.RandomObjectRef()
+	gasCoin := coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
 	gasPrice := uint64(123)
 
 	//
@@ -188,7 +191,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputMempoolProposal(reqRefs))
 		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
 		tc.WithInput(nid, cons.NewInputTimeData(now))
-		tc.WithInput(nid, cons.NewInputGasInfo([]*iotago.ObjectRef{gasCoin}, gasPrice))
+		tc.WithInput(nid, cons.NewInputGasInfo([]*coin.CoinWithRef{&gasCoin}, gasPrice))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)

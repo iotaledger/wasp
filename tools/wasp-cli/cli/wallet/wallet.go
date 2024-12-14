@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iota-go/hw_ledger"
+	ledger_go "github.com/iotaledger/wasp/clients/iota-go/hw_ledger/ledger-go"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
@@ -18,13 +21,15 @@ type WalletProvider string
 const (
 	ProviderUnsafeInMemoryTestingSeed WalletProvider = "unsafe_inmemory_testing_seed"
 	ProviderKeyChain                  WalletProvider = "keychain"
+	ProviderLedger                    WalletProvider = "ledger"
+	ProviderLedgerDebug               WalletProvider = "ledger_debug"
 )
 
 func GetWalletProvider() WalletProvider {
 	provider := WalletProvider(config.GetWalletProviderString())
 
 	switch provider {
-	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed:
+	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug:
 		return provider
 	}
 	return ProviderKeyChain
@@ -32,7 +37,7 @@ func GetWalletProvider() WalletProvider {
 
 func SetWalletProvider(provider WalletProvider) error {
 	switch provider {
-	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed:
+	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug:
 		config.SetWalletProviderString(string(provider))
 		return nil
 	}
@@ -41,11 +46,37 @@ func SetWalletProvider(provider WalletProvider) error {
 
 var loadedWallet wallets.Wallet
 
+func initializeLedger(walletProvider WalletProvider) *hw_ledger.HWLedger {
+	var ledgerDevice *hw_ledger.HWLedger
+	var err error
+
+	switch walletProvider {
+	case ProviderLedgerDebug:
+		log.Printf("Trying to open Speculos debug mode\n")
+
+		dev, err := ledger_go.NewSpeculosTransport(ledger_go.DefaultSpeculosTransportOpts())
+		log.Check(err)
+		ledgerDevice = hw_ledger.NewHWLedger(dev)
+	case ProviderLedger:
+		log.Printf("Trying to open Ledger\n")
+
+		ledgerDevice, err = hw_ledger.TryAndConnect()
+		log.Check(err)
+	default:
+		panic("incorrect wallet provider")
+	}
+
+	return ledgerDevice
+}
+
 func Load() wallets.Wallet {
 	walletProvider := GetWalletProvider()
 
 	if loadedWallet == nil {
 		switch walletProvider {
+		case ProviderLedger, ProviderLedgerDebug:
+			loadedWallet = providers.NewExternalWallet(initializeLedger(walletProvider), AddressIndex, iotasigner.IotaCoinType)
+
 		case ProviderKeyChain:
 			loadedWallet = providers.LoadKeyChain(AddressIndex)
 		case ProviderUnsafeInMemoryTestingSeed:

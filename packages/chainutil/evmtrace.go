@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -13,6 +14,7 @@ import (
 
 func EVMTraceTransaction(
 	anchor *isc.StateAnchor,
+	gasCoin *coin.CoinWithRef,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
@@ -24,6 +26,7 @@ func EVMTraceTransaction(
 ) error {
 	_, err := runISCTask(
 		anchor,
+		gasCoin,
 		store,
 		processors,
 		log,

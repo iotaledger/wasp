@@ -38,6 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -423,6 +424,34 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 
 	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
 	return &stateAnchor
+}
+
+func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
+	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
+		ch.Env.ctx,
+		ch.ChainID.AsAddress().AsIotaAddress(),
+	)
+	require.NoError(ch.Env.T, err)
+
+	metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	require.NoError(ch.Env.T, err)
+	getObjRes, err := ch.Env.ISCMoveClient().GetObject(
+		ch.Env.ctx,
+		iotaclient.GetObjectRequest{
+			ObjectID: metadata.GasCoinObjectID,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		},
+	)
+	require.NoError(ch.Env.T, err)
+	var moveGasCoin iscmoveclient.MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	require.NoError(ch.Env.T, err)
+	gasCoinRef := getObjRes.Data.Ref()
+	return &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(moveGasCoin.Balance),
+		Ref:   &gasCoinRef,
+	}
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
