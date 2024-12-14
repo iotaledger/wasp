@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	ErrDeviceNotFound        = errors.New("device not found")
-	ErrConnectionFailure     = errors.New("failed to connect to device")
-	ErrInvalidResponseLength = errors.New("invalid response length")
+	ErrDeviceNotFound          = errors.New("device not found")
+	ErrConnectionFailure       = errors.New("failed to connect to device")
+	ErrInvalidResponseLength   = errors.New("invalid response length")
+	ErrTooManyLedgersConnected = errors.New("too many ledgers connected")
 )
 
 type HWLedger struct {
@@ -26,11 +27,17 @@ func NewHWLedger(device ledgergo.LedgerDevice) *HWLedger {
 	}
 }
 
+// TryAndConnect tries to connect to a Ledger (index 0). Multiple ledgers are not supported.
 func TryAndConnect() (*HWLedger, error) {
 	l := ledgergo.NewLedgerHIDTransport()
+	count := l.CountDevices()
 
-	if l.CountDevices() == 0 {
+	if count == 0 {
 		return nil, ErrDeviceNotFound
+	}
+
+	if count > 1 {
+		return nil, ErrTooManyLedgersConnected
 	}
 
 	device, err := l.Connect(0)
