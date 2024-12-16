@@ -3,6 +3,7 @@ package l1starter
 import (
 	"context"
 	"fmt"
+	"github.com/samber/lo"
 	"os"
 	"path/filepath"
 
@@ -11,9 +12,10 @@ import (
 )
 
 type L1EndpointConfig struct {
-	IsLocal   bool
-	APIURL    string
-	FaucetURL string
+	IsLocal       bool
+	RandomizeSeed bool
+	APIURL        string
+	FaucetURL     string
 }
 
 func GetRootDir() string {
@@ -68,20 +70,32 @@ func LoadConfig() *L1EndpointConfig {
 		}
 
 		return &L1EndpointConfig{
-			IsLocal: true,
+			IsLocal:       true,
+			RandomizeSeed: true,
 		}
 	}
 
 	isLocal := c.GetBool("IS_LOCAL")
+	randomizeSeed := true // Randomize seed by default
+
+	// If it was set to false on purpose, force a constant seed. This is dependant on the implementation.
+	// In clients we have "NewKeyPair" like functions that need to check this config variable
+	// In Solo too.
+	if lo.Contains(c.AllKeys(), "RANDOMIZE_SEED") && !c.GetBool("RANDOMIZE_SEED") {
+		randomizeSeed = false
+	}
+
 	if isLocal {
 		return &L1EndpointConfig{
-			IsLocal: true,
+			IsLocal:       true,
+			RandomizeSeed: randomizeSeed,
 		}
 	}
 
 	return &L1EndpointConfig{
-		IsLocal:   false,
-		APIURL:    c.GetString("API_URL"),
-		FaucetURL: c.GetString("FAUCET_URL"),
+		IsLocal:       false,
+		APIURL:        c.GetString("API_URL"),
+		FaucetURL:     c.GetString("FAUCET_URL"),
+		RandomizeSeed: randomizeSeed,
 	}
 }
