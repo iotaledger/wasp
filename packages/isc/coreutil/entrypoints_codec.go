@@ -69,7 +69,13 @@ func (f field[T]) Name() string {
 
 func (f field[T]) Type() reflect.Type {
 	var t T
-	return reflect.TypeOf(t)
+
+	r := reflect.TypeOf(t)
+	if r == nil {
+		r = reflect.TypeOf(&t).Elem()
+	}
+
+	return r
 }
 
 func Field[T any](name string) field[T] {
@@ -94,7 +100,13 @@ func (c optionalField[T]) Name() string {
 
 func (c optionalField[T]) Type() reflect.Type {
 	var t T
-	return reflect.TypeOf(t)
+
+	r := reflect.TypeOf(t)
+	if r == nil {
+		r = reflect.TypeOf(&t).Elem()
+	}
+
+	return r
 }
 
 // FieldWithCodecOptional returns a Field that accepts an optional value
