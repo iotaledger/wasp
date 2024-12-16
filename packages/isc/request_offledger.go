@@ -42,8 +42,9 @@ type ImpersonatedOffLedgerRequestData struct {
 	address *cryptolib.Address
 }
 
-func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) ImpersonatedOffLedgerRequest {
-	copyReq := *request
+func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) ImpersonatedOffLedgerRequest {
+	var copyReq OffLedgerRequestData
+	copyReq.OffLedgerRequestDataEssence = *request
 	copyReq.signature = cryptolib.NewEmptySignature()
 
 	return &ImpersonatedOffLedgerRequestData{

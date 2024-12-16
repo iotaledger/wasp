@@ -121,6 +121,9 @@ func (s *Signature) Read(r io.Reader) error {
 
 func (s *Signature) Write(w io.Writer) error {
 	ww := rwutil.NewWriter(w)
+	if *s == *NewEmptySignature() {
+		return nil
+	}
 	ww.WriteByte(s.signatureScheme)
 	ww.Write(s.publicKey)
 	ww.WriteBytes(s.signature[:])

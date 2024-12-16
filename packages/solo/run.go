@@ -55,7 +55,7 @@ func (ch *Chain) RunRequestsSync(reqs []isc.Request) (
 	return ch.runRequestsNolock(reqs)
 }
 
-func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
+func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
