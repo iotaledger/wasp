@@ -114,11 +114,6 @@ func (in *LocalIotaNode) FaucetURL() string {
 	return fmt.Sprintf("%s:%d/gas", in.config.Host, in.config.Ports.Faucet)
 }
 
-
-func (in*LocalIotaNode) ShouldRandomizeSeed() bool {
-	return in.
-}
-
 func (in *LocalIotaNode) L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    in.APIURL(),

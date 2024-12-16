@@ -49,7 +49,6 @@ type IotaNodeEndpoint interface {
 	FaucetURL() string
 	L1Client() clients.L1Client
 	IsLocal() bool
-	ShouldRandomizeSeed() bool
 }
 
 func init() {
