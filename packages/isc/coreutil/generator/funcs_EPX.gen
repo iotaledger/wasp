@@ -61,4 +61,17 @@ func (e EP{{.Inputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{rang
     return err
 }
 
+func (e EP{{.Inputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]) Inputs() []FieldArg {
+	inputs := make([]FieldArg, 0)
+
+	{{range $i := until .Inputs}}
+        inputs = append(inputs, e.Input{{add $i 1}})     {{end}}
+
+	return inputs
+}
+
+func (e EP{{.Inputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}]) Outputs() []FieldArg {
+	return make([]FieldArg, 0)
+}
+
 {{end}}
