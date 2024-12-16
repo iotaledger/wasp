@@ -24,7 +24,7 @@ type Request interface {
 }
 
 func init() {
-	bcs.RegisterEnumType4[Request, *OnLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest]()
+	bcs.RegisterEnumType5[Request, *OnLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest, *ImpersonatedOffLedgerRequestData]()
 }
 
 func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
