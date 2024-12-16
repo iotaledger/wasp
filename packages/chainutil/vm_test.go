@@ -9,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -73,7 +74,6 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		iotago.PackageID{},
 	)
 	return &stateAnchor
-
 }
 
 func TestEVMCall(t *testing.T) {
@@ -107,7 +107,7 @@ func TestEVMCall(t *testing.T) {
 		t.Fatalf("failed to call EVM: %v", err)
 	}
 
-	if !bytes.Equal(result[:], anchor.ChainID().Bytes()) {
+	if !bytes.Equal(result, anchor.ChainID().Bytes()) {
 		t.Fatalf("received wrong chain ID from evm. expected: %x, got: %x", anchor.ChainID().Bytes(), result[3:])
 	}
 }

@@ -6,7 +6,6 @@ package chain_test
 import (
 	"context"
 	"fmt"
-	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"math/rand"
 	"sync"
 	"testing"
@@ -24,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -89,7 +89,6 @@ func TestNodeBasic(t *testing.T) {
 	}
 }
 
-//nolint:gocyclo
 func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration, node l1starter.IotaNodeEndpoint) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable, node)
@@ -108,7 +107,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			if te.ctx.Err() != nil {
 				return
 			}
-			for _, _ = range te.nodeConns {
+			for range te.nodeConns {
 				// TODO: What do we do with milestones here?
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -278,7 +277,7 @@ type testNodeConn struct {
 }
 
 func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }
 

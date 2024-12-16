@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"math/big"
 	"sync"
 	"testing"
@@ -13,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -35,7 +35,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	numAccounts := numRequests / 10
 	numRequestsPerAccount := numRequests / numAccounts
 	errCh := make(chan error, numRequests)
-	txCh := make(chan iotago.Transaction, numRequests)
+	txCh := make(chan iotajsonrpc.IotaTransactionBlockResponse, numRequests)
 	for i := 0; i < numAccounts; i++ {
 		createWalletRetries := 0
 
@@ -60,7 +60,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 			for i := 0; i < numRequestsPerAccount; i++ {
 				retries := 0
 				for {
-					tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
+					tx, err := chainClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 					if err != nil {
 						if retries >= 5 {
 							errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)

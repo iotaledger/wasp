@@ -2,8 +2,10 @@ package isc
 
 import "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 
-const Million = 1_000_000
-const GasCoinMaxValue = 1 * Million
+const (
+	Million         = 1_000_000
+	GasCoinMaxValue = 1 * Million
+)
 
 // TODO Add the comprehensive top up calculation logic, then we can remvoe this constant
 

@@ -81,7 +81,6 @@ func (t *SpeculosTransport) Button(command string) error {
 
 // Exchange sends an APDU command and receives the response
 func (t *SpeculosTransport) Exchange(apdu []byte) ([]byte, error) {
-
 	// Encode and send APDU
 	encoded := encodeAPDU(apdu)
 

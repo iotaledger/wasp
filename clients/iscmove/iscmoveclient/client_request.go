@@ -109,7 +109,6 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		}
 
 		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
-
 			if !lo.Must(iotago.IsSameResource(cointype.String(), string(coin.CoinType))) {
 				return false
 			}

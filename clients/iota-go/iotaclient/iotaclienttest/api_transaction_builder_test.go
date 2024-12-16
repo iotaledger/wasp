@@ -511,7 +511,6 @@ func TestTransferIota(t *testing.T) {
 		if change.Data.Mutated != nil {
 			require.Equal(t, *transferCoin.CoinObjectID, change.Data.Mutated.ObjectID)
 			require.Equal(t, signer.Address(), change.Data.Mutated.Owner.AddressOwner)
-
 		} else if change.Data.Created != nil {
 			require.Equal(t, recipient.Address(), change.Data.Created.Owner.AddressOwner)
 		}

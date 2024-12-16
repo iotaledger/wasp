@@ -70,7 +70,6 @@ func TestGrBasic(t *testing.T) {
 			},
 		)
 	}
-
 }
 
 func testGrBasic(t *testing.T, n, f int, reliable bool) {

@@ -80,7 +80,7 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 				continue
 			}
 			err = c.conn.WriteMessage(websocket.TextMessage, reqBody)
-			if nil != err {
+			if err != nil {
 				c.log.Errorf("WebsocketClient: write error: %s", err)
 				return
 			}

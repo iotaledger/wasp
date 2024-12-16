@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -323,7 +322,7 @@ func (env *Solo) deployChain(
 			ChainOwnerAddress: chainOriginator.Address(),
 			PackageID:         env.ISCPackageID(),
 			StateMetadata:     stateMetadata.Bytes(),
-			ChainGasCoin:      initCoinRef,
+			InitCoinRef:       initCoinRef,
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},
@@ -685,7 +684,6 @@ func (env *Solo) executePTB(
 			},
 		},
 	)
-	fmt.Print(execRes.Digest.String())
 	require.NoError(env.T, err)
 	require.True(env.T, execRes.Effects.Data.IsSuccess())
 	return execRes

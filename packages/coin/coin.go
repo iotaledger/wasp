@@ -46,6 +46,7 @@ func (v Value) String() string {
 func ValueFromBytes(b []byte) (Value, error) {
 	return bcs.Unmarshal[Value](b)
 }
+
 func ValueFromString(s string) (Value, error) {
 	value, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {

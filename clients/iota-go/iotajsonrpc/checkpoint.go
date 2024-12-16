@@ -3,7 +3,7 @@ package iotajsonrpc
 import "github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 type Checkpoint struct {
-	Epoch                      *BigInt                    `json:"epoch"`
+	Epoch                      *BigInt                       `json:"epoch"`
 	SequenceNumber             *BigInt                       `json:"sequenceNumber"`
 	Digest                     iotago.Digest                 `json:"digest"`
 	NetworkTotalTransactions   *BigInt                       `json:"networkTotalTransactions"`

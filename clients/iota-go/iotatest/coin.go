@@ -2,14 +2,15 @@ package iotatest
 
 import (
 	"context"
+	"testing"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func EnsureCoinSplitWithBalance(

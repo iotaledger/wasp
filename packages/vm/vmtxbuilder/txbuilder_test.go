@@ -2,7 +2,6 @@ package vmtxbuilder_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/iotaledger/wasp/clients"
@@ -82,7 +81,6 @@ func TestTxBuilderBasic(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	fmt.Print(txnResponse.Digest.String())
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
 	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
@@ -109,7 +107,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 			ChainOwnerAddress: chainSigner.Address(),
 			PackageID:         iscPackage,
 			StateMetadata:     []byte{1, 2, 3, 4},
-			ChainGasCoin:      getCoinsRes.Data[1].Ref(),
+			InitCoinRef:       getCoinsRes.Data[1].Ref(),
 			GasPayments:       []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
@@ -195,6 +193,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 }
+
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	t.Skip("we may not need to support Cross Chain Request now")
 	// client := newLocalnetClient()

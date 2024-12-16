@@ -3,9 +3,10 @@ package bls_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/tcrypto/bls"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/tcrypto/bls"
 )
 
 var dataToSign = []byte("Hello BLS Test!")

@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	IotaCoinType   CoinType = CoinType(iotago.MustNewResourceType("0x2::iota::IOTA").String())
-	IotaCoinSupply          = 5380677226936000000
+	IotaCoinType CoinType = CoinType(iotago.MustNewResourceType("0x2::iota::IOTA").String())
 )
 
 // ShortString Returns the address with leading zeros trimmed, e.g. 0x2

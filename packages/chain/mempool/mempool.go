@@ -597,7 +597,6 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 	mpi.handleConsensusProposalForChainHead(recv)
 }
 
-//nolint:gocyclo
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
 	// The case for matching ChainHeadAnchor and request BaseAO
@@ -806,8 +805,6 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
-//
-//nolint:gocyclo
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	defer close(req.responseCh)
 	mpi.log.Debugf("handleTrackNewChainHead, from %v, current=%v", req.from, mpi.chainHeadAnchor)

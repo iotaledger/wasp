@@ -1,13 +1,15 @@
 package iotago
 
-type Digest = Base58
-type ObjectDigest = Digest
-type TransactionDigest = Digest
-type TransactionEffectsDigest = Digest
-type TransactionEventsDigest = Digest
-type CheckpointDigest = Digest
-type CertificateDigest = Digest
-type CheckpointContentsDigest = Digest
+type (
+	Digest                   = Base58
+	ObjectDigest             = Digest
+	TransactionDigest        = Digest
+	TransactionEffectsDigest = Digest
+	TransactionEventsDigest  = Digest
+	CheckpointDigest         = Digest
+	CertificateDigest        = Digest
+	CheckpointContentsDigest = Digest
+)
 
 func NewDigest(str string) (*Digest, error) {
 	return NewBase58(str)

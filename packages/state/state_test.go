@@ -6,7 +6,6 @@ package state_test
 import (
 	"bytes"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"math/rand"
 	"strings"
 	"testing"
@@ -26,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 type mustChainStore struct {

@@ -12,7 +12,7 @@ func PTBOptionSome(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.IotaPackageIdMoveStdlib,
+				Package:       iotago.IotaPackageIDMoveStdlib,
 				Module:        "option",
 				Function:      "some",
 				TypeArguments: []iotago.TypeTag{objTypeTag},
@@ -38,7 +38,7 @@ func PTBOptionNoneIotaCoin(
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.IotaPackageIdMoveStdlib,
+				Package:       iotago.IotaPackageIDMoveStdlib,
 				Module:        "option",
 				Function:      "none",
 				TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")},

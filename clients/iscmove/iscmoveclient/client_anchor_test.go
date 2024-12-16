@@ -2,7 +2,6 @@ package iscmoveclient_test
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -10,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -34,7 +34,7 @@ func TestStartNewChain(t *testing.T) {
 			ChainOwnerAddress: signer.Address(),
 			PackageID:         l1starter.ISCPackageID(),
 			StateMetadata:     []byte{1, 2, 3, 4},
-			ChainGasCoin:      getCoinsRes.Data[1].Ref(),
+			InitCoinRef:       getCoinsRes.Data[1].Ref(),
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},
@@ -144,7 +144,7 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 			ChainOwnerAddress: signer.Address(),
 			PackageID:         l1starter.ISCPackageID(),
 			StateMetadata:     []byte{1, 2, 3, 4},
-			ChainGasCoin:      selectedChainGasCoin.Ref(),
+			InitCoinRef:       selectedChainGasCoin.Ref(),
 			GasPayments:       []*iotago.ObjectRef{gasCoin.Ref()},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,

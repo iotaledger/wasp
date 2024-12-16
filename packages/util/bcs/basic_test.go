@@ -7,10 +7,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type BasicWithCustomCodec string
@@ -289,7 +290,7 @@ func TestDecodingWithPresetMap(t *testing.T) {
 	}
 	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
 
-	// NOTE: Preset maps are overriden, preset value is ignored, preset collection is not altered.
+	// NOTE: Preset maps are overridden, preset value is ignored, preset collection is not altered.
 	require.Equal(t, map[int16]bool{1: true, 2: false}, vDec.A)
 	require.Equal(t, map[int16]bool{3: true}, vDecMap)
 }
@@ -305,7 +306,7 @@ func TestDecodingWithPresetSlice(t *testing.T) {
 	}
 	bcs.NewDecoder(bytes.NewReader(vEnc)).MustDecode(&vDec)
 
-	// NOTE: Preset slices are overriden, preset value is ignored, preset collection is not altered.
+	// NOTE: Preset slices are overridden, preset value is ignored, preset collection is not altered.
 	require.Equal(t, []int32{1, 2}, vDec.A)
 	require.Equal(t, []int32{3}, vDecArr)
 }

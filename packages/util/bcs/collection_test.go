@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	ref_bcs "github.com/fardream/go-bcs/bcs"
-	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestArrayCodec(t *testing.T) {

@@ -3,9 +3,10 @@ package isc
 import (
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/samber/lo"
 )
 
 // ContractAgentID is an AgentID formed by a ChainID and a contract Hname.

@@ -40,7 +40,7 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, er)
 	//-------
 
-	tx, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
@@ -82,7 +82,7 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
-	tx, err = client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
@@ -105,7 +105,7 @@ func TestReboot2(t *testing.T) {
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	client := env.createNewClient()
 
-	tx, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
@@ -161,7 +161,7 @@ func TestReboot2(t *testing.T) {
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
-	tx, err = client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
@@ -193,7 +193,7 @@ func newIncCounterClient(t *testing.T, env *ChainEnv, client *chainclient.Client
 }
 
 func (icc *incCounterClient) MustIncOnLedger() {
-	tx, err := icc.client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err := icc.client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(icc.t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
@@ -318,7 +318,7 @@ func TestRebootDuringTasks(t *testing.T) {
 			require.NoError(t, err)
 			client := env.Chain.Client(keyPair)
 			for i := 0; i < postCount; i++ {
-				_, err = client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+				_, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 				require.NoError(t, err)
 				time.Sleep(postDelay)
 			}
@@ -377,7 +377,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	client := env.createNewClient()
 
-	tx, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
@@ -401,7 +401,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
-	tx, err = client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)

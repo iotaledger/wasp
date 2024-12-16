@@ -54,6 +54,7 @@ var supportedLedgerProductID = map[uint8]int{
 func NewLedgerAdmin() LedgerAdmin {
 	return &LedgerAdminHID{}
 }
+
 func NewLedgerHIDTransport() LedgerAdmin {
 	return &LedgerAdminHID{}
 }
@@ -149,7 +150,6 @@ func (ledger *LedgerDeviceHID) write(buffer []byte) (int, error) {
 	totalWrittenBytes := 0
 	for totalBytes > totalWrittenBytes {
 		writtenBytes, err := ledger.device.Write(buffer)
-
 		if err != nil {
 			return totalWrittenBytes, err
 		}
@@ -175,7 +175,6 @@ func (ledger *LedgerDeviceHID) readThread() {
 	for {
 		buffer := make([]byte, PacketSize)
 		readBytes, err := ledger.device.Read(buffer)
-
 		// Check for HID Read Error (May occur even during normal runtime)
 		if err != nil {
 			continue

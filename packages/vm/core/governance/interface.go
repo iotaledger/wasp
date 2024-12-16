@@ -6,13 +6,14 @@
 package governance
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/samber/lo"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)

@@ -3,8 +3,9 @@ package util_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestValidPermutation(t *testing.T) {

@@ -3,8 +3,9 @@ package pipe_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/pipe"
 )
 
 func TestSimple(t *testing.T) {

@@ -26,7 +26,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 	assetsResponse := &models.AssetsResponse{
 		BaseTokens: assets.BaseTokens().String(),
 		// TODO: fix this when native tokens reimplemented
-		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+		// NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -51,7 +51,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 	assetsResponse := &models.AssetsResponse{
 		BaseTokens: assets.BaseTokens().String(),
 		// TODO: fix this when native tokens reimplemented
-		//NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+		// NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)

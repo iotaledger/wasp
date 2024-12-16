@@ -88,8 +88,8 @@ func SerializePacket(
 	channel uint16,
 	command []byte,
 	packetSize int,
-	sequenceIdx uint16) ([]byte, int, error) {
-
+	sequenceIdx uint16,
+) ([]byte, int, error) {
 	if packetSize < 3 {
 		return nil, 0, ErrPacketSize
 	}
@@ -125,8 +125,8 @@ func SerializePacket(
 func DeserializePacket(
 	channel uint16,
 	packet []byte,
-	sequenceIdx uint16) ([]byte, uint16, bool, error) {
-
+	sequenceIdx uint16,
+) ([]byte, uint16, bool, error) {
 	const (
 		minFirstPacketSize = 7
 		minPacketSize      = 5
@@ -170,8 +170,8 @@ func DeserializePacket(
 func WrapCommandAPDU(
 	channel uint16,
 	command []byte,
-	packetSize int) ([]byte, error) {
-
+	packetSize int,
+) ([]byte, error) {
 	var totalResult []byte
 	var sequenceIdx uint16
 

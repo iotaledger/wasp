@@ -209,7 +209,7 @@ func (c *Client) RequestAddStake(
 
 type RequestWithdrawStakeRequest struct {
 	Signer       *iotago.Address
-	StakedIotaId *iotago.ObjectID
+	StakedIotaID *iotago.ObjectID
 	Gas          *iotago.ObjectID // optional
 	GasBudget    *iotajsonrpc.BigInt
 }
@@ -224,7 +224,7 @@ func (c *Client) RequestWithdrawStake(
 		&resp,
 		requestWithdrawStake,
 		req.Signer,
-		req.StakedIotaId,
+		req.StakedIotaID,
 		req.Gas,
 		req.GasBudget,
 	)
