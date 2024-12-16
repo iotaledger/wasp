@@ -121,8 +121,8 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
 			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{
-				iotajsonrpc.IotaCoinType:                            111,
-				iotajsonrpc.CoinTypeFromString("0x1::coin::TEST_A"): 222,
+				iotajsonrpc.IotaCoinType:                                111,
+				iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"): 222,
 			}},
 			GasBudget: 1000,
 		},

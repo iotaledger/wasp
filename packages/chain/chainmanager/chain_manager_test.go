@@ -6,6 +6,7 @@ package chainmanager_test
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -129,7 +130,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(0, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
 

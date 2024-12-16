@@ -19,7 +19,7 @@ func (c *Client) FindCoinsForGasPayment(
 	gasPrice uint64,
 	gasBudget uint64,
 ) ([]*iotago.ObjectRef, error) {
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    owner,
@@ -40,7 +40,7 @@ type StartNewChainRequest struct {
 	ChainOwnerAddress *cryptolib.Address
 	PackageID         iotago.PackageID
 	StateMetadata     []byte
-	InitCoinRef       *iotago.ObjectRef
+	ChainGasCoin      *iotago.ObjectRef
 	GasPayments       []*iotago.ObjectRef
 	GasPrice          uint64
 	GasBudget         uint64
@@ -51,15 +51,15 @@ func (c *Client) StartNewChain(
 	req *StartNewChainRequest,
 ) (*iscmove.AnchorWithRef, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	var argInitCoin iotago.Argument
-	if req.InitCoinRef != nil {
-		ptb = PTBOptionSomeIotaCoin(ptb, req.InitCoinRef)
+	var chainGasCoin iotago.Argument
+	if req.ChainGasCoin != nil {
+		ptb = PTBOptionSomeIotaCoin(ptb, req.ChainGasCoin)
 	} else {
 		ptb = PTBOptionNoneIotaCoin(ptb)
 	}
-	argInitCoin = ptb.LastCommandResultArg()
+	chainGasCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
+	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, chainGasCoin, req.ChainOwnerAddress)
 
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,

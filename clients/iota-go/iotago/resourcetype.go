@@ -27,6 +27,14 @@ func IsSameResource(a, b string) (bool, error) {
 	return ra.String() == rb.String(), nil
 }
 
+func MustNewResourceType(s string) *ResourceType {
+	resource, err := NewResourceType(s)
+	if err != nil {
+		panic(err)
+	}
+	return resource
+}
+
 func NewResourceType(str string) (*ResourceType, error) {
 	var err error
 
@@ -80,36 +88,43 @@ func NewResourceType(str string) (*ResourceType, error) {
 	}, nil
 }
 
-func (r *ResourceType) UnmarshalJSON(data []byte) error {
+func (t *ResourceType) UnmarshalJSON(data []byte) error {
 	resource, err := NewResourceType(string(data[1 : len(data)-1]))
 	if err != nil {
 		return err
 	}
-	*r = *resource
+	*t = *resource
 	return nil
 }
 
-func (r *ResourceType) Contains(address *Address, moduleName string, funcName string) bool {
-	if r == nil {
+func (t *ResourceType) Contains(address *Address, moduleName string, funcName string) bool {
+	if t == nil {
 		return false
 	}
-	if r.Module == moduleName && r.ObjectName == funcName {
+	if t.Module == moduleName && t.ObjectName == funcName {
 		if address == nil {
 			return true
 		}
-		if r.Address.String() == address.String() {
+		if t.Address.String() == address.String() {
 			return true
 		}
 	}
-	if r.SubType1 == nil {
+	if t.SubType1 == nil {
 		return false
 	}
-	return r.SubType1.Contains(address, moduleName, funcName) || r.SubType2.Contains(address, moduleName, funcName)
+	return t.SubType1.Contains(address, moduleName, funcName) || t.SubType2.Contains(address, moduleName, funcName)
 }
 
 func (t *ResourceType) String() string {
 	if t.SubType2 != nil {
-		return fmt.Sprintf("%v::%v::%v<%v, %v>", t.Address.String(), t.Module, t.ObjectName, t.SubType1.String(), t.SubType1.String())
+		return fmt.Sprintf(
+			"%v::%v::%v<%v, %v>",
+			t.Address.String(),
+			t.Module,
+			t.ObjectName,
+			t.SubType1.String(),
+			t.SubType1.String(),
+		)
 	} else if t.SubType1 != nil {
 		return fmt.Sprintf("%v::%v::%v<%v>", t.Address.String(), t.Module, t.ObjectName, t.SubType1.String())
 	} else {
@@ -119,7 +134,14 @@ func (t *ResourceType) String() string {
 
 func (t *ResourceType) ShortString() string {
 	if t.SubType2 != nil {
-		return fmt.Sprintf("%v::%v::%v<%v, %v>", t.Address.ShortString(), t.Module, t.ObjectName, t.SubType1.ShortString(), t.SubType1.ShortString())
+		return fmt.Sprintf(
+			"%v::%v::%v<%v, %v>",
+			t.Address.ShortString(),
+			t.Module,
+			t.ObjectName,
+			t.SubType1.ShortString(),
+			t.SubType1.ShortString(),
+		)
 	} else if t.SubType1 != nil {
 		return fmt.Sprintf("%v::%v::%v<%v>", t.Address.ShortString(), t.Module, t.ObjectName, t.SubType1.ShortString())
 	} else {

@@ -30,7 +30,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	l1starter.StartNode(context.Background())
+	l1starter.TestMain(m)
 }
 
 func TestOrigin(t *testing.T) {
@@ -53,7 +53,7 @@ func TestCreateOrigin(t *testing.T) {
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := client.GetCoins(
 		context.Background(),
 		iotaclient.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},
@@ -85,7 +85,7 @@ func TestCreateOrigin(t *testing.T) {
 			ChainOwnerAddress: stateSigner.Address(),
 			PackageID:         l1starter.ISCPackageID(),
 			StateMetadata:     originStateMetadata.Bytes(),
-			InitCoinRef:       originDeposit.Ref(),
+			ChainGasCoin:      originDeposit.Ref(),
 			GasPayments:       []*iotago.ObjectRef{gasCoin},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
@@ -211,8 +211,8 @@ func startNewChain(
 ) (*iotajsonrpc.IotaTransactionBlockResponse, *iscmove.RefWithObject[iscmove.Anchor], error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argInitCoin iotago.Argument
-	if req.InitCoinRef != nil {
-		ptb = iscmoveclient.PTBOptionSomeIotaCoin(ptb, req.InitCoinRef)
+	if req.ChainGasCoin != nil {
+		ptb = iscmoveclient.PTBOptionSomeIotaCoin(ptb, req.ChainGasCoin)
 	} else {
 		ptb = iscmoveclient.PTBOptionNoneIotaCoin(ptb)
 	}

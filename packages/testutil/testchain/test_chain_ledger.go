@@ -60,7 +60,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 }
 
 func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*isc.StateAnchor, coin.Value) {
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.governor.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 
@@ -96,7 +96,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 			ChainOwnerAddress: tcl.governor.Address(),
 			PackageID:         *tcl.iscPackage,
 			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       originDeposit.Ref(),
+			ChainGasCoin:      originDeposit.Ref(),
 			GasPayments:       []*iotago.ObjectRef{gasCoin},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
@@ -209,7 +209,7 @@ func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitte
 	)
 
 	pt := ptb.Finish()
-	coins, err := tcl.l1client.GetCoinObjsForTargetAmount(context.Background(), signer.Address(), iotaclient.DefaultGasBudget)
+	coins, err := tcl.l1client.GetCoinObjsForTargetAmount(context.Background(), signer.Address(), iotaclient.DefaultGasBudget, iotaclient.DefaultGasBudget)
 	require.NoError(tcl.t, err)
 	gasPayments := coins.CoinRefs()
 

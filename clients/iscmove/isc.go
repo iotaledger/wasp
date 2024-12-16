@@ -2,6 +2,7 @@ package iscmove
 
 import (
 	"bytes"
+	"errors"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -143,9 +144,39 @@ func NewAssets(baseTokens uint64) *Assets {
 	return NewEmptyAssets().AddCoin(iotajsonrpc.IotaCoinType, iotajsonrpc.CoinValue(baseTokens))
 }
 
+var ErrCoinNotFound = errors.New("coin not found")
+
+func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue, error) {
+	for k, coin := range a.Coins {
+		isSame, err := iotago.IsSameResource(k.String(), coinType.String())
+		if err != nil {
+			return 0, err
+		}
+
+		if isSame {
+			return coin, nil
+		}
+	}
+
+	return 0, ErrCoinNotFound
+}
+
 func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
 	a.Coins[coinType] = iotajsonrpc.CoinValue(amount)
 	return a
+}
+
+func (a *Assets) BaseToken() uint64 {
+	token, err := a.FindCoin(iotajsonrpc.IotaCoinType)
+	if err != nil {
+		if errors.Is(err, ErrCoinNotFound) {
+			return 0
+		}
+
+		panic(err)
+	}
+
+	return token.Uint64()
 }
 
 type Request struct {

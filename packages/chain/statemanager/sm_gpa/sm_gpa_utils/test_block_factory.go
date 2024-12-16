@@ -89,7 +89,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	   stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
 	   _ = stateAddress
-	   originCommitment := origin.L1Commitment(0, chainInitParams, 0)
+	   originCommitment := origin.L1Commitment(allmigrations.LatestSchemaVersion, chainInitParams, 0)
 
 	   	aliasOutput0 := &iotago.AliasOutput{
 	   		Amount:        tpkg.TestTokenSupply,

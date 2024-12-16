@@ -22,6 +22,11 @@ func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	return kp
 }
 
+func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
+	seed := cryptolib.NewSeed()
+	return NewSignerWithFunds(t, seed[:], index)
+}
+
 func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {
 	panic("Right now no WS support")
 	wsClient, err := iscmoveclient.NewWebsocketClient(
