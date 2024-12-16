@@ -34,7 +34,7 @@ func Test_SerializePacket_EmptyCommand(t *testing.T) {
 }
 
 func Test_SerializePacket_PacketSize(t *testing.T) {
-	var packetSize = 64
+	packetSize := 64
 	type header struct {
 		channel     uint16
 		tag         uint8
@@ -56,7 +56,7 @@ func Test_SerializePacket_PacketSize(t *testing.T) {
 }
 
 func Test_SerializePacket_Header(t *testing.T) {
-	var packetSize = 64
+	packetSize := 64
 	type header struct {
 		channel     uint16
 		tag         uint8
@@ -81,7 +81,7 @@ func Test_SerializePacket_Header(t *testing.T) {
 }
 
 func Test_SerializePacket_Offset(t *testing.T) {
-	var packetSize = 64
+	packetSize := 64
 	type header struct {
 		channel     uint16
 		tag         uint8
@@ -103,7 +103,7 @@ func Test_SerializePacket_Offset(t *testing.T) {
 }
 
 func Test_WrapCommandAPDU_NumberOfPackets(t *testing.T) {
-	var packetSize = 64
+	packetSize := 64
 	type firstHeader struct {
 		channel     uint16
 		sequenceIdx uint16
@@ -124,7 +124,7 @@ func Test_WrapCommandAPDU_NumberOfPackets(t *testing.T) {
 }
 
 func Test_WrapCommandAPDU_CheckHeaders(t *testing.T) {
-	var packetSize = 64
+	packetSize := 64
 	type firstHeader struct {
 		channel     uint16
 		sequenceIdx uint16
@@ -153,7 +153,7 @@ func Test_WrapCommandAPDU_CheckHeaders(t *testing.T) {
 }
 
 func Test_WrapCommandAPDU_CheckData(t *testing.T) {
-	var packetSize = 64
+	packetSize := 64
 	type firstHeader struct {
 		channel     uint16
 		sequenceIdx uint16
@@ -199,10 +199,10 @@ func Test_WrapCommandAPDU_CheckData(t *testing.T) {
 }
 
 func Test_DeserializePacket_FirstPacket(t *testing.T) {
-	var sampleCommand = []byte{'H', 'e', 'l', 'l', 'o', 0}
+	sampleCommand := []byte{'H', 'e', 'l', 'l', 'o', 0}
 
-	var packetSize = 64
-	var firstPacketHeaderSize = 7
+	packetSize := 64
+	firstPacketHeaderSize := 7
 	packet, _, _ := SerializePacket(0x0101, sampleCommand, packetSize, 0)
 
 	output, totalSize, isSequenceZero, err := DeserializePacket(0x0101, packet, 0)

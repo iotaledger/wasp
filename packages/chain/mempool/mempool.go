@@ -805,7 +805,6 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
-//
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	defer close(req.responseCh)
 	mpi.log.Debugf("handleTrackNewChainHead, from %v, current=%v", req.from, mpi.chainHeadAnchor)

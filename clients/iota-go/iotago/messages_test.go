@@ -23,7 +23,7 @@ func TestTransactionData(t *testing.T) {
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.IotaPackageIdIotaSystem,
+				Package:       iotago.IotaPackageIDIotaSystem,
 				Module:        iotago.IotaSystemModuleName,
 				Function:      "function",
 				TypeArguments: nil,

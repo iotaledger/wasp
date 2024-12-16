@@ -85,7 +85,7 @@ func TestCreateOrigin(t *testing.T) {
 			ChainOwnerAddress: stateSigner.Address(),
 			PackageID:         l1starter.ISCPackageID(),
 			StateMetadata:     originStateMetadata.Bytes(),
-			ChainGasCoin:      originDeposit.Ref(),
+			InitCoinRef:       originDeposit.Ref(),
 			GasPayments:       []*iotago.ObjectRef{gasCoin},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
@@ -211,8 +211,8 @@ func startNewChain(
 ) (*iotajsonrpc.IotaTransactionBlockResponse, *iscmove.RefWithObject[iscmove.Anchor], error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	var argInitCoin iotago.Argument
-	if req.ChainGasCoin != nil {
-		ptb = iscmoveclient.PTBOptionSomeIotaCoin(ptb, req.ChainGasCoin)
+	if req.InitCoinRef != nil {
+		ptb = iscmoveclient.PTBOptionSomeIotaCoin(ptb, req.InitCoinRef)
 	} else {
 		ptb = iscmoveclient.PTBOptionNoneIotaCoin(ptb)
 	}

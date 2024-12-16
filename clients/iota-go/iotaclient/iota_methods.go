@@ -43,7 +43,7 @@ const (
 	getLatestIotaSystemState IotaXMethod = "iotax_getLatestIotaSystemState"
 	getReferenceGasPrice     IotaXMethod = "iotax_getReferenceGasPrice"
 	getStakes                IotaXMethod = "iotax_getStakes"
-	getStakesByIds           IotaXMethod = "iotax_getStakesByIds"
+	getStakesByIDs           IotaXMethod = "iotax_getStakesByIds"
 	getValidatorsApy         IotaXMethod = "iotax_getValidatorsApy"
 
 	// Move Utils

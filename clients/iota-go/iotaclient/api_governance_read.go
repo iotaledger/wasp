@@ -35,7 +35,7 @@ func (c *Client) GetStakesByIds(ctx context.Context, stakedIotaIds []iotago.Obje
 	error,
 ) {
 	var resp []*iotajsonrpc.DelegatedStake
-	return resp, c.transport.Call(ctx, &resp, getStakesByIds, stakedIotaIds)
+	return resp, c.transport.Call(ctx, &resp, getStakesByIDs, stakedIotaIds)
 }
 
 func (c *Client) GetValidatorsApy(ctx context.Context) (*iotajsonrpc.ValidatorsApy, error) {

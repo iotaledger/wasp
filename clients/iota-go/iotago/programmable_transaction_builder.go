@@ -279,7 +279,7 @@ func (p *ProgrammableTransactionBuilder) PublishImmutable(
 	return p.Command(
 		Command{
 			MoveCall: &ProgrammableMoveCall{
-				Package:       IotaPackageIdIotaFramework,
+				Package:       IotaPackageIDIotaFramework,
 				Module:        IotaSystemModuleName,
 				Function:      "make_immutable",
 				TypeArguments: nil,
@@ -300,7 +300,7 @@ func (p *ProgrammableTransactionBuilder) Upgrade(
 			Upgrade: &ProgrammableUpgrade{
 				Modules:      modules,
 				Dependencies: transitiveDeps,
-				PackageId:    currentPackageObjectId,
+				PackageID:    currentPackageObjectId,
 				Ticket:       upgradeTicket,
 			},
 		},

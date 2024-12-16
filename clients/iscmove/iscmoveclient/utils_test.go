@@ -23,8 +23,8 @@ func buildDeployMintTestcoin(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 ) (
-	coinRef *iotago.ObjectRef,
-	coinType *iotago.ResourceType,
+	*iotago.ObjectRef,
+	*iotago.ResourceType,
 ) {
 	tokenPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
 		t,
@@ -33,7 +33,7 @@ func buildDeployMintTestcoin(
 		contracts.Testcoin(),
 	)
 	mintAmount := uint64(1000000)
-	coinRef = iotaclienttest.MintCoins(
+	coinRef := iotaclienttest.MintCoins(
 		t,
 		client.Client,
 		cryptolib.SignerToIotaSigner(signer),
@@ -43,11 +43,11 @@ func buildDeployMintTestcoin(
 		treasuryCap.ObjectID,
 		mintAmount,
 	)
-	coinType = lo.Must(iotago.NewResourceType(fmt.Sprintf(
+	coinType := lo.Must(iotago.NewResourceType(fmt.Sprintf(
 		"%s::%s::%s",
 		tokenPackageID.String(),
 		contracts.TestcoinModuleName,
 		contracts.TestcoinTypeTag,
 	)))
-	return
+	return coinRef, coinType
 }

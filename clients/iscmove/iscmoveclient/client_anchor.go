@@ -40,7 +40,7 @@ type StartNewChainRequest struct {
 	ChainOwnerAddress *cryptolib.Address
 	PackageID         iotago.PackageID
 	StateMetadata     []byte
-	ChainGasCoin      *iotago.ObjectRef
+	InitCoinRef       *iotago.ObjectRef
 	GasPayments       []*iotago.ObjectRef
 	GasPrice          uint64
 	GasBudget         uint64
@@ -51,15 +51,15 @@ func (c *Client) StartNewChain(
 	req *StartNewChainRequest,
 ) (*iscmove.AnchorWithRef, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	var chainGasCoin iotago.Argument
-	if req.ChainGasCoin != nil {
-		ptb = PTBOptionSomeIotaCoin(ptb, req.ChainGasCoin)
+	var argInitCoin iotago.Argument
+	if req.InitCoinRef != nil {
+		ptb = PTBOptionSomeIotaCoin(ptb, req.InitCoinRef)
 	} else {
 		ptb = PTBOptionNoneIotaCoin(ptb)
 	}
-	chainGasCoin = ptb.LastCommandResultArg()
+	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, chainGasCoin, req.ChainOwnerAddress)
+	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
 
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,

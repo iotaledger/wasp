@@ -193,7 +193,7 @@ func PTBAssetsBagTakeCoinBalanceMergeTo(
 	createdCoin := ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.IotaPackageIdIotaFramework,
+				Package:       iotago.IotaPackageIDIotaFramework,
 				Module:        "coin",
 				Function:      "from_balance",
 				TypeArguments: []iotago.TypeTag{*typeTag},

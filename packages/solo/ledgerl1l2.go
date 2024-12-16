@@ -142,7 +142,7 @@ const (
 	TransferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 )
 
-func (ch *Chain) NewNativeTokenParams(maxSupply coin.Value) *NewNativeTokenParams { 
+func (ch *Chain) NewNativeTokenParams(maxSupply coin.Value) *NewNativeTokenParams {
 	ret := &NewNativeTokenParams{
 		ch: ch,
 		/*		sch: &iotago.SimpleTokenScheme{

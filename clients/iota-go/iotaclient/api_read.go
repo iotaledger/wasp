@@ -12,9 +12,9 @@ func (c *Client) GetChainIdentifier(ctx context.Context) (string, error) {
 	return resp, c.transport.Call(ctx, &resp, getChainIdentifier)
 }
 
-func (c *Client) GetCheckpoint(ctx context.Context, checkpointId *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error) {
+func (c *Client) GetCheckpoint(ctx context.Context, checkpointID *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error) {
 	var resp iotajsonrpc.Checkpoint
-	return &resp, c.transport.Call(ctx, &resp, getCheckpoint, checkpointId)
+	return &resp, c.transport.Call(ctx, &resp, getCheckpoint, checkpointID)
 }
 
 type GetCheckpointsRequest struct {
