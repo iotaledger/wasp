@@ -1371,7 +1371,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
 
-	const sendBaseTokens = 700 * isc.Million
+	const sendBaseTokens = 1 * isc.Million
 
 	blockIndex := env.Chain.LatestBlockIndex()
 
