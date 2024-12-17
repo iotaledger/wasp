@@ -44,7 +44,7 @@ func (g *TypeGenerator) generateStructFields(args []CompiledField) []string {
 	for _, arg := range args {
 		typeStr := g.getBCSType(arg.Type)
 		if arg.IsOptional {
-			typeStr = fmt.Sprintf("bcs.optional(%s)", typeStr)
+			typeStr = fmt.Sprintf("bcs.option(%s)", typeStr)
 		}
 		fields = append(fields, fmt.Sprintf("\t%s: %s", arg.Name, typeStr))
 	}

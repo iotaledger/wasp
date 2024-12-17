@@ -92,13 +92,13 @@ func (g *TypeGenerator) getBaseBCSType(t reflect.Type) string {
 	case reflect.Uint64:
 		return "bcs.u64()"
 	case reflect.Int8:
-		return "bcs.fixedBytes(1)"
+		return "bcs.bytes(1)"
 	case reflect.Int16:
-		return "bcs.fixedBytes(2)"
+		return "bcs.bytes(2)"
 	case reflect.Int32:
-		return "bcs.fixedBytes(4)"
+		return "bcs.bytes(4)"
 	case reflect.Int64:
-		return "bcs.fixedBytes(8)"
+		return "bcs.bytes(8)"
 	case reflect.String:
 		return "bcs.string()"
 	case reflect.Slice:
@@ -116,14 +116,14 @@ func (g *TypeGenerator) getBaseBCSType(t reflect.Type) string {
 
 func (g *TypeGenerator) handleSliceType(t reflect.Type) string {
 	if t.Elem().Kind() == reflect.Uint8 {
-		return "bcs.bytes()"
+		return "bcs.vector(bcs.u8())"
 	}
 	return fmt.Sprintf("bcs.vector(%s)", g.getBCSType(t.Elem()))
 }
 
 func (g *TypeGenerator) handleArrayType(t reflect.Type) string {
 	if t.Elem().Kind() == reflect.Uint8 {
-		return fmt.Sprintf("bcs.fixedBytes(%d)", t.Len())
+		return fmt.Sprintf("bcs.fixedArray(%d, bcs.u8())", t.Len())
 	}
 	return fmt.Sprintf("bcs.fixedArray(%s, %d)", g.getBCSType(t.Elem()), t.Len())
 }

@@ -6,7 +6,10 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -204,4 +207,12 @@ func TestA(t *testing.T) {
 	}
 
 	fmt.Println(gen.GetOutput())
+}
+
+func TestTypes(t *testing.T) {
+	objectRef := iotatest.RandomObjectRef()
+	b := bcs.MustMarshal(objectRef)
+
+	fmt.Println(b, hexutil.Encode(b))
+	fmt.Println(objectRef)
 }
