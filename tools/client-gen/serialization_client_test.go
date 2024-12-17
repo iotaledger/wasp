@@ -2,6 +2,10 @@ package client_gen
 
 import (
 	"fmt"
+	"reflect"
+	"regexp"
+	"testing"
+
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -10,10 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"reflect"
-	"regexp"
-	"testing"
 )
 
 func getName(p reflect.Type) string {
@@ -166,7 +166,8 @@ func TestA(t *testing.T) {
 		constructCoreContractFunction(&inccounter.FuncIncAndRepeatOnceAfter2s),
 		constructCoreContractFunction(&inccounter.FuncIncAndRepeatMany),
 		constructCoreContractFunction(&inccounter.ViewGetCounter),
-		constructCoreContractFunction(&sbtestsc.FuncEventLogGenericData),
+		// For now ignore the sbtest contract (mainly used for testing the generator, not included in an actual lib)
+		/*constructCoreContractFunction(&sbtestsc.FuncEventLogGenericData),
 		constructCoreContractFunction(&sbtestsc.FuncEventLogEventData),
 		constructCoreContractFunction(&sbtestsc.FuncEventLogDeploy),
 		constructCoreContractFunction(&sbtestsc.FuncChainOwnerIDView),
@@ -195,7 +196,7 @@ func TestA(t *testing.T) {
 		constructCoreContractFunction(&sbtestsc.FuncInfiniteLoopView),
 		constructCoreContractFunction(&sbtestsc.FuncSendNFTsBack),
 		constructCoreContractFunction(&sbtestsc.FuncClaimAllowance),
-		constructCoreContractFunction(&sbtestsc.FuncStackOverflow),
+		constructCoreContractFunction(&sbtestsc.FuncStackOverflow),*/
 	}
 
 	for _, c := range contractFuncs {
