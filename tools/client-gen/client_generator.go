@@ -8,13 +8,15 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-func (g *TypeGenerator) generateEnumType(enumType reflect.Type) {
+func (tg *TypeGenerator) generateEnumType(enumType reflect.Type) {
 	enumTypes := bcs.EnumTypes[enumType]
 	if enumTypes == nil {
 		return
 	}
 
 	variants := make([]string, 0)
+	dependencies := make([]string, 0)
+	enumName := getQualifiedTypeName(enumType)
 
 	// Generate struct types for variants first
 	// Skip variant 0 as it's typically the None/empty variant
@@ -27,7 +29,11 @@ func (g *TypeGenerator) generateEnumType(enumType reflect.Type) {
 			implType = implType.Elem()
 		}
 		if implType.Kind() == reflect.Struct {
-			g.GenerateType(implType)
+			depName := getQualifiedTypeName(implType)
+			if depName != enumName { // avoid self-dependency
+				dependencies = append(dependencies, depName)
+				tg.GenerateType(implType)
+			}
 		}
 	}
 
@@ -50,25 +56,28 @@ func (g *TypeGenerator) generateEnumType(enumType reflect.Type) {
 		variants = append(variants, fmt.Sprintf("\t%s: %s", variantName, typeStr))
 	}
 
-	enumName := getQualifiedTypeName(enumType)
 	enumDef := fmt.Sprintf("const %s = bcs.enum('%s', {\n%s\n});",
 		enumName, enumName, strings.Join(variants, ",\n"))
 
-	g.output = append(g.output, enumDef)
+	tg.output = append(tg.output, TypeDefinition{
+		Name:         enumName,
+		Definition:   enumDef,
+		Dependencies: dependencies,
+	})
 }
 
-func (g *TypeGenerator) getBCSType(t reflect.Type) string {
+func (tg *TypeGenerator) getBCSType(t reflect.Type) string {
 	t = dereferenceType(t)
 
-	if bcsType, exists := g.getOverrideOrEnumType(t); exists {
+	if bcsType, exists := tg.getOverrideOrEnumType(t); exists {
 		return bcsType
 	}
 
-	return g.getBaseBCSType(t)
+	return tg.getBaseBCSType(t)
 }
 
-func (g *TypeGenerator) getOverrideOrEnumType(t reflect.Type) (string, bool) {
-	if overrideType, exists := g.isOverriddenType(t); exists {
+func (tg *TypeGenerator) getOverrideOrEnumType(t reflect.Type) (string, bool) {
+	if overrideType, exists := tg.isOverriddenType(t); exists {
 		return overrideType, true
 	}
 
@@ -79,7 +88,7 @@ func (g *TypeGenerator) getOverrideOrEnumType(t reflect.Type) (string, bool) {
 	return "", false
 }
 
-func (g *TypeGenerator) getBaseBCSType(t reflect.Type) string {
+func (tg *TypeGenerator) getBaseBCSType(t reflect.Type) string {
 	switch t.Kind() {
 	case reflect.Bool:
 		return "bcs.bool()"
@@ -102,11 +111,11 @@ func (g *TypeGenerator) getBaseBCSType(t reflect.Type) string {
 	case reflect.String:
 		return "bcs.string()"
 	case reflect.Slice:
-		return g.handleSliceType(t)
+		return tg.handleSliceType(t)
 	case reflect.Array:
-		return g.handleArrayType(t)
+		return tg.handleArrayType(t)
 	case reflect.Map:
-		return fmt.Sprintf("bcs.map(%s, %s)", g.getBCSType(t.Key()), g.getBCSType(t.Elem()))
+		return fmt.Sprintf("bcs.map(%s, %s)", tg.getBCSType(t.Key()), tg.getBCSType(t.Elem()))
 	case reflect.Struct:
 		return getQualifiedTypeName(t)
 	default:
@@ -114,16 +123,16 @@ func (g *TypeGenerator) getBaseBCSType(t reflect.Type) string {
 	}
 }
 
-func (g *TypeGenerator) handleSliceType(t reflect.Type) string {
+func (tg *TypeGenerator) handleSliceType(t reflect.Type) string {
 	if t.Elem().Kind() == reflect.Uint8 {
 		return "bcs.vector(bcs.u8())"
 	}
-	return fmt.Sprintf("bcs.vector(%s)", g.getBCSType(t.Elem()))
+	return fmt.Sprintf("bcs.vector(%s)", tg.getBCSType(t.Elem()))
 }
 
-func (g *TypeGenerator) handleArrayType(t reflect.Type) string {
+func (tg *TypeGenerator) handleArrayType(t reflect.Type) string {
 	if t.Elem().Kind() == reflect.Uint8 {
 		return fmt.Sprintf("bcs.fixedArray(%d, bcs.u8())", t.Len())
 	}
-	return fmt.Sprintf("bcs.fixedArray(%s, %d)", g.getBCSType(t.Elem()), t.Len())
+	return fmt.Sprintf("bcs.fixedArray(%s, %d)", tg.getBCSType(t.Elem()), t.Len())
 }

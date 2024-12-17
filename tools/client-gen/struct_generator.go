@@ -8,41 +8,66 @@ import (
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-func (g *TypeGenerator) generateArgsStruct(funcName string, suffix string, args []CompiledField) {
-	// Generate dependencies first
-	g.generateDependencies(args)
+func (tg *TypeGenerator) generateArgsStruct(funcName string, suffix string, args []CompiledField) {
+	dependencies := make([]string, 0)
 
-	fields := g.generateStructFields(args)
-	structName := fmt.Sprintf("%s%s", funcName, suffix)
-
-	if !g.generated[structName] {
-		structDef := fmt.Sprintf("const %s = bcs.struct('%s', {\n%s\n});",
-			structName, structName, strings.Join(fields, ",\n"))
-		g.output = append(g.output, structDef)
-		g.generated[structName] = true
-	}
-}
-
-func (g *TypeGenerator) generateDependencies(args []CompiledField) {
+	// Generate dependencies first and collect them
 	for _, arg := range args {
 		argType := dereferenceType(arg.Type)
 
-		if _, isOverride := g.isOverriddenType(argType); isOverride {
+		if _, isOverride := tg.isOverriddenType(argType); isOverride {
+			continue
+		}
+
+		fmt.Println(argType.Name() + " - " + arg.Name)
+
+		if argType.Kind() == reflect.Struct {
+			depName := getQualifiedTypeName(argType)
+			dependencies = append(dependencies, depName)
+			tg.GenerateType(argType)
+		} else if _, isEnum := bcs.EnumTypes[argType]; isEnum {
+			depName := getQualifiedTypeName(argType)
+			dependencies = append(dependencies, depName)
+			tg.GenerateType(argType)
+		}
+	}
+
+	fields := tg.generateStructFields(args)
+	structName := fmt.Sprintf("%s%s", funcName, suffix)
+
+	if !tg.generated[structName] {
+		structDef := fmt.Sprintf("const %s = bcs.struct('%s', {\n%s\n});",
+			structName, structName, strings.Join(fields, ",\n"))
+
+		tg.output = append(tg.output, TypeDefinition{
+			Name:         structName,
+			Definition:   structDef,
+			Dependencies: dependencies,
+		})
+		tg.generated[structName] = true
+	}
+}
+
+func (tg *TypeGenerator) generateDependencies(args []CompiledField) {
+	for _, arg := range args {
+		argType := dereferenceType(arg.Type)
+
+		if _, isOverride := tg.isOverriddenType(argType); isOverride {
 			continue
 		}
 
 		if _, isEnum := bcs.EnumTypes[argType]; isEnum {
-			g.GenerateType(argType)
+			tg.GenerateType(argType)
 		} else if argType.Kind() == reflect.Struct {
-			g.GenerateType(argType)
+			tg.GenerateType(argType)
 		}
 	}
 }
 
-func (g *TypeGenerator) generateStructFields(args []CompiledField) []string {
+func (tg *TypeGenerator) generateStructFields(args []CompiledField) []string {
 	fields := make([]string, 0, len(args))
 	for _, arg := range args {
-		typeStr := g.getBCSType(arg.Type)
+		typeStr := tg.getBCSType(arg.Type)
 		if arg.IsOptional {
 			typeStr = fmt.Sprintf("bcs.option(%s)", typeStr)
 		}
@@ -51,21 +76,21 @@ func (g *TypeGenerator) generateStructFields(args []CompiledField) []string {
 	return fields
 }
 
-func (g *TypeGenerator) GenerateType(t reflect.Type) {
+func (tg *TypeGenerator) GenerateType(t reflect.Type) {
 	t = dereferenceType(t)
 	qualifiedName := getQualifiedTypeName(t)
 
-	if g.generated[qualifiedName] {
+	if tg.generated[qualifiedName] {
 		return
 	}
 
-	if _, isOverride := g.isOverriddenType(t); isOverride {
+	if _, isOverride := tg.isOverriddenType(t); isOverride {
 		return
 	}
 
 	if _, isEnum := bcs.EnumTypes[t]; isEnum {
-		g.generateEnumType(t)
-		g.generated[qualifiedName] = true
+		tg.generateEnumType(t)
+		tg.generated[qualifiedName] = true
 		return
 	}
 
@@ -73,22 +98,30 @@ func (g *TypeGenerator) GenerateType(t reflect.Type) {
 		return
 	}
 
-	g.generateStructType(t, qualifiedName)
+	tg.generateStructType(t, qualifiedName)
 }
 
-func (g *TypeGenerator) generateStructType(t reflect.Type, qualifiedName string) {
-	// Generate nested types first
+func (tg *TypeGenerator) generateStructType(t reflect.Type, qualifiedName string) {
+	dependencies := make([]string, 0)
+
+	// Generate nested types first and collect dependencies
 	for i := 0; i < t.NumField(); i++ {
 		fieldType := dereferenceType(t.Field(i).Type)
 
-		if _, isOverride := g.isOverriddenType(fieldType); isOverride {
+		if _, isOverride := tg.isOverriddenType(fieldType); isOverride {
 			continue
 		}
 
-		if _, isEnum := bcs.EnumTypes[fieldType]; isEnum {
-			g.GenerateType(fieldType)
-		} else if fieldType.Kind() == reflect.Struct {
-			g.GenerateType(fieldType)
+		if fieldType.Kind() == reflect.Struct {
+			depName := getQualifiedTypeName(fieldType)
+			if depName != qualifiedName { // avoid self-dependency
+				dependencies = append(dependencies, depName)
+				tg.GenerateType(fieldType)
+			}
+		} else if _, isEnum := bcs.EnumTypes[fieldType]; isEnum {
+			depName := getQualifiedTypeName(fieldType)
+			dependencies = append(dependencies, depName)
+			tg.GenerateType(fieldType)
 		}
 	}
 
@@ -96,7 +129,7 @@ func (g *TypeGenerator) generateStructType(t reflect.Type, qualifiedName string)
 	fields := make([]string, 0, t.NumField())
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
-		typeStr := g.getBCSType(field.Type)
+		typeStr := tg.getBCSType(field.Type)
 		fieldName := strings.ToLower(field.Name[:1]) + field.Name[1:]
 		fields = append(fields, fmt.Sprintf("\t%s: %s", fieldName, typeStr))
 	}
@@ -104,6 +137,10 @@ func (g *TypeGenerator) generateStructType(t reflect.Type, qualifiedName string)
 	structDef := fmt.Sprintf("const %s = bcs.struct('%s', {\n%s\n});",
 		qualifiedName, qualifiedName, strings.Join(fields, ",\n"))
 
-	g.output = append(g.output, structDef)
-	g.generated[qualifiedName] = true
+	tg.output = append(tg.output, TypeDefinition{
+		Name:         qualifiedName,
+		Definition:   structDef,
+		Dependencies: dependencies,
+	})
+	tg.generated[qualifiedName] = true
 }

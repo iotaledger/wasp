@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
- 
+
 type CoreContractFunction struct {
 	ContractName string
 	FunctionName string
@@ -36,8 +36,14 @@ type TypeOverride struct {
 	BCSType    string
 }
 
+type TypeDefinition struct {
+	Name         string
+	Definition   string
+	Dependencies []string
+}
+
 type TypeGenerator struct {
 	generated     map[string]bool
-	output        []string
+	output        []TypeDefinition
 	typeOverrides map[string]string
 }
