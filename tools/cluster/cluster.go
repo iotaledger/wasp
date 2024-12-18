@@ -8,8 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"io"
 	"math/rand"
 	"net/http"
@@ -22,6 +20,9 @@ import (
 	"testing"
 	"text/template"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/samber/lo"
 
@@ -850,7 +851,7 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balance := isc.NewEmptyAssets()
 	for _, out := range balances {
-		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.Token.CoinType) == 0 {
+		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.BaseTokenDefault.CoinType) == 0 {
 			balance.SetBaseTokens(coin.Value(out.TotalBalance.Uint64()))
 		} else {
 			balance.AddCoin(coin.MustTypeFromString(out.CoinType.String()), coin.Value(out.TotalBalance.Uint64()))

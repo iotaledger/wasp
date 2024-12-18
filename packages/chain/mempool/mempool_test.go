@@ -27,6 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -489,6 +490,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 		Timestamp:            tangleTime,
 		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
+		L1Params:             parameters.L1Default,
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
 		Log:                  te.log.Named("VM"),

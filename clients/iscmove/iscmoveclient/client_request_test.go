@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
@@ -50,15 +51,12 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 		},
 	)
 
-	referenceGasPrice, err := client.GetReferenceGasPrice(context.TODO())
-	require.NoError(t, err)
-
 	txData := iotago.NewProgrammable(
 		cryptolibSigner.Address().AsIotaAddress(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{primaryCoin.Ref()},
 		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
+		parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)

@@ -18,6 +18,7 @@ import (
 // EVMCall executes an EVM contract call and returns its output, discarding any state changes
 func EVMCall(
 	anchor *isc.StateAnchor,
+	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
@@ -45,6 +46,7 @@ func EVMCall(
 	// TODO: setting EstimateGasMode = true feels wrong here
 	res, err := runISCRequest(
 		anchor,
+		l1Params,
 		store,
 		processors,
 		log,

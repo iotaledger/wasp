@@ -252,6 +252,6 @@ func WrapIotaCoinInfo(info *isc.IotaCoinInfo) IotaCoinInfo {
 		Symbol:      info.Symbol,
 		Description: info.Description,
 		IconUrl:     info.IconURL,
-		TotalSupply: CoinValue(info.TotalSupply),
+		TotalSupply: info.TotalSupply.Uint64(),
 	}
 }

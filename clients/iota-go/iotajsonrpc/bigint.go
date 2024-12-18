@@ -50,3 +50,9 @@ func (w *BigInt) UnmarshalJSON(data []byte) error {
 func (w *BigInt) MarshalJSON() ([]byte, error) {
 	return json.Marshal(w.String())
 }
+
+func (w *BigInt) Clone() *BigInt {
+	ret := NewBigInt(0)
+	ret.Set(w.Int)
+	return ret
+}

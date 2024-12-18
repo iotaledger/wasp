@@ -69,6 +69,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		Processors:         ch.proc,
 		Anchor:             ch.GetLatestAnchor(),
 		GasCoin:            ch.GetLatestGasCoin(),
+		L1Params:           ch.LatestL1Parameters(),
 		Requests:           reqs,
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,

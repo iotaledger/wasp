@@ -178,11 +178,6 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
-		referenceGasPrice, err := nc.wsClient.GetReferenceGasPrice(ctx)
-		if err != nil {
-			panic(err)
-		}
-
 		gasCoinRef := gasCoinGetObjectRes.Data.Ref()
 		var coinInfo cons_gr.NodeConnGasInfo = &SingleGasCoinInfo{
 			coin.CoinWithRef{
@@ -190,7 +185,8 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 				Value: coin.Value(gasCoin.Balance),
 				Ref:   &gasCoinRef,
 			},
-			referenceGasPrice.Uint64(),
+			// FIXME we will pass l1param from consensus
+			parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 		}
 
 		t <- coinInfo

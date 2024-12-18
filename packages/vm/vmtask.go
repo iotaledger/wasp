@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
@@ -28,6 +29,7 @@ type VMTask struct {
 	Timestamp          time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget isc.AgentID
+	L1Params           *parameters.L1Params
 	// If EstimateGasMode is enabled, signature and nonce checks will be skipped,
 	// and no PTB will be produced.
 	EstimateGasMode bool
