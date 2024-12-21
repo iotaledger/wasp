@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -477,8 +478,13 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 
 	store := te.stores[0]
 	vmTask := &vm.VMTask{
-		Processors:           coreprocessors.NewConfigWithTestContracts(),
-		Anchor:               anchor,
+		Processors: coreprocessors.NewConfigWithTestContracts(),
+		Anchor:     anchor,
+		GasCoin: &coin.CoinWithRef{
+			Value: isc.GasCoinMaxValue,
+			Type:  coin.BaseTokenType,
+			Ref:   iotatest.RandomObjectRef(),
+		},
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            tangleTime,

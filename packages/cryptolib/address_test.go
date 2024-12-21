@@ -8,6 +8,7 @@ import (
 	oldbcs "github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -67,29 +68,20 @@ func TestAddressToKey(t *testing.T) {
 }
 
 func TestAddressToIota(t *testing.T) {
-	panic("TODO")
-	/*
-		addr1 := NewRandomAddress()
-		addrIota := addr1.AsIotagoAddress()
-		addr2 := NewAddressFromIotago(addrIota)
-		require.True(t, addr1.Equals(addr2))
-	*/
+	addr1 := NewRandomAddress()
+	addrIota := addr1.AsIotaAddress()
+	addr2 := NewAddressFromIota(addrIota)
+	require.True(t, addr1.Equals(addr2))
 }
 
 func TestAddressFromIota(t *testing.T) {
-	panic("TODO")
-	/*
-		data := make([]byte, iotago.Ed25519AddressBytesLength)
-		rand.Read(data)
+	addrIota1 := iotago.Address{}
+	rand.Read(addrIota1[:])
 
-		addrIota1 := &iotago.Ed25519Address{}
-		copy(addrIota1[:], data)
+	addr := NewAddressFromIota(&addrIota1)
+	addrIota2 := addr.AsIotaAddress()
 
-		addr := NewAddressFromIotago(addrIota1)
-		addrIota2 := addr.AsIotagoAddress()
-
-		require.True(t, addrIota1.Equal(addrIota2))
-	*/
+	require.True(t, addrIota1.Equals(*addrIota2))
 }
 
 func TestAddressBCSCodec(t *testing.T) {

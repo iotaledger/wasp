@@ -3,6 +3,7 @@ package coin
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -18,6 +19,10 @@ type Value uint64
 
 func (v Value) Uint64() uint64 {
 	return uint64(v)
+}
+
+func (v Value) BigInt() *big.Int {
+	return new(big.Int).SetUint64(uint64(v))
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
@@ -41,6 +46,7 @@ func (v Value) String() string {
 func ValueFromBytes(b []byte) (Value, error) {
 	return bcs.Unmarshal[Value](b)
 }
+
 func ValueFromString(s string) (Value, error) {
 	value, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
@@ -51,7 +57,7 @@ func ValueFromString(s string) (Value, error) {
 }
 
 // TODO: maybe it is not ok to consider this constant?
-var BaseTokenType = lo.Must(TypeFromString(iotajsonrpc.IotaCoinType))
+var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
 // Two instances of Type are equal iif they represent the same coin type.
@@ -105,6 +111,10 @@ func (t Type) String() string {
 	return t.s
 }
 
+func (t Type) AsRPCCoinType() iotajsonrpc.CoinType {
+	return iotajsonrpc.CoinType(t.String())
+}
+
 func (t Type) ShortString() string {
 	return t.ResourceType().ShortString()
 }
@@ -143,3 +153,13 @@ var (
 	Zero     = Value(0)
 	MaxValue = Value(math.MaxUint64)
 )
+
+type CoinWithRef struct {
+	Type  Type
+	Value Value
+	Ref   *iotago.ObjectRef
+}
+
+func (c CoinWithRef) Bytes() []byte {
+	return bcs.MustMarshal(&c)
+}

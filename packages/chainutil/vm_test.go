@@ -1,4 +1,4 @@
-package chainutil
+package chainutil_test
 
 import (
 	"bytes"
@@ -9,11 +9,13 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -72,7 +74,6 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		iotago.PackageID{},
 	)
 	return &stateAnchor
-
 }
 
 func TestEVMCall(t *testing.T) {
@@ -99,12 +100,14 @@ func TestEVMCall(t *testing.T) {
 	}
 
 	logger := testlogger.NewLogger(t)
-	result, err := EVMCall(anchor, store, coreprocessors.NewConfig(), logger, msg)
+
+	// FIXME gas coin may not be able to be nil. This may cause error
+	result, err := chainutil.EVMCall(anchor, nil, store, coreprocessors.NewConfig(), logger, msg)
 	if err != nil {
 		t.Fatalf("failed to call EVM: %v", err)
 	}
 
-	if !bytes.Equal(result[:], anchor.ChainID().Bytes()) {
+	if !bytes.Equal(result, anchor.ChainID().Bytes()) {
 		t.Fatalf("received wrong chain ID from evm. expected: %x, got: %x", anchor.ChainID().Bytes(), result[3:])
 	}
 }

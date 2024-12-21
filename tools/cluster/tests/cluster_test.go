@@ -16,8 +16,6 @@ func TestClusterSingleNode(t *testing.T) {
 
 	t.Run("permitionless access node", func(t *testing.T) { run(t, testPermitionlessAccessNode) })
 
-	t.Run("SDRUC", func(t *testing.T) { run(t, testSDRUC) })
-
 	t.Run("spam onledger", func(t *testing.T) { run(t, testSpamOnledger) })
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
 	t.Run("spam EVM", func(t *testing.T) { run(t, testSpamEVM) })

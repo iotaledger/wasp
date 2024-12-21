@@ -10,7 +10,6 @@ import (
 func (c *Client) GetCommitteeInfo(
 	ctx context.Context,
 	epoch *iotajsonrpc.BigInt, // optional
-
 ) (*iotajsonrpc.CommitteeInfo, error) {
 	var resp iotajsonrpc.CommitteeInfo
 	return &resp, c.transport.Call(ctx, &resp, getCommitteeInfo, epoch)
@@ -36,7 +35,7 @@ func (c *Client) GetStakesByIds(ctx context.Context, stakedIotaIds []iotago.Obje
 	error,
 ) {
 	var resp []*iotajsonrpc.DelegatedStake
-	return resp, c.transport.Call(ctx, &resp, getStakesByIds, stakedIotaIds)
+	return resp, c.transport.Call(ctx, &resp, getStakesByIDs, stakedIotaIds)
 }
 
 func (c *Client) GetValidatorsApy(ctx context.Context) (*iotajsonrpc.ValidatorsApy, error) {

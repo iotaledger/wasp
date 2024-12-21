@@ -125,10 +125,10 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 	require.NoError(e.t, err)
 	userAgentID := isc.NewAddressAgentID(userAddress)
 
-	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, userWallet)
+	chClient := chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(waspnode), e.Chain.ChainID, e.Clu.Config.ISCPackageID(), userWallet)
 
 	// deposit funds before sending the off-ledger requestargs
-	reqTx, err := chClient.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+	reqTx, err := chClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssets(baseTokes),
 	})
 	require.NoError(e.t, err)

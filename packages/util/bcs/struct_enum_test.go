@@ -3,9 +3,10 @@ package bcs_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BasicStructEnum struct {

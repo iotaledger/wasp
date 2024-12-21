@@ -41,7 +41,7 @@ func RegisterEnumTypeVariant[EnumType any](id EnumVariantID, newVariant any) str
 
 	registeredVariants[id] = newVariantT
 
-	// Returnign something just for a conveniece of using this function in a single line in global scope like:
+	// Returnign something just for a convenience of using this function in a single line in global scope like:
 	// var _ = RegisterEnumTypeVariant[EnumType](id, newVariant)
 	return struct{}{}
 }

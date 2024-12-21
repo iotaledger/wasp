@@ -31,7 +31,7 @@ func AddressFromHex(str string) (*Address, error) {
 		return nil, errors.New("the len is invalid")
 	}
 	var address Address
-	copy(address[AddressLen-len(data):], data[:])
+	copy(address[AddressLen-len(data):], data)
 	return &address, nil
 }
 

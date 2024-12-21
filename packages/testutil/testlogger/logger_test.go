@@ -3,9 +3,10 @@ package testlogger_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestLoggerBasic(t *testing.T) {

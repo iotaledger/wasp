@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -19,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/samber/lo"
 )
 
 type ChainService struct {

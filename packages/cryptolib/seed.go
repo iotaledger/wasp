@@ -3,7 +3,6 @@ package cryptolib
 import (
 	"crypto/ed25519"
 	"encoding/binary"
-	"fmt"
 
 	"github.com/minio/blake2b-simd"
 	"github.com/wollac/iota-crypto-demo/pkg/bip32path"
@@ -11,17 +10,16 @@ import (
 	"github.com/wollac/iota-crypto-demo/pkg/slip10/eddsa"
 
 	hivecrypto "github.com/iotaledger/hive.go/crypto/ed25519"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/cryptolib/byteutils"
 )
 
 // testnet/alphanet uses COIN_TYPE = 1
-const TestnetCoinType = uint32(1)
+const TestnetCoinType = iotasigner.TestnetCoinType
 
 // / IOTA coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
-const IotaCoinType = uint32(4218)
-
-// / Shimmer coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
-const ShimmerCoinType = uint32(4219)
+const IotaCoinType = iotasigner.IotaCoinType
 
 // SubSeed returns a Seed (ed25519 Seed) from a master seed (that has arbitrary length)
 // note that the accountIndex is actually an uint31
@@ -31,15 +29,21 @@ func SubSeed(walletSeed []byte, accountIndex uint32, useLegacyDerivation ...bool
 		return legacyDerivation(&seed, accountIndex)
 	}
 
-	bip32Path := fmt.Sprintf("m/44'/%d'/%d'/0'/0'", IotaCoinType, accountIndex) // this is the same as FF does it (only the account index changes, the ADDRESS_INDEX stays 0)
+	bip32Path, err := iotasigner.BuildBip32Path(iotasigner.SignatureFlagEd25519, iotasigner.IotaCoinType, accountIndex)
+	if err != nil {
+		panic(err)
+	}
+
 	path, err := bip32path.ParsePath(bip32Path)
 	if err != nil {
 		panic(err)
 	}
+
 	key, err := slip10.DeriveKeyFromPath(walletSeed, eddsa.Ed25519(), path)
 	if err != nil {
 		panic(err)
 	}
+
 	_, prvKey := key.Key.(eddsa.Seed).Ed25519Key()
 	return SeedFromBytes(prvKey)
 }

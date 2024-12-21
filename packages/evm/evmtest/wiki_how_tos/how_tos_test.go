@@ -44,9 +44,9 @@ func TestBaseBalance(t *testing.T) {
 
 	balance, _ := env.Chain.EVM().Balance(deployer, nil)
 	decimals := env.Chain.EVM().BaseToken().Decimals
-	var value coin.Value
+	var value uint64
 	instance.CallFnExpectEvent(nil, "GotBaseBalance", &value, "getBalanceBaseTokens")
-	realBalance := util.BaseTokensDecimalsToEthereumDecimals(value, decimals)
+	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), decimals)
 	assert.Equal(t, balance, realBalance)
 }
 

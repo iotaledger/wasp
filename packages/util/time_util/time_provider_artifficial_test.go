@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util/time_util"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/time_util"
 )
 
 func TestArtificialTimeProvider(t *testing.T) {

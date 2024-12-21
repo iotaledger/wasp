@@ -120,13 +120,13 @@ func (c *Client) ResolveNameServiceNames(
 	return &resp, c.transport.Call(ctx, &resp, resolveNameServiceNames, req.Owner, req.Cursor, req.Limit)
 }
 
-func (s *Client) SubscribeEvent(
+func (c *Client) SubscribeEvent(
 	ctx context.Context,
 	filter *iotajsonrpc.EventFilter,
 	resultCh chan<- *iotajsonrpc.IotaEvent,
 ) error {
 	wsCh := make(chan []byte, 10)
-	err := s.transport.Subscribe(ctx, wsCh, subscribeEvent, filter)
+	err := c.transport.Subscribe(ctx, wsCh, subscribeEvent, filter)
 	if err != nil {
 		return err
 	}
@@ -150,13 +150,13 @@ func (s *Client) SubscribeEvent(
 	return nil
 }
 
-func (s *Client) SubscribeTransaction(
+func (c *Client) SubscribeTransaction(
 	ctx context.Context,
 	filter *iotajsonrpc.TransactionFilter,
 	resultCh chan<- *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
 ) error {
 	wsCh := make(chan []byte, 10)
-	err := s.transport.Subscribe(ctx, wsCh, subscribeTransaction, filter)
+	err := c.transport.Subscribe(ctx, wsCh, subscribeTransaction, filter)
 	if err != nil {
 		return err
 	}

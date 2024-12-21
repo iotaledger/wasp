@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgWrapper(t *testing.T) {
@@ -100,8 +101,7 @@ func (m *TestWrappedMessage2) MsgType() gpa.MessageType {
 	return 2
 }
 
-type testGPABase[MsgType gpa.Message] struct {
-}
+type testGPABase[MsgType gpa.Message] struct{}
 
 func (testGPABase[_]) Input(inp gpa.Input) gpa.OutMessages     { return nil }
 func (testGPABase[_]) Message(msg gpa.Message) gpa.OutMessages { return nil }

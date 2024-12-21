@@ -384,7 +384,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 	if err != nil {
 		return nil, nil, err
 	}
-	res := ch.estimateGas(r)
+	res := ch.EstimateGas(r)
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 
@@ -394,7 +394,7 @@ func (ch *Chain) EstimateGasOnLedger(req *CallParams, keyPair *cryptolib.KeyPair
 func (ch *Chain) EstimateGasOffLedger(req *CallParams, keyPair *cryptolib.KeyPair) (isc.CallArguments, *blocklog.RequestReceipt, error) {
 	reqCopy := *req
 	r := reqCopy.NewRequestOffLedger(ch, keyPair)
-	res := ch.estimateGas(r)
+	res := ch.EstimateGas(r)
 	return res.Return, res.Receipt, ch.ResolveVMError(res.Receipt.Error).AsGoError()
 }
 

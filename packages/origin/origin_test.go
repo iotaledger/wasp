@@ -30,7 +30,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	l1starter.StartNode(context.Background())
+	l1starter.TestMain(m)
 }
 
 func TestOrigin(t *testing.T) {
@@ -53,7 +53,7 @@ func TestCreateOrigin(t *testing.T) {
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := client.GetCoins(
 		context.Background(),
 		iotaclient.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},

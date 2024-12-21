@@ -78,7 +78,10 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	require.NoError(t, err)
+
 	_, err = PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
@@ -121,7 +124,9 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	require.NoError(t, err)
 
 	_, err = PTBTestWrapper(
 		&PTBTestWrapperRequest{
@@ -235,7 +240,9 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	require.NoError(t, err)
+
 	_, err = PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
@@ -283,7 +290,8 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	require.NoError(t, err)
 
 	borrowAnchorAssetsAndPlaceCoin(
 		t,
@@ -362,7 +370,7 @@ func borrowAnchorAssetsAndPlaceCoin(
 		},
 	)
 	pt := ptb.Finish()
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), iotaclient.DefaultGasBudget)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, signer.Address(), iotaclient.DefaultGasBudget, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 	gasPayments := coins.CoinRefs()
 
@@ -408,7 +416,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
 	require.NoError(t, err)
-	testCointype := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+	require.NoError(t, err)
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
@@ -487,6 +496,34 @@ func newAssetsBag(
 		},
 		func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder {
 			return iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, l1starter.ISCPackageID(), signer.Address())
+		},
+	)
+}
+
+func assetsBagPlaceCoinAmountWithGasCoin(
+	client *iscmoveclient.Client,
+	signer cryptolib.Signer,
+	assetsBagRef *iotago.ObjectRef,
+	coinType iotajsonrpc.CoinType,
+	amount uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return PTBTestWrapper(
+		&PTBTestWrapperRequest{
+			Client:    client,
+			Signer:    signer,
+			PackageID: l1starter.ISCPackageID(),
+			GasPrice:  iotaclient.DefaultGasPrice,
+			GasBudget: iotaclient.DefaultGasBudget,
+		},
+		func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder {
+			return iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
+				ptb,
+				l1starter.ISCPackageID(),
+				ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+				iotago.GetArgumentGasCoin(),
+				iotajsonrpc.CoinValue(amount),
+				coinType,
+			)
 		},
 	)
 }

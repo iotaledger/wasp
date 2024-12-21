@@ -3,9 +3,10 @@ package registry_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewChainStateDatabaseManager(t *testing.T) {

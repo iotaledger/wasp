@@ -114,7 +114,7 @@ func TestGetBalance(t *testing.T) {
 
 func TestGetCoinMetadata(t *testing.T) {
 	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
-	metadata, err := api.GetCoinMetadata(context.TODO(), iotajsonrpc.IotaCoinType)
+	metadata, err := api.GetCoinMetadata(context.TODO(), iotajsonrpc.IotaCoinType.String())
 	require.NoError(t, err)
 
 	require.Equal(t, "IOTA", metadata.Name)
@@ -122,10 +122,15 @@ func TestGetCoinMetadata(t *testing.T) {
 
 func TestGetCoins(t *testing.T) {
 	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
-	defaultCoinType := iotajsonrpc.IotaCoinType
+	address := iotago.MustAddressFromHex(testcommon.TestAddress)
+
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), address, l1starter.Instance().FaucetURL())
+	require.NoError(t, err)
+
+	defaultCoinType := iotajsonrpc.IotaCoinType.String()
 	coins, err := api.GetCoins(
 		context.TODO(), iotaclient.GetCoinsRequest{
-			Owner:    iotago.MustAddressFromHex(testcommon.TestAddress),
+			Owner:    address,
 			CoinType: &defaultCoinType,
 			Limit:    3,
 		},
@@ -135,7 +140,7 @@ func TestGetCoins(t *testing.T) {
 	require.Greater(t, len(coins.Data), 0)
 
 	for _, data := range coins.Data {
-		require.Equal(t, iotajsonrpc.CoinType(iotajsonrpc.IotaCoinType), data.CoinType)
+		require.Equal(t, iotajsonrpc.IotaCoinType, data.CoinType)
 		require.Greater(t, data.Balance.Int64(), int64(0))
 	}
 }
@@ -158,7 +163,7 @@ func TestGetTotalSupply(t *testing.T) {
 			api:  iotaclient.NewHTTP(l1starter.Instance().APIURL()),
 			args: args{
 				context.TODO(),
-				iotajsonrpc.IotaCoinType,
+				iotajsonrpc.IotaCoinType.String(),
 			},
 			wantErr: false,
 		},

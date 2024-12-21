@@ -19,16 +19,18 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	iotago "github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -87,7 +89,6 @@ func TestNodeBasic(t *testing.T) {
 	}
 }
 
-//nolint:gocyclo
 func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration, node l1starter.IotaNodeEndpoint) {
 	t.Parallel()
 	te := newEnv(t, n, f, reliable, node)
@@ -106,7 +107,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			if te.ctx.Err() != nil {
 				return
 			}
-			for _, _ = range te.nodeConns {
+			for range te.nodeConns {
 				// TODO: What do we do with milestones here?
 			}
 			time.Sleep(100 * time.Millisecond)
@@ -276,7 +277,11 @@ type testNodeConn struct {
 }
 
 func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
-	//TODO implement me
+	// TODO implement me
+	panic("implement me")
+}
+
+func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
 	panic("implement me")
 }
 
@@ -426,9 +431,12 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 
 	te.governor = cryptolib.NewKeyPair()
 	te.originator = cryptolib.NewKeyPair()
-	
+
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.governor.Address()))
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.governor), node.L1Client(), isc.GasCoinMaxValue*10)
+
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.originator.Address()))
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.originator), node.L1Client(), isc.GasCoinMaxValue*10)
 
 	//
 	// Create a fake network and keys for the tests.

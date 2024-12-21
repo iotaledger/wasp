@@ -3,8 +3,9 @@ package bcs_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestOption(t *testing.T) {

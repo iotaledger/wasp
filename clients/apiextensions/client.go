@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/isc"
 )
- 
+
 func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
 	_, err := ValidateAbsoluteURL(hostname)
 	if err != nil {

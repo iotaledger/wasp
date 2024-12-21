@@ -31,7 +31,7 @@ func TestBCS(t *testing.T) {
 		t, iotago.ProgrammableTransaction{
 			Inputs: []iotago.CallArg{
 				{
-					//Pure: &[]byte{1, 2, 3},
+					// Pure: &[]byte{1, 2, 3},
 					Object: &iotago.ObjectArg{
 						SharedObject: &iotago.SharedObjectArg{
 							Id:                   iotatest.RandomAddress(),

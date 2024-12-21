@@ -9,12 +9,14 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
@@ -59,11 +61,10 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
-	_, err = assetsBagPlaceCoinAmount(
+	_, err = assetsBagPlaceCoinAmountWithGasCoin(
 		client,
 		cryptolibSigner,
 		sentAssetsBagRef,
-		getCoinsRes.Data[2].Ref(),
 		iotajsonrpc.IotaCoinType,
 		10,
 	)
@@ -81,8 +82,11 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			AssetsBagRef:  sentAssetsBagRef,
 			Message:       iscmovetest.RandomMessage(),
 			Allowance:     iscmove.NewAssets(100),
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			GasPayments: []*iotago.ObjectRef{
+				getCoinsRes.Data[2].Ref(),
+			},
+			GasPrice:  iotaclient.DefaultGasPrice,
+			GasBudget: iotaclient.DefaultGasBudget,
 		},
 	)
 
@@ -122,8 +126,17 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 }
 
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinMaxValue)
+
+	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinMaxValue, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
+
+	chainGasCoins, gasCoin, err := coinObjects.PickIOTACoinsWithGas(iotajsonrpc.NewBigInt(isc.GasCoinMaxValue).Int, iotaclient.DefaultGasBudget, iotajsonrpc.PickMethodSmaller)
+	require.NoError(t, err)
+
+	selectedChainGasCoin, err := chainGasCoins.PickCoinNoLess(isc.GasCoinMaxValue)
+	require.NoError(t, err)
+
 	anchor, err := client.StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
@@ -131,7 +144,8 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 			ChainOwnerAddress: signer.Address(),
 			PackageID:         l1starter.ISCPackageID(),
 			StateMetadata:     []byte{1, 2, 3, 4},
-			InitCoinRef:       getCoinsRes.Data[1].Ref(),
+			InitCoinRef:       selectedChainGasCoin.Ref(),
+			GasPayments:       []*iotago.ObjectRef{gasCoin.Ref()},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},

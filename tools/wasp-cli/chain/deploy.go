@@ -92,7 +92,7 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 }
 
 func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinMaxValue)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinMaxValue, isc.GasCoinMaxValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}

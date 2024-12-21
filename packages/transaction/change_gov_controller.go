@@ -54,5 +54,5 @@ func NewChangeGovControllerTx(
 		inputsCommitment := inputIDs.OrderedSet(utxos).MustCommitment()
 		outputs := []iotago.Output{chainOutput}
 	*/
-	return nil, errors.New("iotago.Outputs are not supported anymore") //CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, wallet, parameters.L1().Protocol.NetworkID())
+	return nil, errors.New("iotago.Outputs are not supported anymore") // CreateAndSignTx(inputIDs.UTXOInputs(), inputsCommitment, outputs, wallet, parameters.L1().Protocol.NetworkID())
 }

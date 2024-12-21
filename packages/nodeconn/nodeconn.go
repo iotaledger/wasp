@@ -12,7 +12,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/hive.go/app/shutdown"
@@ -37,12 +39,12 @@ const (
 var ErrOperationAborted = errors.New("operation was aborted")
 
 type SingleGasCoinInfo struct {
-	gasCoinObject iotago.ObjectRef
+	gasCoinObject coin.CoinWithRef
 	gasPrice      uint64
 }
 
-func (g *SingleGasCoinInfo) GetGasCoins() []*iotago.ObjectRef {
-	return []*iotago.ObjectRef{&g.gasCoinObject}
+func (g *SingleGasCoinInfo) GetGasCoins() []*coin.CoinWithRef {
+	return []*coin.CoinWithRef{&g.gasCoinObject}
 }
 
 func (g *SingleGasCoinInfo) GetGasPrice() uint64 {
@@ -64,6 +66,8 @@ type nodeConnection struct {
 
 	shutdownHandler *shutdown.ShutdownHandler
 }
+
+var _ chain.NodeConnection = &nodeConnection{}
 
 func New(
 	ctx context.Context,
@@ -131,6 +135,22 @@ func (nc *nodeConnection) AttachChain(
 	}()
 }
 
+func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
+	ncChain, ok := nc.chainsMap.Get(chainID)
+	if !ok {
+		panic("unexpected chainID")
+	}
+	gasCoinRef, gasCoinBal, err := ncChain.feed.GetChainGasCoin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(gasCoinBal),
+		Ref:   gasCoinRef,
+	}, nil
+}
+
 func (nc *nodeConnection) ConsensusGasPriceProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
@@ -144,9 +164,16 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
-		gasCoin, err := nc.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+		gasCoinGetObjectRes, err := nc.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 		})
+		if err != nil {
+			panic(err)
+		}
+
+		var gasCoin iscmoveclient.MoveCoin
+		err = iotaclient.UnmarshalBCS(gasCoinGetObjectRes.Data.Bcs.Data.MoveObject.BcsBytes, &gasCoin)
 		if err != nil {
 			panic(err)
 		}
@@ -156,8 +183,13 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
+		gasCoinRef := gasCoinGetObjectRes.Data.Ref()
 		var coinInfo cons_gr.NodeConnGasInfo = &SingleGasCoinInfo{
-			gasCoin.Data.Ref(),
+			coin.CoinWithRef{
+				Type:  coin.BaseTokenType,
+				Value: coin.Value(gasCoin.Balance),
+				Ref:   &gasCoinRef,
+			},
 			referenceGasPrice.Uint64(),
 		}
 

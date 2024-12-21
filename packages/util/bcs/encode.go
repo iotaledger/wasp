@@ -436,7 +436,7 @@ func (c *typeCustomization) HasCustomizations() bool {
 
 func (e *Encoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 	// Detecting enum variant index might return error, so we
-	// should first check for existance of custom encoder.
+	// should first check for existence of custom encoder.
 	if customEncoder := e.getCustomEncoder(t); customEncoder != nil {
 		return typeCustomization{CustomEncoder: customEncoder}
 	}
@@ -463,7 +463,7 @@ func (e *Encoder) getCustomEncoder(t reflect.Type) CustomEncoder {
 
 	// Check if this type implements custom encoding interface.
 	// Although we could allow encoding of interfaces, which implement Encodable, still
-	// we exclude them here to ensure symetric behaviour with decoding.
+	// we exclude them here to ensure symetric behavior with decoding.
 	if t.Kind() == reflect.Interface {
 		return nil
 	}
@@ -619,7 +619,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 
 func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 	if v.IsNil() {
-		return e.handleErrorf("attemp to encode non-optional nil-map")
+		return e.handleErrorf("attempt to encode non-optional nil-map")
 	}
 
 	switch typeOpts.LenSizeInBytes {
@@ -695,7 +695,7 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 			}
 
 			if !fieldVal.CanAddr() {
-				// Field is not addresable yet - making it addressable
+				// Field is not addressable yet - making it addressable
 				vCopy := reflect.New(t).Elem()
 				vCopy.Set(v)
 				v = vCopy

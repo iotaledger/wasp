@@ -11,8 +11,20 @@ import (
 // this type "CoinType" is used only in iota-go and iscmoveclient
 type CoinType string
 
-func CoinTypeFromString(s string) CoinType {
-	return CoinType(s)
+func CoinTypeFromString(s string) (CoinType, error) {
+	coinType, err := iotago.NewResourceType(s)
+	if err != nil {
+		return "", err
+	}
+	return CoinType(coinType.String()), nil
+}
+
+func MustCoinTypeFromString(s string) CoinType {
+	coinType, err := CoinTypeFromString(s)
+	if err != nil {
+		panic(err)
+	}
+	return coinType
 }
 
 func (t CoinType) String() string {
@@ -25,6 +37,28 @@ func (t CoinType) TypeTag() iotago.TypeTag {
 		panic(err)
 	}
 	return *coinTypeTag
+}
+
+func (t CoinType) MarshalJSON() ([]byte, error) {
+	coinType, err := iotago.NewResourceType(t.String())
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return json.Marshal(coinType.String())
+}
+
+func (t *CoinType) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	coinType, err := CoinTypeFromString(s)
+	if err != nil {
+		return err
+	}
+	*t = coinType
+	return nil
 }
 
 type CoinValue uint64
