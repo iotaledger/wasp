@@ -7,7 +7,6 @@ import (
 
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -75,13 +74,18 @@ func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.
 	return chainutil.CallView(ch.ID(), chainState, ch.Processors(), ch.Log(), msg)
 }
 
-func EstimateGas(ch chainpkg.Chain, gasCoin *coin.CoinWithRef, req isc.Request) (*isc.Receipt, error) {
+func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
 	anchor, err := ch.LatestAnchor(chainpkg.ActiveOrCommittedState)
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest anchor: %w", err)
 	}
-
-	rec, err := chainutil.SimulateRequest(anchor, gasCoin, ch.Store(), ch.Processors(), ch.Log(), req, true)
+	rec, err := chainutil.SimulateRequest(
+		anchor,
+		ch.Store(),
+		ch.Processors(),
+		ch.Log(),
+		req,
+	)
 	if err != nil {
 		return nil, err
 	}

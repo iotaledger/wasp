@@ -8,7 +8,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -24,23 +23,25 @@ import (
 
 func runISCTask(
 	anchor *isc.StateAnchor,
-	gasCoin *coin.CoinWithRef,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
-	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
 	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
 	}
+	estimateGasMode := true
+	if evmTracer != nil {
+		estimateGasMode = false
+	}
 	task := &vm.VMTask{
 		Processors:           processors,
 		Anchor:               anchor,
-		GasCoin:              gasCoin,
+		GasCoin:              nil,
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            blockTime,
@@ -81,23 +82,19 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnc
 
 func runISCRequest(
 	anchor *isc.StateAnchor,
-	gasCoin *coin.CoinWithRef,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
 	blockTime time.Time,
 	req isc.Request,
-	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
 		anchor,
-		gasCoin,
 		store,
 		processors,
 		log,
 		blockTime,
 		[]isc.Request{req},
-		estimateGasMode,
 		nil,
 	)
 	if err != nil {
