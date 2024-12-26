@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/logger"
-
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -649,7 +648,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, evmAddr.String(), trace.To.String())
-	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(1000).BaseTokens().Uint64()*1e12), trace.Value.String())
+	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(1000).BaseTokens().Uint64()*1e9), trace.Value.String())
 
 	prestate, err := env.traceTransactionWithPrestate(tx.Hash())
 	require.NoError(t, err)

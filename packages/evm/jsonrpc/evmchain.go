@@ -249,20 +249,42 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 	return e.iscStateFromEVMBlockNumber(block.Number())
 }
 
+// Returns the anchor _immediately after_ the given block
 func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.StateAnchor, error) {
 	if blockNumberOrHash == nil {
 		return e.backend.ISCLatestAnchor()
 	}
+	var stateIndex uint32
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		bn := parseBlockNumber(blockNumber)
 		if bn == nil {
 			return e.backend.ISCLatestAnchor()
 		}
-		return e.backend.ISCAnchor(blockNumberToStateIndex(bn))
+		stateIndex = blockNumberToStateIndex(bn) + 1
+	} else {
+		blockHash, _ := blockNumberOrHash.Hash()
+		block := e.BlockByHash(blockHash)
+		stateIndex = blockNumberToStateIndex(block.Number()) + 1
 	}
-	blockHash, _ := blockNumberOrHash.Hash()
-	block := e.BlockByHash(blockHash)
-	return e.backend.ISCAnchor(blockNumberToStateIndex(block.Number()))
+	return e.previousAnchor(stateIndex + 1)
+}
+
+// Returns the anchor, which was used to form state of given index.
+func (e *EVMChain) previousAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
+	latest, err := e.backend.ISCLatestAnchor()
+	if stateIndex == latest.GetStateIndex() {
+		return latest, nil
+	}
+	state, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving latest state: %w", err)
+	}
+	blocklogState := blocklog.NewStateReader(blocklog.Contract.StateSubrealmR(state))
+	block, found := blocklogState.GetBlockInfo(stateIndex)
+	if !found {
+		return nil, fmt.Errorf("block %d not found", stateIndex)
+	}
+	return block.PreviousAnchor, nil
 }
 
 func blockNumberToStateIndex(blockNumber *big.Int) uint32 {
@@ -670,13 +692,8 @@ func (e *EVMChain) traceTransaction(
 		return tracer.TraceFakeTx(tx)
 	}
 
-	anchor, err := e.backend.ISCAnchor(blockInfo.BlockIndex)
-	if err != nil {
-		return nil, err
-	}
-
 	err = e.backend.EVMTraceTransaction(
-		anchor,
+		blockInfo.PreviousAnchor,
 		blockInfo.Timestamp,
 		requestsInBlock,
 		&txIndex,

@@ -91,7 +91,6 @@ func (c *HTTPClient) CallContext(
 	}
 	err = json.Unmarshal(respmsg.Result, result)
 	if err != nil {
-		fmt.Println(string(respmsg.Result))
 		return fmt.Errorf("could not unmarshal response result: %w", err)
 	}
 	return nil
