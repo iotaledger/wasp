@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -101,8 +100,7 @@ func TestEVMCall(t *testing.T) {
 
 	logger := testlogger.NewLogger(t)
 
-	// FIXME gas coin may not be able to be nil. This may cause error
-	result, err := chainutil.EVMCall(anchor, nil, store, coreprocessors.NewConfig(), logger, msg)
+	result, err := chainutil.EVMCall(anchor, store, coreprocessors.NewConfig(), logger, msg)
 	if err != nil {
 		t.Fatalf("failed to call EVM: %v", err)
 	}
