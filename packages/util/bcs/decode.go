@@ -855,8 +855,10 @@ func (d *Decoder) handleErrorf(format string, args ...interface{}) error {
 
 func Decode[V any](dec *Decoder) V {
 	var v V
-	dec.Decode(&v)
-
+	err := dec.Decode(&v)
+	if err != nil {
+		panic(err)
+	}
 	return v
 }
 
