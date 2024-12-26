@@ -106,11 +106,6 @@ func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
 	return anchor, nil
 }
 
-func (b *jsonRPCSoloBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	anchor := b.Chain.GetAnchor(stateIndex)
-	return anchor, nil
-}
-
 func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
 	return b.Chain.LatestState()
 }
