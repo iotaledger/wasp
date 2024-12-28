@@ -19,7 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/labstack/gommon/log"
 	"github.com/samber/lo"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
@@ -105,14 +104,14 @@ func NewEVMChain(
 func (e *EVMChain) publishNewBlock(blockIndex uint32, trieRoot trie.Hash) {
 	state, err := e.backend.ISCStateByTrieRoot(trieRoot)
 	if err != nil {
-		log.Errorf("EVMChain.publishNewBlock(blockIndex=%v): ISCStateByTrieRoot returned error: %v", blockIndex, err)
+		e.log.Errorf("EVMChain.publishNewBlock(blockIndex=%v): ISCStateByTrieRoot returned error: %v", blockIndex, err)
 		return
 	}
 	blockNumber := evmBlockNumberByISCBlockIndex(blockIndex)
 	db := blockchainDB(state)
 	block := db.GetBlockByNumber(blockNumber)
 	if block == nil {
-		log.Errorf("EVMChain.publishNewBlock(blockIndex=%v) GetBlockByNumber: block not found", blockIndex)
+		e.log.Errorf("EVMChain.publishNewBlock(blockIndex=%v) GetBlockByNumber: block not found", blockIndex)
 		return
 	}
 	var logs []*types.Log

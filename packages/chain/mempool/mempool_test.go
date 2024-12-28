@@ -342,13 +342,13 @@ func TestMempoolChainOwner(t *testing.T) {
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
-	require.Equal(t, te.governor.Address().String(), te.anchor.Owner().String(), "governor and anchor owner are not the same")
+	require.Equal(t, te.chainOwner.Address().String(), te.anchor.Owner().String(), "chainOwner and anchor owner are not the same")
 
 	governanceState := governance.NewStateReaderFromChainState(te.stateForAnchor(0, te.anchor))
 	chainOwner := governanceState.GetChainOwnerID()
 	chainOwnerAddress, success := isc.AddressFromAgentID(chainOwner)
 	require.True(t, success, "unable to get address from chain owner agentID")
-	require.Equal(t, te.governor.Address().String(), chainOwnerAddress.String(), "chain owner incorrect")
+	require.Equal(t, te.chainOwner.Address().String(), chainOwnerAddress.String(), "chain owner incorrect")
 }
 
 func TestMempoolOverrideNonce(t *testing.T) {
