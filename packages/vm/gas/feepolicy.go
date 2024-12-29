@@ -59,7 +59,7 @@ func FeeFromGasWithGasPrice(gasUnits uint64, evmGasPrice *big.Int, l1BaseTokenDe
 	feeFullDecimals.Mul(feeFullDecimals, big.NewInt(0).SetUint64(gasUnits))
 	fee, remainder := util.EthereumDecimalsToBaseTokenDecimals(feeFullDecimals, l1BaseTokenDecimals)
 	if remainder != nil && remainder.Sign() != 0 {
-		fee += 1
+		fee++
 	}
 	return fee
 }

@@ -98,7 +98,7 @@ func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
 
 // there are only 256 different signers can be generated
 func NewSignerByIndex(seed []byte, flag KeySchemeFlag, index int) Signer {
-	seed[0] = seed[0] + byte(index)
+	seed[0] += byte(index)
 	return NewSigner(seed, flag)
 }
 
@@ -150,19 +150,13 @@ func (s *InMemorySigner) Sign(msg []byte) (signature *Signature, err error) {
 	}, nil
 }
 
-func (a *InMemorySigner) Address() *iotago.Address {
-	return a.address
+func (s *InMemorySigner) Address() *iotago.Address {
+	return s.address
 }
 
 // FIXME support more than ed25519
-func (a *InMemorySigner) SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error) {
+func (s *InMemorySigner) SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error) {
 	data := MessageWithIntent(intent, txnBytes)
 	hash := blake2b.Sum256(data)
-	return a.Sign(hash[:])
-}
-
-type bcsBytes []byte
-
-func (b bcsBytes) MarshalBCS() ([]byte, error) {
-	return b, nil
+	return s.Sign(hash[:])
 }

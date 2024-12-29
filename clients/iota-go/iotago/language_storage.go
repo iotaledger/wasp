@@ -158,7 +158,7 @@ func (s *StructTag) MarshalJSON() ([]byte, error) {
 	if s.Address == nil || s.Module == "" || s.Name == "" {
 		return nil, fmt.Errorf("empty StructTag")
 	}
-	return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
+	return []byte(fmt.Sprintf("%q", s.String())), nil
 }
 
 func (s *StructTag) String() string {
@@ -173,8 +173,8 @@ func (s *StructTag) String() string {
 			if i != 0 {
 				typeTagString = ", "
 			}
-			typeTagString = typeTagString + typeTag.String()
-			tmp = tmp + typeTagString
+			typeTagString += typeTag.String()
+			tmp += typeTagString
 		}
 		typeParams = fmt.Sprintf("<%s>", tmp)
 	}
@@ -187,8 +187,8 @@ func StructTagFromString(data string) (*StructTag, error) {
 
 	rest := data[len(address)+len(module)+4:]
 	name := rest
-	if strings.Contains(rest, "<") {
-		name = rest[:strings.Index(rest, "<")]
+	if idx := strings.Index(rest, "<"); idx > 0 {
+		name = rest[:idx]
 	}
 	typeParams := []TypeTag{}
 

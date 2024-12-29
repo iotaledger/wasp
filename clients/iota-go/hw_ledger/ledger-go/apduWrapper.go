@@ -19,6 +19,7 @@ package ledger_go
 import (
 	"encoding/binary"
 	"fmt"
+	"math"
 
 	"github.com/pkg/errors"
 )
@@ -112,6 +113,9 @@ func SerializePacket(
 	codec.PutUint16(buffer[3:], sequenceIdx)
 
 	// Only insert total size of the command in the first package
+	if len(command) > math.MaxUint16 {
+		panic("command too long")
+	}
 	if sequenceIdx == 0 {
 		commandLength := uint16(len(command))
 		codec.PutUint16(buffer[5:], commandLength)

@@ -25,7 +25,7 @@ func StorageEncodeShortString(s string) common.Hash {
 	if len(s) > 31 {
 		panic(fmt.Sprintf("string is too long: %q...", s[:8]))
 	}
-	ret := StorageEncodeUint8(uint8(len(s) * 2))
+	ret := StorageEncodeUint8(uint8(len(s) * 2)) //nolint:gosec
 	copy(ret[:], s)
 	return ret
 }

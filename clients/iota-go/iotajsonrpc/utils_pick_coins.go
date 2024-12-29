@@ -107,7 +107,7 @@ func PickupCoinsWithFilter(
 	targetAmount uint64,
 	filter func(*Coin) bool,
 ) (Coins, error) {
-	if len(coins) <= 0 {
+	if len(coins) == 0 {
 		return nil, ErrNoCoinsFound
 	}
 	total := uint64(0)
@@ -116,7 +116,7 @@ func PickupCoinsWithFilter(
 		if filter != nil && !filter(coin) {
 			continue
 		}
-		total = total + coin.Balance.Uint64()
+		total += coin.Balance.Uint64()
 		pickedCoins = append(pickedCoins, coin)
 		if total >= targetAmount {
 			break

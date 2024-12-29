@@ -31,11 +31,11 @@ func NilLogIndex() LogIndex {
 }
 
 func MaxLogIndex(lis ...LogIndex) LogIndex {
-	max := NilLogIndex()
+	maxLogIndex := NilLogIndex()
 	for _, li := range lis {
-		if li > max {
-			max = li
+		if li > maxLogIndex {
+			maxLogIndex = li
 		}
 	}
-	return max
+	return maxLogIndex
 }
