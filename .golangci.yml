@@ -1,8 +1,10 @@
 run:
     tests: true
-
+    allow-parallel-runners: true
+    allow-serial-runners: true
 
 issues:
+    exclude-generated: strict
     exclude-dirs:
       - contracts/wasm
       - tools/cluster
@@ -39,7 +41,8 @@ issues:
         - "var-naming: don't use an underscore in package name" # revive
         - "if-return: redundant if ...; err != nil check, just return error instead." # revive
         - "unused-parameter: parameter" # revive (maybe we should add this again later?)
-
+        - "Error return value of `e.Encode` is not checked"  # errcheck (Mostly used in BCS encoding where e.Err() gets used afterwords)
+        - "may want to add detail/ assignee to this TODO/ FIXME/ BUG comment" # gocritic
     exclude-rules:
         - path: (_test\.go|example_test\.go|example_[0-9A-Za-z_-]+_test\.go)
           linters:
@@ -90,7 +93,6 @@ linters-settings:
             mnd:
                 # don't include the "operation" and "assign"
                 checks: [argument, case, condition, return]
-
     govet:
         enable:
           - shadow

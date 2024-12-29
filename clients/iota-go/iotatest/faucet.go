@@ -6,9 +6,15 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 func MakeSignerWithFunds(index int, faucetURL string) iotasigner.Signer {
+	if UseRandomSeed() {
+		seed := cryptolib.NewSeed()
+		return MakeSignerWithFundsFromSeed(seed[:], index, faucetURL)
+	}
+
 	return MakeSignerWithFundsFromSeed(testcommon.TestSeed, index, faucetURL)
 }
 
