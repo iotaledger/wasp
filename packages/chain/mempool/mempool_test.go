@@ -342,7 +342,7 @@ func TestMempoolChainOwner(t *testing.T) {
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
-
+	fmt.Println("anchor owner", te.anchor.Owner().String())
 	//require.Equal(t, te.governor.Address().String(), te.anchor.Owner().String(), "governor and anchor owner are not the same")
 
 	governanceState := governance.NewStateReaderFromChainState(te.stateForAnchor(0, te.anchor))
