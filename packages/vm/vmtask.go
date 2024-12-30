@@ -18,18 +18,22 @@ import (
 // It is assumed that all requests/inputs are unlock-able by aliasAddress of provided AnchorOutput
 // at timestamp = Timestamp + len(Requests) nanoseconds
 type VMTask struct {
-	Processors         *processors.Config
-	Anchor             *isc.StateAnchor
+	Processors *processors.Config
+	Anchor     *isc.StateAnchor
+	// GasCoin is allowed to be nil iif EstimateGasMode == true || EVMTracer != nil,
+	// in which case no PTB will be produced.
 	GasCoin            *coin.CoinWithRef
 	Store              state.Store
 	Requests           []isc.Request
 	Timestamp          time.Time
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget isc.AgentID
-	// If EstimateGasMode is enabled, signature and nonce checks will be skipped
+	// If EstimateGasMode is enabled, signature and nonce checks will be skipped,
+	// and no PTB will be produced.
 	EstimateGasMode bool
 	// If EVMTracer is set, all requests will be executed normally up until the EVM
 	// tx with the given index, which will then be executed with the given tracer.
+	// No PTB will be produced.
 	EVMTracer            *isc.EVMTracer
 	EnableGasBurnLogging bool // for testing and Solo only
 

@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -31,23 +30,6 @@ type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
 	baseToken  *parameters.BaseToken
-}
-
-// Returns the anchor, which was used to form state of given index.
-func (b *WaspEVMBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	state, err := b.chain.LatestState(chain.ConfirmedState)
-	if err != nil {
-		return nil, fmt.Errorf("retrieving latest state: %w", err)
-	}
-
-	blocklogState := blocklog.NewStateReader(blocklog.Contract.StateSubrealmR(state))
-
-	block, found := blocklogState.GetBlockInfo(stateIndex)
-	if !found {
-		return nil, fmt.Errorf("block %d not found", stateIndex)
-	}
-
-	return block.PreviousAnchor, nil
 }
 
 var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
@@ -95,13 +77,8 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 }
 
 func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
-	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, err
-	}
 	return chainutil.EVMCall(
 		anchor,
-		gasCoin,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
@@ -110,13 +87,8 @@ func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallM
 }
 
 func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
-	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return 0, err
-	}
 	return chainutil.EVMEstimateGas(
 		anchor,
-		gasCoin,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
@@ -132,13 +104,8 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
-	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return err
-	}
 	return chainutil.EVMTraceTransaction(
 		anchor,
-		gasCoin,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),

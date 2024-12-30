@@ -91,13 +91,10 @@ func (e *Encoder) Encode(val any) error {
 	if val == nil {
 		return e.handleErrorf("cannot encode a nil value")
 	}
-
 	defer e.typeInfoCache.Save()
-
 	if err := e.encodeValue(reflect.ValueOf(val), nil, nil); err != nil {
 		return fmt.Errorf("encoding %T: %w", val, err)
 	}
-
 	return nil
 }
 
@@ -273,13 +270,13 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if typeOptions.IsCompactInt {
-			e.WriteCompactUint(uint64(v.Int()))
+			err = e.WriteCompactUint(uint64(v.Int()))
 		} else {
 			err = e.encodeInt(v, typeOptions.UnderlayingType)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if typeOptions.IsCompactInt {
-			e.WriteCompactUint(v.Uint())
+			err = e.WriteCompactUint(v.Uint())
 		} else {
 			err = e.encodeUint(v, typeOptions.UnderlayingType)
 		}

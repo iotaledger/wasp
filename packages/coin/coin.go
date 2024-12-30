@@ -26,7 +26,7 @@ func (v Value) BigInt() *big.Int {
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
-	e.WriteCompactUint(uint64(*v))
+	_ = e.WriteCompactUint(uint64(*v))
 	return e.Err()
 }
 
@@ -83,13 +83,13 @@ func MustTypeFromString(s string) Type {
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
 	rt := t.ResourceType()
-	e.Encode(rt)
+	_ = e.Encode(rt)
 	return e.Err()
 }
 
 func (t *Type) UnmarshalBCS(d *bcs.Decoder) error {
 	var rt iotago.ResourceType
-	d.Decode(&rt)
+	_ = d.Decode(&rt)
 	if d.Err() != nil {
 		return d.Err()
 	}
@@ -120,7 +120,7 @@ func (t Type) ShortString() string {
 }
 
 func (t Type) ResourceType() *iotago.ResourceType {
-	return lo.Must(iotago.NewResourceType(string(t.s)))
+	return lo.Must(iotago.NewResourceType(t.s))
 }
 
 func (t Type) TypeTag() iotago.TypeTag {

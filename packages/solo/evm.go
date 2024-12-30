@@ -56,7 +56,6 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
 	return chainutil.EVMCall(
 		anchor,
-		b.Chain.GetLatestGasCoin(),
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
@@ -67,7 +66,6 @@ func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.C
 func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
 	return chainutil.EVMEstimateGas(
 		anchor,
-		b.Chain.GetLatestGasCoin(),
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
@@ -85,7 +83,6 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 ) error {
 	return chainutil.EVMTraceTransaction(
 		anchor,
-		b.Chain.GetLatestGasCoin(),
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
@@ -103,11 +100,6 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 
 func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
 	anchor := b.Chain.GetLatestAnchor()
-	return anchor, nil
-}
-
-func (b *jsonRPCSoloBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	anchor := b.Chain.GetAnchor(stateIndex)
 	return anchor, nil
 }
 

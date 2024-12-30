@@ -245,9 +245,9 @@ func (c *VersionNotFoundData) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("failed to parse VersionNotFound content: expected string, got %T", vals[0])
 	}
 	c.ObjectID, err = iotago.ObjectIDFromHex(objIDHex)
-	seq, ok := vals[1].(int)
+	seq, ok := vals[1].(float64)
 	if !ok {
-		return fmt.Errorf("failed to parse VersionNotFound content: %w", err)
+		return fmt.Errorf("failed to parse VersionNotFound content: expected number, got %T", vals[1])
 	}
 	c.SequenceNumber = uint64(seq)
 	return nil
