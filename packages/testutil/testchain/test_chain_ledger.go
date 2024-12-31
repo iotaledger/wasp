@@ -59,14 +59,14 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*isc.StateAnchor, coin.Value) {
+func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.governor.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 
 	originDeposit := resGetCoins.Data[1]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.governor.Address())).Encode()
 	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(

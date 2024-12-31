@@ -6,7 +6,6 @@ package mempool_test
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"math/rand"
 	"slices"
 	"testing"
@@ -40,6 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
@@ -342,8 +342,7 @@ func TestMempoolChainOwner(t *testing.T) {
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
-	fmt.Println("anchor owner", te.anchor.Owner().String())
-	//require.Equal(t, te.governor.Address().String(), te.anchor.Owner().String(), "governor and anchor owner are not the same")
+	require.Equal(t, te.governor.Address().String(), te.anchor.Owner().String(), "governor and anchor owner are not the same")
 
 	governanceState := governance.NewStateReaderFromChainState(te.stateForAnchor(0, te.anchor))
 	chainOwner := governanceState.GetChainOwnerID()
@@ -587,6 +586,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
 		Owner: te.governor.Address().AsIotaAddress(),
 	})
+	require.NoError(t, err)
 
 	fmt.Println(objs)
 
@@ -595,7 +595,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	te.tcl = testchain.NewTestChainLedger(t, te.governor, &iscPackage, l1client)
 	var originDepositVal coin.Value
-	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin()
 
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))

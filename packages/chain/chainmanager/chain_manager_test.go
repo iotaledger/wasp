@@ -74,7 +74,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Chain identifiers.
 	tcl := newTestChainLedger(t, originator)
-	anchor, deposit := tcl.MakeTxChainOrigin(cmtAddrA)
+	anchor, deposit := tcl.MakeTxChainOrigin()
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
