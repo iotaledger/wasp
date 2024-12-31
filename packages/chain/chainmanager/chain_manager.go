@@ -242,8 +242,8 @@ func (cmi *chainMgrImpl) AsGPA() gpa.GPA {
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 	switch input := input.(type) {
-	case *inputAliasOutputConfirmed:
-		return cmi.handleInputAliasOutputConfirmed(input)
+	case *inputAnchorConfirmed:
+		return cmi.handleInputAnchorConfirmed(input)
 	case *inputChainTxPublishResult:
 		return cmi.handleInputChainTxPublishResult(input)
 	case *inputConsensusOutputDone:
@@ -280,8 +280,8 @@ func (cmi *chainMgrImpl) Message(msg gpa.Message) gpa.OutMessages {
 // >     	     Send Suspend to Last Active CmtLog; HandleCmtLogOutput(LatestActiveCmt)
 // >         Set LatestActiveCmt <- NIL
 // >         Set NeedConsensus <- NIL
-func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
-	cmi.log.Debugf("handleInputAliasOutputConfirmed: %+v", input)
+func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
+	cmi.log.Debugf("handleInputAnchorConfirmed: %+v", input)
 	//
 	// >     Set LatestConfirmedAO <- ConfirmedAO
 	vsaTip, vsaUpdated := cmi.varAccessNodeState.BlockConfirmed(input.anchor)
@@ -315,7 +315,7 @@ func (cmi *chainMgrImpl) handleInputAliasOutputConfirmed(input *inputAliasOutput
 	// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.handleCmtLogOutput(
 		committeeLog,
-		committeeLog.gpaInstance.Input(cmt_log.NewInputAliasOutputConfirmed(input.anchor)),
+		committeeLog.gpaInstance.Input(cmt_log.NewInputAnchorConfirmed(input.anchor)),
 	))
 	return msgs
 }

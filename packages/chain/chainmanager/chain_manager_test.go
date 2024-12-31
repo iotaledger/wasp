@@ -110,7 +110,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Provide initial AO.
 	initAOInputs := map[gpa.NodeID]gpa.Input{}
 	for nid := range nodes {
-		initAOInputs[nid] = chainmanager.NewInputAliasOutputConfirmed(originator.Address(), anchor)
+		initAOInputs[nid] = chainmanager.NewInputAnchorConfirmed(originator.Address(), anchor)
 	}
 	tc.WithInputs(initAOInputs)
 	tc.RunAll()
@@ -186,7 +186,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Say TX is confirmed.
 	for nid := range nodes {
-		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(originator.Address(), step2AO))
+		tc.WithInput(nid, chainmanager.NewInputAnchorConfirmed(originator.Address(), step2AO))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("TX Published and Confirmed", t.Logf)
@@ -202,7 +202,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Make external committee rotation.
 	rotateAO := tcl.FakeRotationTX(step2AO, cmtAddrB)
 	for nid := range nodes {
-		tc.WithInput(nid, chainmanager.NewInputAliasOutputConfirmed(originator.Address(), rotateAO))
+		tc.WithInput(nid, chainmanager.NewInputAnchorConfirmed(originator.Address(), rotateAO))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After external rotation", t.Logf)

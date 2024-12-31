@@ -76,7 +76,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
 	t.Logf("AO1=%v", ao1)
-	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao1)).RunAll()
+	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
 	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(*cmt_log.Output)
 	for _, n := range gpaNodes {
@@ -100,7 +100,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	}
 	//
 	// AO Confirmed received (nothing changes, we are ahead of it)
-	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao2)).RunAll()
+	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Recv", t.Logf)
 	for _, n := range gpaNodes {
 		require.NotNil(t, n.Output())
@@ -113,10 +113,10 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmt_log.NewInputAliasOutputConfirmed(ao)
+		inputs[n] = cmt_log.NewInputAnchorConfirmed(ao)
 	}
 	return inputs
 }

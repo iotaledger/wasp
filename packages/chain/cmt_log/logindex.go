@@ -26,6 +26,13 @@ func (li LogIndex) Next() LogIndex {
 	return LogIndex(li.AsUint32() + 1)
 }
 
+func (li LogIndex) Prev() LogIndex {
+	if li == 0 {
+		return li
+	}
+	return LogIndex(li.AsUint32() - 1)
+}
+
 func NilLogIndex() LogIndex {
 	return LogIndex(0)
 }

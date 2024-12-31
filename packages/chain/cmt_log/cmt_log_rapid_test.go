@@ -143,7 +143,7 @@ func (sm *cmtLogTestRapidSM) AliasOutputConfirmed(t *rapid.T) {
 	deliverIdx := rapid.IntRange(sm.l1Delivered[nodeID]+1, len(sm.l1Chain)-1).Draw(t, "deliverIdx")
 	ao := sm.l1Chain[deliverIdx]
 	sm.l1Delivered[nodeID] = deliverIdx
-	sm.tc.WithInput(nodeID, cmt_log.NewInputAliasOutputConfirmed(ao))
+	sm.tc.WithInput(nodeID, cmt_log.NewInputAnchorConfirmed(ao))
 	sm.tc.RunAll()
 }
 

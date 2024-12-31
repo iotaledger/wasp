@@ -7,13 +7,15 @@ nodes can reboot and join the consensus without storing its internal state
 nor messages persistently.
 
 Assume LastLI is the latest LogIndex on which the node could work.
+  - A node increases LastLI to L on completion of consensus on L-1
+  - or upon reception of consensus inputs at index L from F+1 nodes.
 
 The algorithm in general:
 
   - A node can join the LastLI with ⊥, if LastLI=MinLI.
     This happens on boot.
 
-  - A node can join the LastLI-1 instance at any time with input ⊥.
+  - A node can join the LastLI-1 or lower instance at any time with input ⊥.
     Others are already working on the LastLI, so we will not damage anything.
 
   - A node can join the LastLI after LastLI-1 is completed or a timeout exceeds.
@@ -36,7 +38,7 @@ Notes on modeling:
     This is modelled by SomeAoOrder, which uses CHOOSE underneath.
 *)
 (******************************************************************************)
-EXTENDS FiniteSets, Sequences, SequencesExt, Integers, WaspByzEnv
+EXTENDS FiniteSets, Sequences, SequencesExt, Integers, WaspByzEnv, TLAPS
 CONSTANT AO
 CONSTANT LI \* Consensus Log Indexes, subset of Nat.
 
@@ -55,9 +57,9 @@ vars == <<l1AOs, l1View, l2MinLI, l2LastLI, l2Input, l2Decision, l2Output>>
 
 Node == AN
 
-BOT         == 0    \* ⊥ as an AO.
-Pending     == -1   \* Pending, not yet proposed AO.
-SomeAoOrder == SetToSeq(AO)
+BOT         == 0            \* ⊥ as an AO.
+Pending     == -1           \* Pending, not yet proposed AO.
+SomeAoOrder == SetToSeq(AO) \* We don't need to consider all the permulations.
 
 TypeOK ==
     /\ l1AOs \in Seq(AO)
