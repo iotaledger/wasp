@@ -22,16 +22,16 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			Size: 2,
 		},
 		Balances: iscmove.AssetsBagBalances{
-			iotajsonrpc.IotaCoinType:                     33,
-			iotajsonrpc.CoinTypeFromString("0xa1::a::A"): 11,
-			iotajsonrpc.CoinTypeFromString("0xa2::b::B"): 22,
+			iotajsonrpc.IotaCoinType:                         33,
+			iotajsonrpc.MustCoinTypeFromString("0xa1::a::A"): 11,
+			iotajsonrpc.MustCoinTypeFromString("0xa2::b::B"): 22,
 		},
 	}
 	assets, err := isc.AssetsFromAssetsBagWithBalances(&assetsBag)
 	require.NoError(t, err)
-	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType], uint64(assets.BaseTokens()))
-	require.Equal(t, assetsBag.Balances[iotajsonrpc.CoinTypeFromString("0xa1::a::A")], uint64(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
-	require.Equal(t, assetsBag.Balances[iotajsonrpc.CoinTypeFromString("0xa2::b::B")], uint64(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
+	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType], iotajsonrpc.CoinValue(assets.BaseTokens()))
+	require.Equal(t, assetsBag.Balances[iotajsonrpc.MustCoinTypeFromString("0xa1::a::A")], iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
+	require.Equal(t, assetsBag.Balances[iotajsonrpc.MustCoinTypeFromString("0xa2::b::B")], iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
 }
 
 func TestAssetsSerialization(t *testing.T) {

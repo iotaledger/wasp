@@ -79,8 +79,13 @@ func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest anchor: %w", err)
 	}
-
-	rec, err := chainutil.SimulateRequest(anchor, ch.Store(), ch.Processors(), ch.Log(), req, true)
+	rec, err := chainutil.SimulateRequest(
+		anchor,
+		ch.Store(),
+		ch.Processors(),
+		ch.Log(),
+		req,
+	)
 	if err != nil {
 		return nil, err
 	}

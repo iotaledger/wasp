@@ -22,7 +22,6 @@ var LimitsDefault = &Limits{
 
 func LimitsFromBytes(data []byte) (*Limits, error) {
 	v, err := bcs.Unmarshal[*Limits](data)
-
 	if err != nil {
 		return nil, err
 	}

@@ -170,9 +170,9 @@ func PTBAssetsBagTakeCoinBalanceMergeTo(
 	packageID iotago.PackageID,
 	argAssetsBag iotago.Argument,
 	amount uint64,
-	coinType string,
+	coinType iotajsonrpc.CoinType,
 ) *iotago.ProgrammableTransactionBuilder {
-	typeTag, err := iotago.TypeTagFromString(coinType)
+	typeTag, err := iotago.TypeTagFromString(coinType.String())
 	if err != nil {
 		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
 	}
@@ -193,7 +193,7 @@ func PTBAssetsBagTakeCoinBalanceMergeTo(
 	createdCoin := ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       iotago.IotaPackageIdIotaFramework,
+				Package:       iotago.IotaPackageIDIotaFramework,
 				Module:        "coin",
 				Function:      "from_balance",
 				TypeArguments: []iotago.TypeTag{*typeTag},

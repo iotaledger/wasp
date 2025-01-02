@@ -29,7 +29,6 @@ func EVMTraceTransaction(
 		log,
 		blockTime,
 		iscRequestsInBlock,
-		false,
 		&isc.EVMTracer{
 			Tracer:      tracer,
 			TxIndex:     txIndex,

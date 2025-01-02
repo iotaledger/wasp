@@ -7,6 +7,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr/am_dist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -15,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
-	"github.com/samber/lo"
 )
 
 type AccessMgr interface {

@@ -156,7 +156,7 @@ func (p *ProgrammableMakeMoveVec) String() string {
 type ProgrammableUpgrade struct {
 	Modules      [][]byte
 	Dependencies []*ObjectID
-	PackageId    *PackageID
+	PackageID    *PackageID
 	Ticket       Argument
 }
 

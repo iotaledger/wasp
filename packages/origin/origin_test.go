@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -30,7 +29,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	l1starter.StartNode(context.Background())
+	l1starter.TestMain(m)
 }
 
 func TestOrigin(t *testing.T) {
@@ -48,12 +47,12 @@ func TestOrigin(t *testing.T) {
 
 func TestCreateOrigin(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	sentSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	stateSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+	sentSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
+	stateSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 
-	coinType := iotajsonrpc.IotaCoinType
+	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := client.GetCoins(
 		context.Background(),
 		iotaclient.GetCoinsRequest{Owner: sentSigner.Address().AsIotaAddress(), CoinType: &coinType},

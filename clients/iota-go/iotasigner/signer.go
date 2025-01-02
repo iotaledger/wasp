@@ -3,21 +3,55 @@ package iotasigner
 import (
 	"crypto/ed25519"
 	"encoding/hex"
+	"errors"
+	"fmt"
 
 	"github.com/tyler-smith/go-bip39"
+	"github.com/wollac/iota-crypto-demo/pkg/bip32path"
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
-const (
-	SignatureFlagEd25519   = 0x0
-	SignatureFlagSecp256k1 = 0x1
+type Bip32CoinType int
 
-	// IOTA_DIFF 4218 is for iotago
-	DerivationPathEd25519   = `m/44'/4218'/0'/0'/0'`
-	DerivationPathSecp256k1 = `m/54'/4218'/0'/0/0`
+const (
+	// testnet/alphanet uses COIN_TYPE = 1
+	TestnetCoinType Bip32CoinType = 1
+	// / IOTA coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
+	IotaCoinType Bip32CoinType = 4218
 )
+
+type SignatureFlag int
+
+const (
+	SignatureFlagEd25519   SignatureFlag = 0x0
+	SignatureFlagSecp256k1 SignatureFlag = 0x1
+)
+
+func BuildBip32Path(signatureFlag SignatureFlag, coinType Bip32CoinType, accountIndex uint32) (string, error) {
+	var derivationSignature int
+	switch signatureFlag {
+	case SignatureFlagEd25519:
+		derivationSignature = 44
+
+	case SignatureFlagSecp256k1:
+		derivationSignature = 54
+	default:
+		return "", errors.New("invalid signature flag")
+	}
+
+	bip32Path := fmt.Sprintf(
+		"%d'/%d'/%d'/0'/0'",
+		derivationSignature,
+		coinType,
+		accountIndex,
+	)
+
+	_, err := bip32path.ParsePath(bip32Path)
+
+	return bip32Path, err
+}
 
 type Signer interface {
 	Address() *iotago.Address
@@ -34,7 +68,7 @@ type InMemorySigner struct {
 }
 
 func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
-	prikey := ed25519.NewKeyFromSeed(seed[:])
+	prikey := ed25519.NewKeyFromSeed(seed)
 	pubkey := prikey.Public().(ed25519.PublicKey)
 
 	// IOTA_DIFF iotago ignore flag when signature scheme is ed25519
@@ -78,7 +112,11 @@ func NewSignerWithMnemonic(mnemonic string, flag KeySchemeFlag) (Signer, error) 
 	if err != nil {
 		return nil, err
 	}
-	key, err := DeriveForPath(DerivationPathEd25519, seed)
+	bip32, err := BuildBip32Path(SignatureFlagEd25519, IotaCoinType, 0)
+	if err != nil {
+		return nil, err
+	}
+	key, err := DeriveForPath("m/"+bip32, seed)
 	if err != nil {
 		return nil, err
 	}

@@ -11,8 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmtest"
 )
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
 
 func TestPRNGLibrary(t *testing.T) {
 	env := evmtest.InitEVM(t)

@@ -44,7 +44,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+		_, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 	}
 
@@ -87,7 +87,7 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	require.NoError(t, err)
 
 	accountsClient := e.Chain.Client(keyPair)
-	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+	tx, err := accountsClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer: isc.NewAssets(1_000_000),
 	})
 	require.NoError(t, err)

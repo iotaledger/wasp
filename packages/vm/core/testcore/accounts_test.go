@@ -535,12 +535,12 @@ func (v *accountsDepositTest) printBalances(prefix string) {
 
 func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t, isc.TopUpFeeMin)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "not enough allowance")
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t, isc.TopUpFeeMin)
 		toWithdraw := v.ch.L2Assets(v.userAgentID)
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1
@@ -669,7 +669,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 	t.Run("accounting and pruning", func(t *testing.T) {
 		// mint 100 tokens from chain 1 and withdraw those to L1
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t, isc.TopUpFeeMin)
 
 		// create a new chain (ch2) with active state pruning set to keep only 1 block
 		blockKeepAmount := int32(1)
@@ -694,7 +694,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, 10_000)
+	v := initWithdrawTest(t, isc.TopUpFeeMin)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens()
 	initialOwnerAccountBaseTokens := v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens()
 

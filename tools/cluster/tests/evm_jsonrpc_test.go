@@ -86,6 +86,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
 	tx, err := e.Chain.Client(walletKey).PostRequest(
+		context.Background(),
 		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)),
 		chainclient.PostRequestParams{
 			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
@@ -133,7 +134,7 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 		B: 0,
 	}
 	govClient := e.Chain.Client(e.Chain.OriginatorKeyPair)
-	reqTx, err := govClient.PostRequest(governance.FuncSetFeePolicy.Message(fp1))
+	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(fp1), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)

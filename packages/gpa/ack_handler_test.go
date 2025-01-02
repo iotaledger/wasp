@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestAckHandler(t *testing.T) {

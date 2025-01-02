@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -77,7 +78,7 @@ type StateMgr interface {
 }
 
 type NodeConnGasInfo interface {
-	GetGasCoins() []*iotago.ObjectRef
+	GetGasCoins() []*coin.CoinWithRef
 	GetGasPrice() uint64
 }
 

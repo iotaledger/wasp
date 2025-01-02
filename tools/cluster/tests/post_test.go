@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"testing"
 	"time"
 
@@ -26,7 +27,7 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 	myClient := e.Chain.Client(myWallet)
 
 	var numRepeats int64 = 42
-	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
+	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(10 * isc.Million),
 		Allowance: isc.NewAssets(9 * isc.Million),
 	})
@@ -73,7 +74,7 @@ func testPost1Request(t *testing.T, e *ChainEnv) {
 
 	myClient := e.Chain.Client(myWallet)
 
-	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
@@ -93,7 +94,7 @@ func testPost3Recursive(t *testing.T, e *ChainEnv) {
 	myClient := e.Chain.Client(myWallet)
 
 	var numRepeats int64 = 3
-	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
+	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(10 * isc.Million),
 		Allowance: isc.NewAssets(9 * isc.Million),
 	})
@@ -119,7 +120,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 	onChainBalance := coin.Value(0)
 	for i := 0; i < 5; i++ {
 		baseTokesSent := coin.Value(1 * isc.Million)
-		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+		tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
 			Transfer: isc.NewAssets(baseTokesSent),
 		})
 		require.NoError(t, err)
@@ -148,11 +149,11 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 
 	myClient := e.Chain.Client(myWallet)
 
-	tx := [5]*iotago.Transaction{}
+	tx := [5]*iotajsonrpc.IotaTransactionBlockResponse{}
 	onChainBalance := coin.Value(0)
 	baseTokesSent := coin.Value(1 * isc.Million)
 	for i := 0; i < 5; i++ {
-		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+		tx[i], err = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
 			Transfer: isc.NewAssets(baseTokesSent),
 		})
 		require.NoError(t, err)

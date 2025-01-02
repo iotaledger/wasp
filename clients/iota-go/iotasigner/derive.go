@@ -110,7 +110,7 @@ func (k *Key) PublicKey() ([]byte, error) {
 // RawSeed returns raw seed bytes
 func (k *Key) RawSeed() [32]byte {
 	var rawSeed [32]byte
-	copy(rawSeed[:], k.Key[:])
+	copy(rawSeed[:], k.Key)
 	return rawSeed
 }
 

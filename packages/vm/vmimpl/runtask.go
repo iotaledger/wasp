@@ -91,7 +91,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		blockIndex, l1Commitment, timestamp, rotationAddr)
 
 	// FIXME we may not need to store this when Rotate the address
-	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment)
+	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment, task.GasCoin)
 	vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	if rotationAddr != nil {
 		// rotation happens
@@ -99,7 +99,12 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		// FIXME maybe we need to amend the following debugging message
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, TopUpFee)
+	// FIXME this may cause a deadlock when the packed the requests are too huge and exceeded the top up fee
+	topUpFee := uint64(0)
+	if isc.TopUpFeeMin > task.GasCoin.Value {
+		topUpFee = isc.TopUpFeeMin - task.GasCoin.Value.Uint64()
+	}
+	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
 	return taskResult
 }
 

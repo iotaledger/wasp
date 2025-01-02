@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -158,13 +158,13 @@ func (bps batchProposalSet) aggregatedGasPrice(f int) uint64 {
 }
 
 // Here we return coins that are proposed by at least F+1 peers.
-func (bps batchProposalSet) aggregatedGasCoins(f int) []*iotago.ObjectRef {
-	coinRefs := map[string]*iotago.ObjectRef{}
+func (bps batchProposalSet) aggregatedGasCoins(f int) []*coin.CoinWithRef {
+	coinRefs := map[string]*coin.CoinWithRef{}
 	coinFrom := map[string]map[gpa.NodeID]bool{}
 	for from, bp := range bps {
 		for i := range bp.gasCoins {
 			coinRef := bp.gasCoins[i]
-			bytesStr := string(coinRef.Bytes())
+			bytesStr := string(coinRef.Ref.Bytes())
 			if _, ok := coinRefs[bytesStr]; !ok {
 				coinRefs[bytesStr] = coinRef
 				coinFrom[bytesStr] = map[gpa.NodeID]bool{}
@@ -189,7 +189,7 @@ func (bps batchProposalSet) aggregatedGasCoins(f int) []*iotago.ObjectRef {
 	})
 
 	// Return the selected coins.
-	result := []*iotago.ObjectRef{}
+	result := []*coin.CoinWithRef{}
 	for _, coinKey := range coinKeys {
 		result = append(result, coinRefs[coinKey])
 	}

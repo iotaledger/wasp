@@ -85,7 +85,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
 
-	impRequest := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestData)).
+	impRequest := isc.NewImpersonatedOffLedgerRequest(&req.(*isc.OffLedgerRequestData).OffLedgerRequestDataEssence).
 		WithSenderAddress(requestFrom)
 
 	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {

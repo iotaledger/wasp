@@ -37,6 +37,7 @@ func (c *Client) CreateAndSendRequest(
 	anchorRef := anchorRes.Data.Ref()
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
+
 	ptb = PTBCreateAndSendRequest(
 		ptb,
 		req.PackageID,
@@ -46,6 +47,7 @@ func (c *Client) CreateAndSendRequest(
 		req.Allowance,
 		req.OnchainGasBudget,
 	)
+
 	return c.SignAndExecutePTB(
 		ctx,
 		req.Signer,
@@ -69,6 +71,22 @@ type CreateAndSendRequestWithAssetsRequest struct {
 	GasBudget        uint64
 }
 
+func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (*iotajsonrpc.Coin, uint64, error) {
+	iotaBalance := req.Assets.BaseToken()
+
+	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance, iotaclient.DefaultGasBudget)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	coin, err := coinOptions.PickCoinNoLess(iotaBalance)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return coin, iotaBalance, nil
+}
+
 func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,
@@ -83,9 +101,13 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
-	placedCoins := []lo.Tuple2[*iotajsonrpc.Coin, uint64]{}
+	var placedCoins []lo.Tuple2[*iotajsonrpc.Coin, uint64]
 	// assume we can find it in the first page
 	for cointype, bal := range req.Assets.Coins {
+		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType.String())) {
+			continue
+		}
+
 		coin, ok := lo.Find(allCoins.Data, func(coin *iotajsonrpc.Coin) bool {
 			if !lo.Must(iotago.IsSameResource(cointype.String(), string(coin.CoinType))) {
 				return false
@@ -106,6 +128,25 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb = PTBAssetsBagNew(ptb, req.PackageID, req.Signer.Address())
 	argAssetsBag := ptb.LastCommandResultArg()
+
+	// Select IOTA coin first
+	gasCoin, balance, err := c.selectProperGasCoinAndBalance(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find an IOTA coin with proper balance ref: %w", err)
+	}
+
+	if balance > 0 {
+		ptb = PTBAssetsBagPlaceCoinWithAmount(
+			ptb,
+			req.PackageID,
+			argAssetsBag,
+			iotago.GetArgumentGasCoin(),
+			iotajsonrpc.CoinValue(balance),
+			iotajsonrpc.IotaCoinType,
+		)
+	}
+
+	// Then the rest of the coins
 	for _, tuple := range placedCoins {
 		ptb = PTBAssetsBagPlaceCoinWithAmount(
 			ptb,
@@ -129,7 +170,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		ctx,
 		req.Signer,
 		ptb.Finish(),
-		req.GasPayments,
+		[]*iotago.ObjectRef{gasCoin.Ref()},
 		req.GasPrice,
 		req.GasBudget,
 	)

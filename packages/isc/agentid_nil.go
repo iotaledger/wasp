@@ -1,8 +1,9 @@
 package isc
 
 import (
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const nilAgentIDString = "-"

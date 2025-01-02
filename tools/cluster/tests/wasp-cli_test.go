@@ -580,6 +580,8 @@ func TestEVMISCReceipt(t *testing.T) {
 }
 
 func TestChangeGovernanceController(t *testing.T) {
+	t.Fatalf("Implement gov controller change")
+	
 	w := newWaspCLITest(t)
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
@@ -588,9 +590,8 @@ func TestChangeGovernanceController(t *testing.T) {
 	// create the new controller
 	_, newGovControllerAddr := testkey.GenKeyAddr()
 	// change gov controller
-	w.MustRun("chain", "change-gov-controller", newGovControllerAddr.Bech32("atoi"), "--chain=chain1")
+	w.MustRun("chain", "change-gov-controller", newGovControllerAddr.String(), "--chain=chain1")
 
-	outputs, err := w.Cluster.L1Client().OutputMap(newGovControllerAddr)
-	require.NoError(t, err)
-	require.Len(t, outputs, 1)
+	t.Fatalf("Implement gov controller change")
+
 }

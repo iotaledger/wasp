@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -194,6 +193,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
 	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 }
+
 func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	t.Skip("we may not need to support Cross Chain Request now")
 	// client := newLocalnetClient()
@@ -422,7 +422,7 @@ func createIscmoveReq(
 	iscPackage iotago.Address,
 	anchor *iscmove.AnchorWithRef,
 ) isc.OnLedgerRequest {
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 
 	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(

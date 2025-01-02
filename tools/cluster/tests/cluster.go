@@ -2,6 +2,7 @@ package tests
 
 import (
 	"flag"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"os"
 	"path"
 	"testing"
@@ -22,7 +23,22 @@ type waspClusterOpts struct {
 // however it's possible to run the tests on any compatible network, by providing the L1 node configuration.
 // example:
 // go test -timeout 30m github.com/iotaledger/wasp/tools/cluster/tests -layer1-api="http://1.1.1.123:3000" -layer1-faucet="http://1.1.1.123:5000"
-var l1 = l1starter.New(flag.CommandLine, flag.CommandLine)
+
+func parseConfig() l1starter.L1EndpointConfig {
+	config := l1starter.L1EndpointConfig{}
+
+	args := flag.CommandLine
+	args.StringVar(&config.APIURL, "layer1-api", "", "layer1 API address")
+	args.StringVar(&config.FaucetURL, "layer1-faucet", "", "layer1 faucet port")
+
+	if len(config.FaucetURL) > 0 || len(config.APIURL) > 0 {
+		config.IsLocal = false
+	}
+
+	return config
+}
+
+var l1 = l1starter.ClusterStart(parseConfig())
 
 // newCluster starts a new cluster environment (both L1 and L2) for tests.
 // It is a private function because cluster tests cannot be run in parallel,
@@ -31,7 +47,6 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	if testing.Short() {
 		t.Skip("Skipping cluster test in short mode")
 	}
-	l1.StartPrivtangleIfNecessary(t.Logf)
 
 	dirname := "wasp-cluster"
 	var modifyNodesConfig templates.ModifyNodesConfigFn
@@ -50,7 +65,7 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 
 	clusterConfig := cluster.NewConfig(
 		waspConfig,
-		l1.Config,
+		l1,
 		modifyNodesConfig,
 	)
 

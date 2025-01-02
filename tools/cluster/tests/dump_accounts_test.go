@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
@@ -23,7 +22,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		env.DepositFunds(10*isc.Million, keyPair)
-		accs = append(accs, addr.Bech32(parameters.L1().Protocol.Bech32HRP))
+		accs = append(accs, addr.String())
 	}
 
 	for i := 0; i < 5; i++ {

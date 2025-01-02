@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -13,7 +13,7 @@ type SyncNC interface {
 	HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages
 	HaveState() gpa.OutMessages
 	HaveRequests() gpa.OutMessages
-	HaveGasInfo(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages
+	HaveGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
 	String() string
 }
 
@@ -23,14 +23,14 @@ type syncNCImpl struct {
 	haveRequests    bool
 	inputCB         func(anchor *isc.StateAnchor) gpa.OutMessages
 
-	gasCoins []*iotago.ObjectRef
+	gasCoins []*coin.CoinWithRef
 	gasPrice uint64
-	outputCB func(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages
+	outputCB func(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
 }
 
 func NewSyncNC(
 	inputCB func(anchor *isc.StateAnchor) gpa.OutMessages,
-	outputCB func(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages,
+	outputCB func(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages,
 ) SyncNC {
 	return &syncNCImpl{inputCB: inputCB, outputCB: outputCB}
 }
@@ -90,7 +90,7 @@ func (sync *syncNCImpl) tryCompleteInputs() gpa.OutMessages {
 	return cb(sync.haveInputAnchor)
 }
 
-func (sync *syncNCImpl) HaveGasInfo(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages {
+func (sync *syncNCImpl) HaveGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
 	if sync.gasCoins == nil && gasCoins != nil {
 		sync.gasCoins = gasCoins
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -47,6 +48,8 @@ type ChainNodeConn interface {
 	// RefreshOnLedgerRequests synchronously fetches all owned requests by the
 	// previously attached chain, and calls recvRequest for each one.
 	RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID)
+
+	GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error)
 }
 
 type NodeConnection interface {
@@ -88,6 +91,7 @@ type ChainCore interface {
 	// L1 yet (after a restart or a chain activation).
 	LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error)
 	LatestState(freshness StateFreshness) (state.State, error)
+	LatestGasCoin(freshness StateFreshness) (*coin.CoinWithRef, error)
 	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
 	Store() indexedstore.IndexedStore // Use LatestState whenever possible. That will work faster.
 	Processors() *processors.Config

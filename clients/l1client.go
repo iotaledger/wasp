@@ -124,6 +124,7 @@ type L1Client interface {
 		ctx context.Context,
 		address *iotago.Address,
 		targetAmount uint64,
+		gasAmount uint64,
 	) (iotajsonrpc.Coins, error)
 	SignAndExecuteTransaction(
 		ctx context.Context,

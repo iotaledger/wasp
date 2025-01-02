@@ -66,6 +66,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acs"
@@ -462,7 +463,7 @@ func (c *consImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
 	return nil
 }
 
-func (c *consImpl) uponNCOutputReady(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.OutMessages {
+func (c *consImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
 	c.output.NeedNodeConnGasInfo = nil
 	return c.subACS.GasInfoReceived(gasCoins, gasPrice)
 }
@@ -511,7 +512,7 @@ func (c *consImpl) uponACSInputsReceived(
 	requestRefs []*isc.RequestRef,
 	dssIndexProposal []int,
 	timeData time.Time,
-	gasCoins []*iotago.ObjectRef,
+	gasCoins []*coin.CoinWithRef,
 	gasPrice uint64,
 ) gpa.OutMessages {
 	batchProposal := bp.NewBatchProposal(
@@ -591,13 +592,19 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 // VM
 
 func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
-	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
-	// The decided base alias output can be different from that we have proposed!
-	decidedAO := aggregatedProposals.DecidedBaseAliasOutput()
+	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
+	stateAnchor := isc.NewStateAnchor(decidedBaseAliasOutput.Anchor(), decidedBaseAliasOutput.ISCPackage())
+	gasCoins := aggregatedProposals.AggregatedGasCoins()
+	// FIXME we need only one
+	if len(gasCoins) != 1 {
+		panic("FIXME we support only one gas coin now")
+	}
+	gasCoin := gasCoins[0]
 
 	c.output.NeedVMResult = &vm.VMTask{
 		Processors:           c.processorCache,
-		Anchor:               decidedAO,
+		Anchor:               &stateAnchor,
+		GasCoin:              gasCoin,
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		Timestamp:            aggregatedProposals.AggregatedTime(),
@@ -608,7 +615,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		Log:                  c.log.Named("VM"),
 		Migrations:           allmigrations.DefaultScheme,
 	}
-	return c.subTX.AnchorDecided(decidedAO)
+	return c.subTX.AnchorDecided(decidedBaseAliasOutput)
 }
 
 func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
@@ -641,7 +648,11 @@ func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggre
 	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
 	var gasPrice uint64 = aggregatedProposals.AggregatedGasPrice()
 	var gasBudget uint64 = pt.EstimateGasBudget(gasPrice)
-	var gasPayment []*iotago.ObjectRef = aggregatedProposals.AggregatedGasCoins()
+	var gasPaymentCoinRef []*coin.CoinWithRef = aggregatedProposals.AggregatedGasCoins()
+	gasPayment := make([]*iotago.ObjectRef, len(gasPaymentCoinRef))
+	for i, coinRef := range gasPaymentCoinRef {
+		gasPayment[i] = coinRef.Ref
+	}
 
 	tx := iotago.NewProgrammable(sender, *pt, gasPayment, gasBudget, gasPrice)
 	return &tx

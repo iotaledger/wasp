@@ -5,8 +5,9 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/trie"
 )
 
 func TestL1CommitmentConversionToBytes(t *testing.T) {

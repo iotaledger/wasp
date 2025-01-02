@@ -8,7 +8,7 @@ import (
 )
 
 type TypeOptions struct {
-	//IncludeUnexported bool
+	// IncludeUnexported bool
 
 	// TODO: Is this needed? It is present in rwutil as Size16/Size32, but it is more of validation.
 	LenSizeInBytes LenBytesCount
@@ -103,8 +103,8 @@ type FieldOptions struct {
 	TypeOptions
 	Skip     bool
 	Optional bool
-	//OmitEmpty bool
-	//ByteOrder    binary.ByteOrder
+	// OmitEmpty bool
+	// ByteOrder    binary.ByteOrder
 	AsByteArray bool
 }
 

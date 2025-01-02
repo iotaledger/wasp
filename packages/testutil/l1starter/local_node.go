@@ -121,6 +121,10 @@ func (in *LocalIotaNode) L1Client() clients.L1Client {
 	})
 }
 
+func (in *LocalIotaNode) IsLocal() bool {
+	return true
+}
+
 func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 	ctx, cancel := context.WithTimeout(in.ctx, timeout)
 	defer cancel()
@@ -145,7 +149,7 @@ func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 	tryLoop(func() bool {
 		res, err := in.L1Client().GetLatestIotaSystemState(in.ctx)
 		if err != nil {
-			in.logf("err: %s", err)
+			in.logf("StatusLoop: err: %s", err)
 		}
 		if err != nil || res == nil {
 			return false
@@ -159,7 +163,7 @@ func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 	tryLoop(func() bool {
 		err := iotaclient.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), in.FaucetURL())
 		if err != nil {
-			in.logf("err: %s", err)
+			in.logf("FaucetLoop: err: %s", err)
 		}
 		return err == nil
 	})

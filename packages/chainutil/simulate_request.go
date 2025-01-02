@@ -16,7 +16,6 @@ func SimulateRequest(
 	processors *processors.Config,
 	log *logger.Logger,
 	req isc.Request,
-	estimateGas bool,
 ) (*blocklog.RequestReceipt, error) {
 	res, err := runISCRequest(
 		anchor,
@@ -25,7 +24,6 @@ func SimulateRequest(
 		log,
 		time.Now(),
 		req,
-		estimateGas,
 	)
 	if err != nil {
 		return nil, err

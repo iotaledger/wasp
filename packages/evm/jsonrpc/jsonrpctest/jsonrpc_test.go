@@ -11,7 +11,6 @@ import (
 	"slices"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -26,24 +25,31 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/logger"
-
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
+const nativeToEthDigitsConversionRate = 1e9
+
 type soloTestEnv struct {
 	Env
 	solo      *solo.Solo
 	soloChain *solo.Chain
+}
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
 }
 
 func newSoloTestEnv(t testing.TB) *soloTestEnv {
@@ -64,7 +70,7 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 	rpcsrv, err := jsonrpc.NewServer(
 		chain.EVM(),
 		accounts,
-		chain.GetChainMetrics().WebAPI,
+		metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
 		jsonrpc.ParametersDefault(),
 	)
 	require.NoError(t, err)
@@ -90,31 +96,44 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 
 func TestRPCGetBalance(t *testing.T) {
 	env := newSoloTestEnv(t)
+
 	_, emptyAddress := solo.NewEthereumAccount()
 	require.Zero(t, env.Balance(emptyAddress).Uint64())
-	wallet, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds()
-	require.Equal(
-		t,
-		env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress))*1e12,
-		env.Balance(nonEmptyAddress).Uint64(),
-	)
+
+	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits single coin object allocated from faucet
+	wallet, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds(initialBalance)
+	initialBalanceEth := env.Balance(nonEmptyAddress)
+	initialBalanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress)))
+	require.Equal(t, initialBalance.Uint64()*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
+	require.Equal(t, initialBalanceNative*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
 
 	// 18 decimals
-	initialBalance := env.Balance(nonEmptyAddress)
 	toSend := new(big.Int).SetUint64(1_111_111_111_111_111_111) // use all 18 decimals
-	tx, err := types.SignTx(
-		types.NewTransaction(0, emptyAddress, toSend, uint64(100_000), env.MustGetGasPrice(), []byte{}),
-		env.Signer(),
-		wallet,
-	)
+	tx := types.NewTransaction(0, emptyAddress, toSend, uint64(100_000), env.MustGetGasPrice(), []byte{})
+	signedTx, err := types.SignTx(tx, env.Signer(), wallet)
 	require.NoError(t, err)
-	receipt := env.mustSendTransactionAndWait(tx)
+
+	receipt := env.mustSendTransactionAndWait(signedTx)
 	require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
-	fee := new(big.Int).Mul(receipt.EffectiveGasPrice, new(big.Int).SetUint64(receipt.GasUsed))
-	exptectedBalance := new(big.Int).Sub(initialBalance, toSend)
+
+	fee := getGasFeeCharged(receipt)
+	exptectedBalance := new(big.Int).Sub(initialBalanceEth, toSend)
 	exptectedBalance = new(big.Int).Sub(exptectedBalance, fee)
 	require.Equal(t, exptectedBalance, env.Balance(nonEmptyAddress))
 	require.Equal(t, toSend, env.Balance(emptyAddress))
+}
+
+func getGasFeeCharged(receipt *types.Receipt) *big.Int {
+	fee := new(big.Int).Mul(receipt.EffectiveGasPrice, new(big.Int).SetUint64(receipt.GasUsed))
+
+	fee, leftover := new(big.Int).QuoRem(fee, big.NewInt(nativeToEthDigitsConversionRate), fee)
+	if leftover.Sign() != 0 {
+		fee.Add(fee, big.NewInt(1))
+	}
+
+	fee = new(big.Int).Mul(fee, big.NewInt(nativeToEthDigitsConversionRate))
+
+	return fee
 }
 
 func TestRPCGetCode(t *testing.T) {
@@ -315,9 +334,10 @@ func TestRPCSignTransaction(t *testing.T) {
 
 	// assert that the tx is correctly signed
 	{
-		decodedTx, err := evmtypes.DecodeTransaction(signed)
+		var decodedTx types.Transaction
+		err := decodedTx.UnmarshalBinary(signed)
 		require.NoError(t, err)
-		sender, err := evmutil.GetSender(decodedTx)
+		sender, err := evmutil.GetSender(&decodedTx)
 		require.NoError(t, err)
 		require.Equal(t, ethAddr, sender)
 	}
@@ -551,9 +571,8 @@ func TestRPCTraceTx(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
-	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+
+	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
@@ -629,7 +648,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, evmAddr.String(), trace.To.String())
-	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(1000).BaseTokens().Uint64()*1e12), trace.Value.String())
+	require.Equal(t, hexutil.EncodeUint64(isc.NewAssets(1000).BaseTokens().Uint64()*nativeToEthDigitsConversionRate), trace.Value.String())
 
 	prestate, err := env.traceTransactionWithPrestate(tx.Hash())
 	require.NoError(t, err)
@@ -672,9 +691,7 @@ func TestRPCTraceBlock(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
-	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)
@@ -882,9 +899,7 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 		})
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1})
-	require.True(t, env.soloChain.WaitForRequestsThrough(1, 180*time.Second))
+	env.soloChain.RunRequestsSync([]isc.Request{req1})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
@@ -979,9 +994,7 @@ func TestRPCBlockReceipt(t *testing.T) {
 
 	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
 	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
-	env.soloChain.WaitForRequestsMark()
-	env.soloChain.Env.AddRequestsToMempool(env.soloChain, []isc.Request{req1, req2})
-	require.True(t, env.soloChain.WaitForRequestsThrough(2, 180*time.Second))
+	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, 2, bi.NumSuccessfulRequests)

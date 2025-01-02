@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -20,6 +21,11 @@ func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 	return kp
+}
+
+func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
+	seed := cryptolib.NewSeed()
+	return NewSignerWithFunds(t, seed[:], index)
 }
 
 func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {

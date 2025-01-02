@@ -1,4 +1,4 @@
-package iotaclient_test
+package iotaclienttest
 
 import (
 	"context"
@@ -14,12 +14,13 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestGetDynamicFieldObject(t *testing.T) {
 	t.Skip("FIXME")
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	parentObjectID, err := iotago.AddressFromHex("0x1719957d7a2bf9d72459ff0eab8e600cbb1991ef41ddd5b4a8c531035933d256")
 	require.NoError(t, err)
 	type args struct {
@@ -65,7 +66,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 }
 
 func TestGetOwnedObjects(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	signer := iotasigner.NewSignerByIndex(testcommon.TestSeed, iotasigner.KeySchemeFlagEd25519, 0)
 	t.Run(
 		"struct tag", func(t *testing.T) {
@@ -146,7 +147,7 @@ func TestGetOwnedObjects(t *testing.T) {
 }
 
 func TestQueryTransactionBlocks(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	limit := uint(10)
 	type args struct {
 		ctx             context.Context
@@ -205,7 +206,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestResolveNameServiceAddress(t *testing.T) {
 	t.Skip()
 
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	addr, err := api.ResolveNameServiceAddress(context.Background(), "2222.iotax")
 	require.NoError(t, err)
 	require.Equal(t, "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9", addr.String())
@@ -217,7 +218,7 @@ func TestResolveNameServiceAddress(t *testing.T) {
 func TestResolveNameServiceNames(t *testing.T) {
 	t.Skip("Fails with 'Method not found'")
 
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	owner := iotago.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
 	namePage, err := api.ResolveNameServiceNames(
 		context.Background(), iotaclient.ResolveNameServiceNamesRequest{

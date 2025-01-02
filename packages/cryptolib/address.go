@@ -125,7 +125,7 @@ func AddressFromHex(str string) (*Address, error) {
 		return nil, errors.New("the len is invalid")
 	}
 	var address Address
-	copy(address[iotago.AddressLen-len(data):], data[:])
+	copy(address[iotago.AddressLen-len(data):], data)
 	return &address, nil
 }
 

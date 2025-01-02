@@ -37,6 +37,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -401,16 +402,18 @@ func (env *Solo) IotaFaucetURL() string {
 	return env.l1Config.IotaFaucetURL
 }
 
-func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
+func (ch *Chain) GetAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
 	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
 		ch.Env.ctx,
 		ch.ChainID.AsAddress().AsIotaAddress(),
 		uint64(stateIndex),
 	)
-	require.NoError(ch.Env.T, err)
+	if err != nil {
+		return nil, err
+	}
 
 	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
-	return &stateAnchor
+	return &stateAnchor, nil
 }
 
 func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
@@ -422,6 +425,34 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 
 	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
 	return &stateAnchor
+}
+
+func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
+	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
+		ch.Env.ctx,
+		ch.ChainID.AsAddress().AsIotaAddress(),
+	)
+	require.NoError(ch.Env.T, err)
+
+	metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	require.NoError(ch.Env.T, err)
+	getObjRes, err := ch.Env.ISCMoveClient().GetObject(
+		ch.Env.ctx,
+		iotaclient.GetObjectRequest{
+			ObjectID: metadata.GasCoinObjectID,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		},
+	)
+	require.NoError(ch.Env.T, err)
+	var moveGasCoin iscmoveclient.MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	require.NoError(ch.Env.T, err)
+	gasCoinRef := getObjRes.Data.Ref()
+	return &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(moveGasCoin.Balance),
+		Ref:   &gasCoinRef,
+	}
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
@@ -645,9 +676,13 @@ func (env *Solo) executePTB(
 			TxDataBytes: txnBytes,
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
-				ShowEvents:        true,
+				ShowEffects:        true,
+				ShowObjectChanges:  true,
+				ShowEvents:         true,
+				ShowInput:          true,
+				ShowBalanceChanges: true,
+				ShowRawEffects:     true,
+				ShowRawInput:       true,
 			},
 		},
 	)

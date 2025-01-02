@@ -3,6 +3,7 @@ package coin
 import (
 	"fmt"
 	"math"
+	"math/big"
 	"strconv"
 	"strings"
 
@@ -20,8 +21,12 @@ func (v Value) Uint64() uint64 {
 	return uint64(v)
 }
 
+func (v Value) BigInt() *big.Int {
+	return new(big.Int).SetUint64(uint64(v))
+}
+
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
-	e.WriteCompactUint(uint64(*v))
+	_ = e.WriteCompactUint(uint64(*v))
 	return e.Err()
 }
 
@@ -41,6 +46,7 @@ func (v Value) String() string {
 func ValueFromBytes(b []byte) (Value, error) {
 	return bcs.Unmarshal[Value](b)
 }
+
 func ValueFromString(s string) (Value, error) {
 	value, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
@@ -51,7 +57,7 @@ func ValueFromString(s string) (Value, error) {
 }
 
 // TODO: maybe it is not ok to consider this constant?
-var BaseTokenType = lo.Must(TypeFromString(iotajsonrpc.IotaCoinType))
+var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
 // Two instances of Type are equal iif they represent the same coin type.
@@ -77,13 +83,13 @@ func MustTypeFromString(s string) Type {
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
 	rt := t.ResourceType()
-	e.Encode(rt)
+	_ = e.Encode(rt)
 	return e.Err()
 }
 
 func (t *Type) UnmarshalBCS(d *bcs.Decoder) error {
 	var rt iotago.ResourceType
-	d.Decode(&rt)
+	_ = d.Decode(&rt)
 	if d.Err() != nil {
 		return d.Err()
 	}
@@ -105,12 +111,16 @@ func (t Type) String() string {
 	return t.s
 }
 
+func (t Type) AsRPCCoinType() iotajsonrpc.CoinType {
+	return iotajsonrpc.CoinType(t.String())
+}
+
 func (t Type) ShortString() string {
 	return t.ResourceType().ShortString()
 }
 
 func (t Type) ResourceType() *iotago.ResourceType {
-	return lo.Must(iotago.NewResourceType(string(t.s)))
+	return lo.Must(iotago.NewResourceType(t.s))
 }
 
 func (t Type) TypeTag() iotago.TypeTag {
@@ -143,3 +153,13 @@ var (
 	Zero     = Value(0)
 	MaxValue = Value(math.MaxUint64)
 )
+
+type CoinWithRef struct {
+	Type  Type
+	Value Value
+	Ref   *iotago.ObjectRef
+}
+
+func (c CoinWithRef) Bytes() []byte {
+	return bcs.MustMarshal(&c)
+}

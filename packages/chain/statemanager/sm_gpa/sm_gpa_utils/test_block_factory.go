@@ -89,7 +89,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	   stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
 	   _ = stateAddress
-	   originCommitment := origin.L1Commitment(0, chainInitParams, 0)
+	   originCommitment := origin.L1Commitment(allmigrations.LatestSchemaVersion, chainInitParams, 0)
 
 	   	aliasOutput0 := &iotago.AliasOutput{
 	   		Amount:        tpkg.TestTokenSupply,
@@ -233,7 +233,7 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *isc.StateAnc
 	anchor, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
 
-	stateAnchor := isc.NewStateAnchor(&anchor, *iotago.MustAddressFromHex("0x0")) //FIXME,
+	stateAnchor := isc.NewStateAnchor(&anchor, *iotago.MustAddressFromHex("0x0")) // FIXME,
 
 	return &stateAnchor
 }

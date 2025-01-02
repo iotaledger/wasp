@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	ref_bcs "github.com/fardream/go-bcs/bcs"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestUint128(t *testing.T) {

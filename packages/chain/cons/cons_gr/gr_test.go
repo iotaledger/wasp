@@ -15,13 +15,12 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 
-	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -29,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -70,7 +70,6 @@ func TestGrBasic(t *testing.T) {
 			},
 		)
 	}
-
 }
 
 func testGrBasic(t *testing.T, n, f int, reliable bool) {
@@ -84,9 +83,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	originator := cryptolib.NewKeyPair()
-	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
-	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), iotaconn.AlphanetFaucetURL)
+	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 
 	//
@@ -118,10 +117,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	stateMgrs := make([]*testStateMgr, len(peerIdentities))
 	procConfig := coreprocessors.NewConfigWithTestContracts()
 
-	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.AlphanetEndpointURL,
-		FaucetURL: iotaconn.AlphanetFaucetURL,
-	})
+	l1client := l1starter.Instance().L1Client()
 
 	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
 	require.NoError(t, err)
@@ -129,7 +125,11 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
 	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
-	gasCoin := iotatest.RandomObjectRef()
+	gasCoin := &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
 
 	logIndex := cmt_log.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
@@ -377,27 +377,27 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 }
 
 type testNodeConnGasInfo struct {
-	gasCoins []*iotago.ObjectRef
+	gasCoins []*coin.CoinWithRef
 	gasPrice uint64
 }
 
-func (tgi *testNodeConnGasInfo) GetGasCoins() []*iotago.ObjectRef { return tgi.gasCoins }
+func (tgi *testNodeConnGasInfo) GetGasCoins() []*coin.CoinWithRef { return tgi.gasCoins }
 func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
 
 type testNodeConn struct {
-	gasCoin *iotago.ObjectRef
+	gasCoin *coin.CoinWithRef
 }
 
 var _ consGR.NodeConn = &testNodeConn{}
 
-func newTestNodeConn(gasCoin *iotago.ObjectRef) *testNodeConn {
+func newTestNodeConn(gasCoin *coin.CoinWithRef) *testNodeConn {
 	return &testNodeConn{gasCoin: gasCoin}
 }
 
 func (t *testNodeConn) ConsensusGasPriceProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnGasInfo {
 	ch := make(chan consGR.NodeConnGasInfo, 1)
 	ch <- &testNodeConnGasInfo{
-		gasCoins: []*iotago.ObjectRef{t.gasCoin},
+		gasCoins: []*coin.CoinWithRef{t.gasCoin},
 		gasPrice: 123,
 	}
 	close(ch)

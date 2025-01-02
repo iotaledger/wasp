@@ -1,4 +1,4 @@
-package iotaclient_test
+package iotaclienttest
 
 import (
 	"context"
@@ -8,17 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sender := iotatest.MakeSignerWithFunds(0, iotaconn.AlphanetFaucetURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	limit := uint(3)
 	coinPages, err := client.GetCoins(
@@ -55,7 +55,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 }
 
 func TestDryRunTransaction(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	signer := iotago.MustAddressFromHex(testcommon.TestAddress)
 	coins, err := api.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{

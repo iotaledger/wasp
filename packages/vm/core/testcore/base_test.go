@@ -45,7 +45,7 @@ func TestInitLoad(t *testing.T) {
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ch.CheckChain()
 
@@ -93,7 +93,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			env := solo.New(t)
-			ch, _ := env.NewChainExt(nil, governance.DefaultMinBaseTokensOnCommonAccount, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+			ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
 			if !test.SenderIsOriginator {
@@ -107,7 +107,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
-			require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, commonAccountBaseTokensBefore)
+			require.EqualValues(t, isc.TopUpFeeMin, commonAccountBaseTokensBefore)
 
 			_, l1Res, _, anchorTransitionPTBRes, err := ch.PostRequestSyncTx(
 				test.Req.

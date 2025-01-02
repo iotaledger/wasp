@@ -28,16 +28,20 @@ func runISCTask(
 	log *logger.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
-	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
 	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
 	}
+	estimateGasMode := true
+	if evmTracer != nil {
+		estimateGasMode = false
+	}
 	task := &vm.VMTask{
 		Processors:           processors,
 		Anchor:               anchor,
+		GasCoin:              nil,
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            blockTime,
@@ -83,7 +87,6 @@ func runISCRequest(
 	log *logger.Logger,
 	blockTime time.Time,
 	req isc.Request,
-	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
 		anchor,
@@ -92,7 +95,6 @@ func runISCRequest(
 		log,
 		blockTime,
 		[]isc.Request{req},
-		estimateGasMode,
 		nil,
 	)
 	if err != nil {

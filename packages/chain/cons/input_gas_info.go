@@ -6,16 +6,16 @@ package cons
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputGasInfo struct {
-	gasCoins []*iotago.ObjectRef
+	gasCoins []*coin.CoinWithRef
 	gasPrice uint64
 }
 
-func NewInputGasInfo(gasCoins []*iotago.ObjectRef, gasPrice uint64) gpa.Input {
+func NewInputGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.Input {
 	return &inputGasInfo{gasCoins: gasCoins, gasPrice: gasPrice}
 }
 

@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/hive.go/lo"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"

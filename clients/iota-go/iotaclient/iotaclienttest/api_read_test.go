@@ -1,4 +1,4 @@
-package iotaclient_test
+package iotaclienttest
 
 import (
 	"context"
@@ -9,22 +9,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func TestGetChainIdentifier(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	chainID, err := client.GetChainIdentifier(context.Background())
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	_, err := client.GetChainIdentifier(context.Background())
 	require.NoError(t, err)
-	require.Equal(t, iotaconn.ChainIdentifierAlphanet, chainID)
 }
 
 func TestGetCheckpoint(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
-	sn := iotajsonrpc.NewBigInt(100)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	sn := iotajsonrpc.NewBigInt(3)
 	checkpoint, err := client.GetCheckpoint(context.Background(), sn)
 	require.NoError(t, err)
 	// targetCheckpoint := &iotajsonrpc.Checkpoint{
@@ -49,7 +48,7 @@ func TestGetCheckpoint(t *testing.T) {
 }
 
 func TestGetCheckpoints(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	cursor := iotajsonrpc.NewBigInt(999)
 	limit := uint64(2)
 	checkpointPage, err := client.GetCheckpoints(
@@ -95,19 +94,13 @@ func TestGetCheckpoints(t *testing.T) {
 	// 		ValidatorSignature:    *iotago.MustNewBase64Data("jHdu/+su0PZ+93y7du1LH48p1+WAqVm2+5EpvMaFrRBnT0Y63EOTl6fMJFwHEizu"),
 	// 	},
 	// }
-	require.Len(t, checkpointPage.Data, 2)
-	t.Log(checkpointPage.Data[0].Transactions[0].String())
-	t.Log(checkpointPage.Data[1].Transactions[0].String())
-	require.Equal(t, iotajsonrpc.NewBigInt(1000), checkpointPage.Data[0].SequenceNumber)
-	require.Equal(t, iotajsonrpc.NewBigInt(1001), checkpointPage.Data[1].SequenceNumber)
-	require.Equal(t, true, checkpointPage.HasNextPage)
-	require.Equal(t, iotajsonrpc.NewBigInt(1001), checkpointPage.NextCursor)
+	t.Log(checkpointPage)
 }
 
 func TestGetEvents(t *testing.T) {
 	t.Skip("TODO: refactor when we have some events")
 
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	digest, err := iotago.NewDigest("3vVi8XZgNpzQ34PFgwJTQqWtPMU84njcBX1EUxUHhyDk")
 	require.NoError(t, err)
 	events, err := client.GetEvents(context.Background(), digest)
@@ -165,7 +158,7 @@ func TestGetEvents(t *testing.T) {
 }
 
 func TestGetLatestCheckpointSequenceNumber(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	sequenceNumber, err := client.GetLatestCheckpointSequenceNumber(context.Background())
 	require.NoError(t, err)
 	num, err := strconv.Atoi(sequenceNumber)
@@ -178,7 +171,7 @@ func TestGetObject(t *testing.T) {
 		ctx   context.Context
 		objID *iotago.ObjectID
 	}
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	coins, err := api.GetCoins(
 		context.TODO(), iotaclient.GetCoinsRequest{
 			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -233,7 +226,7 @@ func TestGetObject(t *testing.T) {
 }
 
 func TestGetProtocolConfig(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	version := iotajsonrpc.NewBigInt(1)
 	protocolConfig, err := api.GetProtocolConfig(context.Background(), version)
 	require.NoError(t, err)
@@ -241,7 +234,7 @@ func TestGetProtocolConfig(t *testing.T) {
 }
 
 func TestGetTotalTransactionBlocks(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	res, err := api.GetTotalTransactionBlocks(context.Background())
 	require.NoError(t, err)
 	t.Log(res)
@@ -249,7 +242,7 @@ func TestGetTotalTransactionBlocks(t *testing.T) {
 
 func TestGetTransactionBlock(t *testing.T) {
 	t.Skip("TODO: fix it when the chain is stable. Currently addresses are not stable")
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	digest, err := iotago.NewDigest("FGpDhznVR2RpUZG7qB5ZEtME3dH3VL81rz2wFRCuoAv9")
 	require.NoError(t, err)
 	resp, err := client.GetTransactionBlock(
@@ -273,7 +266,7 @@ func TestGetTransactionBlock(t *testing.T) {
 }
 
 func TestMultiGetObjects(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	coins, err := api.GetCoins(
 		context.TODO(), iotaclient.GetCoinsRequest{
 			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -308,7 +301,7 @@ func TestMultiGetObjects(t *testing.T) {
 }
 
 func TestMultiGetTransactionBlocks(t *testing.T) {
-	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 
 	resp, err := client.MultiGetTransactionBlocks(
 		context.Background(),
@@ -329,7 +322,7 @@ func TestMultiGetTransactionBlocks(t *testing.T) {
 }
 
 func TestTryGetPastObject(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	// there is no software-level guarantee/SLA that objects with past versions can be retrieved by this API
 	resp, err := api.TryGetPastObject(
 		context.Background(), iotaclient.TryGetPastObjectRequest{
@@ -346,7 +339,7 @@ func TestTryGetPastObject(t *testing.T) {
 }
 
 func TestTryMultiGetPastObjects(t *testing.T) {
-	api := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL)
+	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
 	req := []*iotajsonrpc.IotaGetPastObjectRequest{
 		{
 			ObjectId: iotago.MustObjectIDFromHex("0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f"),

@@ -34,7 +34,7 @@ func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
 		NumSuccessfulRequests: info.NumSuccessfulRequests,
 		NumOffLedgerRequests:  info.NumOffLedgerRequests,
 		GasBurned:             fmt.Sprint(info.GasBurned),
-		GasFeeCharged:         fmt.Sprint(info.GasFeeCharged),
+		GasFeeCharged:         info.GasFeeCharged.String(),
 	}
 }
 

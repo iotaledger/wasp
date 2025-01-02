@@ -1,9 +1,10 @@
 package isc
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/samber/lo"
 )
 
 // AddressAgentID is an AgentID backed by a L1 address

@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestTimeCodec(t *testing.T) {

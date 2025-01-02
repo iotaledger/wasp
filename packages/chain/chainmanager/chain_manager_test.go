@@ -12,8 +12,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
-	"github.com/iotaledger/wasp/clients"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
@@ -26,9 +24,11 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 func TestChainMgrBasic(t *testing.T) {
@@ -130,7 +130,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(0, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
 
@@ -217,10 +217,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 }
 
 func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.TestChainLedger {
-	l1client := clients.NewL1Client(clients.L1Config{
-		APIURL:    iotaconn.AlphanetEndpointURL,
-		FaucetURL: iotaconn.AlphanetFaucetURL,
-	})
+	l1client := l1starter.Instance().L1Client()
 	l1client.RequestFunds(context.Background(), *originator.Address())
 	l1client.RequestFunds(context.Background(), *originator.Address())
 

@@ -3,8 +3,9 @@ package codec_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 func TestOptional(t *testing.T) {

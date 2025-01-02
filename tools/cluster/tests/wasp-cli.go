@@ -48,8 +48,8 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("wallet-provider", "unsafe_inmemory_testing_seed")
 	w.MustRun("init")
 
-	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIURL)
-	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetURL)
+	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIURL())
+	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetURL())
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}
@@ -59,19 +59,9 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*([a-z]{1,4}1[a-z0-9]{59}).*(?i:success)`)
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
 	require.Len(t, rs, 2)
-	_, addr, err := cryptolib.NewAddressFromBech32(rs[1])
+	addr, err := cryptolib.AddressFromHex(rs[1])
 	require.NoError(t, err)
 	w.WaspCliAddress = addr
-	// requested funds will take some time to be available
-	for {
-		outputs, err := clu.L1Client().OutputMap(addr)
-		require.NoError(t, err)
-		if len(outputs) > 0 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-
 	return w
 }
 
