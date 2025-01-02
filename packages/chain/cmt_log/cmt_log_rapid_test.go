@@ -20,15 +20,15 @@ import (
 )
 
 type cmtLogTestRapidSM struct {
-	anchorRef       iotago.ObjectRef
-	chainID         isc.ChainID
-	governorAddress *cryptolib.Address
-	stateAddress    *cryptolib.Address
-	tc              *gpa.TestContext
-	l1Chain         []*isc.StateAnchor // The actual chain.
-	l1Delivered     map[gpa.NodeID]int // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
-	genAOSerial     uint32
-	genNodeID       *rapid.Generator[gpa.NodeID]
+	anchorRef      iotago.ObjectRef
+	chainID        isc.ChainID
+	chainOwnerAddr *cryptolib.Address
+	stateAddress   *cryptolib.Address
+	tc             *gpa.TestContext
+	l1Chain        []*isc.StateAnchor // The actual chain.
+	l1Delivered    map[gpa.NodeID]int // Position of the last element from l1Chain to delivered for the corresponding node (-1 means none).
+	genAOSerial    uint32
+	genNodeID      *rapid.Generator[gpa.NodeID]
 }
 
 var _ rapid.StateMachine = &cmtLogTestRapidSM{}
@@ -42,7 +42,7 @@ func newCmtLogTestRapidSM(t *rapid.T) *cmtLogTestRapidSM {
 	// Chain identifiers.
 	sm.anchorRef = *iotatest.RandomObjectRef()
 	sm.chainID = isc.ChainIDFromObjectID(*sm.anchorRef.ObjectID)
-	sm.governorAddress = cryptolib.NewKeyPair().Address()
+	sm.chainOwnerAddr = cryptolib.NewKeyPair().Address()
 	//
 	// Node identities.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))

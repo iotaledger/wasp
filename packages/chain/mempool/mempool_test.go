@@ -104,7 +104,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
@@ -116,7 +116,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq))
@@ -166,7 +166,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		1,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
 	for i := range te.mempools {
 		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)
@@ -207,7 +207,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
@@ -221,7 +221,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 			nonce,
 			gas.LimitsDefault.MaxGasPerRequest,
-		).Sign(te.governor)
+		).Sign(te.chainOwner)
 	}
 	offLedgerReqs := []isc.Request{
 		createReqWithNonce(0),
@@ -345,7 +345,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
@@ -357,7 +357,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	time.Sleep(400 * time.Millisecond) // give some time for the requests to reach the pool
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(initialReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
@@ -367,7 +367,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		isc.NewMessage(isc.Hn("baz"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(overwritingReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
@@ -410,7 +410,7 @@ func TestTTL(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	<-mp.TrackNewChainHead(te.stateForAnchor(0, te.anchor), nil, []state.Block{}, []state.Block{})
 
-	onLedgerReq1, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq1, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq1.(isc.OnLedgerRequest))
@@ -423,7 +423,7 @@ func TestTTL(t *testing.T) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	t.Log("Sending off-ledger request")
 	require.Nil(t, mp.ReceiveOffLedgerRequest(offLedgerReq))
 
@@ -432,7 +432,7 @@ func TestTTL(t *testing.T) {
 	time.Sleep(201 * time.Millisecond)
 
 	// we need to add some request because ConsensusProposalAsync will not return an empty list.
-	onLedgerReq2, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq2, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	mp.ReceiveOnLedgerRequest(onLedgerReq2.(isc.OnLedgerRequest))
 
@@ -507,7 +507,7 @@ type testEnv struct {
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
 	log              *logger.Logger
-	governor         *cryptolib.KeyPair
+	chainOwner       *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
@@ -527,9 +527,9 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.log = testlogger.NewLogger(t)
 
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
-	te.governor = cryptolib.NewKeyPair()
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
+	te.chainOwner = cryptolib.NewKeyPair()
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
 
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
@@ -555,15 +555,15 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	l1client := l1starter.Instance().L1Client()
 
 	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
-		Owner: te.governor.Address().AsIotaAddress(),
+		Owner: te.chainOwner.Address().AsIotaAddress(),
 	})
 
 	fmt.Println(objs)
 
-	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.governor))
+	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.chainOwner))
 	require.NoError(t, err)
 
-	te.tcl = testchain.NewTestChainLedger(t, te.governor, &iscPackage, l1client)
+	te.tcl = testchain.NewTestChainLedger(t, te.chainOwner, &iscPackage, l1client)
 	var originDepositVal coin.Value
 	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin(te.cmtAddress)
 
