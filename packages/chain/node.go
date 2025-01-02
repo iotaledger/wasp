@@ -336,6 +336,9 @@ func New(
 		consensusStateRegistry,
 		dkShareRegistryProvider,
 		cni.pubKeyAsNodeID,
+		func(upd *chainmanager.NeedConsensusMap) {
+			cni.handleNeedConsensus(ctx, upd)
+		},
 		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			cni.accessLock.RLock()
 			defer cni.accessLock.RUnlock()
@@ -714,6 +717,14 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
+func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
+	upd.ForEach(func(nck chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
+		cni.ensureConsensusInput(ctx, nc)
+		return true
+	})
+	//	TODO: Implement cleanup.
+}
+
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
 	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
 	if outputUntyped == nil { // TODO: Will never be nil, fix it.
@@ -723,12 +734,6 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		return
 	}
 	output := outputUntyped.(*chainmanager.Output)
-	//
-	// Start new consensus instances, if needed.
-	outputNeedConsensus := output.NeedConsensus()
-	if outputNeedConsensus != nil {
-		cni.ensureConsensusInput(ctx, outputNeedConsensus)
-	}
 	//
 	// Start publishing TX'es, if there not being posted already.
 	outputNeedPostTXes := output.NeedPublishTX()
@@ -763,7 +768,7 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	// Update info for access by other components.
 	cni.accessLock.Lock()
 	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
-	cni.latestActiveAO = output.LatestActiveAliasOutput()
+	cni.latestActiveAO = output.LatestActiveAnchorObject()
 	// if cni.latestActiveAO == nil {	// TODO: Check, how is this handled in the case of rejections.
 	// 	cni.latestActiveState = nil
 	// 	cni.latestActiveStateAO = nil

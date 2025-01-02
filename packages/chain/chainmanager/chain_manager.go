@@ -101,14 +101,18 @@ type Output struct {
 	cmi *chainMgrImpl
 }
 
-func (o *Output) LatestActiveAliasOutput() *isc.StateAnchor {
-	if o.cmi.needConsensus == nil {
-		return nil
-	}
-	return o.cmi.needConsensus.BaseStateAnchor
+func (o *Output) LatestActiveAnchorObject() *isc.StateAnchor {
+	// if o.cmi.needConsensus == nil || len(o.cmi.needConsensus) == 0 {
+	// 	return nil // Untyped nil
+	// }
+	// lastAO := o.cmi.needConsensus[len(o.cmi.needConsensus)-1].BaseStateAnchor
+	// if lastAO == nil {
+	// 	return nil // Untyped nil
+	// }
+	// return lastAO
+	panic("implement LatestActiveAnchorObject") // TODO: use the VLV?
 }
 func (o *Output) LatestConfirmedAliasOutput() *isc.StateAnchor { return o.cmi.latestConfirmedAO }
-func (o *Output) NeedConsensus() *NeedConsensus                { return o.cmi.needConsensus }
 func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] {
 	return o.cmi.needPublishTX
 }
@@ -117,20 +121,32 @@ func (o *Output) String() string {
 	return fmt.Sprintf(
 		"{chainMgr.Output, LatestConfirmedAliasOutput=%v, NeedConsensus=%v, NeedPublishTX=%v}",
 		o.LatestConfirmedAliasOutput(),
-		o.NeedConsensus(),
+		o.cmi.needConsensus,
 		o.NeedPublishTX(),
 	)
 }
 
-type NeedConsensus struct {
-	CommitteeAddr   cryptolib.Address
-	LogIndex        cmt_log.LogIndex
-	DKShare         tcrypto.DKShare
-	BaseStateAnchor *isc.StateAnchor
+// =============================================================================
+// We use NeedConsensusKey to address the the instances in a map.
+const NeedConsensusKeySize = cryptolib.AddressSize + 4
+
+type NeedConsensusKey [NeedConsensusKeySize]byte
+type NeedConsensusMap = shrinkingmap.ShrinkingMap[NeedConsensusKey, *NeedConsensus]
+
+func makeConsensusKey(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) NeedConsensusKey {
+	var buf [NeedConsensusKeySize]byte
+	cak := committeeAddr.Key()
+	lib := logIndex.Bytes()
+	copy(buf[0:cryptolib.AddressSize], cak[0:cryptolib.AddressSize])
+	copy(buf[cryptolib.AddressSize:NeedConsensusKeySize], lib[0:4])
+	return buf
 }
 
-func (nc *NeedConsensus) IsFor(output *cmt_log.Output) bool {
-	return output.GetLogIndex() == nc.LogIndex && output.GetBaseAliasOutput().Equals(nc.BaseStateAnchor)
+type NeedConsensus struct {
+	CommitteeAddr   cryptolib.Address
+	DKShare         tcrypto.DKShare
+	LogIndex        cmt_log.LogIndex
+	BaseStateAnchor *isc.StateAnchor
 }
 
 func (nc *NeedConsensus) String() string {
@@ -171,7 +187,8 @@ type chainMgrImpl struct {
 	trackActiveStateCB         func(ao *isc.StateAnchor)                                     // We will call this to set new AO for the active state.
 	savePreliminaryBlockCB     func(block state.Block)                                       // We will call this, when a preliminary block matching the tx signatures is received.
 	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                 // Will be called, when a committee changes.
-	needConsensus              *NeedConsensus                                                // Query for a consensus.
+	needConsensus              *NeedConsensusMap                                             // Query for a consensus.
+	needConsensusCB            func(upd *NeedConsensusMap)                                   //
 	needPublishTX              *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] // Query to post TXes.
 	dkShareRegistryProvider    registry.DKShareRegistryProvider                              // Source for DKShares.
 	varAccessNodeState         VarAccessNodeState
@@ -198,6 +215,7 @@ func New(
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
+	needConsensusCB func(upd *NeedConsensusMap),
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
 	trackActiveStateCB func(ao *isc.StateAnchor),
 	savePreliminaryBlockCB func(block state.Block),
@@ -217,7 +235,8 @@ func New(
 		trackActiveStateCB:         trackActiveStateCB,
 		savePreliminaryBlockCB:     savePreliminaryBlockCB,
 		committeeUpdatedCB:         committeeUpdatedCB,
-		needConsensus:              nil,
+		needConsensus:              shrinkingmap.New[NeedConsensusKey, *NeedConsensus](),
+		needConsensusCB:            needConsensusCB,
 		needPublishTX:              shrinkingmap.New[hashing.HashValue, *NeedPublishTX](),
 		dkShareRegistryProvider:    dkShareRegistryProvider,
 		varAccessNodeState:         NewVarAccessNodeState(chainID, log.Named("VAS")),
@@ -388,9 +407,11 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	}
 	//
 	// >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
-	msgs.AddAll(cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult))
-	}))
+	//
+	// TODO: This event is not needed anymore.
+	// msgs.AddAll(cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
+	// 	return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult))
+	// }))
 	return msgs
 }
 
@@ -413,9 +434,11 @@ func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeou
 
 func (cmi *chainMgrImpl) handleInputMilestoneReceived() gpa.OutMessages {
 	cmi.log.Debugf("handleInputMilestoneReceived")
-	return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputMilestoneReceived())
-	})
+	// TODO: This event is not needed anymore.
+	// return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
+	// 	return cl.Input(cmt_log.NewInputMilestoneReceived())
+	// })
+	return nil
 }
 
 func (cmi *chainMgrImpl) handleInputCanPropose() gpa.OutMessages {
@@ -503,29 +526,59 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 }
 
 func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.Output) {
+	wasEmpty := cmi.needConsensus.IsEmpty()
 	if outputUntyped == nil {
-		cmi.needConsensus = nil
+		cmi.needConsensus.Clear()
+		if !wasEmpty {
+			cmi.needConsensusCB(cmi.needConsensus)
+		}
 		return
 	}
-	output := outputUntyped.(*cmt_log.Output)
-	if cmi.needConsensus != nil && cmi.needConsensus.IsFor(output) {
-		// Not changed, keep it.
-		return
-	}
+	output := outputUntyped.(cmt_log.Output)
+	// if cmi.needConsensus != nil && cmi.needConsensus.IsFor(output) {
+	// 	// Not changed, keep it.
+	// 	return
+	// }
 	dkShare, err := cmi.dkShareRegistryProvider.LoadDKShare(&cli.committeeAddr)
 	if errors.Is(err, tcrypto.ErrDKShareNotFound) {
 		// Rotated to other nodes, so we don't need to start the next consensus.
-		cmi.needConsensus = nil
+		cmi.needConsensus.Clear()
+		if !wasEmpty {
+			cmi.needConsensusCB(cmi.needConsensus)
+		}
 		return
 	}
 	if err != nil {
 		panic(fmt.Errorf("ensureNeedConsensus cannot load DKShare for %v: %w", cli.committeeAddr, err))
 	}
-	cmi.needConsensus = &NeedConsensus{
-		CommitteeAddr:   cli.committeeAddr,
-		LogIndex:        output.GetLogIndex(),
-		DKShare:         dkShare,
-		BaseStateAnchor: output.GetBaseAliasOutput(),
+
+	//
+	// Add new entries, remove those not needed anymore.
+	ids := map[NeedConsensusKey]bool{}
+	mod := false
+	for li, ao := range output {
+		key := makeConsensusKey(cli.committeeAddr, li)
+		ids[key] = true
+		if cmi.needConsensus.Has(key) {
+			continue
+		}
+		mod = true
+		cmi.needConsensus.Set(key, &NeedConsensus{
+			CommitteeAddr:   cli.committeeAddr,
+			LogIndex:        li,
+			DKShare:         dkShare,
+			BaseStateAnchor: ao,
+		})
+	}
+	cmi.needConsensus.ForEachKey(func(nck NeedConsensusKey) bool {
+		if _, ok := ids[nck]; !ok {
+			mod = true
+			cmi.needConsensus.Delete(nck)
+		}
+		return true
+	})
+	if mod {
+		cmi.needConsensusCB(cmi.needConsensus)
 	}
 }
 
@@ -538,7 +591,7 @@ func (cmi *chainMgrImpl) Output() gpa.Output {
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
 	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
 		cmi.output.LatestConfirmedAliasOutput().GetObjectID().String(),
-		cmi.output.LatestActiveAliasOutput().GetObjectID().String(),
+		cmi.output.LatestActiveAnchorObject().GetObjectID().String(),
 	)
 }
 
@@ -603,7 +656,6 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr cryptolib.Address) (*cmtLogI
 		cmi.nodeIDFromPubKey,
 		cmi.deriveAOByQuorum,
 		cmi.pipeliningLimit,
-		cmi.postponeRecoveryMilestones,
 		cmi.metrics,
 		cmi.log.Named(fmt.Sprintf("CL-%v", dkShare.GetSharedPublic().AsAddress().String()[:10])),
 	)
