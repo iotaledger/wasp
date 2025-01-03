@@ -20,7 +20,7 @@ type VarConsInsts interface {
 	StatusString() string
 }
 
-// consInsts implements the algorithm modelled in WaspChainCmtLogSUI.tla
+// consInsts implements the algorithm modeled in WaspChainCmtLogSUI.tla
 type varConsInstsImpl struct {
 	lis       map[LogIndex]*isc.StateAnchor
 	minLI     LogIndex         // Do not participate in LI lower than this.
@@ -42,7 +42,7 @@ func NewVarConsInsts(
 	outputCB func(lis Output),
 	log *logger.Logger,
 ) VarConsInsts {
-	return &varConsInstsImpl{
+	vci := &varConsInstsImpl{
 		lis: map[LogIndex]*isc.StateAnchor{
 			minLI: nil,
 		},
@@ -55,6 +55,8 @@ func NewVarConsInsts(
 		outputCB:  outputCB,
 		log:       log,
 	}
+	vci.outputCB(maps.Clone(vci.lis))
+	return vci
 }
 
 // Consensus at LI produced a TX.
@@ -108,13 +110,14 @@ func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc
 	if li > vci.maxLI {
 		vci.persistCB(li)
 		vci.maxLI = li
-		vci.minLI = MaxLogIndex(vci.minLI, LogIndex(vci.maxLI.AsUint32()-vci.hist))
+		vci.minLI = MaxLogIndex(vci.minLI, vci.maxLI.Sub(vci.hist))
 		msgs.AddAll(cb(li))
 	}
 	//
 	// Cleanup old instances.
 	for i := range vci.lis {
 		if i < vci.minLI {
+			vci.log.Debugf("Cleaning up LI=%v, minLI=%v, maxLI=%v", i, vci.minLI, vci.maxLI)
 			delete(vci.lis, i)
 			continue
 		}
@@ -137,11 +140,11 @@ func (vci *varConsInstsImpl) StatusString() string {
 	for li := vci.minLI; li <= vci.maxLI; li = li.Next() {
 		ao, ok := vci.lis[li]
 		if !ok {
-			buf = buf + fmt.Sprintf(" LI#%d=…", li)
+			buf += fmt.Sprintf(" LI#%d=…", li)
 		} else if ao == nil {
-			buf = buf + fmt.Sprintf(" LI#%d=⊥", li)
+			buf += fmt.Sprintf(" LI#%d=⊥", li)
 		} else {
-			buf = buf + fmt.Sprintf(" LI#%d=%s", li, ao.Anchor().String())
+			buf += fmt.Sprintf(" LI#%d=%s", li, ao.Anchor().String())
 		}
 	}
 	return fmt.Sprintf("{varConsInsts: minLI=%v,%s}", vci.minLI, buf)

@@ -144,12 +144,15 @@ func New(
 		}
 	}
 	cl.varConsInsts = NewVarConsInsts(prevLI.Next(), persistLIFunc, func(out Output) {
+		log.Debugf("VarConsInsts: Output received, %v", out)
 		cl.output = out
 	}, log.Named("VCI"))
 	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) gpa.OutMessages {
+		log.Debugf("VarLogIndex: Output received, %v", li)
 		return cl.varConsInsts.LatestSeenLI(li, cl.varLogIndex.ConsensusStarted)
 	}, cclMetrics, log.Named("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) gpa.OutMessages {
+		log.Debugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1AO(ao, cl.varLogIndex.ConsensusStarted)
 	}, log.Named("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
@@ -208,7 +211,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutput
 
 // Consensus has decided, produced a TX and it is now confirmed by L1.
 func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
-	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.aliasOutput, cl.varLogIndex.ConsensusStarted)
+	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchorObject, cl.varLogIndex.ConsensusStarted)
 }
 
 // Consensus has decided, produced a TX but it was rejected by L1.
