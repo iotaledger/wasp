@@ -54,7 +54,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Create ledger accounts.
 	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
-	originator := cryptolib.NewKeyPair()
+	// originator := cryptolib.NewKeyPair()
 	//
 	// Node identities and DKG.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -70,7 +70,8 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	t.Logf("Committee addressB: %v", cmtAddrB)
 	//
 	// Chain identifiers.
-	tcl := newTestChainLedger(t, originator)
+	cmtAddrASigner := testpeers.NewTestDSSSigner(cmtAddrA, dkRegs, nodeIDs, peerIdentities, log)
+	tcl := newTestChainLedger(t, cmtAddrASigner)
 	anchor, deposit := tcl.MakeTxChainOrigin(cmtAddrA)
 	//
 	// Construct the nodes.
@@ -124,7 +125,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Provide initial AO.
 	initAOInputs := map[gpa.NodeID]gpa.Input{}
 	for nid := range nodes {
-		initAOInputs[nid] = chainmanager.NewInputAnchorConfirmed(originator.Address(), anchor)
+		initAOInputs[nid] = chainmanager.NewInputAnchorConfirmed(cmtAddrA, anchor)
 	}
 	tc.WithInputs(initAOInputs)
 	tc.RunAll()
@@ -239,7 +240,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// }
 }
 
-func newTestChainLedger(t *testing.T, originator *cryptolib.KeyPair) *testchain.TestChainLedger {
+func newTestChainLedger(t *testing.T, originator cryptolib.Signer) *testchain.TestChainLedger {
 	l1client := l1starter.Instance().L1Client()
 	l1client.RequestFunds(context.Background(), *originator.Address())
 	l1client.RequestFunds(context.Background(), *originator.Address())
