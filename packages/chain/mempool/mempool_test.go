@@ -39,6 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
@@ -322,6 +323,34 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// nonce 10 was never proposed
 }
 
+func TestMempoolChainOwner(t *testing.T) {
+	te := newEnv(t, 1, 0, true)
+	defer te.close()
+
+	t.Log("ServerNodesUpdated")
+	tangleTime := time.Now()
+	for _, node := range te.mempools {
+		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.TangleTimeUpdated(tangleTime)
+	}
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
+	// deposit some funds so off-ledger requests can go through
+	t.Log("TrackNewChainHead")
+	for i, node := range te.mempools {
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), te.anchor, []state.Block{}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChannels[i]
+	}
+	require.Equal(t, te.governor.Address().String(), te.anchor.Owner().String(), "governor and anchor owner are not the same")
+
+	governanceState := governance.NewStateReaderFromChainState(te.stateForAnchor(0, te.anchor))
+	chainOwner := governanceState.GetChainOwnerID()
+	chainOwnerAddress, success := isc.AddressFromAgentID(chainOwner)
+	require.True(t, success, "unable to get address from chain owner agentID")
+	require.Equal(t, te.governor.Address().String(), chainOwnerAddress.String(), "chain owner incorrect")
+}
+
 func TestMempoolOverrideNonce(t *testing.T) {
 	// 1 node setup
 	// send nonce 0
@@ -557,6 +586,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
 		Owner: te.chainOwner.Address().AsIotaAddress(),
 	})
+	require.NoError(t, err)
 
 	fmt.Println(objs)
 
@@ -565,7 +595,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 
 	te.tcl = testchain.NewTestChainLedger(t, te.chainOwner, &iscPackage, l1client)
 	var originDepositVal coin.Value
-	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin()
 
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
