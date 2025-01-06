@@ -220,7 +220,7 @@ func New(
 	trackActiveStateCB func(ao *isc.StateAnchor),
 	savePreliminaryBlockCB func(block state.Block),
 	committeeUpdatedCB func(dkShare tcrypto.DKShare),
-	deriveAOByQuorum bool,
+	deriveAOByQuorum bool, // TODO: Review, some of them are outdated.
 	pipeliningLimit int,
 	postponeRecoveryMilestones int,
 	metrics *metrics.ChainCmtLogMetrics,
@@ -584,15 +584,16 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) Output() gpa.Output {
-	return cmi.output
+	panic("Take the output via callback.")
 }
 
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) StatusString() string { // TODO: Call it periodically. Show the active committee.
-	return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
-		cmi.output.LatestConfirmedAliasOutput().GetObjectID().String(),
-		cmi.output.LatestActiveAnchorObject().GetObjectID().String(),
-	)
+	return "{ChainMgr,...}" // TODO: Add more info.
+	// return fmt.Sprintf("{ChainMgr,confirmedAO=%v,activeAO=%v}",
+	// 	cmi.output.LatestConfirmedAliasOutput().GetObjectID().String(),
+	// 	cmi.output.LatestActiveAnchorObject().GetObjectID().String(),
+	// )
 }
 
 ////////////////////////////////////////////////////////////////////////////////
