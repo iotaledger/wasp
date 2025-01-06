@@ -584,7 +584,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 
 // Implements the gpa.GPA interface.
 func (cmi *chainMgrImpl) Output() gpa.Output {
-	panic("Take the output via callback.")
+	return cmi.output
 }
 
 // Implements the gpa.GPA interface.
