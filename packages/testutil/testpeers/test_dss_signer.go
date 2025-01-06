@@ -3,6 +3,7 @@ package testpeers
 import (
 	"fmt"
 
+	"github.com/minio/blake2b-simd"
 	"github.com/samber/lo"
 	"go.dedis.ch/kyber/v3"
 
@@ -98,17 +99,22 @@ func (sig *testDssSigner) Sign(messageToSign []byte) (*cryptolib.Signature, erro
 	tc.RunUntil(tc.OutOfMessagesPredicate())
 	//
 	// Check the FINAL result.
-	var signature []byte
 	for _, n := range gpas {
 		o := n.Output()
-		if signature == nil {
-			signature = o.(*dss.Output).Signature
-			return cryptolib.NewSignature(sig.dkShares[0].GetSharedPublic(), signature), nil
+		if o != nil {
+			signatureBytes := o.(*dss.Output).Signature
+			signature := cryptolib.NewSignature(sig.dkShares[0].GetSharedPublic(), signatureBytes)
+			if !signature.Validate(messageToSign) {
+				return nil, fmt.Errorf("produced an invalid signature")
+			}
+			return signature, nil
 		}
 	}
 	return nil, fmt.Errorf("no node generated a signature")
 }
 
 func (sig *testDssSigner) SignTransactionBlock(txnBytes []byte, intent iotasigner.Intent) (*cryptolib.Signature, error) {
-	return sig.Sign(iotasigner.MessageWithIntent(intent, txnBytes))
+	data := iotasigner.MessageWithIntent(intent, txnBytes)
+	hash := blake2b.Sum256(data)
+	return sig.Sign(hash[:])
 }
