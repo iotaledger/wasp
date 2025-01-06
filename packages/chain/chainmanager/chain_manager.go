@@ -419,7 +419,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 // >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 func (cmi *chainMgrImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusOutputSkip(input.logIndex, input.proposedBaseAO))
+		return cl.Input(cmt_log.NewInputConsensusOutputSkip(input.logIndex))
 	})
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -127,9 +128,9 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		initAOInputs[nid] = chainmanager.NewInputAnchorConfirmed(cmtAddrA, anchor)
 	}
-	tc.WithInputs(initAOInputs)
-	tc.RunAll()
+	tc.WithInputs(initAOInputs).RunAll()
 	tc.PrintAllStatusStrings("Initial AO received", t.Logf)
+	initAOLogIndex := cmt_log.NilLogIndex()
 	for nid, n := range nodes {
 		out := n.Output().(*chainmanager.Output)
 		ncm := needCons[nid]
@@ -140,6 +141,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			require.Nil(t, nc.BaseStateAnchor)
 			require.Equal(t, uint32(1), nc.LogIndex.AsUint32())
 			require.Equal(t, cmtAddrA, &nc.CommitteeAddr)
+			initAOLogIndex = nc.LogIndex
 			return true
 		})
 		// require.NotNil(t, out.NeedConsensus())
@@ -147,6 +149,35 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		// require.Equal(t, uint32(1), out.NeedConsensus().LogIndex.AsUint32())
 		// require.Equal(t, cmtAddrA, &out.NeedConsensus().CommitteeAddr)
 	}
+	//
+	// All proposed NIL, thus consensus should output NIL as well.
+	nextAOInputs := map[gpa.NodeID]gpa.Input{}
+	for nid := range nodes {
+		nextAOInputs[nid] = chainmanager.NewInputConsensusOutputSkip(*cmtAddrA, initAOLogIndex)
+	}
+	tc.WithInputs(nextAOInputs).RunAll()
+	tc.PrintAllStatusStrings("Next AO received", t.Logf)
+	for nid, n := range nodes {
+		out := n.Output().(*chainmanager.Output)
+		ncm := needCons[nid]
+		require.Equal(t, 0, out.NeedPublishTX().Size())
+		require.NotNil(t, ncm)
+		require.Equal(t, 2, ncm.Size())
+		ncm.ForEach(func(nck chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
+			switch nc.LogIndex.AsUint32() {
+			case 1:
+				require.Nil(t, nc.BaseStateAnchor)
+				require.Equal(t, cmtAddrA, &nc.CommitteeAddr)
+			case 2:
+				require.Equal(t, anchor, nc.BaseStateAnchor)
+				require.Equal(t, cmtAddrA, &nc.CommitteeAddr)
+			default:
+				panic("unexpected LI here")
+			}
+			return true
+		})
+	}
+
 	// //
 	// // Provide consensus output.
 	// step2AO := tcl.FakeRotationTX(anchor, cmtAddrA)

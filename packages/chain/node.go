@@ -794,7 +794,6 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseStateAnchor.GetObjectRef(),
 		)
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
