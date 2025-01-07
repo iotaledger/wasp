@@ -120,6 +120,12 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
 	require.NoError(t, err)
 
+	//
+	// The first AO should be reported by L1/NodeConn to the nodes.
+	for _, tnc := range te.nodeConns {
+		tnc.recvAnchor(te.anchor)
+	}
+
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
 	// We only send the requests to the first node. Mempool has to disseminate them.
 	incCount := 10
@@ -326,6 +332,9 @@ func (tnc *testNodeConn) PublishTX(
 		},
 		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 	})
+	if err != nil {
+		return err
+	}
 
 	anchorRef, err := res.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {
