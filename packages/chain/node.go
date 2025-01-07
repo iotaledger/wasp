@@ -339,6 +339,7 @@ func New(
 		dkShareRegistryProvider,
 		cni.pubKeyAsNodeID,
 		func(upd *chainmanager.NeedConsensusMap) {
+			log.Debugf("needConsensusCB called with %v", upd)
 			cni.handleNeedConsensus(ctx, upd)
 		},
 		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {

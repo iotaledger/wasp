@@ -32,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -117,7 +118,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
 	err := te.l1Client.RequestFunds(context.Background(), *scClient.Address())
-
 	require.NoError(t, err)
 
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
@@ -394,24 +394,20 @@ func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID is
 // testEnv
 
 type testEnv struct {
-	t         *testing.T
-	ctx       context.Context
-	ctxCancel context.CancelFunc
-	log       *logger.Logger
-	// utxoDB           *utxodb.UtxoDB // TODO:replace with l1starter?
-	chainOwner       *cryptolib.KeyPair
-	originator       *cryptolib.KeyPair
+	t                *testing.T
+	ctx              context.Context
+	ctxCancel        context.CancelFunc
+	log              *logger.Logger
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
 	peeringNetwork   *testutil.PeeringNetwork
 	networkProviders []peering.NetworkProvider
-	faucetURL        string // FIXME maybe not the proper way
 	tcl              *testchain.TestChainLedger
 	cmtAddress       *cryptolib.Address
+	cmtSigner        cryptolib.Signer
 	chainID          isc.ChainID
 	anchor           *isc.StateAnchor
-	originTx         *iotago.TransactionData
 	nodeConns        []*testNodeConn
 	nodes            []chain.Chain
 
@@ -428,15 +424,6 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()
 	te.l2Client = te.l1Client.L2()
-
-	te.chainOwner = cryptolib.NewKeyPair()
-	te.originator = cryptolib.NewKeyPair()
-
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.chainOwner.Address()))
-	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.chainOwner), node.L1Client(), isc.GasCoinMaxValue*10)
-
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.originator.Address()))
-	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.originator), node.L1Client(), isc.GasCoinMaxValue*10)
 
 	//
 	// Create a fake network and keys for the tests.
@@ -460,8 +447,13 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
+	te.cmtSigner = testpeers.NewTestDSSSigner(te.cmtAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
+
+	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.cmtSigner.Address()))
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinMaxValue*10)
+
 	iscPackageID := node.ISCPackageID()
-	te.tcl = testchain.NewTestChainLedger(t, te.originator, &iscPackageID, te.l1Client)
+	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)
 	te.anchor, _ = te.tcl.MakeTxChainOrigin()
 	//
 	// Initialize the nodes.
