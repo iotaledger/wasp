@@ -2,10 +2,11 @@ package tests
 
 import (
 	"flag"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"os"
 	"path"
 	"testing"
+
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
 	"github.com/stretchr/testify/require"
 
@@ -18,6 +19,8 @@ type waspClusterOpts struct {
 	modifyConfig templates.ModifyNodesConfigFn
 	dirName      string
 }
+
+var l1 l1starter.IotaNodeEndpoint
 
 // by default, when running the cluster tests we will automatically setup a private tangle,
 // however it's possible to run the tests on any compatible network, by providing the L1 node configuration.
@@ -37,8 +40,6 @@ func parseConfig() l1starter.L1EndpointConfig {
 
 	return config
 }
-
-var l1 = l1starter.ClusterStart(parseConfig())
 
 // newCluster starts a new cluster environment (both L1 and L2) for tests.
 // It is a private function because cluster tests cannot be run in parallel,
