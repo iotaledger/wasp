@@ -102,15 +102,9 @@ type Output struct {
 }
 
 func (o *Output) LatestActiveAnchorObject() *isc.StateAnchor {
-	// if o.cmi.needConsensus == nil || len(o.cmi.needConsensus) == 0 {
-	// 	return nil // Untyped nil
-	// }
-	// lastAO := o.cmi.needConsensus[len(o.cmi.needConsensus)-1].BaseStateAnchor
-	// if lastAO == nil {
-	// 	return nil // Untyped nil
-	// }
-	// return lastAO
-	panic("implement LatestActiveAnchorObject") // TODO: use the VLV?
+	// There is no pipelining possible with the SUI based L1,
+	// thus there is no difference between the active and confirmed AO.
+	return o.cmi.latestConfirmedAO
 }
 func (o *Output) LatestConfirmedAliasOutput() *isc.StateAnchor { return o.cmi.latestConfirmedAO }
 func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] {
@@ -131,6 +125,7 @@ func (o *Output) String() string {
 const NeedConsensusKeySize = cryptolib.AddressSize + 4
 
 type NeedConsensusKey [NeedConsensusKeySize]byte
+
 type NeedConsensusMap = shrinkingmap.ShrinkingMap[NeedConsensusKey, *NeedConsensus]
 
 func makeConsensusKey(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) NeedConsensusKey {
