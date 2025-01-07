@@ -34,20 +34,20 @@ type TestChainLedger struct {
 	t           *testing.T
 	l1client    clients.L1Client
 	iscPackage  *iotago.PackageID
-	originator  cryptolib.Signer
+	chainOwner  cryptolib.Signer
 	chainID     isc.ChainID
 	fetchedReqs map[cryptolib.AddressKey]map[iotago.ObjectID]bool
 }
 
 func NewTestChainLedger(
 	t *testing.T,
-	originator cryptolib.Signer,
+	chainOwner cryptolib.Signer,
 	iscPackage *iotago.PackageID,
 	l1client clients.L1Client,
 ) *TestChainLedger {
 	return &TestChainLedger{
 		t:           t,
-		originator:  originator,
+		chainOwner:  chainOwner,
 		l1client:    l1client,
 		iscPackage:  iscPackage,
 		fetchedReqs: map[cryptolib.AddressKey]map[iotago.ObjectID]bool{},
@@ -59,14 +59,14 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Address) (*isc.StateAnchor, coin.Value) {
+func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	coinType := iotajsonrpc.IotaCoinType.String()
-	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.originator.Address().AsIotaAddress(), CoinType: &coinType})
+	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
 
 	originDeposit := resGetCoins.Data[1]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address())).Encode()
 	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(
@@ -92,8 +92,8 @@ func (tcl *TestChainLedger) MakeTxChainOrigin(committeeAddress *cryptolib.Addres
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            tcl.originator,
-			ChainOwnerAddress: tcl.originator.Address(),
+			Signer:            tcl.chainOwner,
+			ChainOwnerAddress: tcl.chainOwner.Address(),
 			PackageID:         *tcl.iscPackage,
 			StateMetadata:     stateMetadata.Bytes(),
 			InitCoinRef:       originDeposit.Ref(),
@@ -143,7 +143,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 }
 
 func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, pt iotago.ProgrammableTransaction) (*isc.StateAnchor, error) {
-	signer := cryptolib.SignerToIotaSigner(tcl.originator)
+	signer := cryptolib.SignerToIotaSigner(tcl.chainOwner)
 
 	coinPage, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address()})
 	if err != nil {
@@ -196,7 +196,7 @@ func (tcl *TestChainLedger) UpdateAnchor(anchor *isc.StateAnchor) (*isc.StateAnc
 
 func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitteeAddr *cryptolib.Address) *isc.StateAnchor {
 	// FIXME a temp impl before the decision of Rotation
-	signer := cryptolib.SignerToIotaSigner(tcl.originator)
+	signer := cryptolib.SignerToIotaSigner(tcl.chainOwner)
 	ptb := iotago.NewProgrammableTransactionBuilder()
 
 	ptb.Command(iotago.Command{

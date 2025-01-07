@@ -73,7 +73,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Chain identifiers.
 	cmtAddrASigner := testpeers.NewTestDSSSigner(cmtAddrA, dkRegs, nodeIDs, peerIdentities, log)
 	tcl := newTestChainLedger(t, cmtAddrASigner)
-	anchor, deposit := tcl.MakeTxChainOrigin(cmtAddrA)
+	anchor, deposit := tcl.MakeTxChainOrigin()
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}

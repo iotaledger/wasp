@@ -36,7 +36,7 @@ module isc::anchor_tests {
         // Setup
         let initial_iota_in_request = 10000;
         let initial_testA_in_request = 100;
-        let governor = @0xA;
+        let chain_owner = @0xA;
         let sender = @0xB;
         let mut ctx = tx_context::dummy();
 
@@ -147,6 +147,6 @@ module isc::anchor_tests {
 
         // !!! END !!!
 
-        transfer::public_transfer(anchor, governor); // not needed in the PTB
+        transfer::public_transfer(anchor, chain_owner); // not needed in the PTB
     }
 }

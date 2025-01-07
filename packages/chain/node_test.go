@@ -399,7 +399,7 @@ type testEnv struct {
 	ctxCancel context.CancelFunc
 	log       *logger.Logger
 	// utxoDB           *utxodb.UtxoDB // TODO:replace with l1starter?
-	governor         *cryptolib.KeyPair
+	chainOwner       *cryptolib.KeyPair
 	originator       *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
@@ -429,11 +429,11 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.l1Client = node.L1Client()
 	te.l2Client = te.l1Client.L2()
 
-	te.governor = cryptolib.NewKeyPair()
+	te.chainOwner = cryptolib.NewKeyPair()
 	te.originator = cryptolib.NewKeyPair()
 
-	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.governor.Address()))
-	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.governor), node.L1Client(), isc.GasCoinMaxValue*10)
+	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.chainOwner.Address()))
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.chainOwner), node.L1Client(), isc.GasCoinMaxValue*10)
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.originator.Address()))
 	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.originator), node.L1Client(), isc.GasCoinMaxValue*10)
@@ -462,7 +462,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 	iscPackageID := node.ISCPackageID()
 	te.tcl = testchain.NewTestChainLedger(t, te.originator, &iscPackageID, te.l1Client)
-	te.anchor, _ = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.anchor, _ = te.tcl.MakeTxChainOrigin()
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))

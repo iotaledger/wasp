@@ -124,7 +124,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
-	anchor, anchorDeposit := tcl.MakeTxChainOrigin(cmtAddress)
+	anchor, anchorDeposit := tcl.MakeTxChainOrigin()
 	gasCoin := &coin.CoinWithRef{
 		Type:  coin.BaseTokenType,
 		Value: coin.Value(100),
