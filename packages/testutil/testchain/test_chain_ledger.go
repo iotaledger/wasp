@@ -66,7 +66,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 
 	originDeposit := resGetCoins.Data[1]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
-	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.governor.Address())).Encode()
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address())).Encode()
 	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/minio/blake2b-simd"
 	"github.com/samber/lo"
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"

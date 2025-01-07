@@ -9,7 +9,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 
-	"github.com/minio/blake2b-simd"
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
