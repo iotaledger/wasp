@@ -105,6 +105,9 @@ func (tg *TypeGenerator) sortGroups(groups map[string]*TypeGroup) []string {
 func (tg *TypeGenerator) generateOutput(sortedGroups []string, groups map[string]*TypeGroup) string {
 	var result []string
 
+	importString := "import { bcs, fromHex, toHex } from '@mysten/bcs';\n\n"
+	result = append(result, importString)
+
 	for _, groupName := range sortedGroups {
 		group := groups[groupName]
 

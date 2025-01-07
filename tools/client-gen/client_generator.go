@@ -52,7 +52,7 @@ func (tg *TypeGenerator) generateEnumType(enumType reflect.Type) {
 		}
 
 		variantName := implType.Name()
-		typeStr := getQualifiedTypeName(implType)
+		typeStr := tg.getBCSType(implType)
 		variants = append(variants, fmt.Sprintf("\t%s: %s", variantName, typeStr))
 	}
 
@@ -124,15 +124,12 @@ func (tg *TypeGenerator) getBaseBCSType(t reflect.Type) string {
 }
 
 func (tg *TypeGenerator) handleSliceType(t reflect.Type) string {
-	if t.Elem().Kind() == reflect.Uint8 {
-		return "bcs.vector(bcs.u8())"
-	}
+	tg.GenerateType(t.Elem())
+
 	return fmt.Sprintf("bcs.vector(%s)", tg.getBCSType(t.Elem()))
 }
 
 func (tg *TypeGenerator) handleArrayType(t reflect.Type) string {
-	if t.Elem().Kind() == reflect.Uint8 {
-		return fmt.Sprintf("bcs.fixedArray(%d, bcs.u8())", t.Len())
-	}
-	return fmt.Sprintf("bcs.fixedArray(%s, %d)", tg.getBCSType(t.Elem()), t.Len())
+	tg.GenerateType(t.Elem())
+	return fmt.Sprintf("bcs.fixedArray(%d, %s)", t.Len(), tg.getBCSType(t.Elem()))
 }

@@ -2,8 +2,8 @@ package iotatest
 
 import (
 	"context"
-	"testing"
 	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"

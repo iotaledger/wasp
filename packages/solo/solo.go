@@ -403,10 +403,13 @@ func (env *Solo) IotaFaucetURL() string {
 }
 
 func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
+	bi, err := ch.GetBlockInfo(stateIndex)
+	require.NoError(ch.Env.T, err)
+
 	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
 		ch.Env.ctx,
 		ch.ChainID.AsAddress().AsIotaAddress(),
-		uint64(stateIndex),
+		uint64(bi.PreviousAnchor.Anchor().Version),
 	)
 	require.NoError(ch.Env.T, err)
 

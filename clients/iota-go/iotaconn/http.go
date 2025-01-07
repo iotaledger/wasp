@@ -89,6 +89,7 @@ func (c *HTTPClient) CallContext(
 	if len(respmsg.Result) == 0 {
 		return ErrNoResult
 	}
+	fmt.Println(string(respmsg.Result))
 	err = json.Unmarshal(respmsg.Result, result)
 	if err != nil {
 		fmt.Println(string(respmsg.Result))

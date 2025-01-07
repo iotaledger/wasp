@@ -2,6 +2,7 @@ package client_gen
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"regexp"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/stretchr/testify/require"
 )
 
 func getName(p reflect.Type) string {
@@ -102,6 +104,13 @@ func TestBCSConversion(t *testing.T) {
 	gen := NewTypeGenerator()
 
 	fmt.Println(gen.GetOutput())
+}
+
+func TestB(t *testing.T) {
+	gen := NewTypeGenerator()
+	gen.GenerateFunction(constructCoreContractFunction(&blocklog.ViewGetEventsForRequest))
+
+	t.Log(gen.GetOutput())
 }
 
 func TestA(t *testing.T) {
@@ -205,6 +214,16 @@ func TestA(t *testing.T) {
 	for _, c := range contractFuncs {
 		gen.GenerateFunction(c)
 	}
+
+	out := gen.GetOutput()
+	f, err := os.Create("D:/Coding/bcs_test/generated.ts")
+	require.NoError(t, err)
+
+	_, err = f.WriteString(out)
+	require.NoError(t, err)
+
+	err = f.Close()
+	require.NoError(t, err)
 
 	fmt.Println(gen.GetOutput())
 }
