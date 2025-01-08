@@ -20,7 +20,7 @@ import (
 
 func TestGetDynamicFieldObject(t *testing.T) {
 	t.Skip("FIXME")
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	parentObjectID, err := iotago.AddressFromHex("0x1719957d7a2bf9d72459ff0eab8e600cbb1991ef41ddd5b4a8c531035933d256")
 	require.NoError(t, err)
 	type args struct {
@@ -66,7 +66,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 }
 
 func TestGetOwnedObjects(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotasigner.NewSignerByIndex(testcommon.TestSeed, iotasigner.KeySchemeFlagEd25519, 0)
 	t.Run(
 		"struct tag", func(t *testing.T) {
@@ -147,7 +147,7 @@ func TestGetOwnedObjects(t *testing.T) {
 }
 
 func TestQueryTransactionBlocks(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	limit := uint(10)
 	type args struct {
 		ctx             context.Context
@@ -206,7 +206,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 func TestResolveNameServiceAddress(t *testing.T) {
 	t.Skip()
 
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	addr, err := api.ResolveNameServiceAddress(context.Background(), "2222.iotax")
 	require.NoError(t, err)
 	require.Equal(t, "0x6174c5bd8ab9bf492e159a64e102de66429cfcde4fa883466db7b03af28b3ce9", addr.String())
@@ -218,7 +218,7 @@ func TestResolveNameServiceAddress(t *testing.T) {
 func TestResolveNameServiceNames(t *testing.T) {
 	t.Skip("Fails with 'Method not found'")
 
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	owner := iotago.MustAddressFromHex("0x57188743983628b3474648d8aa4a9ee8abebe8f6816243773d7e8ed4fd833a28")
 	namePage, err := api.ResolveNameServiceNames(
 		context.Background(), iotaclient.ResolveNameServiceNamesRequest{
@@ -245,7 +245,12 @@ func TestSubscribeEvent(t *testing.T) {
 	defer cancel()
 
 	log := testlogger.NewLogger(t)
-	api, err := iotaclient.NewWebsocket(ctx, iotaconn.AlphanetWebsocketEndpointURL, log)
+	api, err := iotaclient.NewWebsocket(
+		ctx,
+		iotaconn.AlphanetWebsocketEndpointURL,
+		l1starter.WaitUntilEffectsVisible,
+		log,
+	)
 	require.NoError(t, err)
 
 	type args struct {
@@ -303,7 +308,12 @@ func TestSubscribeTransaction(t *testing.T) {
 	defer cancel()
 
 	log := testlogger.NewLogger(t)
-	api, err := iotaclient.NewWebsocket(ctx, iotaconn.AlphanetWebsocketEndpointURL, log)
+	api, err := iotaclient.NewWebsocket(
+		ctx,
+		iotaconn.AlphanetWebsocketEndpointURL,
+		l1starter.WaitUntilEffectsVisible,
+		log,
+	)
 	require.NoError(t, err)
 
 	type args struct {

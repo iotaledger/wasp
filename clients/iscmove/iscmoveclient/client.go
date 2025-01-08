@@ -3,6 +3,7 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/iotaledger/hive.go/logger"
 
@@ -26,9 +27,9 @@ func NewClient(client *iotaclient.Client, faucetURL string) *Client {
 	}
 }
 
-func NewHTTPClient(apiURL, faucetURL string) *Client {
+func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient.WaitParams) *Client {
 	return NewClient(
-		iotaclient.NewHTTP(apiURL),
+		iotaclient.NewHTTP(apiURL, waitUntilEffectsVisible),
 		faucetURL,
 	)
 }
@@ -36,9 +37,10 @@ func NewHTTPClient(apiURL, faucetURL string) *Client {
 func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
+	waitUntilEffectsVisible *iotaclient.WaitParams,
 	log *logger.Logger,
 ) (*Client, error) {
-	ws, err := iotaclient.NewWebsocket(ctx, wsURL, log)
+	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +82,9 @@ func (c *Client) SignAndExecutePTB(
 		}
 	}
 
+	if os.Getenv("DEBUG") != "" {
+		pt.Print("-- SignAndExecutePTB -- ")
+	}
 	tx := iotago.NewProgrammable(
 		signer.Address(),
 		pt,
@@ -97,7 +102,10 @@ func (c *Client) SignAndExecutePTB(
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
 			Signer:      signer,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
 		},
 	)
 	if err != nil {

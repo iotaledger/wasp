@@ -30,19 +30,19 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 
 func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {
 	panic("Right now no WS support")
-	wsClient, err := iscmoveclient.NewWebsocketClient(
+	return iscmoveclient.NewWebsocketClient(
 		ctx,
 		iotaconn.AlphanetWebsocketEndpointURL,
 		l1starter.Instance().FaucetURL(),
+		l1starter.WaitUntilEffectsVisible,
 		log,
 	)
-
-	return wsClient, err
 }
 
 func NewHTTPClient() *iscmoveclient.Client {
 	return iscmoveclient.NewHTTPClient(
 		l1starter.Instance().APIURL(),
 		l1starter.Instance().FaucetURL(),
+		l1starter.WaitUntilEffectsVisible,
 	)
 }

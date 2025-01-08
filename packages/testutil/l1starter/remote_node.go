@@ -41,7 +41,7 @@ func (r *RemoteIotaNode) L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    r.APIURL(),
 		FaucetURL: r.FaucetURL(),
-	})
+	}, WaitUntilEffectsVisible)
 }
 
 func (in *RemoteIotaNode) IsLocal() bool {

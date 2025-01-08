@@ -100,7 +100,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 		iotaclient.DefaultGasBudget,
 	)
 	if os.Getenv("DEBUG") != "" {
-		res.UnsignedTransaction.Print("-- ")
+		res.UnsignedTransaction.Print("-- runRequestsNolock -- ")
 	}
 	ptbRes := ch.Env.executePTB(
 		res.UnsignedTransaction,

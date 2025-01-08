@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
 func TestPTBMoveCall(t *testing.T) {
 	t.Run(
 		"access_multiple_return_values_from_move_func", func(t *testing.T) {
-			client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+			client := l1starter.Instance().L1Client()
 			sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 			_, packageID, err := client.PublishContract(
@@ -94,7 +94,7 @@ func TestPTBMoveCall(t *testing.T) {
 }
 
 func TestPTBTransferObject(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
@@ -140,7 +140,7 @@ func TestPTBTransferObject(t *testing.T) {
 }
 
 func TestPTBTransferIota(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
@@ -186,7 +186,7 @@ func TestPTBTransferIota(t *testing.T) {
 }
 
 func TestPTBPayAllIota(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
@@ -230,7 +230,7 @@ func TestPTBPayAllIota(t *testing.T) {
 }
 
 func TestPTBPayIota(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
@@ -301,7 +301,7 @@ func TestPTBPayIota(t *testing.T) {
 }
 
 func TestPTBPay(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())

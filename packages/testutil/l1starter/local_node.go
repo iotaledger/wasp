@@ -14,6 +14,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 )
 
+var WaitUntilEffectsVisible = &iotaclient.WaitParams{
+	Attempts:             10,
+	DelayBetweenAttempts: 1 * time.Second,
+}
+
 type LocalIotaNode struct {
 	ctx             context.Context
 	config          Config
@@ -118,7 +123,7 @@ func (in *LocalIotaNode) L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    in.APIURL(),
 		FaucetURL: in.FaucetURL(),
-	})
+	}, WaitUntilEffectsVisible)
 }
 
 func (in *LocalIotaNode) IsLocal() bool {
