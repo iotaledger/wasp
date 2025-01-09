@@ -495,6 +495,9 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 	// >     IF cmt == LatestActiveCmt || LatestActiveCmt == NIL THEN
 	// >         Set LatestActiveCmt <- cmt
 	// >         Set NeedConsensus <- output.NeedConsensus // Can be nil
+	if outputUntyped == nil {
+		return msgs
+	}
 	if cmi.latestActiveCmt == nil || cli.committeeAddr.Equals(cmi.latestActiveCmt) {
 		cmi.committeeUpdatedCB(cli.dkShare)
 		cmi.ensureNeedConsensus(cli, outputUntyped)
@@ -508,9 +511,7 @@ func (cmi *chainMgrImpl) handleCmtLogOutput(cli *cmtLogInst, cliMsgs gpa.OutMess
 	// >             Suspend(LatestActiveCmt)
 	// >         Set LatestActiveCmt <- cmt
 	// >         Set NeedConsensus <- output.NeedConsensus
-	if outputUntyped == nil {
-		return msgs
-	}
+
 	if !cmi.latestActiveCmt.Equals(&cli.committeeAddr) {
 		msgs.AddAll(cmi.suspendCommittee(cmi.latestActiveCmt))
 		cmi.committeeUpdatedCB(cli.dkShare)

@@ -150,19 +150,24 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		}
 	}
 
-	collectedRequests := make([]isc.Request, 0)
+	reqIDs := make([]isc.RequestID, 0)
+	for _, req := range incRequests {
+		reqIDs = append(reqIDs, isc.RequestID(*req.ObjectRef.ObjectID))
+	}
+
+	waitCh := awaitRequestsProcessed(ctxTimeout, te, reqIDs, "incRequests")
+
 	for _, tnc := range te.nodeConns {
 		for _, req := range incRequests {
 			onLedgerRequest, err := isc.OnLedgerFromRequest(&req, tnc.chainID.AsAddress())
 			require.NoError(t, err)
-			collectedRequests = append(collectedRequests, onLedgerRequest)
 			tnc.recvRequest(
 				onLedgerRequest,
 			)
 		}
 	}
 
-	awaitRequestsProcessed(ctxTimeout, te, collectedRequests, "incRequests")
+	<-waitCh
 
 	// assert state
 	for i, node := range te.nodes {
@@ -223,30 +228,39 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	}
 }
 
-func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Request, desc string) {
-	reqRefs := isc.RequestRefsFromRequests(requests)
-	for i, node := range te.nodes {
-		for reqNum, reqRef := range reqRefs {
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
+func awaitRequestsProcessed(ctx context.Context, te *testEnv, requestIDs []isc.RequestID, desc string) <-chan struct{} {
+	allRequestsDone := make(chan struct{})
 
-			await := func(confirmed bool) {
-				select {
-				case rec := <-node.AwaitRequestProcessed(ctx, reqRef.ID, confirmed):
-					if rec.Error != nil {
-						te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
+	for i, node := range te.nodes {
+		for reqNum, reqID := range requestIDs {
+			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqID.String())
+
+			startWaiting := func(confirmed bool) {
+				waitCh := node.AwaitRequestProcessed(ctx, reqID, confirmed)
+
+				go func() {
+					select {
+					case rec := <-waitCh:
+						if rec != nil && rec.Error != nil {
+							te.t.Fatalf("request processed with an error, %s", rec.Error.Error())
+						}
+					case <-ctx.Done():
+						if ctx.Err() != nil {
+							te.t.Fatalf("awaitRequestsProcessed (%t) failed: reqID = %v, %s, context timeout", confirmed, reqID, desc)
+						}
 					}
-				case <-ctx.Done():
-					if ctx.Err() != nil {
-						te.t.Fatalf("awaitRequestsProcessed (%t) failed: %s, context timeout", confirmed, desc)
-					}
-				}
+
+					te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqID.String())
+					allRequestsDone <- struct{}{}
+				}()
 			}
 
-			await(false)
-			await(true)
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
+			startWaiting(false)
+			startWaiting(true)
 		}
 	}
+
+	return allRequestsDone
 }
 
 //nolint:revive
