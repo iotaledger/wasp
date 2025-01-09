@@ -72,9 +72,6 @@ func (ari *awaitReceiptImpl) respondByState(state state.State) {
 		if err != nil {
 			panic(fmt.Errorf("cannot read recept from state: %w", err))
 		}
-		if receipt == nil {
-			return true
-		}
 		for _, reqAwait := range reqAwaits {
 			reqAwait.Respond(receipt)
 		}
