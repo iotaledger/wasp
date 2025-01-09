@@ -76,7 +76,7 @@ func New(
 	log *logger.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	wsClient, err := iscmoveclient.NewWebsocketClient(ctx, wsURL, "", log)
+	wsClient, err := iscmoveclient.NewWebsocketClient(ctx, wsURL, "", iotaclient.WaitForEffectsDisabled, log)
 	if err != nil {
 		return nil, err
 	}

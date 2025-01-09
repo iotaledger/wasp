@@ -29,7 +29,7 @@ func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n co
 	if n == 0 {
 		s.accountCoinBalancesMap(accountKey).DelAt(coinType.Bytes())
 	} else {
-		s.accountCoinBalancesMap(accountKey).SetAt(coinType.Bytes(), codec.Encode[coin.Value](n))
+		s.accountCoinBalancesMap(accountKey).SetAt(coinType.Bytes(), codec.Encode(n))
 	}
 }
 

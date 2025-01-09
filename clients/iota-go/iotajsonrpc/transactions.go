@@ -310,7 +310,7 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objec
 	error,
 ) {
 	if r.ObjectChanges == nil {
-		return nil, fmt.Errorf("no ObjectChanges")
+		return nil, errors.New("expected ObjectChanges != nil")
 	}
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
@@ -340,7 +340,7 @@ func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType st
 	error,
 ) {
 	if r.ObjectChanges == nil {
-		return nil, errors.New("no ObjectChanges")
+		return nil, errors.New("expected ObjectChanges != nil")
 	}
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {

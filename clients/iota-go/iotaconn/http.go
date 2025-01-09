@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -88,6 +89,9 @@ func (c *HTTPClient) CallContext(
 	}
 	if len(respmsg.Result) == 0 {
 		return ErrNoResult
+	}
+	if os.Getenv("DEBUG") != "" {
+		fmt.Printf("[DEBUG] Iota client response: %s\n", respmsg.Result)
 	}
 	err = json.Unmarshal(respmsg.Result, result)
 	if err != nil {
@@ -173,6 +177,9 @@ func (c *HTTPClient) doRequest(ctx context.Context, msg interface{}) (*http.Resp
 	body, err := json.Marshal(msg)
 	if err != nil {
 		return nil, err
+	}
+	if os.Getenv("DEBUG") != "" {
+		fmt.Printf("[DEBUG] Iota client request: %s\n", body)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, io.NopCloser(bytes.NewReader(body)))
 	if err != nil {

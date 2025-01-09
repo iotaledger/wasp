@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -37,14 +38,14 @@ func TestGetAllCoins(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		a       *iotaclient.Client
+		a       clients.L1Client
 		args    args
 		want    *iotajsonrpc.CoinPage
 		wantErr bool
 	}{
 		{
 			name: "successful with limit",
-			a:    iotaclient.NewHTTP(l1starter.Instance().APIURL()),
+			a:    l1starter.Instance().L1Client(),
 			args: args{
 				ctx:     context.TODO(),
 				address: iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -55,7 +56,7 @@ func TestGetAllCoins(t *testing.T) {
 		},
 		{
 			name: "successful without limit",
-			a:    iotaclient.NewHTTP(l1starter.Instance().APIURL()),
+			a:    l1starter.Instance().L1Client(),
 			args: args{
 				ctx:     context.TODO(),
 				address: iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -92,7 +93,7 @@ func TestGetAllCoins(t *testing.T) {
 }
 
 func TestGetBalance(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	err := iotaclient.RequestFundsFromFaucet(
 		context.TODO(),
 		iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -113,7 +114,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestGetCoinMetadata(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	metadata, err := api.GetCoinMetadata(context.TODO(), iotajsonrpc.IotaCoinType.String())
 	require.NoError(t, err)
 
@@ -121,7 +122,7 @@ func TestGetCoinMetadata(t *testing.T) {
 }
 
 func TestGetCoins(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	address := iotago.MustAddressFromHex(testcommon.TestAddress)
 
 	err := iotaclient.RequestFundsFromFaucet(context.Background(), address, l1starter.Instance().FaucetURL())
@@ -153,14 +154,14 @@ func TestGetTotalSupply(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		api     *iotaclient.Client
+		api     clients.L1Client
 		args    args
 		want    uint64
 		wantErr bool
 	}{
 		{
 			name: "get Iota supply",
-			api:  iotaclient.NewHTTP(l1starter.Instance().APIURL()),
+			api:  l1starter.Instance().L1Client(),
 			args: args{
 				context.TODO(),
 				iotajsonrpc.IotaCoinType.String(),

@@ -68,7 +68,7 @@ type ProgrammableTransaction struct {
 }
 
 func (p ProgrammableTransaction) Print(prefix string) {
-	fmt.Printf(prefix + "ProgrammableTransaction:\n")
+	fmt.Print(prefix + "ProgrammableTransaction:\n")
 	for i, input := range p.Inputs {
 		fmt.Printf("%s  input %2d: %s\n", prefix, i, input.String())
 	}

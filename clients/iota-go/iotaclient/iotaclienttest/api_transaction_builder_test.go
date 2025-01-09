@@ -19,7 +19,7 @@ import (
 
 func TestBatchTransaction(t *testing.T) {
 	t.Log("TestBatchTransaction TODO")
-	// api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	// api := l1starter.Instance().L1Client()
 
 	// txnBytes, err := api.BatchTransaction(context.Background(), signer, *coin1, *coin2, nil, 10000)
 	// require.NoError(t, err)
@@ -28,7 +28,7 @@ func TestBatchTransaction(t *testing.T) {
 
 func TestMergeCoins(t *testing.T) {
 	t.Skip("FIXME create an account has at least two coin objects on chain")
-	// api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	// api := l1starter.Instance().L1Client()
 	// signer := testAddress
 	// coins, err := api.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 	// 	Owner: signer,
@@ -57,7 +57,7 @@ func TestMergeCoins(t *testing.T) {
 }
 
 func TestMoveCall(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	sdkVerifyBytecode := contracts.SDKVerify()
@@ -136,7 +136,7 @@ func TestMoveCall(t *testing.T) {
 }
 
 func TestPay(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
@@ -188,7 +188,7 @@ func TestPay(t *testing.T) {
 }
 
 func TestPayAllIota(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
@@ -247,7 +247,7 @@ func TestPayAllIota(t *testing.T) {
 }
 
 func TestPayIota(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient1 := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 	recipient2 := iotatest.MakeSignerWithFunds(2, l1starter.Instance().FaucetURL())
@@ -325,7 +325,7 @@ func TestPayIota(t *testing.T) {
 }
 
 func TestPublish(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	testcoinBytecode := contracts.Testcoin()
@@ -356,7 +356,7 @@ func TestPublish(t *testing.T) {
 }
 
 func TestSplitCoin(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	limit := uint(4)
@@ -398,7 +398,7 @@ func TestSplitCoin(t *testing.T) {
 }
 
 func TestSplitCoinEqual(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	limit := uint(4)
@@ -437,7 +437,7 @@ func TestSplitCoinEqual(t *testing.T) {
 }
 
 func TestTransferObject(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
@@ -474,7 +474,7 @@ func TestTransferObject(t *testing.T) {
 }
 
 func TestTransferIota(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 	recipient := iotatest.MakeSignerWithFunds(1, l1starter.Instance().FaucetURL())
 
