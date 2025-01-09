@@ -41,33 +41,46 @@ func (a *PrestateAccount) exists() bool {
 	return a.Nonce > 0 || len(a.Code) > 0 || len(a.Storage) > 0 || (a.Balance != nil && a.Balance.ToInt().Sign() != 0)
 }
 
+type PrestateTxValue struct {
+	Pre     PrestateAccountMap `json:"pre"`
+	Post    PrestateAccountMap `json:"post"`
+	created map[common.Address]bool
+	deleted map[common.Address]bool
+	to      common.Address
+}
+
 type prestateTracer struct {
-	env       *tracing.VMContext
-	pre       PrestateAccountMap
-	post      PrestateAccountMap
-	to        common.Address
+	env           *tracing.VMContext
+	currentTxHash common.Hash
+	states        map[common.Hash]*PrestateTxValue // key is the tx hash, value is the state diff
+	// pre        PrestateAccountMap
+	// post       PrestateAccountMap
+	// to        common.Address
 	config    prestateTracerConfig
 	interrupt atomic.Bool // Atomic flag to signal execution interruption
 	reason    error       // Textual reason for the interruption
-	created   map[common.Address]bool
-	deleted   map[common.Address]bool
+	// created    map[common.Address]bool
+	// deleted    map[common.Address]bool
+	traceBlock bool
 }
 
 type prestateTracerConfig struct {
 	DiffMode bool `json:"diffMode"` // If true, this tracer will return state modifications
 }
 
-func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
+func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, _ any) (*Tracer, error) {
 	var config prestateTracerConfig
 	if err := json.Unmarshal(cfg, &config); err != nil {
 		return nil, err
 	}
 	t := &prestateTracer{
-		pre:     PrestateAccountMap{},
-		post:    PrestateAccountMap{},
-		config:  config,
-		created: make(map[common.Address]bool),
-		deleted: make(map[common.Address]bool),
+		// pre:        PrestateAccountMap{},
+		// post:       PrestateAccountMap{},
+		config: config,
+		// created:    make(map[common.Address]bool),
+		// deleted:    make(map[common.Address]bool),
+		traceBlock: traceBlock,
+		states:     make(map[common.Hash]*PrestateTxValue),
 	}
 	return &Tracer{
 		Tracer: &tracers.Tracer{
@@ -101,21 +114,21 @@ func (t *prestateTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scop
 	switch {
 	case stackLen >= 1 && (op == vm.SLOAD || op == vm.SSTORE):
 		slot := common.Hash(stackData[stackLen-1].Bytes32())
-		t.lookupStorage(caller, slot)
+		t.lookupStorage(t.currentTxHash, caller, slot)
 	case stackLen >= 1 && (op == vm.EXTCODECOPY || op == vm.EXTCODEHASH || op == vm.EXTCODESIZE || op == vm.BALANCE || op == vm.SELFDESTRUCT):
 		addr := common.Address(stackData[stackLen-1].Bytes20())
-		t.lookupAccount(addr)
+		t.lookupAccount(t.currentTxHash, addr)
 		if op == vm.SELFDESTRUCT {
-			t.deleted[caller] = true
+			t.states[t.currentTxHash].deleted[caller] = true
 		}
 	case stackLen >= 5 && (op == vm.DELEGATECALL || op == vm.CALL || op == vm.STATICCALL || op == vm.CALLCODE):
 		addr := common.Address(stackData[stackLen-2].Bytes20())
-		t.lookupAccount(addr)
+		t.lookupAccount(t.currentTxHash, addr)
 	case op == vm.CREATE:
 		nonce := t.env.StateDB.GetNonce(caller)
 		addr := crypto.CreateAddress(caller, nonce)
-		t.lookupAccount(addr)
-		t.created[addr] = true
+		t.lookupAccount(t.currentTxHash, addr)
+		t.states[t.currentTxHash].created[addr] = true
 	case stackLen >= 4 && op == vm.CREATE2:
 		offset := stackData[stackLen-2]
 		size := stackData[stackLen-3]
@@ -127,23 +140,35 @@ func (t *prestateTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scop
 		inithash := crypto.Keccak256(init)
 		salt := stackData[stackLen-4]
 		addr := crypto.CreateAddress2(caller, salt.Bytes32(), inithash)
-		t.lookupAccount(addr)
-		t.created[addr] = true
+		t.lookupAccount(t.currentTxHash, addr)
+		t.states[t.currentTxHash].created[addr] = true
 	}
 }
 
 func (t *prestateTracer) OnTxStart(env *tracing.VMContext, tx *types.Transaction, from common.Address) {
 	t.env = env
-	if tx.To() == nil {
-		t.to = crypto.CreateAddress(from, env.StateDB.GetNonce(from))
-		t.created[t.to] = true
-	} else {
-		t.to = *tx.To()
+	t.currentTxHash = tx.Hash()
+
+	t.states[tx.Hash()] = &PrestateTxValue{
+		Pre:     make(PrestateAccountMap),
+		Post:    make(PrestateAccountMap),
+		created: make(map[common.Address]bool),
+		deleted: make(map[common.Address]bool),
 	}
 
-	t.lookupAccount(from)
-	t.lookupAccount(t.to)
-	t.lookupAccount(env.Coinbase)
+	txState := t.states[tx.Hash()]
+
+	if tx.To() == nil {
+		createdAddr := crypto.CreateAddress(from, env.StateDB.GetNonce(from))
+		txState.to = createdAddr
+		txState.created[createdAddr] = true
+	} else {
+		txState.to = *tx.To()
+	}
+
+	t.lookupAccount(tx.Hash(), from)
+	t.lookupAccount(tx.Hash(), txState.to)
+	t.lookupAccount(tx.Hash(), env.Coinbase)
 }
 
 func (t *prestateTracer) OnTxEnd(receipt *types.Receipt, err error) {
@@ -154,10 +179,10 @@ func (t *prestateTracer) OnTxEnd(receipt *types.Receipt, err error) {
 		t.processDiffState()
 	}
 	// the new created contracts' prestate were empty, so delete them
-	for a := range t.created {
+	for a := range t.states[t.currentTxHash].created {
 		// the created contract maybe exists in statedb before the creating tx
-		if s := t.pre[a]; s != nil && s.empty {
-			delete(t.pre, a)
+		if s := t.states[t.currentTxHash].Pre[a]; s != nil && s.empty {
+			delete(t.states[t.currentTxHash].Pre, a)
 		}
 	}
 }
@@ -167,11 +192,36 @@ func (t *prestateTracer) OnTxEnd(receipt *types.Receipt, err error) {
 func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 	var res []byte
 	var err error
-	if t.config.DiffMode {
-		res, err = json.Marshal(PrestateDiffResult{t.post, t.pre})
+	if t.traceBlock {
+		if t.config.DiffMode {
+			result := []TxTraceResult{}
+			for txHash, txState := range t.states {
+				diffResult, err := json.Marshal(PrestateDiffResult{txState.Post, txState.Pre})
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, TxTraceResult{TxHash: txHash, Result: diffResult})
+			}
+			res, err = json.Marshal(result)
+		} else {
+			result := []TxTraceResult{}
+			for txHash, txState := range t.states {
+				preState, err := json.Marshal(txState.Pre)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, TxTraceResult{TxHash: txHash, Result: preState})
+			}
+			res, err = json.Marshal(result)
+		}
 	} else {
-		res, err = json.Marshal(t.pre)
+		if t.config.DiffMode {
+			res, err = json.Marshal(PrestateDiffResult{t.states[t.currentTxHash].Post, t.states[t.currentTxHash].Pre})
+		} else {
+			res, err = json.Marshal(t.states[t.currentTxHash].Pre)
+		}
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -185,9 +235,10 @@ func (t *prestateTracer) Stop(err error) {
 }
 
 func (t *prestateTracer) processDiffState() {
-	for addr, state := range t.pre {
+	txState := t.states[t.currentTxHash]
+	for addr, state := range txState.Pre {
 		// The deleted account's state is pruned from `post` but kept in `pre`
-		if _, ok := t.deleted[addr]; ok {
+		if _, ok := txState.deleted[addr]; ok {
 			continue
 		}
 		modified := false
@@ -196,15 +247,15 @@ func (t *prestateTracer) processDiffState() {
 		newNonce := t.env.StateDB.GetNonce(addr)
 		newCode := t.env.StateDB.GetCode(addr)
 
-		if newBalance.Cmp(t.pre[addr].Balance.ToInt()) != 0 {
+		if newBalance.Cmp(txState.Pre[addr].Balance.ToInt()) != 0 {
 			modified = true
 			postAccount.Balance = (*hexutil.Big)(newBalance)
 		}
-		if newNonce != t.pre[addr].Nonce {
+		if newNonce != txState.Pre[addr].Nonce {
 			modified = true
 			postAccount.Nonce = newNonce
 		}
-		if !bytes.Equal(newCode, t.pre[addr].Code) {
+		if !bytes.Equal(newCode, txState.Pre[addr].Code) {
 			modified = true
 			postAccount.Code = newCode
 		}
@@ -212,13 +263,13 @@ func (t *prestateTracer) processDiffState() {
 		for key, val := range state.Storage {
 			// don't include the empty slot
 			if val == (common.Hash{}) {
-				delete(t.pre[addr].Storage, key)
+				delete(txState.Pre[addr].Storage, key)
 			}
 
 			newVal := t.env.StateDB.GetState(addr, key)
 			if val == newVal {
 				// Omit unchanged slots
-				delete(t.pre[addr].Storage, key)
+				delete(txState.Pre[addr].Storage, key)
 			} else {
 				modified = true
 				if newVal != (common.Hash{}) {
@@ -228,18 +279,28 @@ func (t *prestateTracer) processDiffState() {
 		}
 
 		if modified {
-			t.post[addr] = postAccount
+			txState.Post[addr] = postAccount
 		} else {
 			// if state is not modified, then no need to include into the pre state
-			delete(t.pre, addr)
+			delete(txState.Pre, addr)
 		}
 	}
 }
 
 // lookupAccount fetches details of an account and adds it to the prestate
 // if it doesn't exist there.
-func (t *prestateTracer) lookupAccount(addr common.Address) {
-	if _, ok := t.pre[addr]; ok {
+func (t *prestateTracer) lookupAccount(tx common.Hash, addr common.Address) {
+	// if _, ok := t.states[tx]; !ok {
+	// 	t.states[tx] = &PrestateTxValue{
+	// 		Pre:     make(PrestateAccountMap),
+	// 		Post:    make(PrestateAccountMap),
+	// 		created: make(map[common.Address]bool),
+	// 		deleted: make(map[common.Address]bool),
+	// 		// to:      addr,
+	// 	}
+	// }
+
+	if _, ok := t.states[tx].Pre[addr]; ok {
 		return
 	}
 
@@ -252,17 +313,18 @@ func (t *prestateTracer) lookupAccount(addr common.Address) {
 	if !acc.exists() {
 		acc.empty = true
 	}
-	t.pre[addr] = acc
+
+	t.states[tx].Pre[addr] = acc
 }
 
 // lookupStorage fetches the requested storage slot and adds
 // it to the prestate of the given contract. It assumes `lookupAccount`
 // has been performed on the contract before.
-func (t *prestateTracer) lookupStorage(addr common.Address, key common.Hash) {
-	if _, ok := t.pre[addr].Storage[key]; ok {
+func (t *prestateTracer) lookupStorage(tx common.Hash, addr common.Address, key common.Hash) {
+	if _, ok := t.states[tx].Pre[addr].Storage[key]; ok {
 		return
 	}
-	t.pre[addr].Storage[key] = t.env.StateDB.GetState(addr, key)
+	t.states[tx].Pre[addr].Storage[key] = t.env.StateDB.GetState(addr, key)
 }
 
 func (t *prestateTracer) TraceFakeTx(tx *types.Transaction) (res json.RawMessage, err error) {

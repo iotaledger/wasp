@@ -699,7 +699,7 @@ func (e *EVMChain) traceTransaction(
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
 		TxIndex:     int(txIndex),
 		TxHash:      tx.Hash(),
-	}, config.TracerConfig)
+	}, config.TracerConfig, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -729,32 +729,38 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		return nil, err
 	}
 
-	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
+	tracerType := "callTracer"
+	if config.Tracer != nil {
+		tracerType = *config.Tracer
+	}
+
+	blockNumber := uint64(iscBlock.BlockIndex())
+
+	tracer, err := newTracer(tracerType, &tracers.Context{
+		BlockHash:   block.Hash(),
+		BlockNumber: new(big.Int).SetUint64(blockNumber),
+	}, config.TracerConfig, true, block.Transactions())
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]TxTraceResult, 0)
-	for i, tx := range blockTxs {
-		result, err := e.traceTransaction(
-			config,
-			iscBlock,
-			iscRequestsInBlock,
-			tx,
-			uint64(i),
-			block.Hash(),
-		)
+	// if e.isFakeTransaction(tx) {
+	// 	return tracer.TraceFakeTx(tx)
+	// }
 
-		// Transactions which failed tracing will be omitted, so the rest of the block can be returned
-		if err == nil {
-			results = append(results, TxTraceResult{
-				TxHash: tx.Hash(),
-				Result: result,
-			})
-		}
+	err = e.backend.EVMTrace(
+		iscBlock.PreviousAliasOutput,
+		iscBlock.Timestamp,
+		iscRequestsInBlock,
+		nil,
+		&blockNumber,
+		tracer.Tracer,
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	return results, nil
+	return tracer.GetResult()
 }
 
 func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {

@@ -6,6 +6,7 @@ package jsonrpc
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync/atomic"
@@ -119,12 +120,14 @@ type TxTraceResult struct {
 }
 
 type callTracer struct {
-	callstack []CallFrame
-	config    callTracerConfig
-	gasLimit  uint64
-	depth     int
-	interrupt atomic.Bool // Atomic flag to signal execution interruption
-	reason    error       // Textual reason for the interruption
+	callstack  []CallFrame
+	config     callTracerConfig
+	gasLimit   uint64
+	depth      int
+	interrupt  atomic.Bool // Atomic flag to signal execution interruption
+	reason     error       // Textual reason for the interruption
+	traceBlock bool
+	blockTxs   types.Transactions
 }
 
 type callTracerConfig struct {
@@ -134,8 +137,22 @@ type callTracerConfig struct {
 
 // newCallTracer returns a native go tracer which tracks
 // call frames of a tx, and implements vm.EVMLogger.
-func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
-	t, err := newCallTracerObject(ctx, cfg)
+func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error) {
+	var blockTxs types.Transactions
+
+	if initValue == nil && traceBlock {
+		return nil, fmt.Errorf("initValue with block transactions is required for block tracing")
+	}
+
+	if initValue != nil {
+		var ok bool
+		blockTxs, ok = initValue.(types.Transactions)
+		if !ok {
+			return nil, fmt.Errorf("invalid init value type for calltracer: %T", initValue)
+		}
+	}
+
+	t, err := newCallTracerObject(ctx, cfg, traceBlock, blockTxs)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +172,7 @@ func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
 	}, nil
 }
 
-func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage) (*callTracer, error) {
+func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock bool, blockTxs types.Transactions) (*callTracer, error) {
 	var config callTracerConfig
 	if cfg != nil {
 		if err := json.Unmarshal(cfg, &config); err != nil {
@@ -164,7 +181,7 @@ func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage) (*callTracer, 
 	}
 	// First callframe contains tx context info
 	// and is populated on start and end.
-	return &callTracer{callstack: make([]CallFrame, 0, 1), config: config}, nil
+	return &callTracer{callstack: make([]CallFrame, 0, 1), config: config, traceBlock: traceBlock, blockTxs: blockTxs}, nil
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
@@ -271,16 +288,38 @@ var ErrIncorrectTopLevelCalls = errors.New("incorrect number of top-level calls"
 // GetResult returns the json-encoded nested list of call traces, and any
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *callTracer) GetResult() (json.RawMessage, error) {
-	if len(t.callstack) != 1 {
-		return nil, ErrIncorrectTopLevelCalls
-	}
+	if t.traceBlock {
 
-	res, err := json.Marshal(t.callstack[0])
-	if err != nil {
-		return nil, err
-	}
+		// otherwise return all call frames
+		results := make([]TxTraceResult, 0, len(t.callstack))
+		for i, cs := range t.callstack {
+			csJSON, err := json.Marshal(cs)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, TxTraceResult{
+				TxHash: t.blockTxs[i].Hash(),
+				Result: csJSON,
+			})
+		}
 
-	return res, t.reason
+		res, err := json.Marshal(results)
+		if err != nil {
+			return nil, err
+		}
+		return res, t.reason
+	} else {
+		if len(t.callstack) != 1 {
+			return nil, ErrIncorrectTopLevelCalls
+		}
+
+		res, err := json.Marshal(t.callstack[0])
+		if err != nil {
+			return nil, err
+		}
+
+		return res, t.reason
+	}
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.

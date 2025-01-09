@@ -37,7 +37,7 @@ func getTracer(ctx isc.Sandbox) *tracing.Hooks {
 		return nil
 	}
 
-	// if block number is set and the tx is null, we're tracing the whole block
+	// if block number is set and the TxIndex is null, we're tracing the whole block
 	if tracer.TxIndex == nil && tracer.BlockNumber != nil {
 		return tracer.Tracer.Hooks
 	}
