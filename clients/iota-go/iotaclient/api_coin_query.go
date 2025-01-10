@@ -9,7 +9,10 @@ import (
 
 func (c *Client) GetAllBalances(ctx context.Context, owner *iotago.Address) ([]*iotajsonrpc.Balance, error) {
 	var resp []*iotajsonrpc.Balance
-	return resp, c.transport.Call(ctx, &resp, getAllBalances, owner)
+	if err := c.transport.Call(ctx, &resp, getAllBalances, owner); err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 type GetAllCoinsRequest struct {

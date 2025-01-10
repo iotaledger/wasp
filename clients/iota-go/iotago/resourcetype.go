@@ -73,8 +73,8 @@ func NewResourceType(str string) (*ResourceType, error) {
 	}
 	module := parts[1]
 	var objectName string
-	if strings.Contains(parts[2], "<") {
-		objectName = parts[2][:strings.Index(parts[2], "<")]
+	if idx := strings.Index(parts[2], "<"); idx > 0 {
+		objectName = parts[2][:idx]
 	} else {
 		objectName = parts[2]
 	}

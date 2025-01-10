@@ -29,8 +29,8 @@ func SignatureFromBytes(bytes []byte) (signature Signature, consumedBytes int, e
 // SignatureFromBase58EncodedString creates a Signature from a base58 encoded string.
 func SignatureFromBase58EncodedString(base58EncodedString string) (signature Signature, err error) {
 	bytes := base58.Decode(base58EncodedString)
-	if err != nil {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded Signature: %w", err)
+	if len(bytes) == 0 {
+		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded Signature: %s", base58EncodedString)
 
 		return
 	}
@@ -107,8 +107,8 @@ func SignatureWithPublicKeyFromBytes(bytes []byte) (signatureWithPublicKey Signa
 // SignatureWithPublicKeyFromBase58EncodedString creates a SignatureWithPublicKey from a base58 encoded string.
 func SignatureWithPublicKeyFromBase58EncodedString(base58EncodedString string) (signatureWithPublicKey SignatureWithPublicKey, err error) {
 	bytes := base58.Decode(base58EncodedString)
-	if err != nil {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded SignatureWithPublicKey: %w", err)
+	if len(bytes) == 0 {
+		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded SignatureWithPublicKey: %s", base58EncodedString)
 
 		return
 	}

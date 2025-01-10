@@ -100,7 +100,7 @@ func (w *BasicWithCustomPtrCodec) UnmarshalBCS(d *bcs.Decoder) error {
 type BasicWithInit string
 
 func (w *BasicWithInit) BCSInit() error {
-	*w = *w + "!"
+	*w += "!"
 	return nil
 }
 
@@ -133,7 +133,7 @@ func (w *BasicWithCustomAndInit) UnmarshalBCS(d *bcs.Decoder) error {
 }
 
 func (w *BasicWithCustomAndInit) BCSInit() error {
-	*w = *w + "!"
+	*w += "!"
 	return nil
 }
 
@@ -233,16 +233,16 @@ func TestBasicCodedErr(t *testing.T) {
 
 func TestMultiPtrCodec(t *testing.T) {
 	var vI int16 = 4660
-	var pVI *int16 = &vI
-	var ppVI **int16 = &pVI
+	pVI := &vI
+	ppVI := &pVI
 	bcs.TestCodecAndBytesVsRef(t, ppVI, []byte{0x34, 0x12})
 
 	pVI = nil
 	bcs.TestEncodeErr(t, ppVI)
 
-	var vM map[int16]bool = map[int16]bool{1: true, 2: false, 3: true}
-	var pVM *map[int16]bool = &vM
-	var ppVM **map[int16]bool = &pVM
+	vM := map[int16]bool{1: true, 2: false, 3: true}
+	pVM := &vM
+	ppVM := &pVM
 	bcs.TestCodecAndBytes(t, ppVM, []byte{0x3, 0x1, 0x0, 0x1, 0x2, 0x0, 0x0, 0x3, 0x0, 0x1})
 
 	type testStruct struct {

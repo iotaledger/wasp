@@ -117,12 +117,12 @@ func (cs Coins) PickIOTACoinsWithGas(amount *big.Int, gasAmount uint64, pickMeth
 			continue
 		}
 
-		if nil == gasCoin || gasCoin.Balance.Uint64() > cs[i].Balance.Uint64() {
+		if gasCoin == nil || gasCoin.Balance.Uint64() > cs[i].Balance.Uint64() {
 			gasCoin = cs[i]
 			selectIndex = i
 		}
 	}
-	if nil == gasCoin {
+	if gasCoin == nil {
 		return nil, nil, ErrCoinsNotMatchRequest
 	}
 
