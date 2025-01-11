@@ -1,28 +1,28 @@
-# \ChainsApi
+# \ChainsAPI
 
 All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**ActivateChain**](ChainsApi.md#ActivateChain) | **Post** /v1/chains/{chainID}/activate | Activate a chain
-[**AddAccessNode**](ChainsApi.md#AddAccessNode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
-[**CallView**](ChainsApi.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
-[**DeactivateChain**](ChainsApi.md#DeactivateChain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
-[**DumpAccounts**](ChainsApi.md#DumpAccounts) | **Post** /v1/chains/{chainID}/dump-accounts | dump accounts information into a humanly-readable format
-[**EstimateGasOffledger**](ChainsApi.md#EstimateGasOffledger) | **Post** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
-[**EstimateGasOnledger**](ChainsApi.md#EstimateGasOnledger) | **Post** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
-[**GetChainInfo**](ChainsApi.md#GetChainInfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
-[**GetChains**](ChainsApi.md#GetChains) | **Get** /v1/chains | Get a list of all chains
-[**GetCommitteeInfo**](ChainsApi.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
-[**GetContracts**](ChainsApi.md#GetContracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
-[**GetMempoolContents**](ChainsApi.md#GetMempoolContents) | **Get** /v1/chains/{chainID}/mempool | Get the contents of the mempool.
-[**GetReceipt**](ChainsApi.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
-[**GetStateValue**](ChainsApi.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
-[**RemoveAccessNode**](ChainsApi.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
-[**SetChainRecord**](ChainsApi.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
-[**V1ChainsChainIDEvmPost**](ChainsApi.md#V1ChainsChainIDEvmPost) | **Post** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
-[**V1ChainsChainIDEvmWsGet**](ChainsApi.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
-[**WaitForRequest**](ChainsApi.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+[**ActivateChain**](ChainsAPI.md#ActivateChain) | **Post** /v1/chains/{chainID}/activate | Activate a chain
+[**AddAccessNode**](ChainsAPI.md#AddAccessNode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
+[**CallView**](ChainsAPI.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
+[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
+[**DumpAccounts**](ChainsAPI.md#DumpAccounts) | **Post** /v1/chains/{chainID}/dump-accounts | dump accounts information into a humanly-readable format
+[**EstimateGasOffledger**](ChainsAPI.md#EstimateGasOffledger) | **Post** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
+[**EstimateGasOnledger**](ChainsAPI.md#EstimateGasOnledger) | **Post** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
+[**GetChainInfo**](ChainsAPI.md#GetChainInfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
+[**GetChains**](ChainsAPI.md#GetChains) | **Get** /v1/chains | Get a list of all chains
+[**GetCommitteeInfo**](ChainsAPI.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
+[**GetContracts**](ChainsAPI.md#GetContracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
+[**GetMempoolContents**](ChainsAPI.md#GetMempoolContents) | **Get** /v1/chains/{chainID}/mempool | Get the contents of the mempool.
+[**GetReceipt**](ChainsAPI.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
+[**GetStateValue**](ChainsAPI.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
+[**RemoveAccessNode**](ChainsAPI.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
+[**SetChainRecord**](ChainsAPI.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
+[**V1ChainsChainIDEvmPost**](ChainsAPI.md#V1ChainsChainIDEvmPost) | **Post** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
+[**V1ChainsChainIDEvmWsGet**](ChainsAPI.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
+[**WaitForRequest**](ChainsAPI.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 
@@ -38,22 +38,22 @@ Activate a chain
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.ActivateChain(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.ActivateChain``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.ActivateChain(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.ActivateChain``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -104,23 +104,23 @@ Configure a trusted node to be an access node.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.AddAccessNode(context.Background(), chainID, peer).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.AddAccessNode``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.AddAccessNode(context.Background(), chainID, peer).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.AddAccessNode``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -175,25 +175,25 @@ Call a view function on a contract by Hname
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    contractCallViewRequest := *openapiclient.NewContractCallViewRequest([]string{"Arguments_example"}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	contractCallViewRequest := *openapiclient.NewContractCallViewRequest([]string{"Arguments_example"}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.CallView(context.Background(), chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.CallView``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `CallView`: []string
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.CallView`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.CallView(context.Background(), chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.CallView``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `CallView`: []string
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.CallView`: %v\n", resp)
 }
 ```
 
@@ -245,22 +245,22 @@ Deactivate a chain
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.DeactivateChain(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.DeactivateChain``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.DeactivateChain(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.DeactivateChain``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -311,22 +311,22 @@ dump accounts information into a humanly-readable format
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.DumpAccounts(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.DumpAccounts``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.DumpAccounts(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.DumpAccounts``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -377,25 +377,25 @@ Estimates gas for a given off-ledger ISC request
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    request := *openapiclient.NewEstimateGasRequestOffledger("FromAddress_example", "RequestBytes_example") // EstimateGasRequestOffledger | Request
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	request := *openapiclient.NewEstimateGasRequestOffledger("FromAddress_example", "RequestBytes_example") // EstimateGasRequestOffledger | Request
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.EstimateGasOffledger(context.Background(), chainID).Request(request).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOffledger``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `EstimateGasOffledger`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOffledger`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.EstimateGasOffledger(context.Background(), chainID).Request(request).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.EstimateGasOffledger``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `EstimateGasOffledger`: ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.EstimateGasOffledger`: %v\n", resp)
 }
 ```
 
@@ -447,25 +447,25 @@ Estimates gas for a given on-ledger ISC request
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.EstimateGasOnledger(context.Background(), chainID).Request(request).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.EstimateGasOnledger``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `EstimateGasOnledger`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.EstimateGasOnledger`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.EstimateGasOnledger(context.Background(), chainID).Request(request).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.EstimateGasOnledger``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `EstimateGasOnledger`: ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.EstimateGasOnledger`: %v\n", resp)
 }
 ```
 
@@ -517,25 +517,25 @@ Get information about a specific chain
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetChainInfo(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetChainInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetChainInfo`: ChainInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetChainInfo`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetChainInfo(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetChainInfo``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetChainInfo`: ChainInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetChainInfo`: %v\n", resp)
 }
 ```
 
@@ -587,23 +587,23 @@ Get a list of all chains
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetChains(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetChains``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetChains`: []ChainInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetChains`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetChains(context.Background()).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetChains``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetChains`: []ChainInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetChains`: %v\n", resp)
 }
 ```
 
@@ -646,25 +646,25 @@ Get information about the deployed committee
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetCommitteeInfo(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetCommitteeInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetCommitteeInfo`: CommitteeInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetCommitteeInfo`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetCommitteeInfo(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetCommitteeInfo``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetCommitteeInfo`: CommitteeInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetCommitteeInfo`: %v\n", resp)
 }
 ```
 
@@ -716,25 +716,25 @@ Get all available chain contracts
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetContracts(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetContracts``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetContracts`: []ContractInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetContracts`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetContracts(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetContracts``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetContracts`: []ContractInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetContracts`: %v\n", resp)
 }
 ```
 
@@ -786,24 +786,24 @@ Get the contents of the mempool.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetMempoolContents(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetMempoolContents``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetMempoolContents`: []int32
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetMempoolContents`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetMempoolContents(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetMempoolContents``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetMempoolContents`: []int32
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetMempoolContents`: %v\n", resp)
 }
 ```
 
@@ -854,25 +854,25 @@ Get a receipt from a request ID
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    requestID := "requestID_example" // string | RequestID (Hex)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	requestID := "requestID_example" // string | RequestID (Hex)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetReceipt(context.Background(), chainID, requestID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetReceipt``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetReceipt`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetReceipt`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetReceipt(context.Background(), chainID, requestID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetReceipt``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetReceipt`: ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetReceipt`: %v\n", resp)
 }
 ```
 
@@ -925,25 +925,25 @@ Fetch the raw value associated with the given key in the chain state
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    stateKey := "stateKey_example" // string | State Key (Hex)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	stateKey := "stateKey_example" // string | State Key (Hex)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.GetStateValue(context.Background(), chainID, stateKey).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.GetStateValue``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetStateValue`: StateResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.GetStateValue`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.GetStateValue(context.Background(), chainID, stateKey).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetStateValue``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetStateValue`: StateResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetStateValue`: %v\n", resp)
 }
 ```
 
@@ -996,23 +996,23 @@ Remove an access node.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.RemoveAccessNode(context.Background(), chainID, peer).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.RemoveAccessNode``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.RemoveAccessNode(context.Background(), chainID, peer).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.RemoveAccessNode``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -1065,23 +1065,23 @@ Sets the chain record.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    chainRecord := *openapiclient.NewChainRecord([]string{"AccessNodes_example"}, false) // ChainRecord | Chain Record
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainRecord := *openapiclient.NewChainRecord([]string{"AccessNodes_example"}, false) // ChainRecord | Chain Record
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.SetChainRecord(context.Background(), chainID).ChainRecord(chainRecord).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.SetChainRecord``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.SetChainRecord(context.Background(), chainID).ChainRecord(chainRecord).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.SetChainRecord``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -1133,22 +1133,22 @@ Ethereum JSON-RPC
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.V1ChainsChainIDEvmPost(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.V1ChainsChainIDEvmPost``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.V1ChainsChainIDEvmPost(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.V1ChainsChainIDEvmPost``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -1199,22 +1199,22 @@ Ethereum JSON-RPC (Websocket transport)
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.V1ChainsChainIDEvmWsGet(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.V1ChainsChainIDEvmWsGet``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.V1ChainsChainIDEvmWsGet(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.V1ChainsChainIDEvmWsGet``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -1265,27 +1265,27 @@ Wait until the given request has been processed by the node
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    requestID := "requestID_example" // string | RequestID (Hex)
-    timeoutSeconds := int32(56) // int32 | The timeout in seconds, maximum 60s (optional)
-    waitForL1Confirmation := true // bool | Wait for the block to be confirmed on L1 (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	requestID := "requestID_example" // string | RequestID (Hex)
+	timeoutSeconds := int32(56) // int32 | The timeout in seconds, maximum 60s (optional)
+	waitForL1Confirmation := true // bool | Wait for the block to be confirmed on L1 (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.ChainsApi.WaitForRequest(context.Background(), chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `ChainsApi.WaitForRequest``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `WaitForRequest`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `ChainsApi.WaitForRequest`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.ChainsAPI.WaitForRequest(context.Background(), chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.WaitForRequest``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `WaitForRequest`: ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.WaitForRequest`: %v\n", resp)
 }
 ```
 

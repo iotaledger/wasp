@@ -43,7 +43,7 @@ func NewMilestoneInfoWithDefaults() *MilestoneInfo {
 
 // GetIndex returns the Index field value if set, zero value otherwise.
 func (o *MilestoneInfo) GetIndex() uint32 {
-	if o == nil || isNil(o.Index) {
+	if o == nil || IsNil(o.Index) {
 		var ret uint32
 		return ret
 	}
@@ -53,7 +53,7 @@ func (o *MilestoneInfo) GetIndex() uint32 {
 // GetIndexOk returns a tuple with the Index field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *MilestoneInfo) GetIndexOk() (*uint32, bool) {
-	if o == nil || isNil(o.Index) {
+	if o == nil || IsNil(o.Index) {
 		return nil, false
 	}
 	return o.Index, true
@@ -61,7 +61,7 @@ func (o *MilestoneInfo) GetIndexOk() (*uint32, bool) {
 
 // HasIndex returns a boolean if a field has been set.
 func (o *MilestoneInfo) HasIndex() bool {
-	if o != nil && !isNil(o.Index) {
+	if o != nil && !IsNil(o.Index) {
 		return true
 	}
 
@@ -75,7 +75,7 @@ func (o *MilestoneInfo) SetIndex(v uint32) {
 
 // GetMilestoneId returns the MilestoneId field value if set, zero value otherwise.
 func (o *MilestoneInfo) GetMilestoneId() string {
-	if o == nil || isNil(o.MilestoneId) {
+	if o == nil || IsNil(o.MilestoneId) {
 		var ret string
 		return ret
 	}
@@ -85,7 +85,7 @@ func (o *MilestoneInfo) GetMilestoneId() string {
 // GetMilestoneIdOk returns a tuple with the MilestoneId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *MilestoneInfo) GetMilestoneIdOk() (*string, bool) {
-	if o == nil || isNil(o.MilestoneId) {
+	if o == nil || IsNil(o.MilestoneId) {
 		return nil, false
 	}
 	return o.MilestoneId, true
@@ -93,7 +93,7 @@ func (o *MilestoneInfo) GetMilestoneIdOk() (*string, bool) {
 
 // HasMilestoneId returns a boolean if a field has been set.
 func (o *MilestoneInfo) HasMilestoneId() bool {
-	if o != nil && !isNil(o.MilestoneId) {
+	if o != nil && !IsNil(o.MilestoneId) {
 		return true
 	}
 
@@ -107,7 +107,7 @@ func (o *MilestoneInfo) SetMilestoneId(v string) {
 
 // GetTimestamp returns the Timestamp field value if set, zero value otherwise.
 func (o *MilestoneInfo) GetTimestamp() uint32 {
-	if o == nil || isNil(o.Timestamp) {
+	if o == nil || IsNil(o.Timestamp) {
 		var ret uint32
 		return ret
 	}
@@ -117,7 +117,7 @@ func (o *MilestoneInfo) GetTimestamp() uint32 {
 // GetTimestampOk returns a tuple with the Timestamp field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *MilestoneInfo) GetTimestampOk() (*uint32, bool) {
-	if o == nil || isNil(o.Timestamp) {
+	if o == nil || IsNil(o.Timestamp) {
 		return nil, false
 	}
 	return o.Timestamp, true
@@ -125,7 +125,7 @@ func (o *MilestoneInfo) GetTimestampOk() (*uint32, bool) {
 
 // HasTimestamp returns a boolean if a field has been set.
 func (o *MilestoneInfo) HasTimestamp() bool {
-	if o != nil && !isNil(o.Timestamp) {
+	if o != nil && !IsNil(o.Timestamp) {
 		return true
 	}
 
@@ -147,13 +147,13 @@ func (o MilestoneInfo) MarshalJSON() ([]byte, error) {
 
 func (o MilestoneInfo) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Index) {
+	if !IsNil(o.Index) {
 		toSerialize["index"] = o.Index
 	}
-	if !isNil(o.MilestoneId) {
+	if !IsNil(o.MilestoneId) {
 		toSerialize["milestoneId"] = o.MilestoneId
 	}
-	if !isNil(o.Timestamp) {
+	if !IsNil(o.Timestamp) {
 		toSerialize["timestamp"] = o.Timestamp
 	}
 	return toSerialize, nil

@@ -42,7 +42,7 @@ func NewGovChainOwnerResponseWithDefaults() *GovChainOwnerResponse {
 
 // GetChainOwner returns the ChainOwner field value if set, zero value otherwise.
 func (o *GovChainOwnerResponse) GetChainOwner() string {
-	if o == nil || isNil(o.ChainOwner) {
+	if o == nil || IsNil(o.ChainOwner) {
 		var ret string
 		return ret
 	}
@@ -52,7 +52,7 @@ func (o *GovChainOwnerResponse) GetChainOwner() string {
 // GetChainOwnerOk returns a tuple with the ChainOwner field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GovChainOwnerResponse) GetChainOwnerOk() (*string, bool) {
-	if o == nil || isNil(o.ChainOwner) {
+	if o == nil || IsNil(o.ChainOwner) {
 		return nil, false
 	}
 	return o.ChainOwner, true
@@ -60,7 +60,7 @@ func (o *GovChainOwnerResponse) GetChainOwnerOk() (*string, bool) {
 
 // HasChainOwner returns a boolean if a field has been set.
 func (o *GovChainOwnerResponse) HasChainOwner() bool {
-	if o != nil && !isNil(o.ChainOwner) {
+	if o != nil && !IsNil(o.ChainOwner) {
 		return true
 	}
 
@@ -82,7 +82,7 @@ func (o GovChainOwnerResponse) MarshalJSON() ([]byte, error) {
 
 func (o GovChainOwnerResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.ChainOwner) {
+	if !IsNil(o.ChainOwner) {
 		toSerialize["chainOwner"] = o.ChainOwner
 	}
 	return toSerialize, nil

@@ -41,7 +41,7 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 	if SkipCheckVersions {
 		return
 	}
-	nodeVersion, _, err := client.NodeApi.
+	nodeVersion, _, err := client.NodeAPI.
 		GetVersion(context.Background()).
 		Execute()
 	log.Check(err)

@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
- 
+
 func initChangeAccessNodesCmd() *cobra.Command {
 	var offLedger bool
 	var node string
@@ -95,7 +95,7 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 
 			callGovView := func(viewName string) isc.CallResults {
-				apiResult, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
+				apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,

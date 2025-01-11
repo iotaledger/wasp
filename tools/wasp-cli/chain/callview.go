@@ -36,7 +36,7 @@ func initCallViewCmd() *cobra.Command {
 
 			msg := isc.NewMessage(isc.Hn(contractName), isc.Hn(funcName), params)
 
-			result, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
+			result, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
 				ContractCallViewRequest(apiextensions.CallViewReq(msg)).Execute()
 			log.Check(err)
 

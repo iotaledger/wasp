@@ -42,7 +42,7 @@ func NewIntWithDefaults() *Int {
 
 // GetAbs returns the Abs field value if set, zero value otherwise.
 func (o *Int) GetAbs() []int32 {
-	if o == nil || isNil(o.Abs) {
+	if o == nil || IsNil(o.Abs) {
 		var ret []int32
 		return ret
 	}
@@ -52,7 +52,7 @@ func (o *Int) GetAbs() []int32 {
 // GetAbsOk returns a tuple with the Abs field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Int) GetAbsOk() ([]int32, bool) {
-	if o == nil || isNil(o.Abs) {
+	if o == nil || IsNil(o.Abs) {
 		return nil, false
 	}
 	return o.Abs, true
@@ -60,7 +60,7 @@ func (o *Int) GetAbsOk() ([]int32, bool) {
 
 // HasAbs returns a boolean if a field has been set.
 func (o *Int) HasAbs() bool {
-	if o != nil && !isNil(o.Abs) {
+	if o != nil && !IsNil(o.Abs) {
 		return true
 	}
 
@@ -74,7 +74,7 @@ func (o *Int) SetAbs(v []int32) {
 
 // GetNeg returns the Neg field value if set, zero value otherwise.
 func (o *Int) GetNeg() bool {
-	if o == nil || isNil(o.Neg) {
+	if o == nil || IsNil(o.Neg) {
 		var ret bool
 		return ret
 	}
@@ -84,7 +84,7 @@ func (o *Int) GetNeg() bool {
 // GetNegOk returns a tuple with the Neg field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Int) GetNegOk() (*bool, bool) {
-	if o == nil || isNil(o.Neg) {
+	if o == nil || IsNil(o.Neg) {
 		return nil, false
 	}
 	return o.Neg, true
@@ -92,7 +92,7 @@ func (o *Int) GetNegOk() (*bool, bool) {
 
 // HasNeg returns a boolean if a field has been set.
 func (o *Int) HasNeg() bool {
-	if o != nil && !isNil(o.Neg) {
+	if o != nil && !IsNil(o.Neg) {
 		return true
 	}
 
@@ -114,10 +114,10 @@ func (o Int) MarshalJSON() ([]byte, error) {
 
 func (o Int) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Abs) {
+	if !IsNil(o.Abs) {
 		toSerialize["abs"] = o.Abs
 	}
-	if !isNil(o.Neg) {
+	if !IsNil(o.Neg) {
 		toSerialize["neg"] = o.Neg
 	}
 	return toSerialize, nil

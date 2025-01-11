@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the PeeringNodeStatusResponse type satisfies the MappedNullable interface at compile time
@@ -30,6 +32,8 @@ type PeeringNodeStatusResponse struct {
 	// The peers public key encoded in Hex
 	PublicKey string `json:"publicKey"`
 }
+
+type _PeeringNodeStatusResponse PeeringNodeStatusResponse
 
 // NewPeeringNodeStatusResponse instantiates a new PeeringNodeStatusResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -215,6 +219,48 @@ func (o PeeringNodeStatusResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["peeringURL"] = o.PeeringURL
 	toSerialize["publicKey"] = o.PublicKey
 	return toSerialize, nil
+}
+
+func (o *PeeringNodeStatusResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"isAlive",
+		"isTrusted",
+		"name",
+		"numUsers",
+		"peeringURL",
+		"publicKey",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varPeeringNodeStatusResponse := _PeeringNodeStatusResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varPeeringNodeStatusResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = PeeringNodeStatusResponse(varPeeringNodeStatusResponse)
+
+	return err
 }
 
 type NullablePeeringNodeStatusResponse struct {

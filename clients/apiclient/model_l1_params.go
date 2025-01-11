@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the L1Params type satisfies the MappedNullable interface at compile time
@@ -24,6 +26,8 @@ type L1Params struct {
 	MaxPayloadSize int32 `json:"maxPayloadSize"`
 	Protocol ProtocolParameters `json:"protocol"`
 }
+
+type _L1Params L1Params
 
 // NewL1Params instantiates a new L1Params object
 // This constructor will assign default values to properties that have it defined,
@@ -131,6 +135,45 @@ func (o L1Params) ToMap() (map[string]interface{}, error) {
 	toSerialize["maxPayloadSize"] = o.MaxPayloadSize
 	toSerialize["protocol"] = o.Protocol
 	return toSerialize, nil
+}
+
+func (o *L1Params) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"baseToken",
+		"maxPayloadSize",
+		"protocol",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varL1Params := _L1Params{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varL1Params)
+
+	if err != nil {
+		return err
+	}
+
+	*o = L1Params(varL1Params)
+
+	return err
 }
 
 type NullableL1Params struct {

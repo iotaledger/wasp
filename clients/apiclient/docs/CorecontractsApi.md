@@ -1,33 +1,33 @@
-# \CorecontractsApi
+# \CorecontractsAPI
 
 All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**AccountsGetAccountBalance**](CorecontractsApi.md#AccountsGetAccountBalance) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-[**AccountsGetAccountFoundries**](CorecontractsApi.md#AccountsGetAccountFoundries) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
-[**AccountsGetAccountNFTIDs**](CorecontractsApi.md#AccountsGetAccountNFTIDs) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
-[**AccountsGetAccountNonce**](CorecontractsApi.md#AccountsGetAccountNonce) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**AccountsGetFoundryOutput**](CorecontractsApi.md#AccountsGetFoundryOutput) | **Get** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
-[**AccountsGetNFTData**](CorecontractsApi.md#AccountsGetNFTData) | **Get** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
-[**AccountsGetNativeTokenIDRegistry**](CorecontractsApi.md#AccountsGetNativeTokenIDRegistry) | **Get** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
-[**AccountsGetTotalAssets**](CorecontractsApi.md#AccountsGetTotalAssets) | **Get** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**BlocklogGetBlockInfo**](CorecontractsApi.md#BlocklogGetBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
-[**BlocklogGetControlAddresses**](CorecontractsApi.md#BlocklogGetControlAddresses) | **Get** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
-[**BlocklogGetEventsOfBlock**](CorecontractsApi.md#BlocklogGetEventsOfBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
-[**BlocklogGetEventsOfLatestBlock**](CorecontractsApi.md#BlocklogGetEventsOfLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
-[**BlocklogGetEventsOfRequest**](CorecontractsApi.md#BlocklogGetEventsOfRequest) | **Get** /v1/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
-[**BlocklogGetLatestBlockInfo**](CorecontractsApi.md#BlocklogGetLatestBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
-[**BlocklogGetRequestIDsForBlock**](CorecontractsApi.md#BlocklogGetRequestIDsForBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
-[**BlocklogGetRequestIDsForLatestBlock**](CorecontractsApi.md#BlocklogGetRequestIDsForLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
-[**BlocklogGetRequestIsProcessed**](CorecontractsApi.md#BlocklogGetRequestIsProcessed) | **Get** /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
-[**BlocklogGetRequestReceipt**](CorecontractsApi.md#BlocklogGetRequestReceipt) | **Get** /v1/chains/{chainID}/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
-[**BlocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
-[**BlocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#BlocklogGetRequestReceiptsOfLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
-[**ErrorsGetErrorMessageFormat**](CorecontractsApi.md#ErrorsGetErrorMessageFormat) | **Get** /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
-[**GovernanceGetAllowedStateControllerAddresses**](CorecontractsApi.md#GovernanceGetAllowedStateControllerAddresses) | **Get** /v1/chains/{chainID}/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
-[**GovernanceGetChainInfo**](CorecontractsApi.md#GovernanceGetChainInfo) | **Get** /v1/chains/{chainID}/core/governance/chaininfo | Get the chain info
-[**GovernanceGetChainOwner**](CorecontractsApi.md#GovernanceGetChainOwner) | **Get** /v1/chains/{chainID}/core/governance/chainowner | Get the chain owner
+[**AccountsGetAccountBalance**](CorecontractsAPI.md#AccountsGetAccountBalance) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
+[**AccountsGetAccountFoundries**](CorecontractsAPI.md#AccountsGetAccountFoundries) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
+[**AccountsGetAccountNFTIDs**](CorecontractsAPI.md#AccountsGetAccountNFTIDs) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
+[**AccountsGetAccountNonce**](CorecontractsAPI.md#AccountsGetAccountNonce) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
+[**AccountsGetFoundryOutput**](CorecontractsAPI.md#AccountsGetFoundryOutput) | **Get** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
+[**AccountsGetNFTData**](CorecontractsAPI.md#AccountsGetNFTData) | **Get** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
+[**AccountsGetNativeTokenIDRegistry**](CorecontractsAPI.md#AccountsGetNativeTokenIDRegistry) | **Get** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
+[**AccountsGetTotalAssets**](CorecontractsAPI.md#AccountsGetTotalAssets) | **Get** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
+[**BlocklogGetBlockInfo**](CorecontractsAPI.md#BlocklogGetBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
+[**BlocklogGetControlAddresses**](CorecontractsAPI.md#BlocklogGetControlAddresses) | **Get** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
+[**BlocklogGetEventsOfBlock**](CorecontractsAPI.md#BlocklogGetEventsOfBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
+[**BlocklogGetEventsOfLatestBlock**](CorecontractsAPI.md#BlocklogGetEventsOfLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
+[**BlocklogGetEventsOfRequest**](CorecontractsAPI.md#BlocklogGetEventsOfRequest) | **Get** /v1/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
+[**BlocklogGetLatestBlockInfo**](CorecontractsAPI.md#BlocklogGetLatestBlockInfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
+[**BlocklogGetRequestIDsForBlock**](CorecontractsAPI.md#BlocklogGetRequestIDsForBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
+[**BlocklogGetRequestIDsForLatestBlock**](CorecontractsAPI.md#BlocklogGetRequestIDsForLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
+[**BlocklogGetRequestIsProcessed**](CorecontractsAPI.md#BlocklogGetRequestIsProcessed) | **Get** /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
+[**BlocklogGetRequestReceipt**](CorecontractsAPI.md#BlocklogGetRequestReceipt) | **Get** /v1/chains/{chainID}/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
+[**BlocklogGetRequestReceiptsOfBlock**](CorecontractsAPI.md#BlocklogGetRequestReceiptsOfBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
+[**BlocklogGetRequestReceiptsOfLatestBlock**](CorecontractsAPI.md#BlocklogGetRequestReceiptsOfLatestBlock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
+[**ErrorsGetErrorMessageFormat**](CorecontractsAPI.md#ErrorsGetErrorMessageFormat) | **Get** /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
+[**GovernanceGetAllowedStateControllerAddresses**](CorecontractsAPI.md#GovernanceGetAllowedStateControllerAddresses) | **Get** /v1/chains/{chainID}/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
+[**GovernanceGetChainInfo**](CorecontractsAPI.md#GovernanceGetChainInfo) | **Get** /v1/chains/{chainID}/core/governance/chaininfo | Get the chain info
+[**GovernanceGetChainOwner**](CorecontractsAPI.md#GovernanceGetChainOwner) | **Get** /v1/chains/{chainID}/core/governance/chainowner | Get the chain owner
 
 
 
@@ -43,26 +43,26 @@ Get all assets belonging to an account
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID, agentID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetAccountBalance``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetAccountBalance`: AssetsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetAccountBalance`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID, agentID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountBalance``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetAccountBalance`: AssetsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountBalance`: %v\n", resp)
 }
 ```
 
@@ -116,26 +116,26 @@ Get all foundries owned by an account
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts, Hex for EVM)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts, Hex for EVM)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetAccountFoundries(context.Background(), chainID, agentID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetAccountFoundries``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetAccountFoundries`: AccountFoundriesResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetAccountFoundries`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountFoundries(context.Background(), chainID, agentID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountFoundries``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetAccountFoundries`: AccountFoundriesResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountFoundries`: %v\n", resp)
 }
 ```
 
@@ -189,26 +189,26 @@ Get all NFT ids belonging to an account
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetAccountNFTIDs(context.Background(), chainID, agentID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetAccountNFTIDs``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetAccountNFTIDs`: AccountNFTsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetAccountNFTIDs`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountNFTIDs(context.Background(), chainID, agentID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountNFTIDs``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetAccountNFTIDs`: AccountNFTsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountNFTIDs`: %v\n", resp)
 }
 ```
 
@@ -262,26 +262,26 @@ Get the current nonce of an account
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetAccountNonce(context.Background(), chainID, agentID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetAccountNonce``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetAccountNonce`: AccountNonceResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetAccountNonce`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountNonce(context.Background(), chainID, agentID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountNonce``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetAccountNonce`: AccountNonceResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountNonce`: %v\n", resp)
 }
 ```
 
@@ -335,26 +335,26 @@ Get the foundry output
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    serialNumber := uint32(56) // uint32 | Serial Number (uint32)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	serialNumber := uint32(56) // uint32 | Serial Number (uint32)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetFoundryOutput(context.Background(), chainID, serialNumber).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetFoundryOutput``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetFoundryOutput`: FoundryOutputResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetFoundryOutput`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetFoundryOutput(context.Background(), chainID, serialNumber).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetFoundryOutput``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetFoundryOutput`: FoundryOutputResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetFoundryOutput`: %v\n", resp)
 }
 ```
 
@@ -408,24 +408,24 @@ Get the NFT data by an ID
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    nftID := "nftID_example" // string | NFT ID (Hex)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	nftID := "nftID_example" // string | NFT ID (Hex)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetNFTData(context.Background(), chainID, nftID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetNFTData``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.CorecontractsAPI.AccountsGetNFTData(context.Background(), chainID, nftID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetNFTData``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -479,25 +479,25 @@ Get a list of all registries
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetNativeTokenIDRegistry(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetNativeTokenIDRegistry``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetNativeTokenIDRegistry`: NativeTokenIDRegistryResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetNativeTokenIDRegistry`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetNativeTokenIDRegistry(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetNativeTokenIDRegistry``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetNativeTokenIDRegistry`: NativeTokenIDRegistryResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetNativeTokenIDRegistry`: %v\n", resp)
 }
 ```
 
@@ -549,25 +549,25 @@ Get all stored assets
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.AccountsGetTotalAssets(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.AccountsGetTotalAssets``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AccountsGetTotalAssets`: AssetsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.AccountsGetTotalAssets`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetTotalAssets(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetTotalAssets``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AccountsGetTotalAssets`: AssetsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetTotalAssets`: %v\n", resp)
 }
 ```
 
@@ -619,26 +619,26 @@ Get the block info of a certain block index
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetBlockInfo(context.Background(), chainID, blockIndex).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetBlockInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetBlockInfo`: BlockInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetBlockInfo`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetBlockInfo(context.Background(), chainID, blockIndex).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetBlockInfo``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetBlockInfo`: BlockInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetBlockInfo`: %v\n", resp)
 }
 ```
 
@@ -692,25 +692,25 @@ Get the control addresses
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetControlAddresses(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetControlAddresses``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetControlAddresses`: ControlAddressesResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetControlAddresses`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetControlAddresses(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetControlAddresses``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetControlAddresses`: ControlAddressesResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetControlAddresses`: %v\n", resp)
 }
 ```
 
@@ -762,26 +762,26 @@ Get events of a block
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetEventsOfBlock(context.Background(), chainID, blockIndex).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetEventsOfBlock``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetEventsOfBlock`: EventsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetEventsOfBlock`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetEventsOfBlock(context.Background(), chainID, blockIndex).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetEventsOfBlock``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetEventsOfBlock`: EventsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetEventsOfBlock`: %v\n", resp)
 }
 ```
 
@@ -835,25 +835,25 @@ Get events of the latest block
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetEventsOfLatestBlock``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetEventsOfLatestBlock`: EventsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetEventsOfLatestBlock`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetEventsOfLatestBlock``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetEventsOfLatestBlock`: EventsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetEventsOfLatestBlock`: %v\n", resp)
 }
 ```
 
@@ -905,26 +905,26 @@ Get events of a request
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    requestID := "requestID_example" // string | RequestID (Hex)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	requestID := "requestID_example" // string | RequestID (Hex)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetEventsOfRequest(context.Background(), chainID, requestID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetEventsOfRequest``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetEventsOfRequest`: EventsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetEventsOfRequest`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetEventsOfRequest(context.Background(), chainID, requestID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetEventsOfRequest``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetEventsOfRequest`: EventsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetEventsOfRequest`: %v\n", resp)
 }
 ```
 
@@ -978,25 +978,25 @@ Get the block info of the latest block
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetLatestBlockInfo(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetLatestBlockInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetLatestBlockInfo`: BlockInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetLatestBlockInfo`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetLatestBlockInfo(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetLatestBlockInfo``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetLatestBlockInfo`: BlockInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetLatestBlockInfo`: %v\n", resp)
 }
 ```
 
@@ -1048,26 +1048,26 @@ Get the request ids for a certain block index
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetRequestIDsForBlock(context.Background(), chainID, blockIndex).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestIDsForBlock``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetRequestIDsForBlock`: RequestIDsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestIDsForBlock`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetRequestIDsForBlock(context.Background(), chainID, blockIndex).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetRequestIDsForBlock``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetRequestIDsForBlock`: RequestIDsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetRequestIDsForBlock`: %v\n", resp)
 }
 ```
 
@@ -1121,25 +1121,25 @@ Get the request ids for the latest block
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetRequestIDsForLatestBlock(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestIDsForLatestBlock``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetRequestIDsForLatestBlock`: RequestIDsResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestIDsForLatestBlock`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetRequestIDsForLatestBlock(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetRequestIDsForLatestBlock``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetRequestIDsForLatestBlock`: RequestIDsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetRequestIDsForLatestBlock`: %v\n", resp)
 }
 ```
 
@@ -1191,26 +1191,26 @@ Get the request processing status
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    requestID := "requestID_example" // string | RequestID (Hex)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	requestID := "requestID_example" // string | RequestID (Hex)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetRequestIsProcessed(context.Background(), chainID, requestID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestIsProcessed``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetRequestIsProcessed`: RequestProcessedResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestIsProcessed`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetRequestIsProcessed(context.Background(), chainID, requestID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetRequestIsProcessed``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetRequestIsProcessed`: RequestProcessedResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetRequestIsProcessed`: %v\n", resp)
 }
 ```
 
@@ -1264,26 +1264,26 @@ Get the receipt of a certain request id
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    requestID := "requestID_example" // string | RequestID (Hex)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	requestID := "requestID_example" // string | RequestID (Hex)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetRequestReceipt(context.Background(), chainID, requestID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceipt``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetRequestReceipt`: ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceipt`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetRequestReceipt(context.Background(), chainID, requestID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetRequestReceipt``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetRequestReceipt`: ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetRequestReceipt`: %v\n", resp)
 }
 ```
 
@@ -1337,26 +1337,26 @@ Get all receipts of a certain block
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), chainID, blockIndex).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceiptsOfBlock``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetRequestReceiptsOfBlock`: []ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceiptsOfBlock`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetRequestReceiptsOfBlock(context.Background(), chainID, blockIndex).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetRequestReceiptsOfBlock``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetRequestReceiptsOfBlock`: []ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetRequestReceiptsOfBlock`: %v\n", resp)
 }
 ```
 
@@ -1410,25 +1410,25 @@ Get all receipts of the latest block
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `BlocklogGetRequestReceiptsOfLatestBlock`: []ReceiptResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.BlocklogGetRequestReceiptsOfLatestBlock``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `BlocklogGetRequestReceiptsOfLatestBlock`: []ReceiptResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.BlocklogGetRequestReceiptsOfLatestBlock`: %v\n", resp)
 }
 ```
 
@@ -1480,27 +1480,27 @@ Get the error message format of a specific error id
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    contractHname := "contractHname_example" // string | Contract (Hname as Hex)
-    errorID := uint32(56) // uint32 | Error Id (uint16)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	contractHname := "contractHname_example" // string | Contract (Hname as Hex)
+	errorID := uint32(56) // uint32 | Error Id (uint16)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.ErrorsGetErrorMessageFormat(context.Background(), chainID, contractHname, errorID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.ErrorsGetErrorMessageFormat``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `ErrorsGetErrorMessageFormat`: ErrorMessageFormatResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.ErrorsGetErrorMessageFormat`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.ErrorsGetErrorMessageFormat(context.Background(), chainID, contractHname, errorID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.ErrorsGetErrorMessageFormat``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `ErrorsGetErrorMessageFormat`: ErrorMessageFormatResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.ErrorsGetErrorMessageFormat`: %v\n", resp)
 }
 ```
 
@@ -1558,25 +1558,25 @@ Get the allowed state controller addresses
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.GovernanceGetAllowedStateControllerAddresses(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.GovernanceGetAllowedStateControllerAddresses``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GovernanceGetAllowedStateControllerAddresses`: GovAllowedStateControllerAddressesResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.GovernanceGetAllowedStateControllerAddresses`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.GovernanceGetAllowedStateControllerAddresses(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.GovernanceGetAllowedStateControllerAddresses``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GovernanceGetAllowedStateControllerAddresses`: GovAllowedStateControllerAddressesResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.GovernanceGetAllowedStateControllerAddresses`: %v\n", resp)
 }
 ```
 
@@ -1630,25 +1630,25 @@ Get the chain info
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.GovernanceGetChainInfo(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.GovernanceGetChainInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GovernanceGetChainInfo`: GovChainInfoResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.GovernanceGetChainInfo`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.GovernanceGetChainInfo(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.GovernanceGetChainInfo``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GovernanceGetChainInfo`: GovChainInfoResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.GovernanceGetChainInfo`: %v\n", resp)
 }
 ```
 
@@ -1702,25 +1702,25 @@ Get the chain owner
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
-    block := "block_example" // string | Block index or trie root (optional)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	block := "block_example" // string | Block index or trie root (optional)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.CorecontractsApi.GovernanceGetChainOwner(context.Background(), chainID).Block(block).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsApi.GovernanceGetChainOwner``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GovernanceGetChainOwner`: GovChainOwnerResponse
-    fmt.Fprintf(os.Stdout, "Response from `CorecontractsApi.GovernanceGetChainOwner`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.CorecontractsAPI.GovernanceGetChainOwner(context.Background(), chainID).Block(block).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.GovernanceGetChainOwner``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GovernanceGetChainOwner`: GovChainOwnerResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.GovernanceGetChainOwner`: %v\n", resp)
 }
 ```
 

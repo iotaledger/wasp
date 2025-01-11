@@ -39,7 +39,7 @@ func initBalanceCmd() *cobra.Command {
 			agentID := util.AgentIDFromArgs(args, chainID)
 			client := cliclients.WaspClient(node)
 
-			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
+			balance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			header := []string{"token", "amount"}
@@ -73,7 +73,7 @@ func initAccountNFTsCmd() *cobra.Command {
 			agentID := util.AgentIDFromArgs(args, chainID)
 			client := cliclients.WaspClient(node)
 
-			nfts, _, err := client.CorecontractsApi.
+			nfts, _, err := client.CorecontractsAPI.
 				AccountsGetAccountNFTIDs(context.Background(), chainID.String(), agentID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
@@ -92,7 +92,7 @@ func initAccountNFTsCmd() *cobra.Command {
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
 func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
-		apiResult, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
+		apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractName: governance.Contract.Name,
 				FunctionName: viewName,
@@ -162,7 +162,7 @@ func initDepositCmd() *cobra.Command {
 					client := cliclients.WaspClient(node)
 					feeNeeded := baseTokensForDepositFee(client, chain)
 					senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
-					senderOnChainBalance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
+					senderOnChainBalance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
 					log.Check(err)

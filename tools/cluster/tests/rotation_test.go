@@ -299,7 +299,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr *cryptolib.Address, t
 }
 
 func (e *ChainEnv) callGetStateController(nodeIndex int) (*cryptolib.Address, error) {
-	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
+	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
 		BlocklogGetControlAddresses(context.Background(), e.Chain.ChainID.String()).
 		Execute()
 	if err != nil {
@@ -322,7 +322,7 @@ func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr *cryptolib.
 }
 
 func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr *cryptolib.Address) bool {
-	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsApi.
+	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
 		GovernanceGetAllowedStateControllerAddresses(context.Background(), chain.ChainID.String()).
 		Execute()
 	require.NoError(t, err)

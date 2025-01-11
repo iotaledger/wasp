@@ -134,7 +134,7 @@ func (c *Client) postSingleRequest(
 func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 	var agentID isc.AgentID = isc.NewAddressAgentID(c.KeyPair.Address())
 
-	result, _, err := c.WaspClient.ChainsApi.CallView(ctx, c.ChainID.String()).
+	result, _, err := c.WaspClient.ChainsAPI.CallView(ctx, c.ChainID.String()).
 		ContractCallViewRequest(apiextensions.CallViewReq(accounts.ViewGetAccountNonce.Message(&agentID))).
 		Execute()
 	if err != nil {
@@ -178,7 +178,7 @@ func (c *Client) PostOffLedgerRequest(
 		ChainId: c.ChainID.String(),
 		Request: request,
 	}
-	_, err := c.WaspClient.RequestsApi.
+	_, err := c.WaspClient.RequestsAPI.
 		OffLedger(ctx).
 		OffLedgerRequest(offLedgerRequest).
 		Execute()

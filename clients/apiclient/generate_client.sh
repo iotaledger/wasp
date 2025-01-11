@@ -36,16 +36,17 @@ cp $SCRIPTPATH/.openapi-generator/FILES /tmp/prev_openapi_generator_files
 if [ $GENERATE_MODE = "docker" ]; then
   echo "Generating client with Docker"
 
+  docker pull lukasmoe/openapi-generator:latest
   docker run -v "$SCRIPTPATH"/wasp_swagger_schema.json:/tmp/schema.json:ro \
     -v "$SCRIPTPATH":/tmp/apiclient-ts \
-    lukasmoe/openapi-generator \
+    lukasmoe/openapi-generator:latest \
     generate -i "/tmp/schema.json" \
     -o "/tmp/apiclient-ts" \
     $GENERATE_ARGS_TS
 
   docker run -v "$SCRIPTPATH"/wasp_swagger_schema.json:/tmp/schema.json:ro \
       -v "$SCRIPTPATH":/tmp/apiclient-go \
-      lukasmoe/openapi-generator \
+      lukasmoe/openapi-generator:latest \
       generate -i "/tmp/schema.json" \
       -o "/tmp/apiclient-go" \
       $GENERATE_ARGS_GO

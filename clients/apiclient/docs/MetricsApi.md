@@ -1,13 +1,13 @@
-# \MetricsApi
+# \MetricsAPI
 
 All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetChainMessageMetrics**](MetricsApi.md#GetChainMessageMetrics) | **Get** /v1/metrics/chain/{chainID}/messages | Get chain specific message metrics.
-[**GetChainPipeMetrics**](MetricsApi.md#GetChainPipeMetrics) | **Get** /v1/metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
-[**GetChainWorkflowMetrics**](MetricsApi.md#GetChainWorkflowMetrics) | **Get** /v1/metrics/chain/{chainID}/workflow | Get chain workflow metrics.
-[**GetNodeMessageMetrics**](MetricsApi.md#GetNodeMessageMetrics) | **Get** /v1/metrics/node/messages | Get accumulated message metrics.
+[**GetChainMessageMetrics**](MetricsAPI.md#GetChainMessageMetrics) | **Get** /v1/metrics/chain/{chainID}/messages | Get chain specific message metrics.
+[**GetChainPipeMetrics**](MetricsAPI.md#GetChainPipeMetrics) | **Get** /v1/metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
+[**GetChainWorkflowMetrics**](MetricsAPI.md#GetChainWorkflowMetrics) | **Get** /v1/metrics/chain/{chainID}/workflow | Get chain workflow metrics.
+[**GetNodeMessageMetrics**](MetricsAPI.md#GetNodeMessageMetrics) | **Get** /v1/metrics/node/messages | Get accumulated message metrics.
 
 
 
@@ -23,24 +23,24 @@ Get chain specific message metrics.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.MetricsApi.GetChainMessageMetrics(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetChainMessageMetrics``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetChainMessageMetrics`: ChainMessageMetrics
-    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetChainMessageMetrics`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.MetricsAPI.GetChainMessageMetrics(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetChainMessageMetrics``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetChainMessageMetrics`: ChainMessageMetrics
+	fmt.Fprintf(os.Stdout, "Response from `MetricsAPI.GetChainMessageMetrics`: %v\n", resp)
 }
 ```
 
@@ -91,24 +91,24 @@ Get chain pipe event metrics.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.MetricsApi.GetChainPipeMetrics(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetChainPipeMetrics``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetChainPipeMetrics`: ConsensusPipeMetrics
-    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetChainPipeMetrics`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.MetricsAPI.GetChainPipeMetrics(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetChainPipeMetrics``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetChainPipeMetrics`: ConsensusPipeMetrics
+	fmt.Fprintf(os.Stdout, "Response from `MetricsAPI.GetChainPipeMetrics`: %v\n", resp)
 }
 ```
 
@@ -159,24 +159,24 @@ Get chain workflow metrics.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    chainID := "chainID_example" // string | ChainID (Hex Address)
+	chainID := "chainID_example" // string | ChainID (Hex Address)
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.MetricsApi.GetChainWorkflowMetrics(context.Background(), chainID).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetChainWorkflowMetrics``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetChainWorkflowMetrics`: ConsensusWorkflowMetrics
-    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetChainWorkflowMetrics`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.MetricsAPI.GetChainWorkflowMetrics(context.Background(), chainID).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetChainWorkflowMetrics``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetChainWorkflowMetrics`: ConsensusWorkflowMetrics
+	fmt.Fprintf(os.Stdout, "Response from `MetricsAPI.GetChainWorkflowMetrics`: %v\n", resp)
 }
 ```
 
@@ -227,23 +227,23 @@ Get accumulated message metrics.
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.MetricsApi.GetNodeMessageMetrics(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `MetricsApi.GetNodeMessageMetrics``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetNodeMessageMetrics`: NodeMessageMetrics
-    fmt.Fprintf(os.Stdout, "Response from `MetricsApi.GetNodeMessageMetrics`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.MetricsAPI.GetNodeMessageMetrics(context.Background()).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetNodeMessageMetrics``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetNodeMessageMetrics`: NodeMessageMetrics
+	fmt.Fprintf(os.Stdout, "Response from `MetricsAPI.GetNodeMessageMetrics`: %v\n", resp)
 }
 ```
 

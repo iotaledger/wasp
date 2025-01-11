@@ -1,15 +1,15 @@
-# \UsersApi
+# \UsersAPI
 
 All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**AddUser**](UsersApi.md#AddUser) | **Post** /v1/users | Add a user
-[**ChangeUserPassword**](UsersApi.md#ChangeUserPassword) | **Put** /v1/users/{username}/password | Change user password
-[**ChangeUserPermissions**](UsersApi.md#ChangeUserPermissions) | **Put** /v1/users/{username}/permissions | Change user permissions
-[**DeleteUser**](UsersApi.md#DeleteUser) | **Delete** /v1/users/{username} | Deletes a user
-[**GetUser**](UsersApi.md#GetUser) | **Get** /v1/users/{username} | Get a user
-[**GetUsers**](UsersApi.md#GetUsers) | **Get** /v1/users | Get a list of all users
+[**AddUser**](UsersAPI.md#AddUser) | **Post** /v1/users | Add a user
+[**ChangeUserPassword**](UsersAPI.md#ChangeUserPassword) | **Put** /v1/users/{username}/password | Change user password
+[**ChangeUserPermissions**](UsersAPI.md#ChangeUserPermissions) | **Put** /v1/users/{username}/permissions | Change user permissions
+[**DeleteUser**](UsersAPI.md#DeleteUser) | **Delete** /v1/users/{username} | Deletes a user
+[**GetUser**](UsersAPI.md#GetUser) | **Get** /v1/users/{username} | Get a user
+[**GetUsers**](UsersAPI.md#GetUsers) | **Get** /v1/users | Get a list of all users
 
 
 
@@ -25,22 +25,22 @@ Add a user
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    addUserRequest := *openapiclient.NewAddUserRequest("Password_example", []string{"Permissions_example"}, "Username_example") // AddUserRequest | The user data
+	addUserRequest := *openapiclient.NewAddUserRequest("Password_example", []string{"Permissions_example"}, "Username_example") // AddUserRequest | The user data
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.UsersApi.AddUser(context.Background()).AddUserRequest(addUserRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UsersApi.AddUser``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.UsersAPI.AddUser(context.Background()).AddUserRequest(addUserRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UsersAPI.AddUser``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -87,23 +87,23 @@ Change user password
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    username := "username_example" // string | The username
-    updateUserPasswordRequest := *openapiclient.NewUpdateUserPasswordRequest("Password_example") // UpdateUserPasswordRequest | The users new password
+	username := "username_example" // string | The username
+	updateUserPasswordRequest := *openapiclient.NewUpdateUserPasswordRequest("Password_example") // UpdateUserPasswordRequest | The users new password
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.UsersApi.ChangeUserPassword(context.Background(), username).UpdateUserPasswordRequest(updateUserPasswordRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UsersApi.ChangeUserPassword``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.UsersAPI.ChangeUserPassword(context.Background(), username).UpdateUserPasswordRequest(updateUserPasswordRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UsersAPI.ChangeUserPassword``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -155,23 +155,23 @@ Change user permissions
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    username := "username_example" // string | The username
-    updateUserPermissionsRequest := *openapiclient.NewUpdateUserPermissionsRequest([]string{"Permissions_example"}) // UpdateUserPermissionsRequest | The users new permissions
+	username := "username_example" // string | The username
+	updateUserPermissionsRequest := *openapiclient.NewUpdateUserPermissionsRequest([]string{"Permissions_example"}) // UpdateUserPermissionsRequest | The users new permissions
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.UsersApi.ChangeUserPermissions(context.Background(), username).UpdateUserPermissionsRequest(updateUserPermissionsRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UsersApi.ChangeUserPermissions``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.UsersAPI.ChangeUserPermissions(context.Background(), username).UpdateUserPermissionsRequest(updateUserPermissionsRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UsersAPI.ChangeUserPermissions``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -223,22 +223,22 @@ Deletes a user
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    username := "username_example" // string | The username
+	username := "username_example" // string | The username
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.UsersApi.DeleteUser(context.Background(), username).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UsersApi.DeleteUser``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.UsersAPI.DeleteUser(context.Background(), username).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UsersAPI.DeleteUser``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 
@@ -289,24 +289,24 @@ Get a user
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    username := "username_example" // string | The username
+	username := "username_example" // string | The username
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.UsersApi.GetUser(context.Background(), username).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UsersApi.GetUser``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetUser`: User
-    fmt.Fprintf(os.Stdout, "Response from `UsersApi.GetUser`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.UsersAPI.GetUser(context.Background(), username).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UsersAPI.GetUser``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetUser`: User
+	fmt.Fprintf(os.Stdout, "Response from `UsersAPI.GetUser`: %v\n", resp)
 }
 ```
 
@@ -357,23 +357,23 @@ Get a list of all users
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.UsersApi.GetUsers(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `UsersApi.GetUsers``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `GetUsers`: []User
-    fmt.Fprintf(os.Stdout, "Response from `UsersApi.GetUsers`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.UsersAPI.GetUsers(context.Background()).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `UsersAPI.GetUsers``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `GetUsers`: []User
+	fmt.Fprintf(os.Stdout, "Response from `UsersAPI.GetUsers`: %v\n", resp)
 }
 ```
 

@@ -1,11 +1,11 @@
-# \AuthApi
+# \AuthAPI
 
 All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**AuthInfo**](AuthApi.md#AuthInfo) | **Get** /auth/info | Get information about the current authentication mode
-[**Authenticate**](AuthApi.md#Authenticate) | **Post** /auth | Authenticate towards the node
+[**AuthInfo**](AuthAPI.md#AuthInfo) | **Get** /auth/info | Get information about the current authentication mode
+[**Authenticate**](AuthAPI.md#Authenticate) | **Post** /auth | Authenticate towards the node
 
 
 
@@ -21,23 +21,23 @@ Get information about the current authentication mode
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.AuthApi.AuthInfo(context.Background()).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `AuthApi.AuthInfo``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `AuthInfo`: AuthInfoModel
-    fmt.Fprintf(os.Stdout, "Response from `AuthApi.AuthInfo`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.AuthAPI.AuthInfo(context.Background()).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `AuthAPI.AuthInfo``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `AuthInfo`: AuthInfoModel
+	fmt.Fprintf(os.Stdout, "Response from `AuthAPI.AuthInfo`: %v\n", resp)
 }
 ```
 
@@ -80,24 +80,24 @@ Authenticate towards the node
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    loginRequest := *openapiclient.NewLoginRequest("Password_example", "Username_example") // LoginRequest | The login request
+	loginRequest := *openapiclient.NewLoginRequest("Password_example", "Username_example") // LoginRequest | The login request
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.AuthApi.Authenticate(context.Background()).LoginRequest(loginRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `AuthApi.Authenticate``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
-    // response from `Authenticate`: LoginResponse
-    fmt.Fprintf(os.Stdout, "Response from `AuthApi.Authenticate`: %v\n", resp)
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	resp, r, err := apiClient.AuthAPI.Authenticate(context.Background()).LoginRequest(loginRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `AuthAPI.Authenticate``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// response from `Authenticate`: LoginResponse
+	fmt.Fprintf(os.Stdout, "Response from `AuthAPI.Authenticate`: %v\n", resp)
 }
 ```
 

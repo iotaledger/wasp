@@ -35,7 +35,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		accs = append(accs, evmAgentID.String())
 	}
 
-	resp, err := env.NewChainClient().WaspClient.ChainsApi.DumpAccounts(
+	resp, err := env.NewChainClient().WaspClient.ChainsAPI.DumpAccounts(
 		context.Background(),
 		env.Chain.ChainID.String(),
 	).Execute()

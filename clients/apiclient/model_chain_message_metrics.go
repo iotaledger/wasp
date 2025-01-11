@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ChainMessageMetrics type satisfies the MappedNullable interface at compile time
@@ -30,6 +32,8 @@ type ChainMessageMetrics struct {
 	OutPullOutputByID UTXOInputMetricItem `json:"outPullOutputByID"`
 	OutPullTxInclusionState TransactionIDMetricItem `json:"outPullTxInclusionState"`
 }
+
+type _ChainMessageMetrics ChainMessageMetrics
 
 // NewChainMessageMetrics instantiates a new ChainMessageMetrics object
 // This constructor will assign default values to properties that have it defined,
@@ -319,6 +323,52 @@ func (o ChainMessageMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize["outPullOutputByID"] = o.OutPullOutputByID
 	toSerialize["outPullTxInclusionState"] = o.OutPullTxInclusionState
 	return toSerialize, nil
+}
+
+func (o *ChainMessageMetrics) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"inAliasOutput",
+		"inOnLedgerRequest",
+		"inOutput",
+		"inStateOutput",
+		"inTxInclusionState",
+		"outPublishGovernanceTransaction",
+		"outPublisherStateTransaction",
+		"outPullLatestOutput",
+		"outPullOutputByID",
+		"outPullTxInclusionState",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varChainMessageMetrics := _ChainMessageMetrics{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varChainMessageMetrics)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ChainMessageMetrics(varChainMessageMetrics)
+
+	return err
 }
 
 type NullableChainMessageMetrics struct {

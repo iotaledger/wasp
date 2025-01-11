@@ -13,18 +13,18 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
 
 
-// AuthApiService AuthApi service
-type AuthApiService service
+// AuthAPIService AuthAPI service
+type AuthAPIService service
 
 type ApiAuthInfoRequest struct {
 	ctx context.Context
-	ApiService *AuthApiService
+	ApiService *AuthAPIService
 }
 
 func (r ApiAuthInfoRequest) Execute() (*AuthInfoModel, *http.Response, error) {
@@ -37,7 +37,7 @@ AuthInfo Get information about the current authentication mode
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiAuthInfoRequest
 */
-func (a *AuthApiService) AuthInfo(ctx context.Context) ApiAuthInfoRequest {
+func (a *AuthAPIService) AuthInfo(ctx context.Context) ApiAuthInfoRequest {
 	return ApiAuthInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -46,7 +46,7 @@ func (a *AuthApiService) AuthInfo(ctx context.Context) ApiAuthInfoRequest {
 
 // Execute executes the request
 //  @return AuthInfoModel
-func (a *AuthApiService) AuthInfoExecute(r ApiAuthInfoRequest) (*AuthInfoModel, *http.Response, error) {
+func (a *AuthAPIService) AuthInfoExecute(r ApiAuthInfoRequest) (*AuthInfoModel, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -54,7 +54,7 @@ func (a *AuthApiService) AuthInfoExecute(r ApiAuthInfoRequest) (*AuthInfoModel, 
 		localVarReturnValue  *AuthInfoModel
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuthApiService.AuthInfo")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuthAPIService.AuthInfo")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -92,9 +92,9 @@ func (a *AuthApiService) AuthInfoExecute(r ApiAuthInfoRequest) (*AuthInfoModel, 
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -121,7 +121,7 @@ func (a *AuthApiService) AuthInfoExecute(r ApiAuthInfoRequest) (*AuthInfoModel, 
 
 type ApiAuthenticateRequest struct {
 	ctx context.Context
-	ApiService *AuthApiService
+	ApiService *AuthAPIService
 	loginRequest *LoginRequest
 }
 
@@ -141,7 +141,7 @@ Authenticate Authenticate towards the node
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiAuthenticateRequest
 */
-func (a *AuthApiService) Authenticate(ctx context.Context) ApiAuthenticateRequest {
+func (a *AuthAPIService) Authenticate(ctx context.Context) ApiAuthenticateRequest {
 	return ApiAuthenticateRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -150,7 +150,7 @@ func (a *AuthApiService) Authenticate(ctx context.Context) ApiAuthenticateReques
 
 // Execute executes the request
 //  @return LoginResponse
-func (a *AuthApiService) AuthenticateExecute(r ApiAuthenticateRequest) (*LoginResponse, *http.Response, error) {
+func (a *AuthAPIService) AuthenticateExecute(r ApiAuthenticateRequest) (*LoginResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
@@ -158,7 +158,7 @@ func (a *AuthApiService) AuthenticateExecute(r ApiAuthenticateRequest) (*LoginRe
 		localVarReturnValue  *LoginResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuthApiService.Authenticate")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "AuthAPIService.Authenticate")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -201,9 +201,9 @@ func (a *AuthApiService) AuthenticateExecute(r ApiAuthenticateRequest) (*LoginRe
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

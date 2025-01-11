@@ -41,7 +41,7 @@ func NewTypeWithDefaults() *Type {
 
 // GetS returns the S field value if set, zero value otherwise.
 func (o *Type) GetS() string {
-	if o == nil || isNil(o.S) {
+	if o == nil || IsNil(o.S) {
 		var ret string
 		return ret
 	}
@@ -51,7 +51,7 @@ func (o *Type) GetS() string {
 // GetSOk returns a tuple with the S field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *Type) GetSOk() (*string, bool) {
-	if o == nil || isNil(o.S) {
+	if o == nil || IsNil(o.S) {
 		return nil, false
 	}
 	return o.S, true
@@ -59,7 +59,7 @@ func (o *Type) GetSOk() (*string, bool) {
 
 // HasS returns a boolean if a field has been set.
 func (o *Type) HasS() bool {
-	if o != nil && !isNil(o.S) {
+	if o != nil && !IsNil(o.S) {
 		return true
 	}
 
@@ -81,7 +81,7 @@ func (o Type) MarshalJSON() ([]byte, error) {
 
 func (o Type) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.S) {
+	if !IsNil(o.S) {
 		toSerialize["s"] = o.S
 	}
 	return toSerialize, nil

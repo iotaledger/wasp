@@ -41,7 +41,7 @@ func NewBigIntWithDefaults() *BigInt {
 
 // GetInt returns the Int field value if set, zero value otherwise.
 func (o *BigInt) GetInt() Int {
-	if o == nil || isNil(o.Int) {
+	if o == nil || IsNil(o.Int) {
 		var ret Int
 		return ret
 	}
@@ -51,7 +51,7 @@ func (o *BigInt) GetInt() Int {
 // GetIntOk returns a tuple with the Int field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *BigInt) GetIntOk() (*Int, bool) {
-	if o == nil || isNil(o.Int) {
+	if o == nil || IsNil(o.Int) {
 		return nil, false
 	}
 	return o.Int, true
@@ -59,7 +59,7 @@ func (o *BigInt) GetIntOk() (*Int, bool) {
 
 // HasInt returns a boolean if a field has been set.
 func (o *BigInt) HasInt() bool {
-	if o != nil && !isNil(o.Int) {
+	if o != nil && !IsNil(o.Int) {
 		return true
 	}
 
@@ -81,7 +81,7 @@ func (o BigInt) MarshalJSON() ([]byte, error) {
 
 func (o BigInt) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Int) {
+	if !IsNil(o.Int) {
 		toSerialize["Int"] = o.Int
 	}
 	return toSerialize, nil

@@ -44,7 +44,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// adds node #0 from cluster2 as access node of node #0 from cluster1
 
 	// trust setup between the two nodes
-	node0peerInfo, _, err := nodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+	node0peerInfo, _, err := nodeClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
 
 	err = clu2.AddTrustedNode(apiclient.PeeringTrustRequest{
@@ -54,7 +54,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	})
 	require.NoError(t, err)
 
-	accessNodePeerInfo, _, err := accessNodeClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+	accessNodePeerInfo, _, err := accessNodeClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
 
 	err = env.Clu.AddTrustedNode(apiclient.PeeringTrustRequest{
@@ -65,7 +65,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// activate the chain on the access node
-	_, err = accessNodeClient.ChainsApi.
+	_, err = accessNodeClient.ChainsAPI.
 		SetChainRecord(context.Background(), env.Chain.ChainID.String()).
 		ChainRecord(apiclient.ChainRecord{
 			IsActive:    true,
@@ -74,7 +74,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// add node 0 from cluster 2 as a *permitionless* access node
-	_, err = nodeClient.ChainsApi.AddAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
+	_, err = nodeClient.ChainsAPI.AddAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
 
 	// give some time for the access node to sync
@@ -96,7 +96,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// remove the access node from cluster1 node 0
-	_, err = nodeClient.ChainsApi.RemoveAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
+	_, err = nodeClient.ChainsAPI.RemoveAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second) // Access/Server node info is exchanged asynchronously.
@@ -107,7 +107,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 
 	// request is not processed after a while
 	time.Sleep(2 * time.Second)
-	receipt, _, err := nodeClient.ChainsApi.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
+	receipt, _, err := nodeClient.ChainsAPI.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
 
 	require.Error(t, err)
 	require.Regexp(t, `404`, err.Error())
