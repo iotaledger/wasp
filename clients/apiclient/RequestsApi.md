@@ -15,23 +15,22 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, RequestsApi } from '';
+import type { RequestsApiOffLedgerRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .RequestsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new RequestsApi(configuration);
 
-let body:.RequestsApiOffLedgerRequest = {
-  // OffLedgerRequest | Offledger request as JSON. Request encoded in Hex
+const request: RequestsApiOffLedgerRequest = {
+    // Offledger request as JSON. Request encoded in Hex
   offLedgerRequest: {
     chainId: "chainId_example",
     request: "Hex string",
   },
 };
 
-apiInstance.offLedger(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.offLedger(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 

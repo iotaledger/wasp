@@ -13,19 +13,19 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
 
-// UsersApiService UsersApi service
-type UsersApiService service
+// UsersAPIService UsersAPI service
+type UsersAPIService service
 
 type ApiAddUserRequest struct {
 	ctx context.Context
-	ApiService *UsersApiService
+	ApiService *UsersAPIService
 	addUserRequest *AddUserRequest
 }
 
@@ -45,7 +45,7 @@ AddUser Add a user
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiAddUserRequest
 */
-func (a *UsersApiService) AddUser(ctx context.Context) ApiAddUserRequest {
+func (a *UsersAPIService) AddUser(ctx context.Context) ApiAddUserRequest {
 	return ApiAddUserRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -53,14 +53,14 @@ func (a *UsersApiService) AddUser(ctx context.Context) ApiAddUserRequest {
 }
 
 // Execute executes the request
-func (a *UsersApiService) AddUserExecute(r ApiAddUserRequest) (*http.Response, error) {
+func (a *UsersAPIService) AddUserExecute(r ApiAddUserRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersApiService.AddUser")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersAPIService.AddUser")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -117,9 +117,9 @@ func (a *UsersApiService) AddUserExecute(r ApiAddUserRequest) (*http.Response, e
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -147,7 +147,7 @@ func (a *UsersApiService) AddUserExecute(r ApiAddUserRequest) (*http.Response, e
 
 type ApiChangeUserPasswordRequest struct {
 	ctx context.Context
-	ApiService *UsersApiService
+	ApiService *UsersAPIService
 	username string
 	updateUserPasswordRequest *UpdateUserPasswordRequest
 }
@@ -169,7 +169,7 @@ ChangeUserPassword Change user password
  @param username The username
  @return ApiChangeUserPasswordRequest
 */
-func (a *UsersApiService) ChangeUserPassword(ctx context.Context, username string) ApiChangeUserPasswordRequest {
+func (a *UsersAPIService) ChangeUserPassword(ctx context.Context, username string) ApiChangeUserPasswordRequest {
 	return ApiChangeUserPasswordRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -178,14 +178,14 @@ func (a *UsersApiService) ChangeUserPassword(ctx context.Context, username strin
 }
 
 // Execute executes the request
-func (a *UsersApiService) ChangeUserPasswordExecute(r ApiChangeUserPasswordRequest) (*http.Response, error) {
+func (a *UsersAPIService) ChangeUserPasswordExecute(r ApiChangeUserPasswordRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersApiService.ChangeUserPassword")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersAPIService.ChangeUserPassword")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -243,9 +243,9 @@ func (a *UsersApiService) ChangeUserPasswordExecute(r ApiChangeUserPasswordReque
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -274,7 +274,7 @@ func (a *UsersApiService) ChangeUserPasswordExecute(r ApiChangeUserPasswordReque
 
 type ApiChangeUserPermissionsRequest struct {
 	ctx context.Context
-	ApiService *UsersApiService
+	ApiService *UsersAPIService
 	username string
 	updateUserPermissionsRequest *UpdateUserPermissionsRequest
 }
@@ -296,7 +296,7 @@ ChangeUserPermissions Change user permissions
  @param username The username
  @return ApiChangeUserPermissionsRequest
 */
-func (a *UsersApiService) ChangeUserPermissions(ctx context.Context, username string) ApiChangeUserPermissionsRequest {
+func (a *UsersAPIService) ChangeUserPermissions(ctx context.Context, username string) ApiChangeUserPermissionsRequest {
 	return ApiChangeUserPermissionsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -305,14 +305,14 @@ func (a *UsersApiService) ChangeUserPermissions(ctx context.Context, username st
 }
 
 // Execute executes the request
-func (a *UsersApiService) ChangeUserPermissionsExecute(r ApiChangeUserPermissionsRequest) (*http.Response, error) {
+func (a *UsersAPIService) ChangeUserPermissionsExecute(r ApiChangeUserPermissionsRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPut
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersApiService.ChangeUserPermissions")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersAPIService.ChangeUserPermissions")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -370,9 +370,9 @@ func (a *UsersApiService) ChangeUserPermissionsExecute(r ApiChangeUserPermission
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -401,7 +401,7 @@ func (a *UsersApiService) ChangeUserPermissionsExecute(r ApiChangeUserPermission
 
 type ApiDeleteUserRequest struct {
 	ctx context.Context
-	ApiService *UsersApiService
+	ApiService *UsersAPIService
 	username string
 }
 
@@ -416,7 +416,7 @@ DeleteUser Deletes a user
  @param username The username
  @return ApiDeleteUserRequest
 */
-func (a *UsersApiService) DeleteUser(ctx context.Context, username string) ApiDeleteUserRequest {
+func (a *UsersAPIService) DeleteUser(ctx context.Context, username string) ApiDeleteUserRequest {
 	return ApiDeleteUserRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -425,14 +425,14 @@ func (a *UsersApiService) DeleteUser(ctx context.Context, username string) ApiDe
 }
 
 // Execute executes the request
-func (a *UsersApiService) DeleteUserExecute(r ApiDeleteUserRequest) (*http.Response, error) {
+func (a *UsersAPIService) DeleteUserExecute(r ApiDeleteUserRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersApiService.DeleteUser")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersAPIService.DeleteUser")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -485,9 +485,9 @@ func (a *UsersApiService) DeleteUserExecute(r ApiDeleteUserRequest) (*http.Respo
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -516,7 +516,7 @@ func (a *UsersApiService) DeleteUserExecute(r ApiDeleteUserRequest) (*http.Respo
 
 type ApiGetUserRequest struct {
 	ctx context.Context
-	ApiService *UsersApiService
+	ApiService *UsersAPIService
 	username string
 }
 
@@ -531,7 +531,7 @@ GetUser Get a user
  @param username The username
  @return ApiGetUserRequest
 */
-func (a *UsersApiService) GetUser(ctx context.Context, username string) ApiGetUserRequest {
+func (a *UsersAPIService) GetUser(ctx context.Context, username string) ApiGetUserRequest {
 	return ApiGetUserRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -541,7 +541,7 @@ func (a *UsersApiService) GetUser(ctx context.Context, username string) ApiGetUs
 
 // Execute executes the request
 //  @return User
-func (a *UsersApiService) GetUserExecute(r ApiGetUserRequest) (*User, *http.Response, error) {
+func (a *UsersAPIService) GetUserExecute(r ApiGetUserRequest) (*User, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -549,7 +549,7 @@ func (a *UsersApiService) GetUserExecute(r ApiGetUserRequest) (*User, *http.Resp
 		localVarReturnValue  *User
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersApiService.GetUser")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersAPIService.GetUser")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -602,9 +602,9 @@ func (a *UsersApiService) GetUserExecute(r ApiGetUserRequest) (*User, *http.Resp
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -642,7 +642,7 @@ func (a *UsersApiService) GetUserExecute(r ApiGetUserRequest) (*User, *http.Resp
 
 type ApiGetUsersRequest struct {
 	ctx context.Context
-	ApiService *UsersApiService
+	ApiService *UsersAPIService
 }
 
 func (r ApiGetUsersRequest) Execute() ([]User, *http.Response, error) {
@@ -655,7 +655,7 @@ GetUsers Get a list of all users
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetUsersRequest
 */
-func (a *UsersApiService) GetUsers(ctx context.Context) ApiGetUsersRequest {
+func (a *UsersAPIService) GetUsers(ctx context.Context) ApiGetUsersRequest {
 	return ApiGetUsersRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -664,7 +664,7 @@ func (a *UsersApiService) GetUsers(ctx context.Context) ApiGetUsersRequest {
 
 // Execute executes the request
 //  @return []User
-func (a *UsersApiService) GetUsersExecute(r ApiGetUsersRequest) ([]User, *http.Response, error) {
+func (a *UsersAPIService) GetUsersExecute(r ApiGetUsersRequest) ([]User, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -672,7 +672,7 @@ func (a *UsersApiService) GetUsersExecute(r ApiGetUsersRequest) ([]User, *http.R
 		localVarReturnValue  []User
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersApiService.GetUsers")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "UsersAPIService.GetUsers")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -724,9 +724,9 @@ func (a *UsersApiService) GetUsersExecute(r ApiGetUsersRequest) ([]User, *http.R
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

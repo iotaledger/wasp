@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**CoinType** | Pointer to **string** |  | [optional] 
+**CoinType** | Pointer to [**Type**](Type.md) |  | [optional] 
 **Decimals** | **int32** | The token decimals | 
 **Name** | **string** | The base token name | 
 **Subunit** | **string** | The token subunit | 
@@ -33,20 +33,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetCoinType
 
-`func (o *BaseToken) GetCoinType() string`
+`func (o *BaseToken) GetCoinType() Type`
 
 GetCoinType returns the CoinType field if non-nil, zero value otherwise.
 
 ### GetCoinTypeOk
 
-`func (o *BaseToken) GetCoinTypeOk() (*string, bool)`
+`func (o *BaseToken) GetCoinTypeOk() (*Type, bool)`
 
 GetCoinTypeOk returns a tuple with the CoinType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCoinType
 
-`func (o *BaseToken) SetCoinType(v string)`
+`func (o *BaseToken) SetCoinType(v Type)`
 
 SetCoinType sets CoinType field to given value.
 

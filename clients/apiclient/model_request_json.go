@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the RequestJSON type satisfies the MappedNullable interface at compile time
@@ -31,6 +33,8 @@ type RequestJSON struct {
 	SenderAccount string `json:"senderAccount"`
 	TargetAddress string `json:"targetAddress"`
 }
+
+type _RequestJSON RequestJSON
 
 // NewRequestJSON instantiates a new RequestJSON object
 // This constructor will assign default values to properties that have it defined,
@@ -320,6 +324,52 @@ func (o RequestJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize["senderAccount"] = o.SenderAccount
 	toSerialize["targetAddress"] = o.TargetAddress
 	return toSerialize, nil
+}
+
+func (o *RequestJSON) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"allowance",
+		"assets",
+		"callTarget",
+		"gasBudget",
+		"isEVM",
+		"isOffLedger",
+		"params",
+		"requestId",
+		"senderAccount",
+		"targetAddress",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varRequestJSON := _RequestJSON{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varRequestJSON)
+
+	if err != nil {
+		return err
+	}
+
+	*o = RequestJSON(varRequestJSON)
+
+	return err
 }
 
 type NullableRequestJSON struct {

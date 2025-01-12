@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the EstimateGasRequestOnledger type satisfies the MappedNullable interface at compile time
@@ -22,6 +24,8 @@ type EstimateGasRequestOnledger struct {
 	// Serialized Output (Hex)
 	OutputBytes string `json:"outputBytes"`
 }
+
+type _EstimateGasRequestOnledger EstimateGasRequestOnledger
 
 // NewEstimateGasRequestOnledger instantiates a new EstimateGasRequestOnledger object
 // This constructor will assign default values to properties that have it defined,
@@ -77,6 +81,43 @@ func (o EstimateGasRequestOnledger) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["outputBytes"] = o.OutputBytes
 	return toSerialize, nil
+}
+
+func (o *EstimateGasRequestOnledger) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"outputBytes",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varEstimateGasRequestOnledger := _EstimateGasRequestOnledger{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varEstimateGasRequestOnledger)
+
+	if err != nil {
+		return err
+	}
+
+	*o = EstimateGasRequestOnledger(varEstimateGasRequestOnledger)
+
+	return err
 }
 
 type NullableEstimateGasRequestOnledger struct {

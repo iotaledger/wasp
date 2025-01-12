@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
- 
+
 /*
 Used to distinguish between an empty flag value or an unset flag.
 
@@ -146,7 +146,7 @@ func validateAndPushURL(target *string, urlValue nilableString) {
 func updateMetadata(node string, chainAliasName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
 	client := cliclients.WaspClient(node)
 
-	chainInfo, _, err := client.CorecontractsApi.GovernanceGetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		log.Fatal("Chain not found")
 	}

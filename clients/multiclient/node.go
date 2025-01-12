@@ -10,7 +10,7 @@ import (
 func (m *MultiClient) NodeVersion() ([]*apiclient.VersionResponse, error) {
 	ret := make([]*apiclient.VersionResponse, len(m.nodes))
 	err := m.Do(func(i int, w *apiclient.APIClient) error {
-		versionResponse, _, err := w.NodeApi.GetVersion(context.Background()).Execute()
+		versionResponse, _, err := w.NodeAPI.GetVersion(context.Background()).Execute()
 		ret[i] = versionResponse
 		return err
 	})

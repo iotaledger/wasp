@@ -29,14 +29,14 @@ func TestReboot(t *testing.T) {
 	client := env.createNewClient()
 
 	// ------ TODO why does this make the test fail?
-	_, er := env.Clu.WaspClient(0).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(0).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(1).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(1).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	//-------
 
@@ -51,7 +51,7 @@ func TestReboot(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -93,7 +93,7 @@ func TestReboot(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -116,7 +116,7 @@ func TestReboot2(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		WaitForL1Confirmation(true).
 		TimeoutSeconds(10).
@@ -126,15 +126,15 @@ func TestReboot2(t *testing.T) {
 	env.expectCounter(2)
 
 	// ------ TODO why does this make the test fail?
-	_, er := env.Clu.WaspClient(0).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(0).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(1).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(1).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	//-------
 
@@ -172,7 +172,7 @@ func TestReboot2(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -207,7 +207,7 @@ func (icc *incCounterClient) MustIncOffLedger() {
 	req, err := icc.client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(icc.t, err)
 
-	_, _, err = icc.env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = icc.env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), icc.env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -388,7 +388,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -412,7 +412,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()

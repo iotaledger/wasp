@@ -1,10 +1,10 @@
-# \RequestsApi
+# \RequestsAPI
 
 All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**OffLedger**](RequestsApi.md#OffLedger) | **Post** /v1/requests/offledger | Post an off-ledger request
+[**OffLedger**](RequestsAPI.md#OffLedger) | **Post** /v1/requests/offledger | Post an off-ledger request
 
 
 
@@ -20,22 +20,22 @@ Post an off-ledger request
 package main
 
 import (
-    "context"
-    "fmt"
-    "os"
-    openapiclient "./openapi"
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
 )
 
 func main() {
-    offLedgerRequest := *openapiclient.NewOffLedgerRequest("ChainId_example", "Hex string") // OffLedgerRequest | Offledger request as JSON. Request encoded in Hex
+	offLedgerRequest := *openapiclient.NewOffLedgerRequest("ChainId_example", "Hex string") // OffLedgerRequest | Offledger request as JSON. Request encoded in Hex
 
-    configuration := openapiclient.NewConfiguration()
-    apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.RequestsApi.OffLedger(context.Background()).OffLedgerRequest(offLedgerRequest).Execute()
-    if err != nil {
-        fmt.Fprintf(os.Stderr, "Error when calling `RequestsApi.OffLedger``: %v\n", err)
-        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-    }
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(offLedgerRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `RequestsAPI.OffLedger``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 }
 ```
 

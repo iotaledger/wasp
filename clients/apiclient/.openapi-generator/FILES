@@ -18,7 +18,7 @@ docs/AddUserRequest.md
 docs/AliasOutputMetricItem.md
 docs/AssetsJSON.md
 docs/AssetsResponse.md
-docs/AuthApi.md
+docs/AuthAPI.md
 docs/AuthInfoModel.md
 docs/BaseToken.md
 docs/BlockInfoResponse.md
@@ -27,7 +27,7 @@ docs/CallTargetJSON.md
 docs/ChainInfoResponse.md
 docs/ChainMessageMetrics.md
 docs/ChainRecord.md
-docs/ChainsApi.md
+docs/ChainsAPI.md
 docs/CoinJSON.md
 docs/CommitteeInfoResponse.md
 docs/CommitteeNode.md
@@ -36,10 +36,10 @@ docs/ConsensusWorkflowMetrics.md
 docs/ContractCallViewRequest.md
 docs/ContractInfoResponse.md
 docs/ControlAddressesResponse.md
-docs/CorecontractsApi.md
+docs/CorecontractsAPI.md
 docs/DKSharesInfo.md
 docs/DKSharesPostRequest.md
-docs/DefaultApi.md
+docs/DefaultAPI.md
 docs/ErrorMessageFormatResponse.md
 docs/EstimateGasRequestOffledger.md
 docs/EstimateGasRequestOnledger.md
@@ -61,11 +61,11 @@ docs/L1Params.md
 docs/Limits.md
 docs/LoginRequest.md
 docs/LoginResponse.md
-docs/MetricsApi.md
+docs/MetricsAPI.md
 docs/MilestoneInfo.md
 docs/MilestoneMetricItem.md
 docs/NativeTokenIDRegistryResponse.md
-docs/NodeApi.md
+docs/NodeAPI.md
 docs/NodeMessageMetrics.md
 docs/NodeOwnerCertificateResponse.md
 docs/OffLedgerRequest.md
@@ -85,7 +85,7 @@ docs/RentStructure.md
 docs/RequestIDsResponse.md
 docs/RequestJSON.md
 docs/RequestProcessedResponse.md
-docs/RequestsApi.md
+docs/RequestsAPI.md
 docs/StateResponse.md
 docs/StateTransaction.md
 docs/Transaction.md
@@ -99,7 +99,7 @@ docs/UnresolvedVMErrorJSON.md
 docs/UpdateUserPasswordRequest.md
 docs/UpdateUserPermissionsRequest.md
 docs/User.md
-docs/UsersApi.md
+docs/UsersAPI.md
 docs/ValidationError.md
 docs/VersionResponse.md
 git_push.sh

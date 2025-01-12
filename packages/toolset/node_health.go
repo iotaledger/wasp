@@ -38,7 +38,7 @@ func nodeHealth(args []string) error {
 	ctx, cancel := context.WithTimeout(getGracefulStopContext(), 5*time.Second)
 	defer cancel()
 
-	_, err = client.DefaultApi.GetHealth(ctx).Execute()
+	_, err = client.DefaultAPI.GetHealth(ctx).Execute()
 	if err != nil {
 		return err
 	}

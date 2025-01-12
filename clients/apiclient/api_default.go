@@ -13,18 +13,18 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
 
 
-// DefaultApiService DefaultApi service
-type DefaultApiService service
+// DefaultAPIService DefaultAPI service
+type DefaultAPIService service
 
 type ApiGetHealthRequest struct {
 	ctx context.Context
-	ApiService *DefaultApiService
+	ApiService *DefaultAPIService
 }
 
 func (r ApiGetHealthRequest) Execute() (*http.Response, error) {
@@ -37,7 +37,7 @@ GetHealth Returns 200 if the node is healthy.
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetHealthRequest
 */
-func (a *DefaultApiService) GetHealth(ctx context.Context) ApiGetHealthRequest {
+func (a *DefaultAPIService) GetHealth(ctx context.Context) ApiGetHealthRequest {
 	return ApiGetHealthRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -45,14 +45,14 @@ func (a *DefaultApiService) GetHealth(ctx context.Context) ApiGetHealthRequest {
 }
 
 // Execute executes the request
-func (a *DefaultApiService) GetHealthExecute(r ApiGetHealthRequest) (*http.Response, error) {
+func (a *DefaultAPIService) GetHealthExecute(r ApiGetHealthRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.GetHealth")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultAPIService.GetHealth")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -90,9 +90,9 @@ func (a *DefaultApiService) GetHealthExecute(r ApiGetHealthRequest) (*http.Respo
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -110,7 +110,7 @@ func (a *DefaultApiService) GetHealthExecute(r ApiGetHealthRequest) (*http.Respo
 
 type ApiV1WsGetRequest struct {
 	ctx context.Context
-	ApiService *DefaultApiService
+	ApiService *DefaultAPIService
 }
 
 func (r ApiV1WsGetRequest) Execute() (*http.Response, error) {
@@ -123,7 +123,7 @@ V1WsGet The websocket connection service
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiV1WsGetRequest
 */
-func (a *DefaultApiService) V1WsGet(ctx context.Context) ApiV1WsGetRequest {
+func (a *DefaultAPIService) V1WsGet(ctx context.Context) ApiV1WsGetRequest {
 	return ApiV1WsGetRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -131,14 +131,14 @@ func (a *DefaultApiService) V1WsGet(ctx context.Context) ApiV1WsGetRequest {
 }
 
 // Execute executes the request
-func (a *DefaultApiService) V1WsGetExecute(r ApiV1WsGetRequest) (*http.Response, error) {
+func (a *DefaultAPIService) V1WsGetExecute(r ApiV1WsGetRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.V1WsGet")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultAPIService.V1WsGet")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -176,9 +176,9 @@ func (a *DefaultApiService) V1WsGetExecute(r ApiV1WsGetRequest) (*http.Response,
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}

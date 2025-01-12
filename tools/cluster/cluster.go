@@ -8,8 +8,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"io"
 	"math/rand"
 	"net/http"
@@ -22,6 +20,9 @@ import (
 	"testing"
 	"text/template"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/samber/lo"
 
@@ -122,7 +123,7 @@ func (clu *Cluster) AddTrustedNode(peerInfo apiclient.PeeringTrustRequest, onNod
 
 		if _, err = clu.WaspClient(
 			//nolint:bodyclose // false positive
-			nodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(peerInfo).Execute(); err != nil {
+			nodes[ni]).NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(peerInfo).Execute(); err != nil {
 			return err
 		}
 	}
@@ -133,7 +134,7 @@ func (clu *Cluster) Login() ([]string, error) {
 	allNodes := clu.Config.AllNodes()
 	jwtTokens := make([]string, len(allNodes))
 	for ni := range allNodes {
-		res, _, err := clu.WaspClient(allNodes[ni]).AuthApi.Authenticate(context.Background()).
+		res, _, err := clu.WaspClient(allNodes[ni]).AuthAPI.Authenticate(context.Background()).
 			LoginRequest(*apiclient.NewLoginRequest("wasp", "wasp")).
 			Execute() //nolint:bodyclose // false positive
 		if err != nil {
@@ -157,7 +158,7 @@ func (clu *Cluster) TrustAll(jwtTokens ...string) error {
 	for ni := range allNodes {
 		var err error
 		//nolint:bodyclose // false positive
-		if allPeers[ni], _, err = clients[ni].NodeApi.GetPeeringIdentity(context.Background()).Execute(); err != nil {
+		if allPeers[ni], _, err = clients[ni].NodeAPI.GetPeeringIdentity(context.Background()).Execute(); err != nil {
 			return err
 		}
 	}
@@ -167,7 +168,7 @@ func (clu *Cluster) TrustAll(jwtTokens ...string) error {
 			if ni == pi {
 				continue // dont trust self
 			}
-			if _, err = clients[ni].NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
+			if _, err = clients[ni].NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(
 				apiclient.PeeringTrustRequest{
 					Name:       fmt.Sprintf("%d", pi),
 					PublicKey:  allPeers[pi].PublicKey,
@@ -210,7 +211,7 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	peerPubKeys := make([]string, 0)
 	for _, i := range committeeNodes {
 		//nolint:bodyclose // false positive
-		peeringNodeInfo, _, err := clu.WaspClient(i).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		peeringNodeInfo, _, err := clu.WaspClient(i).NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 		if err != nil {
 			return nil, err
 		}
@@ -255,7 +256,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	committeePubKeys := make([]string, len(chain.CommitteeNodes))
 	for i, nodeIndex := range chain.CommitteeNodes {
 		//nolint:bodyclose // false positive
-		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 		if err2 != nil {
 			return nil, err2
 		}
@@ -319,7 +320,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			time.Sleep(200 * time.Millisecond)
 			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
 				func(_ int, a *apiclient.APIClient) error {
-					_, _, err2 := a.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 					return err2
 				})
 			if err != nil {
@@ -371,7 +372,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		waspClient := clu.WaspClient(a)
 
 		//nolint:bodyclose // false positive
-		accessNodePeering, _, err := waspClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		accessNodePeering, _, err := waspClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 		if err != nil {
 			return err
 		}
@@ -414,7 +415,7 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotajsonr
 	}
 
 	//nolint:bodyclose // false positive
-	accessNodePeering, _, err := waspClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+	accessNodePeering, _, err := waspClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +425,7 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotajsonr
 		return nil, err
 	}
 
-	cert, _, err := waspClient.NodeApi.OwnerCertificate(context.Background()).Execute() //nolint:bodyclose // false positive
+	cert, _, err := waspClient.NodeAPI.OwnerCertificate(context.Background()).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
 	}

@@ -26,20 +26,19 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
+import type { NodeApiDistrustPeerRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:.NodeApiDistrustPeerRequest = {
-  // string | Name or PubKey (hex) of the trusted peer
+const request: NodeApiDistrustPeerRequest = {
+    // Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
 };
 
-apiInstance.distrustPeer(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.distrustPeer(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -81,14 +80,14 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
+import type { NodeApiGenerateDKSRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:.NodeApiGenerateDKSRequest = {
-  // DKSharesPostRequest | Request parameters
+const request: NodeApiGenerateDKSRequest = {
+    // Request parameters
   dKSharesPostRequest: {
     peerIdentities: [
       "peerIdentities_example",
@@ -98,9 +97,8 @@ let body:.NodeApiGenerateDKSRequest = {
   },
 };
 
-apiInstance.generateDKS(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.generateDKS(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -141,17 +139,15 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getAllPeers(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getAllPeers(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -189,17 +185,15 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getConfiguration(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getConfiguration(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -237,20 +231,19 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
+import type { NodeApiGetDKSInfoRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:.NodeApiGetDKSInfoRequest = {
-  // string | SharedAddress (Hex Address)
+const request: NodeApiGetDKSInfoRequest = {
+    // SharedAddress (Hex Address)
   sharedAddress: "sharedAddress_example",
 };
 
-apiInstance.getDKSInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getDKSInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -292,17 +285,15 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -340,17 +331,15 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getPeeringIdentity(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getPeeringIdentity(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -388,17 +377,15 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getTrustedPeers(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getTrustedPeers(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -436,17 +423,15 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getVersion(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getVersion(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -483,17 +468,15 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.ownerCertificate(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.ownerCertificate(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -531,17 +514,15 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.shutdownNode(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.shutdownNode(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -579,14 +560,14 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, NodeApi } from '';
+import type { NodeApiTrustPeerRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .NodeApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new NodeApi(configuration);
 
-let body:.NodeApiTrustPeerRequest = {
-  // PeeringTrustRequest | Info of the peer to trust
+const request: NodeApiTrustPeerRequest = {
+    // Info of the peer to trust
   peeringTrustRequest: {
     name: "name_example",
     peeringURL: "peeringURL_example",
@@ -594,9 +575,8 @@ let body:.NodeApiTrustPeerRequest = {
   },
 };
 
-apiInstance.trustPeer(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.trustPeer(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 

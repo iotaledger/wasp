@@ -85,7 +85,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// adds node #0 from cluster2 as access node of the chain
 	{
-		node0peerInfo, _, err := w2.Cluster.WaspClient(0).NodeApi.
+		node0peerInfo, _, err := w2.Cluster.WaspClient(0).NodeAPI.
 			GetPeeringIdentity(context.Background()).
 			Execute()
 		require.NoError(t, err)
@@ -100,7 +100,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
-			peerInfo, _, err2 := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			peerInfo, _, err2 := w.Cluster.WaspClient(nodeIndex).NodeAPI.
 				GetPeeringIdentity(context.Background()).
 				Execute()
 			require.NoError(t, err2)

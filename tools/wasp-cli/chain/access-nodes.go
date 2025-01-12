@@ -38,7 +38,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			switch action {
 			case "add":
 				executeActionFunc = func(peer string) {
-					_, err := client.ChainsApi.
+					_, err := client.ChainsAPI.
 						AddAccessNode(context.Background(), chainID.String(), peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
@@ -46,7 +46,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 				}
 			case "remove":
 				executeActionFunc = func(peer string) {
-					_, err := client.ChainsApi.
+					_, err := client.ChainsAPI.
 						RemoveAccessNode(context.Background(), chainID.String(), peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)

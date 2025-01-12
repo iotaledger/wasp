@@ -13,19 +13,19 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
 
-// CorecontractsApiService CorecontractsApi service
-type CorecontractsApiService service
+// CorecontractsAPIService CorecontractsAPI service
+type CorecontractsAPIService service
 
 type ApiAccountsGetAccountBalanceRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	agentID string
 	block *string
@@ -49,7 +49,7 @@ AccountsGetAccountBalance Get all assets belonging to an account
  @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
  @return ApiAccountsGetAccountBalanceRequest
 */
-func (a *CorecontractsApiService) AccountsGetAccountBalance(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountBalanceRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountBalance(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountBalanceRequest {
 	return ApiAccountsGetAccountBalanceRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -60,7 +60,7 @@ func (a *CorecontractsApiService) AccountsGetAccountBalance(ctx context.Context,
 
 // Execute executes the request
 //  @return AssetsResponse
-func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccountsGetAccountBalanceRequest) (*AssetsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetAccountBalanceExecute(r ApiAccountsGetAccountBalanceRequest) (*AssetsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -68,7 +68,7 @@ func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccounts
 		localVarReturnValue  *AssetsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetAccountBalance")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountBalance")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -82,7 +82,7 @@ func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccounts
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -111,9 +111,9 @@ func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccounts
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -150,7 +150,7 @@ func (a *CorecontractsApiService) AccountsGetAccountBalanceExecute(r ApiAccounts
 
 type ApiAccountsGetAccountFoundriesRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	agentID string
 	block *string
@@ -174,7 +174,7 @@ AccountsGetAccountFoundries Get all foundries owned by an account
  @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
  @return ApiAccountsGetAccountFoundriesRequest
 */
-func (a *CorecontractsApiService) AccountsGetAccountFoundries(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountFoundriesRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountFoundries(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountFoundriesRequest {
 	return ApiAccountsGetAccountFoundriesRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -185,7 +185,7 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundries(ctx context.Contex
 
 // Execute executes the request
 //  @return AccountFoundriesResponse
-func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccountsGetAccountFoundriesRequest) (*AccountFoundriesResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetAccountFoundriesExecute(r ApiAccountsGetAccountFoundriesRequest) (*AccountFoundriesResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -193,7 +193,7 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 		localVarReturnValue  *AccountFoundriesResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetAccountFoundries")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountFoundries")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -207,7 +207,7 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -236,9 +236,9 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -275,7 +275,7 @@ func (a *CorecontractsApiService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 
 type ApiAccountsGetAccountNFTIDsRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	agentID string
 	block *string
@@ -299,7 +299,7 @@ AccountsGetAccountNFTIDs Get all NFT ids belonging to an account
  @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
  @return ApiAccountsGetAccountNFTIDsRequest
 */
-func (a *CorecontractsApiService) AccountsGetAccountNFTIDs(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNFTIDsRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountNFTIDs(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNFTIDsRequest {
 	return ApiAccountsGetAccountNFTIDsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -310,7 +310,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDs(ctx context.Context, 
 
 // Execute executes the request
 //  @return AccountNFTsResponse
-func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsGetAccountNFTIDsRequest) (*AccountNFTsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetAccountNFTIDsExecute(r ApiAccountsGetAccountNFTIDsRequest) (*AccountNFTsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -318,7 +318,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 		localVarReturnValue  *AccountNFTsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetAccountNFTIDs")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountNFTIDs")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -332,7 +332,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -361,9 +361,9 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -400,7 +400,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 
 type ApiAccountsGetAccountNonceRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	agentID string
 	block *string
@@ -424,7 +424,7 @@ AccountsGetAccountNonce Get the current nonce of an account
  @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
  @return ApiAccountsGetAccountNonceRequest
 */
-func (a *CorecontractsApiService) AccountsGetAccountNonce(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNonceRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountNonce(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNonceRequest {
 	return ApiAccountsGetAccountNonceRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -435,7 +435,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNonce(ctx context.Context, c
 
 // Execute executes the request
 //  @return AccountNonceResponse
-func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGetAccountNonceRequest) (*AccountNonceResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetAccountNonceExecute(r ApiAccountsGetAccountNonceRequest) (*AccountNonceResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -443,7 +443,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 		localVarReturnValue  *AccountNonceResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetAccountNonce")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountNonce")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -457,7 +457,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -486,9 +486,9 @@ func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -525,7 +525,7 @@ func (a *CorecontractsApiService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 
 type ApiAccountsGetFoundryOutputRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	serialNumber uint32
 	block *string
@@ -549,7 +549,7 @@ AccountsGetFoundryOutput Get the foundry output
  @param serialNumber Serial Number (uint32)
  @return ApiAccountsGetFoundryOutputRequest
 */
-func (a *CorecontractsApiService) AccountsGetFoundryOutput(ctx context.Context, chainID string, serialNumber uint32) ApiAccountsGetFoundryOutputRequest {
+func (a *CorecontractsAPIService) AccountsGetFoundryOutput(ctx context.Context, chainID string, serialNumber uint32) ApiAccountsGetFoundryOutputRequest {
 	return ApiAccountsGetFoundryOutputRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -560,7 +560,7 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutput(ctx context.Context, 
 
 // Execute executes the request
 //  @return FoundryOutputResponse
-func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsGetFoundryOutputRequest) (*FoundryOutputResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetFoundryOutputExecute(r ApiAccountsGetFoundryOutputRequest) (*FoundryOutputResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -568,7 +568,7 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 		localVarReturnValue  *FoundryOutputResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetFoundryOutput")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetFoundryOutput")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -585,7 +585,7 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 	}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -614,9 +614,9 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -653,7 +653,7 @@ func (a *CorecontractsApiService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 
 type ApiAccountsGetNFTDataRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	nftID string
 	block *string
@@ -677,7 +677,7 @@ AccountsGetNFTData Get the NFT data by an ID
  @param nftID NFT ID (Hex)
  @return ApiAccountsGetNFTDataRequest
 */
-func (a *CorecontractsApiService) AccountsGetNFTData(ctx context.Context, chainID string, nftID string) ApiAccountsGetNFTDataRequest {
+func (a *CorecontractsAPIService) AccountsGetNFTData(ctx context.Context, chainID string, nftID string) ApiAccountsGetNFTDataRequest {
 	return ApiAccountsGetNFTDataRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -687,14 +687,14 @@ func (a *CorecontractsApiService) AccountsGetNFTData(ctx context.Context, chainI
 }
 
 // Execute executes the request
-func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTDataRequest) (*http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTDataRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetNFTData")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetNFTData")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -708,7 +708,7 @@ func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -737,9 +737,9 @@ func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -767,7 +767,7 @@ func (a *CorecontractsApiService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 
 type ApiAccountsGetNativeTokenIDRegistryRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -789,7 +789,7 @@ AccountsGetNativeTokenIDRegistry Get a list of all registries
  @param chainID ChainID (Hex Address)
  @return ApiAccountsGetNativeTokenIDRegistryRequest
 */
-func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistry(ctx context.Context, chainID string) ApiAccountsGetNativeTokenIDRegistryRequest {
+func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistry(ctx context.Context, chainID string) ApiAccountsGetNativeTokenIDRegistryRequest {
 	return ApiAccountsGetNativeTokenIDRegistryRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -799,7 +799,7 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistry(ctx context.C
 
 // Execute executes the request
 //  @return NativeTokenIDRegistryResponse
-func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiAccountsGetNativeTokenIDRegistryRequest) (*NativeTokenIDRegistryResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistryExecute(r ApiAccountsGetNativeTokenIDRegistryRequest) (*NativeTokenIDRegistryResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -807,7 +807,7 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 		localVarReturnValue  *NativeTokenIDRegistryResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetNativeTokenIDRegistry")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetNativeTokenIDRegistry")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -820,7 +820,7 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -849,9 +849,9 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -888,7 +888,7 @@ func (a *CorecontractsApiService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 
 type ApiAccountsGetTotalAssetsRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -910,7 +910,7 @@ AccountsGetTotalAssets Get all stored assets
  @param chainID ChainID (Hex Address)
  @return ApiAccountsGetTotalAssetsRequest
 */
-func (a *CorecontractsApiService) AccountsGetTotalAssets(ctx context.Context, chainID string) ApiAccountsGetTotalAssetsRequest {
+func (a *CorecontractsAPIService) AccountsGetTotalAssets(ctx context.Context, chainID string) ApiAccountsGetTotalAssetsRequest {
 	return ApiAccountsGetTotalAssetsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -920,7 +920,7 @@ func (a *CorecontractsApiService) AccountsGetTotalAssets(ctx context.Context, ch
 
 // Execute executes the request
 //  @return AssetsResponse
-func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGetTotalAssetsRequest) (*AssetsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGetTotalAssetsRequest) (*AssetsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -928,7 +928,7 @@ func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 		localVarReturnValue  *AssetsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.AccountsGetTotalAssets")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetTotalAssets")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -941,7 +941,7 @@ func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -970,9 +970,9 @@ func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1009,7 +1009,7 @@ func (a *CorecontractsApiService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 
 type ApiBlocklogGetBlockInfoRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	blockIndex uint32
 	block *string
@@ -1033,7 +1033,7 @@ BlocklogGetBlockInfo Get the block info of a certain block index
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetBlockInfoRequest
 */
-func (a *CorecontractsApiService) BlocklogGetBlockInfo(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
+func (a *CorecontractsAPIService) BlocklogGetBlockInfo(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
 	return ApiBlocklogGetBlockInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1044,7 +1044,7 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfo(ctx context.Context, chai
 
 // Execute executes the request
 //  @return BlockInfoResponse
-func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBlockInfoRequest) (*BlockInfoResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBlockInfoRequest) (*BlockInfoResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1052,7 +1052,7 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 		localVarReturnValue  *BlockInfoResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetBlockInfo")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetBlockInfo")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1069,7 +1069,7 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 	}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1098,9 +1098,9 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1137,7 +1137,7 @@ func (a *CorecontractsApiService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 
 type ApiBlocklogGetControlAddressesRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -1159,7 +1159,7 @@ BlocklogGetControlAddresses Get the control addresses
  @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetControlAddressesRequest
 */
-func (a *CorecontractsApiService) BlocklogGetControlAddresses(ctx context.Context, chainID string) ApiBlocklogGetControlAddressesRequest {
+func (a *CorecontractsAPIService) BlocklogGetControlAddresses(ctx context.Context, chainID string) ApiBlocklogGetControlAddressesRequest {
 	return ApiBlocklogGetControlAddressesRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1169,7 +1169,7 @@ func (a *CorecontractsApiService) BlocklogGetControlAddresses(ctx context.Contex
 
 // Execute executes the request
 //  @return ControlAddressesResponse
-func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlocklogGetControlAddressesRequest) (*ControlAddressesResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlocklogGetControlAddressesRequest) (*ControlAddressesResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1177,7 +1177,7 @@ func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlockl
 		localVarReturnValue  *ControlAddressesResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetControlAddresses")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetControlAddresses")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1190,7 +1190,7 @@ func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlockl
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1219,9 +1219,9 @@ func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlockl
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1258,7 +1258,7 @@ func (a *CorecontractsApiService) BlocklogGetControlAddressesExecute(r ApiBlockl
 
 type ApiBlocklogGetEventsOfBlockRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	blockIndex uint32
 	block *string
@@ -1282,7 +1282,7 @@ BlocklogGetEventsOfBlock Get events of a block
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetEventsOfBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetEventsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
 	return ApiBlocklogGetEventsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1293,7 +1293,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlock(ctx context.Context, 
 
 // Execute executes the request
 //  @return EventsResponse
-func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogGetEventsOfBlockRequest) (*EventsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogGetEventsOfBlockRequest) (*EventsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1301,7 +1301,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 		localVarReturnValue  *EventsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetEventsOfBlock")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetEventsOfBlock")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1318,7 +1318,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 	}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1347,9 +1347,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1386,7 +1386,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 
 type ApiBlocklogGetEventsOfLatestBlockRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -1408,7 +1408,7 @@ BlocklogGetEventsOfLatestBlock Get events of the latest block
  @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetEventsOfLatestBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetEventsOfLatestBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetEventsOfLatestBlockRequest {
 	return ApiBlocklogGetEventsOfLatestBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1418,7 +1418,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlock(ctx context.Con
 
 // Execute executes the request
 //  @return EventsResponse
-func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlocklogGetEventsOfLatestBlockRequest) (*EventsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlocklogGetEventsOfLatestBlockRequest) (*EventsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1426,7 +1426,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 		localVarReturnValue  *EventsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetEventsOfLatestBlock")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetEventsOfLatestBlock")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1439,7 +1439,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1468,9 +1468,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1507,7 +1507,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 
 type ApiBlocklogGetEventsOfRequestRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	requestID string
 	block *string
@@ -1531,7 +1531,7 @@ BlocklogGetEventsOfRequest Get events of a request
  @param requestID RequestID (Hex)
  @return ApiBlocklogGetEventsOfRequestRequest
 */
-func (a *CorecontractsApiService) BlocklogGetEventsOfRequest(ctx context.Context, chainID string, requestID string) ApiBlocklogGetEventsOfRequestRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfRequest(ctx context.Context, chainID string, requestID string) ApiBlocklogGetEventsOfRequestRequest {
 	return ApiBlocklogGetEventsOfRequestRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1542,7 +1542,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequest(ctx context.Context
 
 // Execute executes the request
 //  @return EventsResponse
-func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklogGetEventsOfRequestRequest) (*EventsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfRequestExecute(r ApiBlocklogGetEventsOfRequestRequest) (*EventsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1550,7 +1550,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 		localVarReturnValue  *EventsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetEventsOfRequest")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetEventsOfRequest")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1564,7 +1564,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1593,9 +1593,9 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1632,7 +1632,7 @@ func (a *CorecontractsApiService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 
 type ApiBlocklogGetLatestBlockInfoRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -1654,7 +1654,7 @@ BlocklogGetLatestBlockInfo Get the block info of the latest block
  @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetLatestBlockInfoRequest
 */
-func (a *CorecontractsApiService) BlocklogGetLatestBlockInfo(ctx context.Context, chainID string) ApiBlocklogGetLatestBlockInfoRequest {
+func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfo(ctx context.Context, chainID string) ApiBlocklogGetLatestBlockInfoRequest {
 	return ApiBlocklogGetLatestBlockInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1664,7 +1664,7 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfo(ctx context.Context
 
 // Execute executes the request
 //  @return BlockInfoResponse
-func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklogGetLatestBlockInfoRequest) (*BlockInfoResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklogGetLatestBlockInfoRequest) (*BlockInfoResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1672,7 +1672,7 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 		localVarReturnValue  *BlockInfoResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetLatestBlockInfo")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetLatestBlockInfo")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1685,7 +1685,7 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1714,9 +1714,9 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1753,7 +1753,7 @@ func (a *CorecontractsApiService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 
 type ApiBlocklogGetRequestIDsForBlockRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	blockIndex uint32
 	block *string
@@ -1777,7 +1777,7 @@ BlocklogGetRequestIDsForBlock Get the request ids for a certain block index
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetRequestIDsForBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
 	return ApiBlocklogGetRequestIDsForBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1788,7 +1788,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlock(ctx context.Cont
 
 // Execute executes the request
 //  @return RequestIDsResponse
-func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBlocklogGetRequestIDsForBlockRequest) (*RequestIDsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlockExecute(r ApiBlocklogGetRequestIDsForBlockRequest) (*RequestIDsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1796,7 +1796,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 		localVarReturnValue  *RequestIDsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestIDsForBlock")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestIDsForBlock")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1813,7 +1813,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 	}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1842,9 +1842,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1881,7 +1881,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 
 type ApiBlocklogGetRequestIDsForLatestBlockRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -1903,7 +1903,7 @@ BlocklogGetRequestIDsForLatestBlock Get the request ids for the latest block
  @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetRequestIDsForLatestBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetRequestIDsForLatestBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetRequestIDsForLatestBlockRequest {
 	return ApiBlocklogGetRequestIDsForLatestBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1913,7 +1913,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlock(ctx contex
 
 // Execute executes the request
 //  @return RequestIDsResponse
-func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r ApiBlocklogGetRequestIDsForLatestBlockRequest) (*RequestIDsResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlockExecute(r ApiBlocklogGetRequestIDsForLatestBlockRequest) (*RequestIDsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1921,7 +1921,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 		localVarReturnValue  *RequestIDsResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestIDsForLatestBlock")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestIDsForLatestBlock")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1934,7 +1934,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -1963,9 +1963,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2002,7 +2002,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 
 type ApiBlocklogGetRequestIsProcessedRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	requestID string
 	block *string
@@ -2026,7 +2026,7 @@ BlocklogGetRequestIsProcessed Get the request processing status
  @param requestID RequestID (Hex)
  @return ApiBlocklogGetRequestIsProcessedRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestIsProcessed(ctx context.Context, chainID string, requestID string) ApiBlocklogGetRequestIsProcessedRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessed(ctx context.Context, chainID string, requestID string) ApiBlocklogGetRequestIsProcessedRequest {
 	return ApiBlocklogGetRequestIsProcessedRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2037,7 +2037,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessed(ctx context.Cont
 
 // Execute executes the request
 //  @return RequestProcessedResponse
-func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBlocklogGetRequestIsProcessedRequest) (*RequestProcessedResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessedExecute(r ApiBlocklogGetRequestIsProcessedRequest) (*RequestProcessedResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2045,7 +2045,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 		localVarReturnValue  *RequestProcessedResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestIsProcessed")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestIsProcessed")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2059,7 +2059,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2088,9 +2088,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2127,7 +2127,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 
 type ApiBlocklogGetRequestReceiptRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	requestID string
 	block *string
@@ -2151,7 +2151,7 @@ BlocklogGetRequestReceipt Get the receipt of a certain request id
  @param requestID RequestID (Hex)
  @return ApiBlocklogGetRequestReceiptRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestReceipt(ctx context.Context, chainID string, requestID string) ApiBlocklogGetRequestReceiptRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceipt(ctx context.Context, chainID string, requestID string) ApiBlocklogGetRequestReceiptRequest {
 	return ApiBlocklogGetRequestReceiptRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2162,7 +2162,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceipt(ctx context.Context,
 
 // Execute executes the request
 //  @return ReceiptResponse
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*ReceiptResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2170,7 +2170,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 		localVarReturnValue  *ReceiptResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceipt")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestReceipt")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2184,7 +2184,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2213,9 +2213,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2252,7 +2252,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 
 type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	blockIndex uint32
 	block *string
@@ -2276,7 +2276,7 @@ BlocklogGetRequestReceiptsOfBlock Get all receipts of a certain block
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetRequestReceiptsOfBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2287,7 +2287,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlock(ctx context.
 
 // Execute executes the request
 //  @return []ReceiptResponse
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) ([]ReceiptResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2295,7 +2295,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 		localVarReturnValue  []ReceiptResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceiptsOfBlock")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestReceiptsOfBlock")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2312,7 +2312,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 	}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2341,9 +2341,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2380,7 +2380,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 
 type ApiBlocklogGetRequestReceiptsOfLatestBlockRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -2402,7 +2402,7 @@ BlocklogGetRequestReceiptsOfLatestBlock Get all receipts of the latest block
  @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest
 */
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2412,7 +2412,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlock(ctx co
 
 // Execute executes the request
 //  @return []ReceiptResponse
-func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) ([]ReceiptResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2420,7 +2420,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 		localVarReturnValue  []ReceiptResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.BlocklogGetRequestReceiptsOfLatestBlock")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestReceiptsOfLatestBlock")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2433,7 +2433,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2462,9 +2462,9 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2501,7 +2501,7 @@ func (a *CorecontractsApiService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 
 type ApiErrorsGetErrorMessageFormatRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	contractHname string
 	errorID uint32
@@ -2527,7 +2527,7 @@ ErrorsGetErrorMessageFormat Get the error message format of a specific error id
  @param errorID Error Id (uint16)
  @return ApiErrorsGetErrorMessageFormatRequest
 */
-func (a *CorecontractsApiService) ErrorsGetErrorMessageFormat(ctx context.Context, chainID string, contractHname string, errorID uint32) ApiErrorsGetErrorMessageFormatRequest {
+func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormat(ctx context.Context, chainID string, contractHname string, errorID uint32) ApiErrorsGetErrorMessageFormatRequest {
 	return ApiErrorsGetErrorMessageFormatRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2539,7 +2539,7 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormat(ctx context.Contex
 
 // Execute executes the request
 //  @return ErrorMessageFormatResponse
-func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrorsGetErrorMessageFormatRequest) (*ErrorMessageFormatResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrorsGetErrorMessageFormatRequest) (*ErrorMessageFormatResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2547,7 +2547,7 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 		localVarReturnValue  *ErrorMessageFormatResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.ErrorsGetErrorMessageFormat")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.ErrorsGetErrorMessageFormat")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2565,7 +2565,7 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 	}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2594,9 +2594,9 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2633,7 +2633,7 @@ func (a *CorecontractsApiService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 
 type ApiGovernanceGetAllowedStateControllerAddressesRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -2657,7 +2657,7 @@ Returns the allowed state controller addresses
  @param chainID ChainID (Hex Address)
  @return ApiGovernanceGetAllowedStateControllerAddressesRequest
 */
-func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddresses(ctx context.Context, chainID string) ApiGovernanceGetAllowedStateControllerAddressesRequest {
+func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddresses(ctx context.Context, chainID string) ApiGovernanceGetAllowedStateControllerAddressesRequest {
 	return ApiGovernanceGetAllowedStateControllerAddressesRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2667,7 +2667,7 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddresses(c
 
 // Execute executes the request
 //  @return GovAllowedStateControllerAddressesResponse
-func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesExecute(r ApiGovernanceGetAllowedStateControllerAddressesRequest) (*GovAllowedStateControllerAddressesResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddressesExecute(r ApiGovernanceGetAllowedStateControllerAddressesRequest) (*GovAllowedStateControllerAddressesResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2675,7 +2675,7 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesEx
 		localVarReturnValue  *GovAllowedStateControllerAddressesResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.GovernanceGetAllowedStateControllerAddresses")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetAllowedStateControllerAddresses")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2688,7 +2688,7 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesEx
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2717,9 +2717,9 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesEx
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2756,7 +2756,7 @@ func (a *CorecontractsApiService) GovernanceGetAllowedStateControllerAddressesEx
 
 type ApiGovernanceGetChainInfoRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -2780,7 +2780,7 @@ If you are using the common API functions, you most likely rather want to use '/
  @param chainID ChainID (Hex Address)
  @return ApiGovernanceGetChainInfoRequest
 */
-func (a *CorecontractsApiService) GovernanceGetChainInfo(ctx context.Context, chainID string) ApiGovernanceGetChainInfoRequest {
+func (a *CorecontractsAPIService) GovernanceGetChainInfo(ctx context.Context, chainID string) ApiGovernanceGetChainInfoRequest {
 	return ApiGovernanceGetChainInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2790,7 +2790,7 @@ func (a *CorecontractsApiService) GovernanceGetChainInfo(ctx context.Context, ch
 
 // Execute executes the request
 //  @return GovChainInfoResponse
-func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceGetChainInfoRequest) (*GovChainInfoResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) GovernanceGetChainInfoExecute(r ApiGovernanceGetChainInfoRequest) (*GovChainInfoResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2798,7 +2798,7 @@ func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 		localVarReturnValue  *GovChainInfoResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.GovernanceGetChainInfo")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetChainInfo")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2811,7 +2811,7 @@ func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2840,9 +2840,9 @@ func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -2879,7 +2879,7 @@ func (a *CorecontractsApiService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 
 type ApiGovernanceGetChainOwnerRequest struct {
 	ctx context.Context
-	ApiService *CorecontractsApiService
+	ApiService *CorecontractsAPIService
 	chainID string
 	block *string
 }
@@ -2903,7 +2903,7 @@ Returns the chain owner
  @param chainID ChainID (Hex Address)
  @return ApiGovernanceGetChainOwnerRequest
 */
-func (a *CorecontractsApiService) GovernanceGetChainOwner(ctx context.Context, chainID string) ApiGovernanceGetChainOwnerRequest {
+func (a *CorecontractsAPIService) GovernanceGetChainOwner(ctx context.Context, chainID string) ApiGovernanceGetChainOwnerRequest {
 	return ApiGovernanceGetChainOwnerRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2913,7 +2913,7 @@ func (a *CorecontractsApiService) GovernanceGetChainOwner(ctx context.Context, c
 
 // Execute executes the request
 //  @return GovChainOwnerResponse
-func (a *CorecontractsApiService) GovernanceGetChainOwnerExecute(r ApiGovernanceGetChainOwnerRequest) (*GovChainOwnerResponse, *http.Response, error) {
+func (a *CorecontractsAPIService) GovernanceGetChainOwnerExecute(r ApiGovernanceGetChainOwnerRequest) (*GovChainOwnerResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -2921,7 +2921,7 @@ func (a *CorecontractsApiService) GovernanceGetChainOwnerExecute(r ApiGovernance
 		localVarReturnValue  *GovChainOwnerResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsApiService.GovernanceGetChainOwner")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetChainOwner")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -2934,7 +2934,7 @@ func (a *CorecontractsApiService) GovernanceGetChainOwnerExecute(r ApiGovernance
 	localVarFormParams := url.Values{}
 
 	if r.block != nil {
-		parameterAddToQuery(localVarQueryParams, "block", r.block, "")
+		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -2963,9 +2963,9 @@ func (a *CorecontractsApiService) GovernanceGetChainOwnerExecute(r ApiGovernance
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

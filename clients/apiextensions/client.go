@@ -20,7 +20,7 @@ func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
 }
 
 func CallView(context context.Context, client *apiclient.APIClient, chainID string, request apiclient.ContractCallViewRequest) (isc.CallResults, error) {
-	result, _, err := client.ChainsApi.
+	result, _, err := client.ChainsAPI.
 		CallView(context, chainID).
 		ContractCallViewRequest(request).
 		Execute()

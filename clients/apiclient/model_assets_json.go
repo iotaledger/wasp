@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the AssetsJSON type satisfies the MappedNullable interface at compile time
@@ -22,6 +24,8 @@ type AssetsJSON struct {
 	Coins []CoinJSON `json:"coins"`
 	Objects [][]int32 `json:"objects"`
 }
+
+type _AssetsJSON AssetsJSON
 
 // NewAssetsJSON instantiates a new AssetsJSON object
 // This constructor will assign default values to properties that have it defined,
@@ -103,6 +107,44 @@ func (o AssetsJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize["coins"] = o.Coins
 	toSerialize["objects"] = o.Objects
 	return toSerialize, nil
+}
+
+func (o *AssetsJSON) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"coins",
+		"objects",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varAssetsJSON := _AssetsJSON{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varAssetsJSON)
+
+	if err != nil {
+		return err
+	}
+
+	*o = AssetsJSON(varAssetsJSON)
+
+	return err
 }
 
 type NullableAssetsJSON struct {

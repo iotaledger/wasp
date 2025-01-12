@@ -54,7 +54,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 
 	if len(args) == 0 {
 		blockInfo, _, err := client.
-			CorecontractsApi.
+			CorecontractsAPI.
 			BlocklogGetLatestBlockInfo(context.Background(), config.GetChain(chain).String()).
 			Execute() //nolint:bodyclose // false positive
 
@@ -67,7 +67,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 	log.Check(err)
 
 	blockInfo, _, err := client.
-		CorecontractsApi.
+		CorecontractsAPI.
 		BlocklogGetBlockInfo(context.Background(), config.GetChain(chain).String(), uint32(index)).
 		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
@@ -78,7 +78,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 
 func logRequestsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
-	receipts, _, err := client.CorecontractsApi.
+	receipts, _, err := client.CorecontractsAPI.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetChain(chain).String(), index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
@@ -93,7 +93,7 @@ func logRequestsInBlock(index uint32, node, chain string) {
 
 func logEventsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
-	events, _, err := client.CorecontractsApi.
+	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfBlock(context.Background(), config.GetChain(chain).String(), index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
@@ -141,7 +141,7 @@ func initRequestCmd() *cobra.Command {
 			reqID := reqIDFromString(args[0])
 
 			// TODO add optional block param?
-			receipt, _, err := client.ChainsApi.
+			receipt, _, err := client.ChainsAPI.
 				GetReceipt(context.Background(), chainID.String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
@@ -162,7 +162,7 @@ func initRequestCmd() *cobra.Command {
 
 func logEventsInRequest(reqID isc.RequestID, node, chain string) {
 	client := cliclients.WaspClient(node)
-	events, _, err := client.CorecontractsApi.
+	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfRequest(context.Background(), config.GetChain(chain).String(), reqID.String()).
 		Execute() //nolint:bodyclose // false positive
 

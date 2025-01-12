@@ -26,7 +26,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	outputBytes, err := output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
 	require.NoError(t, err)
 
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOnledger(context.Background(),
+	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOnledger{
 		OutputBytes: cryptolib.EncodeHex(outputBytes),
@@ -87,7 +87,7 @@ func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {
 		outputBytes, err := output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
 		require.NoError(t, err)
 
-		estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOnledger(context.Background(),
+		estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background(),
 			env.Chain.ChainID.String(),
 		).Request(apiclient.EstimateGasRequestOnledger{
 			OutputBytes: cryptolib.EncodeHex(outputBytes),
@@ -129,7 +129,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		WithSender(keyPair.GetPublicKey())
 
 	// Test that the API will fail if the FromAddress is missing
-	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
+	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOffledger{
 		RequestBytes: cryptolib.EncodeHex(estimationReq.Bytes()),
@@ -140,7 +140,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	requestHex := cryptolib.EncodeHex(estimationReq.Bytes())
 
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsApi.EstimateGasOffledger(context.Background(),
+	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background(),
 		env.Chain.ChainID.String(),
 	).Request(apiclient.EstimateGasRequestOffledger{
 		FromAddress:  keyPair.Address().String(),
