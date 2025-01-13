@@ -27,6 +27,10 @@ jobs:
       - name: Build
         run: make build
 
+      - name: Build Tests
+        # use a regex pattern which never meet any function to build all the tests
+        run: go test ./... -run=XXX -tags=tests_build_only
+
   test-short:
     name: Test (short)
     runs-on: ubuntu-latest
