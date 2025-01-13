@@ -806,7 +806,7 @@ func TestSendTimelock(t *testing.T) {
 	// require.Zero(t, env.solo.L1BaseTokens(receiver))
 	// senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress))
 	//
-	// value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
+	// value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.Decimals)
 	//
 	// res, err := env.ISCMagicSandbox(ethKey).CallFn(
 	// 	[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
@@ -824,7 +824,7 @@ func TestSendTimelock(t *testing.T) {
 	// )
 	// require.NoError(t, err)
 	//
-	// decimals := parameters.L1().BaseToken.Decimals
+	// decimals := parameters.Decimals
 	// valueInBaseTokens, bigRemainder := util.EthereumDecimalsToBaseTokenDecimals(
 	// 	value,
 	// 	decimals,
@@ -1429,7 +1429,7 @@ func TestERC20BaseTokens(t *testing.T) {
 	{
 		var supply *big.Int
 		require.NoError(t, erc20.callView("totalSupply", nil, &supply))
-		require.EqualValues(t, baseTokenCoinInfo.TotalSupply, supply.Uint64())
+		require.EqualValues(t, parameters.L1Default.BaseToken.TotalSupply, supply.Uint64())
 	}
 	{
 		var balance *big.Int
@@ -2783,7 +2783,7 @@ func TestL1DepositEVM(t *testing.T) {
 }
 
 func TestDecimalsConversion(t *testing.T) {
-	parameters.InitL1(parameters.L1ForTesting)
+	parameters.InitStaticL1(parameters.L1Default)
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)

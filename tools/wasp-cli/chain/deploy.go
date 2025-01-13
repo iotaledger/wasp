@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -96,10 +97,6 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
-	referenceGasPrice, err := client.GetReferenceGasPrice(ctx)
-	if err != nil {
-		return iotago.ObjectID{}, err
-	}
 
 	txb := iotago.NewProgrammableTransactionBuilder()
 	splitCoinCmd := txb.Command(
@@ -118,7 +115,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
 		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
+		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)

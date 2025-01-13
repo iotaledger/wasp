@@ -32,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -158,6 +159,8 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 			ISCPackageID:  l1starter.Instance().ISCPackageID(),
 		}
 	}
+
+	parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
@@ -453,6 +456,10 @@ func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 		Value: coin.Value(moveGasCoin.Balance),
 		Ref:   &gasCoinRef,
 	}
+}
+
+func (ch *Chain) LatestL1Parameters() *parameters.L1Params {
+	return parameters.L1()
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {

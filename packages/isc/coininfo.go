@@ -13,6 +13,7 @@ type IotaCoinInfo struct {
 	Symbol      string
 	Description string
 	IconURL     string
+	// TotalSupply is a dynamic value, it increases every epoch
 	TotalSupply coin.Value
 }
 

@@ -33,6 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -473,7 +474,11 @@ func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc
 	if err != nil {
 		return nil, err
 	}
-	return e.backend.EVMCall(anchor, callMsg)
+	blockinfo, err := e.getBlockInfoByAnchor(anchor)
+	if err != nil {
+		return nil, err
+	}
+	return e.backend.EVMCall(anchor, callMsg, blockinfo.L1Params)
 }
 
 func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
@@ -481,7 +486,11 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 	if err != nil {
 		return 0, err
 	}
-	return e.backend.EVMEstimateGas(anchor, callMsg)
+	blockinfo, err := e.getBlockInfoByAnchor(anchor)
+	if err != nil {
+		return 0, err
+	}
+	return e.backend.EVMEstimateGas(anchor, callMsg, blockinfo.L1Params)
 }
 
 func (e *EVMChain) GasPrice() *big.Int {
@@ -698,6 +707,7 @@ func (e *EVMChain) traceTransaction(
 		&txIndex,
 		&blockNumber,
 		tracer.Tracer,
+		blockInfo.L1Params,
 	)
 	if err != nil {
 		return nil, err
@@ -881,6 +891,22 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	}
 
 	return results, nil
+}
+
+func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.BlockInfo, error) {
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+	if err != nil {
+		return nil, err
+	}
+	state, err := e.backend.ISCStateByTrieRoot(stateMetadata.L1Commitment.TrieRoot())
+	if err != nil {
+		return nil, err
+	}
+	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(anchor.GetStateIndex())
+	if !ok {
+		return nil, fmt.Errorf("blockinfo not found")
+	}
+	return blockInfo, nil
 }
 
 var maxUint32 = big.NewInt(math.MaxUint32)

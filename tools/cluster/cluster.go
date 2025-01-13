@@ -851,7 +851,7 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balance := isc.NewEmptyAssets()
 	for _, out := range balances {
-		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.Token.CoinType) == 0 {
+		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.BaseTokenDefault.CoinType) == 0 {
 			balance.SetBaseTokens(coin.Value(out.TotalBalance.Uint64()))
 		} else {
 			balance.AddCoin(coin.MustTypeFromString(out.CoinType.String()), coin.Value(out.TotalBalance.Uint64()))

@@ -20,8 +20,8 @@ import (
 // ChainBackend provides access to the underlying ISC chain.
 type ChainBackend interface {
 	EVMSendTransaction(tx *types.Transaction) error
-	EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error)
-	EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error)
+	EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error)
+	EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) (uint64, error)
 	EVMTraceTransaction(
 		anchor *isc.StateAnchor,
 		blockTime time.Time,
@@ -29,6 +29,7 @@ type ChainBackend interface {
 		txIndex *uint64,
 		blockNumber *uint64,
 		tracer *tracers.Tracer,
+		l1Params *parameters.L1Params,
 	) error
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID

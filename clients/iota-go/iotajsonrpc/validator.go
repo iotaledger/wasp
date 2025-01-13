@@ -127,21 +127,25 @@ type IotaValidatorSummary struct {
 }
 
 type (
-	TypeName               []iotago.Address
+	TypeName []iotago.Address
+	// FIXME this struct maybe outdated. We need to update it
 	IotaSystemStateSummary struct {
 		Epoch                                 *BigInt                `json:"epoch"`
 		ProtocolVersion                       *BigInt                `json:"protocolVersion"`
 		SystemStateVersion                    *BigInt                `json:"systemStateVersion"`
+		IotaTotalSupply                       *BigInt                `json:"iotaTotalSupply"`
 		StorageFundTotalObjectStorageRebates  *BigInt                `json:"storageFundTotalObjectStorageRebates"`
 		StorageFundNonRefundableBalance       *BigInt                `json:"storageFundNonRefundableBalance"`
 		ReferenceGasPrice                     *BigInt                `json:"referenceGasPrice"`
 		SafeMode                              bool                   `json:"safeMode"`
+		SafeModeStorageCharges                *BigInt                `json:"safeModeStorageCharges"`
 		SafeModeStorageRewards                *BigInt                `json:"safeModeStorageRewards"`
 		SafeModeComputationRewards            *BigInt                `json:"safeModeComputationRewards"`
 		SafeModeStorageRebates                *BigInt                `json:"safeModeStorageRebates"`
 		SafeModeNonRefundableStorageFee       *BigInt                `json:"safeModeNonRefundableStorageFee"`
 		EpochStartTimestampMs                 *BigInt                `json:"epochStartTimestampMs"`
 		EpochDurationMs                       *BigInt                `json:"epochDurationMs"`
+		MinValidatorCount                     *BigInt                `json:"minValidatorCount"`
 		StakeSubsidyStartEpoch                *BigInt                `json:"stakeSubsidyStartEpoch"`
 		MaxValidatorCount                     *BigInt                `json:"maxValidatorCount"`
 		MinValidatorJoiningStake              *BigInt                `json:"minValidatorJoiningStake"`

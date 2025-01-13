@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -100,7 +101,7 @@ func TestEVMCall(t *testing.T) {
 
 	logger := testlogger.NewLogger(t)
 
-	result, err := chainutil.EVMCall(anchor, store, coreprocessors.NewConfig(), logger, msg)
+	result, err := chainutil.EVMCall(anchor, parameters.L1Default, store, coreprocessors.NewConfig(), logger, msg)
 	if err != nil {
 		t.Fatalf("failed to call EVM: %v", err)
 	}

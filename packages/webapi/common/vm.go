@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -79,8 +80,21 @@ func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest anchor: %w", err)
 	}
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+	if err != nil {
+		return nil, err
+	}
+	state, err := ch.Store().StateByTrieRoot(stateMetadata.L1Commitment.TrieRoot())
+	if err != nil {
+		return nil, err
+	}
+	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(anchor.GetStateIndex())
+	if !ok {
+		return nil, fmt.Errorf("blockinfo not found")
+	}
 	rec, err := chainutil.SimulateRequest(
 		anchor,
+		blockInfo.L1Params,
 		ch.Store(),
 		ch.Processors(),
 		ch.Log(),

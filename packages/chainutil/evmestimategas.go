@@ -26,6 +26,7 @@ var evmErrOutOfGasRegex = regexp.MustCompile("out of gas|intrinsic gas too low")
 // for estimating gas.
 func EVMEstimateGas(
 	anchor *isc.StateAnchor,
+	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
@@ -69,6 +70,7 @@ func EVMEstimateGas(
 		iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
 		res, err := runISCRequest(
 			anchor,
+			l1Params,
 			store,
 			processors,
 			log,
