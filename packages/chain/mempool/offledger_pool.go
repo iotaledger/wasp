@@ -76,7 +76,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 	//
 	// add the request to the "request ref" Lookup Table
 	if !p.refLUT.Set(ref.AsKey(), entry) {
-		p.log.Debugf("NOT ADDED, already exists. reqID: %v as key=%v, senderAccount: ", request.ID(), ref, account)
+		p.log.Debugf("OffLedger Request NOT ADDED, already exists. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
 		return true // not added already exists
 	}
 
@@ -135,7 +135,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 	deleted := p.LimitPoolSize()
 	if lo.Contains(deleted, entry) {
 		// this exact request was deleted from the pool, do not update metrics, or mark available
-		p.log.Debugf("NOT ADDED, was removed already. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
+		p.log.Debugf("OffLedger Request NOT ADDED, was removed already. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
 		return false
 	}
 
