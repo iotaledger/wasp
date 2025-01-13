@@ -477,7 +477,7 @@ type accountsDepositTest struct {
 	coinType          coin.Type
 }
 
-func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest {
+func initDepositTest(t *testing.T, gasCoinBalance ...coin.Value) *accountsDepositTest {
 	ret := &accountsDepositTest{}
 	ret.env = solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 
@@ -486,11 +486,11 @@ func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest 
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
 	ret.userAgentID = isc.NewAddressAgentID(ret.userAddr)
 
-	initBaseTokens := coin.Value(0)
-	if len(initLoad) != 0 {
-		initBaseTokens = initLoad[0]
+	gasCoinBalanceV := coin.Value(0)
+	if len(gasCoinBalance) != 0 {
+		gasCoinBalanceV = gasCoinBalance[0]
 	}
-	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, gasCoinBalanceV, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ret.req = solo.NewCallParams(accounts.FuncDeposit.Message())
 	return ret

@@ -462,7 +462,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.cmtAddress, dkShareProviders = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
 	iscPackageID := node.ISCPackageID()
 	te.tcl = testchain.NewTestChainLedger(t, te.originator, &iscPackageID, te.l1Client)
-	te.anchor, _ = te.tcl.MakeTxChainOrigin()
+	te.anchor = te.tcl.MakeTxChainOrigin()
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))

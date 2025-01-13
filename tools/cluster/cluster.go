@@ -277,7 +277,6 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
 			iotago.ObjectID{},
-			governance.DefaultMinBaseTokensOnCommonAccount,
 			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
 		),
 		&iotago.ObjectID{},

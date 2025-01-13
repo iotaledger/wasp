@@ -124,7 +124,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 
 	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
 
-	anchor, anchorDeposit := tcl.MakeTxChainOrigin()
+	anchor := tcl.MakeTxChainOrigin()
 	gasCoin := &coin.CoinWithRef{
 		Type:  coin.BaseTokenType,
 		Value: coin.Value(100),
@@ -137,7 +137,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, isc.BaseTokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStore, anchor, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)

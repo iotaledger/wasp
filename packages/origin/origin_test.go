@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -35,10 +34,9 @@ func TestMain(m *testing.M) {
 func TestOrigin(t *testing.T) {
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
-	originDepositVal := coin.Value(100)
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, isc.BaseTokenCoinInfo)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	initBlock, _ := origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
+	initBlock, _ := origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, isc.BaseTokenCoinInfo)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
 	require.True(t, l1commitment.Equals(initBlock.L1Commitment()))
@@ -65,8 +63,7 @@ func TestCreateOrigin(t *testing.T) {
 	require.NoError(t, err)
 
 	originDeposit := resGetCoins.Data[2]
-	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, isc.BaseTokenCoinInfo)
 	originStateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
@@ -102,7 +99,7 @@ func TestCreateOrigin(t *testing.T) {
 
 	balancesSentSinger2, err := client.GetAllBalances(context.TODO(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
-	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-originDeposit.Balance.Int64()-txnResponse.Effects.Data.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
+	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-txnResponse.Effects.Data.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
 	balancesStateSinger2, err := client.GetAllBalances(context.TODO(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.Equal(t, balancesStateSinger1[0], balancesStateSinger2[0])

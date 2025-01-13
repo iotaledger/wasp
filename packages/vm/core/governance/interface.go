@@ -169,7 +169,7 @@ const (
 // contract constants
 const (
 	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
-	DefaultMinBaseTokensOnCommonAccount = 3000
+	DefaultMinBaseTokensOnCommonAccount = 0
 
 	BlockKeepAll           = -1
 	DefaultBlockKeepAmount = 10_000

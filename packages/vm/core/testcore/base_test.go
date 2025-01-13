@@ -26,13 +26,13 @@ func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
-	var originAmount coin.Value = 10 * isc.Million
-	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	var gasCoinBalance coin.Value = 10 * isc.Million
+	ch, _ := env.NewChainExt(user, gasCoinBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	_ = ch.Log().Sync()
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,
-		originAmount,
+		0,
 		cassets.BaseTokens())
 	require.EqualValues(t, 1, len(cassets.Coins))
 
