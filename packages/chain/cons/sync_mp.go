@@ -17,15 +17,15 @@ type SyncMP interface {
 }
 
 type syncMPImpl struct {
-	BaseAliasOutput       *isc.StateAnchor
-	DecidedRequestIDs     []isc.RequestID
-	proposalInputsReadyCB func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
-	proposalReceived      bool
-	proposalReceivedCB    func(requestRefs []*isc.RequestRef) gpa.OutMessages
-	requestsNeeded        bool
-	requestsNeededCB      func(requestIDs []*isc.RequestRef) gpa.OutMessages
-	requestsReceived      bool
-	requestsReceivedCB    func(requests []isc.Request) gpa.OutMessages
+	baseAliasOutput         *isc.StateAnchor
+	baseAliasOutputReceived bool
+	proposalInputsReadyCB   func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
+	proposalReceived        bool
+	proposalReceivedCB      func(requestRefs []*isc.RequestRef) gpa.OutMessages
+	requestsNeeded          bool
+	requestsNeededCB        func(requestIDs []*isc.RequestRef) gpa.OutMessages
+	requestsReceived        bool
+	requestsReceivedCB      func(requests []isc.Request) gpa.OutMessages
 }
 
 func NewSyncMP(
@@ -43,11 +43,12 @@ func NewSyncMP(
 }
 
 func (sub *syncMPImpl) BaseAliasOutputReceived(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if sub.BaseAliasOutput != nil {
+	if sub.baseAliasOutputReceived {
 		return nil
 	}
-	sub.BaseAliasOutput = baseAliasOutput
-	return sub.proposalInputsReadyCB(sub.BaseAliasOutput)
+	sub.baseAliasOutput = baseAliasOutput
+	sub.baseAliasOutputReceived = true
+	return sub.proposalInputsReadyCB(sub.baseAliasOutput)
 }
 
 func (sub *syncMPImpl) ProposalReceived(requestRefs []*isc.RequestRef) gpa.OutMessages {
@@ -82,15 +83,15 @@ func (sub *syncMPImpl) String() string {
 	}
 	if sub.proposalReceived {
 		str += "/proposal=OK"
-	} else if sub.BaseAliasOutput == nil {
-		str += "/proposal=WAIT[params: baseAliasOutput]"
+	} else if !sub.baseAliasOutputReceived {
+		str += "/proposal=WAIT[BaseAliasOutput]"
 	} else {
 		str += "/proposal=WAIT[RespFromMemPool]"
 	}
 	if sub.requestsReceived {
 		str += "/requests=OK"
 	} else if !sub.requestsNeeded {
-		str += "/requests=WAIT[acs decision]"
+		str += "/requests=WAIT[AcsDecision]"
 	} else {
 		str += "/requests=WAIT[RespFromMemPool]"
 	}

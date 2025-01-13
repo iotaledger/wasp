@@ -392,6 +392,10 @@ func (c *consImpl) StatusString() string {
 // MP -- MemPool
 
 func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
+	if baseAliasOutput == nil {
+		// If the base AO is nil, we are not going to propose any requests.
+		return c.subMP.ProposalReceived([]*isc.RequestRef{})
+	}
 	c.output.NeedMempoolProposal = baseAliasOutput
 	return nil
 }
@@ -418,6 +422,10 @@ func (c *consImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessage
 // SM -- StateManager
 
 func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
+	if baseAliasOutput == nil {
+		// Don't wait for the state if no base AO is known.
+		return c.subSM.StateProposalConfirmedByStateMgr()
+	}
 	c.output.NeedStateMgrStateProposal = baseAliasOutput
 	return nil
 }
@@ -515,17 +523,23 @@ func (c *consImpl) uponACSInputsReceived(
 	gasCoins []*coin.CoinWithRef,
 	gasPrice uint64,
 ) gpa.OutMessages {
-	batchProposal := bp.NewBatchProposal(
-		*c.dkShare.GetIndex(),
-		baseAliasOutput,
-		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
-		timeData,
-		c.validatorAgentID,
-		requestRefs,
-		gasCoins,
-		gasPrice,
-	)
-	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
+	var batchProposalBytes []byte
+	if baseAliasOutput == nil {
+		batchProposalBytes = []byte{}
+	} else {
+		batchProposal := bp.NewBatchProposal(
+			*c.dkShare.GetIndex(),
+			baseAliasOutput,
+			util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+			timeData,
+			c.validatorAgentID,
+			requestRefs,
+			gasCoins,
+			gasPrice,
+		)
+		batchProposalBytes = batchProposal.Bytes()
+	}
+	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposalBytes)
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to the ACS: %w", err))
 	}

@@ -28,12 +28,13 @@ type SyncACS interface {
 // >     Produce a batch proposal.
 // >     Start the ACS.
 type syncACSImpl struct {
-	BaseStateAnchor  *isc.StateAnchor
-	RequestRefs      []*isc.RequestRef
-	DSSIndexProposal []int
-	TimeData         time.Time
-	gasCoins         []*coin.CoinWithRef
-	gasPrice         uint64
+	baseStateAnchor         *isc.StateAnchor
+	baseStateAnchorReceived bool
+	RequestRefs             []*isc.RequestRef
+	DSSIndexProposal        []int
+	TimeData                time.Time
+	gasCoins                []*coin.CoinWithRef
+	gasPrice                uint64
 
 	inputsReady   bool
 	inputsReadyCB func(
@@ -72,10 +73,11 @@ func NewSyncACS(
 }
 
 func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if sub.BaseStateAnchor != nil {
+	if sub.baseStateAnchorReceived {
 		return nil
 	}
-	sub.BaseStateAnchor = proposedBaseAliasOutput
+	sub.baseStateAnchor = proposedBaseAliasOutput
+	sub.baseStateAnchorReceived = true
 	return sub.tryCompleteInput()
 }
 
@@ -114,11 +116,14 @@ func (sub *syncACSImpl) GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice u
 }
 
 func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
-	if sub.inputsReady || sub.BaseStateAnchor == nil || sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.gasPrice == 0 {
+	if sub.inputsReady || !sub.baseStateAnchorReceived {
+		return nil
+	}
+	if sub.baseStateAnchor != nil && (sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.gasPrice == 0) {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.BaseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.gasPrice)
+	return sub.inputsReadyCB(sub.baseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.gasPrice)
 }
 
 func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
@@ -149,7 +154,7 @@ func (sub *syncACSImpl) String() string {
 		str += "/WAIT[ACS to complete]"
 	} else {
 		wait := []string{}
-		if sub.BaseStateAnchor == nil {
+		if !sub.baseStateAnchorReceived {
 			wait = append(wait, "BaseStateAnchor")
 		}
 		if sub.RequestRefs == nil {
