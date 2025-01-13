@@ -48,7 +48,7 @@ func NewVarConsInsts(
 		},
 		minLI:     minLI,
 		maxLI:     minLI,
-		lastLI:    minLI,
+		lastLI:    NilLogIndex(),
 		lastAO:    nil,
 		hist:      3,
 		persistCB: persistCB,
@@ -98,7 +98,7 @@ func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc
 	}
 	//
 	// Is it already proposed?
-	if existing := vci.lis[li]; existing != nil {
+	if _, ok := vci.lis[li]; ok {
 		return nil
 	}
 	//
