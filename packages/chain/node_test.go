@@ -5,6 +5,7 @@ package chain_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -26,6 +27,7 @@ import (
 	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
@@ -45,6 +47,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -384,6 +387,56 @@ func (tnc *testNodeConn) waitAttached() {
 func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 	panic("should be unused in test")
 }
+
+func (tnc *testNodeConn) ConsensusGasPriceProposal(
+	ctx context.Context,
+	anchor *isc.StateAnchor,
+) <-chan cons_gr.NodeConnGasInfo {
+	t := make(chan cons_gr.NodeConnGasInfo)
+
+	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
+	go func() {
+		stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+		if err != nil {
+			panic(err)
+		}
+
+		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
+			ObjectID: stateMetadata.GasCoinObjectID,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		})
+		if err != nil {
+			panic(err)
+		}
+
+		var moveBalance iotajsonrpc.MoveBalance
+		if err = json.Unmarshal(gasCoin.Data.Content.Data.MoveObject.Fields, &moveBalance); err != nil {
+			panic(err)
+		}
+
+		ref := gasCoin.Data.Ref()
+		var coinInfo cons_gr.NodeConnGasInfo = &testNodeConnGasInfo{
+			gasCoins: []*coin.CoinWithRef{{
+				Type:  coin.BaseTokenType,
+				Value: coin.Value(moveBalance.Value.Uint64()),
+				Ref:   &ref,
+			}},
+			gasPrice: parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
+		}
+
+		t <- coinInfo
+	}()
+
+	return t
+}
+
+type testNodeConnGasInfo struct {
+	gasCoins []*coin.CoinWithRef
+	gasPrice uint64
+}
+
+func (tgi *testNodeConnGasInfo) GetGasCoins() []*coin.CoinWithRef { return tgi.gasCoins }
+func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
 
 // RefreshOnLedgerRequests implements chain.NodeConnection.
 func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {

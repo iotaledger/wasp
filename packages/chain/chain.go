@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -60,6 +61,11 @@ type NodeConnection interface {
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
 	GetL1Params() *parameters.L1Params
+
+	ConsensusGasPriceProposal(
+		ctx context.Context,
+		anchor *isc.StateAnchor,
+	) <-chan cons_gr.NodeConnGasInfo
 }
 
 type StateFreshness byte
