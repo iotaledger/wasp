@@ -17,13 +17,11 @@ func TestMsgWrapper(t *testing.T) {
 	wrapper := gpa.NewMsgWrapper(wrappedMsgID, func(subsystem byte, index int) (gpa.GPA, error) {
 		switch subsystem {
 		case 2:
-			switch index {
-			case 3:
+			if index == 3 {
 				return &subsystemGPA1{}, nil
 			}
 		case 4:
-			switch index {
-			case 5:
+			if index == 5 {
 				return &subsystemGPA2{}, nil
 			}
 		}

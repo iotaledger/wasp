@@ -29,12 +29,12 @@ func initConsensusMetricsCmd() *cobra.Command {
 			log.Check(err)
 
 			chainID := isc.ChainIDFromAddress(chainAddress)
-			workflowStatus, _, err := client.MetricsApi.
+			workflowStatus, _, err := client.MetricsAPI.
 				GetChainWorkflowMetrics(context.Background(), chainID.String()).
 				Execute()
 			log.Check(err)
 
-			pipeMetrics, _, err := client.MetricsApi.
+			pipeMetrics, _, err := client.MetricsAPI.
 				GetChainPipeMetrics(context.Background(), chainID.String()).
 				Execute()
 			log.Check(err)

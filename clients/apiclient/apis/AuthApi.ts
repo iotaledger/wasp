@@ -1,7 +1,7 @@
 // TODO: better import syntax?
 import {BaseAPIRequestFactory, RequiredError, COLLECTION_FORMATS} from './baseapi';
 import {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpFile} from '../http/http';
+import {RequestContext, HttpMethod, ResponseContext, HttpFile, HttpInfo} from '../http/http';
 import {ObjectSerializer} from '../models/ObjectSerializer';
 import {ApiException} from './exception';
 import {canConsumeForm, isCodeInRange} from '../util';
@@ -92,14 +92,14 @@ export class AuthApiResponseProcessor {
      * @params response Response returned by the server for a request to authInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async authInfo(response: ResponseContext): Promise<AuthInfoModel > {
+     public async authInfoWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AuthInfoModel >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: AuthInfoModel = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AuthInfoModel", ""
             ) as AuthInfoModel;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
@@ -108,7 +108,7 @@ export class AuthApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AuthInfoModel", ""
             ) as AuthInfoModel;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -121,14 +121,14 @@ export class AuthApiResponseProcessor {
      * @params response Response returned by the server for a request to authenticate
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async authenticate(response: ResponseContext): Promise<LoginResponse > {
+     public async authenticateWithHttpInfo(response: ResponseContext): Promise<HttpInfo<LoginResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: LoginResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "LoginResponse", ""
             ) as LoginResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", undefined, response.headers);
@@ -143,7 +143,7 @@ export class AuthApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "LoginResponse", ""
             ) as LoginResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

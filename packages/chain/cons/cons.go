@@ -74,6 +74,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa/cc/semi"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
@@ -616,9 +617,11 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	gasCoin := gasCoins[0]
 
 	c.output.NeedVMResult = &vm.VMTask{
-		Processors:           c.processorCache,
-		Anchor:               &stateAnchor,
-		GasCoin:              gasCoin,
+		Processors: c.processorCache,
+		Anchor:     &stateAnchor,
+		GasCoin:    gasCoin,
+		// FIXME pass we l1param to this func instead of calling parameters.L1()
+		L1Params:             parameters.L1(),
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		Timestamp:            aggregatedProposals.AggregatedTime(),

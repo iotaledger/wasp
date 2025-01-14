@@ -477,7 +477,7 @@ type accountsDepositTest struct {
 	coinType          coin.Type
 }
 
-func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest {
+func initDepositTest(t *testing.T, gasCoinBalance ...coin.Value) *accountsDepositTest {
 	ret := &accountsDepositTest{}
 	ret.env = solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 
@@ -486,11 +486,11 @@ func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest 
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
 	ret.userAgentID = isc.NewAddressAgentID(ret.userAddr)
 
-	initBaseTokens := coin.Value(0)
-	if len(initLoad) != 0 {
-		initBaseTokens = initLoad[0]
+	gasCoinBalanceV := coin.Value(0)
+	if len(gasCoinBalance) != 0 {
+		gasCoinBalanceV = gasCoinBalance[0]
 	}
-	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, gasCoinBalanceV, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ret.req = solo.NewCallParams(accounts.FuncDeposit.Message())
 	return ret
@@ -535,12 +535,12 @@ func (v *accountsDepositTest) printBalances(prefix string) {
 
 func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
-		v := initWithdrawTest(t, isc.TopUpFeeMin)
+		v := initWithdrawTest(t, isc.GasCoinMinBalance)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "not enough allowance")
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
-		v := initWithdrawTest(t, isc.TopUpFeeMin)
+		v := initWithdrawTest(t, isc.GasCoinMinBalance)
 		toWithdraw := v.ch.L2Assets(v.userAgentID)
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1
@@ -669,7 +669,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 	t.Run("accounting and pruning", func(t *testing.T) {
 		// mint 100 tokens from chain 1 and withdraw those to L1
-		v := initWithdrawTest(t, isc.TopUpFeeMin)
+		v := initWithdrawTest(t, isc.GasCoinMinBalance)
 
 		// create a new chain (ch2) with active state pruning set to keep only 1 block
 		blockKeepAmount := int32(1)
@@ -694,7 +694,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, isc.TopUpFeeMin)
+	v := initWithdrawTest(t, isc.GasCoinMinBalance)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens()
 	initialOwnerAccountBaseTokens := v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens()
 
@@ -918,7 +918,7 @@ func TestAccounts_DepositRandomContractMinFee(t *testing.T) {
 	receipt := ch.LastReceipt()
 	require.Error(t, receipt.Error)
 
-	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1ForTesting.BaseToken.Decimals), receipt.GasFeeCharged)
+	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1Default.BaseToken.Decimals), receipt.GasFeeCharged)
 	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2BaseTokens(agentID))
 }
 
@@ -946,7 +946,7 @@ func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vm.ErrNotEnoughFundsForAllowance)
 		receipt := ch.LastReceipt()
-		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1ForTesting.BaseToken.Decimals), receipt.GasFeeCharged)
+		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1Default.BaseToken.Decimals), receipt.GasFeeCharged)
 	}
 }
 

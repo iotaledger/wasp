@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -82,7 +83,7 @@ func (k *Key) Derive(i uint32) (*Key, error) {
 	iBytes := make([]byte, 4)
 	binary.BigEndian.PutUint32(iBytes, i)
 	key := append([]byte{0x0}, k.Key...)
-	data := append(key, iBytes...)
+	data := slices.Concat(key, iBytes)
 
 	hash := hmac.New(sha512.New, k.ChainCode)
 	_, err := hash.Write(data)

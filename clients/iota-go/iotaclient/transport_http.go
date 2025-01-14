@@ -12,11 +12,12 @@ type httpTransport struct {
 
 var _ transport = &httpTransport{}
 
-func NewHTTP(url string) *Client {
+func NewHTTP(url string, waitUntilEffectsVisible *WaitParams) *Client {
 	return &Client{
 		transport: &httpTransport{
 			client: iotaconn.NewHTTPClient(url),
 		},
+		WaitUntilEffectsVisible: waitUntilEffectsVisible,
 	}
 }
 

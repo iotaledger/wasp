@@ -4,10 +4,10 @@ import (
 	"crypto/ed25519"
 	"encoding/binary"
 
-	"github.com/minio/blake2b-simd"
 	"github.com/wollac/iota-crypto-demo/pkg/bip32path"
 	"github.com/wollac/iota-crypto-demo/pkg/slip10"
 	"github.com/wollac/iota-crypto-demo/pkg/slip10/eddsa"
+	"golang.org/x/crypto/blake2b"
 
 	hivecrypto "github.com/iotaledger/hive.go/crypto/ed25519"
 

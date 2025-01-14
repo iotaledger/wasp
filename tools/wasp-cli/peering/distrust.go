@@ -27,18 +27,18 @@ func initDistrustCmd() *cobra.Command {
 			client := cliclients.WaspClient(node)
 
 			if peering.CheckPeeringURL(input) != nil {
-				_, err := client.NodeApi.DistrustPeer(context.Background(), input).Execute()
+				_, err := client.NodeAPI.DistrustPeer(context.Background(), input).Execute()
 				log.Check(err)
 				log.Printf("# Distrusted PubKey: %v\n", input)
 				return
 			}
 
-			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
+			trustedList, _, err := client.NodeAPI.GetTrustedPeers(context.Background()).Execute()
 			log.Check(err)
 
 			for _, t := range trustedList {
 				if t.PublicKey == input {
-					_, err := client.NodeApi.DistrustPeer(context.Background(), t.PublicKey).Execute()
+					_, err := client.NodeAPI.DistrustPeer(context.Background(), t.PublicKey).Execute()
 
 					if err != nil {
 						log.Printf("error: failed to distrust %v/%v, reason=%v\n", t.PublicKey, t.PeeringURL, err)

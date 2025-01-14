@@ -35,7 +35,7 @@ func initTrustCmd() *cobra.Command {
 
 			client := cliclients.WaspClient(node)
 
-			_, err = client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+			_, err = client.NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
 				Name:       name,
 				PeeringURL: peeringURL,
 				PublicKey:  pubKey,

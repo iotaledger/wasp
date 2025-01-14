@@ -18,7 +18,7 @@ type TagJson[T TagJsonType] struct {
 }
 
 func (t *TagJson[T]) UnmarshalJSON(data []byte) error {
-	if len(data) <= 0 {
+	if len(data) == 0 {
 		return errors.New("empty json data")
 	}
 	rv := reflect.ValueOf(t).Elem().Field(0)

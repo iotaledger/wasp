@@ -32,7 +32,7 @@ func initInfoCmd() *cobra.Command {
 			// Auth is currently not inside Swagger, so this is a temporary change
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			client := cliclients.WaspClient(node)
-			authInfo, _, err := client.AuthApi.AuthInfo(context.Background()).Execute()
+			authInfo, _, err := client.AuthAPI.AuthInfo(context.Background()).Execute()
 
 			log.Check(err)
 

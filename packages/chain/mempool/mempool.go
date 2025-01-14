@@ -52,6 +52,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -503,8 +504,9 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 		return false
 	}
 	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
-		mpi.addOffledger(offLedgerReq)
-		return true
+		mpi.log.Warn("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
+
+		return mpi.addOffledger(offLedgerReq)
 	}
 	return false
 }
@@ -562,10 +564,13 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	return nil
 }
 
-func (mpi *mempoolImpl) addOffledger(request isc.OffLedgerRequest) {
-	mpi.offLedgerPool.Add(request)
+func (mpi *mempoolImpl) addOffledger(request isc.OffLedgerRequest) bool {
+	if !mpi.offLedgerPool.Add(request) {
+		return false
+	}
 	mpi.metrics.IncRequestsReceived(request)
 	mpi.log.Debugf("accepted by the mempool, requestID: %s", request.ID().String())
+	return true
 }
 
 func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
@@ -788,8 +793,9 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.log.Debugf("Received request %v from outside.", request.ID())
-	mpi.addOffledger(request)
-	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	if mpi.addOffledger(request) {
+		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	}
 }
 
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {

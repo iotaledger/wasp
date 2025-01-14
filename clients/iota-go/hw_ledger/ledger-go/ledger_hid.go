@@ -89,7 +89,7 @@ func isLedgerDevice(d hid.DeviceInfo) bool {
 	deviceFound := d.UsagePage == UsagePageLedgerNanoS
 
 	// Workarounds for possible empty usage pages
-	productIDMM := uint8(d.ProductID >> 8)
+	productIDMM := uint8(d.ProductID >> 8) //nolint:gosec
 	if interfaceID, supported := supportedLedgerProductID[productIDMM]; deviceFound || (supported && (interfaceID == d.Interface)) {
 		return true
 	}

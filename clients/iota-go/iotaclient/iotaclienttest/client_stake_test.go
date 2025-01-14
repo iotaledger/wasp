@@ -19,7 +19,7 @@ func TestRequestAddDelegation(t *testing.T) {
 		t.Skipf("Skipped test as the configured local node does not support this test case")
 	}
 
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	coins, err := client.GetCoins(
@@ -58,7 +58,7 @@ func TestRequestWithdrawDelegation(t *testing.T) {
 		t.Skipf("Skipped test as the configured local node does not support this test case")
 	}
 
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer, err := GetValidatorAddressWithCoins(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &signer)

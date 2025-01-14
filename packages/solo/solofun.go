@@ -9,17 +9,19 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
 func (env *Solo) IotaClient() *iotaclient.Client {
-	return iotaclient.NewHTTP(env.l1Config.IotaRPCURL)
+	return iotaclient.NewHTTP(env.l1Config.IotaRPCURL, l1starter.WaitUntilEffectsVisible)
 }
 
 func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
 	return iscmoveclient.NewHTTPClient(
 		env.l1Config.IotaRPCURL,
 		env.l1Config.IotaFaucetURL,
+		l1starter.WaitUntilEffectsVisible,
 	)
 }
 
@@ -53,8 +55,6 @@ func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))
 }
 
-// NewSignatureSchemeAndPubKey generates new ed25519 signature scheme
-// Returns signature scheme interface and public key in binary form
 func (env *Solo) NewKeyPair(seedOpt ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {
 	return testkey.GenKeyAddr(seedOpt...)
 }

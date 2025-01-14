@@ -142,6 +142,6 @@ func (t *SpeculosTransport) handleAutomationEvents() {
 
 func encodeAPDU(apdu []byte) []byte {
 	size := make([]byte, 4)
-	binary.BigEndian.PutUint32(size, uint32(len(apdu)))
+	binary.BigEndian.PutUint32(size, uint32(len(apdu))) //nolint:gosec
 	return append(size, apdu...)
 }

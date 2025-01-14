@@ -29,7 +29,7 @@ func initExportTrustedJSONCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 
 			client := cliclients.WaspClient(node)
-			trustedList, _, err := client.NodeApi.GetTrustedPeers(context.Background()).Execute()
+			trustedList, _, err := client.NodeAPI.GetTrustedPeers(context.Background()).Execute()
 			log.Check(err)
 
 			var filteredList []apiclient.PeeringNodeIdentityResponse
@@ -97,7 +97,7 @@ func initImportTrustedJSONCmd() *cobra.Command {
 			log.Check(json.Unmarshal(bytes, &trustedList))
 
 			client := cliclients.WaspClient(node)
-			identity, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+			identity, _, err := client.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 			log.Check(err)
 
 			for _, t := range trustedList {
@@ -109,7 +109,7 @@ func initImportTrustedJSONCmd() *cobra.Command {
 					continue
 				}
 
-				_, err := client.NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+				_, err := client.NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
 					Name:       t.Name,
 					PeeringURL: t.PeeringURL,
 					PublicKey:  t.PublicKey,

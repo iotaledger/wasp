@@ -20,14 +20,14 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, UsersApi } from '';
+import type { UsersApiAddUserRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .UsersApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new UsersApi(configuration);
 
-let body:.UsersApiAddUserRequest = {
-  // AddUserRequest | The user data
+const request: UsersApiAddUserRequest = {
+    // The user data
   addUserRequest: {
     password: "password_example",
     permissions: [
@@ -37,9 +37,8 @@ let body:.UsersApiAddUserRequest = {
   },
 };
 
-apiInstance.addUser(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.addUser(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -81,24 +80,23 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, UsersApi } from '';
+import type { UsersApiChangeUserPasswordRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .UsersApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new UsersApi(configuration);
 
-let body:.UsersApiChangeUserPasswordRequest = {
-  // string | The username
+const request: UsersApiChangeUserPasswordRequest = {
+    // The username
   username: "username_example",
-  // UpdateUserPasswordRequest | The users new password
+    // The users new password
   updateUserPasswordRequest: {
     password: "password_example",
   },
 };
 
-apiInstance.changeUserPassword(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.changeUserPassword(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -142,16 +140,16 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, UsersApi } from '';
+import type { UsersApiChangeUserPermissionsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .UsersApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new UsersApi(configuration);
 
-let body:.UsersApiChangeUserPermissionsRequest = {
-  // string | The username
+const request: UsersApiChangeUserPermissionsRequest = {
+    // The username
   username: "username_example",
-  // UpdateUserPermissionsRequest | The users new permissions
+    // The users new permissions
   updateUserPermissionsRequest: {
     permissions: [
       "permissions_example",
@@ -159,9 +157,8 @@ let body:.UsersApiChangeUserPermissionsRequest = {
   },
 };
 
-apiInstance.changeUserPermissions(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.changeUserPermissions(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -205,20 +202,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, UsersApi } from '';
+import type { UsersApiDeleteUserRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .UsersApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new UsersApi(configuration);
 
-let body:.UsersApiDeleteUserRequest = {
-  // string | The username
+const request: UsersApiDeleteUserRequest = {
+    // The username
   username: "username_example",
 };
 
-apiInstance.deleteUser(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.deleteUser(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -260,20 +256,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, UsersApi } from '';
+import type { UsersApiGetUserRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .UsersApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new UsersApi(configuration);
 
-let body:.UsersApiGetUserRequest = {
-  // string | The username
+const request: UsersApiGetUserRequest = {
+    // The username
   username: "username_example",
 };
 
-apiInstance.getUser(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getUser(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -315,17 +310,15 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, UsersApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .UsersApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new UsersApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getUsers(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getUsers(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 

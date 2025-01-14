@@ -42,7 +42,7 @@ func NewUnresolvedVMErrorJSONWithDefaults() *UnresolvedVMErrorJSON {
 
 // GetCode returns the Code field value if set, zero value otherwise.
 func (o *UnresolvedVMErrorJSON) GetCode() string {
-	if o == nil || isNil(o.Code) {
+	if o == nil || IsNil(o.Code) {
 		var ret string
 		return ret
 	}
@@ -52,7 +52,7 @@ func (o *UnresolvedVMErrorJSON) GetCode() string {
 // GetCodeOk returns a tuple with the Code field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UnresolvedVMErrorJSON) GetCodeOk() (*string, bool) {
-	if o == nil || isNil(o.Code) {
+	if o == nil || IsNil(o.Code) {
 		return nil, false
 	}
 	return o.Code, true
@@ -60,7 +60,7 @@ func (o *UnresolvedVMErrorJSON) GetCodeOk() (*string, bool) {
 
 // HasCode returns a boolean if a field has been set.
 func (o *UnresolvedVMErrorJSON) HasCode() bool {
-	if o != nil && !isNil(o.Code) {
+	if o != nil && !IsNil(o.Code) {
 		return true
 	}
 
@@ -74,7 +74,7 @@ func (o *UnresolvedVMErrorJSON) SetCode(v string) {
 
 // GetParams returns the Params field value if set, zero value otherwise.
 func (o *UnresolvedVMErrorJSON) GetParams() []string {
-	if o == nil || isNil(o.Params) {
+	if o == nil || IsNil(o.Params) {
 		var ret []string
 		return ret
 	}
@@ -84,7 +84,7 @@ func (o *UnresolvedVMErrorJSON) GetParams() []string {
 // GetParamsOk returns a tuple with the Params field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *UnresolvedVMErrorJSON) GetParamsOk() ([]string, bool) {
-	if o == nil || isNil(o.Params) {
+	if o == nil || IsNil(o.Params) {
 		return nil, false
 	}
 	return o.Params, true
@@ -92,7 +92,7 @@ func (o *UnresolvedVMErrorJSON) GetParamsOk() ([]string, bool) {
 
 // HasParams returns a boolean if a field has been set.
 func (o *UnresolvedVMErrorJSON) HasParams() bool {
-	if o != nil && !isNil(o.Params) {
+	if o != nil && !IsNil(o.Params) {
 		return true
 	}
 
@@ -114,10 +114,10 @@ func (o UnresolvedVMErrorJSON) MarshalJSON() ([]byte, error) {
 
 func (o UnresolvedVMErrorJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Code) {
+	if !IsNil(o.Code) {
 		toSerialize["code"] = o.Code
 	}
-	if !isNil(o.Params) {
+	if !IsNil(o.Params) {
 		toSerialize["params"] = o.Params
 	}
 	return toSerialize, nil

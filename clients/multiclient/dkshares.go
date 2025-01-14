@@ -11,7 +11,7 @@ import (
 func (m *MultiClient) DKSharesGet(sharedAddress iotago.Address) ([]*apiclient.DKSharesInfo, error) {
 	ret := make([]*apiclient.DKSharesInfo, len(m.nodes))
 	err := m.Do(func(i int, w *apiclient.APIClient) error {
-		sharesInfo, _, err := w.NodeApi.GetDKSInfo(context.Background(), sharedAddress.String()).Execute()
+		sharesInfo, _, err := w.NodeAPI.GetDKSInfo(context.Background(), sharedAddress.String()).Execute()
 		ret[i] = sharesInfo
 		return err
 	})

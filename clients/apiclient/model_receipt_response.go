@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ReceiptResponse type satisfies the MappedNullable interface at compile time
@@ -34,6 +36,8 @@ type ReceiptResponse struct {
 	// Storage deposit charged (uint64 as string)
 	StorageDepositCharged string `json:"storageDepositCharged"`
 }
+
+type _ReceiptResponse ReceiptResponse
 
 // NewReceiptResponse instantiates a new ReceiptResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -86,7 +90,7 @@ func (o *ReceiptResponse) SetBlockIndex(v uint32) {
 
 // GetErrorMessage returns the ErrorMessage field value if set, zero value otherwise.
 func (o *ReceiptResponse) GetErrorMessage() string {
-	if o == nil || isNil(o.ErrorMessage) {
+	if o == nil || IsNil(o.ErrorMessage) {
 		var ret string
 		return ret
 	}
@@ -96,7 +100,7 @@ func (o *ReceiptResponse) GetErrorMessage() string {
 // GetErrorMessageOk returns a tuple with the ErrorMessage field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ReceiptResponse) GetErrorMessageOk() (*string, bool) {
-	if o == nil || isNil(o.ErrorMessage) {
+	if o == nil || IsNil(o.ErrorMessage) {
 		return nil, false
 	}
 	return o.ErrorMessage, true
@@ -104,7 +108,7 @@ func (o *ReceiptResponse) GetErrorMessageOk() (*string, bool) {
 
 // HasErrorMessage returns a boolean if a field has been set.
 func (o *ReceiptResponse) HasErrorMessage() bool {
-	if o != nil && !isNil(o.ErrorMessage) {
+	if o != nil && !IsNil(o.ErrorMessage) {
 		return true
 	}
 
@@ -214,7 +218,7 @@ func (o *ReceiptResponse) SetGasFeeCharged(v string) {
 
 // GetRawError returns the RawError field value if set, zero value otherwise.
 func (o *ReceiptResponse) GetRawError() UnresolvedVMErrorJSON {
-	if o == nil || isNil(o.RawError) {
+	if o == nil || IsNil(o.RawError) {
 		var ret UnresolvedVMErrorJSON
 		return ret
 	}
@@ -224,7 +228,7 @@ func (o *ReceiptResponse) GetRawError() UnresolvedVMErrorJSON {
 // GetRawErrorOk returns a tuple with the RawError field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMErrorJSON, bool) {
-	if o == nil || isNil(o.RawError) {
+	if o == nil || IsNil(o.RawError) {
 		return nil, false
 	}
 	return o.RawError, true
@@ -232,7 +236,7 @@ func (o *ReceiptResponse) GetRawErrorOk() (*UnresolvedVMErrorJSON, bool) {
 
 // HasRawError returns a boolean if a field has been set.
 func (o *ReceiptResponse) HasRawError() bool {
-	if o != nil && !isNil(o.RawError) {
+	if o != nil && !IsNil(o.RawError) {
 		return true
 	}
 
@@ -327,20 +331,64 @@ func (o ReceiptResponse) MarshalJSON() ([]byte, error) {
 func (o ReceiptResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["blockIndex"] = o.BlockIndex
-	if !isNil(o.ErrorMessage) {
+	if !IsNil(o.ErrorMessage) {
 		toSerialize["errorMessage"] = o.ErrorMessage
 	}
 	toSerialize["gasBudget"] = o.GasBudget
 	toSerialize["gasBurnLog"] = o.GasBurnLog
 	toSerialize["gasBurned"] = o.GasBurned
 	toSerialize["gasFeeCharged"] = o.GasFeeCharged
-	if !isNil(o.RawError) {
+	if !IsNil(o.RawError) {
 		toSerialize["rawError"] = o.RawError
 	}
 	toSerialize["request"] = o.Request
 	toSerialize["requestIndex"] = o.RequestIndex
 	toSerialize["storageDepositCharged"] = o.StorageDepositCharged
 	return toSerialize, nil
+}
+
+func (o *ReceiptResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"blockIndex",
+		"gasBudget",
+		"gasBurnLog",
+		"gasBurned",
+		"gasFeeCharged",
+		"request",
+		"requestIndex",
+		"storageDepositCharged",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varReceiptResponse := _ReceiptResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varReceiptResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ReceiptResponse(varReceiptResponse)
+
+	return err
 }
 
 type NullableReceiptResponse struct {

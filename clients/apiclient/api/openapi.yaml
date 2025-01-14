@@ -2360,7 +2360,8 @@ components:
         name: AuthInfoModel
     BaseToken:
       example:
-        coinType: coinType
+        coinType:
+          s: s
         unit: unit
         decimals: 0
         name: name
@@ -2369,10 +2370,7 @@ components:
         useMetricPrefix: true
       properties:
         coinType:
-          format: string
-          type: string
-          xml:
-            name: CoinType
+          $ref: '#/components/schemas/Type'
         decimals:
           description: The token decimals
           format: int32
@@ -3726,7 +3724,8 @@ components:
             version: 9
           maxPayloadSize: 6
           baseToken:
-            coinType: coinType
+            coinType:
+              s: s
             unit: unit
             decimals: 0
             name: name
@@ -3807,7 +3806,8 @@ components:
           version: 9
         maxPayloadSize: 6
         baseToken:
-          coinType: coinType
+          coinType:
+            s: s
           unit: unit
           decimals: 0
           name: name
@@ -5118,6 +5118,9 @@ components:
       xml:
         name: User
     ValidationError:
+      example:
+        error: error
+        missingPermission: missingPermission
       properties:
         error:
           format: string

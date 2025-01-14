@@ -469,7 +469,7 @@ func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[
 			effectiveGasPrice := txs[i].GasPrice()
 			if effectiveGasPrice.Sign() == 0 && !feePolicy.GasPerToken.IsEmpty() {
 				// tx sent before gasPrice was mandatory
-				effectiveGasPrice = feePolicy.DefaultGasPriceFullDecimals(parameters.L1().BaseToken.Decimals)
+				effectiveGasPrice = feePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 			}
 
 			result[i] = RPCMarshalReceipt(receipt, txs[i], effectiveGasPrice)

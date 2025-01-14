@@ -28,5 +28,5 @@ func (s *StateWriter) IncrementNonce(callerAgentID isc.AgentID, chainID isc.Chai
 		return
 	}
 	next := s.AccountNonce(callerAgentID, chainID)
-	s.state.Set(nonceKey(callerAgentID, chainID), codec.Encode[uint64](next))
+	s.state.Set(nonceKey(callerAgentID, chainID), codec.Encode(next))
 }

@@ -198,6 +198,7 @@ type L1Client interface {
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
+	IotaClient() *iotaclient.Client
 	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
 }
 
@@ -252,16 +253,20 @@ func (c *l1Client) L2() L2Client {
 	return iscmoveclient.NewClient(c.Client, c.Config.FaucetURL)
 }
 
-func NewL1Client(l1Config L1Config) L1Client {
+func (c *l1Client) IotaClient() *iotaclient.Client {
+	return c.Client
+}
+
+func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {
 	return &l1Client{
-		iotaclient.NewHTTP(l1Config.APIURL),
+		iotaclient.NewHTTP(l1Config.APIURL, waitUntilEffectsVisible),
 		l1Config,
 	}
 }
 
-func NewLocalnetClient() L1Client {
+func NewLocalnetClient(waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {
 	return NewL1Client(L1Config{
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
-	})
+	}, waitUntilEffectsVisible)
 }

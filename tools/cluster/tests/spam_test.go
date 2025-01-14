@@ -3,11 +3,12 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"math/big"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -101,7 +102,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 30*time.Second)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
@@ -186,7 +187,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)

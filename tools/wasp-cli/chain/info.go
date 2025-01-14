@@ -31,12 +31,12 @@ func initInfoCmd() *cobra.Command {
 			chainID := config.GetChain(chain)
 			client := cliclients.WaspClient(node)
 
-			chainInfo, _, err := client.ChainsApi.
+			chainInfo, _, err := client.ChainsAPI.
 				GetChainInfo(context.Background(), chainID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
-			committeeInfo, _, err := client.ChainsApi.
+			committeeInfo, _, err := client.ChainsAPI.
 				GetCommitteeInfo(context.Background(), chainID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
@@ -79,7 +79,7 @@ func initInfoCmd() *cobra.Command {
 				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
 				log.Printf("\n")
 
-				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+				contracts, _, err := client.ChainsAPI.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 

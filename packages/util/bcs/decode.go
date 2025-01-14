@@ -341,9 +341,9 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	return nil
 }
 
-func (e *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
-	customDecoder := e.getCustomDecoder(t)
-	customInitFunc := e.getCustomInitFunc(t)
+func (d *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
+	customDecoder := d.getCustomDecoder(t)
+	customInitFunc := d.getCustomInitFunc(t)
 
 	if customDecoder != nil || customInitFunc != nil {
 		return typeCustomization{
@@ -366,10 +366,10 @@ func (e *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 	return typeCustomization{}
 }
 
-func (e *Decoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
+func (d *Decoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
 	initialT := t
 
-	if cached, isCached := e.typeInfoCache.Get(initialT); isCached {
+	if cached, isCached := d.typeInfoCache.Get(initialT); isCached {
 		return cached, nil
 	}
 
@@ -378,10 +378,10 @@ func (e *Decoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
 
 	for t.Kind() == reflect.Ptr {
 		// Before dereferencing pointer, we should check if maybe current type is already the type we should decode.
-		customization := e.checkTypeCustomizations(t)
+		customization := d.checkTypeCustomizations(t)
 		if customization.HasCustomizations() {
 			res := typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
-			e.typeInfoCache.Add(initialT, res)
+			d.typeInfoCache.Add(initialT, res)
 
 			return res, nil
 		}
@@ -390,19 +390,19 @@ func (e *Decoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
 		t = t.Elem()
 	}
 
-	customization := e.checkTypeCustomizations(t)
+	customization := d.checkTypeCustomizations(t)
 
 	res := typeInfo{RefLevelsCount: refLevelsCount, typeCustomization: customization}
 
 	if t.Kind() == reflect.Struct {
 		var err error
-		res.FieldOptions, res.FieldHasTag, err = FieldOptionsFromStruct(t, e.cfg.TagName)
+		res.FieldOptions, res.FieldHasTag, err = FieldOptionsFromStruct(t, d.cfg.TagName)
 		if err != nil {
 			return typeInfo{}, fmt.Errorf("parsing struct fields options: %w", err)
 		}
 	}
 
-	e.typeInfoCache.Add(initialT, res)
+	d.typeInfoCache.Add(initialT, res)
 
 	return res, nil
 }

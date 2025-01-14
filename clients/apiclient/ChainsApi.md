@@ -33,20 +33,19 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiActivateChainRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiActivateChainRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiActivateChainRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.activateChain(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.activateChain(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -88,22 +87,21 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiAddAccessNodeRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiAddAccessNodeRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiAddAccessNodeRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Name or PubKey (hex) of the trusted peer
+    // Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
 };
 
-apiInstance.addAccessNode(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.addAccessNode(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -146,16 +144,16 @@ Execute a view call. Either use HName or Name properties. If both are supplied, 
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiCallViewRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiCallViewRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiCallViewRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // ContractCallViewRequest | Parameters
+    // Parameters
   contractCallViewRequest: {
     arguments: [
       "arguments_example",
@@ -168,9 +166,8 @@ let body:.ChainsApiCallViewRequest = {
   },
 };
 
-apiInstance.callView(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.callView(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -211,20 +208,19 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiDeactivateChainRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiDeactivateChainRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiDeactivateChainRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.deactivateChain(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.deactivateChain(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -266,20 +262,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiDumpAccountsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiDumpAccountsRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiDumpAccountsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.dumpAccounts(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.dumpAccounts(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -320,25 +315,24 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiEstimateGasOffledgerRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiEstimateGasOffledgerRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiEstimateGasOffledgerRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // EstimateGasRequestOffledger | Request
+    // Request
   request: {
     fromAddress: "fromAddress_example",
     requestBytes: "requestBytes_example",
   },
 };
 
-apiInstance.estimateGasOffledger(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.estimateGasOffledger(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -379,24 +373,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiEstimateGasOnledgerRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiEstimateGasOnledgerRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiEstimateGasOnledgerRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // EstimateGasRequestOnledger | Request
+    // Request
   request: {
     outputBytes: "outputBytes_example",
   },
 };
 
-apiInstance.estimateGasOnledger(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.estimateGasOnledger(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -437,22 +430,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiGetChainInfoRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiGetChainInfoRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiGetChainInfoRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.getChainInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getChainInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -493,17 +485,15 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getChains(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getChains(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -541,22 +531,21 @@ This endpoint does not need any parameter.
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiGetCommitteeInfoRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiGetCommitteeInfoRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiGetCommitteeInfoRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.getCommitteeInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getCommitteeInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -598,22 +587,21 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiGetContractsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiGetContractsRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiGetContractsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.getContracts(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getContracts(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -655,20 +643,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiGetMempoolContentsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiGetMempoolContentsRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiGetMempoolContentsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.getMempoolContents(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getMempoolContents(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -709,22 +696,21 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiGetReceiptRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiGetReceiptRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiGetReceiptRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | RequestID (Hex)
+    // RequestID (Hex)
   requestID: "requestID_example",
 };
 
-apiInstance.getReceipt(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getReceipt(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -766,22 +752,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiGetStateValueRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiGetStateValueRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiGetStateValueRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | State Key (Hex)
+    // State Key (Hex)
   stateKey: "stateKey_example",
 };
 
-apiInstance.getStateValue(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getStateValue(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -822,22 +807,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiRemoveAccessNodeRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiRemoveAccessNodeRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiRemoveAccessNodeRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Name or PubKey (hex) of the trusted peer
+    // Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
 };
 
-apiInstance.removeAccessNode(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.removeAccessNode(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -879,16 +863,16 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiSetChainRecordRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiSetChainRecordRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiSetChainRecordRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // ChainRecord | Chain Record
+    // Chain Record
   chainRecord: {
     accessNodes: [
       "accessNodes_example",
@@ -897,9 +881,8 @@ let body:.ChainsApiSetChainRecordRequest = {
   },
 };
 
-apiInstance.setChainRecord(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.setChainRecord(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -941,20 +924,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiV1ChainsChainIDEvmPostRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiV1ChainsChainIDEvmPostRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiV1ChainsChainIDEvmPostRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.v1ChainsChainIDEvmPost(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.v1ChainsChainIDEvmPost(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -994,20 +976,19 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiV1ChainsChainIDEvmWsGetRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiV1ChainsChainIDEvmWsGetRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiV1ChainsChainIDEvmWsGetRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.v1ChainsChainIDEvmWsGet(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.v1ChainsChainIDEvmWsGet(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1047,26 +1028,25 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiWaitForRequestRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .ChainsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
 
-let body:.ChainsApiWaitForRequestRequest = {
-  // string | ChainID (Hex Address)
+const request: ChainsApiWaitForRequestRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | RequestID (Hex)
+    // RequestID (Hex)
   requestID: "requestID_example",
-  // number | The timeout in seconds, maximum 60s (optional)
+    // The timeout in seconds, maximum 60s (optional)
   timeoutSeconds: 1,
-  // boolean | Wait for the block to be confirmed on L1 (optional)
+    // Wait for the block to be confirmed on L1 (optional)
   waitForL1Confirmation: true,
 };
 
-apiInstance.waitForRequest(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.waitForRequest(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 

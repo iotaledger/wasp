@@ -72,7 +72,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Chain identifiers.
 	cmtAddrASigner := testpeers.NewTestDSSSigner(cmtAddrA, dkRegs, nodeIDs, peerIdentities, log)
 	tcl := newTestChainLedger(t, cmtAddrASigner)
-	anchor, deposit := tcl.MakeTxChainOrigin()
+	anchor := tcl.MakeTxChainOrigin()
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -81,7 +81,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAnchor(stores[nid], anchor, deposit, isc.BaseTokenCoinInfo)
+		_, err := origin.InitChainByAnchor(stores[nid], anchor, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
@@ -181,7 +181,6 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	// Now we model the situation where the consensus for LI=2 produced a TX,
 	// it was posted to the L1 and now we sending a response to the chain manager.
 	tx1Hash := hashing.PseudoRandomHash(nil)
-	// isctest.UpdateStateAnchor()
 
 	tx1OutSI := anchor.Anchor().Object.StateIndex + uint32(1)
 	tx1OutAO := isctest.RandomStateAnchor(isctest.RandomAnchorOption{

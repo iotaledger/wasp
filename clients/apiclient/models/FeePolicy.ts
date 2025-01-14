@@ -23,6 +23,8 @@ export class FeePolicy {
 
     static readonly discriminator: string | undefined = undefined;
 
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
+
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
             "name": "evmGasRatio",
@@ -50,4 +52,3 @@ export class FeePolicy {
     public constructor() {
     }
 }
-

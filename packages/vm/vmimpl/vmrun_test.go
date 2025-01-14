@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -72,13 +73,11 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		governance.DefaultBlockKeepAmount,
 		false,
 	).Encode()
-	const originDeposit = 1 * isc.Million
 	_, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
 		initParams,
 		iotago.ObjectID{},
-		originDeposit,
 		baseTokenCoinInfo,
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
@@ -187,6 +186,7 @@ func runRequestsAndTransitionAnchor(
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},
+		L1Params:             parameters.L1Default,
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            time.Time{},

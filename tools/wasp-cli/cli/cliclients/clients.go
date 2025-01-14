@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -40,7 +41,7 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 	if SkipCheckVersions {
 		return
 	}
-	nodeVersion, _, err := client.NodeApi.
+	nodeVersion, _, err := client.NodeAPI.
 		GetVersion(context.Background()).
 		Execute()
 	log.Check(err)
@@ -58,7 +59,7 @@ func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    config.L1APIAddress(),
 		FaucetURL: config.L1FaucetAddress(),
-	})
+	}, iotaclient.WaitForEffectsDisabled)
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {

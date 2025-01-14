@@ -56,6 +56,7 @@ func newMigrationsTest(t *testing.T) *migrationsTestEnv {
 	task := &vm.VMTask{
 		Anchor: anchor,
 		// FIXME GasCoinBalance
+		// L1Params
 	}
 	vmctx := &vmContext{
 		task:       task,

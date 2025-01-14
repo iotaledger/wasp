@@ -280,7 +280,7 @@ func OptionalArgAt[T any](results CallResults, index int, def T) (T, error) {
 }
 
 func MustOptionalArgAt[T any](results CallResults, index int, def T) T {
-	return lo.Must(OptionalResAt[T](results, index, def))
+	return lo.Must(OptionalResAt(results, index, def))
 }
 
 type CallResults = CallArguments

@@ -423,7 +423,7 @@ type WithInit struct {
 }
 
 func (w *WithInit) BCSInit() error {
-	w.A = w.A + 10
+	w.A += 10
 	return nil
 }
 

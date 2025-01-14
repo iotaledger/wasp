@@ -91,7 +91,7 @@ func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
 
 func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
 	blockInfo, _, err := ch.Cluster.
-		WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetLatestBlockInfo(context.Background(), ch.ChainID.String()).
+		WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetLatestBlockInfo(context.Background(), ch.ChainID.String()).
 		Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return 0, err
@@ -108,7 +108,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 	ret := make([]*apiclient.BlockInfoResponse, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
 		blockInfo, _, err := ch.Cluster.
-			WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetBlockInfo(context.Background(), ch.ChainID.String(), uint32(idx)).
+			WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetBlockInfo(context.Background(), ch.ChainID.String(), uint32(idx)).
 			Execute() //nolint:bodyclose // false positive
 		if err != nil {
 			return nil, err
@@ -121,7 +121,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 
 func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoResponse, error) {
 	contracts, _, err := ch.Cluster.
-		WaspClient(nodeIndex...).ChainsApi.GetContracts(context.Background(), ch.ChainID.String()).
+		WaspClient(nodeIndex...).ChainsAPI.GetContracts(context.Background(), ch.ChainID.String()).
 		Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoRes
 
 func (ch *Chain) GetCounterValue(nodeIndex ...int) (int64, error) {
 	result, _, err := ch.Cluster.
-		WaspClient(nodeIndex...).ChainsApi.CallView(context.Background(), ch.ChainID.String()).
+		WaspClient(nodeIndex...).ChainsAPI.CallView(context.Background(), ch.ChainID.String()).
 		ContractCallViewRequest(apiclient.ContractCallViewRequest{
 			ContractHName: inccounter.Contract.Hname().String(),
 			FunctionHName: inccounter.ViewGetCounter.Hname().String(),
@@ -155,7 +155,7 @@ func (ch *Chain) GetStateVariable(contractHname isc.Hname, key string, nodeIndex
 }
 
 func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apiclient.ReceiptResponse, error) {
-	receipt, _, err := ch.Cluster.WaspClient(nodeIndex...).ChainsApi.GetReceipt(context.Background(), ch.ChainID.String(), reqID.String()).
+	receipt, _, err := ch.Cluster.WaspClient(nodeIndex...).ChainsAPI.GetReceipt(context.Background(), ch.ChainID.String(), reqID.String()).
 		Execute() //nolint:bodyclose // false positive
 
 	return receipt, err
@@ -166,10 +166,10 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int
 	var receipts []apiclient.ReceiptResponse
 
 	if blockIndex != nil {
-		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), *blockIndex).
+		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetRequestReceiptsOfBlock(context.Background(), ch.ChainID.String(), *blockIndex).
 			Execute() //nolint:bodyclose // false positive
 	} else {
-		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsApi.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), ch.ChainID.String()).
+		receipts, _, err = ch.Cluster.WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetRequestReceiptsOfLatestBlock(context.Background(), ch.ChainID.String()).
 			Execute() //nolint:bodyclose // false positive
 	}
 
