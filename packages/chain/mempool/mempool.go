@@ -96,7 +96,7 @@ type Mempool interface {
 	// It can mean simple advance of the chain, or a rollback or a reorg.
 	// This function is guaranteed to be called in the order, which is
 	// considered the chain block order by the ChainMgr.
-	TrackNewChainHead(st state.State, from *isc.StateAnchor, added, removed []state.Block) <-chan bool
+	TrackNewChainHead(st state.State, from, till *isc.StateAnchor, added, removed []state.Block) <-chan bool
 	// Invoked by the chain when a new off-ledger request is received from a node user.
 	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
@@ -208,6 +208,7 @@ type reqConsensusRequests struct {
 type reqTrackNewChainHead struct {
 	st         state.State
 	from       *isc.StateAnchor
+	till       *isc.StateAnchor
 	added      []state.Block
 	removed    []state.Block
 	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
@@ -296,9 +297,9 @@ func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
-func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from *isc.StateAnchor, added, removed []state.Block) <-chan bool {
+func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *isc.StateAnchor, added, removed []state.Block) <-chan bool {
 	responseCh := make(chan bool)
-	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, added, removed, responseCh}
+	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed, responseCh}
 	return responseCh
 }
 
@@ -688,6 +689,7 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 
 func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {
 	refs := mpi.refsToPropose(recv.consensusID)
+	mpi.log.Debugf("handleConsensusProposalForChainHead, |refs|=%v", len(refs))
 	if len(refs) > 0 {
 		recv.Respond(refs)
 		return
@@ -849,7 +851,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	//
 	// Record the head state.
 	mpi.chainHeadState = req.st
-	mpi.chainHeadAnchor = req.from
+	mpi.chainHeadAnchor = req.till
 	//
 	// Process the pending consensus proposal requests if any.
 	if len(mpi.waitChainHead) != 0 {

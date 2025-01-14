@@ -613,7 +613,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 		})
 	}
 
-	cni.mempool.TrackNewChainHead(st, from, added, removed)
+	cni.mempool.TrackNewChainHead(st, from, till, added, removed)
 }
 
 // The committed state is required here because:
