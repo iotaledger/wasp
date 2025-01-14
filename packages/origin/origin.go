@@ -137,7 +137,7 @@ func InitChain(
 
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
-	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(0, baseTokenCoinInfo)
+	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(baseTokenCoinInfo)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, initParams.BlockKeepAmount)
