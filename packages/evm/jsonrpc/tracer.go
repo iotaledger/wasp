@@ -13,7 +13,7 @@ type Tracer struct {
 	TraceFakeTx func(tx *types.Transaction) (json.RawMessage, error)
 }
 
-type tracerFactory func(traceCtx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error)
+type tracerFactory func(traceCtx *tracers.Context, cfg json.RawMessage, traceBlock bool) (*Tracer, error)
 
 var allTracers = map[string]tracerFactory{}
 
@@ -21,10 +21,10 @@ func registerTracer(tracerType string, fn tracerFactory) {
 	allTracers[tracerType] = fn
 }
 
-func newTracer(tracerType string, ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error) {
+func newTracer(tracerType string, ctx *tracers.Context, cfg json.RawMessage, traceBlock bool) (*Tracer, error) {
 	fn := allTracers[tracerType]
 	if fn == nil {
 		return nil, fmt.Errorf("unsupported tracer type: %s", tracerType)
 	}
-	return fn(ctx, cfg, traceBlock, initValue)
+	return fn(ctx, cfg, traceBlock)
 }

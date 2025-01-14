@@ -699,7 +699,7 @@ func (e *EVMChain) traceTransaction(
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
 		TxIndex:     int(txIndex),
 		TxHash:      tx.Hash(),
-	}, config.TracerConfig, false, nil)
+	}, config.TracerConfig, false)
 	if err != nil {
 		return nil, err
 	}
@@ -739,7 +739,7 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 	tracer, err := newTracer(tracerType, &tracers.Context{
 		BlockHash:   block.Hash(),
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
-	}, config.TracerConfig, true, block.Transactions())
+	}, config.TracerConfig, true)
 	if err != nil {
 		return nil, err
 	}

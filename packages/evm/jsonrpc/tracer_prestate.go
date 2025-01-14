@@ -53,32 +53,23 @@ type prestateTracer struct {
 	env           *tracing.VMContext
 	currentTxHash common.Hash
 	states        map[common.Hash]*PrestateTxValue // key is the tx hash, value is the state diff
-	// pre        PrestateAccountMap
-	// post       PrestateAccountMap
-	// to        common.Address
-	config    prestateTracerConfig
-	interrupt atomic.Bool // Atomic flag to signal execution interruption
-	reason    error       // Textual reason for the interruption
-	// created    map[common.Address]bool
-	// deleted    map[common.Address]bool
-	traceBlock bool
+	config        prestateTracerConfig
+	interrupt     atomic.Bool // Atomic flag to signal execution interruption
+	reason        error       // Textual reason for the interruption
+	traceBlock    bool
 }
 
 type prestateTracerConfig struct {
 	DiffMode bool `json:"diffMode"` // If true, this tracer will return state modifications
 }
 
-func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, _ any) (*Tracer, error) {
+func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool) (*Tracer, error) {
 	var config prestateTracerConfig
 	if err := json.Unmarshal(cfg, &config); err != nil {
 		return nil, err
 	}
 	t := &prestateTracer{
-		// pre:        PrestateAccountMap{},
-		// post:       PrestateAccountMap{},
-		config: config,
-		// created:    make(map[common.Address]bool),
-		// deleted:    make(map[common.Address]bool),
+		config:     config,
 		traceBlock: traceBlock,
 		states:     make(map[common.Hash]*PrestateTxValue),
 	}
@@ -290,16 +281,6 @@ func (t *prestateTracer) processDiffState() {
 // lookupAccount fetches details of an account and adds it to the prestate
 // if it doesn't exist there.
 func (t *prestateTracer) lookupAccount(tx common.Hash, addr common.Address) {
-	// if _, ok := t.states[tx]; !ok {
-	// 	t.states[tx] = &PrestateTxValue{
-	// 		Pre:     make(PrestateAccountMap),
-	// 		Post:    make(PrestateAccountMap),
-	// 		created: make(map[common.Address]bool),
-	// 		deleted: make(map[common.Address]bool),
-	// 		// to:      addr,
-	// 	}
-	// }
-
 	if _, ok := t.states[tx].Pre[addr]; ok {
 		return
 	}
