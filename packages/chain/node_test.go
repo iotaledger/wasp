@@ -103,17 +103,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		tnc.waitAttached()
 	}
 	te.log.Debugf("All attached to node conns.")
-	go func() {
-		for {
-			if te.ctx.Err() != nil {
-				return
-			}
-			for range te.nodeConns {
-				// TODO: What do we do with milestones here?
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
