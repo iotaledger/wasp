@@ -245,7 +245,7 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultCommonAccountBaseTokens   = 50 * isc.Million
+	DefaultGasCoinBalance            = 50 * isc.Million
 	DefaultChainOriginatorBaseTokens = 50 * isc.Million
 )
 
@@ -266,15 +266,15 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 
 func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
+	gasCoinBalance coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (chainData, *isc.StateAnchor) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	if initBaseTokens == 0 {
-		initBaseTokens = DefaultCommonAccountBaseTokens
+	if gasCoinBalance == 0 {
+		gasCoinBalance = DefaultGasCoinBalance
 	}
 
 	if chainOriginator == nil {
@@ -301,7 +301,7 @@ func (env *Solo) deployChain(
 
 	gasCoinRef := env.makeBaseTokenCoin(
 		chainOriginator,
-		initBaseTokens,
+		gasCoinBalance,
 	)
 
 	block, stateMetadata := origin.InitChain(
@@ -309,13 +309,12 @@ func (env *Solo) deployChain(
 		store,
 		initParams.Encode(),
 		*gasCoinRef.ObjectID,
-		initBaseTokens,
 		baseTokenCoinInfo,
 	)
 
 	initCoinRef := env.makeBaseTokenCoin(
 		chainOriginator,
-		initBaseTokens,
+		0,
 	)
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
@@ -367,12 +366,12 @@ func (env *Solo) deployChain(
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChainExt(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
+	gasCoinBalance coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (*Chain, *isc.StateAnchor) {
-	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
+	chData, anchorRef := env.deployChain(chainOriginator, gasCoinBalance, name, evmChainID, blockKeepAmount)
 
 	env.chainsMutex.Lock()
 	defer env.chainsMutex.Unlock()

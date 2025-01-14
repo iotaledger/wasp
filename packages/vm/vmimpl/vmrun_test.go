@@ -73,13 +73,11 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		governance.DefaultBlockKeepAmount,
 		false,
 	).Encode()
-	const originDeposit = 1 * isc.Million
 	_, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
 		initParams,
 		iotago.ObjectID{},
-		originDeposit,
 		baseTokenCoinInfo,
 	)
 	stateMetadataBytes := stateMetadata.Bytes()

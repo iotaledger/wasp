@@ -596,15 +596,14 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	require.NoError(t, err)
 
 	te.tcl = testchain.NewTestChainLedger(t, te.chainOwner, &iscPackage, l1client)
-	var originDepositVal coin.Value
-	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin()
+	te.anchor = te.tcl.MakeTxChainOrigin()
 
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAnchor(te.stores[i], te.anchor, originDepositVal, isc.BaseTokenCoinInfo)
+		origin.InitChainByAnchor(te.stores[i], te.anchor, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(
