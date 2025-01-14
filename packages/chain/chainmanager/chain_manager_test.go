@@ -74,7 +74,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Chain identifiers.
 	tcl := newTestChainLedger(t, originator)
-	anchor := tcl.MakeTxChainOrigin()
+	anchor, deposit := tcl.MakeTxChainOrigin()
 	//
 	// Construct the nodes.
 	nodes := map[gpa.NodeID]gpa.GPA{}
@@ -82,7 +82,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAnchor(stores[nid], anchor, isc.BaseTokenCoinInfo)
+		_, err := origin.InitChainByAnchor(stores[nid], anchor, deposit, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
@@ -130,7 +130,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for nid := range nodes {
 		consReq := nodes[nid].Output().(*chainmanager.Output).NeedConsensus()
 		fake2ST := indexedstore.NewFake(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-		origin.InitChain(allmigrations.LatestSchemaVersion, fake2ST, nil, iotago.ObjectID{}, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, fake2ST, nil, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 		block0, err := fake2ST.BlockByIndex(0)
 		require.NoError(t, err)
 

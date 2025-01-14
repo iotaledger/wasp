@@ -26,15 +26,18 @@ func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
-	var gasCoinBalance coin.Value = 10 * isc.Million
-	ch, _ := env.NewChainExt(user, gasCoinBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	var originAmount coin.Value = 10 * isc.Million
+	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	_ = ch.Log().Sync()
 
-	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
-
 	cassets := ch.L2CommonAccountAssets()
-	require.EqualValues(t, 0, cassets.BaseTokens())
-	require.EqualValues(t, 0, len(cassets.Coins))
+	require.EqualValues(t,
+		originAmount,
+		cassets.BaseTokens())
+	require.EqualValues(t, 1, len(cassets.Coins))
+
+	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
+	require.True(t, cassets.BaseTokens() >= governance.DefaultMinBaseTokensOnCommonAccount)
 
 	testdbhash.VerifyDBHash(env, t.Name())
 }
@@ -42,7 +45,7 @@ func TestInitLoad(t *testing.T) {
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, isc.GasCoinMinBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ch.CheckChain()
 
@@ -90,7 +93,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			env := solo.New(t)
-			ch, _ := env.NewChainExt(nil, isc.GasCoinMinBalance, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+			ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
 			if !test.SenderIsOriginator {
@@ -104,7 +107,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
-			require.EqualValues(t, isc.GasCoinMinBalance, commonAccountBaseTokensBefore)
+			require.EqualValues(t, isc.TopUpFeeMin, commonAccountBaseTokensBefore)
 
 			_, l1Res, _, anchorTransitionPTBRes, err := ch.PostRequestSyncTx(
 				test.Req.

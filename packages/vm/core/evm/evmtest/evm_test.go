@@ -2116,7 +2116,7 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 	} {
 		t.Run(v.name, func(t *testing.T) {
 			env := InitEVM(t)
-			env.Chain.DepositBaseTokensToL2(50*isc.Million, nil)
+			env.Chain.DepositBaseTokensToL2(10*isc.Million, nil)
 			feePolicy := env.Chain.GetGasFeePolicy()
 			feePolicy.GasPerToken = v.gasPerToken
 			feePolicy.EVMGasRatio = v.evmGasRatio

@@ -32,7 +32,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
 	require.True(t, ok)
-	origin.InitChain(allmigrations.LatestSchemaVersion, store, bf.GetChainInitParameters(), iotago.ObjectID{}, isc.BaseTokenCoinInfo)
+	origin.InitChain(allmigrations.LatestSchemaVersion, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	return log, bf, store, sm
 }
 
