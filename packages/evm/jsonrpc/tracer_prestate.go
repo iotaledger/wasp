@@ -211,7 +211,8 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 				result = append(result, TxTraceResult{TxHash: txHash, Result: diffResult})
 
 				for _, tx := range t.fakeTxs {
-					csJSON, err := t.TraceFakeTx(tx)
+					var csJSON json.RawMessage
+					csJSON, err = t.TraceFakeTx(tx)
 					if err != nil {
 						return nil, err
 					}
