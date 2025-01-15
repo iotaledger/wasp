@@ -80,7 +80,6 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	triggerEvent(events, events.NewBlock, &ISCEvent[*BlockWithTrieRoot]{
 		Kind:   ISCEventKindNewBlock,
 		Issuer: &isc.NilAgentID{},
-		// TODO the L1 commitment will be nil (on the blocklog), but at this point the L1 commitment has already been calculated, so we could potentially add it to blockInfo
 		Payload: &BlockWithTrieRoot{
 			BlockInfo: blockInfo,
 			TrieRoot:  block.TrieRoot(),
@@ -91,7 +90,6 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	//
 	// Publish receipts of processed requests.
 	receipts, err := blocklog.RequestReceiptsFromBlock(block)
-
 	if err != nil {
 		log.Errorf("unable to get receipts from a block: %v", err)
 	} else {
@@ -103,7 +101,6 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 				log.Errorf("Could not parse vmerror of receipt [%v]: %v", receipt.Request.ID(), resolveError)
 			}
 
-			// TODO: Validate logic here:
 			receipt.BlockIndex = blockIndex
 			receipt.RequestIndex = uint16(index)
 
@@ -130,10 +127,8 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 		payload = append(payload, event)
 	}
 	triggerEvent(events, events.BlockEvents, &ISCEvent[[]*isc.Event]{
-		Kind:   ISCEventKindBlockEvents,
-		Issuer: &isc.NilAgentID{},
-		// TODO should be possible to filter by request ID (not possible with current events impl)
-		// RequestID: event.RequestID,
+		Kind:    ISCEventKindBlockEvents,
+		Issuer:  &isc.NilAgentID{},
 		Payload: payload,
 		ChainID: chainID,
 	})

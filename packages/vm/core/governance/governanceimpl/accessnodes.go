@@ -102,7 +102,7 @@ func changeAccessNodes(ctx isc.Sandbox, reqs []lo.Tuple2[*cryptolib.PublicKey, g
 			accessNodes.DelAt(pubKey.Bytes())
 		case governance.ChangeAccessNodeActionAccept:
 			// TODO should the list of candidates be checked? we are just adding any pubkey
-			accessNodes.SetAt(pubKey.Bytes(), codec.Encode[bool](true))
+			accessNodes.SetAt(pubKey.Bytes(), codec.Encode(true))
 			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
 			accessNodes.DelAt(pubKey.Bytes())
