@@ -12,10 +12,12 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -139,18 +141,56 @@ func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time, ran
 	return bp.validatorFeeDestination
 }
 
+type l1paramsCounter struct {
+	counter  int
+	l1params *parameters.L1Params
+}
+
 // Use the same aggregation logic as for the timestamp:
 // Take highest value proposed by at least F+1 nodes.
-func (bps batchProposalSet) aggregatedGasPrice(f int) uint64 {
-	proposals := make([]uint64, 0, len(bps))
+func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
+	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
+	ps := make([]*parameters.L1Params, 0, len(bps))
+	gasPriceBPs := make([]uint64, 0, len(bps))
 	for _, bp := range bps {
-		proposals = append(proposals, bp.gasPrice)
+		ps = append(ps, bp.l1params)
 	}
+	aggregatedGasPrice := aggregatedGasPrice(gasPriceBPs, f)
+
+	// count the amount of each L1Params
+	protocolMap := make(map[string]l1paramsCounter)
+	for _, l1params := range ps {
+		if elt, ok := protocolMap[l1params.Hash().Hex()]; ok {
+			elt.counter += 1
+			protocolMap[l1params.Hash().Hex()] = elt
+		} else {
+			protocolMap[l1params.Hash().Hex()] = l1paramsCounter{
+				counter:  1,
+				l1params: l1params,
+			}
+		}
+	}
+	for _, elt := range protocolMap {
+		if elt.counter >= proposalCount-f {
+			l1 := elt.l1params.Clone()
+			l1.Protocol.ReferenceGasPrice = iotajsonrpc.NewBigInt(aggregatedGasPrice)
+			return l1
+		}
+	}
+	return nil
+}
+
+// Use the same aggregation logic as for the timestamp:
+// Take highest value proposed by at least F+1 nodes.
+func aggregatedGasPrice(gaspriceBPs []uint64, f int) uint64 {
+	proposals := make([]uint64, 0, len(gaspriceBPs))
+	copy(proposals, gaspriceBPs)
+
 	sort.Slice(proposals, func(i, j int) bool {
 		return proposals[i] < proposals[j]
 	})
 
-	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
+	proposalCount := len(gaspriceBPs) // |acsProposals| >= N-F by ACS logic.
 	if proposalCount <= f {
 		return 0 // Zero time marks a failure.
 	}

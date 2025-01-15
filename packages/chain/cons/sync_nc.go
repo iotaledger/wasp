@@ -7,13 +7,14 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type SyncNC interface {
 	HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages
 	HaveState() gpa.OutMessages
 	HaveRequests() gpa.OutMessages
-	HaveGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
+	HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 	String() string
 }
 
@@ -24,13 +25,13 @@ type syncNCImpl struct {
 	inputCB         func(anchor *isc.StateAnchor) gpa.OutMessages
 
 	gasCoins []*coin.CoinWithRef
-	gasPrice uint64
-	outputCB func(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
+	l1params *parameters.L1Params
+	outputCB func(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 }
 
 func NewSyncNC(
 	inputCB func(anchor *isc.StateAnchor) gpa.OutMessages,
-	outputCB func(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages,
+	outputCB func(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages,
 ) SyncNC {
 	return &syncNCImpl{inputCB: inputCB, outputCB: outputCB}
 }
@@ -90,21 +91,21 @@ func (sync *syncNCImpl) tryCompleteInputs() gpa.OutMessages {
 	return cb(sync.haveInputAnchor)
 }
 
-func (sync *syncNCImpl) HaveGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
+func (sync *syncNCImpl) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
 	if sync.gasCoins == nil && gasCoins != nil {
 		sync.gasCoins = gasCoins
 	}
-	if sync.gasPrice == 0 && gasPrice != 0 {
-		sync.gasPrice = gasPrice
+	if sync.l1params == nil && l1params != nil {
+		sync.l1params = l1params
 	}
 	return sync.tryCompleteOutput()
 }
 
 func (sync *syncNCImpl) tryCompleteOutput() gpa.OutMessages {
-	if sync.outputCB == nil || sync.gasCoins == nil || sync.gasPrice == 0 {
+	if sync.outputCB == nil || sync.gasCoins == nil || sync.l1params == nil {
 		return nil
 	}
 	cb := sync.outputCB
 	sync.outputCB = nil
-	return cb(sync.gasCoins, sync.gasPrice)
+	return cb(sync.gasCoins, sync.l1params)
 }

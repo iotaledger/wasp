@@ -5,6 +5,7 @@ package bp
 
 import (
 	"bytes"
+	"fmt"
 	"sort"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -25,10 +27,11 @@ type AggregatedBatchProposals struct {
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
 	aggregatedGasCoins     []*coin.CoinWithRef
-	aggregatedGasPrice     uint64
+	aggregatedL1Params     *parameters.L1Params
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
+	fmt.Println("!!!AggregateBatchProposals: ")
 	bps := batchProposalSet{}
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
@@ -62,7 +65,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	aggregatedTime := bps.aggregatedTime(f)
 	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
 	aggregatedGasCoins := bps.aggregatedGasCoins(f)
-	aggregatedGasPrice := bps.aggregatedGasPrice(f)
+	aggregatedL1Params := bps.aggregatedL1Params(f)
 	abp := &AggregatedBatchProposals{
 		batchProposalSet:       bps,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
@@ -70,16 +73,16 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
 		aggregatedGasCoins:     aggregatedGasCoins,
-		aggregatedGasPrice:     aggregatedGasPrice,
+		aggregatedL1Params:     aggregatedL1Params,
 	}
 	if abp.decidedBaseAliasOutput == nil ||
 		len(abp.decidedRequestRefs) == 0 ||
 		abp.aggregatedTime.IsZero() ||
 		len(abp.aggregatedGasCoins) == 0 ||
-		abp.aggregatedGasPrice == 0 {
+		abp.aggregatedL1Params == nil {
 		log.Debugf(
-			"Cant' aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, aggregatedTime=%v",
-			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), abp.aggregatedTime,
+			"Can't aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, |aggregatedGasCoins|=%v, |aggregatedL1Params|=%v , aggregatedTime=%v",
+			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), len(abp.aggregatedGasCoins), abp.aggregatedL1Params, abp.aggregatedTime,
 		)
 		abp.shouldBeSkipped = true
 	}
@@ -191,9 +194,9 @@ func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*coin.CoinWithRef {
 	return abp.aggregatedGasCoins
 }
 
-func (abp *AggregatedBatchProposals) AggregatedGasPrice() uint64 {
+func (abp *AggregatedBatchProposals) AggregatedL1Params() *parameters.L1Params {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.aggregatedGasPrice
+	return abp.aggregatedL1Params
 }

@@ -1,6 +1,7 @@
 package coin
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -81,6 +82,10 @@ func MustTypeFromString(s string) Type {
 	return t
 }
 
+func (t *Type) MarshalJSON() ([]byte, error) {
+	return []byte("\"" + t.String() + "\""), nil
+}
+
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
 	rt := t.ResourceType()
 	e.Encode(rt)
@@ -157,6 +162,11 @@ type CoinWithRef struct {
 	Type  Type
 	Value Value
 	Ref   *iotago.ObjectRef
+}
+
+func (c CoinWithRef) String() string {
+	b, _ := json.Marshal(&c)
+	return string(b)
 }
 
 func (c CoinWithRef) Bytes() []byte {
