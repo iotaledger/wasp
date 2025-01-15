@@ -10,7 +10,6 @@ import (
 	"math"
 	"math/big"
 	"path"
-	"slices"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -666,17 +665,6 @@ func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInf
 	return blocklog.GetRequestsInBlock(blocklogStatePartition, iscBlockIndex)
 }
 
-func (e *EVMChain) isFakeTransaction(tx *types.Transaction) bool {
-	sender, err := evmutil.GetSender(tx)
-
-	// the error will fire when the transaction is invalid. This is most of the time a fake evm tx we use for internal calls, therefore it's fine to assume both.
-	if slices.Equal(sender.Bytes(), common.Address{}.Bytes()) || err != nil {
-		return true
-	}
-
-	return false
-}
-
 // traceTransaction allows the tracing of a single EVM transaction.
 // "Fake" transactions that are emitted e.g. for L1 deposits return some mocked trace.
 func (e *EVMChain) traceTransaction(
@@ -704,7 +692,7 @@ func (e *EVMChain) traceTransaction(
 		return nil, err
 	}
 
-	if e.isFakeTransaction(tx) {
+	if evmutil.IsFakeTransaction(tx) {
 		return tracer.TraceFakeTx(tx)
 	}
 
@@ -739,7 +727,7 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 	blockTxs := block.Transactions()
 	fakeTxs := make([]*types.Transaction, 0, len(blockTxs))
 	for _, tx := range blockTxs {
-		if e.isFakeTransaction(tx) {
+		if evmutil.IsFakeTransaction(tx) {
 			fakeTxs = append(fakeTxs, tx)
 		}
 	}
