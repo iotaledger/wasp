@@ -505,7 +505,8 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 
 	iscPackageID := node.ISCPackageID()
 	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)
-	te.anchor, _ = te.tcl.MakeTxChainOrigin()
+	var originDeposit coin.Value
+	te.anchor, originDeposit = te.tcl.MakeTxChainOrigin()
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))
@@ -553,6 +554,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 				MaxOffledgerToPropose: 1000,
 			},
 			1*time.Second,
+			originDeposit,
 		)
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)
