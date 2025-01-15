@@ -24,7 +24,7 @@ import (
 
 func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
 	coinType := iotajsonrpc.IotaCoinType.String()
-	coinObjects, err := client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
+	coinObjects, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})
@@ -75,7 +75,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 	require.NoError(t, err)
 	fmt.Println(result)
 
-	coinObjects, err = client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
+	coinObjects, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})

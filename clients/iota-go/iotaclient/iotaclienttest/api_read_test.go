@@ -174,7 +174,7 @@ func TestGetObject(t *testing.T) {
 	}
 	api := l1starter.Instance().L1Client()
 	coins, err := api.GetCoins(
-		context.TODO(), iotaclient.GetCoinsRequest{
+		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
 			Limit: 1,
 		},
@@ -192,7 +192,7 @@ func TestGetObject(t *testing.T) {
 			name: "test for devnet",
 			api:  api,
 			args: args{
-				ctx:   context.TODO(),
+				ctx:   context.Background(),
 				objID: coins.Data[0].CoinObjectID,
 			},
 			want:    3,
@@ -269,7 +269,7 @@ func TestGetTransactionBlock(t *testing.T) {
 func TestMultiGetObjects(t *testing.T) {
 	api := l1starter.Instance().L1Client()
 	coins, err := api.GetCoins(
-		context.TODO(), iotaclient.GetCoinsRequest{
+		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
 			Limit: 1,
 		},
