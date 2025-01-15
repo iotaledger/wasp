@@ -669,7 +669,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc.StateAnchor) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, &aliasOutput, isc.BaseTokenCoinInfo)
+		initBlock, err := origin.InitChainByAnchor(cni.chainStore, &aliasOutput, 0, isc.BaseTokenCoinInfo)
 		if err != nil {
 			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
 			return

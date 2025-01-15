@@ -195,7 +195,7 @@ func TestBlocklog_ViewGetRequestReceipt(t *testing.T) {
 func TestBlocklog_Pruning(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true})
 
-	ch, _ := env.NewChainExt(nil, isc.GasCoinMinBalance, "chain1", 0, 10)
+	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", 0, 10)
 	for i := 1; i <= 20; i++ {
 		ch.DepositBaseTokensToL2(1000, nil)
 	}

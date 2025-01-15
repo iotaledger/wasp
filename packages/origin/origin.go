@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -75,6 +76,7 @@ func L1Commitment(
 	v isc.SchemaVersion,
 	args isc.CallArguments,
 	gasCoinObjectID iotago.ObjectID,
+	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) *state.L1Commitment {
 	block, _ := InitChain(
@@ -82,6 +84,7 @@ func L1Commitment(
 		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
 		args,
 		gasCoinObjectID,
+		originDeposit,
 		baseTokenCoinInfo,
 	)
 	return block.L1Commitment()
@@ -89,6 +92,7 @@ func L1Commitment(
 
 func L1CommitmentFromAnchorStateMetadata(
 	stateMetadataBytes []byte,
+	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (*state.L1Commitment, error) {
 	stateMetadata, err := transaction.StateMetadataFromBytes(stateMetadataBytes)
@@ -99,6 +103,7 @@ func L1CommitmentFromAnchorStateMetadata(
 		stateMetadata.SchemaVersion,
 		stateMetadata.InitParams,
 		*stateMetadata.GasCoinObjectID,
+		originDeposit,
 		baseTokenCoinInfo,
 	)
 	return l1c, nil
@@ -109,6 +114,7 @@ func InitChain(
 	store state.Store,
 	args isc.CallArguments,
 	gasCoinObjectID iotago.ObjectID,
+	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, *transaction.StateMetadata) {
 	initParams, err := DecodeInitParams(args)
@@ -137,7 +143,7 @@ func InitChain(
 
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
-	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(baseTokenCoinInfo)
+	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, baseTokenCoinInfo)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, initParams.BlockKeepAmount)
@@ -163,6 +169,7 @@ func InitChain(
 func InitChainByAnchor(
 	chainStore state.Store,
 	anchor *isc.StateAnchor,
+	originDeposit coin.Value,
 	baseTokenCoinInfo *isc.IotaCoinInfo,
 ) (state.Block, error) {
 	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
@@ -174,6 +181,7 @@ func InitChainByAnchor(
 		chainStore,
 		stateMetadata.InitParams,
 		*stateMetadata.GasCoinObjectID,
+		originDeposit,
 		baseTokenCoinInfo,
 	)
 	if !originBlock.L1Commitment().Equals(stateMetadata.L1Commitment) {

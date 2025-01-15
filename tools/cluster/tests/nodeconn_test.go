@@ -8,13 +8,12 @@ package tests
 
 import (
 	"context"
-	"testing"
-
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/stretchr/testify/require"
+	"testing"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +30,7 @@ func createChain(t *testing.T) isc.ChainID {
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(originator.Address())).Encode()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, isc.BaseTokenCoinInfo)
+	origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	return isc.ChainID{}
 }
 

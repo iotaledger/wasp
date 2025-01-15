@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -58,7 +59,7 @@ func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }
 
-func (tcl *TestChainLedger) MakeTxChainOrigin() *isc.StateAnchor {
+func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
@@ -66,7 +67,8 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() *isc.StateAnchor {
 	originDeposit := resGetCoins.Data[1]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address())).Encode()
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, isc.BaseTokenCoinInfo)
+	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
@@ -105,7 +107,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() *isc.StateAnchor {
 	require.NotNil(tcl.t, stateAnchor)
 	tcl.chainID = stateAnchor.ChainID()
 
-	return &stateAnchor
+	return &stateAnchor, originDepositVal
 }
 
 func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (isc.Request, error) {
