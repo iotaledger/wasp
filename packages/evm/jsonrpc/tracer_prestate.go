@@ -203,7 +203,8 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 		if t.config.DiffMode {
 			result := []TxTraceResult{}
 			for txHash, txState := range t.states {
-				diffResult, err := json.Marshal(PrestateDiffResult{txState.Post, txState.Pre})
+				var diffResult json.RawMessage
+				diffResult, err = json.Marshal(PrestateDiffResult{txState.Post, txState.Pre})
 				if err != nil {
 					return nil, err
 				}
@@ -221,7 +222,8 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 		} else {
 			result := []TxTraceResult{}
 			for txHash, txState := range t.states {
-				preState, err := json.Marshal(txState.Pre)
+				var preState json.RawMessage
+				preState, err = json.Marshal(txState.Pre)
 				if err != nil {
 					return nil, err
 				}
@@ -229,7 +231,8 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 			}
 
 			for _, tx := range t.fakeTxs {
-				csJSON, err := t.TraceFakeTx(tx)
+				var csJSON json.RawMessage
+				csJSON, err = t.TraceFakeTx(tx)
 				if err != nil {
 					return nil, err
 				}

@@ -628,20 +628,23 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
 
 	t.Run("callTracer_tx", func(t *testing.T) {
-		trace, err := env.traceTransactionWithCallTracer(tx.Hash())
+		var trace jsonrpc.CallFrame
+		trace, err = env.traceTransactionWithCallTracer(tx.Hash())
 		require.NoError(t, err)
 		require.Equal(t, evmAddr.String(), trace.To.String())
 		require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
 	})
 
 	t.Run("prestateTracer_tx", func(t *testing.T) {
-		prestate, err := env.traceTransactionWithPrestate(tx.Hash())
+		var prestate jsonrpc.PrestateAccountMap
+		prestate, err = env.traceTransactionWithPrestate(tx.Hash())
 		require.NoError(t, err)
 		require.Empty(t, prestate)
 	})
 
 	t.Run("prestateTracerDiff_tx", func(t *testing.T) {
-		prestateDiff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+		var prestateDiff jsonrpc.PrestateDiffResult
+		prestateDiff, err = env.traceTransactionWithPrestateDiff(tx.Hash())
 		require.NoError(t, err)
 		require.Empty(t, prestateDiff.Pre)
 		require.Empty(t, prestateDiff.Post)
@@ -660,7 +663,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		var traces = make([]jsonrpc.TxTraceResult, 0)
+		traces := make([]jsonrpc.TxTraceResult, 0)
 		err = json.Unmarshal(res1, &traces)
 		require.NoError(t, err)
 		require.Len(t, traces, 1)
@@ -686,7 +689,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		var traces = make([]jsonrpc.TxTraceResult, 0)
+		traces := make([]jsonrpc.TxTraceResult, 0)
 		err = json.Unmarshal(res1, &traces)
 		require.NoError(t, err)
 		require.Len(t, traces, 1)

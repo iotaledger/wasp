@@ -291,7 +291,6 @@ var ErrIncorrectTopLevelCalls = errors.New("incorrect number of top-level calls"
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *callTracer) GetResult() (json.RawMessage, error) {
 	if t.traceBlock {
-
 		// otherwise return all call frames
 		results := make([]TxTraceResult, 0, len(t.txToStack))
 		for txHash, stack := range t.txToStack {
@@ -318,18 +317,18 @@ func (t *callTracer) GetResult() (json.RawMessage, error) {
 			return nil, err
 		}
 		return res, t.reason
-	} else {
-		if len(t.txToStack) != 1 {
-			return nil, ErrIncorrectTopLevelCalls
-		}
-
-		res, err := json.Marshal(t.txToStack[t.currentTx][0])
-		if err != nil {
-			return nil, err
-		}
-
-		return res, t.reason
 	}
+
+	if len(t.txToStack) != 1 {
+		return nil, ErrIncorrectTopLevelCalls
+	}
+
+	res, err := json.Marshal(t.txToStack[t.currentTx][0])
+	if err != nil {
+		return nil, err
+	}
+
+	return res, t.reason
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.
