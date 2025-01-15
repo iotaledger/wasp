@@ -6,6 +6,7 @@ package jsonrpc
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync/atomic"
@@ -127,6 +128,7 @@ type callTracer struct {
 	interrupt  atomic.Bool // Atomic flag to signal execution interruption
 	reason     error       // Textual reason for the interruption
 	traceBlock bool
+	fakeTxs    []*types.Transaction
 }
 
 type callTracerConfig struct {
@@ -136,8 +138,21 @@ type callTracerConfig struct {
 
 // newCallTracer returns a native go tracer which tracks
 // call frames of a tx, and implements vm.EVMLogger.
-func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool) (*Tracer, error) {
-	t, err := newCallTracerObject(ctx, cfg, traceBlock)
+func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error) {
+	var fakeTxs types.Transactions
+
+	if initValue == nil && traceBlock {
+		return nil, fmt.Errorf("initValue with block transactions is required for block tracing")
+	}
+
+	if initValue != nil {
+		var ok bool
+		fakeTxs, ok = initValue.(types.Transactions)
+		if !ok {
+			return nil, fmt.Errorf("invalid init value type for calltracer: %T", initValue)
+		}
+	}
+	t, err := newCallTracerObject(ctx, cfg, traceBlock, fakeTxs)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +172,7 @@ func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool) (
 	}, nil
 }
 
-func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock bool) (*callTracer, error) {
+func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock bool, fakeTxs []*types.Transaction) (*callTracer, error) {
 	var config callTracerConfig
 	if cfg != nil {
 		if err := json.Unmarshal(cfg, &config); err != nil {
@@ -166,7 +181,7 @@ func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock boo
 	}
 	// First callframe contains tx context info
 	// and is populated on start and end.
-	return &callTracer{txToStack: make(map[common.Hash][]CallFrame), currentTx: common.Hash{}, config: config, traceBlock: traceBlock}, nil
+	return &callTracer{txToStack: make(map[common.Hash][]CallFrame), currentTx: common.Hash{}, config: config, traceBlock: traceBlock, fakeTxs: fakeTxs}, nil
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
@@ -288,6 +303,14 @@ func (t *callTracer) GetResult() (json.RawMessage, error) {
 				TxHash: txHash,
 				Result: csJSON,
 			})
+		}
+
+		for _, tx := range t.fakeTxs {
+			csJSON, err := t.TraceFakeTx(tx)
+			if err != nil {
+				return nil, err
+			}
+			results = append(results, TxTraceResult{TxHash: tx.Hash(), Result: csJSON})
 		}
 
 		res, err := json.Marshal(results)

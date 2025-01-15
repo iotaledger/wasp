@@ -699,7 +699,7 @@ func (e *EVMChain) traceTransaction(
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
 		TxIndex:     int(txIndex),
 		TxHash:      tx.Hash(),
-	}, config.TracerConfig, false)
+	}, config.TracerConfig, false, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -736,17 +736,21 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 
 	blockNumber := uint64(iscBlock.BlockIndex())
 
+	blockTxs := block.Transactions()
+	fakeTxs := make([]*types.Transaction, 0, len(blockTxs))
+	for _, tx := range blockTxs {
+		if e.isFakeTransaction(tx) {
+			fakeTxs = append(fakeTxs, tx)
+		}
+	}
+
 	tracer, err := newTracer(tracerType, &tracers.Context{
 		BlockHash:   block.Hash(),
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
-	}, config.TracerConfig, true)
+	}, config.TracerConfig, true, types.Transactions(fakeTxs))
 	if err != nil {
 		return nil, err
 	}
-
-	// if e.isFakeTransaction(tx) {
-	// 	return tracer.TraceFakeTx(tx)
-	// }
 
 	err = e.backend.EVMTrace(
 		iscBlock.PreviousAliasOutput,

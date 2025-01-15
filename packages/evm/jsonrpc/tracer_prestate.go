@@ -6,6 +6,7 @@ package jsonrpc
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -57,13 +58,27 @@ type prestateTracer struct {
 	interrupt     atomic.Bool // Atomic flag to signal execution interruption
 	reason        error       // Textual reason for the interruption
 	traceBlock    bool
+	fakeTxs       types.Transactions
 }
 
 type prestateTracerConfig struct {
 	DiffMode bool `json:"diffMode"` // If true, this tracer will return state modifications
 }
 
-func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool) (*Tracer, error) {
+func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error) {
+	var fakeTxs types.Transactions
+
+	if initValue == nil && traceBlock {
+		return nil, fmt.Errorf("initValue with block transactions is required for block tracing")
+	}
+
+	if initValue != nil {
+		var ok bool
+		fakeTxs, ok = initValue.(types.Transactions)
+		if !ok {
+			return nil, fmt.Errorf("invalid init value type for prestateTracer: %T", initValue)
+		}
+	}
 	var config prestateTracerConfig
 	if err := json.Unmarshal(cfg, &config); err != nil {
 		return nil, err
@@ -72,6 +87,7 @@ func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock boo
 		config:     config,
 		traceBlock: traceBlock,
 		states:     make(map[common.Hash]*PrestateTxValue),
+		fakeTxs:    fakeTxs,
 	}
 	return &Tracer{
 		Tracer: &tracers.Tracer{
@@ -192,6 +208,14 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 					return nil, err
 				}
 				result = append(result, TxTraceResult{TxHash: txHash, Result: diffResult})
+
+				for _, tx := range t.fakeTxs {
+					csJSON, err := t.TraceFakeTx(tx)
+					if err != nil {
+						return nil, err
+					}
+					result = append(result, TxTraceResult{TxHash: tx.Hash(), Result: csJSON})
+				}
 			}
 			res, err = json.Marshal(result)
 		} else {
@@ -203,6 +227,15 @@ func (t *prestateTracer) GetResult() (json.RawMessage, error) {
 				}
 				result = append(result, TxTraceResult{TxHash: txHash, Result: preState})
 			}
+
+			for _, tx := range t.fakeTxs {
+				csJSON, err := t.TraceFakeTx(tx)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, TxTraceResult{TxHash: tx.Hash(), Result: csJSON})
+			}
+
 			res, err = json.Marshal(result)
 		}
 	} else {
