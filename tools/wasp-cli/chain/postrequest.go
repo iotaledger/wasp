@@ -4,6 +4,7 @@ import (
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -46,7 +47,7 @@ func postRequest(nodeName, chain, hname, fname string, params chainclient.PostRe
 	}
 
 	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotago.Transaction, error) {
-		return scClient.PostRequest(fname, params)
+		return scClient.PostRequest(fname, params, chainclient.PostRequestParams{OnlyUnlockedOutputs: true})
 	})
 }
 

@@ -20,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -202,6 +203,14 @@ func TestWaspCLIDeposit(t *testing.T) {
 			"--node=0",
 		)
 		require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
+
+		out = w.MustRun("balance")
+		for _, line := range out {
+			if strings.Contains(line, "0x") {
+				balance := strings.TrimSpace(strings.Split(line, ":")[1])
+				require.Equal(t, balance, "2")
+			}
+		}
 
 		// deposit the native token to the chain (to an ethereum account)
 		w.MustRun(
