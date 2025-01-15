@@ -37,15 +37,17 @@ type Config struct {
 }
 
 type Client interface {
-	// requests funds from faucet, waits for confirmation
+	// RequestFunds requests funds from faucet, waits for confirmation
 	RequestFunds(addr iotago.Address, timeout ...time.Duration) error
-	// sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
+	// PostTxAndWaitUntilConfirmation sends a tx (including tipselection and local PoW if necessary) and waits for confirmation
 	PostTxAndWaitUntilConfirmation(tx *iotago.Transaction, timeout ...time.Duration) (iotago.BlockID, error)
-	// returns the outputs owned by a given address
+	// OutputMap returns the outputs owned by a given address
 	OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error)
-	// output
+	// OutputMapNonLocked returns the outputs owned by a given address, excluding any locked outputs (mainly relevant for sending TXs from clients)
+	OutputMapNonLocked(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error)
+	// GetAliasOutput output
 	GetAliasOutput(aliasID iotago.AliasID, timeout ...time.Duration) (iotago.OutputID, iotago.Output, error)
-	// used to query the health endpoint of the node
+	// Health used to query the health endpoint of the node
 	Health(timeout ...time.Duration) (bool, error)
 }
 
@@ -87,44 +89,11 @@ func NewClient(config Config, log *logger.Logger, timeout ...time.Duration) Clie
 	}
 }
 
-// OutputMap implements L1Connection
-func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error) {
-	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
-	defer cancelContext()
-
-	bech32Addr := myAddress.Bech32(parameters.L1().Protocol.Bech32HRP)
-	falseParam := false
-	trueParam := true
-
-	queries := []nodeclient.IndexerQuery{
-		&nodeclient.BasicOutputsQuery{
-			AddressBech32: bech32Addr,
-			IndexerTimelockParas: nodeclient.IndexerTimelockParas{
-				HasTimelock:      &trueParam,
-				TimelockedBefore: uint32(time.Now().Unix()),
-			},
-			IndexerNativeTokenParas: nodeclient.IndexerNativeTokenParas{
-				HasNativeTokens: &falseParam,
-			},
-		},
-		&nodeclient.BasicOutputsQuery{
-			AddressBech32: bech32Addr,
-			IndexerTimelockParas: nodeclient.IndexerTimelockParas{
-				HasTimelock: &falseParam,
-			},
-			IndexerNativeTokenParas: nodeclient.IndexerNativeTokenParas{
-				HasNativeTokens: &falseParam,
-			},
-		},
-		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
-		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
-		&nodeclient.AliasesQuery{GovernorBech32: bech32Addr},
-	}
-
+func (c *l1client) readOutputs(ctx context.Context, queries []nodeclient.IndexerQuery) (iotago.OutputSet, error) {
 	result := make(map[iotago.OutputID]iotago.Output)
 
 	for _, query := range queries {
-		res, err := c.indexerClient.Outputs(ctxWithTimeout, query)
+		res, err := c.indexerClient.Outputs(ctx, query)
 		if err != nil {
 			return nil, fmt.Errorf("failed to query address outputs: %w", err)
 		}
@@ -141,6 +110,54 @@ func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration)
 		}
 	}
 	return result, nil
+}
+
+// OutputMapNonLocked implements L1Connection
+func (c *l1client) OutputMapNonLocked(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error) {
+	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
+	defer cancelContext()
+
+	bech32Addr := myAddress.Bech32(parameters.L1().Protocol.Bech32HRP)
+	falseParam := false
+	trueParam := true
+
+	queries := []nodeclient.IndexerQuery{
+		&nodeclient.BasicOutputsQuery{
+			AddressBech32: bech32Addr,
+			IndexerTimelockParas: nodeclient.IndexerTimelockParas{
+				HasTimelock:      &trueParam,
+				TimelockedBefore: uint32(time.Now().Unix()),
+			},
+		},
+		&nodeclient.BasicOutputsQuery{
+			AddressBech32: bech32Addr,
+			IndexerTimelockParas: nodeclient.IndexerTimelockParas{
+				HasTimelock: &falseParam,
+			},
+		},
+		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
+		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
+		&nodeclient.AliasesQuery{GovernorBech32: bech32Addr},
+	}
+
+	return c.readOutputs(ctxWithTimeout, queries)
+}
+
+// OutputMap implements L1Connection
+func (c *l1client) OutputMap(myAddress iotago.Address, timeout ...time.Duration) (iotago.OutputSet, error) {
+	ctxWithTimeout, cancelContext := newCtx(c.ctx, timeout...)
+	defer cancelContext()
+
+	bech32Addr := myAddress.Bech32(parameters.L1().Protocol.Bech32HRP)
+
+	queries := []nodeclient.IndexerQuery{
+		&nodeclient.BasicOutputsQuery{AddressBech32: bech32Addr},
+		&nodeclient.FoundriesQuery{AliasAddressBech32: bech32Addr},
+		&nodeclient.NFTsQuery{AddressBech32: bech32Addr},
+		&nodeclient.AliasesQuery{GovernorBech32: bech32Addr},
+	}
+
+	return c.readOutputs(ctxWithTimeout, queries)
 }
 
 // postBlock sends a block (including tipselection and local PoW if necessary).

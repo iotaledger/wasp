@@ -5,6 +5,7 @@ import (
 	"math"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -47,6 +48,7 @@ type PostRequestParams struct {
 	Allowance                *isc.Assets
 	gasBudget                uint64
 	AutoAdjustStorageDeposit bool
+	OnlyUnlockedOutputs      bool
 }
 
 func (par *PostRequestParams) GasBudget() uint64 {
@@ -69,7 +71,16 @@ func (c *Client) Post1Request(
 	entryPoint isc.Hname,
 	params ...PostRequestParams,
 ) (*iotago.Transaction, error) {
-	outputsSet, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
+	par := defaultParams(params...)
+	var outputsSet iotago.OutputSet
+	var err error
+
+	if par.OnlyUnlockedOutputs {
+		outputsSet, err = c.Layer1Client.OutputMapNonLocked(c.KeyPair.Address())
+	} else {
+		outputsSet, err = c.Layer1Client.OutputMap(c.KeyPair.Address())
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +94,16 @@ func (c *Client) PostNRequests(
 	requestsCount int,
 	params ...PostRequestParams,
 ) ([]*iotago.Transaction, error) {
+	par := defaultParams(params...)
+	var outputs iotago.OutputSet
 	var err error
-	outputs, err := c.Layer1Client.OutputMap(c.KeyPair.Address())
+
+	if par.OnlyUnlockedOutputs {
+		outputs, err = c.Layer1Client.OutputMapNonLocked(c.KeyPair.Address())
+	} else {
+		outputs, err = c.Layer1Client.OutputMap(c.KeyPair.Address())
+	}
+
 	if err != nil {
 		return nil, err
 	}
