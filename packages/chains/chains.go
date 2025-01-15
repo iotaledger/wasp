@@ -423,6 +423,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		stateManagerParameters,
 		c.mempoolSettings,
 		c.mempoolBroadcastInterval,
+		0,
 	)
 	if err != nil {
 		chainCancel()
