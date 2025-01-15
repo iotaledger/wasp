@@ -627,20 +627,76 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
 
-	trace, err := env.traceTransactionWithCallTracer(tx.Hash())
-	require.NoError(t, err)
+	t.Run("callTracer_tx", func(t *testing.T) {
+		trace, err := env.traceTransactionWithCallTracer(tx.Hash())
+		require.NoError(t, err)
+		require.Equal(t, evmAddr.String(), trace.To.String())
+		require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
+	})
 
-	require.Equal(t, evmAddr.String(), trace.To.String())
-	require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
+	t.Run("prestateTracer_tx", func(t *testing.T) {
+		prestate, err := env.traceTransactionWithPrestate(tx.Hash())
+		require.NoError(t, err)
+		require.Empty(t, prestate)
+	})
 
-	prestate, err := env.traceTransactionWithPrestate(tx.Hash())
-	require.NoError(t, err)
-	require.Empty(t, prestate)
+	t.Run("prestateTracerDiff_tx", func(t *testing.T) {
+		prestateDiff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+		require.NoError(t, err)
+		require.Empty(t, prestateDiff.Pre)
+		require.Empty(t, prestateDiff.Post)
+	})
 
-	prestateDiff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
-	require.NoError(t, err)
-	require.Empty(t, prestateDiff.Pre)
-	require.Empty(t, prestateDiff.Post)
+	t.Run("callTracer_block", func(t *testing.T) {
+		callTracer := "callTracer"
+		var res1 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res1,
+			"debug_traceBlockByNumber",
+			hexutil.Uint64(env.BlockNumber()).String(),
+			tracers.TraceConfig{Tracer: &callTracer},
+		)
+		require.NoError(t, err)
+
+		var traces = make([]jsonrpc.TxTraceResult, 0)
+		err = json.Unmarshal(res1, &traces)
+		require.NoError(t, err)
+		require.Len(t, traces, 1)
+		require.Equal(t, tx.Hash(), traces[0].TxHash)
+
+		cs := jsonrpc.CallFrame{}
+		err = json.Unmarshal(traces[0].Result, &cs)
+		require.NoError(t, err)
+		require.Equal(t, evmAddr.String(), cs.To.String())
+		require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), cs.Value.String())
+	})
+
+	t.Run("prestateTracer_block", func(t *testing.T) {
+		tracer := "prestateTracer"
+		var res1 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res1,
+			"debug_traceBlockByNumber",
+			hexutil.Uint64(env.BlockNumber()).String(),
+			tracers.TraceConfig{Tracer: &tracer},
+		)
+		require.NoError(t, err)
+
+		var traces = make([]jsonrpc.TxTraceResult, 0)
+		err = json.Unmarshal(res1, &traces)
+		require.NoError(t, err)
+		require.Len(t, traces, 1)
+		require.Equal(t, tx.Hash(), traces[0].TxHash)
+
+		prestate := jsonrpc.PrestateAccountMap{}
+		err = json.Unmarshal(traces[0].Result, &prestate)
+		require.NoError(t, err)
+		require.Empty(t, prestate)
+	})
 }
 
 func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAddress common.Address, contractABI abi.ABI, contractAddress common.Address) {
