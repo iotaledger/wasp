@@ -2,63 +2,64 @@ package parameters
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // L1Params describes parameters coming from the L1Params node
 type L1Params struct {
-	MaxPayloadSize int        `json:"maxPayloadSize" swagger:"required"`
-	Protocol       *Protocol  `json:"protocol" swagger:"required"`
-	BaseToken      *BaseToken `json:"baseToken" swagger:"required"`
+	Protocol  *Protocol  `json:"protocol" swagger:"required"`
+	BaseToken *BaseToken `json:"baseToken" swagger:"required"`
 }
 
 func (l *L1Params) String() string {
-	ret := "{\n"
-	ret += fmt.Sprintf("\tMaxPayloadSize: %d\n", l.MaxPayloadSize)
-	ret += fmt.Sprintf("\tProtocol: %s\n", l.Protocol.String())
-	ret += fmt.Sprintf("\tBaseToken: %s\n", l.BaseToken.String())
-	ret += "}\n"
-	return ret
+	b, _ := json.Marshal(l)
+	return string(b)
+}
+
+func (l *L1Params) Bytes() []byte {
+	b, err := bcs.Marshal(l)
+	if err != nil {
+		panic(err)
+	}
+	return b
+}
+
+func (l *L1Params) Hash() hashing.HashValue {
+	res, _ := hashing.HashValueFromBytes(l.Bytes())
+	return res
 }
 
 func (l *L1Params) Clone() *L1Params {
 	protocol := l.Protocol.Clone()
 	return &L1Params{
-		MaxPayloadSize: l.MaxPayloadSize,
-		Protocol:       &protocol,
-		BaseToken:      l.BaseToken,
+		Protocol:  &protocol,
+		BaseToken: l.BaseToken,
 	}
 }
 
 type Protocol struct {
-	Epoch                 *iotajsonrpc.BigInt
-	ProtocolVersion       *iotajsonrpc.BigInt
-	SystemStateVersion    *iotajsonrpc.BigInt
-	IotaTotalSupply       *iotajsonrpc.BigInt
-	ReferenceGasPrice     *iotajsonrpc.BigInt
-	EpochStartTimestampMs *iotajsonrpc.BigInt
-	EpochDurationMs       *iotajsonrpc.BigInt
+	Epoch                 *iotajsonrpc.BigInt `json:"epoch" swagger:"required"`
+	ProtocolVersion       *iotajsonrpc.BigInt `json:"protocol_version" swagger:"required"`
+	SystemStateVersion    *iotajsonrpc.BigInt `json:"system_state_version" swagger:"required"`
+	IotaTotalSupply       *iotajsonrpc.BigInt `json:"iota_total_supply" swagger:"required"`
+	ReferenceGasPrice     *iotajsonrpc.BigInt `json:"reference_gas_price" swagger:"required"`
+	EpochStartTimestampMs *iotajsonrpc.BigInt `json:"epoch_start_timestamp_ms" swagger:"required"`
+	EpochDurationMs       *iotajsonrpc.BigInt `json:"epoch_duration_ms" swagger:"required"`
 }
 
 func (p *Protocol) String() string {
-	ret := "{\n"
-	ret += fmt.Sprintf("\tEpoch: %s\n", p.Epoch)
-	ret += fmt.Sprintf("\tProtocolVersion: %s\n", p.ProtocolVersion)
-	ret += fmt.Sprintf("\tSystemStateVersion: %s\n", p.SystemStateVersion)
-	ret += fmt.Sprintf("\tIotaTotalSupply: %s\n", p.IotaTotalSupply)
-	ret += fmt.Sprintf("\tReferenceGasPrice: %s\n", p.ReferenceGasPrice)
-	ret += fmt.Sprintf("\tEpochStartTimestampMs: %s\n", p.EpochStartTimestampMs)
-	ret += fmt.Sprintf("\tEpochDurationMs: %s\n", p.EpochDurationMs)
-	ret += "}\n"
-	return ret
+	b, _ := json.Marshal(p)
+	return string(b)
 }
 
 func (p *Protocol) Clone() Protocol {
@@ -85,17 +86,8 @@ type BaseToken struct {
 }
 
 func (b *BaseToken) String() string {
-	ret := "{\n"
-	ret += fmt.Sprintf("\tName: %s\n", b.Name)
-	ret += fmt.Sprintf("\tTickerSymbol: %s\n", b.TickerSymbol)
-	ret += fmt.Sprintf("\tUnit: %s\n", b.Unit)
-	ret += fmt.Sprintf("\tSubunit: %s\n", b.Subunit)
-	ret += fmt.Sprintf("\tDecimals: %d\n", b.Decimals)
-	ret += fmt.Sprintf("\tUseMetricPrefix: %v\n", b.UseMetricPrefix)
-	ret += fmt.Sprintf("\tCoinType: %s\n", b.CoinType)
-	ret += fmt.Sprintf("\tTokenSupply: %d\n", b.TotalSupply)
-	ret += "}\n"
-	return ret
+	ret, _ := json.Marshal(b)
+	return string(ret)
 }
 
 const (
@@ -141,19 +133,12 @@ func L1() *L1Params {
 	return l1Params
 }
 
-// for test only
-func InitStaticL1(l1 *L1Params) {
-	l1Params = l1
-}
-
-func InitL1(client iotaclient.Client, logger *logger.Logger) {
+func InitL1(client iotaclient.Client, logger *logger.Logger) error {
 	var protocol Protocol
 	var totalSupply *iotajsonrpc.Supply
 	timeout := 600 * time.Second
 	for {
 		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
 
 		summary, err := client.GetLatestIotaSystemState(ctx)
 		if err != nil {
@@ -171,7 +156,9 @@ func InitL1(client iotaclient.Client, logger *logger.Logger) {
 			EpochDurationMs:       summary.EpochDurationMs,
 		}
 
+		ctx, cancel := context.WithTimeout(ctx, timeout)
 		totalSupply, err = client.GetTotalSupply(ctx, iotajsonrpc.IotaCoinType.String())
+		cancel()
 		if err != nil {
 			logger.Errorln("can't get latest total supply: ", err)
 			time.Sleep(60 * time.Second)
@@ -179,6 +166,9 @@ func InitL1(client iotaclient.Client, logger *logger.Logger) {
 		}
 		break
 	}
+	if totalSupply == nil {
+		return fmt.Errorf("can't get Latest L1Params")
+	}
 
 	l1ParamsMutex.Lock()
 	newL1Params := l1Params.Clone()
@@ -186,97 +176,5 @@ func InitL1(client iotaclient.Client, logger *logger.Logger) {
 	newL1Params.BaseToken.TotalSupply = totalSupply.Value.Uint64()
 	l1Params = newL1Params
 	l1ParamsMutex.Unlock()
-}
-
-type L1Syncer struct {
-	client         *iotaclient.Client
-	epochID        iotago.EpochId
-	startTimestamp time.Time
-	epochDuration  time.Duration
-	timeout        time.Duration // GetLatestIotaSystemState timeout
-	logger         *logger.Logger
-	status         bool // switch on/off for L1Syncer
-}
-
-func NewL1Syncer(
-	client *iotaclient.Client,
-	timeout time.Duration,
-	logger *logger.Logger,
-) *L1Syncer {
-	if l1Params == nil {
-		l1Params = L1Default
-	}
-	return &L1Syncer{
-		client:  client,
-		timeout: timeout,
-		logger:  logger,
-	}
-}
-
-// Check latest L1 system parameters every hour
-func (l *L1Syncer) Start() {
-	l.status = true
-	for l.status {
-		l.Upate()
-		time.Sleep(time.Until(l.startTimestamp.Add(l.epochDuration)))
-	}
-}
-
-// Update the latest L1 system parameters
-func (l *L1Syncer) Upate() {
-	var protocol Protocol
-	var newEpochID uint64
-	var totalSupply *iotajsonrpc.Supply
-	for {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, l.timeout)
-		defer cancel()
-
-		summary, err := l.client.GetLatestIotaSystemState(ctx)
-		if err != nil {
-			l.logger.Errorln("can't get latest epoch: ", err)
-			time.Sleep(60 * time.Second)
-			continue
-		}
-		protocol = Protocol{
-			Epoch:                 summary.Epoch,
-			ProtocolVersion:       summary.ProtocolVersion,
-			SystemStateVersion:    summary.SystemStateVersion,
-			IotaTotalSupply:       summary.IotaTotalSupply,
-			ReferenceGasPrice:     summary.ReferenceGasPrice,
-			EpochStartTimestampMs: summary.EpochStartTimestampMs,
-			EpochDurationMs:       summary.EpochDurationMs,
-		}
-
-		newEpochID = summary.Epoch.Uint64()
-		if newEpochID == l.epochID {
-			l.logger.Debugln("same epoch: ", newEpochID)
-			time.Sleep(60 * time.Second)
-			continue
-		}
-
-		totalSupply, err = l.client.GetTotalSupply(ctx, iotajsonrpc.IotaCoinType.String())
-		if err != nil {
-			l.logger.Errorln("can't get latest total supply: ", err)
-			time.Sleep(60 * time.Second)
-			continue
-		}
-		break
-	}
-
-	l.epochID = newEpochID
-	// theoretically we can check once a day only, then startTimestamp will be needed
-	l.startTimestamp = l.startTimestamp.UTC()
-	l.epochDuration = time.Duration(protocol.EpochDurationMs.Uint64()) * time.Millisecond
-
-	l1ParamsMutex.Lock()
-	newL1Params := l1Params.Clone()
-	newL1Params.Protocol = &protocol
-	newL1Params.BaseToken.TotalSupply = totalSupply.Value.Uint64()
-	l1Params = newL1Params
-	l1ParamsMutex.Unlock()
-}
-
-func (l *L1Syncer) Stop() {
-	l.status = false
+	return nil
 }

@@ -38,17 +38,17 @@ const (
 
 var ErrOperationAborted = errors.New("operation was aborted")
 
-type SingleGasCoinInfo struct {
+type SingleL1Info struct {
 	gasCoinObject coin.CoinWithRef
-	gasPrice      uint64
+	l1params      *parameters.L1Params
 }
 
-func (g *SingleGasCoinInfo) GetGasCoins() []*coin.CoinWithRef {
+func (g *SingleL1Info) GetGasCoins() []*coin.CoinWithRef {
 	return []*coin.CoinWithRef{&g.gasCoinObject}
 }
 
-func (g *SingleGasCoinInfo) GetGasPrice() uint64 {
-	return g.gasPrice
+func (g *SingleL1Info) GetL1Params() *parameters.L1Params {
+	return g.l1params
 }
 
 // nodeConnection implements chain.NodeConnection.
@@ -151,11 +151,11 @@ func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID
 	}, nil
 }
 
-func (nc *nodeConnection) ConsensusGasPriceProposal(
+func (nc *nodeConnection) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan cons_gr.NodeConnGasInfo {
-	t := make(chan cons_gr.NodeConnGasInfo)
+) <-chan cons_gr.NodeConnL1Info {
+	t := make(chan cons_gr.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -178,15 +178,19 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
+		err = parameters.InitL1(*nc.wsClient.Client, nc.Logger())
+		if err != nil {
+			panic(err)
+		}
+
 		gasCoinRef := gasCoinGetObjectRes.Data.Ref()
-		var coinInfo cons_gr.NodeConnGasInfo = &SingleGasCoinInfo{
+		var coinInfo cons_gr.NodeConnL1Info = &SingleL1Info{
 			coin.CoinWithRef{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(gasCoin.Balance),
 				Ref:   &gasCoinRef,
 			},
-			// FIXME we will pass l1param from consensus
-			parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
+			parameters.L1(),
 		}
 
 		t <- coinInfo

@@ -8,19 +8,20 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BatchProposal struct {
-	nodeIndex               uint16              `bcs:"export"` // Just for a double-check.
-	baseAliasOutput         *isc.StateAnchor    `bcs:"export"` // Proposed Base AliasOutput to use.
-	dssIndexProposal        util.BitVector      `bcs:"export"` // DSS Index proposal.
-	timeData                time.Time           `bcs:"export"` // Our view of time.
-	validatorFeeDestination isc.AgentID         `bcs:"export"` // Proposed destination for fees.
-	requestRefs             []*isc.RequestRef   `bcs:"export"` // Requests we propose to include into the execution.
-	gasCoins                []*coin.CoinWithRef `bcs:"export"` // Coins to use for gas payment.
-	gasPrice                uint64              `bcs:"export"` // The gas price to use.
+	nodeIndex               uint16               `bcs:"export"` // Just for a double-check.
+	baseAliasOutput         *isc.StateAnchor     `bcs:"export"` // Proposed Base AliasOutput to use.
+	dssIndexProposal        util.BitVector       `bcs:"export"` // DSS Index proposal.
+	timeData                time.Time            `bcs:"export"` // Our view of time.
+	validatorFeeDestination isc.AgentID          `bcs:"export"` // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef    `bcs:"export"` // Requests we propose to include into the execution.
+	gasCoins                []*coin.CoinWithRef  `bcs:"export"` // Coins to use for gas payment.
+	l1params                *parameters.L1Params `bcs:"export"` // The L1Params for current state
 }
 
 func NewBatchProposal(
@@ -31,7 +32,7 @@ func NewBatchProposal(
 	validatorFeeDestination isc.AgentID,
 	requestRefs []*isc.RequestRef,
 	gasCoins []*coin.CoinWithRef,
-	gasPrice uint64,
+	l1params *parameters.L1Params,
 ) *BatchProposal {
 	return &BatchProposal{
 		nodeIndex:               nodeIndex,
@@ -41,7 +42,7 @@ func NewBatchProposal(
 		validatorFeeDestination: validatorFeeDestination,
 		requestRefs:             requestRefs,
 		gasCoins:                gasCoins,
-		gasPrice:                gasPrice,
+		l1params:                l1params,
 	}
 }
 

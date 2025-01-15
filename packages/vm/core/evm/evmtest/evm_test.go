@@ -2793,7 +2793,6 @@ func TestL1DepositEVM(t *testing.T) {
 }
 
 func TestDecimalsConversion(t *testing.T) {
-	parameters.InitStaticL1(parameters.L1Default)
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)
