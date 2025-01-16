@@ -20,12 +20,12 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -124,22 +124,27 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
 
 	for i := 0; i < incCount; i++ {
-		ref := iotatest.RandomObjectRef()
 
-		scRequest := iscmove.Request{
-			ID:        *ref.ObjectID,
-			Message:   iscmove.Message{},
-			AssetsBag: iscmove.AssetsBagWithBalances{},
-			Sender:    scClient.Address(),
-			Allowance: iscmove.Assets{},
-			GasBudget: 0,
-		}
+		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:           scClient,
+			PackageID:        te.iscPackageID,
+			AnchorAddress:    te.anchor.GetObjectID(),
+			Assets:           iscmove.NewAssets(111),
+			Message:          iscmovetest.RandomMessage(),
+			Allowance:        iscmove.NewAssets(100),
+			OnchainGasBudget: 100,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
+		})
+		require.NoError(t, err)
+		reqRef, err := req.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		require.NoError(t, err)
+		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+		require.NoError(t, err)
+		//		onLedgerReq, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(te.anchor.GetObjectID()))
+		//		require.NoError(t, err)
 
-		incRequests[i] = iscmove.RefWithObject[iscmove.Request]{
-			Owner:     scClient.Address().AsIotaAddress(),
-			Object:    &scRequest,
-			ObjectRef: *ref,
-		}
+		incRequests[i] = *reqWithObj
 	}
 
 	collectedRequests := make([]isc.Request, 0)
@@ -235,7 +240,7 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 			}
 
 			await(false)
-			await(true)
+			//await(true)
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
