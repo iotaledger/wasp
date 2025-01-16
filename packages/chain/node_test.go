@@ -330,6 +330,7 @@ func (tnc *testNodeConn) PublishTX(
 		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 	})
 	if err != nil {
+		tnc.t.Logf("ExecuteTransactionBlock, err=%v", err)
 		return err
 	}
 

@@ -56,13 +56,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/minio/blake2b-simd"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-
-	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
@@ -648,14 +649,18 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
-	signingMsg, err := bcs.Marshal(&unsignedTX)
+	txData := c.makeTransactionData(&unsignedTX, aggregatedProposals)
+	txnBytes, err := bcs.Marshal(txData)
 	if err != nil {
 		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
 	}
+	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
+	txnBytesHash := blake2b.Sum256(txnBytes)
+	txnBytes = txnBytesHash[:]
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.UnsignedTXReceived(c.makeTransactionData(&unsignedTX, aggregatedProposals))).
-		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
+		AddAll(c.subTX.UnsignedTXReceived(txData)).
+		AddAll(c.subDSS.MessageToSignReceived(txnBytes))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
