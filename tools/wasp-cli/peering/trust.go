@@ -28,14 +28,14 @@ func initTrustCmd() *cobra.Command {
 			pubKey := args[1]
 			peeringURL := args[2]
 			node = waspcmd.DefaultWaspNodeFallback(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			_, err := cryptolib.DecodeHex(pubKey) // Assert it can be decoded.
 			log.Check(err)
 			log.Check(peering.CheckPeeringURL(peeringURL))
 
-			client := cliclients.WaspClient(node)
-
-			_, err = client.NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(apiclient.PeeringTrustRequest{
+			_, err = client.NodeAPI.TrustPeer(ctx).PeeringTrustRequest(apiclient.PeeringTrustRequest{
 				Name:       name,
 				PeeringURL: peeringURL,
 				PublicKey:  pubKey,

@@ -52,7 +52,8 @@ func initLoginCmd() *cobra.Command {
 				return
 			}
 
-			token, _, err := cliclients.WaspClient(node).AuthAPI.
+			ctx := context.Background()
+			token, _, err := cliclients.WaspClientWithVersionCheck(ctx, node).AuthAPI.
 				Authenticate(context.Background()).
 				LoginRequest(apiclient.LoginRequest{
 					Username: username,

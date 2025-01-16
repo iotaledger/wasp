@@ -70,10 +70,6 @@ func initBalanceCmd() *cobra.Command {
 				Tokens:       balance,
 			}
 
-			if log.VerboseFlag {
-
-			}
-
 			log.PrintCLIOutput(model)
 		},
 	}

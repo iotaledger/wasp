@@ -31,7 +31,8 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			action := args[0]
 			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			var executeActionFunc func(peer string)
 
@@ -39,7 +40,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			case "add":
 				executeActionFunc = func(peer string) {
 					_, err := client.ChainsAPI.
-						AddAccessNode(context.Background(), chainID.String(), peer).
+						AddAccessNode(ctx, chainID.String(), peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					log.Printf("added %s as an access node\n", peer)
@@ -47,7 +48,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			case "remove":
 				executeActionFunc = func(peer string) {
 					_, err := client.ChainsAPI.
-						RemoveAccessNode(context.Background(), chainID.String(), peer).
+						RemoveAccessNode(ctx, chainID.String(), peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					log.Printf("removed %s as an access node\n", peer)

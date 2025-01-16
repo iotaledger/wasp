@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"context"
 	"encoding/hex"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -35,14 +37,14 @@ func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
 		"register-erc20-native-token-on-remote-chain",
 		"Call evm core contract registerERC20NativeTokenOnRemoteChain entry point",
 		evm.Contract.Name,
-		"", //evm.FuncRegisterERC20CoinOnRemoteChain.Name,
+		"", // evm.FuncRegisterERC20CoinOnRemoteChain.Name,
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
 			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")
 		},
 		func(cmd *cobra.Command) []string {
 			panic("refactor me: initRegisterERC20NativeTokenOnRemoteChainCmd")
-
+			//nolint:govet
 			chainID := codec.Encode[*cryptolib.Address](config.GetChain(targetChain).AsAddress())
 			extraArgs := []string{"string", "A", "bytes", "0x" + hex.EncodeToString(chainID)}
 			return append(getRegisterERC20NativeTokenArgs(cmd), extraArgs...)
@@ -65,6 +67,8 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			allowanceTokens := util.ParseFungibleTokens(postrequestParams.allowance)
 
@@ -73,7 +77,8 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 				Allowance: allowanceTokens,
 			}
 			postRequest(
-				node,
+				ctx,
+				client,
 				chain,
 				isc.NewMessageFromNames(hname, fname, util.EncodeParams(funcArgs(cmd), chainID)),
 				params,

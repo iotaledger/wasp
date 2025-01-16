@@ -54,8 +54,8 @@ func initializeLedger(walletProvider WalletProvider) *hw_ledger.HWLedger {
 	case ProviderLedgerDebug:
 		log.Printf("Trying to open Speculos debug mode\n")
 
-		dev, err := ledger_go.NewSpeculosTransport(ledger_go.DefaultSpeculosTransportOpts())
-		log.Check(err)
+		dev, err2 := ledger_go.NewSpeculosTransport(ledger_go.DefaultSpeculosTransportOpts())
+		log.Check(err2)
 		ledgerDevice = hw_ledger.NewHWLedger(dev)
 	case ProviderLedger:
 		log.Printf("Trying to open Ledger\n")

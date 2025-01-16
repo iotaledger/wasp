@@ -3,11 +3,12 @@ package util
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"math/big"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -87,7 +88,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 			log.Fatal("invalid nftid length")
 		}
 
-		var nid = [iotago.AddressLen]byte(nidBytes)
+		nid := [iotago.AddressLen]byte(nidBytes)
 
 		return codec.Encode(nid)
 	case "requestid":
@@ -103,7 +104,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 			log.Fatal("invalid tokenid length")
 		}
 
-		var tid = [iotago.AddressLen]byte(tidBytes)
+		tid := [iotago.AddressLen]byte(tidBytes)
 
 		return codec.Encode(tid)
 	case "uint8":

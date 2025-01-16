@@ -24,8 +24,9 @@ func initListTrustedCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			client := cliclients.WaspClient(node)
-			trustedList, _, err := client.NodeAPI.GetTrustedPeers(context.Background()).Execute()
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+			trustedList, _, err := client.NodeAPI.GetTrustedPeers(ctx).Execute()
 			log.Check(err)
 
 			header := []string{"Name", "PubKey", "PeeringURL", "Trusted"}

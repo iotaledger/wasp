@@ -8,9 +8,11 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -52,10 +54,11 @@ func initRotateWithDKGCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			if !skipMaintenance {
-				setMaintenanceStatus(chain, node, true, offLedger)
-				defer setMaintenanceStatus(chain, node, false, offLedger)
+				setMaintenanceStatus(ctx, client, chain, true, offLedger)
+				defer setMaintenanceStatus(ctx, client, chain, false, offLedger)
 			}
 
 			controllerAddr := doDKG(ctx, node, peers, quorum)
@@ -126,12 +129,12 @@ func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
 	*/
 }
 
-func setMaintenanceStatus(chain, node string, status bool, offledger bool) {
+func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chain string, status bool, offledger bool) {
 	msg := governance.FuncStartMaintenance.Message()
 	if !status {
 		msg = governance.FuncStopMaintenance.Message()
 	}
-	postRequest(node, chain, msg, chainclient.PostRequestParams{}, offledger, true)
+	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{}, offledger, true)
 }
 
 func initChangeGovControllerCmd() *cobra.Command {
