@@ -14,7 +14,7 @@ import { Type } from '../models/Type';
 import { HttpFile } from '../http/http';
 
 export class BaseToken {
-    'coinType'?: Type;
+    'coinType': Type;
     /**
     * The token decimals
     */
@@ -31,6 +31,10 @@ export class BaseToken {
     * The ticker symbol
     */
     'tickerSymbol': string;
+    /**
+    * The total supply of BaseToken
+    */
+    'totalSupply': number;
     /**
     * The token unit
     */
@@ -74,6 +78,12 @@ export class BaseToken {
             "baseName": "tickerSymbol",
             "type": "string",
             "format": "string"
+        },
+        {
+            "name": "totalSupply",
+            "baseName": "totalSupply",
+            "type": "number",
+            "format": "int64"
         },
         {
             "name": "unit",

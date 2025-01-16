@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Error** | **string** |  | 
+**Error** | Pointer to **string** |  | [optional] 
 **Jwt** | **string** |  | 
 
 ## Methods
 
 ### NewLoginResponse
 
-`func NewLoginResponse(error_ string, jwt string, ) *LoginResponse`
+`func NewLoginResponse(jwt string, ) *LoginResponse`
 
 NewLoginResponse instantiates a new LoginResponse object
 This constructor will assign default values to properties that have it defined,
@@ -45,6 +45,11 @@ and a boolean to check if the value has been set.
 
 SetError sets Error field to given value.
 
+### HasError
+
+`func (o *LoginResponse) HasError() bool`
+
+HasError returns a boolean if a field has been set.
 
 ### GetJwt
 
