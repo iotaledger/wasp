@@ -100,7 +100,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), te.anchor, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, te.anchor, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
@@ -203,7 +203,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, te.anchor, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
@@ -338,7 +338,7 @@ func TestMempoolChainOwner(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), te.anchor, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, te.anchor, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
@@ -369,7 +369,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, nil, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
@@ -438,7 +438,7 @@ func TestTTL(t *testing.T) {
 	mp.TangleTimeUpdated(start)
 
 	// deposit some funds so off-ledger requests can go through
-	<-mp.TrackNewChainHead(te.stateForAnchor(0, te.anchor), nil, []state.Block{}, []state.Block{})
+	<-mp.TrackNewChainHead(te.stateForAnchor(0, te.anchor), nil, nil, []state.Block{}, []state.Block{})
 
 	onLedgerReq1, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
@@ -522,7 +522,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 	// sync mempools with new state
 	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
 	for i := range te.mempools {
-		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, anchor, []state.Block{block}, []state.Block{})
+		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, nil, anchor, []state.Block{block}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
