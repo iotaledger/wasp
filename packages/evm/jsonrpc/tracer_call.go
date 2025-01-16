@@ -121,14 +121,14 @@ type TxTraceResult struct {
 
 type callTracer struct {
 	txToStack  map[common.Hash][]CallFrame
-	currentTx  common.Hash
 	config     callTracerConfig
 	gasLimit   uint64
 	depth      int
 	interrupt  atomic.Bool // Atomic flag to signal execution interruption
 	reason     error       // Textual reason for the interruption
+	currentTx  common.Hash
 	traceBlock bool
-	fakeTxs    []*types.Transaction
+	blockTxs   []*types.Transaction
 }
 
 type callTracerConfig struct {
@@ -172,7 +172,7 @@ func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, i
 	}, nil
 }
 
-func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock bool, fakeTxs []*types.Transaction) (*callTracer, error) {
+func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock bool, blockTxs []*types.Transaction) (*callTracer, error) {
 	var config callTracerConfig
 	if cfg != nil {
 		if err := json.Unmarshal(cfg, &config); err != nil {
@@ -181,7 +181,7 @@ func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock boo
 	}
 	// First callframe contains tx context info
 	// and is populated on start and end.
-	return &callTracer{txToStack: make(map[common.Hash][]CallFrame), currentTx: common.Hash{}, config: config, traceBlock: traceBlock, fakeTxs: fakeTxs}, nil
+	return &callTracer{txToStack: make(map[common.Hash][]CallFrame), currentTx: common.Hash{}, config: config, traceBlock: traceBlock, blockTxs: blockTxs}, nil
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
@@ -290,45 +290,21 @@ var ErrIncorrectTopLevelCalls = errors.New("incorrect number of top-level calls"
 // GetResult returns the json-encoded nested list of call traces, and any
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *callTracer) GetResult() (json.RawMessage, error) {
-	if t.traceBlock {
-		// otherwise return all call frames
-		results := make([]TxTraceResult, 0, len(t.txToStack))
-		for txHash, stack := range t.txToStack {
-			csJSON, err := json.Marshal(stack[0])
-			if err != nil {
-				return nil, err
+	return GetTraceResults(
+		t.blockTxs,
+		t.traceBlock,
+		t.TraceFakeTx,
+		func(tx *types.Transaction) (json.RawMessage, error) {
+			stack, ok := t.txToStack[tx.Hash()]
+			if !ok {
+				return nil, fmt.Errorf("no call stack for tx %s", tx.Hash().Hex())
 			}
-			results = append(results, TxTraceResult{
-				TxHash: txHash,
-				Result: csJSON,
-			})
-		}
-
-		for _, tx := range t.fakeTxs {
-			csJSON, err := t.TraceFakeTx(tx)
-			if err != nil {
-				return nil, err
-			}
-			results = append(results, TxTraceResult{TxHash: tx.Hash(), Result: csJSON})
-		}
-
-		res, err := json.Marshal(results)
-		if err != nil {
-			return nil, err
-		}
-		return res, t.reason
-	}
-
-	if len(t.txToStack) != 1 {
-		return nil, ErrIncorrectTopLevelCalls
-	}
-
-	res, err := json.Marshal(t.txToStack[t.currentTx][0])
-	if err != nil {
-		return nil, err
-	}
-
-	return res, t.reason
+			return json.Marshal(stack[0])
+		},
+		func() (json.RawMessage, error) {
+			return json.Marshal(t.txToStack[t.currentTx][0])
+		},
+		t.reason)
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.

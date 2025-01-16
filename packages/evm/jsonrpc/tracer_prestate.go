@@ -58,7 +58,7 @@ type prestateTracer struct {
 	interrupt     atomic.Bool // Atomic flag to signal execution interruption
 	reason        error       // Textual reason for the interruption
 	traceBlock    bool
-	fakeTxs       types.Transactions
+	blockTxs      types.Transactions
 }
 
 type prestateTracerConfig struct {
@@ -66,7 +66,7 @@ type prestateTracerConfig struct {
 }
 
 func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error) {
-	var fakeTxs types.Transactions
+	var blockTxs types.Transactions
 
 	if initValue == nil && traceBlock {
 		return nil, fmt.Errorf("initValue with block transactions is required for block tracing")
@@ -74,7 +74,7 @@ func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock boo
 
 	if initValue != nil {
 		var ok bool
-		fakeTxs, ok = initValue.(types.Transactions)
+		blockTxs, ok = initValue.(types.Transactions)
 		if !ok {
 			return nil, fmt.Errorf("invalid init value type for prestateTracer: %T", initValue)
 		}
@@ -87,7 +87,7 @@ func newPrestateTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock boo
 		config:     config,
 		traceBlock: traceBlock,
 		states:     make(map[common.Hash]*PrestateTxValue),
-		fakeTxs:    fakeTxs,
+		blockTxs:   blockTxs,
 	}
 	return &Tracer{
 		Tracer: &tracers.Tracer{
@@ -197,63 +197,22 @@ func (t *prestateTracer) OnTxEnd(receipt *types.Receipt, err error) {
 // GetResult returns the json-encoded nested list of call traces, and any
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *prestateTracer) GetResult() (json.RawMessage, error) {
-	var res []byte
-	var err error
-	if t.traceBlock {
-		if t.config.DiffMode {
-			result := []TxTraceResult{}
-			for txHash, txState := range t.states {
-				var diffResult json.RawMessage
-				diffResult, err = json.Marshal(PrestateDiffResult{txState.Post, txState.Pre})
-				if err != nil {
-					return nil, err
-				}
-				result = append(result, TxTraceResult{TxHash: txHash, Result: diffResult})
-
-				for _, tx := range t.fakeTxs {
-					var csJSON json.RawMessage
-					csJSON, err = t.TraceFakeTx(tx)
-					if err != nil {
-						return nil, err
-					}
-					result = append(result, TxTraceResult{TxHash: tx.Hash(), Result: csJSON})
-				}
+	return GetTraceResults(
+		t.blockTxs,
+		t.traceBlock,
+		t.TraceFakeTx,
+		func(tx *types.Transaction) (json.RawMessage, error) {
+			txState := t.states[tx.Hash()]
+			if t.config.DiffMode {
+				return json.Marshal(PrestateDiffResult{txState.Post, txState.Pre})
 			}
-			res, err = json.Marshal(result)
-		} else {
-			result := []TxTraceResult{}
-			for txHash, txState := range t.states {
-				var preState json.RawMessage
-				preState, err = json.Marshal(txState.Pre)
-				if err != nil {
-					return nil, err
-				}
-				result = append(result, TxTraceResult{TxHash: txHash, Result: preState})
+			return json.Marshal(txState.Pre)
+		}, func() (json.RawMessage, error) {
+			if t.config.DiffMode {
+				return json.Marshal(PrestateDiffResult{t.states[t.currentTxHash].Post, t.states[t.currentTxHash].Pre})
 			}
-
-			for _, tx := range t.fakeTxs {
-				var csJSON json.RawMessage
-				csJSON, err = t.TraceFakeTx(tx)
-				if err != nil {
-					return nil, err
-				}
-				result = append(result, TxTraceResult{TxHash: tx.Hash(), Result: csJSON})
-			}
-
-			res, err = json.Marshal(result)
-		}
-	} else {
-		if t.config.DiffMode {
-			res, err = json.Marshal(PrestateDiffResult{t.states[t.currentTxHash].Post, t.states[t.currentTxHash].Pre})
-		} else {
-			res, err = json.Marshal(t.states[t.currentTxHash].Pre)
-		}
-	}
-
-	if err != nil {
-		return nil, err
-	}
-	return json.RawMessage(res), t.reason
+			return json.Marshal(t.states[t.currentTxHash].Pre)
+		}, t.reason)
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.

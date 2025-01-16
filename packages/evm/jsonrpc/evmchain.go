@@ -725,17 +725,11 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 	blockNumber := uint64(iscBlock.BlockIndex())
 
 	blockTxs := block.Transactions()
-	fakeTxs := make([]*types.Transaction, 0, len(blockTxs))
-	for _, tx := range blockTxs {
-		if evmutil.IsFakeTransaction(tx) {
-			fakeTxs = append(fakeTxs, tx)
-		}
-	}
 
 	tracer, err := newTracer(tracerType, &tracers.Context{
 		BlockHash:   block.Hash(),
 		BlockNumber: new(big.Int).SetUint64(blockNumber),
-	}, config.TracerConfig, true, types.Transactions(fakeTxs))
+	}, config.TracerConfig, true, blockTxs)
 	if err != nil {
 		return nil, err
 	}
