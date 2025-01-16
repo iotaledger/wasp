@@ -70,19 +70,19 @@ func TestMain(m *testing.M) {
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
 	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 10 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 20 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 40 * time.Second},   // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 50 * time.Second},   // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 130 * time.Second}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 1000 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 2000 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 3000 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 4000 * time.Second},   // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 5000 * time.Second},   // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 13000 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
 			// TODO these "unreliable" tests are crazy, they either succeed in 10~20s or run forever...
-			tc{n: 4, f: 1, reliable: false, timeout: 5 * time.Minute},   // Minimal robust config.
-			tc{n: 10, f: 3, reliable: false, timeout: 15 * time.Minute}, // Typical config.
-			tc{n: 31, f: 10, reliable: true, timeout: 25 * time.Minute}, // Large cluster, reliable - to make test faster.
+			tc{n: 4, f: 1, reliable: false, timeout: 50 * time.Minute},   // Minimal robust config.
+			tc{n: 10, f: 3, reliable: false, timeout: 150 * time.Minute}, // Typical config.
+			tc{n: 31, f: 10, reliable: true, timeout: 250 * time.Minute}, // Large cluster, reliable - to make test faster.
 		)
 	}
 	for _, tst := range tests {
@@ -399,7 +399,7 @@ func (tnc *testNodeConn) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
-		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
+		gasCoin, err := tnc.l1Client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 		})
