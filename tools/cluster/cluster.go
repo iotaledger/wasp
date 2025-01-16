@@ -222,7 +222,7 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	dkgInitiatorIndex := rand.Intn(len(apiHosts))
 	client := clu.WaspClientFromHostName(apiHosts[dkgInitiatorIndex])
 
-	return apilib.RunDKG(client, peerPubKeys, threshold, timeout...)
+	return apilib.RunDKG(context.Background(), client, peerPubKeys, threshold, timeout...)
 }
 
 func (clu *Cluster) DeployChainWithDKG(allPeers, committeeNodes []int, quorum uint16, blockKeepAmount ...int32) (*Chain, error) {
@@ -362,7 +362,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	for _, tx := range addAccessNodesTxs {
 		// ---------- wait until the requests are processed in all committee nodes
 
-		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 5*time.Second); err != nil {
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, tx, true, 5*time.Second); err != nil {
 			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
@@ -391,7 +391,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	if err != nil {
 		return err
 	}
-	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, tx, true, 30*time.Second)
+	_, err = peers.WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, tx, true, 30*time.Second)
 	if err != nil {
 		return err
 	}

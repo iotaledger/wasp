@@ -32,7 +32,7 @@ func TestBasicRotation(t *testing.T) {
 	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter (before rotation)")
 	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
 	// change the committee to the new one
@@ -42,13 +42,13 @@ func TestBasicRotation(t *testing.T) {
 	tx, err = govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{})
 	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncAddAllowedStateControllerAddress")
 	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
 	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - CoreEPRotateStateController")
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
 	stateController, err := env.callGetStateController(0)
@@ -59,7 +59,7 @@ func TestBasicRotation(t *testing.T) {
 	tx, err = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter")
 	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 20*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
 	require.EqualValues(t, 2, env.getNativeContractCounter())
@@ -99,7 +99,7 @@ func TestRotation(t *testing.T) {
 		*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
 	)
 	require.NoError(t, err)
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 15*time.Second)
+	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 15*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
@@ -108,7 +108,7 @@ func TestRotation(t *testing.T) {
 	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 15*time.Second))
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 15*time.Second)
+	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 15*time.Second)
 	require.NoError(t, err)
 
 	_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
@@ -171,7 +171,7 @@ func TestRotationFromSingle(t *testing.T) {
 		*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
 	)
 	require.NoError(t, err)
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
 	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
@@ -181,7 +181,7 @@ func TestRotationFromSingle(t *testing.T) {
 	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 30*time.Second))
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	select {
@@ -243,7 +243,7 @@ func TestRotationMany(t *testing.T) {
 			*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
 		)
 		require.NoError(t, err2)
-		_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, waitTimeout)
+		_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
 		require.NoError(t, err2)
 		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
 	}
@@ -264,7 +264,7 @@ func TestRotationMany(t *testing.T) {
 		tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 		require.NoError(t, chEnv.waitStateControllers(rotation.Address, waitTimeout))
-		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chEnv.Chain.ChainID, tx, false, waitTimeout)
+		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
 		require.NoError(t, err)
 	}
 }
