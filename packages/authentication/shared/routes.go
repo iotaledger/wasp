@@ -20,5 +20,5 @@ type LoginRequest struct {
 
 type LoginResponse struct {
 	JWT   string `json:"jwt,omitempty" swagger:"required"`
-	Error error  `json:"error,omitempty" swagger:"required"`
+	Error error  `json:"error,omitempty" swagger:""`
 }

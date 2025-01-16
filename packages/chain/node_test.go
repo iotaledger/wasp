@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -360,15 +359,6 @@ func (tnc *testNodeConn) PublishTX(
 	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorID)
 	if err != nil {
 		return err
-	}
-
-	existing := lo.ContainsBy(tnc.published, func(publishedAnchor *iscmove.AnchorWithRef) bool {
-		publishedID := publishedAnchor.Hash()
-		return anchor.Hash() == publishedID
-	})
-	if existing {
-		tnc.t.Logf("Already seen an Anchor with ID=%v", anchor.Hash())
-		return nil
 	}
 
 	tnc.published = append(tnc.published, anchor)
