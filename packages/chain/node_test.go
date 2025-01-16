@@ -326,6 +326,8 @@ func (tnc *testNodeConn) PublishTX(
 		Signatures:  tx.Signatures,
 		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges:  true,
+			ShowEvents:         true,
+			ShowEffects:        true,
 			ShowInput:          true,
 			ShowBalanceChanges: true,
 		},
@@ -336,12 +338,41 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	anchorRef, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
-	if err != nil {
-		return err
+	var anchorID *iotago.ObjectID
+
+	// Maybe the request was already posted?
+	if res.ObjectChanges == nil {
+		for _, e := range res.Effects.Data.V1.Mutated {
+			objectID := e.Reference.ObjectID
+
+			obj, _ := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
+				ObjectID: objectID,
+				Options: &iotajsonrpc.IotaObjectDataOptions{
+					ShowContent: true,
+					ShowDisplay: true,
+					ShowType:    true,
+				},
+			})
+
+			resource, err2 := iotago.NewResourceType(*obj.Data.Type)
+			if err2 != nil {
+				tnc.t.Logf("Failed to parse Resource type of AnchorTX %f", err2)
+			} else {
+				if resource.Contains(nil, iscmove.AnchorModuleName, iscmove.AnchorObjectName) {
+					anchorID = obj.Data.ObjectID
+				}
+			}
+		}
+	} else {
+		anchorRef, err2 := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+		if err2 != nil {
+			return err2
+		}
+
+		anchorID = anchorRef.ObjectID
 	}
 
-	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
+	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorID)
 	if err != nil {
 		return err
 	}
