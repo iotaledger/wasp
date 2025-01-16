@@ -337,7 +337,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	anchorRef, err := res.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorRef, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {
 		return err
 	}
