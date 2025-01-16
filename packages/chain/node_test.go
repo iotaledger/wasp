@@ -5,7 +5,6 @@ package chain_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -26,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -407,16 +407,17 @@ func (tnc *testNodeConn) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
-		var moveBalance iotajsonrpc.MoveBalance
-		if err = json.Unmarshal(gasCoin.Data.Content.Data.MoveObject.Fields, &moveBalance); err != nil {
-			panic(err)
+		var moveBalance iscmoveclient.MoveCoin
+		err = iotaclient.UnmarshalBCS(gasCoin.Data.Bcs.Data.MoveObject.BcsBytes, &moveBalance)
+		if err != nil {
+			panic("failed to decode gas coin object: " + err.Error())
 		}
 
 		ref := gasCoin.Data.Ref()
 		var coinInfo cons_gr.NodeConnGasInfo = &testNodeConnGasInfo{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
-				Value: coin.Value(moveBalance.Value.Uint64()),
+				Value: coin.Value(moveBalance.Balance),
 				Ref:   &ref,
 			}},
 			gasPrice: parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),

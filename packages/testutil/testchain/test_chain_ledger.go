@@ -63,16 +63,15 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	coinType := iotajsonrpc.IotaCoinType.String()
 	resGetCoins, err := tcl.l1client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: tcl.chainOwner.Address().AsIotaAddress(), CoinType: &coinType})
 	require.NoError(tcl.t, err)
-
-	originDeposit := resGetCoins.Data[1]
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address())).Encode()
-	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, isc.BaseTokenCoinInfo)
+
+	gasCoin := resGetCoins.Data[0].Ref()
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, *gasCoin.ObjectID, 0, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
-		&iotago.ObjectID{},
+		gasCoin.ObjectID,
 		&gas.FeePolicy{
 			GasPerToken: util.Ratio32{
 				A: 1,
@@ -87,7 +86,6 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 		initParams,
 		"https://iota.org",
 	)
-	gasCoin := resGetCoins.Data[0].Ref()
 	// FIXME this may refer to the ObjectRef with older version, and trigger panic
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
@@ -96,7 +94,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 			ChainOwnerAddress: tcl.chainOwner.Address(),
 			PackageID:         *tcl.iscPackage,
 			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       originDeposit.Ref(),
+			InitCoinRef:       nil,
 			GasPayments:       []*iotago.ObjectRef{gasCoin},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
@@ -107,7 +105,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	require.NotNil(tcl.t, stateAnchor)
 	tcl.chainID = stateAnchor.ChainID()
 
-	return &stateAnchor, originDepositVal
+	return &stateAnchor, 0
 }
 
 func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (isc.Request, error) {
