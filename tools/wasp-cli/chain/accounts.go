@@ -3,7 +3,6 @@ package chain
 import (
 	"context"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -137,7 +136,7 @@ func initDepositCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 			defer cancel()
 
-			if strings.Contains(args[0], ":") {
+			if args[0] == "" {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
 
@@ -146,7 +145,8 @@ func initDepositCmd() *cobra.Command {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
-							Transfer: tokens,
+							Transfer:  tokens,
+							Allowance: tokens,
 						},
 					)
 				})

@@ -57,10 +57,10 @@ func initPostRequestCmd() *cobra.Command {
 			params := util.EncodeParams(args[2:], chainID)
 			msg := isc.NewMessage(isc.Hn(cname), isc.Hn(fname), params)
 
-			allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
+			//allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
 			postParams := chainclient.PostRequestParams{
-				Transfer:  util.ParseFungibleTokens(postRequestParams.transfer),
-				Allowance: allowanceTokens,
+				Transfer:  isc.NewAssets(1000000),
+				Allowance: isc.NewAssets(1000000),
 			}
 			postRequest(node, chain, msg, postParams, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
 		},
