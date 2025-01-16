@@ -98,7 +98,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
@@ -117,7 +118,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return
 		case task := <-ncc.publishTxQueue:
 			err := postTx(task)
-			task.cb(task.tx, err)
+			panic("PLACE NEW STATE ANCHOR HERE (pull mutateObject anchor from above after ExecuteTransactionBlock")
+			task.cb(task.tx, nil, err)
 		}
 	}
 }

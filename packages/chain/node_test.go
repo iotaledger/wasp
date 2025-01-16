@@ -325,10 +325,9 @@ func (tnc *testNodeConn) PublishTX(
 		TxDataBytes: txBytes,
 		Signatures:  tx.Signatures,
 		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects:        true,
 			ShowObjectChanges:  true,
+			ShowInput:          true,
 			ShowBalanceChanges: true,
-			ShowEvents:         true,
 		},
 		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 	})
@@ -357,9 +356,9 @@ func (tnc *testNodeConn) PublishTX(
 	}
 
 	tnc.published = append(tnc.published, anchor)
-	callback(tx, nil)
-
 	stateAnchor := isc.NewStateAnchor(anchor, tnc.iscPackageID)
+
+	callback(tx, &stateAnchor, nil)
 
 	tnc.recvAnchor(&stateAnchor)
 	return nil

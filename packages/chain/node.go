@@ -115,7 +115,7 @@ type RequestHandler = func(req isc.OnLedgerRequest)
 // is the current one.
 type AnchorHandler = func(anchor *isc.StateAnchor)
 
-type TxPostHandler = func(tx iotasigner.SignedTransaction, err error)
+type TxPostHandler = func(tx iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error)
 
 type chainNodeImpl struct {
 	me                  gpa.NodeID
@@ -751,14 +751,14 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes.Set(txHash, subCancel)
 			publishStart := time.Now()
-			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, err error) {
+			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 				cni.recvTxPublishedPipe.In() <- &txPublished{
-					committeeAddr: txToPost.CommitteeAddr,
-					logIndex:      txToPost.LogIndex,
-					txID:          txHash,
-					// nextAliasOutput: txToPost,
-					confirmed: err == nil,
+					committeeAddr:   txToPost.CommitteeAddr,
+					logIndex:        txToPost.LogIndex,
+					txID:            txHash,
+					nextAliasOutput: newStateAnchor,
+					confirmed:       err == nil,
 				}
 			}); err != nil {
 				cni.log.Error(err.Error())
