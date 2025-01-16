@@ -325,7 +325,10 @@ func (tnc *testNodeConn) PublishTX(
 		TxDataBytes: txBytes,
 		Signatures:  tx.Signatures,
 		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowEffects: true,
+			ShowEffects:        true,
+			ShowObjectChanges:  true,
+			ShowBalanceChanges: true,
+			ShowEvents:         true,
 		},
 		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 	})
