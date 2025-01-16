@@ -7,51 +7,62 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
-var testSeed = []byte{50, 230, 119, 9, 86, 155, 106, 30, 245, 81, 234, 122, 116, 90, 172, 148, 59, 33, 88, 252, 134, 42, 231, 198, 208, 141, 209, 116, 78, 21, 216, 24}
-
-func newSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
-	seed[0] = seed[0] + byte(index)
-	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := suiclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsSuiAddress(), suiconn.LocalnetFaucetURL)
-	require.NoError(t, err)
-	return kp
+type PTBTestWrapperRequest struct {
+	Client      *iscmoveclient.Client
+	Signer      cryptolib.Signer
+	PackageID   iotago.PackageID
+	GasPayments []*iotago.ObjectRef // optional
+	GasPrice    uint64
+	GasBudget   uint64
 }
 
-func newLocalnetClient() *iscmoveclient.Client {
-	return iscmoveclient.NewHTTPClient(
-		suiconn.LocalnetEndpointURL,
-		suiconn.LocalnetFaucetURL,
+func PTBTestWrapper(
+	req *PTBTestWrapperRequest,
+	f func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	return req.Client.SignAndExecutePTB(
+		context.TODO(),
+		req.Signer,
+		f(ptb).Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
 	)
 }
 
 func TestKeys(t *testing.T) {
-	cryptolibSigner := newSignerWithFunds(t, testSeed, 0)
-	client := newLocalnetClient()
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	client := iscmoveclienttest.NewHTTPClient()
 	iscBytecode := contracts.ISC()
 
-	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
-		Sender:          cryptolibSigner.Address().AsSuiAddress(),
+	txnBytes, err := client.Publish(context.Background(), iotaclient.PublishRequest{
+		Sender:          cryptolibSigner.Address().AsIotaAddress(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
+		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
 	})
 	require.NoError(t, err)
 
 	txnResponse, err := client.SignAndExecuteTransaction(
 		context.Background(),
-		cryptolib.SignerToSuiSigner(cryptolibSigner),
-		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes.TxBytes,
+			Signer:      cryptolib.SignerToIotaSigner(cryptolibSigner),
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
 		},
 	)
 	require.NoError(t, err)

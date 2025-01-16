@@ -4,15 +4,15 @@
 package bracha
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgBrachaType byte
 
 const (
+	// The type for message kinds (only one of these in this case).
+	msgType gpa.MessageType = iota
+
 	msgBrachaTypePropose msgBrachaType = iota
 	msgBrachaTypeEcho
 	msgBrachaTypeReady
@@ -20,22 +20,12 @@ const (
 
 type msgBracha struct {
 	gpa.BasicMessage
-	brachaType msgBrachaType // Type
-	value      []byte        // Value
+	brachaType msgBrachaType `bcs:"export"` // Type
+	value      []byte        `bcs:"export"` // Value
 }
 
 var _ gpa.Message = new(msgBracha)
 
-func (msg *msgBracha) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msg.brachaType = msgBrachaType(rr.ReadByte())
-	msg.value = rr.ReadBytes()
-	return rr.Err
-}
-
-func (msg *msgBracha) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(byte(msg.brachaType))
-	ww.WriteBytes(msg.value)
-	return ww.Err
+func (msg *msgBracha) MsgType() gpa.MessageType {
+	return msgType
 }

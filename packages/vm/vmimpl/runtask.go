@@ -1,25 +1,21 @@
 package vmimpl
 
 import (
-	"errors"
 	"math"
 
-	"github.com/iotaledger/hive.go/lo"
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
+	"github.com/iotaledger/wasp/packages/transaction"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
@@ -53,22 +49,14 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		panic("invalid params: must be at least 1 request")
 	}
 
-	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(task.AnchorOutput)
-	if err != nil {
-		panic(err)
-	}
-
-	stateDraft, err := task.Store.NewStateDraft(task.TimeAssumption, prevL1Commitment)
-	if err != nil {
-		panic(err)
-	}
-
-	txbuilder := vmtxbuilder.NewTransactionBuilder()
+	prevL1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(task.Anchor))
+	stateDraft := lo.Must(task.Store.NewStateDraft(task.Timestamp, prevL1Commitment))
+	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage(), task.Anchor, task.Anchor.Owner())
 	vmctx := newVmContext(task, stateDraft, txbuilder)
 	vmctx.init()
 
 	// run the batch of requests
-	requestResults, numSuccess, numOffLedger, unprocessable := vmctx.runRequests(
+	requestResults, numSuccess, numOffLedger := vmctx.runRequests(
 		vmctx.task.Requests,
 		governance.NewStateReaderFromChainState(stateDraft).GetMaintenanceStatus(),
 		vmctx.task.Log,
@@ -97,22 +85,26 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.extractBlock(
 		numProcessed, numSuccess, numOffLedger,
-		unprocessable,
 	)
 
 	vmctx.task.Log.Debugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, l1Commitment, timestamp, rotationAddr)
 
-	if rotationAddr == nil {
-		// rotation does not happen
-		taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment)
-		vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
-	} else {
+	// FIXME we may not need to store this when Rotate the address
+	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment, task.GasCoin)
+	vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
+	if rotationAddr != nil {
 		// rotation happens
-		taskResult.RotationAddress = rotationAddr
-		taskResult.StateMetadata = nil
+		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
+		// FIXME maybe we need to amend the following debugging message
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
+	// FIXME this may cause a deadlock when the packed the requests are too huge and exceeded the top up fee
+	topUpFee := uint64(0)
+	if isc.TopUpFeeMin > task.GasCoin.Value {
+		topUpFee = isc.TopUpFeeMin - task.GasCoin.Value.Uint64()
+	}
+	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
 	return taskResult
 }
 
@@ -123,30 +115,29 @@ func (vmctx *vmContext) init() {
 		vmctx.runMigrations(chainState, vmctx.task.Migrations)
 		vmctx.schemaVersion = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 
-		// save the anchor tx ID of the current state
-		blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState)).UpdateLatestBlockInfo(
-			vmctx.task.AnchorOutputID,
-		)
-
+		// TODO
 		// save the ObjectID of the newly created tokens, foundries and NFTs in the previous block
-		accountsState := vmctx.accountsStateWriterFromChainState(chainState)
-		newNFTIDs := accountsState.
-			UpdateLatestOutputID(vmctx.task.AnchorOutputID, vmctx.task.AnchorOutput.StateIndex)
+		/*
+			accountsState := vmctx.accountsStateWriterFromChainState(chainState)
+			newNFTIDs := accountsState.
+				UpdateLatestOutputID(vmctx.task.AnchorOutputID, vmctx.task.AnchorOutput.StateIndex)
 
-		if len(newNFTIDs) > 0 {
-			for nftID, owner := range newNFTIDs {
-				nft := accountsState.GetNFTData(nftID)
-				if owner.Kind() == isc.AgentIDKindEthereumAddress {
-					// emit an EVM event so that the mint is visible from the EVM block explorer
-					vmctx.onBlockClose(
-						vmctx.emitEVMEventL1NFTMint(nft.ID, owner.(*isc.EthereumAddressAgentID)),
-					)
+			if len(newNFTIDs) > 0 {
+				for nftID, owner := range newNFTIDs {
+					nft := accountsState.GetNFTData(nftID)
+					if owner.Kind() == isc.AgentIDKindEthereumAddress {
+						// emit an EVM event so that the mint is visible from the EVM block explorer
+						vmctx.onBlockClose(
+							vmctx.emitEVMEventL1NFTMint(nft.ID, owner.(*isc.EthereumAddressAgentID)),
+						)
+					}
 				}
 			}
-		}
+		*/
 	})
 }
 
+/* TODO
 func (vmctx *vmContext) emitEVMEventL1NFTMint(nftID iotago.NFTID, owner *isc.EthereumAddressAgentID) blockCloseCallback {
 	return func(reqIndex uint16) {
 		// fake a request execution and insert a Mint event on the EVM
@@ -163,12 +154,7 @@ func (vmctx *vmContext) emitEVMEventL1NFTMint(nftID iotago.NFTID, owner *isc.Eth
 		reqCtx.uncommittedState.Mutations().ApplyTo(vmctx.stateDraft)
 	}
 }
-
-func (vmctx *vmContext) getAnchorOutputSD() uint64 {
-	// get the total L2 funds in accounting
-	totalL2Funds := vmctx.loadTotalFungibleTokens()
-	return vmctx.task.AnchorOutput.Amount - totalL2Funds.BaseTokens
-}
+*/
 
 func (vmctx *vmContext) runRequests(
 	reqs []isc.Request,
@@ -178,21 +164,15 @@ func (vmctx *vmContext) runRequests(
 	results []*vm.RequestResult,
 	numSuccess uint16,
 	numOffLedger uint16,
-	unprocessable []isc.OnLedgerRequest,
 ) {
 	results = []*vm.RequestResult{}
-	allReqs := lo.CopySlice(reqs)
 
 	// main loop over the batch of requests
 	requestIndexCounter := uint16(0)
-	for reqIndex := 0; reqIndex < len(allReqs); reqIndex++ {
-		req := allReqs[reqIndex]
-		result, unprocessableToRetry, skipReason := vmctx.runRequest(req, requestIndexCounter, maintenanceMode)
+	for reqIndex := 0; reqIndex < len(reqs); reqIndex++ {
+		req := reqs[reqIndex]
+		result, skipReason := vmctx.runRequest(req, requestIndexCounter, maintenanceMode)
 		if skipReason != nil {
-			if errors.Is(vmexceptions.ErrNotEnoughFundsForSD, skipReason) {
-				unprocessable = append(unprocessable, req.(isc.OnLedgerRequest))
-			}
-
 			// some requests are just ignored (deterministically)
 			log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
@@ -211,24 +191,11 @@ func (vmctx *vmContext) runRequests(
 		}
 		numSuccess++
 
-		isRetry := reqIndex >= len(reqs)
-		if isRetry {
-			vmctx.removeUnprocessable(req.ID())
-		}
-		for _, retry := range unprocessableToRetry {
-			if len(allReqs) >= math.MaxUint16 {
-				log.Warnf("cannot process request to be retried %s (retry requested in %s): too many requests in block",
-					retry.ID(), req.ID())
-			} else {
-				allReqs = append(allReqs, retry)
-			}
-		}
-
 		// abort if num of requests is above max_uint16.
 		if reqIndex+1 == math.MaxUint16 {
 			log.Warnf("aborting vm run due to excessive number of requests. total: %d, executed: %d", len(reqs), reqIndex+1)
 			break
 		}
 	}
-	return results, numSuccess, numOffLedger, unprocessable
+	return results, numSuccess, numOffLedger
 }

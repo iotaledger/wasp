@@ -6,10 +6,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
@@ -17,42 +15,43 @@ import (
 )
 
 func (c *Controller) estimateGasOnLedger(e echo.Context) error {
-	controllerutils.SetOperation(e, "estimate_gas_onledger")
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return err
-	}
+	panic("TODO")
+	// controllerutils.SetOperation(e, "estimate_gas_onledger")
+	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// if err != nil {
+	// 	return err
+	// }
 
-	var estimateGasRequest models.EstimateGasRequestOnledger
-	if err = e.Bind(&estimateGasRequest); err != nil {
-		return apierrors.InvalidPropertyError("body", err)
-	}
+	// var estimateGasRequest models.EstimateGasRequestOnledger
+	// if err = e.Bind(&estimateGasRequest); err != nil {
+	// 	return apierrors.InvalidPropertyError("body", err)
+	// }
 
-	outputBytes, err := iotago.DecodeHex(estimateGasRequest.Output)
-	if err != nil {
-		return apierrors.InvalidPropertyError("Request", err)
-	}
-	output, err := util.OutputFromBytes(outputBytes)
-	if err != nil {
-		return apierrors.InvalidPropertyError("Output", err)
-	}
+	// outputBytes, err := cryptolib.DecodeHex(estimateGasRequest.Output)
+	// if err != nil {
+	// 	return apierrors.InvalidPropertyError("Request", err)
+	// }
+	// output, err := util.OutputFromBytes(outputBytes)
+	// if err != nil {
+	// 	return apierrors.InvalidPropertyError("Output", err)
+	// }
 
-	req, err := isc.OnLedgerFromUTXO(
-		output,
-		iotago.OutputID{}, // empty outputID for estimation
-	)
-	if err != nil {
-		return apierrors.InvalidPropertyError("Output", err)
-	}
-	if !req.TargetAddress().Equals(chainID.AsAddress()) {
-		return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
-	}
+	// req, err := isc.OnLedgerFromUTXO(
+	// 	output,
+	// 	iotago.OutputID{}, // empty outputID for estimation
+	// )
+	// if err != nil {
+	// 	return apierrors.InvalidPropertyError("Output", err)
+	// }
+	// if !req.TargetAddress().Equals(chainID.AsAddress()) {
+	// 	return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
+	// }
 
-	rec, err := common.EstimateGas(ch, req)
-	if err != nil {
-		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
-	}
-	return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
+	// rec, err := common.EstimateGas(ch, req)
+	// if err != nil {
+	// 	return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
+	// }
+	// return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
 }
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {
@@ -76,7 +75,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("fromAddress", err)
 	}
 
-	requestBytes, err := iotago.DecodeHex(estimateGasRequest.Request)
+	requestBytes, err := cryptolib.DecodeHex(estimateGasRequest.Request)
 	if err != nil {
 		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
@@ -86,7 +85,7 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
 
-	impRequest := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestData)).
+	impRequest := isc.NewImpersonatedOffLedgerRequest(&req.(*isc.OffLedgerRequestData).OffLedgerRequestDataEssence).
 		WithSenderAddress(requestFrom)
 
 	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {

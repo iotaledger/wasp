@@ -1,16 +1,19 @@
-package util
+package util_test
 
 import (
 	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
-	value := uint64(12345678)
+	value := coin.Value(12345678)
 	tests := []struct {
-		decimals          uint32
+		decimals          uint8
 		expected          uint64
 		expectedRemainder uint64
 	}{
@@ -24,7 +27,7 @@ func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		wei := BaseTokensDecimalsToEthereumDecimals(value, test.decimals)
+		wei := util.BaseTokensDecimalsToEthereumDecimals(value, test.decimals)
 		require.EqualValues(t, test.expected, wei.Uint64())
 	}
 }
@@ -32,7 +35,7 @@ func TestBaseTokensDecimalsToEthereumDecimals(t *testing.T) {
 func TestEthereumDecimalsToBaseTokenDecimals(t *testing.T) {
 	value := uint64(123456789123456789)
 	tests := []struct {
-		decimals          uint32
+		decimals          uint8
 		expected          uint64
 		expectedRemainder uint64
 	}{
@@ -47,7 +50,7 @@ func TestEthereumDecimalsToBaseTokenDecimals(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		bt, rem := EthereumDecimalsToBaseTokenDecimals(new(big.Int).SetUint64(value), test.decimals)
+		bt, rem := util.EthereumDecimalsToBaseTokenDecimals(new(big.Int).SetUint64(value), test.decimals)
 		require.EqualValues(t, test.expected, bt)
 		require.EqualValues(t, test.expectedRemainder, rem.Uint64())
 	}

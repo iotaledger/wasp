@@ -7,10 +7,9 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/suiconn"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -42,7 +41,7 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 	if SkipCheckVersions {
 		return
 	}
-	nodeVersion, _, err := client.NodeApi.
+	nodeVersion, _, err := client.NodeAPI.
 		GetVersion(context.Background()).
 		Execute()
 	log.Check(err)
@@ -53,25 +52,24 @@ func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
 }
 
 func L2Client() clients.L2Client {
-	return clients.NewL2Client(
-		iscmove.Config{
-			APIURL: suiconn.LocalnetEndpointURL,
-		},
-	)
+	return L1Client().L2()
 }
 
 func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
-		APIURL:    suiconn.LocalnetEndpointURL,
-		FaucetURL: suiconn.LocalnetFaucetURL,
-	})
+		APIURL:    config.L1APIAddress(),
+		FaucetURL: config.L1FaucetAddress(),
+	}, iotaclient.WaitForEffectsDisabled)
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
+	iscPackageID := config.GetPackageID()
+
 	return chainclient.New(
 		L1Client(),
 		waspClient,
 		chainID,
+		iscPackageID,
 		wallet.Load(),
 	)
 }

@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ProtocolParameters type satisfies the MappedNullable interface at compile time
@@ -19,8 +21,6 @@ var _ MappedNullable = &ProtocolParameters{}
 
 // ProtocolParameters struct for ProtocolParameters
 type ProtocolParameters struct {
-	// The human readable network prefix
-	Bech32Hrp string `json:"bech32Hrp"`
 	// The networks max depth
 	BelowMaxDepth uint32 `json:"belowMaxDepth"`
 	// The minimal PoW score
@@ -34,13 +34,14 @@ type ProtocolParameters struct {
 	Version int32 `json:"version"`
 }
 
+type _ProtocolParameters ProtocolParameters
+
 // NewProtocolParameters instantiates a new ProtocolParameters object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32) *ProtocolParameters {
+func NewProtocolParameters(belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32) *ProtocolParameters {
 	this := ProtocolParameters{}
-	this.Bech32Hrp = bech32Hrp
 	this.BelowMaxDepth = belowMaxDepth
 	this.MinPowScore = minPowScore
 	this.NetworkName = networkName
@@ -56,30 +57,6 @@ func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore u
 func NewProtocolParametersWithDefaults() *ProtocolParameters {
 	this := ProtocolParameters{}
 	return &this
-}
-
-// GetBech32Hrp returns the Bech32Hrp field value
-func (o *ProtocolParameters) GetBech32Hrp() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.Bech32Hrp
-}
-
-// GetBech32HrpOk returns a tuple with the Bech32Hrp field value
-// and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetBech32HrpOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Bech32Hrp, true
-}
-
-// SetBech32Hrp sets field value
-func (o *ProtocolParameters) SetBech32Hrp(v string) {
-	o.Bech32Hrp = v
 }
 
 // GetBelowMaxDepth returns the BelowMaxDepth field value
@@ -236,7 +213,6 @@ func (o ProtocolParameters) MarshalJSON() ([]byte, error) {
 
 func (o ProtocolParameters) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["bech32Hrp"] = o.Bech32Hrp
 	toSerialize["belowMaxDepth"] = o.BelowMaxDepth
 	toSerialize["minPowScore"] = o.MinPowScore
 	toSerialize["networkName"] = o.NetworkName
@@ -244,6 +220,48 @@ func (o ProtocolParameters) ToMap() (map[string]interface{}, error) {
 	toSerialize["tokenSupply"] = o.TokenSupply
 	toSerialize["version"] = o.Version
 	return toSerialize, nil
+}
+
+func (o *ProtocolParameters) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"belowMaxDepth",
+		"minPowScore",
+		"networkName",
+		"rentStructure",
+		"tokenSupply",
+		"version",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varProtocolParameters := _ProtocolParameters{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varProtocolParameters)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ProtocolParameters(varProtocolParameters)
+
+	return err
 }
 
 type NullableProtocolParameters struct {

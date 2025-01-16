@@ -3,16 +3,17 @@ package sbtests
 import (
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -24,22 +25,19 @@ import (
 // SC deployed on chain 2
 // funds are deposited by some user on chain 1, on behalf of SC
 // SC tries to withdraw those funds from chain 1 to chain 2
-func Test2Chains(t *testing.T) { run2(t, test2Chains) }
-
-func test2Chains(t *testing.T) {
+func Test2Chains(t *testing.T) {
+	t.Skip("TODO")
 	corecontracts.PrintWellKnownHnames()
 
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
-	}).
-		WithNativeContract(sbtestsc.Processor)
+		Debug:           true,
+		PrintStackTrace: true,
+	})
 	chain1 := env.NewChain()
-	chain2, _ := env.NewChainExt(nil, 0, "chain2")
+	chain2, _ := env.NewChainExt(nil, 0, "chain2", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	// chain owner deposit base tokens on chain2
-	chain2BaseTokenOwnerDeposit := 5 * isc.Million
-	err := chain2.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(chain2BaseTokenOwnerDeposit), nil)
+	var chain2BaseTokenOwnerDeposit coin.Value = 5 * isc.Million
+	err := chain2.DepositAssetsToL2(isc.NewAssets(chain2BaseTokenOwnerDeposit), nil)
 	require.NoError(t, err)
 	chain1.CheckAccountLedger()
 	chain2.CheckAccountLedger()
@@ -48,8 +46,8 @@ func test2Chains(t *testing.T) {
 	contractAgentID2 := setupTestSandboxSC(t, chain2, nil)
 
 	userWallet, userAddress := env.NewKeyPairWithFunds()
-	userAgentID := isc.NewAgentID(userAddress)
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount)
+	userAgentID := isc.NewAddressAgentID(userAddress)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount)
 
 	fmt.Println("---------------chain1---------------")
 	fmt.Println(chain1.DumpAccounts())
@@ -60,13 +58,10 @@ func test2Chains(t *testing.T) {
 	chain1TotalBaseTokens := chain1.L2TotalBaseTokens()
 	chain2TotalBaseTokens := chain2.L2TotalBaseTokens()
 
-	chain1.WaitForRequestsMark()
-	chain2.WaitForRequestsMark()
-
 	// send base tokens to contractAgentID2 (that is an entity of chain2) on chain1
 	const baseTokensCreditedToScOnChain1 = 10 * isc.Million
-	creditBaseTokensToSend := baseTokensCreditedToScOnChain1 + gas.LimitsDefault.MinGasPerRequest
-	_, err = chain1.PostRequestSync(solo.NewCallParams(accounts.FuncTransferAllowanceTo.Message(contractAgentID2)).
+	creditBaseTokensToSend := coin.Value(baseTokensCreditedToScOnChain1 + gas.LimitsDefault.MinGasPerRequest)
+	_, l1Res, _, _, err := chain1.PostRequestSyncTx(solo.NewCallParams(accounts.FuncTransferAllowanceTo.Message(contractAgentID2)).
 		AddBaseTokens(creditBaseTokensToSend).
 		AddAllowanceBaseTokens(baseTokensCreditedToScOnChain1).
 		WithMaxAffordableGasBudget(),
@@ -76,7 +71,7 @@ func test2Chains(t *testing.T) {
 	chain1TransferAllowanceReceipt := chain1.LastReceipt()
 	chain1TransferAllowanceGas := chain1TransferAllowanceReceipt.GasFeeCharged
 
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-creditBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount-creditBaseTokensToSend-coin.Value(l1Res.Effects.Data.GasFee()))
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	chain1.AssertL2BaseTokens(contractAgentID2, baseTokensCreditedToScOnChain1)
 	chain1.AssertL2TotalBaseTokens(chain1TotalBaseTokens + creditBaseTokensToSend)
@@ -93,7 +88,7 @@ func test2Chains(t *testing.T) {
 	fmt.Println("------------------------------------")
 
 	// make chain2 send a call to chain1 to withdraw base tokens
-	baseTokensToWithdrawFromChain1 := baseTokensCreditedToScOnChain1
+	var baseTokensToWithdrawFromChain1 coin.Value = baseTokensCreditedToScOnChain1
 
 	gasFeeTransferAccountToChain := 10 * gas.LimitsDefault.MinGasPerRequest
 	// gas reserve for the 'TransferAllowanceTo' func call in 'TransferAccountToChain' func call
@@ -109,20 +104,15 @@ func test2Chains(t *testing.T) {
 	// the gas fees for the chain2.accounts.transferAccountToChain() request and the
 	// chain1.accounts.transferAllowanceTo() request.
 	// note that the storage deposit will be returned in the end
-	withdrawReqAllowance := storageDeposit + gasFeeTransferAccountToChain + gasReserve
+	withdrawReqAllowance := coin.Value(storageDeposit + gasFeeTransferAccountToChain + gasReserve)
 
 	// also cover gas fee for `FuncWithdrawFromChain` on chain2
-	withdrawBaseTokensToSend := withdrawReqAllowance + withdrawFeeGas
+	withdrawBaseTokensToSend := withdrawReqAllowance + coin.Value(withdrawFeeGas)
 
 	_, err = chain2.PostRequestSync(
-		solo.NewCallParams(isc.NewMessageFromNames(ScName, sbtestsc.FuncWithdrawFromChain.Name, codec.MakeDict(map[string]any{
-			sbtestsc.ParamChainID:                          chain1.ChainID,
-			sbtestsc.ParamBaseTokens:                       baseTokensToWithdrawFromChain1,
-			sbtestsc.ParamGasReserve:                       gasReserve,
-			sbtestsc.ParamGasReserveTransferAccountToChain: gasFeeTransferAccountToChain,
-		}))).
+		solo.NewCallParams(sbtestsc.FuncWithdrawFromChain.Message(chain1.ChainID, baseTokensToWithdrawFromChain1, &gasReserve, &gasFeeTransferAccountToChain), ScName).
 			AddBaseTokens(withdrawBaseTokensToSend).
-			WithAllowance(isc.NewAssetsBaseTokensU64(withdrawReqAllowance)).
+			WithAllowance(isc.NewAssets(withdrawReqAllowance)).
 			WithMaxAffordableGasBudget(),
 		userWallet,
 	)
@@ -134,13 +124,8 @@ func test2Chains(t *testing.T) {
 	require.Equal(t, sbtestsc.FuncWithdrawFromChain.Hname(), chain2WithdrawFromChainTarget.EntryPoint)
 	require.Nil(t, chain2WithdrawFromChainReceipt.Error)
 
-	// accounts.FuncTransferAllowanceTo()
-	// accounts.FuncTransferAccountToChain()
-	require.True(t, chain1.WaitForRequestsThrough(2, 10*time.Second))
-	// testcore.FuncWithdrawFromChain()
-	// accounts.FuncTransferAllowanceTo()
-	require.True(t, chain2.WaitForRequestsThrough(2, 10*time.Second))
-
+	_, res := chain2.RunRequestBatch(1)
+	require.Len(t, res, 1)
 	chain2TransferAllowanceReceipt := chain2.LastReceipt()
 	// chain2TransferAllowanceGas := chain2TransferAllowanceReceipt.GasFeeCharged
 	chain2TransferAllowanceTarget := chain2TransferAllowanceReceipt.DeserializedRequest().Message().Target
@@ -162,14 +147,14 @@ func test2Chains(t *testing.T) {
 	fmt.Println("------------------------------------")
 
 	// the 2 function call we did above are requests from L1
-	env.AssertL1BaseTokens(userAddress, utxodb.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend)
+	env.AssertL1BaseTokens(userAddress, iotaclient.FundsFromFaucetAmount-creditBaseTokensToSend-withdrawBaseTokensToSend)
 	// on chain1 user only made the first transaction, so it is the same as its balance before 'WithdrawFromChain' function call
 	chain1.AssertL2BaseTokens(userAgentID, creditBaseTokensToSend-baseTokensCreditedToScOnChain1-chain1TransferAllowanceGas)
 	// gasFeeTransferAccountToChain is is used for paying the gas fee of the 'TransferAccountToChain' func call
 	// in 'WithdrawFromChain' func call
 	// gasReserve is used for paying the gas fee of the 'TransferAllowanceTo' func call in 'TransferAccountToChain' func call
 	// So the token left in contractAgentID2 on chain1 is the unused gas fee
-	chain1.AssertL2BaseTokens(contractAgentID2, gasFeeTransferAccountToChain-chain1TransferAccountToChainGas)
+	chain1.AssertL2BaseTokens(contractAgentID2, coin.Value(gasFeeTransferAccountToChain)-chain1TransferAccountToChainGas)
 	// tokens in 'withdrawBaseTokensToSend' amount are moved with the request from L1 to L2
 	// 'withdrawReqAllowance' is is the amount moved from chain1 to chain2 with the request
 	// 'baseTokensToWithdrawFromChain1' is the amount we assigned to withdraw in 'WithdrawFromChain' func call

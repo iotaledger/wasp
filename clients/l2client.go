@@ -4,85 +4,41 @@ package clients
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 type L2Client interface {
 	StartNewChain(
 		ctx context.Context,
-		cryptolibSigner cryptolib.Signer,
-		packageID sui.PackageID,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64,
-		gasBudget uint64,
-		initParams []byte,
-		devMode bool,
-	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+		req *iscmoveclient.StartNewChainRequest,
+	) (*iscmove.AnchorWithRef, error)
 	CreateAndSendRequest(
 		ctx context.Context,
-		cryptolibSigner cryptolib.Signer,
-		packageID sui.PackageID,
-		anchorAddress *sui.ObjectID,
-		assetsBagRef *sui.ObjectRef,
-		iscContractName uint32,
-		iscFunctionName uint32,
-		args [][]byte,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64,
-		gasBudget uint64,
-		devMode bool,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	ReceiveAndUpdateStateRootRequest(
+		req *iscmoveclient.CreateAndSendRequestRequest,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	ReceiveRequestsAndTransition(
 		ctx context.Context,
-		cryptolibSigner cryptolib.Signer,
-		packageID sui.PackageID,
-		anchorRef *sui.ObjectRef,
-		reqs []sui.ObjectRef,
-		stateRoot []byte,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64,
-		gasBudget uint64,
-		devMode bool,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	AssetsBagNew(
-		ctx context.Context,
-		cryptolibSigner cryptolib.Signer,
-		packageID sui.PackageID,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64,
-		gasBudget uint64,
-		devMode bool,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	AssetsBagPlaceCoin(
-		ctx context.Context,
-		cryptolibSigner cryptolib.Signer,
-		packageID sui.PackageID,
-		assetsBagRef *sui.ObjectRef,
-		coin *sui.ObjectRef,
-		coinType suijsonrpc.CoinType,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64,
-		gasBudget uint64,
-		devMode bool,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
-	AssetsDestroyEmpty(
-		ctx context.Context,
-		cryptolibSigner cryptolib.Signer,
-		packageID sui.PackageID,
-		assetsBagRef *sui.ObjectRef,
-		gasPayments []*sui.ObjectRef, // optional
-		gasPrice uint64,
-		gasBudget uint64,
-		devMode bool,
-	) (*suijsonrpc.SuiTransactionBlockResponse, error)
+		req *iscmoveclient.ReceiveRequestsAndTransitionRequest,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 	GetAssetsBagWithBalances(
 		ctx context.Context,
-		assetsBagID *sui.ObjectID,
+		assetsBagID *iotago.ObjectID,
 	) (*iscmove.AssetsBagWithBalances, error)
+	CreateAndSendRequestWithAssets(
+		ctx context.Context,
+		req *iscmoveclient.CreateAndSendRequestWithAssetsRequest,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	GetAnchorFromObjectID(
+		ctx context.Context,
+		anchorObjectID *iotago.ObjectID,
+	) (*iscmove.RefWithObject[iscmove.Anchor], error)
+	GetRequestFromObjectID(
+		ctx context.Context,
+		reqID *iotago.ObjectID,
+	) (*iscmove.RefWithObject[iscmove.Request], error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}

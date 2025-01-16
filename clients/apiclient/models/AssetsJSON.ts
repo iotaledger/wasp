@@ -10,37 +10,29 @@
  * Do not edit the class manually.
  */
 
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
+import { CoinJSON } from '../models/CoinJSON';
 import { HttpFile } from '../http/http';
 
 export class AssetsJSON {
-    /**
-    * The base tokens (uint64 as string)
-    */
-    'baseTokens': string;
-    'nativeTokens': Array<NativeTokenJSON>;
-    'nfts': Array<string>;
+    'coins': Array<CoinJSON>;
+    'objects': Array<Array<number>>;
 
     static readonly discriminator: string | undefined = undefined;
 
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
+
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "baseTokens",
-            "baseName": "baseTokens",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "nativeTokens",
-            "baseName": "nativeTokens",
-            "type": "Array<NativeTokenJSON>",
+            "name": "coins",
+            "baseName": "coins",
+            "type": "Array<CoinJSON>",
             "format": ""
         },
         {
-            "name": "nfts",
-            "baseName": "nfts",
-            "type": "Array<string>",
-            "format": "string"
+            "name": "objects",
+            "baseName": "objects",
+            "type": "Array<Array<number>>",
+            "format": "int32"
         }    ];
 
     static getAttributeTypeMap() {
@@ -50,4 +42,3 @@ export class AssetsJSON {
     public constructor() {
     }
 }
-

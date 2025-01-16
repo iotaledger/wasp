@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -14,16 +14,14 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds                       = coreerrors.Register("not enough funds").Create()
-	ErrNotEnoughBaseTokensForStorageDeposit = coreerrors.Register("not enough base tokens for storage deposit").Create()
-	ErrNotEnoughAllowance                   = coreerrors.Register("not enough allowance").Create()
-	ErrBadAmount                            = coreerrors.Register("bad native asset amount").Create()
-	ErrDuplicateTreasuryCap                 = coreerrors.Register("duplicate TreasuryCap").Create()
-	ErrTreasuryCapNotFound                  = coreerrors.Register("TreasuryCap not found").Create()
-	ErrOverflow                             = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrTooManyNFTsInAllowance               = coreerrors.Register("expected at most 1 NFT in allowance").Create()
-	ErrNFTIDNotFound                        = coreerrors.Register("NFTID not found").Create()
-	ErrImmutableMetadataInvalid             = coreerrors.Register("IRC27 metadata is invalid: '%s'")
+	ErrNotEnoughFunds           = coreerrors.Register("not enough funds").Create()
+	ErrNotEnoughAllowance       = coreerrors.Register("not enough allowance").Create()
+	ErrBadAmount                = coreerrors.Register("bad native asset amount").Create()
+	ErrDuplicateTreasuryCap     = coreerrors.Register("duplicate TreasuryCap").Create()
+	ErrTreasuryCapNotFound      = coreerrors.Register("TreasuryCap not found").Create()
+	ErrOverflow                 = coreerrors.Register("overflow in token arithmetics").Create()
+	ErrNFTIDNotFound            = coreerrors.Register("NFTID not found").Create()
+	ErrImmutableMetadataInvalid = coreerrors.Register("IRC27 metadata is invalid: '%s'")
 )
 
 const (
@@ -31,14 +29,14 @@ const (
 	// Covered in: TestFoundries
 	keyAllAccounts = "a"
 
-	// prefixCoins | <accountID> stores a map of <CoinType> => big.Int
+	// prefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
 	// Covered in: TestFoundries
-	prefixCoins = "C"
+	prefixAccountCoinBalances = "C"
 
-	// prefixRemainders | <accountID> stores the wei remainder (big.Int 18 decimals)
-	prefixRemainders = "w"
+	// prefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
+	prefixAccountWeiRemainder = "w"
 
-	// L2TotalsAccount is the special <accountID> storing the total coins
+	// L2TotalsAccount is the special <accountID> storing the total coin balances
 	// controlled by the chain
 	// Covered in: TestFoundries
 	L2TotalsAccount = "*"
@@ -51,10 +49,6 @@ const (
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	prefixObjectsByCollection = "c"
 
-	// prefixTreasuryCaps + <agentID> stores a map of <ObjectID> => true
-	// Covered in: TestFoundries
-	prefixTreasuryCaps = "T"
-
 	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	// Covered in: TestNFTMint
 	noCollection = "-"
@@ -63,12 +57,9 @@ const (
 	// Covered in: TestNFTMint
 	keyNonce = "m"
 
-	// keyCoinRecords stores a map of <CoinType> => array of CoinRecord
+	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
-	keyCoinRecords = "RC"
-	// keyTreasuryCapRecords stores a map of <CoinType> => TreasuryCapRecord
-	// Covered in: TestFoundries
-	keyTreasuryCapRecords = "RT"
+	keyCoinInfo = "RC"
 	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	keyObjectRecords = "RO"
@@ -109,7 +100,7 @@ func (s *StateReader) AllAccountsAsDict() dict.Dict {
 
 // touchAccount ensures the account is in the list of all accounts
 func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
-	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Bool.Encode(true))
+	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Encode(true))
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance
@@ -119,7 +110,7 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 	}
 	accountKey := accountKey(agentID, chainID)
 	for coinType, amount := range allowance.Coins {
-		if bigint.Less(s.getCoinBalance(accountKey, coinType), amount) {
+		if s.getCoinBalance(accountKey, coinType) < amount {
 			return false
 		}
 	}
@@ -161,11 +152,11 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 
 // debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
 // It takes base tokens from allowance to the common account and then removes them from the L2 ledger
-func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount uint64, chainID isc.ChainID) {
+func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount coin.Value, chainID isc.ChainID) {
 	if amount == 0 {
 		return
 	}
-	storageDepositAssets := isc.NewAssetsBaseTokens(amount)
+	storageDepositAssets := isc.NewAssets(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
 	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets.Coins, chainID)
 }

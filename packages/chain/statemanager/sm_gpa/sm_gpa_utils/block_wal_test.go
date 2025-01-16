@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const constTestFolder = "basicWALTest"
@@ -24,7 +26,7 @@ func TestBlockWALBasic(t *testing.T) {
 	blocksInWAL := blocks[:4]
 	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(log, constTestFolder, isc.RandomChainID(), mockBlockWALMetrics())
+	walBad, err := NewBlockWAL(log, constTestFolder, isctest.RandomChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])
@@ -229,7 +231,7 @@ func writeBlocksLegacy(t *testing.T, chainID isc.ChainID, blocks []state.Block) 
 		filePath := walPathNoSubfolderFromHash(chainID, block.Hash())
 		f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 		require.NoError(t, err)
-		err = block.Write(f)
+		err = bcs.MarshalStream(&block, f)
 		require.NoError(t, err)
 		err = f.Close()
 		require.NoError(t, err)

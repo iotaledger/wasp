@@ -6,16 +6,16 @@ package cons
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 // That's the main/initial input for the consensus.
 type inputProposal struct {
-	baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]
+	baseAliasOutput *isc.StateAnchor
 }
 
-func NewInputProposal(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.Input {
+func NewInputProposal(baseAliasOutput *isc.StateAnchor) gpa.Input {
 	return &inputProposal{baseAliasOutput: baseAliasOutput}
 }
 

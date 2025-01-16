@@ -6,6 +6,7 @@ package jsonrpctest
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"math"
 	"math/big"
@@ -18,10 +19,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
@@ -37,7 +40,7 @@ type Env struct {
 	ChainID               uint16
 	accountManager        *jsonrpc.AccountManager
 	WaitTxConfirmed       func(common.Hash) error
-	NewAccountWithL2Funds func(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address)
+	NewAccountWithL2Funds func(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address)
 }
 
 func (e *Env) Signer() types.Signer {
@@ -286,6 +289,72 @@ func (e *Env) getLogs(q ethereum.FilterQuery) []types.Log {
 	logs, err := e.Client.FilterLogs(context.Background(), q)
 	require.NoError(e.T, err)
 	return logs
+}
+
+func (e *Env) traceTransactionWithCallTracer(txHash common.Hash) (jsonrpc.CallFrame, error) {
+	var res json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	tracer := "callTracer"
+	err := e.RawClient.CallContext(
+		context.Background(),
+		&res,
+		"debug_traceTransaction",
+		txHash,
+		tracers.TraceConfig{Tracer: &tracer},
+	)
+	if err != nil {
+		return jsonrpc.CallFrame{}, err
+	}
+	trace := jsonrpc.CallFrame{}
+	err = json.Unmarshal(res, &trace)
+	require.NoError(e.T, err)
+	return trace, nil
+}
+
+func (e *Env) traceTransactionWithPrestate(txHash common.Hash) (jsonrpc.PrestateAccountMap, error) {
+	var res json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	tracer := "prestateTracer"
+	err := e.RawClient.CallContext(
+		context.Background(),
+		&res,
+		"debug_traceTransaction",
+		txHash,
+		tracers.TraceConfig{
+			Tracer:       &tracer,
+			TracerConfig: []byte(`{"diffMode": false}`),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	var ret jsonrpc.PrestateAccountMap
+	err = json.Unmarshal(res, &ret)
+	require.NoError(e.T, err)
+	return ret, nil
+}
+
+func (e *Env) traceTransactionWithPrestateDiff(txHash common.Hash) (jsonrpc.PrestateDiffResult, error) {
+	var res json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	tracer := "prestateTracer"
+	err := e.RawClient.CallContext(
+		context.Background(),
+		&res,
+		"debug_traceTransaction",
+		txHash,
+		tracers.TraceConfig{
+			Tracer:       &tracer,
+			TracerConfig: []byte(`{"diffMode": true}`),
+		},
+	)
+	if err != nil {
+		return jsonrpc.PrestateDiffResult{}, err
+	}
+	var ret jsonrpc.PrestateDiffResult
+	err = json.Unmarshal(res, &ret)
+	require.NoError(e.T, err)
+	return ret, nil
 }
 
 func (e *Env) TestRPCGetLogs() {

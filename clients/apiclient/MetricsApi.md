@@ -18,20 +18,19 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, MetricsApi } from '';
+import type { MetricsApiGetChainMessageMetricsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .MetricsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new MetricsApi(configuration);
 
-let body:.MetricsApiGetChainMessageMetricsRequest = {
-  // string | ChainID (Bech32)
+const request: MetricsApiGetChainMessageMetricsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.getChainMessageMetrics(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getChainMessageMetrics(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -39,7 +38,7 @@ apiInstance.getChainMessageMetrics(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -73,20 +72,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, MetricsApi } from '';
+import type { MetricsApiGetChainPipeMetricsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .MetricsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new MetricsApi(configuration);
 
-let body:.MetricsApiGetChainPipeMetricsRequest = {
-  // string | ChainID (Bech32)
+const request: MetricsApiGetChainPipeMetricsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.getChainPipeMetrics(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getChainPipeMetrics(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -94,7 +92,7 @@ apiInstance.getChainPipeMetrics(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -128,20 +126,19 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, MetricsApi } from '';
+import type { MetricsApiGetChainWorkflowMetricsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .MetricsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new MetricsApi(configuration);
 
-let body:.MetricsApiGetChainWorkflowMetricsRequest = {
-  // string | ChainID (Bech32)
+const request: MetricsApiGetChainWorkflowMetricsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
 };
 
-apiInstance.getChainWorkflowMetrics(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getChainWorkflowMetrics(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -149,7 +146,7 @@ apiInstance.getChainWorkflowMetrics(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -183,17 +180,15 @@ Name | Type | Description  | Notes
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, MetricsApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .MetricsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new MetricsApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.getNodeMessageMetrics(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.getNodeMessageMetrics(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 

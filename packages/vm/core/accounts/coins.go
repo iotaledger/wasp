@@ -1,57 +1,52 @@
 package accounts
 
 import (
-	"math/big"
-
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-func coinsMapKey(accountKey kv.Key) string {
-	return prefixCoins + string(accountKey)
+func accountCoinBalancesKey(accountKey kv.Key) string {
+	return prefixAccountCoinBalances + string(accountKey)
 }
 
-func (s *StateReader) coinsMapR(accountKey kv.Key) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, coinsMapKey(accountKey))
+func (s *StateReader) accountCoinBalancesMapR(accountKey kv.Key) *collections.ImmutableMap {
+	return collections.NewMapReadOnly(s.state, accountCoinBalancesKey(accountKey))
 }
 
-func (s *StateWriter) coinsMap(accountKey kv.Key) *collections.Map {
-	return collections.NewMap(s.state, coinsMapKey(accountKey))
+func (s *StateWriter) accountCoinBalancesMap(accountKey kv.Key) *collections.Map {
+	return collections.NewMap(s.state, accountCoinBalancesKey(accountKey))
 }
 
-func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType isc.CoinType) *big.Int {
-	r := new(big.Int)
-	b := s.coinsMapR(accountKey).GetAt(coinType.Bytes())
-	if len(b) > 0 {
-		r.SetBytes(b)
-	}
-	return r
+func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType coin.Type) coin.Value {
+	b := s.accountCoinBalancesMapR(accountKey).GetAt(coinType.Bytes())
+	return codec.MustDecode[coin.Value](b, 0)
 }
 
-func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType isc.CoinType, n *big.Int) {
-	if n.Sign() == 0 {
-		s.coinsMap(accountKey).DelAt(coinType.Bytes())
+func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n coin.Value) {
+	if n == 0 {
+		s.accountCoinBalancesMap(accountKey).DelAt(coinType.Bytes())
 	} else {
-		s.coinsMap(accountKey).SetAt(coinType.Bytes(), codec.BigIntAbs.Encode(n))
+		s.accountCoinBalancesMap(accountKey).SetAt(coinType.Bytes(), codec.Encode(n))
 	}
 }
 
-func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID isc.CoinType, chainID isc.ChainID) *big.Int {
+func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID coin.Type, chainID isc.ChainID) coin.Value {
 	return s.getCoinBalance(accountKey(agentID, chainID), coinID)
 }
 
-func (s *StateReader) GetCoinBalanceTotal(coinID isc.CoinType) *big.Int {
+func (s *StateReader) GetCoinBalanceTotal(coinID coin.Type) coin.Value {
 	return s.getCoinBalance(L2TotalsAccount, coinID)
 }
 
 func (s *StateReader) GetCoins(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
 	ret := isc.CoinBalances{}
-	s.coinsMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
+	s.accountCoinBalancesMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
-			codec.CoinType.MustDecode(coinType),
-			codec.BigIntAbs.MustDecode(val),
+			codec.MustDecode[coin.Type](coinType),
+			codec.MustDecode[coin.Value](val),
 		)
 		return true
 	})

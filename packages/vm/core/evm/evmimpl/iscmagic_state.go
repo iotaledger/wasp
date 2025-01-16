@@ -4,19 +4,14 @@
 package evmimpl
 
 import (
-	"math"
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
-	gethmath "github.com/ethereum/go-ethereum/common/math"
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
 // The ISC magic contract stores some data in the ISC state.
@@ -31,7 +26,7 @@ const (
 	prefixAllowance = "a"
 	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
 	// registered by calling ISC.registerERC20NativeToken() from solidity.
-	// Covered in: TestERC20NativeTokensWithExternalFoundry
+	// Covered in: TestERC20CoinWithExternalFoundry
 	prefixERC20ExternalNativeTokens = "e"
 )
 
@@ -58,33 +53,24 @@ func keyAllowance(from, to common.Address) kv.Key {
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	state := evm.ISCMagicSubrealmR(ctx.StateR())
 	key := keyAllowance(from, to)
-	return isc.MustAssetsFromBytes(state.Get(key))
+	b := state.Get(key)
+	if b == nil {
+		return isc.NewEmptyAssets()
+	}
+	return lo.Must(isc.AssetsFromBytes(b))
 }
 
 var errBaseTokensMustBeUint64 = coreerrors.Register("base tokens amount must be an uint64").Create()
 
-func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, numTokens *big.Int) {
+func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, amount coin.Value) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
-		if !numTokens.IsUint64() {
-			// Calling `approve(MAX_UINT256)` is semantically equivalent to an "infinite" allowance
-			if numTokens.Cmp(gethmath.MaxBig256) == 0 {
-				numTokens = big.NewInt(0).SetUint64(math.MaxUint64)
-			} else {
-				panic(errBaseTokensMustBeUint64)
-			}
-		}
-		allowance.BaseTokens = numTokens.Uint64()
+		allowance.SetBaseTokens(amount)
 	})
 }
 
-func setAllowanceNativeTokens(ctx isc.Sandbox, from, to common.Address, nativeTokenID iscmagic.NativeTokenID, numTokens *big.Int) {
+func setAllowanceCoin(ctx isc.Sandbox, from, to common.Address, coinType coin.Type, amount coin.Value) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {
-		ntSet := allowance.NativeTokens.MustSet()
-		ntSet[nativeTokenID.MustUnwrap()] = &isc.NativeToken{
-			ID:     nativeTokenID.MustUnwrap(),
-			Amount: numTokens,
-		}
-		allowance.NativeTokens = lo.Values(ntSet)
+		allowance.Coins.Set(coinType, amount)
 	})
 }
 
@@ -95,60 +81,25 @@ func addToAllowance(ctx isc.Sandbox, from, to common.Address, add *isc.Assets) {
 }
 
 func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)) {
+	allowance := getAllowance(ctx, from, to)
+	f(allowance)
 	state := evm.ISCMagicSubrealm(ctx.State())
 	key := keyAllowance(from, to)
-	allowance := isc.MustAssetsFromBytes(state.Get(key))
-	f(allowance)
 	state.Set(key, allowance.Bytes())
 }
 
 var errFundsNotAllowed = coreerrors.Register("remaining allowance insufficient").Create()
 
 func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.Assets) {
-	state := evm.ISCMagicSubrealm(ctx.State())
-	key := keyAllowance(from, to)
-	remaining := isc.MustAssetsFromBytes(state.Get(key))
+	remaining := getAllowance(ctx, from, to)
 	if ok := remaining.Spend(taken); !ok {
 		panic(errFundsNotAllowed)
 	}
+	state := evm.ISCMagicSubrealm(ctx.State())
+	key := keyAllowance(from, to)
 	if remaining.IsEmpty() {
 		state.Del(key)
 	} else {
 		state.Set(key, remaining.Bytes())
 	}
-}
-
-// directory of ERC20 contract addresses by native token ID
-func keyERC20ExternalNativeTokensAddress(nativeTokenID isc.NativeTokenID) kv.Key {
-	return prefixERC20ExternalNativeTokens + kv.Key(nativeTokenID[:])
-}
-
-func addERC20ExternalNativeTokensAddress(ctx isc.Sandbox, nativeTokenID isc.NativeTokenID, addr common.Address) {
-	state := evm.ISCMagicSubrealm(ctx.State())
-	state.Set(keyERC20ExternalNativeTokensAddress(nativeTokenID), addr.Bytes())
-}
-
-func getERC20ExternalNativeTokensAddress(ctx isc.SandboxBase, nativeTokenID isc.NativeTokenID) (ret common.Address, ok bool) {
-	state := evm.ISCMagicSubrealmR(ctx.StateR())
-	b := state.Get(keyERC20ExternalNativeTokensAddress(nativeTokenID))
-	if b == nil {
-		return ret, false
-	}
-	copy(ret[:], b)
-	return ret, true
-}
-
-// findERC20NativeTokenContractAddress returns the address of an
-// ERC20NativeTokens or ERC20ExternalNativeTokens contract.
-func findERC20NativeTokenContractAddress(ctx isc.Sandbox, nativeTokenID iotago.NativeTokenID) (common.Address, bool) {
-	addr, ok := getERC20ExternalNativeTokensAddress(ctx, nativeTokenID)
-	if ok {
-		return addr, true
-	}
-	addr = iscmagic.ERC20NativeTokensAddress(nativeTokenID.FoundrySerialNumber())
-	stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
-	if stateDB.Exist(addr) {
-		return addr, true
-	}
-	return common.Address{}, false
 }

@@ -13,7 +13,8 @@ func GetAllowedStateControllerAddresses(ch chain.Chain, blockIndexOrTrieRoot str
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetAllowedStateControllerAddresses.Output.Decode(ret)
+
+	return governance.ViewGetAllowedStateControllerAddresses.DecodeOutput(ret)
 }
 
 func GetChainOwner(ch chain.Chain, blockIndexOrTrieRoot string) (isc.AgentID, error) {
@@ -21,7 +22,7 @@ func GetChainOwner(ch chain.Chain, blockIndexOrTrieRoot string) (isc.AgentID, er
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetChainOwner.Output.Decode(ret)
+	return governance.ViewGetChainOwner.DecodeOutput(ret)
 }
 
 func GetChainInfo(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.ChainInfo, error) {
@@ -29,5 +30,5 @@ func GetChainInfo(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.ChainInfo, 
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetChainInfo.Output.Decode(ret)
+	return governance.ViewGetChainInfo.DecodeOutput(ret)
 }

@@ -6,8 +6,6 @@ pragma solidity >=0.8.5;
 import "@iscmagic/ISC.sol";
 
 contract ISCTest {
-    uint64 public constant TokensForGas = 500;
-
     function getChainID() public view returns (ISCChainID) {
         return ISC.sandbox.getChainID();
     }
@@ -31,8 +29,7 @@ contract ISCTest {
     event RequestIDEvent(ISCRequestID reqID);
 
     function emitRequestID() public {
-        ISCRequestID memory reqID = ISC.sandbox.getRequestID();
-        emit RequestIDEvent(reqID);
+        emit RequestIDEvent(ISC.sandbox.getRequestID());
     }
 
     event DummyEvent(string s);
@@ -49,60 +46,80 @@ contract ISCTest {
         emit SenderAccountEvent(sender);
     }
 
-    function sendBaseTokens(L1Address memory receiver, uint64 baseTokens)
+    function sendBaseTokens(IotaAddress receiver, uint64 baseTokens)
         public payable
     {
         ISCAssets memory allowance;
         if (baseTokens == 0) {
             allowance = ISC.sandbox.getAllowanceFrom(msg.sender);
         } else {
-            allowance.baseTokens = baseTokens;
+            allowance.coins = new CoinBalance[](1);
+            allowance.coins[0].coinType = ISC.sandbox.getBaseTokenInfo().coinType;
+            allowance.coins[0].amount = uint64(baseTokens);
         }
 
         ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
 
         ISCAssets memory assets;
-        require(allowance.baseTokens > TokensForGas);
-        assets.baseTokens = allowance.baseTokens - TokensForGas;
+        assets.coins = new CoinBalance[](1);
+        assets.coins[0].coinType = allowance.coins[0].coinType;
+        assets.coins[0].amount = allowance.coins[0].amount;
 
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, assets, true, metadata, options);
+        ISC.sandbox.send(receiver, assets, metadata, options);
     }
 
-    function sendNFT(L1Address memory receiver, NFTID id, uint64 storageDeposit) public {
+    function sendNFT(IotaAddress receiver, IotaObjectID id, uint64 storageDeposit) public {
         ISCAssets memory allowance;
-        allowance.baseTokens = storageDeposit;
-        allowance.nfts = new NFTID[](1);
-        allowance.nfts[0] = id;
+        allowance.coins = new CoinBalance[](1);
+        allowance.coins[0].coinType = ISC.sandbox.getBaseTokenInfo().coinType;
+        allowance.coins[0].amount = uint64(storageDeposit);
+        allowance.objects = new IotaObjectID[](1);
+        allowance.objects[0] = id;
 
         ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
 
         ISCAssets memory assets;
-        assets.nfts = new NFTID[](1);
-        assets.nfts[0] = id;
+        assets.objects = new IotaObjectID[](1);
+        assets.objects[0] = id;
         ISCSendMetadata memory metadata;
         ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, assets, true, metadata, options);
+        ISC.sandbox.send(receiver, assets, metadata, options);
     }
 
     function callInccounter() public {
-        ISCDict memory params = ISCDict(new ISCDictItem[](1));
-        bytes memory int64Encoded42 = hex"2A00000000000000";
-        params.items[0] = ISCDictItem("counter", int64Encoded42);
-        ISCAssets memory allowance;
-        ISC.sandbox.call(ISC.util.hn("inccounter"), ISC.util.hn("incCounter"), params, allowance);
+        bytes[] memory params = new bytes[](1);
+        params[0] = hex"012A00000000000000"; // optional int64(42) BCS-encoded
+        ISC.sandbox.call(
+            ISCMessage({
+                target: ISCTarget({
+                    contractHname: ISC.util.hn("inccounter"),
+                    entryPoint: ISC.util.hn("incCounter")
+                }),
+                params: params
+            }),
+            ISCAssets({
+                coins: new CoinBalance[](0),
+                objects: new IotaObjectID[](0)
+            })
+        );
     }
 
     function makeISCPanic() public {
         // will produce a panic in ISC
-        ISCDict memory params;
-        ISCAssets memory allowance;
         ISC.sandbox.call(
-            ISC.util.hn("governance"),
-            ISC.util.hn("claimChainOwnership"),
-            params,
-            allowance
+            ISCMessage({
+                target: ISCTarget({
+                    contractHname: ISC.util.hn("governance"),
+                    entryPoint: ISC.util.hn("claimChainOwnership")
+                }),
+                params: new bytes[](0)
+            }),
+            ISCAssets({
+                coins: new CoinBalance[](0),
+                objects: new IotaObjectID[](0)
+            })
         );
     }
 
@@ -111,12 +128,16 @@ contract ISCTest {
         ISCAssets memory allowance
     ) public {
         // moves funds owned by the current contract to the targetAgentID
-        ISCDict memory params = ISCDict(new ISCDictItem[](2));
-        params.items[0] = ISCDictItem("a", targetAgentID.data);
+        bytes[] memory params = new bytes[](1);
+        params[0] = targetAgentID.data;
         ISC.sandbox.call(
-            ISC.util.hn("accounts"),
-            ISC.util.hn("transferAllowanceTo"),
-            params,
+            ISCMessage({
+                target: ISCTarget({
+                    contractHname: ISC.util.hn("accounts"),
+                    entryPoint: ISC.util.hn("transferAllowanceTo")
+                }),
+                params: params
+            }),
             allowance
         );
     }
@@ -130,22 +151,24 @@ contract ISCTest {
     }
 
     function testStackOverflow() public view {
-        bytes memory args = bytes.concat(
+        bytes[] memory params = new bytes[](1);
+        params[0] = bytes.concat(
             hex"0000000000000000000000000000000000000000" // From address
             hex"01" // Optional field ToAddr exists
             , bytes20(uint160(address(this))), // Put our own address as ToAddr
-            hex"0000000000000000" // Gas limit
+            hex"00" // Gas limit
             hex"00" // Optional field value does not exist
-            hex"04000000" // Data length
+            hex"04" // Data length
             hex"b3ee6942" // Function to call: sha3.keccak_256(b'testStackOverflow()').hexdigest()[0:8]
         );
-        ISCDict memory params = ISCDict(new ISCDictItem[](1));
-        params.items[0] = ISCDictItem("c", args);
-
         ISC.sandbox.callView(
-            ISC.util.hn("evm"),
-            ISC.util.hn("callContract"),
-            params
+            ISCMessage({
+                target: ISCTarget({
+                    contractHname: ISC.util.hn("evm"),
+                    entryPoint: ISC.util.hn("callContract")
+                }),
+                params: params
+            })
         );
     }
 
@@ -175,7 +198,7 @@ contract ISCTest {
         emit TestSelfDestruct6780ContractCreated(address(c)); 
         // call selfdestruct in the same tx
         c.testSelfDestruct(payable(msg.sender));
-    } 
+    }
 
     event LoopEvent();
 
@@ -185,27 +208,20 @@ contract ISCTest {
         }
     }
 
-    // This function is used to test foundry access. Should fail if foundry is not owned by the sender.
-    function mint(uint32 foundrySN,uint256 amount, uint64 storageDeposit) public {
-      ISCAssets memory allowance;
-      allowance.baseTokens = storageDeposit;
-      ISC.accounts.mintNativeTokens(foundrySN, amount, allowance);
-    }
-
     function testCallViewCaller() public view returns (bytes memory) {
         // test that the caller is set to this contract's address
-        ISCDict memory params = ISCDict(new ISCDictItem[](0));
-        ISCDict memory r = ISC.sandbox.callView(
-            ISC.util.hn("accounts"),
-            ISC.util.hn("balance"),
-            params
+        bytes[] memory params = new bytes[](1);
+        params[0] = hex"00"; // Optional field agentID
+        bytes[] memory r = ISC.sandbox.callView(
+            ISCMessage({
+                target: ISCTarget({
+                    contractHname: ISC.util.hn("accounts"),
+                    entryPoint: ISC.util.hn("balance")
+                }),
+                params: params
+            })
         );
-        for (uint256 i = 0; i < r.items.length; i++) {
-            if (r.items[i].key.length == 0) {
-                return r.items[i].value;
-            }
-        }
-        revert();
+        return r[0];
     }
 
     error CustomError(uint8);
@@ -220,74 +236,6 @@ contract ISCTest {
         emit SomeEvent();
         revert();
     }
-
-   event nftMint(bytes id);
-
-   function mintNFT() public payable {
-        ISCAssets memory allowance;
-        allowance.baseTokens = 100000;
-
-        ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
-
-        ISCDict memory params = ISCDict(new ISCDictItem[](2));
-        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}"); // immutable metadata
-        params.items[1] = ISCDictItem("a", agentID.data); // agentID
-
-        ISCDict memory ret = ISC.sandbox.call(
-            ISC.util.hn("accounts"),
-            ISC.util.hn("mintNFT"),
-            params,
-            allowance
-        );
-       emit nftMint(ret.items[0].value); 
-    }
-
-
-    // mints an NFT as part of collectionID (requires the collection NFT to be owned by this contract)
-    function mintNFTForCollection(NFTID collectionID) public payable {
-        ISCAssets memory allowance;
-        allowance.baseTokens = 100000;
-
-        ISCAgentID memory agentID = ISC.sandbox.getSenderAccount();
-
-        ISCDict memory params = ISCDict(new ISCDictItem[](3));
-        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}"); // immutable metadata
-        params.items[1] = ISCDictItem("a", agentID.data); // agentID
-        params.items[2] = ISCDictItem("C", abi.encodePacked(collectionID)); // collectionID
-
-        ISCDict memory ret = ISC.sandbox.call(
-            ISC.util.hn("accounts"),
-            ISC.util.hn("mintNFT"),
-            params,
-            allowance
-        );
-       emit nftMint(ret.items[0].value); 
-    }
- 
-
-
-   function mintNFTToL1(bytes memory l1addr ) public payable {
-        ISCAssets memory allowance;
-        allowance.baseTokens = 100000;
-
-        ISCAgentID memory agentID = ISCTypes.newL1AgentID(l1addr);
-
-        ISCDict memory params = ISCDict(new ISCDictItem[](3));
-        params.items[0] = ISCDictItem("I", "{\"name\": \"test\"}"); // immutable metadata
-        params.items[1] = ISCDictItem("a", agentID.data); // agentID
-        bytes memory withdrawParam = new bytes(1);
-        withdrawParam[0] = 0x01;
-        params.items[2] = ISCDictItem("w", withdrawParam);
-
-        ISCDict memory ret = ISC.sandbox.call(
-            ISC.util.hn("accounts"),
-            ISC.util.hn("mintNFT"),
-            params,
-            allowance
-        );
-       emit nftMint(ret.items[0].value); 
-    }
-
 }
 
 contract SelfDestruct6780{

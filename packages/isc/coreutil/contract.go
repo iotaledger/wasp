@@ -8,49 +8,37 @@ package coreutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
 )
 
-type Handler[S isc.SandboxBase] func(ctx S) dict.Dict
+type Handler[S isc.SandboxBase] func(ctx S) isc.CallArguments
 
 //********************************* *********************************\\
 
 // ContractInfo holds basic information about a native smart contract
 type ContractInfo struct {
-	Name        string
-	ProgramHash hashing.HashValue
+	Name string
 }
 
 func NewContract(name string) *ContractInfo {
 	return &ContractInfo{
-		Name:        name,
-		ProgramHash: CoreContractProgramHash(name),
+		Name: name,
 	}
 }
 
-func CoreContractProgramHash(name string) hashing.HashValue {
-	return hashing.HashStrings(name)
-}
-
-func defaultInitFunc(ctx isc.Sandbox) dict.Dict {
+func defaultInitFunc(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Debugf("default init function invoked for contract %s from caller %s", ctx.Contract(), ctx.Caller())
 	return nil
 }
 
 // Processor creates a ContractProcessor with the provided handlers
 func (i *ContractInfo) Processor(init Handler[isc.Sandbox], eps ...isc.ProcessorEntryPoint) *ContractProcessor {
-	if init == nil {
-		init = defaultInitFunc
+	if init != nil {
+		panic("init function no longer supported")
 	}
-	funcInit := i.Func(isc.FuncInit)
-	handlers := map[isc.Hname]isc.ProcessorEntryPoint{
-		// constructor:
-		isc.EntryPointInit: funcInit.WithHandler(init),
-	}
+	handlers := map[isc.Hname]isc.ProcessorEntryPoint{}
 	for _, ep := range eps {
 		hname := ep.Hname()
 		if _, ok := handlers[hname]; ok {
@@ -107,7 +95,7 @@ func (ep *EntryPointInfo[S]) Hname() isc.Hname {
 	return isc.Hn(ep.Name)
 }
 
-func (ep *EntryPointInfo[S]) Message(params dict.Dict) isc.Message {
+func (ep *EntryPointInfo[S]) Message(params isc.CallArguments) isc.Message {
 	return isc.NewMessage(ep.Contract.Hname(), ep.Hname(), params)
 }
 
@@ -126,7 +114,7 @@ var (
 	_ isc.ProcessorEntryPoint = &EntryPointHandler[isc.SandboxView]{}
 )
 
-func (h *EntryPointHandler[S]) Call(ctx any) dict.Dict {
+func (h *EntryPointHandler[S]) Call(ctx isc.SandboxBase) isc.CallArguments {
 	return h.Handler(ctx.(S))
 }
 

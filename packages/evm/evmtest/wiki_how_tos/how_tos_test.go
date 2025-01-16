@@ -10,8 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmtest"
 )
@@ -35,7 +37,7 @@ var (
 )
 
 func TestBaseBalance(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -44,41 +46,12 @@ func TestBaseBalance(t *testing.T) {
 	decimals := env.Chain.EVM().BaseToken().Decimals
 	var value uint64
 	instance.CallFnExpectEvent(nil, "GotBaseBalance", &value, "getBalanceBaseTokens")
-	realBalance := util.BaseTokensDecimalsToEthereumDecimals(value, decimals)
+	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), decimals)
 	assert.Equal(t, balance, realBalance)
 }
 
-func TestNativeBalance(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
-	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
-
-	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
-
-	// create a new native token on L1
-	foundry, tokenID, err := env.Chain.NewNativeTokenParams(100000000000000).CreateFoundry()
-	require.NoError(t, err)
-	// the token id in bytes, used to call the contract
-	nativeTokenIDBytes := isc.NativeTokenIDToBytes(tokenID)
-
-	// mint some native tokens to the chain originator
-	err = env.Chain.MintTokens(foundry, 10000000, env.Chain.OriginatorPrivateKey)
-	require.NoError(t, err)
-
-	// get the agentId of the contract deployer
-	senderAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
-
-	// send some native tokens to the contract deployer
-	// and check if the balance returned by the contract is correct
-	err = env.Chain.SendFromL2ToL2AccountNativeTokens(tokenID, senderAgentID, 100000, env.Chain.OriginatorPrivateKey)
-	require.NoError(t, err)
-
-	nativeBalance := new(big.Int)
-	instance.CallFnExpectEvent(nil, "GotNativeTokenBalance", &nativeBalance, "getBalanceNativeTokens", nativeTokenIDBytes)
-	assert.Equal(t, int64(100000), nativeBalance.Int64())
-}
-
 func TestNFTBalance(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -89,12 +62,12 @@ func TestNFTBalance(t *testing.T) {
 	// mint an NFToken to the contract deployer
 	// and check if the balance returned by the contract is correct
 	mockMetaData := []byte("sesa")
-	nfti, info, err := env.Chain.Env.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, mockMetaData)
+	nfti, err := env.Chain.Env.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, mockMetaData)
 	require.NoError(t, err)
 	env.Chain.MustDepositNFT(nfti, env.Chain.OriginatorAgentID, env.Chain.OriginatorPrivateKey)
 
 	transfer := isc.NewEmptyAssets()
-	transfer.AddNFTs(info.NFTID)
+	transfer.AddObject(nfti.ID)
 
 	// send the NFT to the contract deployer
 	err = env.Chain.SendFromL2ToL2Account(transfer, senderAgentID, env.Chain.OriginatorPrivateKey)
@@ -107,7 +80,7 @@ func TestNFTBalance(t *testing.T) {
 }
 
 func TestAgentID(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
@@ -123,7 +96,7 @@ func TestAgentID(t *testing.T) {
 }
 
 func TestEntropy(t *testing.T) {
-	env := evmtest.InitEVMWithSolo(t, solo.New(t), true)
+	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	instance := env.DeployContract(privateKey, EntropyContractABI, EntropyContractBytecode)
@@ -135,4 +108,8 @@ func TestEntropy(t *testing.T) {
 	var entropy2 [32]byte
 	instance.CallFnExpectEvent(nil, "EntropyEvent", &entropy2, "emitEntropy")
 	assert.NotEqual(t, entropy, entropy2)
+}
+
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
 }

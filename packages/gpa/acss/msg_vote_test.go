@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgVoteSerialization(t *testing.T) {
@@ -17,7 +17,7 @@ func TestMsgVoteSerialization(t *testing.T) {
 			msgVoteOK,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgVote))
+		bcs.TestCodec(t, msg)
 	}
 	{
 		msg := &msgVote{
@@ -25,6 +25,6 @@ func TestMsgVoteSerialization(t *testing.T) {
 			msgVoteREADY,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(msgVote))
+		bcs.TestCodec(t, msg)
 	}
 }

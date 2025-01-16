@@ -12,27 +12,26 @@
 
 import { AssetsJSON } from '../models/AssetsJSON';
 import { CallTargetJSON } from '../models/CallTargetJSON';
-import { JSONDict } from '../models/JSONDict';
-import { NFTJSON } from '../models/NFTJSON';
 import { HttpFile } from '../http/http';
 
 export class RequestJSON {
     'allowance': AssetsJSON;
+    'assets': AssetsJSON;
     'callTarget': CallTargetJSON;
-    'fungibleTokens': AssetsJSON;
     /**
     * The gas budget (uint64 as string)
     */
     'gasBudget': string;
     'isEVM': boolean;
     'isOffLedger': boolean;
-    'nft': NFTJSON;
-    'params': JSONDict;
+    'params': Array<Array<number>>;
     'requestId': string;
     'senderAccount': string;
     'targetAddress': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -42,15 +41,15 @@ export class RequestJSON {
             "format": ""
         },
         {
-            "name": "callTarget",
-            "baseName": "callTarget",
-            "type": "CallTargetJSON",
+            "name": "assets",
+            "baseName": "assets",
+            "type": "AssetsJSON",
             "format": ""
         },
         {
-            "name": "fungibleTokens",
-            "baseName": "fungibleTokens",
-            "type": "AssetsJSON",
+            "name": "callTarget",
+            "baseName": "callTarget",
+            "type": "CallTargetJSON",
             "format": ""
         },
         {
@@ -72,16 +71,10 @@ export class RequestJSON {
             "format": "boolean"
         },
         {
-            "name": "nft",
-            "baseName": "nft",
-            "type": "NFTJSON",
-            "format": ""
-        },
-        {
             "name": "params",
             "baseName": "params",
-            "type": "JSONDict",
-            "format": ""
+            "type": "Array<Array<number>>",
+            "format": "int32"
         },
         {
             "name": "requestId",
@@ -109,4 +102,3 @@ export class RequestJSON {
     public constructor() {
     }
 }
-

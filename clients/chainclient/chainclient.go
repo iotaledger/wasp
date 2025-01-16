@@ -2,51 +2,55 @@ package chainclient
 
 import (
 	"context"
-	"errors"
 	"math"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
 // Client allows to interact with a specific chain in the node, for example to send on-ledger or off-ledger requests
 type Client struct {
-	Layer1Client clients.L1Client
+	L1Client     clients.L1Client
 	WaspClient   *apiclient.APIClient
 	ChainID      isc.ChainID
+	IscPackageID iotago.PackageID
 	KeyPair      cryptolib.Signer
 }
 
 // New creates a new chainclient.Client
 func New(
-	layer1Client clients.L1Client,
+	l1Client clients.L1Client,
 	waspClient *apiclient.APIClient,
 	chainID isc.ChainID,
+	iscPackageID iotago.PackageID,
 	keyPair cryptolib.Signer,
 ) *Client {
 	return &Client{
-		Layer1Client: layer1Client,
+		L1Client:     l1Client,
 		WaspClient:   waspClient,
 		ChainID:      chainID,
+		IscPackageID: iscPackageID,
 		KeyPair:      keyPair,
 	}
 }
 
 type PostRequestParams struct {
-	Transfer                 *isc.Assets
-	Nonce                    uint64
-	NFT                      *isc.NFT
-	Allowance                *isc.Assets
-	gasBudget                uint64
-	AutoAdjustStorageDeposit bool
+	Transfer  *isc.Assets
+	Nonce     uint64
+	NFT       *isc.NFT
+	Allowance *isc.Assets
+	gasBudget uint64
 }
 
 func (par *PostRequestParams) GasBudget() uint64 {
@@ -64,104 +68,91 @@ func defaultParams(params ...PostRequestParams) PostRequestParams {
 }
 
 // PostRequest sends an on-ledger transaction with one request on it to the chain
-func (c *Client) PostRequest(msg isc.Message, params ...PostRequestParams) (*iotago.Transaction, error) {
-	panic("refactor me: l1connection.OutputMap")
-	return c.post1RequestWithOutputs(msg, nil, params...)
+func (c *Client) PostRequest(
+	ctx context.Context,
+	msg isc.Message,
+	param PostRequestParams,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return c.postSingleRequest(ctx, msg, param)
 }
 
 // PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
-func (c *Client) PostNRequests(
+func (c *Client) PostMultipleRequests(
+	ctx context.Context,
 	msg isc.Message,
 	requestsCount int,
 	params ...PostRequestParams,
-) ([]*iotago.Transaction, error) {
-	panic("refactor me: l1connection.OutputMap")
-	err := errors.New("refactor me: PostNRequests")
-	var outputs iotago.OutputSet
-
-	transactions := make([]*iotago.Transaction, requestsCount)
+) ([]*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	var err error
+	txRes := make([]*iotajsonrpc.IotaTransactionBlockResponse, requestsCount)
 	for i := 0; i < requestsCount; i++ {
-		transactions[i], err = c.post1RequestWithOutputs(msg, outputs, params...)
+		txRes[i], err = c.postSingleRequest(ctx, msg, params[i])
 		if err != nil {
 			return nil, err
-		}
-		txID, err := transactions[i].ID()
-		if err != nil {
-			return nil, err
-		}
-		for _, input := range transactions[i].Essence.Inputs {
-			if utxoInput, ok := input.(*iotago.UTXOInput); ok {
-				delete(outputs, utxoInput.ID())
-			}
-		}
-		for index, output := range transactions[i].Essence.Outputs {
-			if basicOutput, ok := output.(*iotago.BasicOutput); ok {
-				if cryptolib.NewAddressFromIotago(basicOutput.Ident()).Equals(c.KeyPair.Address()) {
-					outputID := iotago.OutputIDFromTransactionIDAndIndex(txID, uint16(index))
-					outputs[outputID] = transactions[i].Essence.Outputs[index]
-				}
-			}
 		}
 	}
-	return transactions, nil
+	return txRes, nil
 }
 
-func (c *Client) post1RequestWithOutputs(
-	msg isc.Message,
-	outputs iotago.OutputSet,
-	params ...PostRequestParams,
-) (*iotago.Transaction, error) {
-	par := defaultParams(params...)
-	tx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    c.KeyPair,
-			SenderAddress:    c.KeyPair.Address(),
-			UnspentOutputs:   outputs,
-			UnspentOutputIDs: isc.OutputSetToOutputIDs(outputs),
-			Request: &isc.RequestParameters{
-				TargetAddress:                 c.ChainID.AsAddress(),
-				Assets:                        par.Transfer,
-				AdjustToMinimumStorageDeposit: par.AutoAdjustStorageDeposit,
-				Metadata: &isc.SendMetadata{
-					Message:   msg,
-					Allowance: par.Allowance,
-					GasBudget: par.GasBudget(),
-				},
-			},
-			NFT: par.NFT,
+func (c *Client) postSingleRequest(
+	ctx context.Context,
+	iscmsg isc.Message,
+	params PostRequestParams,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	assets := iscmove.NewAssets(0)
+	for coinType, coinbal := range params.Transfer.Coins {
+		assets.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinbal.Uint64()))
+	}
+	msg := &iscmove.Message{
+		Contract: uint32(iscmsg.Target.Contract),
+		Function: uint32(iscmsg.Target.EntryPoint),
+		Args:     iscmsg.Params,
+	}
+	allowances := iscmove.NewAssets(0)
+	for coinType, coinBalance := range params.Allowance.Coins {
+		allowances.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinBalance.Uint64()))
+	}
+	return c.L1Client.L2().CreateAndSendRequestWithAssets(
+		ctx,
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:           c.KeyPair,
+			PackageID:        c.IscPackageID,
+			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
+			Assets:           assets,
+			Message:          msg,
+			Allowance:        allowances,
+			OnchainGasBudget: params.gasBudget,
+			GasPrice:         parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
+			GasBudget:        iotaclient.DefaultGasBudget,
 		},
 	)
-	if err != nil {
-		return nil, err
-	}
-
-	panic("refactor me: l1connection.PostTxAndWaitUntilConfirmation")
-	err = errors.New("refactor me: post1RequestWithOutputs")
-
-	return tx, err
 }
 
 func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
-	result, _, err := c.WaspClient.ChainsApi.CallView(ctx, c.ChainID.String()).
-		ContractCallViewRequest(apiclient.ContractCallViewRequest{
-			ContractHName: accounts.Contract.Hname().String(),
-			FunctionHName: accounts.ViewGetAccountNonce.Hname().String(),
-			Arguments: apiextensions.JSONDictToAPIJSONDict(dict.Dict{
-				accounts.ParamAgentID: isc.NewAgentID(c.KeyPair.Address()).Bytes(),
-			}.JSONDict()),
-		}).Execute()
+	var agentID isc.AgentID = isc.NewAddressAgentID(c.KeyPair.Address())
+
+	result, _, err := c.WaspClient.ChainsAPI.CallView(ctx, c.ChainID.String()).
+		ContractCallViewRequest(apiextensions.CallViewReq(accounts.ViewGetAccountNonce.Message(&agentID))).
+		Execute()
 	if err != nil {
 		return 0, err
 	}
-	resultDict, err := apiextensions.APIJsonDictToDict(*result)
+	resultDict, err := apiextensions.APIResultToCallArgs(result)
 	if err != nil {
 		return 0, err
 	}
-	return codec.Uint64.Decode(resultDict.Get(accounts.ParamAccountNonce))
+
+	nonce, err := accounts.ViewGetAccountNonce.DecodeOutput(resultDict)
+	if err != nil {
+		return 0, err
+	}
+
+	return nonce, nil
 }
 
 // PostOffLedgerRequest sends an off-ledger tx via the wasp node web api
-func (c *Client) PostOffLedgerRequest(ctx context.Context,
+func (c *Client) PostOffLedgerRequest(
+	ctx context.Context,
 	msg isc.Message,
 	params ...PostRequestParams,
 ) (isc.OffLedgerRequest, error) {
@@ -178,13 +169,13 @@ func (c *Client) PostOffLedgerRequest(ctx context.Context,
 	req.WithNonce(par.Nonce)
 	signed := req.Sign(c.KeyPair)
 
-	request := iotago.EncodeHex(signed.Bytes())
+	request := cryptolib.EncodeHex(signed.Bytes())
 
 	offLedgerRequest := apiclient.OffLedgerRequest{
 		ChainId: c.ChainID.String(),
 		Request: request,
 	}
-	_, err := c.WaspClient.RequestsApi.
+	_, err := c.WaspClient.RequestsAPI.
 		OffLedger(ctx).
 		OffLedgerRequest(offLedgerRequest).
 		Execute()
@@ -192,9 +183,9 @@ func (c *Client) PostOffLedgerRequest(ctx context.Context,
 	return signed, err
 }
 
-func (c *Client) DepositFunds(n uint64) (*iotago.Transaction, error) {
-	return c.PostRequest(accounts.FuncDeposit.Message(), PostRequestParams{
-		Transfer: isc.NewAssets(n, nil),
+func (c *Client) DepositFunds(n coin.Value) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return c.PostRequest(context.Background(), accounts.FuncDeposit.Message(), PostRequestParams{
+		Transfer: isc.NewAssets(n),
 	})
 }
 
@@ -210,7 +201,7 @@ func (par *PostRequestParams) WithTransfer(transfer *isc.Assets) *PostRequestPar
 	return par
 }
 
-func (par *PostRequestParams) WithBaseTokens(i uint64) *PostRequestParams {
+func (par *PostRequestParams) WithBaseTokens(i coin.Value) *PostRequestParams {
 	par.Transfer.AddBaseTokens(i)
 	return par
 }

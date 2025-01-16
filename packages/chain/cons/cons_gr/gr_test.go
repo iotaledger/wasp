@@ -14,10 +14,13 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -25,19 +28,18 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testchain"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
 func TestGrBasic(t *testing.T) {
-	t.Parallel()
 	type test struct {
 		n        int
 		f        int
@@ -57,10 +59,15 @@ func TestGrBasic(t *testing.T) {
 			test{n: 31, f: 10, reliable: true}, // Large cluster, reliable - to make test faster.
 		)
 	}
+
+	t.Parallel()
+
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
-			func(tt *testing.T) { testGrBasic(tt, tst.n, tst.f, tst.reliable) },
+			func(tt *testing.T) {
+				testGrBasic(tt, tst.n, tst.f, tst.reliable)
+			},
 		)
 	}
 }
@@ -69,12 +76,18 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
 	defer log.Sync()
+
+	ctx, ctxCancel := context.WithCancel(context.Background())
+	defer ctxCancel()
+
 	//
-	// Create ledger accounts.
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
 	originator := cryptolib.NewKeyPair()
-	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
+	err := iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
+	err = iotaclient.RequestFundsFromFaucet(ctx, originator.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	require.NoError(t, err)
+
 	//
 	// Create a fake network and keys for the tests.
 	peeringURL, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -102,26 +115,36 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	nodes := make([]*consGR.ConsGr, len(peerIdentities))
 	mempools := make([]*testMempool, len(peerIdentities))
 	stateMgrs := make([]*testStateMgr, len(peerIdentities))
-	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
-	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
-	_, originAO, chainID := tcl.MakeTxChainOrigin(cmtAddress)
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	defer ctxCancel()
+	procConfig := coreprocessors.NewConfigWithTestContracts()
+
+	l1client := l1starter.Instance().L1Client()
+
+	iscPackage, err := l1client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(originator))
+	require.NoError(t, err)
+
+	tcl := testchain.NewTestChainLedger(t, originator, &iscPackage, l1client)
+
+	anchor, anchorDeposit := tcl.MakeTxChainOrigin()
+	gasCoin := &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
+
 	logIndex := cmt_log.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {
-		procCache := processors.MustNew(procConfig)
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAliasOutput(chainStore, originAO)
+		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, isc.BaseTokenCoinInfo)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
 		chainMetrics := chainMetricsProvider.GetChainMetrics(isc.EmptyChainID())
 		nodes[i] = consGR.New(
-			ctx, chainID, chainStore, dkShare, &logIndex, peerIdentities[i],
-			procCache, mempools[i], stateMgrs[i],
+			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
+			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
 			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
@@ -138,16 +161,16 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	for i, n := range nodes {
 		outputCh := make(chan *consGR.Output, 1)
 		outputChs[i] = outputCh
-		n.Input(originAO, func(o *consGR.Output) { outputCh <- o }, func() {})
+		n.Input(anchor, func(o *consGR.Output) { outputCh <- o }, func() {})
 	}
 	//
 	// Provide data from Mempool and StateMgr.
 	for i := range nodes {
 		nodes[i].Time(time.Now())
-		mempools[i].addRequests(originAO.OutputID(), []isc.Request{
-			isc.NewOffLedgerRequest(chainID, isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
+		mempools[i].addRequests(anchor.GetObjectRef(), []isc.Request{
+			isc.NewOffLedgerRequest(anchor.ChainID(), isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
 		})
-		stateMgrs[i].addOriginState(originAO)
+		stateMgrs[i].addOriginState(anchor)
 	}
 	//
 	// Wait for outputs.
@@ -165,12 +188,22 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 ////////////////////////////////////////////////////////////////////////////////
 // testMempool
 
+type anchorKey = string
+
+func anchorKeyFromAnchor(anchor *isc.StateAnchor) anchorKey {
+	return anchor.GetObjectRef().String()
+}
+
+func anchorKeyFromAnchorRef(objectRef *iotago.ObjectRef) anchorKey {
+	return objectRef.String()
+}
+
 type testMempool struct {
 	t          *testing.T
 	lock       *sync.Mutex
-	reqsByAO   map[iotago.OutputID][]isc.Request
+	reqsByAO   map[anchorKey][]isc.Request
 	allReqs    []isc.Request
-	qProposals map[iotago.OutputID]chan []*isc.RequestRef
+	qProposals map[anchorKey]chan []*isc.RequestRef
 	qRequests  []*testMempoolReqQ
 }
 
@@ -183,17 +216,17 @@ func newTestMempool(t *testing.T) *testMempool {
 	return &testMempool{
 		t:          t,
 		lock:       &sync.Mutex{},
-		reqsByAO:   map[iotago.OutputID][]isc.Request{},
+		reqsByAO:   map[anchorKey][]isc.Request{},
 		allReqs:    []isc.Request{},
-		qProposals: map[iotago.OutputID]chan []*isc.RequestRef{},
+		qProposals: map[anchorKey]chan []*isc.RequestRef{},
 		qRequests:  []*testMempoolReqQ{},
 	}
 }
 
-func (tmp *testMempool) addRequests(aliasOutputID iotago.OutputID, requests []isc.Request) {
+func (tmp *testMempool) addRequests(anchorRef *iotago.ObjectRef, requests []isc.Request) {
 	tmp.lock.Lock()
 	defer tmp.lock.Unlock()
-	tmp.reqsByAO[aliasOutputID] = requests
+	tmp.reqsByAO[anchorKeyFromAnchorRef(anchorRef)] = requests
 	tmp.allReqs = append(tmp.allReqs, requests...)
 	tmp.tryRespondProposalQueries()
 	tmp.tryRespondRequestQueries()
@@ -231,12 +264,11 @@ func (tmp *testMempool) tryRespondRequestQueries() {
 	tmp.qRequests = remaining
 }
 
-func (tmp *testMempool) ConsensusProposalAsync(ctx context.Context, aliasOutput *isc.AliasOutputWithID, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
+func (tmp *testMempool) ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	tmp.lock.Lock()
 	defer tmp.lock.Unlock()
-	outputID := aliasOutput.OutputID()
 	resp := make(chan []*isc.RequestRef, 1)
-	tmp.qProposals[outputID] = resp
+	tmp.qProposals[anchorKeyFromAnchor(anchor)] = resp
 	tmp.tryRespondProposalQueries()
 	return resp
 }
@@ -273,7 +305,7 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 	}
 }
 
-func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
+func (tsm *testStateMgr) addOriginState(originAO *isc.StateAnchor) {
 	originAOStateMetadata, err := transaction.StateMetadataFromBytes(originAO.GetStateMetadata())
 	require.NoError(tsm.t, err)
 	chainState, err := tsm.chainStore.StateByTrieRoot(
@@ -283,7 +315,7 @@ func (tsm *testStateMgr) addOriginState(originAO *isc.AliasOutputWithID) {
 	tsm.addState(originAO, chainState)
 }
 
-func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, chainState state.State) { // TODO: Why is it not called from other places???
+func (tsm *testStateMgr) addState(aliasOutput *isc.StateAnchor, chainState state.State) { // TODO: Why is it not called from other places???
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	hash := commitmentHashFromAO(aliasOutput)
@@ -291,7 +323,7 @@ func (tsm *testStateMgr) addState(aliasOutput *isc.AliasOutputWithID, chainState
 	tsm.tryRespond(hash)
 }
 
-func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan interface{} {
+func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.StateAnchor) <-chan interface{} {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan interface{}, 1)
@@ -303,11 +335,11 @@ func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput
 
 // State manager has to ensure all the data needed for the specified alias
 // output (presented as aliasOutputID+stateCommitment) is present in the DB.
-func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, aliasOutput *isc.AliasOutputWithID) <-chan state.State {
+func (tsm *testStateMgr) ConsensusDecidedState(ctx context.Context, anchor *isc.StateAnchor) <-chan state.State {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan state.State, 1)
-	stateCommitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+	stateCommitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	if err != nil {
 		tsm.t.Fatal(err)
 	}
@@ -344,8 +376,36 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 	}
 }
 
-func commitmentHashFromAO(aliasOutput *isc.AliasOutputWithID) hashing.HashValue {
-	commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+type testNodeConnGasInfo struct {
+	gasCoins []*coin.CoinWithRef
+	gasPrice uint64
+}
+
+func (tgi *testNodeConnGasInfo) GetGasCoins() []*coin.CoinWithRef { return tgi.gasCoins }
+func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
+
+type testNodeConn struct {
+	gasCoin *coin.CoinWithRef
+}
+
+var _ consGR.NodeConn = &testNodeConn{}
+
+func newTestNodeConn(gasCoin *coin.CoinWithRef) *testNodeConn {
+	return &testNodeConn{gasCoin: gasCoin}
+}
+
+func (t *testNodeConn) ConsensusGasPriceProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnGasInfo {
+	ch := make(chan consGR.NodeConnGasInfo, 1)
+	ch <- &testNodeConnGasInfo{
+		gasCoins: []*coin.CoinWithRef{t.gasCoin},
+		gasPrice: 123,
+	}
+	close(ch)
+	return ch
+}
+
+func commitmentHashFromAO(anchor *isc.StateAnchor) hashing.HashValue {
+	commitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	if err != nil {
 		panic(err)
 	}

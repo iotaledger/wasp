@@ -1,29 +1,31 @@
-package util
+package util_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util"
 )
 
 func TestValidPermutation(t *testing.T) {
-	require.True(t, ValidPermutation([]uint16{0}))
-	require.True(t, ValidPermutation([]uint16{0, 1, 2, 3, 4}))
-	require.True(t, ValidPermutation([]uint16{0, 3, 2, 1, 4}))
-	require.True(t, ValidPermutation([]uint16{0, 4, 2, 1, 3}))
-	require.True(t, ValidPermutation([]uint16{2, 4, 1, 0, 3}))
+	require.True(t, util.ValidPermutation([]uint16{0}))
+	require.True(t, util.ValidPermutation([]uint16{0, 1, 2, 3, 4}))
+	require.True(t, util.ValidPermutation([]uint16{0, 3, 2, 1, 4}))
+	require.True(t, util.ValidPermutation([]uint16{0, 4, 2, 1, 3}))
+	require.True(t, util.ValidPermutation([]uint16{2, 4, 1, 0, 3}))
 
-	require.False(t, ValidPermutation([]uint16{1, 2, 3, 4, 5})) // Permutation indexes should start at 0
-	require.False(t, ValidPermutation([]uint16{0, 2, 2}))
-	require.False(t, ValidPermutation([]uint16{1, 2, 1}))
+	require.False(t, util.ValidPermutation([]uint16{1, 2, 3, 4, 5})) // Permutation indexes should start at 0
+	require.False(t, util.ValidPermutation([]uint16{0, 2, 2}))
+	require.False(t, util.ValidPermutation([]uint16{1, 2, 1}))
 }
 
 func TestPermute(t *testing.T) {
 	for n := uint16(1); n < 1000; n += 3 {
 		for k := 0; k < 10; k++ {
-			perm, err := NewPermutation16(n, 15)
+			perm, err := util.NewPermutation16(n, 15)
 			require.NoError(t, err, "error creating permutation")
-			require.Truef(t, ValidPermutation(perm.GetArray()), "invalid permutation %+v", perm)
+			require.Truef(t, util.ValidPermutation(perm.GetArray()), "invalid permutation %+v", perm)
 		}
 	}
 }
@@ -31,7 +33,7 @@ func TestPermute(t *testing.T) {
 func TestNext(t *testing.T) {
 	for n := uint16(1); n < 100; n += 3 {
 		for k := 0; k < 10; k++ {
-			perm, err := NewPermutation16(n, -1)
+			perm, err := util.NewPermutation16(n, -1)
 			require.NoError(t, err, "error creating permutation")
 			arr := make([]uint16, n*5)
 			for i := range arr {
@@ -44,7 +46,7 @@ func TestNext(t *testing.T) {
 				require.Equal(t, arr[i], arr[i+4*n])
 			}
 			permArr := arr[0:n]
-			require.Truef(t, ValidPermutation(permArr), "invalid permutation %+v", permArr)
+			require.Truef(t, util.ValidPermutation(permArr), "invalid permutation %+v", permArr)
 			// No need to check other cases (arr[n:n*2], arr[n*2, n*3], etc):
 			// If arr[0:n] is a valid iteration and for every i in [0;n) arr[i] == arr[i+k*n], then arr[n*k:n*(k+1)] is also a valid iteration
 		}
@@ -65,7 +67,7 @@ func TestNextNoCycles(t *testing.T) {
 	// NOTE: the exact values might be a little bit of due to accuracy of float arythmetics in LibreOffice Calc. They are provided just to get an impression.
 	for n := uint16(10); n < 100; n += 3 {
 		for k := 0; k < 10; k++ {
-			perm, err := NewPermutation16(n, 9223372016854775807)
+			perm, err := util.NewPermutation16(n, 9223372016854775807)
 			require.NoError(t, err, "error creating permutation")
 			arr := make([]uint16, n*5)
 			for i := range arr {
@@ -73,7 +75,7 @@ func TestNextNoCycles(t *testing.T) {
 			}
 			permArrs := [][]uint16{arr[0:n], arr[n : 2*n], arr[2*n : 3*n], arr[3*n : 4*n], arr[4*n : 5*n]}
 			for i := 0; i < len(permArrs); i++ {
-				require.Truef(t, ValidPermutation(permArrs[i]), "invalid permutation %v: %+v", i, permArrs[i])
+				require.Truef(t, util.ValidPermutation(permArrs[i]), "invalid permutation %v: %+v", i, permArrs[i])
 				for j := 0; j < i; j++ {
 					require.Truef(t, arePermutationsDifferent(t, permArrs[i], permArrs[j]), "permutations %v and %v match: %+v", j, i, permArrs[i])
 				}

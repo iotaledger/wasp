@@ -19,9 +19,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -50,25 +50,11 @@ func newChainEnv(t *testing.T, clu *cluster.Cluster, chain *cluster.Chain) *Chai
 
 type contractEnv struct {
 	*ChainEnv
-	programHash hashing.HashValue
 }
 
 func (e *ChainEnv) createNewClient() *chainclient.Client {
-	keyPair, addr, err := e.Clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
-	retries := 0
-	for {
-		outs, err := e.Clu.L1Client().OutputMap(addr)
-		require.NoError(e.t, err)
-		if len(outs) > 0 {
-			break
-		}
-		retries++
-		if retries > 10 {
-			panic("createNewClient - funds aren't available")
-		}
-		time.Sleep(300 * time.Millisecond)
-	}
 	return e.Chain.Client(keyPair)
 }
 
@@ -82,35 +68,30 @@ func SetupWithChain(t *testing.T, opt ...waspClusterOpts) *ChainEnv {
 func (e *ChainEnv) NewChainClient() *chainclient.Client {
 	wallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
-	return chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, wallet)
+	return chainclient.New(e.Clu.L1Client(), e.Clu.WaspClient(0), e.Chain.ChainID, e.Clu.Config.ISCPackageID(), wallet)
 }
 
-func (e *ChainEnv) DepositFunds(amount uint64, keyPair *cryptolib.KeyPair) {
+func (e *ChainEnv) DepositFunds(amount coin.Value, keyPair *cryptolib.KeyPair) {
 	client := e.Chain.Client(keyPair)
-	tx, err := client.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokensU64(amount),
+	tx, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer: isc.NewAssets(amount),
 	})
 	require.NoError(e.t, err)
-	txID, err := tx.ID()
-	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
+	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
 }
 
 func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cryptolib.KeyPair, targetAccount isc.AgentID) {
 	transferAssets := assets.Clone()
 	transferAssets.AddBaseTokens(1 * isc.Million) // to pay for the fees
-	tx, err := e.Chain.Client(keyPair).PostRequest(accounts.FuncTransferAllowanceTo.Message(targetAccount), chainclient.PostRequestParams{
-		Transfer:                 transferAssets,
-		NFT:                      nft,
-		Allowance:                assets,
-		AutoAdjustStorageDeposit: false,
+	tx, err := e.Chain.Client(keyPair).PostRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(targetAccount), chainclient.PostRequestParams{
+		Transfer:  transferAssets,
+		NFT:       nft,
+		Allowance: assets,
 	})
 	require.NoError(e.t, err)
-	txID, err := tx.ID()
-	require.NoError(e.t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", txID.ToHex())
+	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
 }
 
 // DeploySolidityContract deploys a given solidity contract with a given private key, returns the create contract address

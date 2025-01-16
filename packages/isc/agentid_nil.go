@@ -1,9 +1,9 @@
 package isc
 
 import (
-	"io"
+	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const nilAgentIDString = "-"
@@ -13,7 +13,8 @@ type NilAgentID struct{}
 var _ AgentID = &NilAgentID{}
 
 func (a *NilAgentID) Bytes() []byte {
-	return rwutil.WriteToBytes(a)
+	// TODO: remove this function from codebase because it is not needed anymore
+	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 
 func (a *NilAgentID) BelongsToChain(cID ChainID) bool {
@@ -37,16 +38,4 @@ func (a *NilAgentID) Kind() AgentIDKind {
 
 func (a *NilAgentID) String() string {
 	return nilAgentIDString
-}
-
-func (a *NilAgentID) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadKindAndVerify(rwutil.Kind(a.Kind()))
-	return rr.Err
-}
-
-func (a *NilAgentID) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(a.Kind()))
-	return ww.Err
 }

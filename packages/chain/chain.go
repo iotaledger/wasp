@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -41,12 +43,14 @@ type ChainNodeConn interface {
 	PublishTX(
 		ctx context.Context,
 		chainID isc.ChainID,
-		tx SignedTx,
+		tx iotasigner.SignedTransaction,
 		callback TxPostHandler,
 	) error
 	// RefreshOnLedgerRequests synchronously fetches all owned requests by the
 	// previously attached chain, and calls recvRequest for each one.
 	RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID)
+
+	GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error)
 }
 
 type NodeConnection interface {
@@ -57,7 +61,11 @@ type NodeConnection interface {
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
 	GetL1Params() *parameters.L1Params
-	GetL1ProtocolParams() *iotago.ProtocolParameters
+
+	ConsensusGasPriceProposal(
+		ctx context.Context,
+		anchor *isc.StateAnchor,
+	) <-chan cons_gr.NodeConnGasInfo
 }
 
 type StateFreshness byte
@@ -87,11 +95,12 @@ type ChainCore interface {
 	// The active AO can be ahead of the confirmed one by several blocks.
 	// Both values can be nil, if the node haven't received an output from
 	// L1 yet (after a restart or a chain activation).
-	LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error)
+	LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error)
 	LatestState(freshness StateFreshness) (state.State, error)
+	LatestGasCoin(freshness StateFreshness) (*coin.CoinWithRef, error)
 	GetCommitteeInfo() *CommitteeInfo // TODO: Review, maybe we can reorganize the CommitteeInfo structure.
 	Store() indexedstore.IndexedStore // Use LatestState whenever possible. That will work faster.
-	Processors() *processors.Cache
+	Processors() *processors.Config
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
 	Log() *logger.Logger

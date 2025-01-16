@@ -19,13 +19,13 @@ import (
 )
 
 func (c *Controller) getControlAddresses(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	controlAddresses, err := corecontracts.GetControlAddresses(ch)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	controlAddressesResponse := &models.ControlAddressesResponse{
@@ -38,15 +38,15 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 }
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	var blockInfo *blocklog.BlockInfo
 	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
-		blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = strconv.ParseUint(e.Param(params.ParamBlockIndex), 10, 64)
@@ -54,10 +54,10 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 			return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
 		}
 
-		blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	blockInfoResponse := models.MapBlockInfoResponse(blockInfo)
@@ -66,15 +66,15 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 }
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	var requestIDs []isc.RequestID
 	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
-		requestIDs, err = corecontracts.GetRequestIDsForLatestBlock(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, requestIDs, err = corecontracts.GetRequestIDsForLatestBlock(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
@@ -82,11 +82,11 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 			return err
 		}
 
-		requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	requestIDsResponse := &models.RequestIDsResponse{
@@ -131,21 +131,21 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 }
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
-	var blocklogReceipts []*blocklog.RequestReceipt
+	var blocklogReceipts *blocklog.RequestReceiptsResponse
 	blockIndex := e.Param(params.ParamBlockIndex)
 
 	if blockIndex == "" {
 		var blockInfo *blocklog.BlockInfo
-		blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, blockInfo, err = corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
-			return c.handleViewCallError(err, chainID)
+			return c.handleViewCallError(err)
 		}
 
-		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockInfo.BlockIndex(), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockInfo.BlockIndex, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	} else {
 		var blockIndexNum uint64
 		blockIndexNum, err = params.DecodeUInt(e, params.ParamBlockIndex)
@@ -156,12 +156,12 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
-	receiptsResponse := make([]*models.ReceiptResponse, len(blocklogReceipts))
+	receiptsResponse := make([]*models.ReceiptResponse, len(blocklogReceipts.Receipts))
 
-	for i, blocklogReceipt := range blocklogReceipts {
+	for i, blocklogReceipt := range blocklogReceipts.Receipts {
 		parsedReceipt, err := common.ParseReceipt(ch, blocklogReceipt)
 		if err != nil {
 			panic(err)
@@ -176,7 +176,7 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
@@ -185,7 +185,7 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 
 	requestProcessed, err := corecontracts.IsRequestProcessed(ch, requestID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 
 	requestProcessedResponse := models.RequestProcessedResponse{
@@ -208,9 +208,9 @@ func eventsResponse(e echo.Context, events []*isc.Event) error {
 }
 
 func (c *Controller) getBlockEvents(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	var events []*isc.Event
 	blockIndex := e.Param(params.ParamBlockIndex)
@@ -221,28 +221,28 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return err
 		}
 
-		events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
-			return c.handleViewCallError(err, chainID)
+			return c.handleViewCallError(err)
 		}
 	} else {
-		blockInfo, err := corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, blockInfo, err := corecontracts.GetLatestBlockInfo(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
-			return c.handleViewCallError(err, chainID)
+			return c.handleViewCallError(err)
 		}
 
-		events, err = corecontracts.GetEventsForBlock(ch, blockInfo.BlockIndex(), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		_, events, err = corecontracts.GetEventsForBlock(ch, blockInfo.BlockIndex, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
-			return c.handleViewCallError(err, chainID)
+			return c.handleViewCallError(err)
 		}
 	}
 	return eventsResponse(e, events)
 }
 
 func (c *Controller) getRequestEvents(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
@@ -251,7 +251,7 @@ func (c *Controller) getRequestEvents(e echo.Context) error {
 
 	events, err := corecontracts.GetEventsForRequest(ch, requestID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
-		return c.handleViewCallError(err, chainID)
+		return c.handleViewCallError(err)
 	}
 	return eventsResponse(e, events)
 }

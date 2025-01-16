@@ -62,9 +62,9 @@ func TestLPPPeeringImpl(t *testing.T) {
 		doneCh <- true
 	})
 
-	n0p2.SendMsg(peering.NewPeerMessageData(chain1, receiver, 125))
-	n1p1.SendMsg(peering.NewPeerMessageData(chain1, receiver, 125))
-	n2p0.SendMsg(peering.NewPeerMessageData(chain2, receiver, 125))
+	n0p2.SendMsg(peering.NewPeerMessageData(chain1, receiver, 125, nil))
+	n1p1.SendMsg(peering.NewPeerMessageData(chain1, receiver, 125, nil))
+	n2p0.SendMsg(peering.NewPeerMessageData(chain2, receiver, 125, nil))
 
 	<-doneCh
 	time.Sleep(100 * time.Millisecond)

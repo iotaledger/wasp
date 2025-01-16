@@ -14,11 +14,13 @@ import { HttpFile } from '../http/http';
 
 export class GovChainOwnerResponse {
     /**
-    * The chain owner (Bech32-encoded)
+    * The chain owner (Hex Address)
     */
     'chainOwner'?: string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -35,4 +37,3 @@ export class GovChainOwnerResponse {
     public constructor() {
     }
 }
-

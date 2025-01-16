@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/util"
@@ -57,7 +58,7 @@ func newAccessMgrSM(t *rapid.T, nodeCount, chainCount int) *accessMgrSM {
 		sm.nodeIDs = gpa.NodeIDsFromPublicKeys(sm.nodePubs)
 		sm.chainIDs = make([]isc.ChainID, chainCount)
 		for i := range sm.chainIDs {
-			sm.chainIDs[i] = isc.RandomChainID([]byte{byte(i)})
+			sm.chainIDs[i] = isctest.RandomChainID([]byte{byte(i)})
 		}
 		sm.genNodeID = rapid.SampledFrom(sm.nodeIDs)
 		sm.genNodePub = rapid.SampledFrom(sm.nodePubs)

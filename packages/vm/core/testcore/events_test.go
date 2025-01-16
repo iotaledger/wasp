@@ -1,3 +1,5 @@
+// excluded temporarily because of compilation errors
+
 package testcore
 
 import (
@@ -7,46 +9,19 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-)
-
-var (
-	manyEventsContractName = "ManyEventsContract"
-	manyEventsContract     = coreutil.NewContract(manyEventsContractName)
-
-	funcManyEvents = manyEventsContract.Func("manyevents")
-	funcBigEvent   = manyEventsContract.Func("bigevent")
-
-	manyEventsContractProcessor = manyEventsContract.Processor(nil,
-		funcManyEvents.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := codec.Uint32.MustDecode(ctx.Params().Get("n"))
-			for i := uint32(0); i < n; i++ {
-				ctx.Event("event.test", codec.Uint32.Encode(n))
-			}
-			return nil
-		}),
-		funcBigEvent.WithHandler(func(ctx isc.Sandbox) dict.Dict {
-			n := codec.Uint32.MustDecode(ctx.Params().Get("n"))
-			ctx.Event("event.big", make([]byte, n))
-			return nil
-		}),
-	)
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/manyevents"
 )
 
 func setupTest(t *testing.T) *solo.Chain {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true, PrintStackTrace: true}).
-		WithNativeContract(manyEventsContractProcessor)
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
-	err := ch.DeployContract(nil, manyEventsContract.Name, manyEventsContract.ProgramHash)
-	require.NoError(t, err)
 
 	// allow "infinite" gas per request
 	limits := ch.GetGasLimits()
@@ -69,14 +44,12 @@ func checkNEvents(t *testing.T, ch *solo.Chain, reqid isc.RequestID, n int) {
 	require.Len(t, events, n)
 }
 
-func getBurnedGas(ch *solo.Chain, tx *iotago.Transaction, err error) (uint64, error) {
-	reqs, err2 := ch.Env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(ch.Env.T, err2)
-	require.EqualValues(ch.Env.T, 1, len(reqs))
+func getBurnedGas(ch *solo.Chain, reqID isc.RequestID, err error) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
-	receipt, _ := ch.GetRequestReceipt(reqs[0].ID())
+	receipt, ok := ch.GetRequestReceipt(reqID)
+	require.True(ch.Env.T, ok)
 	return receipt.GasBurned, nil
 }
 
@@ -85,12 +58,14 @@ func TestManyEvents(t *testing.T) {
 
 	postEvents := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
-		tx, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParamsEx(manyEventsContract.Name, funcManyEvents.Name, "n", n).
+		req, _, _, _, err := ch.PostRequestSyncTx(
+			solo.NewCallParamsEx(manyevents.Contract.Name, manyevents.FuncManyEvents.Name, isc.NewCallArguments(
+				codec.Encode(n),
+			)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
-		return getBurnedGas(ch, tx, err)
+		return getBurnedGas(ch, req.ID(), err)
 	}
 
 	gas1000, err := postEvents(1000)
@@ -118,12 +93,14 @@ func TestEventTooLarge(t *testing.T) {
 
 	postEvent := func(n uint32) (uint64, error) {
 		// post a request that issues too many events (nEvents)
-		tx, _, err := ch.PostRequestSyncTx(
-			solo.NewCallParamsEx(manyEventsContract.Name, funcBigEvent.Name, "n", n).
+		req, _, _, _, err := ch.PostRequestSyncTx(
+			solo.NewCallParamsEx(manyevents.Contract.Name, manyevents.FuncBigEvent.Name, isc.NewCallArguments(
+				codec.Encode(n),
+			)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
-		return getBurnedGas(ch, tx, err)
+		return getBurnedGas(ch, req.ID(), err)
 	}
 
 	gas1k, err := postEvent(100_000)
@@ -139,44 +116,38 @@ func TestEventTooLarge(t *testing.T) {
 }
 
 func incrementSCCounter(t *testing.T, ch *solo.Chain) isc.RequestID {
-	tx, _, err := ch.PostRequestSyncTx(
+	req, _, _, _, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(inccounter.FuncIncCounter.Message(nil)).WithGasBudget(math.MaxUint64),
 		nil,
 	)
 	require.NoError(t, err)
-	reqs, err := ch.Env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	return reqs[0].ID()
+	return req.ID()
 }
 
 func getEventsForRequest(t *testing.T, chain *solo.Chain, reqID isc.RequestID) []*isc.Event {
 	res, err := chain.CallView(blocklog.ViewGetEventsForRequest.Message(reqID))
 	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
+	return lo.Must(blocklog.ViewGetEventsForRequest.DecodeOutput(res))
 }
 
 func getEventsForBlock(t *testing.T, chain *solo.Chain, blockNumber ...uint32) []*isc.Event {
 	res, err := chain.CallView(blocklog.ViewGetEventsForBlock.Message(coreutil.Optional(blockNumber...)))
 	require.NoError(t, err)
-	return lo.Must(blocklog.ViewGetEventsForRequest.Output.Decode(res))
+	_, events := lo.Must2(blocklog.ViewGetEventsForBlock.DecodeOutput(res))
+	return events
 }
 
 func TestGetEvents(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
-		WithNativeContract(inccounter.Processor)
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(10_000, nil)
 	require.NoError(t, err)
 
-	err = ch.DeployContract(nil, inccounter.Contract.Name, inccounter.Contract.ProgramHash, nil)
-	require.NoError(t, err)
-
-	// block 1 = ch init
-	// block 2 = inccounter contract deployment
-	reqID1 := incrementSCCounter(t, ch) // #block 3
-	reqID2 := incrementSCCounter(t, ch) // #block 4
-	reqID3 := incrementSCCounter(t, ch) // #block 5
+	bi := ch.LatestBlockIndex()
+	reqID1 := incrementSCCounter(t, ch) // #block bi+1
+	reqID2 := incrementSCCounter(t, ch) // #block bi+2
+	reqID3 := incrementSCCounter(t, ch) // #block bi+3
 
 	testdbhash.VerifyContractStateHash(env, blocklog.Contract, "", t.Name())
 
@@ -192,25 +163,21 @@ func TestGetEvents(t *testing.T) {
 	require.Len(t, events, 1)
 	checkEventCounter(t, events[0], 3)
 
-	events = getEventsForBlock(t, ch, 3)
-	require.Len(t, events, 2)
-	checkEventCounter(t, events[0], 0)
-
-	events = getEventsForBlock(t, ch, 4)
+	events = getEventsForBlock(t, ch, bi+1)
 	require.Len(t, events, 1)
 	checkEventCounter(t, events[0], 1)
 
-	events = getEventsForBlock(t, ch, 5)
+	events = getEventsForBlock(t, ch, bi+2)
 	require.Len(t, events, 1)
 	checkEventCounter(t, events[0], 2)
 
-	events = getEventsForBlock(t, ch)
+	events = getEventsForBlock(t, ch, bi+3)
 	require.Len(t, events, 1)
 	checkEventCounter(t, events[0], 3)
 }
 
 func checkEventCounter(t *testing.T, event *isc.Event, value uint64) {
-	counter, err := codec.Uint64.Decode(event.Payload)
+	counter, err := codec.Decode[uint64](event.Payload)
 	require.NoError(t, err)
 	require.EqualValues(t, counter, value)
 }

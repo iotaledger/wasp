@@ -14,7 +14,6 @@ import (
 
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 // magicContractHandler has one public receiver for each ISC magic method, with
@@ -86,16 +85,17 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 	return ret
 }
 
-func (h *magicContractHandler) call(msg isc.Message, allowance *isc.Assets) dict.Dict {
+func (h *magicContractHandler) call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
 		msg, allowance,
 	)
 }
 
-func (h *magicContractHandler) callView(msg isc.Message) dict.Dict {
+func (h *magicContractHandler) callView(msg isc.Message) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
-		msg, nil,
+		msg,
+		isc.NewEmptyAssets(),
 	)
 }

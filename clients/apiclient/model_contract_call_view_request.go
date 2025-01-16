@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ContractCallViewRequest type satisfies the MappedNullable interface at compile time
@@ -19,7 +21,8 @@ var _ MappedNullable = &ContractCallViewRequest{}
 
 // ContractCallViewRequest struct for ContractCallViewRequest
 type ContractCallViewRequest struct {
-	Arguments JSONDict `json:"arguments"`
+	// Encoded arguments to be passed to the function
+	Arguments []string `json:"arguments"`
 	Block *string `json:"block,omitempty"`
 	// The contract name as HName (Hex)
 	ContractHName string `json:"contractHName"`
@@ -31,11 +34,13 @@ type ContractCallViewRequest struct {
 	FunctionName string `json:"functionName"`
 }
 
+type _ContractCallViewRequest ContractCallViewRequest
+
 // NewContractCallViewRequest instantiates a new ContractCallViewRequest object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewContractCallViewRequest(arguments JSONDict, contractHName string, contractName string, functionHName string, functionName string) *ContractCallViewRequest {
+func NewContractCallViewRequest(arguments []string, contractHName string, contractName string, functionHName string, functionName string) *ContractCallViewRequest {
 	this := ContractCallViewRequest{}
 	this.Arguments = arguments
 	this.ContractHName = contractHName
@@ -54,9 +59,9 @@ func NewContractCallViewRequestWithDefaults() *ContractCallViewRequest {
 }
 
 // GetArguments returns the Arguments field value
-func (o *ContractCallViewRequest) GetArguments() JSONDict {
+func (o *ContractCallViewRequest) GetArguments() []string {
 	if o == nil {
-		var ret JSONDict
+		var ret []string
 		return ret
 	}
 
@@ -65,21 +70,21 @@ func (o *ContractCallViewRequest) GetArguments() JSONDict {
 
 // GetArgumentsOk returns a tuple with the Arguments field value
 // and a boolean to check if the value has been set.
-func (o *ContractCallViewRequest) GetArgumentsOk() (*JSONDict, bool) {
+func (o *ContractCallViewRequest) GetArgumentsOk() ([]string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Arguments, true
+	return o.Arguments, true
 }
 
 // SetArguments sets field value
-func (o *ContractCallViewRequest) SetArguments(v JSONDict) {
+func (o *ContractCallViewRequest) SetArguments(v []string) {
 	o.Arguments = v
 }
 
 // GetBlock returns the Block field value if set, zero value otherwise.
 func (o *ContractCallViewRequest) GetBlock() string {
-	if o == nil || isNil(o.Block) {
+	if o == nil || IsNil(o.Block) {
 		var ret string
 		return ret
 	}
@@ -89,7 +94,7 @@ func (o *ContractCallViewRequest) GetBlock() string {
 // GetBlockOk returns a tuple with the Block field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ContractCallViewRequest) GetBlockOk() (*string, bool) {
-	if o == nil || isNil(o.Block) {
+	if o == nil || IsNil(o.Block) {
 		return nil, false
 	}
 	return o.Block, true
@@ -97,7 +102,7 @@ func (o *ContractCallViewRequest) GetBlockOk() (*string, bool) {
 
 // HasBlock returns a boolean if a field has been set.
 func (o *ContractCallViewRequest) HasBlock() bool {
-	if o != nil && !isNil(o.Block) {
+	if o != nil && !IsNil(o.Block) {
 		return true
 	}
 
@@ -216,7 +221,7 @@ func (o ContractCallViewRequest) MarshalJSON() ([]byte, error) {
 func (o ContractCallViewRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["arguments"] = o.Arguments
-	if !isNil(o.Block) {
+	if !IsNil(o.Block) {
 		toSerialize["block"] = o.Block
 	}
 	toSerialize["contractHName"] = o.ContractHName
@@ -224,6 +229,47 @@ func (o ContractCallViewRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize["functionHName"] = o.FunctionHName
 	toSerialize["functionName"] = o.FunctionName
 	return toSerialize, nil
+}
+
+func (o *ContractCallViewRequest) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"arguments",
+		"contractHName",
+		"contractName",
+		"functionHName",
+		"functionName",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varContractCallViewRequest := _ContractCallViewRequest{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varContractCallViewRequest)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ContractCallViewRequest(varContractCallViewRequest)
+
+	return err
 }
 
 type NullableContractCallViewRequest struct {

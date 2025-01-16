@@ -16,17 +16,15 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, AuthApi } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .AuthApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new AuthApi(configuration);
 
-let body:any = {};
+const request = {};
 
-apiInstance.authInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.authInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -63,23 +61,22 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, AuthApi } from '';
+import type { AuthApiAuthenticateRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .AuthApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new AuthApi(configuration);
 
-let body:.AuthApiAuthenticateRequest = {
-  // LoginRequest | The login request
+const request: AuthApiAuthenticateRequest = {
+    // The login request
   loginRequest: {
-    password: "wasp",
-    username: "wasp",
+    password: "password_example",
+    username: "username_example",
   },
 };
 
-apiInstance.authenticate(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.authenticate(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 

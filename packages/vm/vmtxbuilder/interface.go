@@ -1,16 +1,23 @@
 package vmtxbuilder
 
 import (
-	"math/big"
-
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
+// TODO maybe we dont need this interface
 type TransactionBuilder interface {
 	Clone() TransactionBuilder
-	ConsumeRequest(req isc.OnLedgerRequest) (storageDepositNeeded *big.Int)
-	SendObject(object sui.Object) (storageDepositReturned *big.Int)
-	BuildTransactionEssence(stateRoot *state.L1Commitment) sui.ProgrammableTransaction // TODO add stateMetadata?
+	ConsumeRequest(req isc.OnLedgerRequest)
+
+	// pt command will be appended into ptb
+	SendAssets(target *iotago.Address, assets *isc.Assets)
+	// pt command will be appended into ptb
+	SendCrossChainRequest(targetPackage *iotago.Address, targetAnchor *iotago.Address, assets *isc.Assets, metadata *isc.SendMetadata)
+
+	// this will be appended RotationTransaction PTB in the end of 'BuildTransactionEssence()'
+	RotationTransaction(rotationAddress *iotago.Address)
+
+	// this will reset txb into nil
+	BuildTransactionEssence(stateMetadata []byte, topUpAmount uint64) iotago.ProgrammableTransaction
 }

@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -42,7 +43,7 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := env.Chain.Client(nil, nodeIndex)
 		reqID := isc.RequestIDFromEVMTxHash(txHash)
-		receipt, _, err := c.WaspClient.ChainsApi.
+		receipt, _, err := c.WaspClient.ChainsAPI.
 			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
 			TimeoutSeconds(10).
 			Execute()
@@ -73,22 +74,23 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 
 const transferAllowanceToGasBudgetBaseTokens = 1 * isc.Million
 
-func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	ethKey, ethAddr := newEthereumAccount()
 	walletKey, walletAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.T, err)
 
-	var amount uint64
+	var amount coin.Value
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
 		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
 	}
 	tx, err := e.Chain.Client(walletKey).PostRequest(
+		context.Background(),
 		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)),
 		chainclient.PostRequestParams{
-			Transfer:  isc.NewAssets(amount+transferAllowanceToGasBudgetBaseTokens, nil),
-			Allowance: isc.NewAssetsBaseTokensU64(amount),
+			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
+			Allowance: isc.NewAssets(amount),
 		},
 	)
 	require.NoError(e.T, err)
@@ -132,14 +134,14 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 		B: 0,
 	}
 	govClient := e.Chain.Client(e.Chain.OriginatorKeyPair)
-	reqTx, err := govClient.PostRequest(governance.FuncSetFeePolicy.Message(fp1))
+	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(fp1), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	d, err := govClient.CallView(context.Background(), governance.ViewGetFeePolicy.Message())
 	require.NoError(t, err)
-	fp2, err := governance.ViewGetFeePolicy.Output.Decode(d)
+	fp2, err := governance.ViewGetFeePolicy.DecodeOutput(d)
 	require.NoError(t, err)
 	require.Equal(t, fp1, fp2)
 	e.TestRPCGetLogs()

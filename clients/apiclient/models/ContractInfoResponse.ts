@@ -21,12 +21,10 @@ export class ContractInfoResponse {
     * The name of the contract.
     */
     'name': string;
-    /**
-    * The hash of the contract. (Hex encoded)
-    */
-    'programHash': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -40,12 +38,6 @@ export class ContractInfoResponse {
             "baseName": "name",
             "type": "string",
             "format": "string"
-        },
-        {
-            "name": "programHash",
-            "baseName": "programHash",
-            "type": "string",
-            "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
@@ -55,4 +47,3 @@ export class ContractInfoResponse {
     public constructor() {
     }
 }
-

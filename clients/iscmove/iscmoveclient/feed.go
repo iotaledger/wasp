@@ -6,25 +6,26 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/sui/serialization"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 type ChainFeed struct {
 	wsClient      *Client
-	iscPackageID  sui.PackageID
-	anchorAddress sui.ObjectID
+	iscPackageID  iotago.PackageID
+	anchorAddress iotago.ObjectID
 	log           *logger.Logger
 }
 
 func NewChainFeed(
 	ctx context.Context,
 	wsClient *Client,
-	iscPackageID sui.PackageID,
-	anchorAddress sui.ObjectID,
+	iscPackageID iotago.PackageID,
+	anchorAddress iotago.ObjectID,
 	log *logger.Logger,
 ) *ChainFeed {
 	return &ChainFeed{
@@ -41,70 +42,51 @@ func (f *ChainFeed) WaitUntilStopped() {
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.RefWithObject[iscmove.Anchor], []*iscmove.Request, error) {
+func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.RefWithObject[iscmove.Request], error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	reqs := make([]*iscmove.Request, 0)
-	var lastSeen *sui.ObjectID
-	for {
-		res, err := f.wsClient.GetOwnedObjects(ctx, suiclient.GetOwnedObjectsRequest{
-			Address: &f.anchorAddress,
-			Query: &suijsonrpc.SuiObjectResponseQuery{
-				Filter: &suijsonrpc.SuiObjectDataFilter{
-					StructType: &sui.StructTag{
-						Address: &f.iscPackageID,
-						Module:  iscmove.RequestModuleName,
-						Name:    iscmove.RequestObjectName,
-					},
-				},
-				Options: &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
-			},
-			Cursor: lastSeen,
-		})
-		if ctx.Err() != nil {
-			return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
-		}
-		if len(res.Data) == 0 {
-			break
-		}
-		lastSeen = res.NextCursor
-		for _, reqData := range res.Data {
-			var req iscmove.Request
-			err := suiclient.UnmarshalBCS(reqData.Data.Bcs.Data.MoveObject.BcsBytes, &req)
-			if err != nil {
-				return nil, nil, fmt.Errorf("failed to decode request: %w", err)
-			}
-			reqs = append(reqs, &req)
-		}
+
+	reqs, err := f.wsClient.GetRequests(ctx, f.iscPackageID, &f.anchorAddress)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
 	}
+
 	return anchor, reqs, nil
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
 func (f *ChainFeed) SubscribeToUpdates(
 	ctx context.Context,
-	anchorCh chan<- *iscmove.RefWithObject[iscmove.Anchor],
-	requestsCh chan<- *iscmove.Request,
+	anchorID iotago.ObjectID,
+	anchorCh chan<- *iscmove.AnchorWithRef,
+	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	go f.subscribeToAnchorUpdates(ctx, anchorCh)
-	go f.subscribeToNewRequests(ctx, requestsCh)
+	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
 }
 
 func (f *ChainFeed) subscribeToNewRequests(
 	ctx context.Context,
-	requests chan<- *iscmove.Request,
+	anchorID iotago.ObjectID,
+	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
-		events := make(chan *suijsonrpc.SuiEvent)
+		events := make(chan *iotajsonrpc.IotaEvent)
 		err := f.wsClient.SubscribeEvent(
 			ctx,
-			&suijsonrpc.EventFilter{
-				MoveEventType: &sui.StructTag{
-					Address: &f.iscPackageID,
-					Module:  iscmove.RequestModuleName,
-					Name:    iscmove.RequestEventObjectName,
+			&iotajsonrpc.EventFilter{
+				And: &iotajsonrpc.AndOrEventFilter{
+					Filter1: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
+						Address: &f.iscPackageID,
+						Module:  iscmove.RequestModuleName,
+						Name:    iscmove.RequestEventObjectName,
+					}},
+					Filter2: &iotajsonrpc.EventFilter{MoveEventField: &iotajsonrpc.EventFilterMoveEventField{
+						Path:  iscmove.RequestEventAnchorFieldName,
+						Value: anchorID.String(),
+					}},
 				},
 			},
 			events,
@@ -128,8 +110,8 @@ func (f *ChainFeed) subscribeToNewRequests(
 
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
-	events <-chan *suijsonrpc.SuiEvent,
-	requests chan<- *iscmove.Request,
+	events <-chan *iotajsonrpc.IotaEvent,
+	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
 		select {
@@ -140,30 +122,30 @@ func (f *ChainFeed) consumeRequestEvents(
 				return
 			}
 			var reqEvent iscmove.RequestEvent
-			err := suiclient.UnmarshalBCS(ev.Bcs, &reqEvent)
+			err := iotaclient.UnmarshalBCS(ev.Bcs, &reqEvent)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
-			req, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
+			reqWithObj, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
-			requests <- req
+			requests <- reqWithObj
 		}
 	}
 }
 
 func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
-	anchorCh chan<- *iscmove.RefWithObject[iscmove.Anchor],
+	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
-		changes := make(chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects])
+		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
 		err := f.wsClient.SubscribeTransaction(
 			ctx,
-			&suijsonrpc.TransactionFilter{
+			&iotajsonrpc.TransactionFilter{
 				ChangedObject: &f.anchorAddress,
 			},
 			changes,
@@ -187,8 +169,8 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 
 func (f *ChainFeed) consumeAnchorUpdates(
 	ctx context.Context,
-	changes <-chan *serialization.TagJson[suijsonrpc.SuiTransactionBlockEffects],
-	anchorCh chan<- *iscmove.RefWithObject[iscmove.Anchor],
+	changes <-chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects],
+	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
 		select {
@@ -200,10 +182,10 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			}
 			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == f.anchorAddress {
-					r, err := f.wsClient.TryGetPastObject(ctx, suiclient.TryGetPastObjectRequest{
+					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
-						Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 					})
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
@@ -214,17 +196,47 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						continue
 					}
 					var anchor *iscmove.Anchor
-					err = suiclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+					err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
-					anchorCh <- &iscmove.RefWithObject[iscmove.Anchor]{
+					anchorCh <- &iscmove.AnchorWithRef{
 						ObjectRef: r.Data.VersionFound.Ref(),
 						Object:    anchor,
+						Owner:     r.Data.VersionFound.Owner.AddressOwner,
 					}
 				}
 			}
 		}
 	}
+}
+
+func (f *ChainFeed) GetISCPackageID() iotago.PackageID {
+	return f.iscPackageID
+}
+
+func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uint64, error) {
+	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
+	}
+	metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
+	}
+	getObjRes, err := f.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+		ObjectID: metadata.GasCoinObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to fetch gas coin object: %w", err)
+	}
+	var moveGasCoin MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to decode gas coin object: %w", err)
+	}
+	gasCoinRef := getObjRes.Data.Ref()
+	return &gasCoinRef, moveGasCoin.Balance, nil
 }

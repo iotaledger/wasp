@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -78,7 +79,7 @@ func (bwT *blockWAL) Write(block state.Block) error {
 			bwT.metrics.IncFailedWrites()
 			return fmt.Errorf("failed to write block index into temporary file %s: %w", tmpFilePath, ww.Err)
 		}
-		err = block.Write(f)
+		err = bcs.MarshalStream(&block, f)
 		if err != nil {
 			bwT.metrics.IncFailedWrites()
 			return fmt.Errorf("writing block to temporary file %s failed: %w", tmpFilePath, err)
@@ -272,7 +273,7 @@ func blockIndexFromReader(version uint32, r io.Reader) (uint32, error) {
 		return index, rr.Err
 	case 0:
 		block := state.NewBlock()
-		err := block.Read(r)
+		_, err := bcs.UnmarshalStreamInto(r, &block)
 		if err != nil {
 			return 0, err
 		}
@@ -290,7 +291,7 @@ func blockFromReader(version uint32, r io.Reader) (state.Block, error) {
 			return nil, fmt.Errorf("failed to read block index in header: %w", err)
 		}
 		block := state.NewBlock()
-		err = block.Read(r)
+		_, err = bcs.UnmarshalStreamInto(r, &block)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read block: %w", err)
 		}
@@ -301,7 +302,7 @@ func blockFromReader(version uint32, r io.Reader) (state.Block, error) {
 		return block, nil
 	case 0:
 		block := state.NewBlock()
-		err := block.Read(r)
+		_, err := bcs.UnmarshalStreamInto(r, &block)
 		return block, err
 	default:
 		return nil, fmt.Errorf("unknown block version %v", version)

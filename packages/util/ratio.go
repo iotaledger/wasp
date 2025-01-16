@@ -3,13 +3,13 @@ package util
 import (
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"strconv"
 	"strings"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // A + B
@@ -22,8 +22,7 @@ type Ratio32 struct {
 }
 
 func Ratio32FromBytes(data []byte) (ret Ratio32, err error) {
-	_, err = rwutil.ReadFromBytes(data, &ret)
-	return ret, err
+	return bcs.Unmarshal[Ratio32](data)
 }
 
 func Ratio32FromString(s string) (ret Ratio32, err error) {
@@ -45,7 +44,7 @@ func Ratio32FromString(s string) (ret Ratio32, err error) {
 }
 
 func (ratio Ratio32) Bytes() []byte {
-	return rwutil.WriteToBytes(&ratio)
+	return bcs.MustMarshal(&ratio)
 }
 
 func (ratio Ratio32) String() string {
@@ -154,19 +153,17 @@ func (ratio Ratio32) IsEmpty() bool {
 	return ratio == ZeroGasFee
 }
 
-func (ratio *Ratio32) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	ratio.A = rr.ReadUint32()
-	ratio.B = rr.ReadUint32()
-	if rr.Err == nil && !ratio.IsValid() {
-		rr.Err = errors.New("ratio has zero component")
-	}
-	return rr.Err
-}
+func (ratio *Ratio32) UnmarshalBCS(d bcs.Decoder) error {
+	ratio.A = d.ReadUint32()
+	ratio.B = d.ReadUint32()
 
-func (ratio *Ratio32) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteUint32(ratio.A)
-	ww.WriteUint32(ratio.B)
-	return ww.Err
+	if d.Err() != nil {
+		return d.Err()
+	}
+
+	if !ratio.IsValid() {
+		return errors.New("ratio has zero component")
+	}
+
+	return nil
 }

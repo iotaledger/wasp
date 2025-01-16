@@ -4,74 +4,84 @@
 package sm_gpa_utils
 
 import (
-	"crypto/rand"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	iotago "github.com/iotaledger/iota.go/v3"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
-
-type anchorData struct {
-	ref          *sui.ObjectRef
-	assets       iscmove.Referent[iscmove.AssetsBag]
-	l1Commitment *state.L1Commitment
-	stateIndex   uint32
-}
 
 type BlockFactory struct {
 	t                   require.TestingT
 	store               state.Store
 	chainID             isc.ChainID
-	chainInitParams     dict.Dict
+	chainInitParams     isc.CallArguments
 	lastBlockCommitment *state.L1Commitment
-	anchorData          map[state.BlockHash]anchorData
+	anchorData          map[state.BlockHash]iscmove.AnchorWithRef
 }
 
-func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *BlockFactory {
-	var chainInitParams dict.Dict
+type BlockFactoryCallArguments struct {
+	BlockKeepAmount int32
+}
+
+func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallArguments) *BlockFactory {
+	var chainInitParams isc.CallArguments
+	agentID := isctest.NewRandomAgentID()
 	if len(chainInitParamsOpt) > 0 {
-		chainInitParams = chainInitParamsOpt[0]
+		initParams := origin.DefaultInitParams(agentID)
+		initParams.BlockKeepAmount = chainInitParamsOpt[0].BlockKeepAmount
+		chainInitParams = initParams.Encode()
 	} else {
-		chainInitParams = nil
+		chainInitParams = origin.DefaultInitParams(agentID).Encode()
 	}
-	chainID := isc.RandomChainID()
-	originCommitment := origin.L1Commitment(0, chainInitParams, 0)
-	originAnchorData := anchorData{
-		ref: &sui.ObjectRef{
-			ObjectID: sui.ObjectIDFromArray(chainID),
-			Version:  0,
-			Digest:   nil, // TODO
-		},
-		assets: iscmove.Referent[iscmove.AssetsBag]{
-			//ID: nil, // TODO
-			Value: &iscmove.AssetsBag{
-				//ID:   nil, // TODO
-				Size: 0,
-			},
-		},
-		l1Commitment: originCommitment,
-		stateIndex:   0,
-	}
+
+	chainID := isctest.RandomChainID()
+	chainIDObjID := chainID.AsObjectID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	origin.InitChain(0, chainStore, chainInitParams, 0)
+	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+	originCommitment := originBlock.L1Commitment()
+	originStateMetadata := transaction.NewStateMetadata(
+		allmigrations.LatestSchemaVersion,
+		originBlock.L1Commitment(),
+		&iotago.ObjectID{},
+		gas.DefaultFeePolicy(),
+		chainInitParams,
+		"",
+	)
+	originAnchorData := iscmove.RefWithObject[iscmove.Anchor]{
+		ObjectRef: iotago.ObjectRef{
+			ObjectID: &chainIDObjID,
+			Version:  0,
+			Digest:   nil,
+		},
+		Object: &iscmove.Anchor{
+			ID:            chainIDObjID,
+			Assets:        iscmovetest.RandomAssetsBag(),
+			StateMetadata: originStateMetadata.Bytes(),
+			StateIndex:    0,
+		},
+	}
 	return &BlockFactory{
 		t:                   t,
 		store:               chainStore,
 		chainID:             chainID,
 		chainInitParams:     chainInitParams,
 		lastBlockCommitment: originCommitment,
-		anchorData:          map[state.BlockHash]anchorData{originCommitment.BlockHash(): originAnchorData},
+		anchorData:          map[state.BlockHash]iscmove.RefWithObject[iscmove.Anchor]{originCommitment.BlockHash(): originAnchorData},
 	}
 
 	/*
@@ -79,7 +89,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	   chainID := isc.ChainIDFromAliasID(iotago.AliasIDFromOutputID(aliasOutput0ID))
 	   stateAddress := cryptolib.NewKeyPair().GetPublicKey().AsAddress()
 	   _ = stateAddress
-	   originCommitment := origin.L1Commitment(0, chainInitParams, 0)
+	   originCommitment := origin.L1Commitment(allmigrations.LatestSchemaVersion, chainInitParams, 0)
 
 	   	aliasOutput0 := &iotago.AliasOutput{
 	   		Amount:        tpkg.TestTokenSupply,
@@ -96,7 +106,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...dict.Dict) *Block
 	   		},
 	   	}
 
-	   aliasOutputs := make(map[state.BlockHash]*isc.AliasOutputWithID)
+	   aliasOutputs := make(map[state.BlockHash]*isc.StateAnchor)
 	   originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	   aliasOutputs[originCommitment.BlockHash()] = originOutput
 	   chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
@@ -117,16 +127,16 @@ func (bfT *BlockFactory) GetChainID() isc.ChainID {
 	return bfT.chainID
 }
 
-func (bfT *BlockFactory) GetChainInitParameters() dict.Dict {
+func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 	return bfT.chainInitParams
 }
 
-func (bfT *BlockFactory) GetOriginAnchor() *iscmove.RefWithObject[iscmove.Anchor] {
-	return bfT.GetAnchor(origin.L1Commitment(0, bfT.chainInitParams, 0))
+func (bfT *BlockFactory) GetOriginAnchor() *isc.StateAnchor {
+	return bfT.GetAnchor(origin.L1Commitment(allmigrations.LatestSchemaVersion, bfT.chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 }
 
 func (bfT *BlockFactory) GetOriginBlock() state.Block {
-	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(0, bfT.chainInitParams, 0).TrieRoot())
+	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(allmigrations.LatestSchemaVersion, bfT.chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo).TrieRoot())
 	require.NoError(bfT.t, err)
 	return block
 }
@@ -173,7 +183,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	require.NoError(bfT.t, err)
 	counterKey := kv.Key(coreutil.StateVarBlockIndex + "counter")
 	counterBin := stateDraft.Get(counterKey)
-	counter, err := codec.Uint64.Decode(counterBin, 0)
+	counter, err := codec.Decode[uint64](counterBin, 0)
 	require.NoError(bfT.t, err)
 	var increment uint64
 	if len(incrementOpt) > 0 {
@@ -181,25 +191,29 @@ func (bfT *BlockFactory) GetNextBlock(
 	} else {
 		increment = 1
 	}
-	counterBin = codec.Uint64.Encode(counter + increment)
+	counterBin = codec.Encode[uint64](counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
-	// require.EqualValues(t, stateDraft.BlockIndex(), block.BlockIndex())
 	newCommitment := block.L1Commitment()
 
 	consumedAnchor := bfT.GetAnchor(commitment)
+	consumedMetadata, err := transaction.StateMetadataFromBytes(consumedAnchor.Anchor().Object.StateMetadata)
+	require.NoError(bfT.t, err)
+	consumedMetadata.L1Commitment, err = state.NewL1CommitmentFromBytes(newCommitment.Bytes())
+	require.NoError(bfT.t, err)
 
-	newAnchorData := anchorData{
-		ref: &sui.ObjectRef{
-			ObjectID: consumedAnchor.ObjectRef.ObjectID,
-			Version:  consumedAnchor.ObjectRef.Version + 1,
-			Digest:   nil, // TODO
+	newAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		Owner:     consumedAnchor.Anchor().Owner,
+		ObjectRef: consumedAnchor.Anchor().ObjectRef,
+		Object: &iscmove.Anchor{
+			consumedAnchor.Anchor().Object.ID,
+			consumedAnchor.Anchor().Object.Assets,
+			consumedMetadata.Bytes(),
+			consumedAnchor.Anchor().Object.StateIndex + 1,
 		},
-		assets:       consumedAnchor.Object.Assets,
-		l1Commitment: newCommitment,
-		stateIndex:   consumedAnchor.Object.StateIndex + 1,
-	}
-	bfT.anchorData[newCommitment.BlockHash()] = newAnchorData
+	}, consumedAnchor.ISCPackage())
+
+	bfT.anchorData[newCommitment.BlockHash()] = *newAnchor.Anchor()
 
 	return block
 }
@@ -215,25 +229,11 @@ func (bfT *BlockFactory) GetStateDraft(block state.Block) state.StateDraft {
 	return result
 }
 
-func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *iscmove.RefWithObject[iscmove.Anchor] {
-	anchorData, ok := bfT.anchorData[commitment.BlockHash()]
+func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *isc.StateAnchor {
+	anchor, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
-	return &iscmove.RefWithObject[iscmove.Anchor]{
-		ObjectRef: *anchorData.ref,
-		Object: &iscmove.Anchor{
-			ID:         *anchorData.ref.ObjectID,
-			Assets:     anchorData.assets,
-			InitParams: bfT.chainInitParams.Bytes(),
-			StateRoot:  sui.NewBytes(anchorData.l1Commitment.TrieRoot().Bytes()),
-			BlockHash:  sui.NewBytes(anchorData.l1Commitment.BlockHash().Bytes()),
-			StateIndex: anchorData.stateIndex,
-		},
-	}
-}
 
-func getRandomTxID(t require.TestingT) iotago.TransactionID {
-	var result iotago.TransactionID
-	_, err := rand.Read(result[:])
-	require.NoError(t, err)
-	return result
+	stateAnchor := isc.NewStateAnchor(&anchor, *iotago.MustAddressFromHex("0x0")) // FIXME,
+
+	return &stateAnchor
 }

@@ -48,7 +48,7 @@ func NewStateWriterFromSandbox(ctx isc.Sandbox) *StateWriter {
 }
 
 // converts an account key from the accounts contract (shortform without chainID) to an AgentID
-func agentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
+func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 	if len(key) < isc.ChainIDLength {
 		// short form saved (withoutChainID)
 		switch len(key) {
@@ -66,5 +66,5 @@ func agentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 			panic("bad key length")
 		}
 	}
-	return codec.AgentID.Decode([]byte(key))
+	return codec.Decode[isc.AgentID]([]byte(key))
 }

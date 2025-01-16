@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ControlAddressesResponse type satisfies the MappedNullable interface at compile time
@@ -19,13 +21,15 @@ var _ MappedNullable = &ControlAddressesResponse{}
 
 // ControlAddressesResponse struct for ControlAddressesResponse
 type ControlAddressesResponse struct {
-	// The governing address (Bech32)
+	// The governing address (Hex Address)
 	GoverningAddress string `json:"governingAddress"`
 	// The block index (uint32
 	SinceBlockIndex uint32 `json:"sinceBlockIndex"`
-	// The state address (Bech32)
+	// The state address (Hex Address)
 	StateAddress string `json:"stateAddress"`
 }
+
+type _ControlAddressesResponse ControlAddressesResponse
 
 // NewControlAddressesResponse instantiates a new ControlAddressesResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -133,6 +137,45 @@ func (o ControlAddressesResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["sinceBlockIndex"] = o.SinceBlockIndex
 	toSerialize["stateAddress"] = o.StateAddress
 	return toSerialize, nil
+}
+
+func (o *ControlAddressesResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"governingAddress",
+		"sinceBlockIndex",
+		"stateAddress",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varControlAddressesResponse := _ControlAddressesResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varControlAddressesResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ControlAddressesResponse(varControlAddressesResponse)
+
+	return err
 }
 
 type NullableControlAddressesResponse struct {

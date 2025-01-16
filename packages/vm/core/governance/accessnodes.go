@@ -4,10 +4,10 @@
 package governance
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -15,11 +15,18 @@ import (
 // It is implemented as a signature over the node pub key concatenated with the owner address.
 type NodeOwnershipCertificate []byte
 
+type NodeOwnershipCertificateFields struct {
+	NodePubKey   *cryptolib.PublicKey
+	OwnerAddress *cryptolib.Address
+}
+
 func NewNodeOwnershipCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) NodeOwnershipCertificate {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(nodeKeyPair.GetPublicKey())
-	ww.Write(ownerAddress)
-	return nodeKeyPair.GetPrivateKey().Sign(ww.Bytes())
+	cert := bcs.MustMarshal(&NodeOwnershipCertificateFields{
+		NodePubKey:   nodeKeyPair.GetPublicKey(),
+		OwnerAddress: ownerAddress,
+	})
+
+	return nodeKeyPair.GetPrivateKey().Sign(cert)
 }
 
 func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
@@ -27,90 +34,40 @@ func NodeOwnershipCertificateFromBytes(data []byte) NodeOwnershipCertificate {
 }
 
 func (c NodeOwnershipCertificate) Verify(nodePubKey *cryptolib.PublicKey, ownerAddress *cryptolib.Address) bool {
-	ww := rwutil.NewBytesWriter()
-	ww.Write(nodePubKey)
-	ww.Write(ownerAddress)
-	return nodePubKey.Verify(ww.Bytes(), c.Bytes())
+	cert := bcs.MustMarshal(&NodeOwnershipCertificateFields{
+		NodePubKey:   nodePubKey,
+		OwnerAddress: ownerAddress,
+	})
+
+	return nodePubKey.Verify(cert, c.Bytes())
 }
 
 func (c NodeOwnershipCertificate) Bytes() []byte {
 	return c
 }
 
+// AccessNodeData conveys all the information that is maintained
+// on the governance SC about a specific node.
+type AccessNodeData struct {
+	ValidatorAddr *cryptolib.Address       // Address of the validator owning the node. Not sent via parameters.
+	Certificate   NodeOwnershipCertificate // Proof that Validator owns the Node.
+	ForCommittee  bool                     // true, if Node should be a candidate to a committee.
+	AccessAPI     string                   // API URL, if any.
+}
+
 // AccessNodeInfo conveys all the information that is maintained
 // on the governance SC about a specific node.
 type AccessNodeInfo struct {
-	NodePubKey    []byte // Public Key of the node. Stored as a key in the SC State and Params.
-	validatorAddr []byte // Address of the validator owning the node. Not sent via parameters.
-	Certificate   []byte // Proof that Validator owns the Node.
-	ForCommittee  bool   // true, if Node should be a candidate to a committee.
-	AccessAPI     string // API URL, if any.
+	NodePubKey *cryptolib.PublicKey // Public Key of the node. Stored as a key in the SC State and Params.
+	AccessNodeData
 }
 
-func AccessNodeInfoFromBytes(pubKey, data []byte) (*AccessNodeInfo, error) {
-	rr := rwutil.NewBytesReader(data)
-	return &AccessNodeInfo{
-		NodePubKey:    pubKey,
-		validatorAddr: rr.ReadBytes(),
-		Certificate:   rr.ReadBytes(),
-		ForCommittee:  rr.ReadBool(),
-		AccessAPI:     rr.ReadString(),
-	}, rr.Err
-}
-
-var (
-	errInvalidCertificate      = coreerrors.Register("invalid certificate").Create()
-	errSenderMustHaveL1Address = coreerrors.Register("sender must have L1 address").Create()
-)
-
-func AccessNodeInfoWithValidatorAddress(ctx isc.Sandbox, ani *AccessNodeInfo) *AccessNodeInfo {
-	validatorAddr, _ := isc.AddressFromAgentID(ctx.Request().SenderAccount()) // Not from params, to have it validated.
-	if validatorAddr == nil {
-		panic(errSenderMustHaveL1Address)
-	}
-	ani.validatorAddr = codec.Address.Encode(validatorAddr)
-	if !ani.ValidateCertificate() {
-		panic(errInvalidCertificate)
-	}
-	return ani
-}
-
-func (a *AccessNodeInfo) Bytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteBytes(a.validatorAddr)
-	ww.WriteBytes(a.Certificate)
-	ww.WriteBool(a.ForCommittee)
-	ww.WriteString(a.AccessAPI)
-	return ww.Bytes()
-}
+var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()
 
 func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) *AccessNodeInfo {
 	a.Certificate = NewNodeOwnershipCertificate(nodeKeyPair, ownerAddress).Bytes()
 	return a
 }
-
-func (a *AccessNodeInfo) ValidateCertificate() bool {
-	nodePubKey, err := cryptolib.PublicKeyFromBytes(a.NodePubKey)
-	if err != nil {
-		return false
-	}
-	validatorAddr, err := cryptolib.NewAddressFromBytes(a.validatorAddr)
-	if err != nil {
-		return false
-	}
-	cert := NodeOwnershipCertificateFromBytes(a.Certificate)
-	return cert.Verify(nodePubKey, validatorAddr)
-}
-
-// GetChainNodesResponse
-type GetChainNodesResponse struct {
-	AccessNodeCandidates map[cryptolib.PublicKeyKey]*AccessNodeInfo // Application info for the AccessNodes.
-	AccessNodes          map[cryptolib.PublicKeyKey]struct{}        // Public Keys of Access Nodes.
-}
-
-//
-//	ChangeAccessNodesRequest
-//
 
 type ChangeAccessNodeAction byte
 
@@ -121,23 +78,17 @@ const (
 	ChangeAccessNodeActionLast
 )
 
-type ChangeAccessNodesRequest map[cryptolib.PublicKeyKey]ChangeAccessNodeAction
-
-func NewChangeAccessNodesRequest() ChangeAccessNodesRequest {
-	return ChangeAccessNodesRequest(make(map[cryptolib.PublicKeyKey]ChangeAccessNodeAction))
+func RemoveAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
+	action := ChangeAccessNodeActionRemove
+	return lo.T2(pubKey, &action)
 }
 
-func (req ChangeAccessNodesRequest) Remove(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
-	req[pubKey.AsKey()] = ChangeAccessNodeActionRemove
-	return req
+func AcceptAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
+	action := ChangeAccessNodeActionAccept
+	return lo.T2(pubKey, &action)
 }
 
-func (req ChangeAccessNodesRequest) Accept(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
-	req[pubKey.AsKey()] = ChangeAccessNodeActionAccept
-	return req
-}
-
-func (req ChangeAccessNodesRequest) Drop(pubKey *cryptolib.PublicKey) ChangeAccessNodesRequest {
-	req[pubKey.AsKey()] = ChangeAccessNodeActionDrop
-	return req
+func DropAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
+	action := ChangeAccessNodeActionDrop
+	return lo.T2(pubKey, &action)
 }

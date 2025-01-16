@@ -16,11 +16,10 @@ func TestClusterSingleNode(t *testing.T) {
 
 	t.Run("permitionless access node", func(t *testing.T) { run(t, testPermitionlessAccessNode) })
 
-	t.Run("SDRUC", func(t *testing.T) { run(t, testSDRUC) })
-
 	t.Run("spam onledger", func(t *testing.T) { run(t, testSpamOnledger) })
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
 	t.Run("spam EVM", func(t *testing.T) { run(t, testSpamEVM) })
+	t.Run("accounts dump", func(t *testing.T) { run(t, testDumpAccounts) })
 }
 
 func TestClusterMultiNodeCommittee(t *testing.T) {
@@ -32,14 +31,9 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	run := createTestWrapper(t, 4, []int{0, 1, 2, 3})
 
 	t.Run("deploy basic", func(t *testing.T) { run(t, testDeployChain) })
-	t.Run("deploy contract", func(t *testing.T) { run(t, testDeployContractOnly) })
-	t.Run("deploy contract and spawn", func(t *testing.T) { run(t, testDeployContractAndSpawn) })
 
 	t.Run("accountsBasic", func(t *testing.T) { run(t, testBasicAccounts) })
 	t.Run("2acccounts", func(t *testing.T) { run(t, testBasic2Accounts) })
-
-	t.Run("small blob", func(t *testing.T) { run(t, testBlobStoreSmallBlob) })
-	t.Run("many blobs", func(t *testing.T) { run(t, testBlobStoreManyBlobsNoEncoding) })
 
 	t.Run("post deploy", func(t *testing.T) { run(t, testPostDeployInccounter) })
 	t.Run("post 1", func(t *testing.T) { run(t, testPost1Request) })
@@ -50,7 +44,6 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) })
 
 	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) })
-	t.Run("offledger 900KB", func(t *testing.T) { run(t, testOffledgerRequest900KB) })
 	t.Run("offledger nonce", func(t *testing.T) { run(t, testOffledgerNonce) })
 
 	t.Run("inccounter invalid entrypoint", func(t *testing.T) { run(t, testInvalidEntrypoint) })

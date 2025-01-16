@@ -1,33 +1,34 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmt_log
+package cmt_log_test
 
 import (
 	"math/rand"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgNextLogIndexSerialization(t *testing.T) {
 	{
-		msg := &MsgNextLogIndex{
+		msg := &cmt_log.MsgNextLogIndex{
 			gpa.BasicMessage{},
-			LogIndex(rand.Int31()),
-			MsgNextLogIndexCauseRecover,
+			cmt_log.LogIndex(rand.Int31()),
+			cmt_log.MsgNextLogIndexCauseRecover,
 			false,
 		}
 
-		rwutil.ReadWriteTest(t, msg, new(MsgNextLogIndex))
+		bcs.TestCodec(t, msg)
 	}
-	msg := &MsgNextLogIndex{
+	msg := &cmt_log.MsgNextLogIndex{
 		gpa.BasicMessage{},
-		LogIndex(rand.Int31()),
-		MsgNextLogIndexCauseRecover,
+		cmt_log.LogIndex(rand.Int31()),
+		cmt_log.MsgNextLogIndexCauseRecover,
 		true,
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(MsgNextLogIndex))
+	bcs.TestCodec(t, msg)
 }

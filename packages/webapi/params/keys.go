@@ -2,7 +2,6 @@ package params
 
 const (
 	ParamAgentID              = "agentID"
-	ParamBlobHash             = "blobHash"
 	ParamBlockIndex           = "blockIndex"
 	ParamChainID              = "chainID"
 	ParamContractHName        = "contractHname"
@@ -20,7 +19,6 @@ const (
 
 const (
 	DescriptionAgentID              = "AgentID (Hex Address for L1 accounts | Hex for EVM)"
-	DescriptionBlobHash             = "BlobHash (Hex)"
 	DescriptionChainID              = "ChainID (Hex Address)"
 	DescriptionContractHName        = "The contract hname (Hex)"
 	DescriptionFieldKey             = "FieldKey (String)"

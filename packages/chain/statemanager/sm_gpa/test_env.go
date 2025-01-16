@@ -10,19 +10,21 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 type testEnv struct {
@@ -41,7 +43,7 @@ func newTestEnv(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
+	createSnapMFun func(origStore, nodeStore state.Store, tp time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
 	result := newTestEnvNoNodes(t, parametersOpt...)
@@ -68,19 +70,18 @@ func newTestEnvNoNodes(
 ) *testEnv {
 	var bf *sm_gpa_utils.BlockFactory
 	var parameters StateManagerParameters
-	var chainInitParameters dict.Dict
+	var chainInitParameters sm_gpa_utils.BlockFactoryCallArguments
 	if len(parametersOpt) > 0 {
 		parameters = parametersOpt[0]
-		chainInitParameters = dict.New()
-		chainInitParameters.Set(origin.ParamBlockKeepAmount, codec.Int32.Encode(int32(parameters.PruningMinStatesToKeep)))
+		chainInitParameters = sm_gpa_utils.BlockFactoryCallArguments{BlockKeepAmount: int32(parameters.PruningMinStatesToKeep)}
+		bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	} else {
 		parameters = NewStateManagerParameters()
-		chainInitParameters = nil
+		bf = sm_gpa_utils.NewBlockFactory(t)
 	}
 
-	bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
 	log := testlogger.NewLogger(t)
-	parameters.TimeProvider = sm_gpa_utils.NewArtifficialTimeProvider()
+	parameters.TimeProvider = time_util.NewArtificialTimeProvider()
 	return &testEnv{
 		t:          t,
 		bf:         bf,
@@ -92,12 +93,12 @@ func newTestEnvNoNodes(
 func (teT *testEnv) addNodes(
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
+	createSnapMFun func(origStore, nodeStore state.Store, tp time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 ) {
 	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
 		return createWALFun()
 	}
-	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
+	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		return createSnapMFun(origStore, nodeStore, tp, log)
 	}
 	teT.addVariedNodes(nodeIDs, createWALVariedFun, createSnapMVariedFun)
@@ -106,7 +107,7 @@ func (teT *testEnv) addNodes(
 func (teT *testEnv) addVariedNodes(
 	nodeIDs []gpa.NodeID,
 	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager,
 ) {
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
@@ -124,7 +125,7 @@ func (teT *testEnv) addVariedNodes(
 		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
-		origin.InitChain(0, store, teT.bf.GetChainInitParameters(), 0)
+		origin.InitChain(allmigrations.LatestSchemaVersion, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	}
 	teT.nodeIDs = nodeIDs
 	teT.sms = sms

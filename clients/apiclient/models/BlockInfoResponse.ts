@@ -24,11 +24,12 @@ export class BlockInfoResponse {
     'gasFeeCharged': string;
     'numOffLedgerRequests': number;
     'numSuccessfulRequests': number;
-    'previousAliasOutput': string;
     'timestamp': Date;
     'totalRequests': number;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -62,12 +63,6 @@ export class BlockInfoResponse {
             "format": "int32"
         },
         {
-            "name": "previousAliasOutput",
-            "baseName": "previousAliasOutput",
-            "type": "string",
-            "format": "string"
-        },
-        {
             "name": "timestamp",
             "baseName": "timestamp",
             "type": "Date",
@@ -87,4 +82,3 @@ export class BlockInfoResponse {
     public constructor() {
     }
 }
-

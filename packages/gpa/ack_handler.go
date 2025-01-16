@@ -5,11 +5,10 @@ package gpa
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (
@@ -105,10 +104,14 @@ func (a *ackHandler) StatusString() string {
 }
 
 func (a *ackHandler) UnmarshalMessage(data []byte) (Message, error) {
-	return UnmarshalMessage(data, Mapper{
+	msg, err := UnmarshalMessage(data, Mapper{
 		msgTypeAckHandlerReset: func() Message { return &ackHandlerReset{} },
 		msgTypeAckHandlerBatch: func() Message { return &ackHandlerBatch{nestedGPA: a.nested} },
 	})
+	if err != nil {
+		fmt.Printf("ack, err=%v\n", err) // TODO: Clean this up.
+	}
+	return msg, err
 }
 
 func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
@@ -141,19 +144,19 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
 	from := msg.sender
 	if !msg.response {
-		max := 0
+		maxId := 0
 
 		if recvAcksIn, exists := a.recvAcksIn.Get(msg.sender); exists {
 			for id := range recvAcksIn {
-				if id > max {
-					max = id
+				if id > maxId {
+					maxId = id
 				}
 			}
 		}
 		return NoMessages().Add(&ackHandlerReset{
 			BasicMessage: NewBasicMessage(msg.sender),
 			response:     true,
-			latestID:     max,
+			latestID:     maxId,
 		})
 	}
 	if ini, exists := a.initialized.Get(from); exists && ini {
@@ -297,26 +300,14 @@ func (a *ackHandler) makeBatches(msgs OutMessages) OutMessages {
 
 type ackHandlerReset struct {
 	BasicMessage
-	response bool
-	latestID int
+	response bool `bcs:"export"`
+	latestID int  `bcs:"export"`
 }
 
 var _ Message = new(ackHandlerReset)
 
-func (msg *ackHandlerReset) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeAckHandlerReset.ReadAndVerify(rr)
-	msg.response = rr.ReadBool()
-	msg.latestID = int(rr.ReadUint32())
-	return rr.Err
-}
-
-func (msg *ackHandlerReset) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeAckHandlerReset.Write(ww)
-	ww.WriteBool(msg.response)
-	ww.WriteUint32(uint32(msg.latestID))
-	return ww.Err
+func (msg *ackHandlerReset) MsgType() MessageType {
+	return msgTypeAckHandlerReset
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -335,6 +326,10 @@ type ackHandlerBatch struct {
 
 var _ Message = new(ackHandlerBatch)
 
+func (msg *ackHandlerBatch) MsgType() MessageType {
+	return msgTypeAckHandlerBatch
+}
+
 func (msg *ackHandlerBatch) Recipient() NodeID {
 	return msg.recipient
 }
@@ -346,48 +341,39 @@ func (msg *ackHandlerBatch) SetSender(sender NodeID) {
 	}
 }
 
-func (msg *ackHandlerBatch) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeAckHandlerBatch.ReadAndVerify(rr)
-	msg.id = nil
-	hasID := rr.ReadBool()
-	if hasID {
-		id := int(rr.ReadUint32())
-		msg.id = &id
+func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
+	e.EncodeOptional(msg.id)
+
+	msgsBytes, err := MarshalMessages(msg.msgs)
+	if err != nil {
+		return fmt.Errorf("msgs: %w", err)
 	}
 
-	size := rr.ReadSize16()
-	msg.msgs = make([]Message, size)
-	for i := range msg.msgs {
-		msg.msgs[i] = rwutil.ReadFromFunc(rr, msg.nestedGPA.UnmarshalMessage)
-	}
+	e.Encode(msgsBytes)
+	e.Encode(msg.acks)
 
-	size = rr.ReadSize16()
-	msg.acks = make([]int, size)
-	for i := range msg.acks {
-		msg.acks[i] = int(rr.ReadUint32())
-	}
-	return rr.Err
+	return e.Err()
 }
 
-func (msg *ackHandlerBatch) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeAckHandlerBatch.Write(ww)
-	ww.WriteBool(msg.id != nil)
-	if msg.id != nil {
-		ww.WriteUint32(uint32(*msg.id))
+func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
+	msg.id = nil
+
+	d.DecodeOptional(&msg.id)
+
+	msgsBytes := bcs.Decode[[][]byte](d)
+	msg.msgs = make([]Message, len(msgsBytes))
+
+	for i := range msgsBytes {
+		var err error
+		msg.msgs[i], err = msg.nestedGPA.UnmarshalMessage(msgsBytes[i])
+		if err != nil {
+			return err
+		}
 	}
 
-	ww.WriteSize16(len(msg.msgs))
-	for i := range msg.msgs {
-		ww.WriteBytes(rwutil.WriteToBytes(msg.msgs[i]))
-	}
+	msg.acks = bcs.Decode[[]int](d)
 
-	ww.WriteSize16(len(msg.acks))
-	for i := range msg.acks {
-		ww.WriteUint32(uint32(msg.acks[i]))
-	}
-	return ww.Err
+	return d.Err()
 }
 
 ////////////////////////////////////////////////////////////////////////////////

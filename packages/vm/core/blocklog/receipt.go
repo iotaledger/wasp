@@ -1,13 +1,15 @@
 package blocklog
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -16,19 +18,22 @@ import (
 // RequestReceipt represents log record of processed request on the chain
 type RequestReceipt struct {
 	Request       isc.Request            `json:"request"`
-	Error         *isc.UnresolvedVMError `json:"error"`
-	GasBudget     uint64                 `json:"gasBudget"`
-	GasBurned     uint64                 `json:"gasBurned"`
-	GasFeeCharged uint64                 `json:"gasFeeCharged"`
-	SDCharged     uint64                 `json:"storageDepositCharged"`
+	Error         *isc.UnresolvedVMError `json:"error" bcs:"optional"`
+	GasBudget     uint64                 `json:"gasBudget" bcs:"compact"`
+	GasBurned     uint64                 `json:"gasBurned" bcs:"compact"`
+	GasFeeCharged coin.Value             `json:"gasFeeCharged" bcs:"compact"`
+	GasBurnLog    *gas.BurnLog           `json:"-" bcs:"optional"`
 	// not persistent
-	BlockIndex   uint32       `json:"blockIndex"`
-	RequestIndex uint16       `json:"requestIndex"`
-	GasBurnLog   *gas.BurnLog `json:"-"`
+	BlockIndex   uint32 `json:"blockIndex" bcs:"-"`
+	RequestIndex uint16 `json:"requestIndex" bcs:"-"`
 }
 
 func RequestReceiptFromBytes(data []byte, blockIndex uint32, reqIndex uint16) (*RequestReceipt, error) {
-	rec, err := rwutil.ReadFromBytes(data, new(RequestReceipt))
+	return RequestReceiptFromReader(bytes.NewReader(data), blockIndex, reqIndex)
+}
+
+func RequestReceiptFromReader(r io.Reader, blockIndex uint32, reqIndex uint16) (*RequestReceipt, error) {
+	rec, err := bcs.UnmarshalStream[*RequestReceipt](r)
 	if err != nil {
 		return nil, err
 	}
@@ -44,44 +49,7 @@ func RequestReceiptsFromBlock(block state.Block) ([]*RequestReceipt, error) {
 }
 
 func (rec *RequestReceipt) Bytes() []byte {
-	return rwutil.WriteToBytes(rec)
-}
-
-func (rec *RequestReceipt) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rec.GasBudget = rr.ReadGas64()
-	rec.GasBurned = rr.ReadGas64()
-	rec.GasFeeCharged = rr.ReadGas64()
-	rec.SDCharged = rr.ReadAmount64()
-	rec.Request = isc.RequestFromReader(rr)
-	hasError := rr.ReadBool()
-	if hasError {
-		rec.Error = new(isc.UnresolvedVMError)
-		rr.Read(rec.Error)
-	}
-	if len(rr.Bytes()) != 0 {
-		rec.GasBurnLog = new(gas.BurnLog)
-		rr.Read(rec.GasBurnLog)
-	}
-
-	return rr.Err
-}
-
-func (rec *RequestReceipt) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteGas64(rec.GasBudget)
-	ww.WriteGas64(rec.GasBurned)
-	ww.WriteGas64(rec.GasFeeCharged)
-	ww.WriteAmount64(rec.SDCharged)
-	ww.Write(rec.Request)
-	ww.WriteBool(rec.Error != nil)
-	if rec.Error != nil {
-		ww.Write(rec.Error)
-	}
-	if rec.GasBurnLog != nil {
-		ww.Write(rec.GasBurnLog)
-	}
-	return ww.Err
+	return bcs.MustMarshal(rec)
 }
 
 func (rec *RequestReceipt) String() string {
@@ -89,7 +57,6 @@ func (rec *RequestReceipt) String() string {
 	ret += fmt.Sprintf("Err: %v\n", rec.Error)
 	ret += fmt.Sprintf("Block/Request index: %d / %d\n", rec.BlockIndex, rec.RequestIndex)
 	ret += fmt.Sprintf("Gas budget / burned / fee charged: %d / %d /%d\n", rec.GasBudget, rec.GasBurned, rec.GasFeeCharged)
-	ret += fmt.Sprintf("Storage deposit charged: %d\n", rec.SDCharged)
 	ret += fmt.Sprintf("Call data: %s\n", rec.Request)
 	ret += fmt.Sprintf("burn log: %s\n", rec.GasBurnLog)
 	return ret
@@ -137,29 +104,21 @@ type RequestLookupKey [6]byte
 
 func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
 	ret := RequestLookupKey{}
-	copy(ret[:4], codec.Uint32.Encode(blockIndex))
-	copy(ret[4:6], codec.Uint16.Encode(requestIndex))
+	copy(ret[:4], codec.Encode[uint32](blockIndex))
+	copy(ret[4:6], codec.Encode[uint16](requestIndex))
 	return ret
 }
 
 func (k *RequestLookupKey) BlockIndex() uint32 {
-	return codec.Uint32.MustDecode(k[:4])
+	return codec.MustDecode[uint32](k[:4])
 }
 
 func (k *RequestLookupKey) RequestIndex() uint16 {
-	return codec.Uint16.MustDecode(k[4:6])
+	return codec.MustDecode[uint16](k[4:6])
 }
 
 func (k *RequestLookupKey) Bytes() []byte {
 	return k[:]
-}
-
-func (k *RequestLookupKey) Read(r io.Reader) error {
-	return rwutil.ReadN(r, k[:])
-}
-
-func (k *RequestLookupKey) Write(w io.Writer) error {
-	return rwutil.WriteN(w, k[:])
 }
 
 // endregion ///////////////////////////////////////////////////////////
@@ -170,22 +129,11 @@ func (k *RequestLookupKey) Write(w io.Writer) error {
 type RequestLookupKeyList []RequestLookupKey
 
 func RequestLookupKeyListFromBytes(data []byte) (ret RequestLookupKeyList, err error) {
-	rr := rwutil.NewBytesReader(data)
-	size := rr.ReadSize16()
-	ret = make(RequestLookupKeyList, size)
-	for i := range ret {
-		rr.Read(&ret[i])
-	}
-	return ret, rr.Err
+	return bcs.Unmarshal[RequestLookupKeyList](data)
 }
 
 func (ll RequestLookupKeyList) Bytes() []byte {
-	ww := rwutil.NewBytesWriter()
-	ww.WriteSize16(len(ll))
-	for i := range ll {
-		ww.Write(&ll[i])
-	}
-	return ww.Bytes()
+	return bcs.MustMarshal(&ll)
 }
 
 // endregion /////////////////////////////////////////////////////////////

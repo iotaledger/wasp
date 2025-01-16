@@ -14,11 +14,13 @@ import { HttpFile } from '../http/http';
 
 export class GovAllowedStateControllerAddressesResponse {
     /**
-    * The allowed state controller addresses (Bech32-encoded)
+    * The allowed state controller addresses (Hex Address)
     */
     'addresses'?: Array<string>;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -35,4 +37,3 @@ export class GovAllowedStateControllerAddressesResponse {
     public constructor() {
     }
 }
-

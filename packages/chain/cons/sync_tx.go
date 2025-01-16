@@ -7,37 +7,37 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm"
 )
 
 type SyncTX interface {
-	VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages
+	UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages
 	SignatureReceived(signature []byte) gpa.OutMessages
 	BlockSaved(block state.Block) gpa.OutMessages
 	String() string
 }
 
 type syncTXImpl struct {
-	vmResult   *vm.VMTaskResult
+	unsignedTX *iotago.TransactionData
 	signature  []byte
 	blockSaved bool
 	block      state.Block
 
 	inputsReady   bool
-	inputsReadyCB func(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages
+	inputsReadyCB func(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages
 }
 
-func NewSyncTX(inputsReadyCB func(vmResult *vm.VMTaskResult, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
+func NewSyncTX(inputsReadyCB func(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages) SyncTX {
 	return &syncTXImpl{inputsReadyCB: inputsReadyCB}
 }
 
-func (sub *syncTXImpl) VMResultReceived(vmResult *vm.VMTaskResult) gpa.OutMessages {
-	if sub.vmResult != nil || vmResult == nil {
+func (sub *syncTXImpl) UnsignedTXReceived(unsignedTX *iotago.TransactionData) gpa.OutMessages {
+	if sub.unsignedTX != nil || unsignedTX == nil {
 		return nil
 	}
-	sub.vmResult = vmResult
+	sub.unsignedTX = unsignedTX
 	return sub.tryCompleteInputs()
 }
 
@@ -59,11 +59,11 @@ func (sub *syncTXImpl) BlockSaved(block state.Block) gpa.OutMessages {
 }
 
 func (sub *syncTXImpl) tryCompleteInputs() gpa.OutMessages {
-	if sub.inputsReady || sub.vmResult == nil || sub.signature == nil || !sub.blockSaved {
+	if sub.inputsReady || sub.unsignedTX == nil || sub.signature == nil || !sub.blockSaved {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.vmResult, sub.block, sub.signature)
+	return sub.inputsReadyCB(sub.unsignedTX, sub.block, sub.signature)
 }
 
 // Try to provide useful human-readable compact status.
@@ -73,8 +73,8 @@ func (sub *syncTXImpl) String() string {
 		str += statusStrOK
 	} else {
 		wait := []string{}
-		if sub.vmResult == nil {
-			wait = append(wait, "VMResult")
+		if sub.unsignedTX == nil {
+			wait = append(wait, "unsignedTX")
 		}
 		if sub.signature == nil {
 			wait = append(wait, "Signature")

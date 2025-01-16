@@ -27,7 +27,7 @@ export class CommitteeInfoResponse {
     */
     'candidateNodes': Array<CommitteeNode>;
     /**
-    * ChainID (Bech32-encoded).
+    * ChainID (Hex Address).
     */
     'chainId': string;
     /**
@@ -37,6 +37,8 @@ export class CommitteeInfoResponse {
     'stateAddress': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -83,4 +85,3 @@ export class CommitteeInfoResponse {
     public constructor() {
     }
 }
-

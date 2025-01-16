@@ -10,7 +10,8 @@ import (
 
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgAccessSerialization(t *testing.T) {
@@ -18,9 +19,19 @@ func TestMsgAccessSerialization(t *testing.T) {
 		gpa.BasicMessage{},
 		rand.Intn(math.MaxUint32 + 1),
 		rand.Intn(math.MaxUint32 + 1),
-		[]isc.ChainID{isc.RandomChainID(), isc.RandomChainID()},
-		[]isc.ChainID{isc.RandomChainID(), isc.RandomChainID()},
+		[]isc.ChainID{isctest.RandomChainID(), isctest.RandomChainID()},
+		[]isc.ChainID{isctest.RandomChainID(), isctest.RandomChainID()},
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgAccess))
+	bcs.TestCodec(t, msg)
+
+	msg = &msgAccess{
+		gpa.BasicMessage{},
+		math.MaxUint32,
+		math.MaxUint32,
+		[]isc.ChainID{isctest.RandomChainID(), isctest.RandomChainID()},
+		[]isc.ChainID{isctest.RandomChainID(), isctest.RandomChainID()},
+	}
+
+	bcs.TestCodec(t, msg)
 }

@@ -1,8 +1,10 @@
 package apiextensions
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"strconv"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -13,15 +15,15 @@ import (
      * Coins []Coin
 */
 func AssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.Assets, error) {
-	baseTokens, err := iotago.DecodeUint256(assetsResponse.BaseTokens)
+	baseTokens, err := strconv.ParseUint(assetsResponse.BaseTokens, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 
-	assets := isc.NewAssets(baseTokens)
+	assets := isc.NewAssets(coin.Value(baseTokens))
 	/*
 		for _, nativeToken := range assetsResponse.NativeTokens {
-			nativeTokenIDHex, err2 := iotago.DecodeHex(nativeToken.Id)
+			nativeTokenIDHex, err2 := cryptolib.DecodeHex(nativeToken.Id)
 			if err2 != nil {
 				return nil, err2
 			}

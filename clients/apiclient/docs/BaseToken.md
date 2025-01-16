@@ -4,6 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**CoinType** | Pointer to [**Type**](Type.md) |  | [optional] 
 **Decimals** | **int32** | The token decimals | 
 **Name** | **string** | The base token name | 
 **Subunit** | **string** | The token subunit | 
@@ -29,6 +30,31 @@ will change when the set of required properties is changed
 NewBaseTokenWithDefaults instantiates a new BaseToken object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetCoinType
+
+`func (o *BaseToken) GetCoinType() Type`
+
+GetCoinType returns the CoinType field if non-nil, zero value otherwise.
+
+### GetCoinTypeOk
+
+`func (o *BaseToken) GetCoinTypeOk() (*Type, bool)`
+
+GetCoinTypeOk returns a tuple with the CoinType field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetCoinType
+
+`func (o *BaseToken) SetCoinType(v Type)`
+
+SetCoinType sets CoinType field to given value.
+
+### HasCoinType
+
+`func (o *BaseToken) HasCoinType() bool`
+
+HasCoinType returns a boolean if a field has been set.
 
 ### GetDecimals
 

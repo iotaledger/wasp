@@ -9,13 +9,14 @@ import (
 	"io"
 
 	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/packages/transaction"
 )
 
 // TODO DeployChain on peering domain, not on committee
@@ -28,13 +29,14 @@ type CreateChainParams struct {
 	OriginatorKeyPair    cryptolib.Signer
 	Textout              io.Writer
 	Prefix               string
-	InitParams           dict.Dict
+	StateMetadata        transaction.StateMetadata
+	GasCoinObjectID      *iotago.ObjectID
 	GovernanceController *cryptolib.Address
-	PackageID            sui.PackageID
+	PackageID            iotago.PackageID
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr, govControllerAddr *cryptolib.Address) (isc.ChainID, error) {
+func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -47,7 +49,33 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		originatorAddr, stateControllerAddr, par.N, par.T)
 	fmt.Fprint(textout, par.Prefix)
 
-	anchor, err := par.Layer1Client.L2().StartNewChain(ctx, par.OriginatorKeyPair, par.PackageID, nil, suiclient.DefaultGasPrice, suiclient.DefaultGasBudget, par.InitParams.Bytes(), false)
+	referenceGasPrice, err := par.Layer1Client.GetReferenceGasPrice(ctx)
+	if err != nil {
+		return isc.ChainID{}, err
+	}
+
+	var gasPayments []*iotago.ObjectRef
+	if par.GasCoinObjectID != nil {
+		resGetObj, err := par.Layer1Client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: par.StateMetadata.GasCoinObjectID})
+		if err != nil {
+			return isc.ChainID{}, err
+		}
+		ref := resGetObj.Data.Ref()
+		gasPayments = append(gasPayments, &ref)
+	}
+
+	anchor, err := par.Layer1Client.L2().StartNewChain(
+		ctx,
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            par.OriginatorKeyPair,
+			ChainOwnerAddress: stateControllerAddr,
+			PackageID:         par.PackageID,
+			StateMetadata:     par.StateMetadata.Bytes(),
+			GasPayments:       gasPayments,
+			GasPrice:          referenceGasPrice.Uint64(),
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
+	)
 	if err != nil {
 		return isc.ChainID{}, err
 	}

@@ -2,11 +2,12 @@ package chain
 
 import (
 	"context"
+	"time"
 
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -27,15 +28,11 @@ func postRequest(nodeName, chain string, msg isc.Message, params chainclient.Pos
 		return
 	}
 
-	if !adjustStorageDeposit {
-		// check if there are enough funds for SD
-		panic("refactor me: transaction.MakeBasicOutput")
-		var output iotago.Output
-		util.SDAdjustmentPrompt(output)
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
 
-	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotago.Transaction, error) {
-		return chainClient.PostRequest(msg, params)
+	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+		return chainClient.PostRequest(ctx, msg, params)
 	})
 }
 

@@ -7,16 +7,22 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 // ncChain is responsible for maintaining the information related to a single chain.
@@ -36,7 +42,7 @@ type ncChain struct {
 
 type publishTxTask struct {
 	ctx context.Context
-	tx  chain.SignedTx
+	tx  iotasigner.SignedTransaction
 	cb  chain.TxPostHandler
 }
 
@@ -47,7 +53,7 @@ func newNCChain(
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
 ) *ncChain {
-	anchorAddress := chainID.AsAddress().AsSuiAddress()
+	anchorAddress := chainID.AsAddress().AsIotaAddress()
 	feed := iscmoveclient.NewChainFeed(
 		ctx,
 		nodeConn.wsClient,
@@ -68,6 +74,11 @@ func newNCChain(
 	ncc.shutdownWaitGroup.Add(1)
 	go ncc.postTxLoop(ctx)
 
+	// FIXME make timeout configurable
+	// FIXME this will be replaced by passing l1param from consensus
+	l1syncer := parameters.NewL1Syncer(nodeConn.wsClient.Client, 600*time.Second, nodeConn.Logger())
+	go l1syncer.Start()
+
 	return ncc
 }
 
@@ -83,13 +94,13 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		if err != nil {
 			return err
 		}
-		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, suiclient.ExecuteTransactionBlockRequest{
+		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
-			Options: &suijsonrpc.SuiTransactionBlockResponseOptions{
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowEffects: true,
 			},
-			RequestType: suijsonrpc.TxnRequestTypeWaitForLocalExecution,
+			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
 		if err != nil {
 			return err
@@ -113,22 +124,29 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	anchorRef, reqs, err := ncc.feed.FetchCurrentState(ctx)
+	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
 	if err != nil {
 		return err
 	}
-	ncc.anchorHandler(anchorRef)
+	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
+	ncc.anchorHandler(&anchor)
+
 	for _, req := range reqs {
-		ncc.requestHandler(req)
+		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
+		if err != nil {
+			return err
+		}
+		ncc.requestHandler(onledgerReq)
 	}
+
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil
 }
 
-func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
-	anchorUpdates := make(chan *iscmove.RefWithObject[iscmove.Anchor])
-	newRequests := make(chan *iscmove.Request)
-	ncc.feed.SubscribeToUpdates(ctx, anchorUpdates, newRequests)
+func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID) {
+	anchorUpdates := make(chan *iscmove.AnchorWithRef)
+	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
+	ncc.feed.SubscribeToUpdates(ctx, anchorID, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)
 	go func() {
@@ -137,10 +155,16 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case anchorRef := <-anchorUpdates:
-				ncc.anchorHandler(anchorRef)
+			case moveAnchor := <-anchorUpdates:
+				anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
+				ncc.anchorHandler(&anchor)
 			case req := <-newRequests:
-				ncc.requestHandler(req)
+				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
+				if err != nil {
+					panic(err)
+				}
+				ncc.LogInfo("Incoming request ", req.ObjectID.String(), " ", onledgerReq.String(), " ", onledgerReq.ID().String())
+				ncc.requestHandler(onledgerReq)
 			}
 		}
 	}()

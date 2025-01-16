@@ -24,7 +24,7 @@ func initListContractsCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 
 			client := cliclients.WaspClient(node)
-			contracts, _, err := client.ChainsApi.
+			contracts, _, err := client.ChainsAPI.
 				GetContracts(context.Background(), config.GetChain(chain).String()).
 				Execute() //nolint:bodyclose // false positive
 
@@ -36,7 +36,6 @@ func initListContractsCmd() *cobra.Command {
 				"hname",
 				"name",
 				"description",
-				"proghash",
 				"owner fee",
 				"validator fee",
 			}
@@ -46,7 +45,6 @@ func initListContractsCmd() *cobra.Command {
 				rows[i] = []string{
 					contract.HName,
 					contract.Name,
-					contract.ProgramHash,
 				}
 				i++
 			}

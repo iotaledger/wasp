@@ -14,7 +14,7 @@ import { HttpFile } from '../http/http';
 
 export class ControlAddressesResponse {
     /**
-    * The governing address (Bech32)
+    * The governing address (Hex Address)
     */
     'governingAddress': string;
     /**
@@ -22,11 +22,13 @@ export class ControlAddressesResponse {
     */
     'sinceBlockIndex': number;
     /**
-    * The state address (Bech32)
+    * The state address (Hex Address)
     */
     'stateAddress': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -55,4 +57,3 @@ export class ControlAddressesResponse {
     public constructor() {
     }
 }
-

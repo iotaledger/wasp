@@ -10,11 +10,13 @@
  * Do not edit the class manually.
  */
 
-import { JSONDict } from '../models/JSONDict';
 import { HttpFile } from '../http/http';
 
 export class ContractCallViewRequest {
-    'arguments': JSONDict;
+    /**
+    * Encoded arguments to be passed to the function
+    */
+    'arguments': Array<string>;
     'block'?: string;
     /**
     * The contract name as HName (Hex)
@@ -35,12 +37,14 @@ export class ContractCallViewRequest {
 
     static readonly discriminator: string | undefined = undefined;
 
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
+
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
             "name": "arguments",
             "baseName": "arguments",
-            "type": "JSONDict",
-            "format": ""
+            "type": "Array<string>",
+            "format": "string"
         },
         {
             "name": "block",
@@ -80,4 +84,3 @@ export class ContractCallViewRequest {
     public constructor() {
     }
 }
-

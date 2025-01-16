@@ -1,10 +1,10 @@
 package util
 
 import (
-	"math/big"
 	"strings"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -12,7 +12,7 @@ import (
 const BaseTokenStr = "base"
 
 func TokenIDFromString(s string) []byte {
-	ret, err := iotago.DecodeHex(s)
+	ret, err := cryptolib.DecodeHex(s)
 	if err != nil {
 		log.Fatalf("Invalid token id: %s", s)
 	}
@@ -25,33 +25,29 @@ func ArgsToFungibleTokensStr(args []string) []string {
 
 func ParseFungibleTokens(args []string) *isc.Assets {
 	tokens := isc.NewEmptyAssets()
+
 	for _, tr := range args {
-		parts := strings.Split(tr, ":")
+		parts := strings.Split(tr, "|")
 		if len(parts) != 2 {
-			log.Fatal("fungible tokens syntax: <token-id>:<amount>, <token-id:amount>... -- Example: base:100")
+			log.Fatal("fungible tokens syntax: <token-id>|<amount>, <token-id|amount>... -- Example: base|100")
 		}
+
+		amount, err := coin.ValueFromString(parts[1])
+		if err != nil {
+			log.Fatalf("error parsing token amount: %v", err)
+		}
+
 		// In the past we would indicate base tokens as 'IOTA:nnn'
 		// Now we can simply use ':nnn', but let's keep it
 		// backward compatible for now and allow both
-		tokenIDBytes := isc.BaseTokenID
-		if strings.ToLower(parts[0]) != BaseTokenStr {
-			tokenIDBytes = TokenIDFromString(strings.TrimSpace(parts[0]))
+		if strings.ToLower(parts[0]) == BaseTokenStr || coin.BaseTokenType.MatchesStringType(parts[0]) {
+			tokens.AddBaseTokens(amount)
+		} else {
+			coinID, err := coin.TypeFromString(parts[0])
+			log.Check(err)
+			tokens.AddCoin(coinID, amount)
 		}
-
-		amount, ok := new(big.Int).SetString(parts[1], 10)
-		if !ok {
-			log.Fatal("error parsing token amount")
-		}
-
-		if isc.IsBaseToken(tokenIDBytes) {
-			tokens.AddBaseTokens(amount.Uint64())
-			continue
-		}
-
-		nativeTokenID, err := isc.NativeTokenIDFromBytes(tokenIDBytes)
-		log.Check(err)
-
-		tokens.AddNativeTokens(nativeTokenID, amount)
 	}
+
 	return tokens
 }

@@ -6,16 +6,18 @@ package vmimpl
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	iotago "github.com/iotaledger/iota.go/v3"
+
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/sandbox"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 type contractSandbox struct {
@@ -31,22 +33,15 @@ func NewSandbox(reqctx *requestContext) isc.Sandbox {
 }
 
 // Call calls an entry point of contract, passes parameters and funds
-func (s *contractSandbox) Call(msg isc.Message, transfer *isc.Assets) dict.Dict {
+func (s *contractSandbox) Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
-	return s.Ctx.Call(msg, transfer)
-}
-
-// DeployContract deploys contract by the binary hash
-// and calls "init" endpoint (constructor) with provided parameters
-func (s *contractSandbox) DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
-	s.Ctx.GasBurn(gas.BurnCodeDeployContract)
-	s.reqctx.deployContract(programHash, name, initParams)
+	return s.Ctx.Call(msg, allowance)
 }
 
 func (s *contractSandbox) Event(topic string, payload []byte) {
 	s.Ctx.GasBurn(gas.BurnCodeEmitEvent1P, uint64(len(topic)+len(payload)))
 	hContract := s.reqctx.CurrentContractHname()
-	hex := iotago.EncodeHex(payload)
+	hex := hexutil.Encode(payload)
 	if len(hex) > 80 {
 		hex = hex[:40] + "..."
 	}
@@ -77,11 +72,6 @@ func (s *contractSandbox) Request() isc.Calldata {
 func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.reqctx.numPostedOutputs))
 	s.reqctx.send(par)
-}
-
-func (s *contractSandbox) EstimateRequiredStorageDeposit(par isc.RequestParameters) uint64 {
-	s.Ctx.GasBurn(gas.BurnCodeEstimateStorageDepositCost)
-	return s.reqctx.estimateRequiredStorageDeposit(par)
 }
 
 func (s *contractSandbox) State() kv.KVStore {
@@ -135,10 +125,6 @@ func (s *contractSandbox) Privileged() isc.Privileged {
 
 // privileged methods:
 
-func (s *contractSandbox) TryLoadContract(programHash hashing.HashValue) error {
-	return s.reqctx.TryLoadContract(programHash)
-}
-
 func (s *contractSandbox) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
 	return s.reqctx.CreateNewFoundry(scheme, metadata)
 }
@@ -187,19 +173,15 @@ func (s *contractSandbox) CreditToAccount(agentID isc.AgentID, amount *big.Int) 
 	s.reqctx.creditToAccountFullDecimals(agentID, amount, true)
 }
 
-func (s *contractSandbox) RetryUnprocessable(req isc.Request, outputID sui.ObjectID) {
-	s.reqctx.RetryUnprocessable(req, outputID)
-}
-
 func (s *contractSandbox) totalGasTokens() *isc.Assets {
 	if s.reqctx.vm.task.EstimateGasMode {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.reqctx.gas.maxTokensToSpendForGasFee
-	return isc.NewAssetsBaseTokensU64(amount)
+	return isc.NewAssets(coin.Value(amount))
 }
 
-func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) dict.Dict {
+func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) isc.CallArguments {
 	s.Ctx.GasBurn(gas.BurnCodeCallContract)
 	return s.reqctx.CallOnBehalfOf(caller, msg, transfer)
 }

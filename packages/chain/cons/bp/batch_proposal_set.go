@@ -10,7 +10,9 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"golang.org/x/exp/maps"
+
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -28,9 +30,9 @@ func (bps batchProposalSet) decidedDSSIndexProposals() map[gpa.NodeID][]int {
 
 // Decided Base Alias Output is the one, that was proposed by F+1 nodes or more.
 // If there is more that 1 such ID, we refuse to use all of them.
-func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.RefWithObject[iscmove.Anchor] {
+func (bps batchProposalSet) decidedBaseAliasOutput(f int) *isc.StateAnchor {
 	counts := map[hashing.HashValue]int{}
-	values := map[hashing.HashValue]*iscmove.RefWithObject[iscmove.Anchor]{}
+	values := map[hashing.HashValue]*isc.StateAnchor{}
 	for _, bp := range bps {
 		h := bp.baseAliasOutput.Hash()
 		counts[h]++
@@ -39,16 +41,16 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.RefWithObject
 		}
 	}
 
-	var found *iscmove.RefWithObject[iscmove.Anchor]
+	var found *isc.StateAnchor
 	var uncertain bool
 	for h, count := range counts {
 		if count > f {
-			if found != nil && found.Object.GetStateIndex() == values[h].Object.GetStateIndex() {
+			if found != nil && found.GetStateIndex() == values[h].GetStateIndex() {
 				// Found more that 1 AliasOutput proposed by F+1 or more nodes.
 				uncertain = true
 				continue
 			}
-			if found == nil || found.Object.GetStateIndex() < values[h].Object.GetStateIndex() {
+			if found == nil || found.GetStateIndex() < values[h].GetStateIndex() {
 				found = values[h]
 				uncertain = false
 			}
@@ -62,7 +64,7 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *iscmove.RefWithObject
 
 // Take requests proposed by at least F+1 nodes. Then the request is proposed at least by 1 fair node.
 // We should only consider the proposals from the nodes that proposed the decided AO, otherwise we can select already processed requests.
-func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove.RefWithObject[iscmove.Anchor]) []*isc.RequestRef {
+func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*isc.RequestRef {
 	minNumberMentioned := f + 1
 	requestsByKey := map[isc.RequestRefKey]*isc.RequestRef{}
 	numMentioned := map[isc.RequestRefKey]int{}
@@ -70,7 +72,7 @@ func (bps batchProposalSet) decidedRequestRefs(f int, ao *iscmove.RefWithObject[
 	// Count number of nodes proposing a request.
 	maxLen := 0
 	for _, bp := range bps {
-		if !bp.baseAliasOutput.Equals(&ao.ObjectRef) {
+		if !bp.baseAliasOutput.Equals(ao) {
 			continue
 		}
 		for _, reqRef := range bp.requestRefs {
@@ -135,4 +137,61 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomnes
 func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time, randomness hashing.HashValue) isc.AgentID {
 	bp := bps[bps.selectedProposal(aggregatedTime, randomness)]
 	return bp.validatorFeeDestination
+}
+
+// Use the same aggregation logic as for the timestamp:
+// Take highest value proposed by at least F+1 nodes.
+func (bps batchProposalSet) aggregatedGasPrice(f int) uint64 {
+	proposals := make([]uint64, 0, len(bps))
+	for _, bp := range bps {
+		proposals = append(proposals, bp.gasPrice)
+	}
+	sort.Slice(proposals, func(i, j int) bool {
+		return proposals[i] < proposals[j]
+	})
+
+	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
+	if proposalCount <= f {
+		return 0 // Zero time marks a failure.
+	}
+	return proposals[proposalCount-f-1] // Max(|acsProposals|-F Lowest) ~= 66 percentile.
+}
+
+// Here we return coins that are proposed by at least F+1 peers.
+func (bps batchProposalSet) aggregatedGasCoins(f int) []*coin.CoinWithRef {
+	coinRefs := map[string]*coin.CoinWithRef{}
+	coinFrom := map[string]map[gpa.NodeID]bool{}
+	for from, bp := range bps {
+		for i := range bp.gasCoins {
+			coinRef := bp.gasCoins[i]
+			bytesStr := string(coinRef.Ref.Bytes())
+			if _, ok := coinRefs[bytesStr]; !ok {
+				coinRefs[bytesStr] = coinRef
+				coinFrom[bytesStr] = map[gpa.NodeID]bool{}
+			}
+			coinFrom[bytesStr][from] = true
+		}
+	}
+
+	// Drop the coins proposed by less than F+1 nodes.
+	for i, cf := range coinFrom {
+		if len(cf) < f+1 {
+			delete(coinFrom, i)
+		}
+	}
+
+	// Sort them by the proposal frequency, then by the bytes.
+	coinKeys := maps.Keys(coinFrom)
+	sort.Slice(coinKeys, func(i, j int) bool {
+		fromI := len(coinFrom[coinKeys[i]])
+		fromJ := len(coinFrom[coinKeys[j]])
+		return fromI < fromJ || (fromI == fromJ && coinKeys[i] < coinKeys[j])
+	})
+
+	// Return the selected coins.
+	result := []*coin.CoinWithRef{}
+	for _, coinKey := range coinKeys {
+		result = append(result, coinRefs[coinKey])
+	}
+	return result
 }

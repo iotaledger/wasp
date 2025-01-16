@@ -3,76 +3,48 @@
 package blocklog
 
 import (
-	"math"
+	"bytes"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 
 var (
-	// Funcs
-	FuncRetryUnprocessable = coreutil.NewEP1(Contract, "retryUnprocessable",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-	)
-
 	// Views
 	ViewGetBlockInfo = coreutil.NewViewEP12(Contract, "getBlockInfo",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockInfo, codec.NewCodecEx(BlockInfoFromBytes)),
+		coreutil.FieldOptional[uint32](),
+		coreutil.Field[uint32](),
+		coreutil.Field[*BlockInfo](),
 	)
 	ViewGetRequestIDsForBlock = coreutil.NewViewEP12(Contract, "getRequestIDsForBlock",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
-		OutputRequestIDs{},
+		coreutil.FieldOptional[uint32](),
+		coreutil.Field[uint32](),
+		coreutil.Field[[]isc.RequestID](),
 	)
 	ViewGetRequestReceipt = coreutil.NewViewEP11(Contract, "getRequestReceipt",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
+		coreutil.Field[isc.RequestID](),
 		OutputRequestReceipt{},
 	)
-	ViewGetRequestReceiptsForBlock = coreutil.NewViewEP12(Contract, "getRequestReceiptsForBlock",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
+	ViewGetRequestReceiptsForBlock = coreutil.NewViewEP11(Contract, "getRequestReceiptsForBlock",
+		coreutil.FieldOptional[uint32](),
 		OutputRequestReceipts{},
 	)
 	ViewIsRequestProcessed = coreutil.NewViewEP11(Contract, "isRequestProcessed",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-		coreutil.FieldWithCodec(ParamRequestProcessed, codec.Bool),
+		coreutil.Field[isc.RequestID](),
+		coreutil.Field[bool](),
 	)
 	ViewGetEventsForRequest = coreutil.NewViewEP11(Contract, "getEventsForRequest",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-		OutputEvents{},
+		coreutil.Field[isc.RequestID](),
+		coreutil.Field[[]*isc.Event](),
 	)
 	ViewGetEventsForBlock = coreutil.NewViewEP12(Contract, "getEventsForBlock",
-		coreutil.FieldWithCodecOptional(ParamBlockIndex, codec.Uint32),
-		coreutil.FieldWithCodec(ParamBlockIndex, codec.Uint32),
-		OutputEvents{},
+		coreutil.FieldOptional[uint32](),
+		coreutil.Field[uint32](),
+		coreutil.Field[[]*isc.Event](),
 	)
-	ViewHasUnprocessable = coreutil.NewViewEP11(Contract, "hasUnprocessable",
-		coreutil.FieldWithCodec(ParamRequestID, codec.RequestID),
-		coreutil.FieldWithCodec(ParamUnprocessableRequestExists, codec.Bool),
-	)
-)
-
-// request parameters
-const (
-	ParamBlockIndex                 = "n"
-	ParamBlockInfo                  = "i"
-	ParamContractHname              = "h"
-	ParamFromBlock                  = "f"
-	ParamToBlock                    = "t"
-	ParamRequestID                  = "u"
-	ParamRequestIndex               = "r"
-	ParamRequestProcessed           = "p"
-	ParamRequestRecord              = "d"
-	ParamEvent                      = "e"
-	ParamStateControllerAddress     = "s"
-	ParamUnprocessableRequestExists = "x"
 )
 
 const (
@@ -95,130 +67,69 @@ const (
 	//   EventLookupKey = blockIndex | requestIndex | eventIndex
 	// Covered in: TestGetEvents
 	prefixRequestEvents = "d"
-
-	// Map of requestID => unprocessableRequestRecord
-	// Covered in: TestUnprocessableWithPruning
-	prefixUnprocessableRequests = "u"
-
-	// Array of requestID.
-	// Temporary list of unprocessable requests that need updating the outputID field
-	// Covered in: TestUnprocessableWithPruning
-	prefixNewUnprocessableRequests = "U"
 )
-
-type OutputRequestIDs struct{}
-
-func (OutputRequestIDs) Encode(reqIDs []isc.RequestID) dict.Dict {
-	return codec.SliceToArray(codec.RequestID, reqIDs, ParamRequestID)
-}
-
-func (OutputRequestIDs) Decode(r dict.Dict) ([]isc.RequestID, error) {
-	return codec.SliceFromArray(codec.RequestID, r, ParamRequestID)
-}
 
 type OutputRequestReceipt struct{}
 
-func (OutputRequestReceipt) Encode(rec *RequestReceipt) dict.Dict {
+func (OutputRequestReceipt) Encode(rec *RequestReceipt) []byte {
 	if rec == nil {
 		return nil
 	}
-	return dict.Dict{
-		ParamRequestRecord: rec.Bytes(),
-		ParamBlockIndex:    codec.Uint32.Encode(rec.BlockIndex),
-		ParamRequestIndex:  codec.Uint16.Encode(rec.RequestIndex),
-	}
+
+	var buf bytes.Buffer
+	enc := bcs.NewEncoder(&buf)
+
+	enc.MustEncode(rec.BlockIndex)
+	enc.MustEncode(rec.RequestIndex)
+	enc.MustEncode(rec)
+
+	return buf.Bytes()
 }
 
-func (OutputRequestReceipt) Decode(r dict.Dict) (*RequestReceipt, error) {
-	if r.IsEmpty() {
+func (OutputRequestReceipt) Decode(r []byte) (*RequestReceipt, error) {
+	if len(r) == 0 {
 		return nil, nil
 	}
-	blockIndex, err := codec.Uint32.Decode(r[ParamBlockIndex])
+
+	rr := bytes.NewReader(r)
+	dec := bcs.NewDecoder(rr)
+
+	blockIndex := bcs.Decode[uint32](dec)
+	reqIndex := bcs.Decode[uint16](dec)
+
+	if dec.Err() != nil {
+		return nil, dec.Err()
+	}
+
+	rec, err := RequestReceiptFromReader(rr, blockIndex, reqIndex)
 	if err != nil {
 		return nil, err
 	}
-	reqIndex, err := codec.Uint16.Decode(r[ParamRequestIndex])
-	if err != nil {
-		return nil, err
-	}
-	rec, err := RequestReceiptFromBytes(r[ParamRequestRecord], blockIndex, reqIndex)
-	if err != nil {
-		return nil, err
-	}
+
 	return rec, nil
+}
+
+type RequestReceiptsResponse struct {
+	BlockIndex uint32
+	Receipts   []*RequestReceipt
 }
 
 type OutputRequestReceipts struct{}
 
-func (OutputRequestReceipts) Encode(receipts []*RequestReceipt) dict.Dict {
-	ret := dict.New()
-	requestReceipts := collections.NewArray(ret, ParamRequestRecord)
-	for _, receipt := range receipts {
-		requestReceipts.Push(receipt.Bytes())
-	}
-	return ret
+func (OutputRequestReceipts) Encode(res *RequestReceiptsResponse) []byte {
+	return bcs.MustMarshal(res)
 }
 
-func (OutputRequestReceipts) Decode(r dict.Dict) ([]*RequestReceipt, error) {
-	receipts := collections.NewArrayReadOnly(r, ParamRequestRecord)
-	ret := make([]*RequestReceipt, receipts.Len())
-	var err error
-	blockIndex, err := codec.Uint32.Decode(r.Get(ParamBlockIndex))
+func (OutputRequestReceipts) Decode(r []byte) (*RequestReceiptsResponse, error) {
+	res, err := bcs.Unmarshal[*RequestReceiptsResponse](r)
 	if err != nil {
 		return nil, err
 	}
-	for i := range ret {
-		ret[i], err = RequestReceiptFromBytes(receipts.GetAt(uint32(i)), blockIndex, uint16(i))
-		if err != nil {
-			return nil, err
-		}
+
+	for i := range res.Receipts {
+		res.Receipts[i].BlockIndex = res.BlockIndex
+		res.Receipts[i].RequestIndex = uint16(i)
 	}
-	return ret, nil
-}
 
-type OutputEvents struct{}
-
-func (OutputEvents) Encode(events []*isc.Event) dict.Dict {
-	return codec.SliceToArray(codec.NewCodecEx(isc.EventFromBytes), events, ParamEvent)
-}
-
-func (OutputEvents) Decode(r dict.Dict) ([]*isc.Event, error) {
-	return codec.SliceFromArray(codec.NewCodecEx(isc.EventFromBytes), r, ParamEvent)
-}
-
-type BlockRange struct {
-	From uint32
-	To   uint32
-}
-
-type EventsForContractQuery struct {
-	Contract   isc.Hname
-	BlockRange *BlockRange
-}
-
-type InputEventsForContract struct{}
-
-func (InputEventsForContract) Encode(q EventsForContractQuery) dict.Dict {
-	r := dict.Dict{
-		ParamContractHname: codec.Hname.Encode(q.Contract),
-	}
-	if q.BlockRange != nil {
-		r[ParamFromBlock] = codec.Uint32.Encode(q.BlockRange.From)
-		r[ParamToBlock] = codec.Uint32.Encode(q.BlockRange.To)
-	}
-	return r
-}
-
-func (InputEventsForContract) Decode(d dict.Dict) (ret EventsForContractQuery, err error) {
-	ret.Contract, err = codec.Hname.Decode(d[ParamContractHname])
-	if err != nil {
-		return
-	}
-	ret.BlockRange = &BlockRange{}
-	ret.BlockRange.From, err = codec.Uint32.Decode(d[ParamFromBlock], 0)
-	if err != nil {
-		return
-	}
-	ret.BlockRange.To, err = codec.Uint32.Decode(d[ParamToBlock], math.MaxUint32)
-	return
+	return res, nil
 }

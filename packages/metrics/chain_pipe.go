@@ -114,14 +114,14 @@ func (m *ChainPipeMetrics) TrackPipeLenMax(name string, key string, lenFunc func
 			Help:        "Length of a pipe",
 			ConstLabels: m.makeLabels(name),
 		}, func() float64 {
-			max := 0
+			maxVal := 0
 			for _, f := range valueFuncs {
 				fVal := f()
-				if max < fVal {
-					max = fVal
+				if maxVal < fVal {
+					maxVal = fVal
 				}
 			}
-			return float64(max)
+			return float64(maxVal)
 		})
 		if err := m.reg.Register(collector); err != nil {
 			panic(fmt.Errorf("failed to register pipe %v max len metric for chain %v: %w", name, m.chainID, err))

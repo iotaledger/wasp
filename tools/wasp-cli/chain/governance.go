@@ -6,16 +6,17 @@ package chain
 import (
 	"context"
 
+	"github.com/samber/lo"
+
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -38,19 +39,27 @@ func initChangeAccessNodesCmd() *cobra.Command {
 			if len(args)%2 != 0 {
 				log.Fatal("wrong number of arguments")
 			}
-			pars := governance.NewChangeAccessNodesRequest()
+			pars := make([]lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction], 0)
+
 			for i := 1; i < len(args); i += 2 {
-				action := args[i-1]
 				pubkey, err := cryptolib.PublicKeyFromString(args[i])
+				action := args[i-1]
 				log.Check(err)
+
+				var actionResult governance.ChangeAccessNodeAction
+
 				switch action {
 				case "accept":
-					pars.Accept(pubkey)
+					actionResult = governance.ChangeAccessNodeActionAccept
 				case "remove":
-					pars.Remove(pubkey)
+					actionResult = governance.ChangeAccessNodeActionRemove
 				case "drop":
-					pars.Drop(pubkey)
+					actionResult = governance.ChangeAccessNodeActionDrop
+				default:
+					log.Fatal("invalid action")
 				}
+
+				pars = append(pars, lo.T2(pubkey, actionResult))
 			}
 			postRequest(
 				node,
@@ -85,21 +94,22 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 			client := cliclients.WaspClient(node)
 
-			callGovView := func(viewName string) dict.Dict {
-				result, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
+			callGovView := func(viewName string) isc.CallResults {
+				apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,
 					}).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 
-				resultDict, err := apiextensions.APIJsonDictToDict(*result)
+				result, err := apiextensions.APIResultToCallArgs(apiResult)
 				log.Check(err)
-				return resultDict
+				return result
 			}
 
-			feePolicyBytes := callGovView(governance.ViewGetFeePolicy.Name).Get(governance.ParamFeePolicyBytes)
-			feePolicy := gas.MustFeePolicyFromBytes(feePolicyBytes)
+			r := callGovView(governance.ViewGetFeePolicy.Name)
+			feePolicy, err := governance.ViewGetFeePolicy.DecodeOutput(r)
+			log.Check(err)
 			feePolicy.GasPerToken = util.Ratio32{}
 
 			postRequest(

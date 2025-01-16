@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -33,7 +32,7 @@ func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
 	bwtsmT := new(blockWALTestSM)
 	var err error
 	bwtsmT.factory = NewBlockFactory(t)
-	bwtsmT.lastBlockCommitment = origin.L1Commitment(0, nil, 0)
+	bwtsmT.lastBlockCommitment = bwtsmT.factory.GetOriginBlock().L1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
 	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)

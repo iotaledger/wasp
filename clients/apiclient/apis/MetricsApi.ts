@@ -1,7 +1,7 @@
 // TODO: better import syntax?
 import {BaseAPIRequestFactory, RequiredError, COLLECTION_FORMATS} from './baseapi';
 import {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpFile} from '../http/http';
+import {RequestContext, HttpMethod, ResponseContext, HttpFile, HttpInfo} from '../http/http';
 import {ObjectSerializer} from '../models/ObjectSerializer';
 import {ApiException} from './exception';
 import {canConsumeForm, isCodeInRange} from '../util';
@@ -21,7 +21,7 @@ export class MetricsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getChainMessageMetrics(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -58,7 +58,7 @@ export class MetricsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getChainPipeMetrics(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -95,7 +95,7 @@ export class MetricsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Bech32)
+     * @param chainID ChainID (Hex Address)
      */
     public async getChainWorkflowMetrics(chainID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -170,14 +170,14 @@ export class MetricsApiResponseProcessor {
      * @params response Response returned by the server for a request to getChainMessageMetrics
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getChainMessageMetrics(response: ResponseContext): Promise<ChainMessageMetrics > {
+     public async getChainMessageMetricsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ChainMessageMetrics >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: ChainMessageMetrics = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ChainMessageMetrics", ""
             ) as ChainMessageMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -196,7 +196,7 @@ export class MetricsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ChainMessageMetrics", ""
             ) as ChainMessageMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -209,14 +209,14 @@ export class MetricsApiResponseProcessor {
      * @params response Response returned by the server for a request to getChainPipeMetrics
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getChainPipeMetrics(response: ResponseContext): Promise<ConsensusPipeMetrics > {
+     public async getChainPipeMetricsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ConsensusPipeMetrics >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: ConsensusPipeMetrics = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ConsensusPipeMetrics", ""
             ) as ConsensusPipeMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -235,7 +235,7 @@ export class MetricsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ConsensusPipeMetrics", ""
             ) as ConsensusPipeMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -248,14 +248,14 @@ export class MetricsApiResponseProcessor {
      * @params response Response returned by the server for a request to getChainWorkflowMetrics
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getChainWorkflowMetrics(response: ResponseContext): Promise<ConsensusWorkflowMetrics > {
+     public async getChainWorkflowMetricsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ConsensusWorkflowMetrics >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: ConsensusWorkflowMetrics = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ConsensusWorkflowMetrics", ""
             ) as ConsensusWorkflowMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -274,7 +274,7 @@ export class MetricsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ConsensusWorkflowMetrics", ""
             ) as ConsensusWorkflowMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -287,14 +287,14 @@ export class MetricsApiResponseProcessor {
      * @params response Response returned by the server for a request to getNodeMessageMetrics
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getNodeMessageMetrics(response: ResponseContext): Promise<NodeMessageMetrics > {
+     public async getNodeMessageMetricsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<NodeMessageMetrics >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: NodeMessageMetrics = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "NodeMessageMetrics", ""
             ) as NodeMessageMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -310,7 +310,7 @@ export class MetricsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "NodeMessageMetrics", ""
             ) as NodeMessageMetrics;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

@@ -1,3 +1,6 @@
+// Excluded for now as we right now don't support minting new coins
+//go:build exclude
+
 package chain
 
 import (
@@ -7,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
@@ -36,13 +40,13 @@ func initCreateNativeTokenCmd() *cobra.Command {
 				MeltedTokens:  big.NewInt(meltedTokens),
 			}
 
-			tokenSchemeBytes := codec.TokenScheme.Encode(tokenScheme)
+			tokenSchemeBytes := codec.Encode[TokenScheme](tokenScheme)
 
 			return []string{
 				"string", accounts.ParamTokenScheme, "bytes", "0x" + hex.EncodeToString(tokenSchemeBytes),
-				"string", accounts.ParamTokenName, "bytes", "0x" + hex.EncodeToString(codec.String.Encode(tokenName)),
-				"string", accounts.ParamTokenTickerSymbol, "bytes", "0x" + hex.EncodeToString(codec.String.Encode(tokenSymbol)),
-				"string", accounts.ParamTokenDecimals, "bytes", "0x" + hex.EncodeToString(codec.Uint8.Encode(tokenDecimals)),
+				"string", accounts.ParamTokenName, "bytes", "0x" + hex.EncodeToString(codec.Encode[string](tokenName)),
+				"string", accounts.ParamTokenTickerSymbol, "bytes", "0x" + hex.EncodeToString(codec.Encode[string](tokenSymbol)),
+				"string", accounts.ParamTokenDecimals, "bytes", "0x" + hex.EncodeToString(codec.Encode[uint8](tokenDecimals)),
 			}
 		},
 	)

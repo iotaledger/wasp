@@ -3,20 +3,9 @@
 
 package tests
 
-import (
-	"context"
-	"fmt"
-	"testing"
-	"time"
+// refactor me: Fix this to actual L1 Rebased
 
-	"github.com/stretchr/testify/require"
-
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/nodeclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-)
-
+/*
 func TestHornetStartup(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping privtangle test in short mode")
@@ -79,3 +68,4 @@ func mustOutputMap(client l2connection.Client, myAddress *cryptolib.Address) map
 	}
 	return outs
 }
+*/

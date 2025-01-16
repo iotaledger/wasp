@@ -1,7 +1,7 @@
 package vmimpl
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -10,10 +10,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byte {
+func (vmctx *vmContext) StateMetadata(l1Commitment *state.L1Commitment, gasCoin *coin.CoinWithRef) []byte {
 	stateMetadata := transaction.StateMetadata{
-		Version:      transaction.StateMetadataSupportedVersion,
-		L1Commitment: stateCommitment,
+		L1Commitment: l1Commitment,
 	}
 
 	stateMetadata.SchemaVersion = root.NewStateReaderFromChainState(vmctx.stateDraft).GetSchemaVersion()
@@ -22,17 +21,9 @@ func (vmctx *vmContext) StateMetadata(stateCommitment *state.L1Commitment) []byt
 	govState := governance.NewStateReaderFromChainState(vmctx.stateDraft)
 	stateMetadata.PublicURL = govState.GetPublicURL()
 	stateMetadata.GasFeePolicy = govState.GetGasFeePolicy()
+	stateMetadata.GasCoinObjectID = gasCoin.Ref.ObjectID
 
 	return stateMetadata.Bytes()
-}
-
-func (vmctx *vmContext) BuildTransactionEssence(stateCommitment *state.L1Commitment, assertTxbuilderBalanced bool) (*iotago.TransactionEssence, []byte) {
-	stateMetadata := vmctx.StateMetadata(stateCommitment)
-	essence, inputsCommitment := vmctx.txbuilder.BuildTransactionEssence(stateMetadata)
-	// if assertTxbuilderBalanced {
-	// 	vmctx.txbuilder.MustBalanced()
-	// }
-	return essence, inputsCommitment
 }
 
 func (vmctx *vmContext) createTxBuilderSnapshot() vmtxbuilder.TransactionBuilder {
@@ -43,18 +34,6 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot vmtxbuilder.Transactio
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *vmContext) loadNativeTokenOutput(nativeTokenID isc.NativeTokenID) (out *iotago.BasicOutput, id iotago.OutputID) {
-	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNativeTokenOutput(nativeTokenID, vmctx.ChainID())
-}
-
-func (vmctx *vmContext) loadFoundry(serNum uint32) (out *iotago.FoundryOutput, id iotago.OutputID) {
-	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetFoundryOutput(serNum, vmctx.ChainID())
-}
-
-func (vmctx *vmContext) loadNFT(nftID isc.NFTID) (out *iotago.NFTOutput, id iotago.OutputID) {
-	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetNFTOutput(nftID)
-}
-
-func (vmctx *vmContext) loadTotalFungibleTokens() *isc.Assets {
+func (vmctx *vmContext) getTotalL2Coins() isc.CoinBalances {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetTotalL2FungibleTokens()
 }

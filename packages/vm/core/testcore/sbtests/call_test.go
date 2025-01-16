@@ -5,52 +5,50 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
-func TestGetSet(t *testing.T) { run2(t, testGetSet) }
-func testGetSet(t *testing.T) {
+func TestGetSet(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSetInt.Name,
-		sbtestsc.ParamIntParamName, "ppp",
-		sbtestsc.ParamIntParamValue, 314).
+	req := solo.NewCallParams(sbtestsc.FuncSetInt.Message("ppp", 314), ScName).
 		WithGasBudget(100_000)
 	_, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
 
-	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetInt.Name,
-		sbtestsc.ParamIntParamName, "ppp")
+	ret, err := sbtestsc.FuncGetInt.Call("ppp", func(msg isc.Message) (isc.CallArguments, error) {
+		return chain.CallViewWithContract(ScName, msg)
+	})
 	require.NoError(t, err)
-
-	retInt, err := codec.Int64.Decode(ret.Get("ppp"))
-	require.NoError(t, err)
-	require.EqualValues(t, 314, retInt)
+	require.EqualValues(t, 314, ret)
 }
 
-func TestCallRecursive(t *testing.T) { run2(t, testCallRecursive) }
-func testCallRecursive(t *testing.T) {
+func TestCallRecursive(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	depth := 27
+	depth := uint64(27)
 	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OriginatorAgentID))
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name,
-		sbtestsc.ParamN, depth,
-		sbtestsc.ParamHnameContract, HScName,
-		sbtestsc.ParamHnameEP, sbtestsc.FuncRunRecursion.Hname()).
+	req := solo.NewCallParams(
+		sbtestsc.FuncCallOnChain.Message(isc.NewCallArguments(
+			codec.Encode(depth),
+			codec.Encode(HScName),
+			codec.Encode(sbtestsc.FuncRunRecursion.Hname()),
+		)),
+		ScName,
+	).
 		WithGasBudget(5_000_000)
 	_, err := chain.PostRequestSync(req, nil)
 	t.Logf("receipt: %s", chain.LastReceipt())
 	require.NoError(t, err)
 
-	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
-	require.NoError(t, err)
-
-	r, err := codec.Int64.Decode(ret.Get(sbtestsc.VarCounter))
+	r, err := sbtestsc.FuncGetCounter.Call(func(msg isc.Message) (isc.CallArguments, error) {
+		return chain.CallViewWithContract(ScName, msg)
+	})
 	require.NoError(t, err)
 	require.EqualValues(t, depth+1, r)
 }
@@ -64,78 +62,74 @@ func fibonacci(n int64) int64 {
 	return fibonacci(n-1) + fibonacci(n-2)
 }
 
-func TestCallFibonacci(t *testing.T) { run2(t, testCallFibonacci) }
-func testCallFibonacci(t *testing.T) {
+func TestCallFibonacci(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetFibonacci.Name,
-		sbtestsc.ParamN, fiboN,
-	)
+	ret, err := sbtestsc.FuncGetFibonacci.Call(fiboN, func(msg isc.Message) (isc.CallArguments, error) {
+		return chain.CallViewWithContract(ScName, msg)
+	})
+
 	require.NoError(t, err)
-	val, err := codec.Uint64.Decode(ret.Get(sbtestsc.ParamN))
-	require.NoError(t, err)
-	require.EqualValues(t, fibonacci(fiboN), val)
+	require.EqualValues(t, fibonacci(fiboN), ret)
 }
 
-func TestCallFibonacciIndirect(t *testing.T) { run2(t, testCallFibonacciIndirect) }
-func testCallFibonacciIndirect(t *testing.T) {
+func TestCallFibonacciIndirect(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncGetFibonacciIndirect.Name,
-		sbtestsc.ParamN, fiboN,
-	)
+	ret, err := sbtestsc.FuncGetFibonacciIndirect.Call(fiboN, func(msg isc.Message) (isc.CallArguments, error) {
+		return chain.CallViewWithContract(ScName, msg)
+	})
+
 	require.NoError(t, err)
-	val, err := codec.Uint64.Decode(ret.Get(sbtestsc.ParamN))
-	require.NoError(t, err)
-	require.EqualValues(t, fibonacci(fiboN), val)
+	require.EqualValues(t, fibonacci(fiboN), ret)
 }
 
-func TestIndirectCallFibonacci(t *testing.T) { run2(t, testIndirectCallFibonacci) }
-func testIndirectCallFibonacci(t *testing.T) { //nolint:dupl
+func TestIndirectCallFibonacci(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name,
-		sbtestsc.ParamN, fiboN,
-		sbtestsc.ParamHnameContract, HScName,
-		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacci.Hname()).
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name, isc.NewCallArguments(
+		codec.Encode(fiboN),
+		codec.Encode(HScName),
+		codec.Encode(sbtestsc.FuncGetFibonacci.Hname()),
+	)).
 		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	r, err := codec.Uint64.Decode(ret.Get(sbtestsc.ParamN))
+	r, err := isc.ResAt[uint64](ret, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
 	ret, err = chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, err = codec.Uint64.Decode(ret.Get(sbtestsc.VarCounter))
+	r, err = isc.ResAt[uint64](ret, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, r)
 }
 
-func TestIndirectCallFibonacciIndirect(t *testing.T) { run2(t, testIndirectCallFibonacciIndirect) }
-func testIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
+func TestIndirectCallFibonacciIndirect(t *testing.T) { //nolint:dupl
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name,
-		sbtestsc.ParamN, fiboN,
-		sbtestsc.ParamHnameContract, HScName,
-		sbtestsc.ParamHnameEP, sbtestsc.FuncGetFibonacciIndirect.Hname()).
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallOnChain.Name, isc.NewCallArguments(
+		codec.Encode(fiboN),
+		codec.Encode(HScName),
+		codec.Encode(sbtestsc.FuncGetFibonacciIndirect.Hname()),
+	)).
 		WithGasBudget(5_000_000)
 	ret, err := chain.PostRequestSync(req.AddBaseTokens(1), nil)
 	require.NoError(t, err)
-	r, err := codec.Uint64.Decode(ret.Get(sbtestsc.ParamN))
+	r, err := isc.ResAt[uint64](ret, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, fibonacci(fiboN), r)
 
 	ret, err = chain.CallViewEx(ScName, sbtestsc.FuncGetCounter.Name)
 	require.NoError(t, err)
 
-	r, err = codec.Uint64.Decode(ret.Get(sbtestsc.VarCounter))
+	r, err = isc.ResAt[uint64](ret, 0)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, r)
 }

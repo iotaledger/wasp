@@ -1,13 +1,24 @@
-package solo
+package solo_test
 
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
+}
+
 func TestSoloBasic1(t *testing.T) {
-	corecontracts.PrintWellKnownHnames()
-	env := New(t, &InitOptions{Debug: true, PrintStackTrace: true})
-	_ = env.NewChain()
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
+	ch := env.NewChain(false)
+	require.EqualValues(env.T, solo.DefaultCommonAccountBaseTokens, ch.L2CommonAccountAssets().Coins.BaseTokens())
+
+	err := ch.DepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
+	require.NoError(env.T, err)
+	require.EqualValues(env.T, solo.DefaultChainOriginatorBaseTokens, ch.L2BaseTokens(ch.OriginatorAgentID))
 }

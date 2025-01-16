@@ -17,11 +17,11 @@ import { HttpFile } from '../http/http';
 
 export class GovChainInfoResponse {
     /**
-    * ChainID (Bech32-encoded).
+    * ChainID (Hex Address).
     */
     'chainID': string;
     /**
-    * The chain owner address (Bech32-encoded).
+    * The chain owner address (Hex Address).
     */
     'chainOwnerId': string;
     'gasFeePolicy': FeePolicy;
@@ -33,6 +33,8 @@ export class GovChainInfoResponse {
     'publicURL': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -79,4 +81,3 @@ export class GovChainInfoResponse {
     public constructor() {
     }
 }
-

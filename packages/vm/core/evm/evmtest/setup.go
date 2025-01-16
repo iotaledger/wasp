@@ -13,15 +13,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -49,21 +46,17 @@ type ethCallOptions struct {
 	gasPrice *big.Int
 }
 
-func InitEVM(t testing.TB, deployMagicWrap bool, nativeContracts ...*coreutil.ContractProcessor) *SoloChainEnv {
+func InitEVM(t testing.TB) *SoloChainEnv {
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
-		GasBurnLogEnabled:        false,
+		Debug:             true,
+		PrintStackTrace:   true,
+		GasBurnLogEnabled: false,
 	})
-	for _, c := range nativeContracts {
-		env = env.WithNativeContract(c)
-	}
-	return InitEVMWithSolo(t, env, deployMagicWrap)
+	return InitEVMWithSolo(t, env)
 }
 
-func InitEVMWithSolo(t testing.TB, env *solo.Solo, deployMagicWrap bool) *SoloChainEnv {
-	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", dict.Dict{origin.ParamDeployBaseTokenMagicWrap: codec.Encode(deployMagicWrap)})
+func InitEVMWithSolo(t testing.TB, env *solo.Solo) *SoloChainEnv {
+	soloChain, _ := env.NewChainExt(nil, 0, "evmchain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	return &SoloChainEnv{
 		t:          t,
 		solo:       env,
@@ -109,7 +102,7 @@ func (e *SoloChainEnv) getCode(addr common.Address) []byte {
 func (e *SoloChainEnv) getEVMGasRatio() util.Ratio32 {
 	ret, err := e.Chain.CallView(governance.ViewGetEVMGasRatio.Message())
 	require.NoError(e.t, err)
-	return lo.Must(governance.ViewGetEVMGasRatio.Output.Decode(ret))
+	return lo.Must(governance.ViewGetEVMGasRatio.DecodeOutput(ret))
 }
 
 func (e *SoloChainEnv) setEVMGasRatio(newGasRatio util.Ratio32, opts ...iscCallOptions) error {
@@ -161,41 +154,15 @@ func (e *SoloChainEnv) ISCMagicPrivileged(defaultSender *ecdsa.PrivateKey) *IscC
 	return e.contractFromABI(iscmagic.Address, iscmagic.PrivilegedABI, defaultSender)
 }
 
-func (e *SoloChainEnv) ERC20BaseTokens(defaultSender *ecdsa.PrivateKey) *IscContractInstance {
-	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20BaseTokensABI))
+func (e *SoloChainEnv) ERC20Coin(defaultSender *ecdsa.PrivateKey, coinType coin.Type) *IscContractInstance {
+	ntABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20CoinABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
 		EVMContractInstance: &EVMContractInstance{
 			chain:         e,
 			defaultSender: defaultSender,
-			address:       iscmagic.ERC20BaseTokensAddress,
-			abi:           erc20BaseABI,
-		},
-	}
-}
-
-func (e *SoloChainEnv) ERC20NativeTokens(defaultSender *ecdsa.PrivateKey, foundrySN uint32) *IscContractInstance {
-	ntABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20NativeTokensABI))
-	require.NoError(e.t, err)
-	return &IscContractInstance{
-		EVMContractInstance: &EVMContractInstance{
-			chain:         e,
-			defaultSender: defaultSender,
-			address:       iscmagic.ERC20NativeTokensAddress(foundrySN),
+			address:       iscmagic.ERC20CoinAddress(coinType),
 			abi:           ntABI,
-		},
-	}
-}
-
-func (e *SoloChainEnv) ERC20ExternalNativeTokens(defaultSender *ecdsa.PrivateKey, addr common.Address) *IscContractInstance {
-	erc20BaseABI, err := abi.JSON(strings.NewReader(iscmagic.ERC20ExternalNativeTokensABI))
-	require.NoError(e.t, err)
-	return &IscContractInstance{
-		EVMContractInstance: &EVMContractInstance{
-			chain:         e,
-			defaultSender: defaultSender,
-			address:       addr,
-			abi:           erc20BaseABI,
 		},
 	}
 }
@@ -213,7 +180,7 @@ func (e *SoloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *IscContractI
 	}
 }
 
-func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID isc.NFTID) *IscContractInstance {
+func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID iotago.ObjectID) *IscContractInstance {
 	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
 	require.NoError(e.t, err)
 	return &IscContractInstance{
@@ -246,10 +213,6 @@ func (e *SoloChainEnv) deployFibonacciContract(creator *ecdsa.PrivateKey) *fibon
 	return &fibonacciContractInstance{e.DeployContract(creator, evmtest.FibonacciContractABI, evmtest.FibonacciContractByteCode)}
 }
 
-func (e *SoloChainEnv) deployERC20ExampleContract(creator *ecdsa.PrivateKey) *erc20ContractInstance {
-	return &erc20ContractInstance{e.DeployContract(creator, evmtest.ERC20ExampleContractABI, evmtest.ERC20ExampleContractBytecode)}
-}
-
 func (e *SoloChainEnv) maxGasLimit() uint64 {
 	fp := e.Chain.GetGasFeePolicy()
 	gl := e.Chain.GetGasLimits()
@@ -267,16 +230,16 @@ func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string,
 	}
 }
 
-func (e *SoloChainEnv) registerERC20NativeToken(foundryOwner *cryptolib.KeyPair, token evm.ERC20NativeTokenParams) error {
+func (e *SoloChainEnv) registerERC20Coin(kp *cryptolib.KeyPair, coinType coin.Type) error {
 	_, err := e.Chain.PostRequestOffLedger(
-		solo.NewCallParams(evm.FuncRegisterERC20NativeToken.Message(token)).
+		solo.NewCallParams(evm.FuncRegisterERC20Coin.Message(coinType)).
 			WithMaxAffordableGasBudget(),
-		foundryOwner,
+		kp,
 	)
 	return err
 }
 
-func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID isc.NFTID) error {
+func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.ObjectID) error {
 	_, err := e.Chain.PostRequestOffLedger(
 		solo.NewCallParams(evm.FuncRegisterERC721NFTCollection.Message(collectionID)).
 			WithMaxAffordableGasBudget(),

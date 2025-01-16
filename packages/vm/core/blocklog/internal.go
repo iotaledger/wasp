@@ -10,7 +10,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 func (s *StateWriter) GetBlockRegistry() *collections.Array {
@@ -32,11 +31,6 @@ func (s *StateReader) IterateBlockRegistryPrefix(f func(blockInfo *BlockInfo)) {
 func (s *StateWriter) SaveNextBlockInfo(blockInfo *BlockInfo) {
 	registry := collections.NewArray(s.state, prefixBlockRegistry)
 	registry.Push(blockInfo.Bytes())
-}
-
-// UpdateLatestBlockInfo is called before producing the next block to save anchor tx id and commitment data of the previous one
-func (s *StateWriter) UpdateLatestBlockInfo(anchorTxID sui.ObjectID) {
-	s.updateUnprocessableRequestsOutputID(anchorTxID)
 }
 
 // SaveRequestReceipt appends request record to the record log and creates records for fast lookup
@@ -140,6 +134,16 @@ func (s *StateReader) getRequestEventsInternal(reqID isc.RequestID) ([][]byte, e
 	}
 }
 
+type BlockRange struct {
+	From uint32
+	To   uint32
+}
+
+type EventsForContractQuery struct {
+	Contract   isc.Hname
+	BlockRange *BlockRange
+}
+
 func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [][]byte {
 	registry := collections.NewArrayReadOnly(s.state, prefixBlockRegistry)
 	latestBlockIndex := registry.Len() - 1
@@ -151,7 +155,7 @@ func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [
 
 	filteredEvents := make([][]byte, 0)
 	for blockNumber := q.BlockRange.From; blockNumber <= adjustedToBlock; blockNumber++ {
-		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Uint32.Encode(blockNumber))
+		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Encode[uint32](blockNumber))
 		s.state.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
 			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
 			if parsedContractID == q.Contract {

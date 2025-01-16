@@ -19,9 +19,3 @@ type BlockWAL interface {
 	Read(state.BlockHash) (state.Block, error)
 	ReadAllByStateIndex(cb func(stateIndex uint32, block state.Block) bool) error
 }
-
-type TimeProvider interface {
-	SetNow(time.Time)
-	GetNow() time.Time
-	After(time.Duration) <-chan time.Time
-}

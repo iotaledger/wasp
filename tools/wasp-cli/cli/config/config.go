@@ -8,11 +8,14 @@ import (
 	"path"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/spf13/viper"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/privtangle/privtangledefaults"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -109,11 +112,7 @@ func L1APIAddress() string {
 	if host != "" {
 		return host
 	}
-	return fmt.Sprintf(
-		"%s:%d",
-		privtangledefaults.Host,
-		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetRestAPI,
-	)
+	return iotaconn.AlphanetEndpointURL
 }
 
 func L1FaucetAddress() string {
@@ -121,11 +120,8 @@ func L1FaucetAddress() string {
 	if address != "" {
 		return address
 	}
-	return fmt.Sprintf(
-		"%s:%d",
-		privtangledefaults.Host,
-		privtangledefaults.BasePort+privtangledefaults.NodePortOffsetFaucet,
-	)
+	return iotaconn.AlphanetFaucetURL
+
 }
 
 var keyChain keychain.KeyChain
@@ -199,6 +195,21 @@ func GetChain(name string) isc.ChainID {
 	chainID, err := isc.ChainIDFromString(configChainID)
 	log.Check(err)
 	return chainID
+}
+
+func GetPackageID() iotago.PackageID {
+	configPackageID := viper.GetString("l1.packageId")
+	if configPackageID == "" {
+		// TODO: We should probably decide how to handle this. Do we want to depend on a constant packageID or deploy a new ISCMove contract for each chain?
+		log.Fatal(fmt.Sprintf("package id '%s' doesn't exist in config file", configPackageID))
+	}
+
+	packageIDParsed := lo.Must(iotago.PackageIDFromHex(configPackageID))
+	return *packageIDParsed
+}
+
+func SetPackageID(id iotago.PackageID) {
+	Set("l1.packageId", id.String())
 }
 
 func GetUseLegacyDerivation() bool {

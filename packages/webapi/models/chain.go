@@ -47,9 +47,8 @@ type CommitteeInfoResponse struct {
 }
 
 type ContractInfoResponse struct {
-	HName       string `json:"hName" swagger:"desc(The id (HName as Hex)) of the contract.),required"`
-	Name        string `json:"name" swagger:"desc(The name of the contract.),required"`
-	ProgramHash string `json:"programHash" swagger:"desc(The hash of the contract. (Hex encoded)),required"`
+	HName string `json:"hName" swagger:"desc(The id (HName as Hex)) of the contract.),required"`
+	Name  string `json:"name" swagger:"desc(The name of the contract.),required"`
 }
 
 type PublicChainMetadata struct {

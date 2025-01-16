@@ -13,19 +13,19 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
 
-// MetricsApiService MetricsApi service
-type MetricsApiService service
+// MetricsAPIService MetricsAPI service
+type MetricsAPIService service
 
 type ApiGetChainMessageMetricsRequest struct {
 	ctx context.Context
-	ApiService *MetricsApiService
+	ApiService *MetricsAPIService
 	chainID string
 }
 
@@ -37,10 +37,10 @@ func (r ApiGetChainMessageMetricsRequest) Execute() (*ChainMessageMetrics, *http
 GetChainMessageMetrics Get chain specific message metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainMessageMetricsRequest
 */
-func (a *MetricsApiService) GetChainMessageMetrics(ctx context.Context, chainID string) ApiGetChainMessageMetricsRequest {
+func (a *MetricsAPIService) GetChainMessageMetrics(ctx context.Context, chainID string) ApiGetChainMessageMetricsRequest {
 	return ApiGetChainMessageMetricsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -50,7 +50,7 @@ func (a *MetricsApiService) GetChainMessageMetrics(ctx context.Context, chainID 
 
 // Execute executes the request
 //  @return ChainMessageMetrics
-func (a *MetricsApiService) GetChainMessageMetricsExecute(r ApiGetChainMessageMetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
+func (a *MetricsAPIService) GetChainMessageMetricsExecute(r ApiGetChainMessageMetricsRequest) (*ChainMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -58,7 +58,7 @@ func (a *MetricsApiService) GetChainMessageMetricsExecute(r ApiGetChainMessageMe
 		localVarReturnValue  *ChainMessageMetrics
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetChainMessageMetrics")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsAPIService.GetChainMessageMetrics")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -111,9 +111,9 @@ func (a *MetricsApiService) GetChainMessageMetricsExecute(r ApiGetChainMessageMe
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -151,7 +151,7 @@ func (a *MetricsApiService) GetChainMessageMetricsExecute(r ApiGetChainMessageMe
 
 type ApiGetChainPipeMetricsRequest struct {
 	ctx context.Context
-	ApiService *MetricsApiService
+	ApiService *MetricsAPIService
 	chainID string
 }
 
@@ -163,10 +163,10 @@ func (r ApiGetChainPipeMetricsRequest) Execute() (*ConsensusPipeMetrics, *http.R
 GetChainPipeMetrics Get chain pipe event metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainPipeMetricsRequest
 */
-func (a *MetricsApiService) GetChainPipeMetrics(ctx context.Context, chainID string) ApiGetChainPipeMetricsRequest {
+func (a *MetricsAPIService) GetChainPipeMetrics(ctx context.Context, chainID string) ApiGetChainPipeMetricsRequest {
 	return ApiGetChainPipeMetricsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -176,7 +176,7 @@ func (a *MetricsApiService) GetChainPipeMetrics(ctx context.Context, chainID str
 
 // Execute executes the request
 //  @return ConsensusPipeMetrics
-func (a *MetricsApiService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsRequest) (*ConsensusPipeMetrics, *http.Response, error) {
+func (a *MetricsAPIService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsRequest) (*ConsensusPipeMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -184,7 +184,7 @@ func (a *MetricsApiService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsR
 		localVarReturnValue  *ConsensusPipeMetrics
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetChainPipeMetrics")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsAPIService.GetChainPipeMetrics")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -237,9 +237,9 @@ func (a *MetricsApiService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsR
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -277,7 +277,7 @@ func (a *MetricsApiService) GetChainPipeMetricsExecute(r ApiGetChainPipeMetricsR
 
 type ApiGetChainWorkflowMetricsRequest struct {
 	ctx context.Context
-	ApiService *MetricsApiService
+	ApiService *MetricsAPIService
 	chainID string
 }
 
@@ -289,10 +289,10 @@ func (r ApiGetChainWorkflowMetricsRequest) Execute() (*ConsensusWorkflowMetrics,
 GetChainWorkflowMetrics Get chain workflow metrics.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Bech32)
+ @param chainID ChainID (Hex Address)
  @return ApiGetChainWorkflowMetricsRequest
 */
-func (a *MetricsApiService) GetChainWorkflowMetrics(ctx context.Context, chainID string) ApiGetChainWorkflowMetricsRequest {
+func (a *MetricsAPIService) GetChainWorkflowMetrics(ctx context.Context, chainID string) ApiGetChainWorkflowMetricsRequest {
 	return ApiGetChainWorkflowMetricsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -302,7 +302,7 @@ func (a *MetricsApiService) GetChainWorkflowMetrics(ctx context.Context, chainID
 
 // Execute executes the request
 //  @return ConsensusWorkflowMetrics
-func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflowMetricsRequest) (*ConsensusWorkflowMetrics, *http.Response, error) {
+func (a *MetricsAPIService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflowMetricsRequest) (*ConsensusWorkflowMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -310,7 +310,7 @@ func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflow
 		localVarReturnValue  *ConsensusWorkflowMetrics
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetChainWorkflowMetrics")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsAPIService.GetChainWorkflowMetrics")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -363,9 +363,9 @@ func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflow
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -403,7 +403,7 @@ func (a *MetricsApiService) GetChainWorkflowMetricsExecute(r ApiGetChainWorkflow
 
 type ApiGetNodeMessageMetricsRequest struct {
 	ctx context.Context
-	ApiService *MetricsApiService
+	ApiService *MetricsAPIService
 }
 
 func (r ApiGetNodeMessageMetricsRequest) Execute() (*NodeMessageMetrics, *http.Response, error) {
@@ -416,7 +416,7 @@ GetNodeMessageMetrics Get accumulated message metrics.
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetNodeMessageMetricsRequest
 */
-func (a *MetricsApiService) GetNodeMessageMetrics(ctx context.Context) ApiGetNodeMessageMetricsRequest {
+func (a *MetricsAPIService) GetNodeMessageMetrics(ctx context.Context) ApiGetNodeMessageMetricsRequest {
 	return ApiGetNodeMessageMetricsRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -425,7 +425,7 @@ func (a *MetricsApiService) GetNodeMessageMetrics(ctx context.Context) ApiGetNod
 
 // Execute executes the request
 //  @return NodeMessageMetrics
-func (a *MetricsApiService) GetNodeMessageMetricsExecute(r ApiGetNodeMessageMetricsRequest) (*NodeMessageMetrics, *http.Response, error) {
+func (a *MetricsAPIService) GetNodeMessageMetricsExecute(r ApiGetNodeMessageMetricsRequest) (*NodeMessageMetrics, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -433,7 +433,7 @@ func (a *MetricsApiService) GetNodeMessageMetricsExecute(r ApiGetNodeMessageMetr
 		localVarReturnValue  *NodeMessageMetrics
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsApiService.GetNodeMessageMetrics")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "MetricsAPIService.GetNodeMessageMetrics")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -485,9 +485,9 @@ func (a *MetricsApiService) GetNodeMessageMetricsExecute(r ApiGetNodeMessageMetr
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}

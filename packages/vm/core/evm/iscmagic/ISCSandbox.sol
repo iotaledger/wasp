@@ -11,7 +11,7 @@ import "./ISCTypes.sol";
  */
 interface ISCSandbox {
     // Get the ISC request ID
-    function getRequestID() external view returns (ISCRequestID memory);
+    function getRequestID() external view returns (ISCRequestID);
 
     // Get the AgentID of the sender of the ISC request
     function getSenderAccount() external view returns (ISCAgentID memory);
@@ -27,26 +27,17 @@ interface ISCSandbox {
 
     // Take some funds from the given address, which must have authorized first with `allow`.
     // If `allowance` is empty, all allowed funds are taken.
-    function takeAllowedFunds(
-        address addr,
-        ISCAssets memory allowance
-    ) external;
+    function takeAllowedFunds(address addr, ISCAssets memory allowance) external;
 
     // Get the amount of funds currently allowed by the given address to the caller
-    function getAllowanceFrom(
-        address addr
-    ) external view returns (ISCAssets memory);
+    function getAllowanceFrom(address addr) external view returns (ISCAssets memory);
 
     // Get the amount of funds currently allowed by the caller to the given address
-    function getAllowanceTo(
-        address target
-    ) external view returns (ISCAssets memory);
+    function getAllowanceTo(address target) external view returns (ISCAssets memory);
 
     // Get the amount of funds currently allowed between the given addresses
-    function getAllowance(
-        address from,
-        address to
-    ) external view returns (ISCAssets memory);
+    function getAllowance(address from, address to) external view
+        returns (ISCAssets memory);
 
     // Send an on-ledger request (or a regular transaction to any L1 address).
     // The specified `assets` are transferred from the caller's
@@ -55,28 +46,21 @@ interface ISCSandbox {
     // include the transferred `assets`.
     // The specified `allowance` must not be greater than `assets`.
     function send(
-        L1Address memory targetAddress,
+        IotaAddress targetAddress,
         ISCAssets memory assets,
-        bool adjustMinimumStorageDeposit,
         ISCSendMetadata memory metadata,
         ISCSendOptions memory sendOptions
     ) external payable;
 
     // Call the entry point of an ISC contract on the same chain.
     function call(
-        ISCHname contractHname,
-        ISCHname entryPoint,
-        ISCDict memory params,
+        ISCMessage memory message,
         ISCAssets memory allowance
-    ) external returns (ISCDict memory);
+    ) external returns (bytes[] memory);
 
     // Call a view entry point of an ISC contract on the same chain.
     // The called entry point will have the `evm` core contract as caller.
-    function callView(
-        ISCHname contractHname,
-        ISCHname entryPoint,
-        ISCDict memory params
-    ) external view returns (ISCDict memory);
+    function callView(ISCMessage memory message) external view returns (bytes[] memory);
 
     // Get the ChainID of the underlying ISC chain
     function getChainID() external view returns (ISCChainID);
@@ -87,28 +71,19 @@ interface ISCSandbox {
     // Get the timestamp of the ISC block (seconds since UNIX epoch)
     function getTimestampUnixSeconds() external view returns (int64);
 
-    // Get the properties of the ISC base token
-    function getBaseTokenProperties()
-        external
-        view
-        returns (ISCTokenProperties memory);
+    // Get the properties of the L1 base token
+    function getBaseTokenInfo() external view returns (IotaCoinInfo memory);
 
-    // Get the ID of a L2-controlled native token, given its foundry serial number
-    function getNativeTokenID(
-        uint32 foundrySN
-    ) external view returns (NativeTokenID memory);
+    // Get the properties of a L2-controlled coin
+    function getCoinInfo(string memory coinType) external view returns (IotaCoinInfo memory);
 
-    // Get the token scheme of a L2-controlled native token, given its foundry serial number
-    function getNativeTokenScheme(
-        uint32 foundrySN
-    ) external view returns (NativeTokenScheme memory);
+    // Get information about an on-chain object
+    function getObjectBCS(IotaObjectID id) external view returns (bytes memory);
 
-    // Get information about an on-chain NFT
-    function getNFTData(NFTID id) external view returns (ISCNFT memory);
-
-    // Get information about an on-chain IRC27 NFT
-    // NOTE: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form
-    function getIRC27NFTData(NFTID id) external view returns (IRC27NFT memory);
+    // TODO
+    // // Get information about an on-chain IRC27 NFT
+    // // NOTE: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form
+    // function getIRC27NFTData(IotaObjectID id) external view returns (IRC27NFT memory);
 
     // Get information about an on-chain IRC27 NFT
     // returns a JSON file encoded with the following format:
@@ -117,31 +92,14 @@ interface ISCSandbox {
     //   "description": NFT.description,
     //   "image": NFT.URI
     // }))
-    function getIRC27TokenURI(NFTID id) external view returns (string memory);
+    function getIRC27TokenURI(IotaObjectID id) external view returns (string memory);
 
-    // Get the address of an ERC20NativeTokens contract for the given foundry serial number
-    function erc20NativeTokensAddress(
-        uint32 foundrySN
-    ) external view returns (address);
+    // Get the address of an ERC20Coin contract
+    function ERC20CoinAddress(string memory coinType) external view returns (address);
 
     // Get the address of an ERC721NFTCollection contract for the given collection ID
-    function erc721NFTCollectionAddress(
-        NFTID collectionID
-    ) external view returns (address);
-
-    // Extract the foundry serial number from an ERC20NativeTokens contract's address
-    function erc20NativeTokensFoundrySerialNumber(
-        address addr
-    ) external view returns (uint32);
-
-    // Creates an ERC20NativeTokens contract instance and register it with the foundry as a native token. Only the foundry owner can call this function.
-    function registerERC20NativeToken(
-        uint32 foundrySN,
-        string memory name,
-        string memory symbol,
-        uint8 decimals,
-        ISCAssets memory allowance
-    ) external;
+    function erc721NFTCollectionAddress(IotaObjectID collectionID) external view
+        returns (address);
 }
 
 ISCSandbox constant __iscSandbox = ISCSandbox(ISC_MAGIC_ADDRESS);

@@ -12,5 +12,7 @@ const (
 )
 
 func (a *acsImpl) UnmarshalMessage(data []byte) (gpa.Message, error) {
-	return a.msgWrapper.UnmarshalMessage(data)
+	return gpa.UnmarshalMessage(data, gpa.Mapper{}, gpa.Fallback{
+		msgTypeWrapped: a.msgWrapper.UnmarshalMessage,
+	})
 }

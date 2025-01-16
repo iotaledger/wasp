@@ -2,13 +2,11 @@ package viewcontext
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/kv/kvdecoder"
 )
 
 type callContext struct {
-	contract isc.Hname  // called contract
-	params   isc.Params // params passed
+	contract isc.Hname         // called contract
+	params   isc.CallArguments // params passed
 }
 
 func (ctx *ViewContext) getCallContext() *callContext {
@@ -18,14 +16,11 @@ func (ctx *ViewContext) getCallContext() *callContext {
 	return ctx.callStack[len(ctx.callStack)-1]
 }
 
-func (ctx *ViewContext) pushCallContext(contract isc.Hname, params dict.Dict) {
+func (ctx *ViewContext) pushCallContext(contract isc.Hname, params isc.CallArguments) {
 	ctx.callStack = append(ctx.callStack,
 		&callContext{
 			contract: contract,
-			params: isc.Params{
-				Dict:      params,
-				KVDecoder: kvdecoder.New(params, ctx.log),
-			},
+			params:   params,
 		})
 }
 

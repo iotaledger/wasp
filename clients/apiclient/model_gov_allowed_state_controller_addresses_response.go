@@ -19,7 +19,7 @@ var _ MappedNullable = &GovAllowedStateControllerAddressesResponse{}
 
 // GovAllowedStateControllerAddressesResponse struct for GovAllowedStateControllerAddressesResponse
 type GovAllowedStateControllerAddressesResponse struct {
-	// The allowed state controller addresses (Bech32-encoded)
+	// The allowed state controller addresses (Hex Address)
 	Addresses []string `json:"addresses,omitempty"`
 }
 
@@ -42,7 +42,7 @@ func NewGovAllowedStateControllerAddressesResponseWithDefaults() *GovAllowedStat
 
 // GetAddresses returns the Addresses field value if set, zero value otherwise.
 func (o *GovAllowedStateControllerAddressesResponse) GetAddresses() []string {
-	if o == nil || isNil(o.Addresses) {
+	if o == nil || IsNil(o.Addresses) {
 		var ret []string
 		return ret
 	}
@@ -52,7 +52,7 @@ func (o *GovAllowedStateControllerAddressesResponse) GetAddresses() []string {
 // GetAddressesOk returns a tuple with the Addresses field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *GovAllowedStateControllerAddressesResponse) GetAddressesOk() ([]string, bool) {
-	if o == nil || isNil(o.Addresses) {
+	if o == nil || IsNil(o.Addresses) {
 		return nil, false
 	}
 	return o.Addresses, true
@@ -60,7 +60,7 @@ func (o *GovAllowedStateControllerAddressesResponse) GetAddressesOk() ([]string,
 
 // HasAddresses returns a boolean if a field has been set.
 func (o *GovAllowedStateControllerAddressesResponse) HasAddresses() bool {
-	if o != nil && !isNil(o.Addresses) {
+	if o != nil && !IsNil(o.Addresses) {
 		return true
 	}
 
@@ -82,7 +82,7 @@ func (o GovAllowedStateControllerAddressesResponse) MarshalJSON() ([]byte, error
 
 func (o GovAllowedStateControllerAddressesResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.Addresses) {
+	if !IsNil(o.Addresses) {
 		toSerialize["addresses"] = o.Addresses
 	}
 	return toSerialize, nil

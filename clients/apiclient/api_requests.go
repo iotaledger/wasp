@@ -13,18 +13,18 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
 
 
-// RequestsApiService RequestsApi service
-type RequestsApiService service
+// RequestsAPIService RequestsAPI service
+type RequestsAPIService service
 
 type ApiOffLedgerRequest struct {
 	ctx context.Context
-	ApiService *RequestsApiService
+	ApiService *RequestsAPIService
 	offLedgerRequest *OffLedgerRequest
 }
 
@@ -44,7 +44,7 @@ OffLedger Post an off-ledger request
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiOffLedgerRequest
 */
-func (a *RequestsApiService) OffLedger(ctx context.Context) ApiOffLedgerRequest {
+func (a *RequestsAPIService) OffLedger(ctx context.Context) ApiOffLedgerRequest {
 	return ApiOffLedgerRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -52,14 +52,14 @@ func (a *RequestsApiService) OffLedger(ctx context.Context) ApiOffLedgerRequest 
 }
 
 // Execute executes the request
-func (a *RequestsApiService) OffLedgerExecute(r ApiOffLedgerRequest) (*http.Response, error) {
+func (a *RequestsAPIService) OffLedgerExecute(r ApiOffLedgerRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RequestsApiService.OffLedger")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "RequestsAPIService.OffLedger")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -102,9 +102,9 @@ func (a *RequestsApiService) OffLedgerExecute(r ApiOffLedgerRequest) (*http.Resp
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}

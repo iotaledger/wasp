@@ -13,29 +13,31 @@ interface ISCAccounts {
     // Get the L2 base tokens balance of an account
     function getL2BalanceBaseTokens(ISCAgentID memory agentID) external view returns (uint64);
 
-    // Get the L2 native tokens balance of an account
-    function getL2BalanceNativeTokens(NativeTokenID memory id, ISCAgentID memory agentID) external view returns (uint256);
+    // Get the L2 coin balance of an account
+    function getL2BalanceCoin(
+        string memory coinType,
+        ISCAgentID memory agentID
+    ) external view returns (uint64);
 
-    // Get the L2 NFTs owned by an account
-    function getL2NFTs(ISCAgentID memory agentID) external view returns (NFTID[] memory);
+    // Get the list of objects owned by an account on L2
+    function getL2Objects(ISCAgentID memory agentID) external view
+        returns (IotaObjectID[] memory);
 
-    // Get the amount of L2 NFTs owned by an account
-    function getL2NFTAmount(ISCAgentID memory agentID) external view returns (uint256);
+    // Get the amount of objects owned by an account on L2
+    function getL2ObjectsCount(ISCAgentID memory agentID) external view
+        returns (uint256);
 
-    // Get the L2 NFTs of a given collection owned by an account
-    function getL2NFTsInCollection(ISCAgentID memory agentID, NFTID collectionId) external view returns (NFTID[] memory);
+    // Get the objects of a given collection owned by an account on L2
+    function getL2ObjectsInCollection(
+        ISCAgentID memory agentID,
+        IotaObjectID collectionId
+    ) external view returns (IotaObjectID[] memory);
 
-    // Get the amount of L2 NFTs of a given collection owned by an account
-    function getL2NFTAmountInCollection(ISCAgentID memory agentID, NFTID collectionId) external view returns (uint256);
-
-    // Create a new foundry.
-    function foundryCreateNew(NativeTokenScheme memory tokenScheme, ISCAssets memory allowance) external returns(uint32);
-
-    // Creates foundry + IRC30 metadata + ERC20 token registration
-    function createNativeTokenFoundry(string memory tokenName, string memory tokenSymbol, uint8 tokenDecimals, NativeTokenScheme memory tokenScheme, ISCAssets memory allowance) external returns(uint32);
-
-    // Mint new tokens. Only the owner of the foundry can call this function.
-    function mintNativeTokens(uint32 foundrySN, uint256 amount, ISCAssets memory allowance) external;
+    // Get the amount of objects of a given collection owned by an account on L2
+    function getL2ObjectsCountInCollection(
+        ISCAgentID memory agentID,
+        IotaObjectID collectionId
+    ) external view returns (uint256);
 }
 
 ISCAccounts constant __iscAccounts = ISCAccounts(ISC_MAGIC_ADDRESS);

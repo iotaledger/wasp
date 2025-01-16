@@ -2,28 +2,34 @@ package iscmoveclient
 
 import (
 	"context"
+	"fmt"
+	"os"
 
 	"github.com/iotaledger/hive.go/logger"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
-	*suiclient.Client
+	*iotaclient.Client
 	faucetURL string
 }
 
-func NewClient(client *suiclient.Client, faucetURL string) *Client {
+func NewClient(client *iotaclient.Client, faucetURL string) *Client {
 	return &Client{
 		Client:    client,
 		faucetURL: faucetURL,
 	}
 }
 
-func NewHTTPClient(apiURL, faucetURL string) *Client {
+func NewHTTPClient(apiURL, faucetURL string, waitUntilEffectsVisible *iotaclient.WaitParams) *Client {
 	return NewClient(
-		suiclient.NewHTTP(apiURL),
+		iotaclient.NewHTTP(apiURL, waitUntilEffectsVisible),
 		faucetURL,
 	)
 }
@@ -31,9 +37,10 @@ func NewHTTPClient(apiURL, faucetURL string) *Client {
 func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
+	waitUntilEffectsVisible *iotaclient.WaitParams,
 	log *logger.Logger,
 ) (*Client, error) {
-	ws, err := suiclient.NewWebsocket(ctx, wsURL, log)
+	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +51,122 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) er
 	if c.faucetURL == "" {
 		panic("missing faucetURL")
 	}
-	return suiclient.RequestFundsFromFaucet(ctx, address.AsSuiAddress(), c.faucetURL)
+	return iotaclient.RequestFundsFromFaucet(ctx, address.AsIotaAddress(), c.faucetURL)
 }
 
 func (c *Client) Health(ctx context.Context) error {
-	_, err := c.GetLatestSuiSystemState(ctx)
+	_, err := c.GetLatestIotaSystemState(ctx)
 	return err
+}
+
+func (c *Client) SignAndExecutePTB(
+	ctx context.Context,
+	cryptolibSigner cryptolib.Signer,
+	pt iotago.ProgrammableTransaction,
+	gasPayments []*iotago.ObjectRef, // optional
+	gasPrice uint64,
+	gasBudget uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
+	var err error
+	if len(gasPayments) == 0 {
+		gasPayments, err = c.FindCoinsForGasPayment(
+			ctx,
+			signer.Address(),
+			pt,
+			gasPrice,
+			gasBudget,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if os.Getenv("DEBUG") != "" {
+		pt.Print("-- SignAndExecutePTB -- ")
+	}
+	tx := iotago.NewProgrammable(
+		signer.Address(),
+		pt,
+		gasPayments,
+		gasBudget,
+		gasPrice,
+	)
+
+	txnBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	}
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx,
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes,
+			Signer:      signer,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	}
+	return txnResponse, nil
+}
+
+func (c *Client) DevInspectPTB(
+	ctx context.Context,
+	cryptolibSigner cryptolib.Signer,
+	pt iotago.ProgrammableTransaction,
+	gasPayments []*iotago.ObjectRef, // optional
+	gasPrice uint64,
+	gasBudget uint64,
+) (*iotajsonrpc.DevInspectResults, error) {
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
+	var err error
+	if len(gasPayments) == 0 {
+		gasPayments, err = c.FindCoinsForGasPayment(
+			ctx,
+			signer.Address(),
+			pt,
+			gasPrice,
+			gasBudget,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	tx := iotago.NewProgrammable(
+		signer.Address(),
+		pt,
+		gasPayments,
+		gasBudget,
+		gasPrice,
+	)
+
+	txnBytes, err := bcs.Marshal(&tx.V1.Kind)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	}
+	txnResponse, err := c.DevInspectTransactionBlock(
+		ctx,
+		iotaclient.DevInspectTransactionBlockRequest{
+			SenderAddress: signer.Address(),
+			TxKindBytes:   txnBytes,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+	if txnResponse.Error != "" {
+		return nil, fmt.Errorf("execute error: %s", txnResponse.Error)
+	}
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+	}
+	return txnResponse, nil
 }

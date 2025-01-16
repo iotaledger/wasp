@@ -10,9 +10,11 @@
  * Do not edit the class manually.
  */
 
+import { Type } from '../models/Type';
 import { HttpFile } from '../http/http';
 
 export class BaseToken {
+    'coinType'?: Type;
     /**
     * The token decimals
     */
@@ -40,7 +42,15 @@ export class BaseToken {
 
     static readonly discriminator: string | undefined = undefined;
 
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
+
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "coinType",
+            "baseName": "coinType",
+            "type": "Type",
+            "format": ""
+        },
         {
             "name": "decimals",
             "baseName": "decimals",
@@ -85,4 +95,3 @@ export class BaseToken {
     public constructor() {
     }
 }
-

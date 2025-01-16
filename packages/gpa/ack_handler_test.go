@@ -7,7 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestAckHandler(t *testing.T) {
@@ -49,4 +52,68 @@ func TestAckHandler(t *testing.T) {
 		}
 		tc.RunAll()
 	}
+}
+
+func TestAckHandlerBatchCodec(t *testing.T) {
+	testMsgs := []ackHandlerBatch{
+		{
+			id: lo.ToPtr(42),
+			msgs: []Message{
+				&TestMessage{ID: 50},
+				&TestMessage{ID: 100},
+			},
+			acks:      []int{1, 2, 3},
+			nestedGPA: &testGPA{},
+		},
+		{
+			id:        lo.ToPtr(42),
+			msgs:      []Message{},
+			acks:      []int{1, 2, 3},
+			nestedGPA: &testGPA{},
+		},
+		{
+			id:        lo.ToPtr(42),
+			msgs:      nil,
+			acks:      []int{1, 2, 3},
+			nestedGPA: &testGPA{},
+		},
+	}
+
+	for _, v := range testMsgs {
+		vEnc := bcs.MustMarshal(&v)
+		vDec := bcs.MustUnmarshalInto(vEnc, &ackHandlerBatch{nestedGPA: &testGPA{}})
+		if len(v.msgs) == 0 {
+			require.Len(t, vDec.msgs, 0)
+			vDec.msgs = v.msgs
+		}
+		require.Equal(t, v, *vDec, vEnc)
+
+		v.id = nil
+		vEnc = bcs.MustMarshal(&v)
+		vDec = bcs.MustUnmarshalInto(vEnc, &ackHandlerBatch{nestedGPA: &testGPA{}})
+		if len(v.msgs) == 0 {
+			require.Len(t, vDec.msgs, 0)
+			vDec.msgs = v.msgs
+		}
+		require.Equal(t, v, *vDec, vEnc)
+	}
+}
+
+type testGPA struct {
+	GPA
+}
+
+var _ GPA = &testGPA{}
+
+func (g *testGPA) UnmarshalMessage(data []byte) (Message, error) {
+	return UnmarshalMessage(data, Mapper{
+		msgTypeTest: func() Message { return &TestMessage{} },
+	}, nil)
+}
+
+func TestAckHandlerResetCodec(t *testing.T) {
+	bcs.TestCodec(t, ackHandlerReset{
+		response: true,
+		latestID: 123,
+	})
 }

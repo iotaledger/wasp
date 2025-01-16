@@ -4,19 +4,25 @@
 package isc
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
 // SandboxBase is the common interface of Sandbox and SandboxView
@@ -24,7 +30,7 @@ type SandboxBase interface {
 	Helpers
 	Balance
 	// Params returns the parameters of the current call
-	Params() *Params
+	Params() CallArguments
 	// ChainID returns the chain ID
 	ChainID() ChainID
 	// ChainOwnerID returns the AgentID of the current owner of the chain
@@ -45,10 +51,12 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
-	// GetNFTData returns information about a NFTID (issuer and metadata)
-	GetNFTData(nftID iotago.NFTID) *NFT
+	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
+	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
+	// GetCoinInfo returns information about a coin known by the chain
+	GetCoinInfo(coinType coin.Type) (*IotaCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
-	CallView(Message) dict.Dict
+	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
 	StateR() kv.KVStoreReader
 	// SchemaVersion returns the schema version of the current state
@@ -56,11 +64,6 @@ type SandboxBase interface {
 }
 
 type SchemaVersion uint32
-
-type Params struct {
-	Dict dict.Dict
-	KVDecoder
-}
 
 type Helpers interface {
 	Requiref(cond bool, format string, args ...interface{})
@@ -75,13 +78,13 @@ type Authorize interface {
 
 type Balance interface {
 	// BalanceBaseTokens returns number of base tokens in the balance of the smart contract
-	BalanceBaseTokens() (bts uint64, remainder *big.Int)
-	// BalanceNativeToken returns number of native token or nil if it is empty
-	BalanceNativeToken(iotago.NativeTokenID) *big.Int
-	// BalanceNativeTokens returns all native tokens owned by the smart contract
-	BalanceNativeTokens() iotago.NativeTokens
-	// OwnedNFTs returns the NFTIDs of NFTs owned by the smart contract
-	OwnedNFTs() []iotago.NFTID
+	BaseTokensBalance() (bts coin.Value, remainder *big.Int)
+	// CoinBalance returns the balance of the given coin
+	CoinBalance(p coin.Type) coin.Value
+	// CoinBalances returns the balance of all coins owned by the smart contract
+	CoinBalances() CoinBalances
+	// OwnedObjects returns the ids of objects owned by the smart contract
+	OwnedObjects() []iotago.ObjectID
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }
@@ -100,9 +103,7 @@ type Sandbox interface {
 	// Call calls the entry point of the contract with parameters and allowance.
 	// If the entry point is full entry point, allowance tokens are available to be moved from the caller's
 	// accounts (if enough). If the entry point is view, 'allowance' has no effect
-	Call(msg Message, allowance *Assets) dict.Dict
-	// DeployContract deploys contract on the same chain. 'initParams' are passed to the 'init' entry point
-	DeployContract(programHash hashing.HashValue, name string, initParams dict.Dict)
+	Call(msg Message, allowance *Assets) CallArguments
 	// Event emits an event
 	Event(topic string, payload []byte)
 	// RegisterError registers an error
@@ -119,11 +120,9 @@ type Sandbox interface {
 	TransferAllowedFunds(target AgentID, transfer ...*Assets) *Assets
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
-	// EstimateRequiredStorageDeposit returns the amount of base tokens needed to cover for a given request's storage deposit
-	EstimateRequiredStorageDeposit(r RequestParameters) uint64
 	// StateAnchor properties of the anchor request
 	StateAnchor() *StateAnchor
-
+	// RequestIndex returns the index of the current request in the request batch
 	RequestIndex() uint16
 
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
@@ -141,16 +140,10 @@ type Sandbox interface {
 
 // Privileged is a sub-interface for core contracts. Should not be called by VM plugins
 type Privileged interface {
-	TryLoadContract(programHash hashing.HashValue) error
-	CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64)
-	DestroyFoundry(uint32) uint64
-	ModifyFoundrySupply(serNum uint32, delta *big.Int) int64
-	MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput)
 	GasBurnEnable(enable bool)
 	GasBurnEnabled() bool
-	RetryUnprocessable(req Request, outputID sui.ObjectID)
 	OnWriteReceipt(CoreCallbackFunc)
-	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) dict.Dict
+	CallOnBehalfOf(caller AgentID, msg Message, allowance *Assets) CallArguments
 	SendOnBehalfOf(caller ContractIdentity, metadata RequestParameters)
 
 	// only called from EVM
@@ -159,12 +152,161 @@ type Privileged interface {
 	CreditToAccount(AgentID, *big.Int)
 }
 
-type Message struct {
-	Target CallTarget `json:"target"`
-	Params dict.Dict  `json:"params"`
+type CallArguments [][]byte
+
+func NewCallArguments(args ...[]byte) CallArguments {
+	callArguments := make(CallArguments, len(args))
+	for i, v := range args {
+		callArguments[i] = make([]byte, len(v))
+		copy(callArguments[i], v)
+	}
+	return callArguments
 }
 
-func NewMessage(contract Hname, ep Hname, params ...dict.Dict) Message {
+func (c CallArguments) Equals(other CallArguments) bool {
+	if len(c) != len(other) {
+		return false
+	}
+	for i, v := range c {
+		if !bytes.Equal(v, other[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (c CallArguments) Length() int {
+	return len(c)
+}
+
+func (c CallArguments) Clone() CallArguments {
+	clone := make(CallArguments, len(c))
+	for i, v := range c {
+		clone[i] = make([]byte, len(v))
+		copy(clone[i], v)
+	}
+	return clone
+}
+
+func (c CallArguments) At(index int) ([]byte, error) {
+	if (index < 0) || (index >= len(c)) {
+		return nil, fmt.Errorf("index out of range")
+	}
+
+	return (c)[index], nil
+}
+
+func (c CallArguments) MustAt(index int) []byte {
+	ret, err := c.At(index)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+func (c CallArguments) OrNil(index int) []byte {
+	if (index < 0) || (index >= len(c)) {
+		return nil
+	}
+	return c[index]
+}
+
+func (c CallArguments) String() string {
+	return hexutil.Encode(c.Bytes())
+}
+
+func (c CallArguments) Bytes() []byte {
+	return bcs.MustMarshal(&c)
+}
+
+func CallArgumentsFromBytes(b []byte) (CallArguments, error) {
+	return bcs.Unmarshal[CallArguments](b)
+}
+
+func (c CallArguments) MarshalJSON() ([]byte, error) {
+	d := make([]string, len(c))
+
+	for i, arg := range c {
+		d[i] = hexutil.Encode(arg)
+	}
+
+	return json.Marshal(d)
+}
+
+func (c *CallArguments) UnmarshalJSON(data []byte) error {
+	var args []string
+	err := json.Unmarshal(data, &args)
+	if err != nil {
+		return err
+	}
+
+	cTemp := make([][]byte, len(args))
+
+	for i, v := range args {
+		(cTemp)[i], err = hexutil.Decode(v)
+		if err != nil {
+			return err
+		}
+	}
+
+	*c = cTemp
+
+	return nil
+}
+
+func ArgAt[T any](results CallResults, index int) (r T, _ error) {
+	b, err := results.At(index)
+	if err != nil {
+		return r, err
+	}
+
+	return codec.Decode[T](b)
+}
+
+func MustArgAt[T any](results CallResults, index int) T {
+	return lo.Must(ResAt[T](results, index))
+}
+
+func OptionalArgAt[T any](results CallResults, index int, def T) (T, error) {
+	r, err := ArgAt[*T](results, index)
+	if err != nil {
+		return def, nil
+	}
+	if r == nil {
+		return def, nil
+	}
+
+	return *r, nil
+}
+
+func MustOptionalArgAt[T any](results CallResults, index int, def T) T {
+	return lo.Must(OptionalResAt(results, index, def))
+}
+
+type CallResults = CallArguments
+
+func ResAt[T any](results CallResults, index int) (T, error) {
+	return ArgAt[T](results, index)
+}
+
+func MustResAt[T any](results CallResults, index int) T {
+	return MustArgAt[T](results, index)
+}
+
+func OptionalResAt[T any](results CallResults, index int, def T) (T, error) {
+	return OptionalArgAt(results, index, def)
+}
+
+func MustOptionalResAt[T any](results CallResults, index int, def T) T {
+	return MustOptionalArgAt(results, index, def)
+}
+
+type Message struct {
+	Target CallTarget    `json:"target"`
+	Params CallArguments `json:"params"`
+}
+
+func NewMessage(contract Hname, ep Hname, params ...CallArguments) Message {
 	msg := Message{
 		Target: CallTarget{Contract: contract, EntryPoint: ep},
 	}
@@ -174,11 +316,15 @@ func NewMessage(contract Hname, ep Hname, params ...dict.Dict) Message {
 	return msg
 }
 
+func (m Message) Equals(other Message) bool {
+	return m.Target.Equals(other.Target) && m.Params.Equals(other.Params)
+}
+
 func (m Message) String() string {
 	return fmt.Sprintf("Message(%s, %s, %s)", m.Target.Contract, m.Target.EntryPoint, m.Params)
 }
 
-func NewMessageFromNames(contract string, ep string, params ...dict.Dict) Message {
+func NewMessageFromNames(contract string, ep string, params ...CallArguments) Message {
 	return NewMessage(Hn(contract), Hn(ep), params...)
 }
 
@@ -189,13 +335,7 @@ func (m Message) Clone() Message {
 	}
 }
 
-func (m Message) WithParam(k kv.Key, v []byte) (r Message) {
-	r = m.Clone()
-	r.Params[k] = v
-	return
-}
-
-type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64)
+type CoreCallbackFunc func(contractPartition kv.KVStore, gasBurned uint64, vmError *VMError)
 
 // RequestParameters represents parameters of the on-ledger request. The request is build from these parameters
 type RequestParameters struct {
@@ -205,8 +345,6 @@ type RequestParameters struct {
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	Assets *Assets
-	// AdjustToMinimumStorageDeposit if true base tokens in attached fungible tokens will be added to meet minimum storage deposit requirements
-	AdjustToMinimumStorageDeposit bool
 	// Metadata is a request metadata. It may be nil if the request is just sending assets to L1 address
 	Metadata *SendMetadata
 	// SendOptions includes options of the request, such as time lock or expiry parameters
@@ -222,16 +360,101 @@ type Gas interface {
 
 // StateAnchor contains properties of the anchor request/transaction in the current context
 type StateAnchor struct {
-	ChainID              ChainID
-	Sender               *cryptolib.Address
-	OutputID             iotago.OutputID
-	IsOrigin             bool
-	StateController      *cryptolib.Address
-	GovernanceController *cryptolib.Address
-	StateIndex           uint32
-	StateData            []byte
-	Deposit              uint64
-	NativeTokens         iotago.NativeTokens
+	anchor     *iscmove.AnchorWithRef
+	iscPackage iotago.Address
+}
+
+// Every time changing the L1 state of the Anchor object, the nodes should create
+// a latest StateAnchor, and remember to update the latest ObjectRef of GasCoin
+// "changing the L1 state of the Anchor object" includes the following 'txbuilder' operations
+// * BuildTransactionEssence (update the anchor commitment)
+// * RotationTransaction
+func NewStateAnchor(
+	anchor *iscmove.AnchorWithRef,
+	iscPackage iotago.Address,
+) StateAnchor {
+	return StateAnchor{
+		anchor:     anchor,
+		iscPackage: iscPackage,
+	}
+}
+
+func (s *StateAnchor) MarshalBCS(e *bcs.Encoder) error {
+	err := e.Encode(s.anchor)
+	if err != nil {
+		return err
+	}
+
+	err = e.Encode(s.iscPackage)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StateAnchor) UnmarshalBCS(d *bcs.Decoder) error {
+	s.anchor = nil
+	err := d.Decode(&s.anchor)
+	if err != nil {
+		return err
+	}
+
+	s.iscPackage = iotago.Address{}
+	err = d.Decode(&s.iscPackage)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StateAnchor) ISCPackage() iotago.Address {
+	return s.iscPackage
+}
+
+func (s StateAnchor) Anchor() *iscmove.AnchorWithRef {
+	return s.anchor
+}
+
+func (s StateAnchor) Owner() *cryptolib.Address {
+	return cryptolib.NewAddressFromIota(s.anchor.Owner)
+}
+
+func (s StateAnchor) GetObjectRef() *iotago.ObjectRef {
+	return &s.anchor.ObjectRef
+}
+
+func (s StateAnchor) GetObjectID() *iotago.ObjectID {
+	return s.anchor.ObjectID
+}
+
+func (s StateAnchor) GetStateMetadata() []byte {
+	return s.anchor.Object.StateMetadata
+}
+
+func (s StateAnchor) GetStateIndex() uint32 {
+	return s.anchor.Object.StateIndex
+}
+
+func (s StateAnchor) GetAssetsBag() *iscmove.AssetsBag {
+	return &s.anchor.Object.Assets
+}
+
+func (s StateAnchor) ChainID() ChainID {
+	return ChainIDFromObjectID(*s.anchor.ObjectID)
+}
+
+func (s StateAnchor) Hash() hashing.HashValue {
+	return s.anchor.Hash()
+}
+
+func (s StateAnchor) Equals(input *StateAnchor) bool {
+	if input == nil {
+		return false
+	}
+
+	return iscmove.AnchorWithRefEquals(*s.anchor, *input.Anchor())
 }
 
 type SendOptions struct {
@@ -278,6 +501,7 @@ type BLS interface {
 }
 
 type EVMTracer struct {
-	Tracer  *tracers.Tracer
-	TxIndex uint64
+	Tracer      *tracers.Tracer
+	TxIndex     *uint64
+	BlockNumber *uint64
 }

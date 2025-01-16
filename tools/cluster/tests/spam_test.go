@@ -8,27 +8,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 // executed in cluster_test.go
 func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
 	// in the privtangle setup, with 1s milestones, this test takes ~50m to process 10k requests
 	const numRequests = 10_000
 
@@ -36,7 +36,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 	numAccounts := numRequests / 10
 	numRequestsPerAccount := numRequests / numAccounts
 	errCh := make(chan error, numRequests)
-	txCh := make(chan iotago.Transaction, numRequests)
+	txCh := make(chan iotajsonrpc.IotaTransactionBlockResponse, numRequests)
 	for i := 0; i < numAccounts; i++ {
 		createWalletRetries := 0
 
@@ -61,7 +61,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 			for i := 0; i < numRequestsPerAccount; i++ {
 				retries := 0
 				for {
-					tx, err := chainClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
+					tx, err := chainClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 					if err != nil {
 						if retries >= 5 {
 							errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
@@ -102,19 +102,18 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 30*time.Second)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
+	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
-	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
+	lastEventCounterValue := codec.MustDecode[int64](eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 }
 
 // executed in cluster_test.go
 func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
 
 	// we need to cap the limit of parallel requests, otherwise some reqs will fail due to local tcp limits: `dial tcp 127.0.0.1:9090: socket: too many open files`
 	const maxParallelRequests = 700
@@ -124,7 +123,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(utxodb.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(iotaclient.FundsFromFaucetAmount, keyPair)
 
 	myClient := env.Chain.Client(keyPair)
 
@@ -188,12 +187,12 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
-	eventBytes, err := iotago.DecodeHex(res.Events[len(res.Events)-1].Payload)
+	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
 	require.NoError(t, err)
-	lastEventCounterValue := codec.Int64.MustDecode(eventBytes)
+	lastEventCounterValue := codec.MustDecode[int64](eventBytes)
 	require.EqualValues(t, lastEventCounterValue, numRequests)
 	avgProcessingDuration := processingDurationsSum / numRequests
 	fmt.Printf("avg processing duration: %ds\n max: %ds\n", avgProcessingDuration, maxProcessingDuration)
@@ -202,7 +201,6 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 // executed in cluster_test.go
 func testSpamEVM(t *testing.T, env *ChainEnv) {
 	testutil.RunHeavy(t)
-	env.deployNativeIncCounterSC(0)
 
 	const numRequests = 1_000
 
@@ -211,7 +209,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
 	evmAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, evmAddr)
-	env.TransferFundsTo(isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+	env.TransferFundsTo(isc.NewAssets(iotaclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 
 	// deploy solidity inccounter
 	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))

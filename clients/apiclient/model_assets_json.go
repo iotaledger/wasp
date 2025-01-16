@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the AssetsJSON type satisfies the MappedNullable interface at compile time
@@ -19,21 +21,20 @@ var _ MappedNullable = &AssetsJSON{}
 
 // AssetsJSON struct for AssetsJSON
 type AssetsJSON struct {
-	// The base tokens (uint64 as string)
-	BaseTokens string `json:"baseTokens"`
-	NativeTokens []NativeTokenJSON `json:"nativeTokens"`
-	Nfts []string `json:"nfts"`
+	Coins []CoinJSON `json:"coins"`
+	Objects [][]int32 `json:"objects"`
 }
+
+type _AssetsJSON AssetsJSON
 
 // NewAssetsJSON instantiates a new AssetsJSON object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAssetsJSON(baseTokens string, nativeTokens []NativeTokenJSON, nfts []string) *AssetsJSON {
+func NewAssetsJSON(coins []CoinJSON, objects [][]int32) *AssetsJSON {
 	this := AssetsJSON{}
-	this.BaseTokens = baseTokens
-	this.NativeTokens = nativeTokens
-	this.Nfts = nfts
+	this.Coins = coins
+	this.Objects = objects
 	return &this
 }
 
@@ -45,76 +46,52 @@ func NewAssetsJSONWithDefaults() *AssetsJSON {
 	return &this
 }
 
-// GetBaseTokens returns the BaseTokens field value
-func (o *AssetsJSON) GetBaseTokens() string {
+// GetCoins returns the Coins field value
+func (o *AssetsJSON) GetCoins() []CoinJSON {
 	if o == nil {
-		var ret string
+		var ret []CoinJSON
 		return ret
 	}
 
-	return o.BaseTokens
+	return o.Coins
 }
 
-// GetBaseTokensOk returns a tuple with the BaseTokens field value
+// GetCoinsOk returns a tuple with the Coins field value
 // and a boolean to check if the value has been set.
-func (o *AssetsJSON) GetBaseTokensOk() (*string, bool) {
+func (o *AssetsJSON) GetCoinsOk() ([]CoinJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.BaseTokens, true
+	return o.Coins, true
 }
 
-// SetBaseTokens sets field value
-func (o *AssetsJSON) SetBaseTokens(v string) {
-	o.BaseTokens = v
+// SetCoins sets field value
+func (o *AssetsJSON) SetCoins(v []CoinJSON) {
+	o.Coins = v
 }
 
-// GetNativeTokens returns the NativeTokens field value
-func (o *AssetsJSON) GetNativeTokens() []NativeTokenJSON {
+// GetObjects returns the Objects field value
+func (o *AssetsJSON) GetObjects() [][]int32 {
 	if o == nil {
-		var ret []NativeTokenJSON
+		var ret [][]int32
 		return ret
 	}
 
-	return o.NativeTokens
+	return o.Objects
 }
 
-// GetNativeTokensOk returns a tuple with the NativeTokens field value
+// GetObjectsOk returns a tuple with the Objects field value
 // and a boolean to check if the value has been set.
-func (o *AssetsJSON) GetNativeTokensOk() ([]NativeTokenJSON, bool) {
+func (o *AssetsJSON) GetObjectsOk() ([][]int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.NativeTokens, true
+	return o.Objects, true
 }
 
-// SetNativeTokens sets field value
-func (o *AssetsJSON) SetNativeTokens(v []NativeTokenJSON) {
-	o.NativeTokens = v
-}
-
-// GetNfts returns the Nfts field value
-func (o *AssetsJSON) GetNfts() []string {
-	if o == nil {
-		var ret []string
-		return ret
-	}
-
-	return o.Nfts
-}
-
-// GetNftsOk returns a tuple with the Nfts field value
-// and a boolean to check if the value has been set.
-func (o *AssetsJSON) GetNftsOk() ([]string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return o.Nfts, true
-}
-
-// SetNfts sets field value
-func (o *AssetsJSON) SetNfts(v []string) {
-	o.Nfts = v
+// SetObjects sets field value
+func (o *AssetsJSON) SetObjects(v [][]int32) {
+	o.Objects = v
 }
 
 func (o AssetsJSON) MarshalJSON() ([]byte, error) {
@@ -127,10 +104,47 @@ func (o AssetsJSON) MarshalJSON() ([]byte, error) {
 
 func (o AssetsJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["baseTokens"] = o.BaseTokens
-	toSerialize["nativeTokens"] = o.NativeTokens
-	toSerialize["nfts"] = o.Nfts
+	toSerialize["coins"] = o.Coins
+	toSerialize["objects"] = o.Objects
 	return toSerialize, nil
+}
+
+func (o *AssetsJSON) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"coins",
+		"objects",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varAssetsJSON := _AssetsJSON{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varAssetsJSON)
+
+	if err != nil {
+		return err
+	}
+
+	*o = AssetsJSON(varAssetsJSON)
+
+	return err
 }
 
 type NullableAssetsJSON struct {

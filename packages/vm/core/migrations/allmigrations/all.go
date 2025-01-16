@@ -4,8 +4,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 )
 
+const (
+	SchemaVersionIotaRebased = 4 + iota // versions prior to 4 correspond to stardust
+
+	LatestSchemaVersion = SchemaVersionIotaRebased
+)
+
 var DefaultScheme = &migrations.MigrationScheme{
-	BaseSchemaVersion: 3,
+	BaseSchemaVersion: LatestSchemaVersion,
 
 	// Add new migrations to the end of this list, and they will be applied before
 	// creating the next block.
@@ -16,5 +22,3 @@ var DefaultScheme = &migrations.MigrationScheme{
 	// BaseSchemaVersion by one.
 	Migrations: []migrations.Migration{},
 }
-
-const SchemaVersionIotaRebased = 3

@@ -24,10 +24,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
@@ -37,8 +39,10 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
@@ -54,8 +58,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suisigner"
 )
 
 const (
@@ -107,18 +109,13 @@ type PeerStatus struct {
 	Connected  bool
 }
 
-type RequestHandler = func(req *iscmove.Request)
+type RequestHandler = func(req isc.OnLedgerRequest)
 
 // The Anchor versions must be passed here in-order. The last one
 // is the current one.
-type AnchorHandler = func(anchor *iscmove.RefWithObject[iscmove.Anchor])
+type AnchorHandler = func(anchor *isc.StateAnchor)
 
-type SignedTx struct {
-	Data       *sui.TransactionData
-	Signatures []*suisigner.Signature
-}
-
-type TxPostHandler = func(tx SignedTx, err error)
+type TxPostHandler = func(tx iotasigner.SignedTransaction, err error)
 
 type chainNodeImpl struct {
 	me                  gpa.NodeID
@@ -130,14 +127,14 @@ type chainNodeImpl struct {
 	tangleTime          time.Time
 	mempool             mempool.Mempool
 	stateMgr            statemanager.StateMgr
-	recvAliasOutputPipe pipe.Pipe[*isc.AliasOutputWithID]
+	recvAnchorPipe      pipe.Pipe[isc.StateAnchor]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	recvMilestonePipe   pipe.Pipe[time.Time]
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
 	consOutputPipe      pipe.Pipe[*consOutput]
 	consRecoverPipe     pipe.Pipe[*consRecover]
-	publishingTXes      *shrinkingmap.ShrinkingMap[iotago.TransactionID, context.CancelFunc] // TX'es now being published.
-	procCache           *processors.Cache                                                    // Cache for the SC processors.
+	publishingTXes      *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
+	procCache           *processors.Config                                                // Cache for the SC processors.
 	configUpdatedCh     chan *configUpdate
 	serversUpdatedPipe  pipe.Pipe[*serversUpdate]
 	awaitReceiptActCh   chan *awaitReceiptReq
@@ -161,12 +158,14 @@ type chainNodeImpl struct {
 	accessNodesFromCNF     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the active state).
 	accessNodesFromACT     []*cryptolib.PublicKey // Access nodes, as configured in the governance contract (for the confirmed state).
 	serverNodes            []*cryptolib.PublicKey // The nodes we can query (because they consider us an access node).
-	latestConfirmedAO      *isc.AliasOutputWithID // Confirmed by L1, can be lagging from latestActiveAO.
+	latestConfirmedAO      *isc.StateAnchor       // Confirmed by L1, can be lagging from latestActiveAO.
 	latestConfirmedState   state.State            // State corresponding to latestConfirmedAO, for performance reasons.
-	latestConfirmedStateAO *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
-	latestActiveAO         *isc.AliasOutputWithID // This is the AO the chain is build on.
+	latestConfirmedStateAO *isc.StateAnchor       // Set only when the corresponding state is retrieved.
+	latestActiveAO         *isc.StateAnchor       // This is the AO the chain is build on.
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
-	latestActiveStateAO    *isc.AliasOutputWithID // Set only when the corresponding state is retrieved.
+	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
+	gasCoin                *coin.CoinWithRef      // Set only when the corresponding state is retrieved.
+	originDeposit          coin.Value             // Initial deposit of the chain.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -216,8 +215,8 @@ func (cr *consRecover) String() string {
 type txPublished struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
-	txID            iotago.TransactionID
-	nextAliasOutput *isc.AliasOutputWithID
+	txID            hashing.HashValue
+	nextAliasOutput *isc.StateAnchor
 	confirmed       bool
 }
 
@@ -262,6 +261,7 @@ func New(
 	smParameters sm_gpa.StateManagerParameters,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
+	originDeposit coin.Value,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -277,14 +277,14 @@ func New(
 		chainStore:             chainStore,
 		nodeConn:               nodeConn,
 		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
-		recvAliasOutputPipe:    pipe.NewInfinitePipe[*isc.AliasOutputWithID](),
+		recvAnchorPipe:         pipe.NewInfinitePipe[isc.StateAnchor](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		recvMilestonePipe:      pipe.NewInfinitePipe[time.Time](),
 		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
-		publishingTXes:         shrinkingmap.New[iotago.TransactionID, context.CancelFunc](),
-		procCache:              processors.MustNew(processorConfig),
+		publishingTXes:         shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
+		procCache:              processorConfig,
 		configUpdatedCh:        make(chan *configUpdate, 1),
 		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
 		awaitReceiptActCh:      make(chan *awaitReceiptReq, 1),
@@ -310,6 +310,7 @@ func New(
 		latestActiveAO:         nil,
 		latestActiveState:      nil,
 		latestActiveStateAO:    nil,
+		originDeposit:          originDeposit,
 		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -319,7 +320,7 @@ func New(
 		log:                    log,
 	}
 
-	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAliasOutputPipe", cni.recvAliasOutputPipe.Len)
+	cni.chainMetrics.Pipe.TrackPipeLen("node-recvAnchorPipe", cni.recvAnchorPipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-recvTxPublishedPipe", cni.recvTxPublishedPipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-recvMilestonePipe", cni.recvMilestonePipe.Len)
 	cni.chainMetrics.Pipe.TrackPipeLen("node-consOutputPipe", cni.consOutputPipe.Len)
@@ -345,8 +346,8 @@ func New(
 			defer cni.accessLock.RUnlock()
 			return cni.activeAccessNodes, cni.activeCommitteeNodes
 		},
-		func(anchor *iscmove.Anchor) {
-			cni.stateTrackerAct.TrackAliasOutput(ao, true)
+		func(anchor *isc.StateAnchor) {
+			cni.stateTrackerAct.TrackAliasOutput(anchor, true)
 		},
 		func(block state.Block) {
 			if err := cni.stateMgr.PreliminaryBlock(block); err != nil {
@@ -438,36 +439,18 @@ func New(
 	})
 	//
 	// Attach to the L1.
-	recvRequestCB := func(outputInfo *isc.OutputInfo) {
-		log.Debugf("recvRequestCB[%p], consumed=%v, outputID=%v", cni, outputInfo.Consumed(), outputInfo.OutputID.ToHex())
+	recvRequestCB := func(req isc.OnLedgerRequest) {
+		log.Debugf("recvRequestCB[%p], requestID=%v", cni, req.ID())
 		cni.chainMetrics.NodeConn.L1RequestReceived()
-		req, err := isc.OnLedgerFromUTXO(outputInfo.Output, outputInfo.OutputID)
-		if err != nil {
-			cni.log.Warnf("Cannot create OnLedgerRequest from output: %v", err)
-			return
-		}
-		if req.IsInternalUTXO(cni.chainID) {
-			cni.log.Debugf("Ignoring internal UTXO with ID=%v, will not consider it a request: %v", outputInfo.OutputID.ToHex(), req.String())
-			return
-		}
 		cni.mempool.ReceiveOnLedgerRequest(req)
 	}
-	recvAliasOutputPipeInCh := cni.recvAliasOutputPipe.In()
-	recvAliasOutputCB := func(outputInfo *isc.OutputInfo) {
-		log.Debugf("recvAliasOutputCB[%p], %v", cni, outputInfo.OutputID.ToHex())
-		cni.chainMetrics.NodeConn.L1AliasOutputReceived()
-		if outputInfo.Consumed() {
-			// we don't need to send consumed alias outputs to the pipe
-			return
-		}
-		recvAliasOutputPipeInCh <- outputInfo.AliasOutputWithID()
+	recvAnchorPipeInCh := cni.recvAnchorPipe.In()
+	recvAnchorCB := func(anchor *isc.StateAnchor) {
+		log.Debugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
+		cni.chainMetrics.NodeConn.L1AnchorReceived()
+		recvAnchorPipeInCh <- *anchor
 	}
-	recvMilestonePipeInCh := cni.recvMilestonePipe.In()
-	recvMilestoneCB := func(timestamp time.Time) {
-		log.Debugf("recvMilestoneCB[%p], %v", cni, timestamp)
-		recvMilestonePipeInCh <- timestamp
-	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAliasOutputCB, recvMilestoneCB, onChainConnect, onChainDisconnect)
+	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
 	//
 	// Run the main thread.
 
@@ -503,7 +486,7 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
 	defer util.ExecuteIfNotNil(cleanupFunc)
 
-	recvAliasOutputPipeOutCh := cni.recvAliasOutputPipe.Out()
+	recvAnchorPipeOutCh := cni.recvAnchorPipe.Out()
 	recvTxPublishedPipeOutCh := cni.recvTxPublishedPipe.Out()
 	recvMilestonePipeOutCh := cni.recvMilestonePipe.Out()
 	netRecvPipeOutCh := cni.netRecvPipe.Out()
@@ -529,9 +512,9 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				continue
 			}
 			cni.handleTxPublished(ctx, txPublishResult)
-		case aliasOutput, ok := <-recvAliasOutputPipeOutCh:
+		case aliasOutput, ok := <-recvAnchorPipeOutCh:
 			if !ok {
-				recvAliasOutputPipeOutCh = nil
+				recvAnchorPipeOutCh = nil
 				continue
 			}
 			cni.handleAliasOutput(ctx, aliasOutput)
@@ -604,17 +587,18 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 
 // The active state is needed by the mempool to cleanup the processed requests, etc.
 // The request/receipt awaits are already handled in the StateTracker.
-func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *isc.StateAnchor, added, removed []state.Block) {
 	cni.log.Debugf("handleStateTrackerActCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestActiveState = st
 	cni.latestActiveStateAO = till
+	// FIXME cni.gasCoin
 	latestConfirmedAO := cni.latestConfirmedAO
 	cni.accessLock.Unlock()
 
 	// Set the state to match the ActiveOrConfirmed state.
 	if latestConfirmedAO == nil || till.GetStateIndex() > latestConfirmedAO.GetStateIndex() {
-		l1Commitment := transaction.MustL1CommitmentFromAliasOutput(till.GetAliasOutput())
+		l1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(till))
 		if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 			panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
 		}
@@ -628,7 +612,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 		})
 	}
 
-	cni.mempool.TrackNewChainHead(st, from, till, added, removed)
+	cni.mempool.TrackNewChainHead(st, from, added, removed)
 }
 
 // The committed state is required here because:
@@ -636,7 +620,7 @@ func (cni *chainNodeImpl) handleStateTrackerActCB(st state.State, from, till *is
 //   - We set it as latest here. This is then used in many places to access the latest version of the state.
 //
 // The request/receipt awaits are already handled in the StateTracker.
-func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.AliasOutputWithID, added, removed []state.Block) {
+func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *isc.StateAnchor, added, removed []state.Block) {
 	cni.log.Debugf("handleStateTrackerCnfCB: till %v from %v", till, from)
 	cni.accessLock.Lock()
 	cni.latestConfirmedState = st
@@ -653,7 +637,7 @@ func (cni *chainNodeImpl) handleStateTrackerCnfCB(st state.State, from, till *is
 
 	// Set the state to match the ActiveOrConfirmed state.
 	if latestActiveStateAO == nil || latestActiveStateAO.GetStateIndex() <= till.GetStateIndex() {
-		l1Commitment := transaction.MustL1CommitmentFromAliasOutput(till.GetAliasOutput())
+		l1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(till))
 		if err := cni.chainStore.SetLatest(l1Commitment.TrieRoot()); err != nil {
 			panic(fmt.Errorf("cannot set L1Commitment=%v as latest: %w", l1Commitment, err))
 		}
@@ -681,16 +665,16 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 	cni.publishingTXes.Delete(txPubResult.txID)
 
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
+		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.nextAliasOutput.Hash(), txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *isc.AliasOutputWithID) {
+func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc.StateAnchor) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		initBlock, err := origin.InitChainByAliasOutput(cni.chainStore, aliasOutput)
+		initBlock, err := origin.InitChainByAnchor(cni.chainStore, &aliasOutput, cni.originDeposit, isc.BaseTokenCoinInfo)
 		if err != nil {
 			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
 			return
@@ -700,10 +684,10 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput *is
 		}
 	}
 
-	cni.stateTrackerCnf.TrackAliasOutput(aliasOutput, true)
-	cni.stateTrackerAct.TrackAliasOutput(aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
+	cni.stateTrackerCnf.TrackAliasOutput(&aliasOutput, true)
+	cni.stateTrackerAct.TrackAliasOutput(&aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputAliasOutputConfirmed(aliasOutput),
+		chainmanager.NewInputAliasOutputConfirmed(aliasOutput.Owner(), &aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
@@ -754,20 +738,22 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 	//
 	// Start publishing TX'es, if there not being posted already.
 	outputNeedPostTXes := output.NeedPublishTX()
-	outputNeedPostTXes.ForEach(func(ti iotago.TransactionID, needPublishTx *chainmanager.NeedPublishTX) bool {
+	outputNeedPostTXes.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
 		txToPost := needPublishTx // Have to take a copy to be used in callback.
-		if !cni.publishingTXes.Has(txToPost.TxID) {
+		txHash := lo.Must(txToPost.Tx.Hash())
+
+		if !cni.publishingTXes.Has(txHash) {
 			subCtx, subCancel := context.WithCancel(ctx)
-			cni.publishingTXes.Set(txToPost.TxID, subCancel)
+			cni.publishingTXes.Set(txHash, subCancel)
 			publishStart := time.Now()
-			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, txToPost.Tx, func(_ *iotago.Transaction, confirmed bool) {
-				cni.chainMetrics.NodeConn.TXPublishResult(confirmed, time.Since(publishStart))
+			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, err error) {
+				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 				cni.recvTxPublishedPipe.In() <- &txPublished{
-					committeeAddr:   txToPost.CommitteeAddr,
-					logIndex:        txToPost.LogIndex,
-					txID:            txToPost.TxID,
-					nextAliasOutput: txToPost.NextAliasOutput,
-					confirmed:       confirmed,
+					committeeAddr: txToPost.CommitteeAddr,
+					logIndex:      txToPost.LogIndex,
+					txID:          txHash,
+					// nextAliasOutput: txToPost,
+					confirmed: err == nil,
 				}
 			}); err != nil {
 				cni.log.Error(err.Error())
@@ -799,14 +785,14 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		chainMgrInput = chainmanager.NewInputConsensusOutputDone(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseAliasOutput.OutputID(),
+			*out.request.BaseStateAnchor.GetObjectID(),
 			out.output.Result,
 		)
 	case cons.Skipped:
 		chainMgrInput = chainmanager.NewInputConsensusOutputSkip(
 			out.request.CommitteeAddr,
 			out.request.LogIndex,
-			out.request.BaseAliasOutput.OutputID(),
+			out.request.BaseStateAnchor.GetObjectRef(),
 		)
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
@@ -839,8 +825,8 @@ func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensu
 			cni.consRecoverPipe.In() <- &consRecover{request: needConsensus}
 		}
 		ci.request = needConsensus
-		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseAliasOutput, true)
-		ci.consensus.Input(needConsensus.BaseAliasOutput, outputCB, recoverCB)
+		cni.stateTrackerAct.TrackAliasOutput(needConsensus.BaseStateAnchor, true)
+		ci.consensus.Input(needConsensus.BaseStateAnchor, outputCB, recoverCB)
 	}
 }
 
@@ -860,7 +846,9 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			logIndexCopy := addLogIndex
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
-				cni.procCache, cni.mempool, cni.stateMgr, cni.net,
+				cni.procCache, cni.mempool, cni.stateMgr,
+				cni.nodeConn, // TODO: Pass the NodeConn here.
+				cni.net,
 				cni.validatorAgentID,
 				cni.recoveryTimeout, RedeliveryPeriod, PrintStatusPeriod,
 				cni.chainMetrics.Consensus,
@@ -922,14 +910,14 @@ func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr cryptolib.Address,
 }
 
 // Cleanup TX'es that are not needed to be posted anymore.
-func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[iotago.TransactionID, *chainmanager.NeedPublishTX]) {
+func (cni *chainNodeImpl) cleanupPublishingTXes(neededPostTXes *shrinkingmap.ShrinkingMap[hashing.HashValue, *chainmanager.NeedPublishTX]) {
 	if neededPostTXes == nil || neededPostTXes.Size() == 0 {
 		// just create a new map
-		cni.publishingTXes = shrinkingmap.New[iotago.TransactionID, context.CancelFunc]()
+		cni.publishingTXes = shrinkingmap.New[hashing.HashValue, context.CancelFunc]()
 		return
 	}
 
-	cni.publishingTXes.ForEach(func(txID iotago.TransactionID, cancelFunc context.CancelFunc) bool {
+	cni.publishingTXes.ForEach(func(txID hashing.HashValue, cancelFunc context.CancelFunc) bool {
 		if !neededPostTXes.Has(txID) { // remove anything that doesn't need a tx to be posted
 			cancelFunc()
 			cni.publishingTXes.Delete(txID)
@@ -948,7 +936,8 @@ func (cni *chainNodeImpl) sendMessages(outMsgs gpa.OutMessages) {
 			cni.log.Warnf("Pub key for the recipient not found: %v", msg.Recipient())
 			return
 		}
-		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(cni.netPeeringID, peering.ReceiverChain, msgTypeChainMgr, msgBytes)
 		cni.net.SendMsgByPubKey(recipientPubKey, pm)
 	})
 }
@@ -1043,7 +1032,7 @@ func (cni *chainNodeImpl) Store() indexedstore.IndexedStore {
 	return cni.chainStore
 }
 
-func (cni *chainNodeImpl) Processors() *processors.Cache {
+func (cni *chainNodeImpl) Processors() *processors.Config {
 	return cni.procCache
 }
 
@@ -1051,7 +1040,7 @@ func (cni *chainNodeImpl) Log() *logger.Logger {
 	return cni.log
 }
 
-func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.AliasOutputWithID, error) {
+func (cni *chainNodeImpl) LatestAnchor(freshness StateFreshness) (*isc.StateAnchor, error) {
 	cni.accessLock.RLock()
 	latestActiveAO := cni.latestActiveStateAO
 	latestConfirmedAO := cni.latestConfirmedStateAO
@@ -1084,6 +1073,10 @@ func (cni *chainNodeImpl) LatestAliasOutput(freshness StateFreshness) (*isc.Alia
 	default:
 		panic(fmt.Errorf("unexpected StateFreshness: %v", freshness))
 	}
+}
+
+func (cni *chainNodeImpl) LatestGasCoin(freshness StateFreshness) (*coin.CoinWithRef, error) {
+	return cni.nodeConn.GetGasCoinRef(context.Background(), cni.chainID)
 }
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {

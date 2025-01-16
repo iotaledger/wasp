@@ -11,16 +11,16 @@ import (
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/samber/lo"
 )
 
 // MintBlock "mints" the Ethereum block after all requests in the ISC
@@ -35,10 +35,18 @@ func getTracer(ctx isc.Sandbox) *tracing.Hooks {
 	if tracer == nil {
 		return nil
 	}
-	if tracer.TxIndex != uint64(ctx.RequestIndex()) {
-		return nil // trace only the transaction we're interested in
+
+	// if block number is set and the tx is null, we're tracing the whole block
+	if tracer.TxIndex == nil && tracer.BlockNumber != nil {
+		return tracer.Tracer.Hooks
 	}
-	return tracer.Tracer.Hooks
+
+	// if tx index is set, we're tracing a specific transaction
+	if tracer.TxIndex != nil && *tracer.TxIndex == uint64(ctx.RequestIndex()) {
+		return tracer.Tracer.Hooks
+	}
+
+	return nil
 }
 
 func createEmulator(ctx isc.Sandbox) *emulator.EVMEmulator {
@@ -72,13 +80,6 @@ func gasLimits(chainInfo *isc.ChainInfo) emulator.GasLimits {
 // timestamp returns the current timestamp in seconds since epoch
 func timestamp(t time.Time) uint64 {
 	return uint64(t.Unix())
-}
-
-func result(value []byte) dict.Dict {
-	if value == nil {
-		return nil
-	}
-	return dict.Dict{evm.FieldResult: value}
 }
 
 type emulatorContext struct {
@@ -123,7 +124,7 @@ func (ctx *emulatorContext) Timestamp() uint64 {
 	return timestamp(ctx.sandbox.Timestamp())
 }
 
-func (*emulatorContext) BaseTokensDecimals() uint32 {
+func (*emulatorContext) BaseTokensDecimals() uint8 {
 	return parameters.Decimals
 }
 
@@ -133,7 +134,7 @@ func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {
 	ctx.WithoutGasBurn(func() {
 		var agentID isc.AgentID = isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr)
 		res := ctx.sandbox.CallView(accounts.ViewBalanceBaseTokenEVM.Message(&agentID))
-		ret = lo.Must(accounts.ViewBalanceBaseTokenEVM.Output.Decode(res))
+		ret = lo.Must(accounts.ViewBalanceBaseTokenEVM.DecodeOutput(res))
 	})
 	return ret
 }

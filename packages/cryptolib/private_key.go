@@ -9,7 +9,6 @@ import (
 	"go.dedis.ch/kyber/v3/sign/eddsa"
 	"go.dedis.ch/kyber/v3/util/key"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -55,7 +54,7 @@ func (pkT *PrivateKey) AsBytes() []byte {
 }
 
 func (pkT *PrivateKey) String() string {
-	return iotago.EncodeHex(pkT.key)
+	return EncodeHex(pkT.key)
 }
 
 func (pkT *PrivateKey) AsStdKey() ed25519.PrivateKey {
@@ -76,14 +75,6 @@ func (pkT *PrivateKey) Public() *PublicKey {
 
 func (pkT *PrivateKey) Sign(message []byte) []byte {
 	return ed25519.Sign(pkT.key, message)
-}
-
-func (pkT *PrivateKey) AddressKeysForEd25519Address(addr *iotago.Ed25519Address) iotago.AddressKeys {
-	return iotago.NewAddressKeysForEd25519Address(addr, pkT.key)
-}
-
-func (pkT *PrivateKey) AddressKeys(addr iotago.Address) iotago.AddressKeys {
-	return iotago.AddressKeys{Address: addr, Keys: pkT.key}
 }
 
 func (pkT *PrivateKey) Read(r io.Reader) error {

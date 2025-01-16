@@ -15,7 +15,7 @@ func (li LogIndex) AsUint32() uint32 {
 }
 
 func (li LogIndex) Bytes() []byte {
-	return codec.Uint32.Encode(li.AsUint32())
+	return codec.Encode[uint32](li.AsUint32())
 }
 
 func (li LogIndex) IsNil() bool {
@@ -31,11 +31,11 @@ func NilLogIndex() LogIndex {
 }
 
 func MaxLogIndex(lis ...LogIndex) LogIndex {
-	max := NilLogIndex()
+	maxLogIndex := NilLogIndex()
 	for _, li := range lis {
-		if li > max {
-			max = li
+		if li > maxLogIndex {
+			maxLogIndex = li
 		}
 	}
-	return max
+	return maxLogIndex
 }

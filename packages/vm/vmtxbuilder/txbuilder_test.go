@@ -1,486 +1,451 @@
-package vmtxbuilder
+package vmtxbuilder_test
 
 import (
-	"math/big"
-	"math/rand"
+	"context"
 	"testing"
+
+	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/testutil/testiotago"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
-var dummyStateMetadata = []byte("foobar")
-
-type mockAccountContractRead struct {
-	assets             *isc.Assets
-	nativeTokenOutputs map[isc.NativeTokenID]*iotago.BasicOutput
-}
-
-func (m *mockAccountContractRead) Read() AccountsContractRead {
-	return AccountsContractRead{
-		NativeTokenOutput: func(id iotago.FoundryID) (*iotago.BasicOutput, iotago.OutputID) {
-			return m.nativeTokenOutputs[id], iotago.OutputID{}
-		},
-		FoundryOutput: func(uint32) (*iotago.FoundryOutput, iotago.OutputID) {
-			return nil, iotago.OutputID{}
-		},
-		NFTOutput: func(id isc.NFTID) (*iotago.NFTOutput, iotago.OutputID) {
-			return nil, iotago.OutputID{}
-		},
-		TotalFungibleTokens: func() *isc.Assets {
-			return m.assets
-		},
-	}
-}
-
-func newMockAccountsContractRead(anchor *iotago.AliasOutput) *mockAccountContractRead {
-	anchorMinSD := parameters.L1().Protocol.RentStructure.MinRent(anchor)
-	assets := isc.NewAssetsBaseTokensU64(anchor.Deposit() - anchorMinSD)
-	return &mockAccountContractRead{
-		assets:             assets,
-		nativeTokenOutputs: make(map[iotago.FoundryID]*iotago.BasicOutput),
-	}
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
 }
 
 func TestTxBuilderBasic(t *testing.T) {
-	const initialTotalBaseTokens = 10 * isc.Million
-	addr := tpkg.RandEd25519Address()
-	aliasID := testiotago.RandAliasID()
-	anchor := &iotago.AliasOutput{
-		Amount:       initialTotalBaseTokens,
-		NativeTokens: nil,
-		AliasID:      aliasID,
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: addr},
-			&iotago.GovernorAddressUnlockCondition{Address: addr},
+	client := l1starter.Instance().L1Client()
+	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
+	require.NoError(t, err)
+
+	anchor, err := client.L2().StartNewChain(
+		context.Background(),
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            chainSigner,
+			ChainOwnerAddress: chainSigner.Address(),
+			PackageID:         iscPackage,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
 		},
-		StateIndex:     0,
-		StateMetadata:  dummyStateMetadata,
-		FoundryCounter: 0,
-		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: aliasID.ToAddress(),
-			},
+	)
+	require.NoError(t, err)
+
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+	selectedGasCoin := getCoinsRes.Data[0].Ref()
+
+	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
+	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
+
+	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
+	txb.ConsumeRequest(req1)
+	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
+	txb.ConsumeRequest(req2)
+	stateMetadata := []byte("dummy stateMetadata")
+	pt := txb.BuildTransactionEssence(stateMetadata, 123)
+
+	tx := iotago.NewProgrammable(
+		chainSigner.Address().AsIotaAddress(),
+		pt,
+		[]*iotago.ObjectRef{selectedGasCoin},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+	txnBytes, err := bcs.Marshal(&tx)
+	require.NoError(t, err)
+
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
-	}
-	anchorID := tpkg.RandOutputID(0)
-	t.Run("deposits", func(t *testing.T) {
-		mockedAccounts := newMockAccountsContractRead(anchor)
-		txb := NewTransactionBuilder(
-			anchor,
-			anchorID,
-			parameters.L1().Protocol.RentStructure.MinRent(anchor),
-			mockedAccounts.Read(),
-		)
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-		require.EqualValues(t, 1, txb.numInputs())
-		require.EqualValues(t, 1, txb.numOutputs())
-		require.False(t, txb.InputsAreFull())
-		require.False(t, txb.outputsAreFull())
+	)
 
-		require.EqualValues(t, 1, len(essence.Inputs))
-		require.EqualValues(t, 1, len(essence.Outputs))
+	require.NoError(t, err)
+	require.True(t, txnResponse.Effects.Data.IsSuccess())
 
-		_, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-
-		// consume a request that sends 1Mi funds
-		req1, err := isc.OnLedgerFromUTXO(&iotago.BasicOutput{
-			Amount: 1 * isc.Million,
-		}, iotago.OutputID{})
-		require.NoError(t, err)
-		txb.Consume(req1)
-		mockedAccounts.assets.AddBaseTokens(req1.Output().Deposit())
-
-		essence, _ = txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-		require.Len(t, essence.Outputs, 1)
-		require.EqualValues(t, essence.Outputs[0].Deposit(), anchor.Deposit()+req1.Output().Deposit())
-
-		// consume a request that sends 1Mi, 1 NFT, and 4 native tokens
-		nftID := tpkg.RandNFTAddress().NFTID()
-		nativeTokenID1 := testiotago.RandNativeTokenID()
-		nativeTokenID2 := testiotago.RandNativeTokenID()
-		nativeTokenID3 := testiotago.RandNativeTokenID()
-		nativeTokenID4 := testiotago.RandNativeTokenID()
-
-		req2, err := isc.OnLedgerFromUTXO(&iotago.NFTOutput{
-			Amount: 1 * isc.Million,
-			NFTID:  nftID,
-			NativeTokens: []*isc.NativeToken{
-				{ID: nativeTokenID1, Amount: big.NewInt(1)},
-				{ID: nativeTokenID2, Amount: big.NewInt(2)},
-				{ID: nativeTokenID3, Amount: big.NewInt(3)},
-				{ID: nativeTokenID4, Amount: big.NewInt(4)},
-			},
-		}, iotago.OutputID{})
-		require.NoError(t, err)
-		totalSDBaseTokensUsedToSplitAssets := txb.Consume(req2)
-
-		// deduct SD costs of creating the internal accounting outputs
-		mockedAccounts.assets.Add(req2.Assets())
-		mockedAccounts.assets.Spend(isc.NewAssetsBaseTokensU64(totalSDBaseTokensUsedToSplitAssets))
-
-		essence, _ = txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-		require.Len(t, essence.Outputs, 6) // 1 anchor AO, 1 NFT internal Output, 4 NativeTokens internal outputs
-		require.EqualValues(t, essence.Outputs[0].Deposit(), anchor.Deposit()+req1.Output().Deposit()+req2.Output().Deposit()-totalSDBaseTokensUsedToSplitAssets)
-	})
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
+	require.NotNil(t, getObjReq1.Error.Data.Deleted)
+	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
+	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 }
 
-func TestTxBuilderConsistency(t *testing.T) {
-	const initialTotalBaseTokens = 10000 * isc.Million
-	addr := tpkg.RandEd25519Address()
-	aliasID := testiotago.RandAliasID()
-	anchor := &iotago.AliasOutput{
-		Amount:       initialTotalBaseTokens,
-		NativeTokens: nil,
-		AliasID:      aliasID,
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: addr},
-			&iotago.GovernorAddressUnlockCondition{Address: addr},
+func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
+	client := l1starter.Instance().L1Client()
+	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+	recipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
+	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
+	require.NoError(t, err)
+
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+
+	anchor, err := client.L2().StartNewChain(
+		context.Background(),
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            chainSigner,
+			ChainOwnerAddress: chainSigner.Address(),
+			PackageID:         iscPackage,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			InitCoinRef:       getCoinsRes.Data[1].Ref(),
+			GasPayments:       []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
 		},
-		StateIndex:     0,
-		StateMetadata:  dummyStateMetadata,
-		FoundryCounter: 0,
-		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: aliasID.ToAddress(),
-			},
+	)
+	require.NoError(t, err)
+
+	selectedGasCoin := getCoinsRes.Data[2].Ref()
+	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
+	txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
+
+	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
+	txb1.ConsumeRequest(req1)
+
+	// stateMetadata := transaction.NewStateMetadata(isc.SchemaVersion(1), commitment, &gas.FeePolicy{}, isc.CallArguments{}, "http://dummy")
+	// ptb := txb.BuildTransactionEssence(stateMetadata.Bytes())
+	stateMetadata1 := []byte("dummy stateMetadata1")
+	ptb1 := txb1.BuildTransactionEssence(stateMetadata1, 123)
+
+	tx1 := iotago.NewProgrammable(
+		chainSigner.Address().AsIotaAddress(),
+		ptb1,
+		[]*iotago.ObjectRef{selectedGasCoin},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+	txnBytes1, err := bcs.Marshal(&tx1)
+	require.NoError(t, err)
+
+	txnResponse1, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes1,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
-	}
-	anchorID := tpkg.RandOutputID(0)
+	)
 
-	initTest := func(numTokenIDs int) (*AnchorTransactionBuilder, *mockAccountContractRead, []isc.NativeTokenID) {
-		mockedAccounts := newMockAccountsContractRead(anchor)
-		txb := NewTransactionBuilder(
-			anchor,
-			anchorID,
-			parameters.L1().Protocol.RentStructure.MinRent(anchor),
-			mockedAccounts.Read(),
-		)
+	require.NoError(t, err)
+	require.True(t, txnResponse1.Effects.Data.IsSuccess())
 
-		nativeTokenIDs := make([]isc.NativeTokenID, 0)
-		for i := 0; i < numTokenIDs; i++ {
-			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
-		}
-		return txb, mockedAccounts, nativeTokenIDs
-	}
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
+	require.NotNil(t, getObjReq1.Error.Data.Deleted)
 
-	// return deposit in BaseToken
-	consumeUTXO := func(t *testing.T, txb *AnchorTransactionBuilder, id isc.NativeTokenID, amountNative uint64, mockedAccounts *mockAccountContractRead) {
-		panic("refactor me: transaction.MakeBasicOutput")
-		var out iotago.Output
+	// reset
+	tmp, err := client.UpdateObjectRef(context.Background(), &anchor.ObjectRef)
+	require.NoError(t, err)
+	anchor.ObjectRef = *tmp
+	txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
-		panic("refactor me: transaction.AdjustToMinimumStorageDeposit")
-		// out = transaction.AdjustToMinimumStorageDeposit(out)
-		req, err := isc.OnLedgerFromUTXO(
-			out, iotago.OutputID{})
+	txb2.SendAssets(recipientSigner.Address().AsIotaAddress(), isc.NewAssets(1))
 
-		require.NoError(t, err)
-		sdCost := txb.Consume(req)
-		mockedAccounts.assets.Add(req.Assets())
-		mockedAccounts.assets.Spend(isc.NewAssetsBaseTokensU64(sdCost))
-		txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-	}
+	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
+	txb2.ConsumeRequest(req2)
+	stateMetadata2 := []byte("dummy stateMetadata2")
+	pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)
 
-	addOutput := func(txb *AnchorTransactionBuilder, amount uint64, nativeTokenID isc.NativeTokenID, mockedAccounts *mockAccountContractRead) {
-		outAssets := &isc.Assets{
-			BaseTokens: 1 * isc.Million,
-			NativeTokens: isc.NativeTokens{{
-				ID:     nativeTokenID,
-				Amount: new(big.Int).SetUint64(amount),
-			}},
-		}
+	getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
 
-		panic("refactor me: transaction.BasicOutputFromPostData")
-		var out iotago.Output
+	tx2 := iotago.NewProgrammable(
+		chainSigner.Address().AsIotaAddress(),
+		pt2,
+		[]*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+	txnBytes2, err := bcs.Marshal(&tx2)
+	require.NoError(t, err)
 
-		sdAdjust := txb.AddOutput(out)
-		if !mockedAccounts.assets.Spend(outAssets) {
-			panic("out of balance in chain output")
-		}
-		if sdAdjust < 0 {
-			mockedAccounts.assets.Spend(isc.NewAssetsBaseTokensU64(uint64(-sdAdjust)))
-		} else {
-			mockedAccounts.assets.AddBaseTokens(uint64(sdAdjust))
-		}
-		txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-	}
+	txnResponse2, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes2,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
+	)
 
-	t.Run("consistency check", func(t *testing.T) {
-		const runTimes = 100
-		const testAmount = 10
-		const numTokenIDs = 4
+	require.NoError(t, err)
+	require.True(t, txnResponse2.Effects.Data.IsSuccess())
 
-		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
-		for i := 0; i < runTimes; i++ {
-			idx := rand.Intn(numTokenIDs)
-			consumeUTXO(t, txb, nativeTokenIDs[idx], testAmount, mockedAccounts)
-		}
-
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
-	})
-
-	runConsume := func(txb *AnchorTransactionBuilder, nativeTokenIDs []isc.NativeTokenID, numRun int, amountNative uint64, mockedAccounts *mockAccountContractRead) {
-		for i := 0; i < numRun; i++ {
-			idx := i % len(nativeTokenIDs)
-			consumeUTXO(t, txb, nativeTokenIDs[idx], amountNative, mockedAccounts)
-			txb.BuildTransactionEssence(dummyStateMetadata)
-			txb.MustBalanced()
-		}
-	}
-
-	t.Run("exceed inputs", func(t *testing.T) {
-		const runTimes = 150
-		const testAmount = 10
-		const numTokenIDs = 4
-
-		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
-		err := panicutil.CatchPanicReturnError(func() {
-			runConsume(txb, nativeTokenIDs, runTimes, testAmount, mockedAccounts)
-		}, vmexceptions.ErrInputLimitExceeded)
-		require.Error(t, err, vmexceptions.ErrInputLimitExceeded)
-	})
-	t.Run("exceeded outputs", func(t *testing.T) {
-		const runTimesInputs = 120
-		const runTimesOutputs = 130
-		const numTokenIDs = 5
-
-		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
-		runConsume(txb, nativeTokenIDs, runTimesInputs, 10, mockedAccounts)
-		txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		err := panicutil.CatchPanicReturnError(func() {
-			for i := 0; i < runTimesOutputs; i++ {
-				idx := rand.Intn(numTokenIDs)
-				addOutput(txb, 1, nativeTokenIDs[idx], mockedAccounts)
-			}
-		}, vmexceptions.ErrOutputLimitExceeded)
-		require.Error(t, err, vmexceptions.ErrOutputLimitExceeded)
-	})
-	t.Run("randomize", func(t *testing.T) {
-		const runTimes = 30
-		const numTokenIDs = 5
-
-		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
-		for _, id := range nativeTokenIDs {
-			consumeUTXO(t, txb, id, 10, mockedAccounts)
-		}
-
-		for i := 0; i < runTimes; i++ {
-			idx1 := rand.Intn(numTokenIDs)
-			consumeUTXO(t, txb, nativeTokenIDs[idx1], 1, mockedAccounts)
-			idx2 := rand.Intn(numTokenIDs)
-			if mockedAccounts.assets.AmountNativeToken(nativeTokenIDs[idx2]).Uint64() > 0 {
-				addOutput(txb, 1, nativeTokenIDs[idx2], mockedAccounts)
-			}
-		}
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
-	})
-	t.Run("clone", func(t *testing.T) {
-		const runTimes = 7
-		const numTokenIDs = 5
-
-		txb, mockedAccounts, nativeTokenIDs := initTest(numTokenIDs)
-		for _, id := range nativeTokenIDs {
-			consumeUTXO(t, txb, id, 100, mockedAccounts)
-		}
-		txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		txbClone := txb.Clone()
-		txbClone.BuildTransactionEssence(dummyStateMetadata)
-
-		for i := 0; i < runTimes; i++ {
-			idx1 := rand.Intn(numTokenIDs)
-			consumeUTXO(t, txb, nativeTokenIDs[idx1], 1, mockedAccounts)
-			idx2 := rand.Intn(numTokenIDs)
-			addOutput(txb, 1, nativeTokenIDs[idx2], mockedAccounts)
-		}
-
-		txbClone.BuildTransactionEssence(dummyStateMetadata)
-	})
-	t.Run("send some of the tokens in balance", func(t *testing.T) {
-		txb, mockedAccounts, nativeTokenIDs := initTest(5)
-		setNativeTokenAccountsBalance := func(id isc.NativeTokenID, amount int64) {
-			mockedAccounts.assets.AddNativeTokens(id, big.NewInt(amount))
-			// create internal accounting outputs with 0 base tokens (they must be updated in the output side)
-			out := txb.newInternalTokenOutput(aliasID, id)
-			out.NativeTokens[0].Amount = new(big.Int).SetInt64(amount)
-			mockedAccounts.nativeTokenOutputs[id] = out
-		}
-
-		// send 90 < 100 which is on-chain. 10 must be left and storage deposit should not disappear
-		for i := range nativeTokenIDs {
-			setNativeTokenAccountsBalance(nativeTokenIDs[i], 100)
-			addOutput(txb, 90, nativeTokenIDs[i], mockedAccounts)
-		}
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		require.EqualValues(t, 6, len(essence.Inputs))
-		require.EqualValues(t, 11, len(essence.Outputs)) // 6 + 5 internal outputs with the 10 remaining tokens
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
-	})
-
-	t.Run("test consistency - consume send out, consume again", func(t *testing.T) {
-		txb, mockedAccounts, nativeTokenIDs := initTest(1)
-		tokenID := nativeTokenIDs[0]
-		consumeUTXO(t, txb, tokenID, 1, mockedAccounts)
-		addOutput(txb, 1, tokenID, mockedAccounts)
-		consumeUTXO(t, txb, tokenID, 1, mockedAccounts)
-
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
-	})
+	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
+	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 }
 
-func TestFoundries(t *testing.T) {
-	const initialTotalBaseTokens = 10*isc.Million + governance.DefaultMinBaseTokensOnCommonAccount
-	addr := tpkg.RandEd25519Address()
-	aliasID := testiotago.RandAliasID()
-	anchor := &iotago.AliasOutput{
-		Amount:       initialTotalBaseTokens,
-		NativeTokens: nil,
-		AliasID:      aliasID,
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: addr},
-			&iotago.GovernorAddressUnlockCondition{Address: addr},
-		},
-		StateIndex:     0,
-		StateMetadata:  dummyStateMetadata,
-		FoundryCounter: 0,
-		Features: iotago.Features{
-			&iotago.SenderFeature{
-				Address: aliasID.ToAddress(),
-			},
-		},
-	}
-	anchorID := tpkg.RandOutputID(0)
+func TestTxBuilderSendCrossChainRequest(t *testing.T) {
+	t.Skip("we may not need to support Cross Chain Request now")
+	// client := newLocalnetClient()
+	// signer := newSignerWithFunds(t, testSeed, 0)
+	// iscPackage1, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(signer))
+	// require.NoError(t, err)
 
-	var nativeTokenIDs []isc.NativeTokenID
-	var txb *AnchorTransactionBuilder
-	var numTokenIDs int
+	// anchor1, err := client.L2().StartNewChain(
+	// 	context.Background(),
+	// 	&iscmoveclient.StartNewChainRequest{
+	// 		Signer:            signer,
+	// 		ChainOwnerAddress: signer.Address(),
+	// 		PackageID:         iscPackage1,
+	// 		StateMetadata:     []byte{1, 2, 3, 4},
+	// 		GasPrice:          iotaclient.DefaultGasPrice,
+	// 		GasBudget:         iotaclient.DefaultGasBudget,
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// anchor2, err := client.L2().StartNewChain(
+	// 	context.Background(),
+	// 	&iscmoveclient.StartNewChainRequest{
+	// 		Signer:            signer,
+	// 		ChainOwnerAddress: signer.Address(),
+	// 		PackageID:         iscPackage1,
+	// 		StateMetadata:     []byte{1, 2, 3, 4},
+	// 		GasPrice:          iotaclient.DefaultGasPrice,
+	// 		GasBudget:         iotaclient.DefaultGasBudget,
+	// 	},
+	// )
+	// require.NoError(t, err)
 
-	var mockedAccounts *mockAccountContractRead
-	initTest := func() {
-		mockedAccounts = newMockAccountsContractRead(anchor)
-		txb = NewTransactionBuilder(
-			anchor,
-			anchorID,
-			parameters.L1().Protocol.RentStructure.MinRent(anchor),
-			mockedAccounts.Read(),
-		)
+	// stateAnchor1 := isc.NewStateAnchor(anchor1, signer.Address(), iscPackage1)
+	// txb1 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor1, signer.Address())
 
-		nativeTokenIDs = make([]isc.NativeTokenID, 0)
+	// req1 := createIscmoveReq(t, client, signer, iscPackage1, anchor1)
+	// txb1.ConsumeRequest(req1)
 
-		for i := 0; i < numTokenIDs; i++ {
-			nativeTokenIDs = append(nativeTokenIDs, testiotago.RandNativeTokenID())
-		}
-	}
-	createNFoundries := func(n int) {
-		for i := 0; i < n; i++ {
-			sn, storageDeposit := txb.CreateNewFoundry(
-				&iotago.SimpleTokenScheme{MaximumSupply: big.NewInt(10_000_000), MeltedTokens: util.Big0, MintedTokens: util.Big0},
-				nil,
-			)
-			require.EqualValues(t, i+1, int(sn))
+	// stateMetadata1 := []byte("dummy stateMetadata1")
+	// pt1 := txb1.BuildTransactionEssence(stateMetadata1, 123)
 
-			mockedAccounts.assets.BaseTokens -= storageDeposit
-			txb.BuildTransactionEssence(dummyStateMetadata)
-			txb.MustBalanced()
-		}
-	}
-	t.Run("create foundry ok", func(t *testing.T) {
-		initTest()
-		createNFoundries(3)
-		essence, _ := txb.BuildTransactionEssence(dummyStateMetadata)
-		txb.MustBalanced()
-		essenceBytes, err := essence.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		t.Logf("essence bytes len = %d", len(essenceBytes))
-	})
+	// coins, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
+	// require.NoError(t, err)
+
+	// tx1 := iotago.NewProgrammable(
+	// 	signer.Address().AsIotaAddress(),
+	// 	pt1,
+	// 	[]*iotago.ObjectRef{coins.CoinRefs()[2]},
+	// 	iotaclient.DefaultGasBudget,
+	// 	iotaclient.DefaultGasPrice,
+	// )
+	// txnBytes1, err := bcs.Marshal(&tx1)
+	// require.NoError(t, err)
+
+	// txnResponse1, err := client.SignAndExecuteTransaction(
+	// 	context.Background(),
+	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 		TxDataBytes: txnBytes1,
+	// 		Signer:      cryptolib.SignerToIotaSigner(signer),
+	// 		Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	// 	},
+	// )
+
+	// require.NoError(t, err)
+	// require.True(t, txnResponse1.Effects.Data.IsSuccess())
+
+	// getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
+	// require.NotNil(t, getObjReq1.Error.Data.Deleted)
+
+	// // reset
+	// tmp, err := client.UpdateObjectRef(context.Background(), &anchor1.ObjectRef)
+	// require.NoError(t, err)
+	// anchor1.ObjectRef = *tmp
+	// txb2 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor1, signer.Address())
+
+	// txb2.SendCrossChainRequest(&iscPackage1, anchor2.ObjectID, isc.NewAssets(1), &isc.SendMetadata{
+	// 	Message:   isc.NewMessage(isc.Hn("accounts"), isc.Hn("deposit")),
+	// 	Allowance: isc.NewAssets(1),
+	// 	GasBudget: 2,
+	// })
+
+	// stateMetadata2 := []byte("dummy stateMetadata2")
+	// pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)
+
+	// coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
+	// require.NoError(t, err)
+
+	// tx2 := iotago.NewProgrammable(
+	// 	signer.Address().AsIotaAddress(),
+	// 	pt2,
+	// 	[]*iotago.ObjectRef{coins.CoinRefs()[0]},
+	// 	iotaclient.DefaultGasBudget,
+	// 	iotaclient.DefaultGasPrice,
+	// )
+	// txnBytes2, err := bcs.Marshal(&tx2)
+	// require.NoError(t, err)
+
+	// txnResponse2, err := client.SignAndExecuteTransaction(
+	// 	context.Background(),
+	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 		TxDataBytes: txnBytes2,
+	// 		Signer:      cryptolib.SignerToIotaSigner(signer),
+	// 		Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// require.True(t, txnResponse2.Effects.Data.IsSuccess())
+	// crossChainRequestRef, err := txnResponse2.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	// require.NoError(t, err)
+
+	// stateAnchor2 := isc.NewStateAnchor(anchor2, signer.Address(), iscPackage1)
+	// txb3 := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage1, &stateAnchor2, signer.Address())
+
+	// reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), crossChainRequestRef.ObjectID)
+	// require.NoError(t, err)
+	// req3, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor2.ObjectID))
+	// require.NoError(t, err)
+	// txb3.ConsumeRequest(req3)
+
+	// coins, err = client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), iotaclient.DefaultGasBudget)
+	// require.NoError(t, err)
+
+	// stateMetadata3 := []byte("dummy stateMetadata3")
+	// pt3 := txb3.BuildTransactionEssence(stateMetadata3, 123)
+
+	// tx3 := iotago.NewProgrammable(
+	// 	signer.Address().AsIotaAddress(),
+	// 	pt3,
+	// 	[]*iotago.ObjectRef{coins.CoinRefs()[0]},
+	// 	iotaclient.DefaultGasBudget,
+	// 	iotaclient.DefaultGasPrice,
+	// )
+
+	// txnBytes3, err := bcs.Marshal(&tx3)
+	// require.NoError(t, err)
+
+	// txnResponse3, err := client.SignAndExecuteTransaction(
+	// 	context.Background(),
+	// 	&iotaclient.SignAndExecuteTransactionRequest{
+	// 		TxDataBytes: txnBytes3,
+	// 		Signer:      cryptolib.SignerToIotaSigner(signer),
+	// 		Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+	// 	},
+	// )
+
+	// require.NoError(t, err)
+	// require.True(t, txnResponse3.Effects.Data.IsSuccess())
 }
 
-func TestSerDe(t *testing.T) {
-	t.Run("serde BasicOutput", func(t *testing.T) {
-		reqMetadata := isc.RequestMetadata{
-			SenderContract: isc.EmptyContractIdentity(),
-			Message:        isc.NewMessage(0, 0),
-			Allowance:      isc.NewEmptyAssets(),
-			GasBudget:      0,
-		}
-		assets := isc.NewEmptyAssets()
+func TestRotateAndBuildTx(t *testing.T) {
+	client := l1starter.Instance().L1Client()
+	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
+	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
+	require.NoError(t, err)
 
-		panic("refactor me: transaction.MakeBasicOutput")
-		var out iotago.BasicOutput
-		_ = assets
-		_ = reqMetadata
+	anchor, err := client.L2().StartNewChain(
+		context.Background(),
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            chainSigner,
+			ChainOwnerAddress: chainSigner.Address(),
+			PackageID:         iscPackage,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
+	)
+	require.NoError(t, err)
 
-		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		outBack := &iotago.BasicOutput{}
-		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		condSet := out.Conditions.MustSet()
-		condSetBack := outBack.Conditions.MustSet()
-		require.True(t, condSet[iotago.UnlockConditionAddress].Equal(condSetBack[iotago.UnlockConditionAddress]))
-		require.EqualValues(t, out.Deposit(), outBack.Amount)
-		require.EqualValues(t, 0, len(outBack.NativeTokens))
-		require.True(t, outBack.Features.Equal(out.Features))
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+
+	selectedGasCoin := getCoinsRes.Data[0].Ref()
+
+	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
+	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
+
+	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
+	txb.ConsumeRequest(req1)
+	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
+	txb.ConsumeRequest(req2)
+	txb.RotationTransaction(rotateRecipientSigner.Address().AsIotaAddress())
+	stateMetadata := []byte("dummy stateMetadata")
+	pt := txb.BuildTransactionEssence(stateMetadata, 123)
+
+	tx := iotago.NewProgrammable(
+		chainSigner.Address().AsIotaAddress(),
+		pt,
+		[]*iotago.ObjectRef{selectedGasCoin},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+	txnBytes, err := bcs.Marshal(&tx)
+	require.NoError(t, err)
+
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txnBytes,
+			Signer:      cryptolib.SignerToIotaSigner(chainSigner),
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		},
+	)
+
+	require.NoError(t, err)
+	require.True(t, txnResponse.Effects.Data.IsSuccess())
+
+	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
+	require.NotNil(t, getObjReq1.Error.Data.Deleted)
+	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
+	require.NotNil(t, getObjReq2.Error.Data.Deleted)
+
+	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		ObjectID: anchor.ObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
 	})
-	t.Run("serde FoundryOutput", func(t *testing.T) {
-		out := &iotago.FoundryOutput{
-			Conditions: iotago.UnlockConditions{
-				&iotago.ImmutableAliasUnlockCondition{Address: tpkg.RandAliasAddress()},
-			},
-			Amount:       1337,
-			NativeTokens: nil,
-			SerialNumber: 5,
-			TokenScheme: &iotago.SimpleTokenScheme{
-				MintedTokens:  big.NewInt(200),
-				MeltedTokens:  big.NewInt(0),
-				MaximumSupply: big.NewInt(2000),
-			},
-			Features: nil,
-		}
-		data, err := out.Serialize(serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		outBack := &iotago.FoundryOutput{}
-		_, err = outBack.Deserialize(data, serializer.DeSeriModeNoValidation, nil)
-		require.NoError(t, err)
-		require.True(t, identicalFoundries(out, outBack))
-	})
+	require.NoError(t, err)
+	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), getObjRes.Data.Owner.AddressOwner)
+}
+
+func createIscmoveReq(
+	t *testing.T,
+	client clients.L1Client,
+	signer cryptolib.Signer,
+	iscPackage iotago.Address,
+	anchor *iscmove.AnchorWithRef,
+) isc.OnLedgerRequest {
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	require.NoError(t, err)
+
+	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
+		context.Background(),
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:           signer,
+			PackageID:        iscPackage,
+			AnchorAddress:    anchor.ObjectID,
+			Assets:           iscmove.NewAssets(111),
+			Message:          iscmovetest.RandomMessage(),
+			Allowance:        iscmove.NewAssets(100),
+			OnchainGasBudget: 100,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
+		},
+	)
+	require.NoError(t, err)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	require.NoError(t, err)
+	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	require.NoError(t, err)
+	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
+	require.NoError(t, err)
+
+	return req
 }

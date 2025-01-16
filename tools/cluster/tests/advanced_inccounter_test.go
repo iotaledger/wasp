@@ -11,11 +11,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 func TestAccessNodesOnLedger(t *testing.T) {
@@ -44,7 +44,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 
 	for i := 0; i < numRequests; i++ {
 		client := e.createNewClient()
-		_, err := client.PostRequest(inccounter.FuncIncCounter.Message(nil))
+		_, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 	}
 
@@ -87,8 +87,8 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	require.NoError(t, err)
 
 	accountsClient := e.Chain.Client(keyPair)
-	tx, err := accountsClient.PostRequest(accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssetsBaseTokensU64(1_000_000),
+	tx, err := accountsClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer: isc.NewAssets(1_000_000),
 	})
 	require.NoError(t, err)
 

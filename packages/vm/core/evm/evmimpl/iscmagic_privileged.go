@@ -4,10 +4,9 @@
 package evmimpl
 
 import (
-	"math/big"
-
 	"github.com/ethereum/go-ethereum/common"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -25,35 +24,23 @@ func (h *magicContractHandler) MoveBetweenAccounts(
 	)
 }
 
-// handler for ISCPrivileged::addToAllowance
-// Deprecated: called from previous versions of ERC20NativeTokens.sol and
-// ERC20BaseTokens.sol. May be removed after all living chains are spawned
-// with version > v0.6.1-alpha.12.
-func (h *magicContractHandler) AddToAllowance(
-	from common.Address,
-	to common.Address,
-	allowance iscmagic.ISCAssets,
-) {
-	addToAllowance(h.ctx, from, to, allowance.Unwrap())
-}
-
 // handler for ISCPrivileged::setAllowanceBaseTokens
 func (h *magicContractHandler) SetAllowanceBaseTokens(
 	from common.Address,
 	to common.Address,
-	numTokens *big.Int,
+	amount iscmagic.CoinValue,
 ) {
-	setAllowanceBaseTokens(h.ctx, from, to, numTokens)
+	setAllowanceBaseTokens(h.ctx, from, to, coin.Value(amount))
 }
 
-// handler for ISCPrivileged::setAllowanceNativeTokens
-func (h *magicContractHandler) SetAllowanceNativeTokens(
+// handler for ISCPrivileged::setAllowanceCoin
+func (h *magicContractHandler) SetAllowanceCoin(
 	from common.Address,
 	to common.Address,
-	nativeTokenID iscmagic.NativeTokenID,
-	numTokens *big.Int,
+	coinType iscmagic.CoinType,
+	amount iscmagic.CoinValue,
 ) {
-	setAllowanceNativeTokens(h.ctx, from, to, nativeTokenID, numTokens)
+	setAllowanceCoin(h.ctx, from, to, coin.MustTypeFromString(coinType), coin.Value(amount))
 }
 
 // handler for ISCPrivileged::moveAllowedFunds

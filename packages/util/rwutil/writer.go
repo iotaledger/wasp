@@ -6,9 +6,11 @@ package rwutil
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"math/big"
+	"runtime/debug"
 	"time"
 
 	"github.com/iotaledger/hive.go/serializer/v2"
@@ -234,7 +236,8 @@ func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 		if 0 <= val && val <= int(limit) {
 			return ww.WriteN(size64Encode(uint64(val)))
 		}
-		ww.Err = errors.New("invalid write size limit")
+		debug.PrintStack()
+		ww.Err = errors.New(fmt.Sprintf("invalid write size limit (val: %d, limit: %d)", val, limit))
 	}
 	return ww
 }

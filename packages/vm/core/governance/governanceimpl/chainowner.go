@@ -4,8 +4,8 @@
 package governanceimpl
 
 import (
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
@@ -15,7 +15,7 @@ var errOwnerNotDelegated = coreerrors.Register("not delegated to another chain o
 // claimChainOwnership changes the chain owner to the delegated agentID (if any)
 // Checks authorization if the caller is the one to which the ownership is delegated
 // Note that ownership is only changed by the successful call to  claimChainOwnership
-func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
+func claimChainOwnership(ctx isc.Sandbox) {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
 	state := governance.NewStateWriterFromSandbox(ctx)
 
@@ -32,26 +32,23 @@ func claimChainOwnership(ctx isc.Sandbox) dict.Dict {
 		currentOwner.String(),
 		nextOwner.String(),
 	)
-	return nil
 }
 
 // delegateChainOwnership stores next possible (delegated) chain owner to another agentID
 // checks authorization by the current owner
 // Two-step process allow/change is in order to avoid mistakes
-func delegateChainOwnership(ctx isc.Sandbox, newOwnerID isc.AgentID) dict.Dict {
+func delegateChainOwnership(ctx isc.Sandbox, newOwnerID isc.AgentID) {
 	ctx.Log().Debugf("governance.delegateChainOwnership.begin")
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetChainOwnerIDDelegated(newOwnerID)
 	ctx.Log().Debugf("governance.delegateChainOwnership.success: chain ownership delegated to %s", newOwnerID.String())
-	return nil
 }
 
-func setPayoutAgentID(ctx isc.Sandbox, agent isc.AgentID) dict.Dict {
+func setPayoutAgentID(ctx isc.Sandbox, agent isc.AgentID) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetPayoutAgentID(agent)
-	return nil
 }
 
 func getPayoutAgentID(ctx isc.SandboxView) isc.AgentID {
@@ -59,14 +56,13 @@ func getPayoutAgentID(ctx isc.SandboxView) isc.AgentID {
 	return state.GetPayoutAgentID()
 }
 
-func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance uint64) dict.Dict {
+func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance coin.Value) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetMinCommonAccountBalance(minCommonAccountBalance)
-	return nil
 }
 
-func getMinCommonAccountBalance(ctx isc.SandboxView) uint64 {
+func getMinCommonAccountBalance(ctx isc.SandboxView) coin.Value {
 	state := governance.NewStateReaderFromSandbox(ctx)
 	return state.GetMinCommonAccountBalance()
 }

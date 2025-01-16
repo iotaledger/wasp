@@ -13,5 +13,5 @@ func ErrorMessageFormat(ch chain.Chain, contractID isc.Hname, errorID uint16, bl
 	if err != nil {
 		return "", err
 	}
-	return errors.ViewGetErrorMessageFormat.Output.Decode(ret)
+	return errors.ViewGetErrorMessageFormat.DecodeOutput(ret)
 }

@@ -9,9 +9,7 @@ import (
 	"io"
 	"strings"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 )
 
 const AddressSize = 32
@@ -55,7 +53,7 @@ func NewAddressFromBytes(addr []byte) (*Address, error) {
 func NewAddressFromHexString(addr string) (*Address, error) {
 	addrBytes, err := DecodeHex(addr)
 	if err != nil {
-		return nil, fmt.Errorf("Error decoding hex: %w", err)
+		return nil, fmt.Errorf("error decoding hex: %w", err)
 	}
 	return NewAddressFromBytes(addrBytes)
 }
@@ -65,22 +63,14 @@ func NewAddressFromKey(key AddressKey) *Address {
 	return &result
 }
 
-// TODO: remove when not needed
-func NewAddressFromIotago(addr iotago.Address) *Address {
-	addrBytes, err := addr.Serialize(0, nil)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to obtain byte array from iotago address: %s", err))
-	}
-	address, err := NewAddressFromBytes(addrBytes[1:])
-	if err != nil {
-		panic(fmt.Sprintf("Failed to obtain address from byte array: %s", err))
-	}
-	return address
+func NewAddressFromIota(addr *iotago.Address) *Address {
+	a := Address(addr[:])
+	return &a
 }
 
 // TODO: remove when not needed
-func (a *Address) AsSuiAddress() *sui.Address {
-	result := sui.Address(a[:])
+func (a *Address) AsIotaAddress() *iotago.Address {
+	result := iotago.Address(a[:])
 	return &result
 }
 
@@ -107,16 +97,13 @@ func (a *Address) Clone() *Address {
 }
 
 func (a *Address) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	address := rr.ReadBytes()
-	copy(a[:], address)
-	return rr.Err
+	_, err := r.Read(a[:])
+	return err
 }
 
 func (a *Address) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteBytes(a[:])
-	return ww.Err
+	_, err := w.Write(a[:])
+	return err
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {
@@ -134,11 +121,11 @@ func AddressFromHex(str string) (*Address, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > sui.AddressLen {
+	if len(data) > iotago.AddressLen {
 		return nil, errors.New("the len is invalid")
 	}
 	var address Address
-	copy(address[sui.AddressLen-len(data):], data[:])
+	copy(address[iotago.AddressLen-len(data):], data)
 	return &address, nil
 }
 
@@ -157,9 +144,4 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 	}
 
 	return err
-}
-
-// FIXME may need to be pointer
-func (a Address) MarshalBCS() ([]byte, error) {
-	return a[:], nil
 }

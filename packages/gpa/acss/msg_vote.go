@@ -4,10 +4,7 @@
 package acss
 
 import (
-	"io"
-
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type msgVoteKind byte
@@ -20,21 +17,11 @@ const (
 // This message is used a vote for the "Bracha-style totality" agreement.
 type msgVote struct {
 	gpa.BasicMessage
-	kind msgVoteKind
+	kind msgVoteKind `bcs:"export"`
 }
 
 var _ gpa.Message = new(msgVote)
 
-func (msg *msgVote) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	msgTypeVote.ReadAndVerify(rr)
-	msg.kind = msgVoteKind(rr.ReadByte())
-	return rr.Err
-}
-
-func (msg *msgVote) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	msgTypeVote.Write(ww)
-	ww.WriteByte(byte(msg.kind))
-	return ww.Err
+func (m *msgVote) MsgType() gpa.MessageType {
+	return msgTypeVote
 }

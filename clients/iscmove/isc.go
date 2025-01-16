@@ -1,12 +1,13 @@
 package iscmove
 
 import (
-	"io"
+	"bytes"
+	"errors"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
 
 const (
@@ -16,12 +17,13 @@ const (
 
 	AssetsBagModuleName = "assets_bag"
 	AssetsBagObjectName = "AssetsBag"
-	AssetObjectName     = "Asset"
 
 	RequestModuleName      = "request"
 	RequestObjectName      = "Request"
 	MessageObjectName      = "Message"
 	RequestEventObjectName = "RequestEvent"
+
+	RequestEventAnchorFieldName = "/anchor"
 )
 
 /*
@@ -35,22 +37,10 @@ const (
   * Type "Table" is a typed map: map[K]V
 */
 
-// Related to: https://github.com/iotaledger/kinesis/tree/isc-suijsonrpc/dapps/isc/sources
-// Might change completely: https://github.com/iotaledger/iota/pull/370#discussion_r1617682560
-type Allowance struct {
-	CoinAmounts []uint64
-	CoinTypes   []string
-	NFTs        []sui.ObjectID
-}
-
-type Referent[T any] struct {
-	ID    sui.ObjectID
-	Value *T `bcs:"optional"`
-}
-
 type RefWithObject[T any] struct {
-	sui.ObjectRef
+	iotago.ObjectRef
 	Object *T
+	Owner  *iotago.Address
 }
 
 // Used in packages/chain/cons/bp/batch_proposal_set as key of a map
@@ -60,74 +50,155 @@ func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 	return res
 }
 
-func (rwo *RefWithObject[any]) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (rwo *RefWithObject[any]) Write(w io.Writer) error {
-	return nil // TODO implement
-}
-
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
-	ID   sui.ObjectID
+	ID   iotago.ObjectID
 	Size uint64
 }
 
-type AssetsBagBalances map[suijsonrpc.CoinType]*suijsonrpc.Balance
+func (ab *AssetsBag) Equals(other *AssetsBag) bool {
+	if (ab == nil) || (other == nil) {
+		return (ab == nil) && (other == nil)
+	}
+	return ab.ID.Equals(other.ID) &&
+		ab.Size == other.Size
+}
+
+type AssetsBagBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
 
 type AssetsBagWithBalances struct {
 	AssetsBag
-	Balances AssetsBagBalances
+	Balances AssetsBagBalances `bcs:"-"`
 }
 
 type Anchor struct {
-	ID         sui.ObjectID
-	Assets     Referent[AssetsBag]
-	InitParams []byte
-	StateRoot  sui.Bytes
-	BlockHash  sui.Bytes
-	StateIndex uint32
+	ID            iotago.ObjectID
+	Assets        AssetsBag
+	StateMetadata []byte
+	StateIndex    uint32
 }
 
-func (a *Anchor) GetStateIndex() uint32 {
-	return a.StateIndex
+func (a1 Anchor) Equals(a2 *Anchor) bool {
+	if !bytes.Equal(a1.ID[:], a2.ID[:]) {
+		return false
+	}
+	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+		return false
+	}
+	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+		return false
+	}
+	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+		return false
+	}
+	if a1.Assets.Size != a2.Assets.Size {
+		return false
+	}
+	if !bytes.Equal(a1.StateMetadata, a2.StateMetadata) {
+		return false
+	}
+	if a1.StateIndex != a2.StateIndex {
+		return false
+	}
+	return true
 }
 
-func (a *Anchor) Equals(b *Anchor) bool {
-	return a.ID.Equals(b.ID)
-}
+type AnchorWithRef = RefWithObject[Anchor]
 
-func (a *Anchor) Read(r io.Reader) error {
-	return nil // TODO implement
-}
-
-func (a *Anchor) Write(w io.Writer) error {
-	return nil // TODO implement
+func AnchorWithRefEquals(a1 AnchorWithRef, a2 AnchorWithRef) bool {
+	if !a1.ObjectRef.Equals(&a2.ObjectRef) {
+		return false
+	}
+	if !a1.Object.Equals(a2.Object) {
+		return false
+	}
+	return true
 }
 
 type Receipt struct {
-	RequestID sui.ObjectID
+	RequestID iotago.ObjectID
 }
 
 type Message struct {
 	Contract uint32
 	Function uint32
-	Args     [][]sui.Bytes
+	Args     [][]byte
+}
+
+type Assets struct {
+	Coins CoinBalances
+}
+
+type CoinAllowance struct {
+	CoinType iotajsonrpc.CoinType
+	Balance  iotajsonrpc.CoinValue
+}
+
+type CoinBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
+
+func NewEmptyAssets() *Assets {
+	return &Assets{Coins: make(CoinBalances)}
+}
+
+func NewAssets(baseTokens uint64) *Assets {
+	return NewEmptyAssets().AddCoin(iotajsonrpc.IotaCoinType, iotajsonrpc.CoinValue(baseTokens))
+}
+
+var ErrCoinNotFound = errors.New("coin not found")
+
+func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue, error) {
+	for k, coin := range a.Coins {
+		isSame, err := iotago.IsSameResource(k.String(), coinType.String())
+		if err != nil {
+			return 0, err
+		}
+
+		if isSame {
+			return coin, nil
+		}
+	}
+
+	return 0, ErrCoinNotFound
+}
+
+func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
+	a.Coins[coinType] = iotajsonrpc.CoinValue(amount)
+	return a
+}
+
+func (a *Assets) BaseToken() uint64 {
+	token, err := a.FindCoin(iotajsonrpc.IotaCoinType)
+	if err != nil {
+		if errors.Is(err, ErrCoinNotFound) {
+			return 0
+		}
+
+		panic(err)
+	}
+
+	return token.Uint64()
 }
 
 type Request struct {
-	ID        sui.ObjectID
-	Sender    *cryptolib.Address
-	AssetsBag Referent[AssetsBag] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetBag with `bcs:"optional`
+	ID     iotago.ObjectID
+	Sender *cryptolib.Address
+	// XXX balances are empty if we don't fetch the dynamic fields
+	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   Message
+	Allowance Assets
+	GasBudget uint64
 }
 
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-suijsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
+type RequestEvent struct {
+	RequestID iotago.ObjectID
+	Anchor    iotago.Address
+}
+
+// Related to: https://github.com/iotaledger/kinesis/blob/isc-iotajsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
 type IRC27MetaData struct {
 	Version           string
 	MediaType         string
-	URI               string // Actually of type "Url" in SUI -> Create proper type?
+	URI               string
 	Name              string
 	CollectionName    *string `bcs:"optional"`
 	Royalties         Table[*cryptolib.Address, uint32]
@@ -138,7 +209,7 @@ type IRC27MetaData struct {
 }
 
 type NFT struct {
-	ID                sui.ObjectID
+	ID                iotago.ObjectID
 	LegacySender      *cryptolib.Address `bcs:"optional"`
 	Metadata          *[]uint8           `bcs:"optional"`
 	Tag               *[]uint8           `bcs:"optional"`

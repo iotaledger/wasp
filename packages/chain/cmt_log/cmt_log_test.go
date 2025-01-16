@@ -9,13 +9,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/testiotago"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 )
@@ -43,9 +45,8 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	defer log.Sync()
 	//
 	// Chain identifiers.
-	aliasID := testiotago.RandAliasID()
-	chainID := isc.ChainIDFromAliasID(aliasID)
-	governor := cryptolib.NewKeyPair()
+	aliasRef := iotatest.RandomObjectRef()
+	chainID := isc.ChainIDFromObjectID(*aliasRef.ObjectID)
 	//
 	// Node identities.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -72,7 +73,8 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	gpaTC.PrintAllStatusStrings("Initial", t.Logf)
 	//
 	// Provide first alias output. Consensus should be sent now.
-	ao1 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress, 1)
+	// FIXME is should be anchor state transition, instead of random anchor
+	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
 	t.Logf("AO1=%v", ao1)
 	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
@@ -83,7 +85,8 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	}
 	//
 	// Consensus results received (consumed ao1, produced ao2).
-	ao2 := randomAliasOutputWithID(aliasID, governor.Address(), committeeAddress, 2)
+	// FIXME is should be anchor state transition, instead of random anchor
+	ao2 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 2)
 	t.Logf("AO2=%v", ao2)
 	gpaTC.WithInputs(inputConsensusOutput(gpaNodes, cons1, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
@@ -110,7 +113,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *iscmove.Anchor) map[gpa.NodeID]gpa.Input {
+func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
 		inputs[n] = cmt_log.NewInputAliasOutputConfirmed(ao)
@@ -118,24 +121,22 @@ func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *iscmove.Anch
 	return inputs
 }
 
-func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *iscmove.Anchor) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), consReq.GetBaseAliasOutput().ID, consReq.GetBaseAliasOutput().ID, nextAO)
+		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), *consReq.GetBaseAliasOutput().GetObjectID(), nextAO.GetObjectRef())
 	}
 	return inputs
 }
 
-func randomAliasOutputWithID(aliasID iotago.AliasID, governorAddress, stateAddress *cryptolib.Address, stateIndex uint32) *iscmove.Anchor {
-	outputID := testiotago.RandOutputID()
-	aliasOutput := &iotago.AliasOutput{
-		AliasID:       aliasID,
-		StateIndex:    stateIndex,
-		StateMetadata: []byte{},
-		Conditions: iotago.UnlockConditions{
-			&iotago.StateControllerAddressUnlockCondition{Address: stateAddress.AsIotagoAddress()},
-			&iotago.GovernorAddressUnlockCondition{Address: governorAddress.AsIotagoAddress()},
-		},
-	}
-	return isc.NewAliasOutputWithID(aliasOutput, outputID)
+func randomAnchorWithID(anchorID iotago.ObjectID, stateAddress *cryptolib.Address, stateIndex uint32) *isc.StateAnchor {
+	anchor := iscmovetest.RandomAnchor(iscmovetest.RandomAnchorOption{StateMetadata: &[]byte{}, StateIndex: &stateIndex, ID: &anchorID})
+	stateAnchor := isc.NewStateAnchor(
+		&iscmove.AnchorWithRef{
+			Object:    &anchor,
+			ObjectRef: *iotatest.RandomObjectRef(),
+			Owner:     stateAddress.AsIotaAddress(),
+		}, *cryptolib.NewRandomAddress().AsIotaAddress())
+
+	return &stateAnchor
 }

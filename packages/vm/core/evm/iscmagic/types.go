@@ -7,15 +7,13 @@ import (
 	"math/big"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
-
-// ISCChainID matches the type definition in ISCTypes.sol
-type ISCChainID [isc.ChainIDLength]byte
 
 func init() {
 	if isc.ChainIDLength != 32 {
@@ -23,84 +21,15 @@ func init() {
 	}
 }
 
-func WrapISCChainID(c isc.ChainID) (ret ISCChainID) {
-	copy(ret[:], c.Bytes())
-	return
-}
+type (
+	CoinType  = string
+	CoinValue = uint64
+)
 
-func (c ISCChainID) Unwrap() (isc.ChainID, error) {
-	return isc.ChainIDFromBytes(c[:])
-}
-
-func (c ISCChainID) MustUnwrap() isc.ChainID {
-	ret, err := c.Unwrap()
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-// NativeTokenID matches the struct definition in ISCTypes.sol
-type NativeTokenID struct {
-	Data []byte
-}
-
-func WrapNativeTokenID(nativeTokenID isc.NativeTokenID) NativeTokenID {
-	return NativeTokenID{Data: nativeTokenID[:]}
-}
-
-func (a NativeTokenID) Unwrap() (ret isc.NativeTokenID) {
-	copy(ret[:], a.Data)
-	return
-}
-
-func (a NativeTokenID) MustUnwrap() (ret isc.NativeTokenID) {
-	copy(ret[:], a.Data)
-	return
-}
-
-// NativeToken matches the struct definition in ISCTypes.sol
-type NativeToken struct {
-	ID     NativeTokenID
-	Amount *big.Int
-}
-
-func WrapNativeToken(nativeToken *isc.NativeToken) NativeToken {
-	return NativeToken{
-		ID:     WrapNativeTokenID(nativeToken.ID),
-		Amount: nativeToken.Amount,
-	}
-}
-
-func (nt NativeToken) Unwrap() *isc.NativeToken {
-	return &isc.NativeToken{
-		ID:     nt.ID.Unwrap(),
-		Amount: nt.Amount,
-	}
-}
-
-// L1Address matches the struct definition in ISCTypes.sol
-type L1Address struct {
-	Data []byte
-}
-
-func WrapL1Address(a *cryptolib.Address) L1Address {
-	if a == nil {
-		return L1Address{Data: []byte{}}
-	}
-	return L1Address{Data: a.Bytes()}
-}
-
-func (a L1Address) Unwrap() (*cryptolib.Address, error) {
-	return cryptolib.NewAddressFromBytes(a.Data)
-}
-
-func (a L1Address) MustUnwrap() *cryptolib.Address {
-	ret, err := a.Unwrap()
-	if err != nil {
-		panic(err)
-	}
-	return ret
+// CoinBalance matches the struct definition in ISCTypes.sol
+type CoinBalance struct {
+	CoinType CoinType
+	Amount   CoinValue
 }
 
 // ISCAgentID matches the struct definition in ISCTypes.sol
@@ -116,98 +45,9 @@ func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 	return isc.AgentIDFromBytes(a.Data)
 }
 
-func (a ISCAgentID) MustUnwrap() isc.AgentID {
-	ret, err := a.Unwrap()
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-// ISCRequestID matches the struct definition in ISCTypes.sol
-type ISCRequestID struct {
-	Data []byte
-}
-
-func WrapISCRequestID(rid isc.RequestID) ISCRequestID {
-	return ISCRequestID{Data: rid.Bytes()}
-}
-
-func (rid ISCRequestID) Unwrap() (isc.RequestID, error) {
-	return isc.RequestIDFromBytes(rid.Data)
-}
-
-func (rid ISCRequestID) MustUnwrap() isc.RequestID {
-	ret, err := rid.Unwrap()
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-// NFTID matches the type definition in ISCTypes.sol
-type NFTID [isc.NFTIDLength]byte
-
-func init() {
-	if isc.NFTIDLength != 32 {
-		panic("static check: NFTID length does not match bytes32 in ISCTypes.sol")
-	}
-}
-
-func WrapNFTID(c isc.NFTID) (ret NFTID) {
-	copy(ret[:], c[:])
-	return
-}
-
-func (n NFTID) Unwrap() (ret isc.NFTID) {
-	copy(ret[:], n[:])
-	return
-}
-
-// TokenID returns the uint256 tokenID for ERC721
-func (n NFTID) TokenID() *big.Int {
-	return new(big.Int).SetBytes(n[:])
-}
-
-// ISCNFT matches the struct definition in ISCTypes.sol
-type ISCNFT struct {
-	ID       NFTID
-	Issuer   L1Address
-	Metadata []byte
-	Owner    ISCAgentID
-}
-
-func WrapISCNFT(n *isc.NFT) ISCNFT {
-	r := ISCNFT{
-		ID:       WrapNFTID(n.ID),
-		Issuer:   WrapL1Address(n.Issuer),
-		Metadata: n.Metadata,
-	}
-	if n.Owner != nil {
-		r.Owner = WrapISCAgentID(n.Owner)
-	}
-	return r
-}
-
-func (n ISCNFT) Unwrap() (*isc.NFT, error) {
-	issuer, err := n.Issuer.Unwrap()
-	if err != nil {
-		return nil, err
-	}
-	return &isc.NFT{
-		ID:       n.ID.Unwrap(),
-		Issuer:   issuer,
-		Metadata: n.Metadata,
-		Owner:    n.Owner.MustUnwrap(),
-	}, nil
-}
-
-func (n ISCNFT) MustUnwrap() *isc.NFT {
-	ret, err := n.Unwrap()
-	if err != nil {
-		panic(err)
-	}
-	return ret
+// TokenIDFromIotaObjectID returns the uint256 tokenID for ERC721
+func TokenIDFromIotaObjectID(o iotago.ObjectID) *big.Int {
+	return new(big.Int).SetBytes(o[:])
 }
 
 // IRC27NFTMetadata matches the struct definition in ISCTypes.sol
@@ -215,7 +55,7 @@ type IRC27NFTMetadata struct {
 	Standard    string
 	Version     string
 	MimeType    string
-	Uri         string //nolint:revive // false positive
+	Uri         string //nolint:revive // "URI" would break serialization
 	Name        string
 	Description string
 }
@@ -231,48 +71,37 @@ func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
 	}
 }
 
-// IRC27NFT matches the struct definition in ISCTypes.sol
-type IRC27NFT struct {
-	Nft      ISCNFT
-	Metadata IRC27NFTMetadata
-}
-
 // ISCAssets matches the struct definition in ISCTypes.sol
 type ISCAssets struct {
-	BaseTokens   uint64
-	NativeTokens []NativeToken
-	Nfts         []NFTID
+	Coins   []CoinBalance
+	Objects []iotago.ObjectID
 }
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
-	if a == nil {
-		return WrapISCAssets(isc.NewEmptyAssets())
-	}
-	tokens := make([]NativeToken, len(a.NativeTokens))
-	for i, nativeToken := range a.NativeTokens {
-		tokens[i] = WrapNativeToken(nativeToken)
-	}
-	nfts := make([]NFTID, len(a.NFTs))
-	for i, id := range a.NFTs {
-		nfts[i] = WrapNFTID(id)
-	}
-	return ISCAssets{
-		BaseTokens:   a.BaseTokens,
-		NativeTokens: tokens,
-		Nfts:         nfts,
-	}
+	var ret ISCAssets
+	a.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
+		ret.Coins = append(ret.Coins, CoinBalance{
+			CoinType: CoinType(coinType.String()),
+			Amount:   CoinValue(amount),
+		})
+		return true
+	})
+	a.Objects.IterateSorted(func(id iotago.ObjectID) bool {
+		ret.Objects = append(ret.Objects, id)
+		return true
+	})
+	return ret
 }
 
 func (a ISCAssets) Unwrap() *isc.Assets {
-	tokens := make(isc.NativeTokens, len(a.NativeTokens))
-	for i, nativeToken := range a.NativeTokens {
-		tokens[i] = nativeToken.Unwrap()
+	assets := isc.NewEmptyAssets()
+	for _, b := range a.Coins {
+		assets.AddCoin(coin.MustTypeFromString(string(b.CoinType)), coin.Value(b.Amount))
 	}
-	nfts := make([]isc.NFTID, len(a.Nfts))
-	for i, id := range a.Nfts {
-		nfts[i] = id.Unwrap()
+	for _, id := range a.Objects {
+		assets.AddObject(id)
 	}
-	return isc.NewAssets(a.BaseTokens, tokens, nfts...)
+	return assets
 }
 
 // ISCDictItem matches the struct definition in ISCTypes.sol
@@ -302,87 +131,127 @@ func (d ISCDict) Unwrap() dict.Dict {
 	return ret
 }
 
-type ISCSendMetadata struct {
-	TargetContract uint32
-	Entrypoint     uint32
-	Params         ISCDict
-	Allowance      ISCAssets
-	GasBudget      uint64
+type ISCHname = uint32
+
+type ISCCallTarget struct {
+	ContractHname ISCHname
+	EntryPoint    ISCHname
 }
 
-func WrapISCSendMetadata(metadata isc.SendMetadata) ISCSendMetadata {
-	ret := ISCSendMetadata{
-		GasBudget:      metadata.GasBudget,
-		TargetContract: uint32(metadata.Message.Target.Contract),
-		Entrypoint:     uint32(metadata.Message.Target.EntryPoint),
-		Params:         WrapISCDict(metadata.Message.Params),
-		Allowance:      WrapISCAssets(metadata.Allowance),
-	}
+type ISCMessage struct {
+	Target ISCCallTarget
+	Params [][]byte
+}
 
-	return ret
+func WrapISCMessage(msg isc.Message) ISCMessage {
+	return ISCMessage{
+		Target: ISCCallTarget{
+			ContractHname: ISCHname(msg.Target.Contract),
+			EntryPoint:    ISCHname(msg.Target.EntryPoint),
+		},
+		Params: msg.Params,
+	}
+}
+
+func (m ISCMessage) Unwrap() isc.Message {
+	return isc.NewMessage(isc.Hname(m.Target.ContractHname), isc.Hname(m.Target.EntryPoint), m.Params)
+}
+
+type ISCSendMetadata struct {
+	Message   ISCMessage
+	Allowance ISCAssets
+	GasBudget uint64
+}
+
+func WrapISCSendMetadata(metadata *isc.SendMetadata) ISCSendMetadata {
+	if metadata == nil {
+		return ISCSendMetadata{}
+	}
+	return ISCSendMetadata{
+		Message:   WrapISCMessage(metadata.Message),
+		Allowance: WrapISCAssets(metadata.Allowance),
+		GasBudget: metadata.GasBudget,
+	}
 }
 
 func (i ISCSendMetadata) Unwrap() *isc.SendMetadata {
-	ret := isc.SendMetadata{
-		Message: isc.NewMessage(
-			isc.Hname(i.TargetContract),
-			isc.Hname(i.Entrypoint),
-			i.Params.Unwrap(),
-		),
+	if i.Message.Target.ContractHname == 0 {
+		return nil
+	}
+	return &isc.SendMetadata{
+		Message:   i.Message.Unwrap(),
 		Allowance: i.Allowance.Unwrap(),
 		GasBudget: i.GasBudget,
 	}
-
-	return &ret
-}
-
-type ISCExpiration struct {
-	Time          int64
-	ReturnAddress L1Address
-}
-
-func (i *ISCExpiration) Unwrap() *isc.Expiration {
-	if i == nil {
-		return nil
-	}
-
-	if i.Time == 0 {
-		return nil
-	}
-
-	address := i.ReturnAddress.MustUnwrap()
-
-	ret := isc.Expiration{
-		ReturnAddress: address,
-		Time:          time.UnixMilli(i.Time),
-	}
-
-	return &ret
 }
 
 type ISCSendOptions struct {
 	Timelock   int64
-	Expiration ISCExpiration
+	Expiration struct {
+		Time          int64
+		ReturnAddress cryptolib.Address
+	}
+}
+
+func WrapISCSendOptions(options *isc.SendOptions) ISCSendOptions {
+	var ret ISCSendOptions
+	if options == nil {
+		return ret
+	}
+	ret.Timelock = options.Timelock.Unix()
+	if options.Expiration == nil {
+		return ret
+	}
+	ret.Expiration.Time = options.Expiration.Time.Unix()
+	ret.Expiration.ReturnAddress = *options.Expiration.ReturnAddress
+	return ret
 }
 
 func (i *ISCSendOptions) Unwrap() isc.SendOptions {
 	var timeLock time.Time
-
 	if i.Timelock > 0 {
-		timeLock = time.UnixMilli(i.Timelock)
+		timeLock = time.Unix(i.Timelock, 0)
 	}
-
 	ret := isc.SendOptions{
-		Timelock:   timeLock,
-		Expiration: i.Expiration.Unwrap(),
+		Timelock: timeLock,
 	}
-
+	if i.Expiration.Time > 0 {
+		ret.Expiration = &isc.Expiration{
+			Time:          time.Unix(i.Expiration.Time, 0),
+			ReturnAddress: &i.Expiration.ReturnAddress,
+		}
+	}
 	return ret
 }
 
-type ISCTokenProperties struct {
-	Name         string
-	TickerSymbol string
-	Decimals     uint8
-	TotalSupply  *big.Int
+func init() {
+	if cryptolib.AddressSize != 32 {
+		panic("static check: address length != 32")
+	}
+}
+
+func WrapIotaAddress(addr *cryptolib.Address) (ret [32]byte) {
+	return *addr
+}
+
+type IotaCoinInfo struct {
+	CoinType    CoinType
+	Decimals    uint8
+	Name        string
+	Symbol      string
+	Description string
+	IconUrl     string
+	TotalSupply CoinValue
+}
+
+func WrapIotaCoinInfo(info *isc.IotaCoinInfo) IotaCoinInfo {
+	return IotaCoinInfo{
+		CoinType:    CoinType(info.CoinType.String()),
+		Decimals:    info.Decimals,
+		Name:        info.Name,
+		Symbol:      info.Symbol,
+		Description: info.Description,
+		IconUrl:     info.IconURL,
+		TotalSupply: info.TotalSupply.Uint64(),
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -17,9 +18,6 @@ var Processor = Contract.Processor(nil,
 	ViewGetRequestReceipt.WithHandler(viewGetRequestReceipt),
 	ViewGetRequestReceiptsForBlock.WithHandler(viewGetRequestReceiptsForBlock),
 	ViewIsRequestProcessed.WithHandler(viewIsRequestProcessed),
-	ViewHasUnprocessable.WithHandler(viewHasUnprocessable),
-
-	FuncRetryUnprocessable.WithHandler(retryUnprocessable),
 )
 
 var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
@@ -27,7 +25,9 @@ var ErrBlockNotFound = coreerrors.Register("Block not found").Create()
 func (s *StateWriter) SetInitialState() {
 	s.SaveNextBlockInfo(&BlockInfo{
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
+		BlockIndex:            0,
 		Timestamp:             time.Time{},
+		L1Params:              parameters.L1Default, // TODO we should use the real L1Params at the moment
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,
@@ -74,12 +74,11 @@ func viewGetRequestReceipt(ctx isc.SandboxView, reqID isc.RequestID) *RequestRec
 }
 
 // viewGetRequestReceiptsForBlock returns a list of receipts for a given block.
-func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) (uint32, []*RequestReceipt) {
+func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) *RequestReceiptsResponse {
 	blockIndex := getBlockIndexParams(ctx, blockIndexOptional)
-
 	if blockIndex == 0 {
 		// block 0 is an empty state
-		return 0, nil
+		return &RequestReceiptsResponse{BlockIndex: 0}
 	}
 
 	receipts, found := NewStateReaderFromSandbox(ctx).getRequestLogRecordsForBlockBin(blockIndex)
@@ -87,11 +86,14 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uin
 		panic(errNotFound)
 	}
 
-	return blockIndex, lo.Map(receipts, func(b []byte, i int) *RequestReceipt {
-		receipt, err := RequestReceiptFromBytes(b, blockIndex, uint16(i))
-		ctx.RequireNoError(err)
-		return receipt
-	})
+	return &RequestReceiptsResponse{
+		BlockIndex: blockIndex,
+		Receipts: lo.Map(receipts, func(b []byte, i int) *RequestReceipt {
+			receipt, err := RequestReceiptFromBytes(b, blockIndex, uint16(i))
+			ctx.RequireNoError(err)
+			return receipt
+		}),
+	}
 }
 
 func viewIsRequestProcessed(ctx isc.SandboxView, requestID isc.RequestID) bool {

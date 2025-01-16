@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
@@ -28,10 +28,10 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 	e.Set(controllerutils.EchoContextKeyChainID, chainID)
 
 	if !c.chainService.HasChain(chainID) {
-		return apierrors.ChainNotFoundError(chainID.String())
+		return apierrors.ChainNotFoundError()
 	}
 
-	requestDecoded, err := iotago.DecodeHex(request.Request)
+	requestDecoded, err := cryptolib.DecodeHex(request.Request)
 	if err != nil {
 		return apierrors.InvalidPropertyError("Request", err)
 	}

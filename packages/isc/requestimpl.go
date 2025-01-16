@@ -3,19 +3,17 @@ package isc
 import (
 	"errors"
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-type RequestKind rwutil.Kind
+type RequestKind byte
 
 const (
 	requestKindOnLedger RequestKind = iota
@@ -33,35 +31,20 @@ func IsOffledgerKind(b byte) bool {
 }
 
 func RequestFromBytes(data []byte) (Request, error) {
-	rr := rwutil.NewBytesReader(data)
-	return RequestFromReader(rr), rr.Err
-}
-
-func RequestFromReader(rr *rwutil.Reader) (ret Request) {
-	kind := rr.ReadKind()
-	switch RequestKind(kind) {
-	case requestKindOnLedger:
-		ret = new(onLedgerRequestData)
-	case requestKindOffLedgerISC:
-		ret = new(OffLedgerRequestData)
-	case requestKindOffLedgerEVMTx:
-		ret = new(evmOffLedgerTxRequest)
-	case requestKindOffLedgerEVMCall:
-		ret = new(evmOffLedgerCallRequest)
-	default:
-		if rr.Err == nil {
-			rr.Err = errors.New("invalid Request kind")
-			return nil
-		}
-	}
-	rr.PushBack().WriteKind(kind)
-	rr.Read(ret)
-	return ret
+	return bcs.Unmarshal[Request](data)
 }
 
 // region RequestID //////////////////////////////////////////////////////////////////
 
-type RequestID sui.ObjectID
+type RequestID iotago.ObjectID
+
+func (id *RequestID) AsIotaObjectID() iotago.ObjectID {
+	return iotago.ObjectID(*id)
+}
+
+func (id *RequestID) AsIotaAddress() iotago.Address {
+	return iotago.Address(*id)
+}
 
 const RequestIDDigestLen = 6
 
@@ -70,7 +53,7 @@ type RequestRef struct {
 	Hash hashing.HashValue
 }
 
-const RequestRefKeyLen = sui.AddressLen + 32
+const RequestRefKeyLen = iotago.AddressLen + 32
 
 type RequestRefKey [RequestRefKeyLen]byte
 
@@ -79,7 +62,7 @@ func (rrk RequestRefKey) String() string {
 }
 
 func RequestRefFromBytes(data []byte) (*RequestRef, error) {
-	return rwutil.ReadFromBytes(data, new(RequestRef))
+	return bcs.Unmarshal[*RequestRef](data)
 }
 
 func RequestRefFromRequest(req Request) *RequestRef {
@@ -108,25 +91,11 @@ func (ref *RequestRef) IsFor(req Request) bool {
 }
 
 func (ref *RequestRef) Bytes() []byte {
-	return rwutil.WriteToBytes(ref)
+	return bcs.MustMarshal(ref)
 }
 
 func (ref *RequestRef) String() string {
 	return fmt.Sprintf("{requestRef, id=%v, hash=%v}", ref.ID.String(), ref.Hash.Hex())
-}
-
-func (ref *RequestRef) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.ReadN(ref.Hash[:])
-	rr.ReadN(ref.ID[:])
-	return rr.Err
-}
-
-func (ref *RequestRef) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN(ref.Hash[:])
-	ww.WriteN(ref.ID[:])
-	return ww.Err
 }
 
 // RequestLookupDigest is shortened version of the request id. It is guaranteed to be unique
@@ -134,39 +103,27 @@ func (ref *RequestRef) Write(w io.Writer) error {
 // if it was never seen
 type RequestLookupDigest [RequestIDDigestLen + 2]byte
 
-func NewRequestID(txid iotago.TransactionID, index uint16) RequestID {
-	panic("refactor me: removal of Iota.go types")
-	return RequestID{}
-	// return RequestID(iotago.OutputIDFromTransactionIDAndIndex(txid, index))
-}
-
 func RequestIDFromBytes(data []byte) (ret RequestID, err error) {
-	_, err = rwutil.ReadFromBytes(data, &ret)
-	return ret, err
+	return bcs.Unmarshal[RequestID](data)
 }
 
 func RequestIDFromEVMTxHash(txHash common.Hash) RequestID {
-	return NewRequestID(iotago.TransactionID(txHash), 0)
+	return RequestID(txHash)
 }
 
 func RequestIDFromString(s string) (ret RequestID, err error) {
-	data, err := iotago.DecodeHex(s)
+	data, err := cryptolib.DecodeHex(s)
 	if err != nil {
 		return RequestID{}, err
 	}
 
-	if len(data) != iotago.OutputIDLength {
+	if len(data) != iotago.AddressLen {
 		return ret, errors.New("error parsing requestID: wrong length")
 	}
 
 	requestID := RequestID{}
 	copy(requestID[:], data)
 	return requestID, nil
-}
-
-func (rid RequestID) OutputID() iotago.OutputID {
-	panic("refactor me: Removal of Iota.go types")
-	return iotago.OutputID(rid.Bytes())
 }
 
 func (rid RequestID) LookupDigest() RequestLookupDigest {
@@ -186,20 +143,12 @@ func (rid RequestID) Equals(other RequestID) bool {
 }
 
 func (rid RequestID) String() string {
-	return iotago.EncodeHex(rid[:])
+	return hexutil.Encode(rid[:])
 }
 
 func (rid RequestID) Short() string {
 	ridString := rid.String()
 	return fmt.Sprintf("%s..%s", ridString[2:6], ridString[len(ridString)-4:])
-}
-
-func (rid *RequestID) Read(r io.Reader) error {
-	return rwutil.ReadN(r, rid[:])
-}
-
-func (rid *RequestID) Write(w io.Writer) error {
-	return rwutil.WriteN(w, rid[:])
 }
 
 // endregion ////////////////////////////////////////////////////////////
@@ -215,17 +164,8 @@ type RequestMetadata struct {
 	GasBudget uint64 `json:"gasBudget"`
 }
 
-func requestMetadataFromFeatureSet(set iotago.FeatureSet) (*RequestMetadata, error) {
-	metadataFeatBlock := set.MetadataFeature()
-	if metadataFeatBlock == nil {
-		// IMPORTANT: this cannot return an empty `&RequestMetadata{}` object because that could cause `isInternalUTXO` check to fail
-		return nil, nil
-	}
-	return RequestMetadataFromBytes(metadataFeatBlock.Data)
-}
-
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
-	return rwutil.ReadFromBytes(data, new(RequestMetadata))
+	return bcs.Unmarshal[*RequestMetadata](data)
 }
 
 // returns nil if nil pointer receiver is cloned
@@ -243,29 +183,5 @@ func (meta *RequestMetadata) Clone() *RequestMetadata {
 }
 
 func (meta *RequestMetadata) Bytes() []byte {
-	return rwutil.WriteToBytes(meta)
-}
-
-func (meta *RequestMetadata) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&meta.SenderContract)
-	rr.Read(&meta.Message.Target.Contract)
-	rr.Read(&meta.Message.Target.EntryPoint)
-	meta.GasBudget = rr.ReadGas64()
-	meta.Message.Params = dict.New()
-	rr.Read(&meta.Message.Params)
-	meta.Allowance = NewEmptyAssets()
-	rr.Read(meta.Allowance)
-	return rr.Err
-}
-
-func (meta *RequestMetadata) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&meta.SenderContract)
-	ww.Write(&meta.Message.Target.Contract)
-	ww.Write(&meta.Message.Target.EntryPoint)
-	ww.WriteGas64(meta.GasBudget)
-	ww.Write(&meta.Message.Params)
-	ww.Write(meta.Allowance)
-	return ww.Err
+	return bcs.MustMarshal(meta)
 }

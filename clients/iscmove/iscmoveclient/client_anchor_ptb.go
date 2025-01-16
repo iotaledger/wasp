@@ -3,138 +3,294 @@ package iscmoveclient
 import (
 	"fmt"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/sui"
 )
 
-func NewStartNewChainPTB(packageID sui.PackageID, initParams []byte, ownerAddress *cryptolib.Address) sui.ProgrammableTransaction {
-	ptb := sui.NewProgrammableTransactionBuilder()
+func PTBStartNewChain(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	stateMetadata []byte,
+	argInitCoin iotago.Argument,
+	ownerAddress *cryptolib.Address,
+) *iotago.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "start_new_chain",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
-					ptb.MustPure(initParams),
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					ptb.MustPure(stateMetadata),
+					argInitCoin,
 				},
 			},
 		},
 	)
 	ptb.Command(
-		sui.Command{
-			TransferObjects: &sui.ProgrammableTransferObjects{
-				Objects: []sui.Argument{arg1},
-				Address: ptb.MustPure(ownerAddress.AsSuiAddress()),
+		iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{arg1},
+				Address: ptb.MustPure(ownerAddress.AsIotaAddress()),
 			},
 		},
 	)
-
-	return ptb.Finish()
+	return ptb
 }
 
-func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, requestObjects []sui.ObjectRef, reqAssetsBagsMap map[sui.ObjectRef]*iscmove.AssetsBagWithBalances, stateRoot []byte) (sui.ProgrammableTransaction, error) {
-	ptb := sui.NewProgrammableTransactionBuilder()
-
-	argAnchor := ptb.MustObj(sui.ObjectArg{ImmOrOwnedObject: anchorRef})
-	typeReceipt, err := sui.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
-	if err != nil {
-		return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Receipt's TypeTag: %w", err)
-	}
-
-	var argReceiveRequests []sui.Argument
-	argBorrowAssets := ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+func PTBTakeAndTransferCoinBalance(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAnchor iotago.Argument,
+	target *iotago.Address,
+	assets *iscmove.Assets,
+) *iotago.ProgrammableTransactionBuilder {
+	argBorrow := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "borrow_assets",
-				TypeArguments: []sui.TypeTag{},
-				Arguments:     []sui.Argument{argAnchor},
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					argAnchor,
+				},
 			},
 		},
 	)
-	argAnchorAssets := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
-	argAnchorBorrow := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
-	for _, reqObject := range requestObjects {
-		argReqObject := ptb.MustObj(sui.ObjectArg{Receiving: &reqObject})
+	argAssets := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
+	argB := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
+
+	for coinType, coinBalance := range assets.Coins {
+		argBal := ptb.Command(
+			iotago.Command{
+				MoveCall: &iotago.ProgrammableMoveCall{
+					Package:       &packageID,
+					Module:        iscmove.AssetsBagModuleName,
+					Function:      "take_coin_balance",
+					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+					Arguments: []iotago.Argument{
+						argAssets,
+						ptb.MustPure(coinBalance),
+					},
+				},
+			},
+		)
+		argTransferCoin := ptb.Command(
+			iotago.Command{
+				MoveCall: &iotago.ProgrammableMoveCall{
+					Package:       iotago.IotaPackageIDIotaFramework,
+					Module:        "coin",
+					Function:      "from_balance",
+					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+					Arguments: []iotago.Argument{
+						argBal,
+					},
+				},
+			},
+		)
+		ptb.Command(
+			iotago.Command{
+				TransferObjects: &iotago.ProgrammableTransferObjects{
+					Objects: []iotago.Argument{argTransferCoin},
+					Address: ptb.MustForceSeparatePure(target),
+				},
+			},
+		)
+	}
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "return_assets_from_borrow",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					argAnchor,
+					argAssets,
+					argB,
+				},
+			},
+		},
+	)
+	return ptb
+}
+
+func PTBTakeAndPlaceToAssetsBag(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAnchor iotago.Argument,
+	argAssetsBag iotago.Argument,
+	amount uint64,
+	coinType string,
+) *iotago.ProgrammableTransactionBuilder {
+	typeTag, err := iotago.TypeTagFromString(coinType)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse TypeTag: %s: %s", coinType, err))
+	}
+	argBorrow := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "borrow_assets",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					argAnchor,
+				},
+			},
+		},
+	)
+	argAssets := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
+	argB := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
+	argBal := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "take_coin_balance",
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
+					argAssets,
+					ptb.MustPure(amount),
+				},
+			},
+		},
+	)
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "place_coin_balance",
+				TypeArguments: []iotago.TypeTag{*typeTag},
+				Arguments: []iotago.Argument{
+					argAssetsBag,
+					argBal,
+				},
+			},
+		},
+	)
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "return_assets_from_borrow",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					argAnchor,
+					argAssets,
+					argB,
+				},
+			},
+		},
+	)
+	return ptb
+}
+
+func PTBReceiveRequestsAndTransition(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAnchor iotago.Argument,
+	requestRefs []iotago.ObjectRef,
+	requestAssets []*iscmove.AssetsBagWithBalances,
+	stateMetadata []byte,
+	topUpAmount uint64,
+) *iotago.ProgrammableTransactionBuilder {
+	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
+	if err != nil {
+		panic(fmt.Sprintf("can't parse Receipt's TypeTag: %s", err))
+	}
+
+	var argReceiveRequests []iotago.Argument
+	argBorrowAssets := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "borrow_assets",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments:     []iotago.Argument{argAnchor},
+			},
+		},
+	)
+	argAnchorAssets := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrowAssets.Result, Result: 0}}
+	argAnchorBorrow := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrowAssets.Result, Result: 1}}
+	for i, reqObject := range requestRefs {
+		reqObject := reqObject
+		argReqObject := ptb.MustObj(iotago.ObjectArg{Receiving: &reqObject})
 		argReceiveRequest := ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
+			iotago.Command{
+				MoveCall: &iotago.ProgrammableMoveCall{
 					Package:       &packageID,
 					Module:        iscmove.AnchorModuleName,
 					Function:      "receive_request",
-					TypeArguments: []sui.TypeTag{},
-					Arguments:     []sui.Argument{argAnchor, argReqObject},
+					TypeArguments: []iotago.TypeTag{},
+					Arguments:     []iotago.Argument{argAnchor, argReqObject},
 				},
 			},
 		)
 		argReceiveRequests = append(argReceiveRequests, argReceiveRequest)
 
-		assetsBag := reqAssetsBagsMap[reqObject]
-		argAssetsBag := sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
-		for _, bal := range assetsBag.Balances {
-			typeTag, err := sui.TypeTagFromString(bal.CoinType)
-			if err != nil {
-				return sui.ProgrammableTransaction{}, fmt.Errorf("can't parse Balance's Coin TypeTag: %w", err)
-			}
+		assetsBag := requestAssets[i]
+		argAssetsBag := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
+		for coinType := range assetsBag.Balances {
 			argBal := ptb.Command(
-				sui.Command{
-					MoveCall: &sui.ProgrammableMoveCall{
+				iotago.Command{
+					MoveCall: &iotago.ProgrammableMoveCall{
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "take_all_coin_balance",
-						TypeArguments: []sui.TypeTag{*typeTag},
-						Arguments:     []sui.Argument{argAssetsBag},
+						TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+						Arguments:     []iotago.Argument{argAssetsBag},
 					},
 				},
 			)
 			ptb.Command(
-				sui.Command{
-					MoveCall: &sui.ProgrammableMoveCall{
+				iotago.Command{
+					MoveCall: &iotago.ProgrammableMoveCall{
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "place_coin_balance",
-						TypeArguments: []sui.TypeTag{*typeTag},
-						Arguments:     []sui.Argument{argAnchorAssets, argBal},
+						TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
+						Arguments:     []iotago.Argument{argAnchorAssets, argBal},
 					},
 				},
 			)
 		}
-		ptb.Command(
-			sui.Command{
-				MoveCall: &sui.ProgrammableMoveCall{
-					Package:       &packageID,
-					Module:        iscmove.AssetsBagModuleName,
-					Function:      "destroy_empty",
-					TypeArguments: []sui.TypeTag{},
-					Arguments:     []sui.Argument{argAssetsBag},
-				},
-			},
-		)
+		PTBAssetsDestroyEmpty(ptb, packageID, argAssetsBag)
 	}
 
-	var nestedResults []sui.Argument
+	var nestedResults []iotago.Argument
 	for _, argReceiveRequest := range argReceiveRequests {
-		nestedResults = append(nestedResults, sui.Argument{NestedResult: &sui.NestedResult{Cmd: *argReceiveRequest.Result, Result: 0}})
+		nestedResults = append(nestedResults, iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argReceiveRequest.Result, Result: 0}})
 	}
-	argReceipts := ptb.Command(sui.Command{
-		MakeMoveVec: &sui.ProgrammableMakeMoveVec{
+	argReceipts := ptb.Command(iotago.Command{
+		MakeMoveVec: &iotago.ProgrammableMakeMoveVec{
 			Type:    typeReceipt,
 			Objects: nestedResults,
 		},
 	})
-
+	// top up gas coin
+	ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
+		ptb,
+		packageID,
+		argAnchorAssets,
+		topUpAmount,
+		iotajsonrpc.IotaCoinType,
+	)
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
 				Function:      "return_assets_from_borrow",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
 					argAnchor,
 					argAnchorAssets,
 					argAnchorBorrow,
@@ -144,20 +300,19 @@ func NewReceiveRequestPTB(packageID sui.PackageID, anchorRef *sui.ObjectRef, req
 	)
 
 	ptb.Command(
-		sui.Command{
-			MoveCall: &sui.ProgrammableMoveCall{
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
-				Function:      "update_state_root",
-				TypeArguments: []sui.TypeTag{},
-				Arguments: []sui.Argument{
+				Function:      "transition",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
 					argAnchor,
-					ptb.MustPure(stateRoot),
+					ptb.MustPure(stateMetadata),
 					argReceipts,
 				},
 			},
 		},
 	)
-
-	return ptb.Finish(), nil
+	return ptb
 }

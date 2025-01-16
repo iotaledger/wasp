@@ -3,7 +3,7 @@ package kv
 import (
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 )
 
 type Item struct {
@@ -26,5 +26,5 @@ func (items Items) Swap(i, j int) {
 }
 
 func (it *Item) Format(format string) string {
-	return fmt.Sprintf(format, iotago.EncodeHex([]byte(it.Key)), iotago.EncodeHex(it.Value))
+	return fmt.Sprintf(format, hexutil.Encode([]byte(it.Key)), hexutil.Encode(it.Value))
 }

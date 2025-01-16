@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the RequestProcessedResponse type satisfies the MappedNullable interface at compile time
@@ -23,6 +25,8 @@ type RequestProcessedResponse struct {
 	IsProcessed bool `json:"isProcessed"`
 	RequestId string `json:"requestId"`
 }
+
+type _RequestProcessedResponse RequestProcessedResponse
 
 // NewRequestProcessedResponse instantiates a new RequestProcessedResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -130,6 +134,45 @@ func (o RequestProcessedResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["isProcessed"] = o.IsProcessed
 	toSerialize["requestId"] = o.RequestId
 	return toSerialize, nil
+}
+
+func (o *RequestProcessedResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"chainId",
+		"isProcessed",
+		"requestId",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varRequestProcessedResponse := _RequestProcessedResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varRequestProcessedResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = RequestProcessedResponse(varRequestProcessedResponse)
+
+	return err
 }
 
 type NullableRequestProcessedResponse struct {

@@ -5,13 +5,12 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Allowance** | [**AssetsJSON**](AssetsJSON.md) |  | 
+**Assets** | [**AssetsJSON**](AssetsJSON.md) |  | 
 **CallTarget** | [**CallTargetJSON**](CallTargetJSON.md) |  | 
-**FungibleTokens** | [**AssetsJSON**](AssetsJSON.md) |  | 
 **GasBudget** | **string** | The gas budget (uint64 as string) | 
 **IsEVM** | **bool** |  | 
 **IsOffLedger** | **bool** |  | 
-**Nft** | [**NFTJSON**](NFTJSON.md) |  | 
-**Params** | [**JSONDict**](JSONDict.md) |  | 
+**Params** | **[][]int32** |  | 
 **RequestId** | **string** |  | 
 **SenderAccount** | **string** |  | 
 **TargetAddress** | **string** |  | 
@@ -20,7 +19,7 @@ Name | Type | Description | Notes
 
 ### NewRequestJSON
 
-`func NewRequestJSON(allowance AssetsJSON, callTarget CallTargetJSON, fungibleTokens AssetsJSON, gasBudget string, isEVM bool, isOffLedger bool, nft NFTJSON, params JSONDict, requestId string, senderAccount string, targetAddress string, ) *RequestJSON`
+`func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params [][]int32, requestId string, senderAccount string, targetAddress string, ) *RequestJSON`
 
 NewRequestJSON instantiates a new RequestJSON object
 This constructor will assign default values to properties that have it defined,
@@ -55,6 +54,26 @@ and a boolean to check if the value has been set.
 SetAllowance sets Allowance field to given value.
 
 
+### GetAssets
+
+`func (o *RequestJSON) GetAssets() AssetsJSON`
+
+GetAssets returns the Assets field if non-nil, zero value otherwise.
+
+### GetAssetsOk
+
+`func (o *RequestJSON) GetAssetsOk() (*AssetsJSON, bool)`
+
+GetAssetsOk returns a tuple with the Assets field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAssets
+
+`func (o *RequestJSON) SetAssets(v AssetsJSON)`
+
+SetAssets sets Assets field to given value.
+
+
 ### GetCallTarget
 
 `func (o *RequestJSON) GetCallTarget() CallTargetJSON`
@@ -73,26 +92,6 @@ and a boolean to check if the value has been set.
 `func (o *RequestJSON) SetCallTarget(v CallTargetJSON)`
 
 SetCallTarget sets CallTarget field to given value.
-
-
-### GetFungibleTokens
-
-`func (o *RequestJSON) GetFungibleTokens() AssetsJSON`
-
-GetFungibleTokens returns the FungibleTokens field if non-nil, zero value otherwise.
-
-### GetFungibleTokensOk
-
-`func (o *RequestJSON) GetFungibleTokensOk() (*AssetsJSON, bool)`
-
-GetFungibleTokensOk returns a tuple with the FungibleTokens field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetFungibleTokens
-
-`func (o *RequestJSON) SetFungibleTokens(v AssetsJSON)`
-
-SetFungibleTokens sets FungibleTokens field to given value.
 
 
 ### GetGasBudget
@@ -155,42 +154,22 @@ and a boolean to check if the value has been set.
 SetIsOffLedger sets IsOffLedger field to given value.
 
 
-### GetNft
-
-`func (o *RequestJSON) GetNft() NFTJSON`
-
-GetNft returns the Nft field if non-nil, zero value otherwise.
-
-### GetNftOk
-
-`func (o *RequestJSON) GetNftOk() (*NFTJSON, bool)`
-
-GetNftOk returns a tuple with the Nft field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetNft
-
-`func (o *RequestJSON) SetNft(v NFTJSON)`
-
-SetNft sets Nft field to given value.
-
-
 ### GetParams
 
-`func (o *RequestJSON) GetParams() JSONDict`
+`func (o *RequestJSON) GetParams() [][]int32`
 
 GetParams returns the Params field if non-nil, zero value otherwise.
 
 ### GetParamsOk
 
-`func (o *RequestJSON) GetParamsOk() (*JSONDict, bool)`
+`func (o *RequestJSON) GetParamsOk() (*[][]int32, bool)`
 
 GetParamsOk returns a tuple with the Params field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetParams
 
-`func (o *RequestJSON) SetParams(v JSONDict)`
+`func (o *RequestJSON) SetParams(v [][]int32)`
 
 SetParams sets Params field to given value.
 

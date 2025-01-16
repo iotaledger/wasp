@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
@@ -19,8 +19,8 @@ func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {
 	return apiclient.NewAPIClient(config), nil
 }
 
-func CallView(context context.Context, client *apiclient.APIClient, chainID string, request apiclient.ContractCallViewRequest) (dict.Dict, error) {
-	result, _, err := client.ChainsApi.
+func CallView(context context.Context, client *apiclient.APIClient, chainID string, request apiclient.ContractCallViewRequest) (isc.CallResults, error) {
+	result, _, err := client.ChainsAPI.
 		CallView(context, chainID).
 		ContractCallViewRequest(request).
 		Execute()
@@ -28,7 +28,5 @@ func CallView(context context.Context, client *apiclient.APIClient, chainID stri
 		return nil, err
 	}
 
-	dictResult, err := APIJsonDictToDict(*result)
-
-	return dictResult, err
+	return APIResultToCallArgs(result)
 }

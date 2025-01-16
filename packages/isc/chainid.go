@@ -4,23 +4,20 @@
 package isc
 
 import (
-	"io"
-
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-const ChainIDLength = iotago.AliasIDLength
+const ChainIDLength = iotago.AddressLen
 
 var emptyChainID = ChainID{}
 
 // ChainID represents the global identifier of the chain
 // It is wrapped AliasAddress, an address without a private key behind
 type (
-	ChainID    sui.ObjectID
+	// ChainID is the anchor ObjectID
+	ChainID    iotago.ObjectID
 	ChainIDKey string
 )
 
@@ -33,19 +30,13 @@ func ChainIDFromAddress(addr *cryptolib.Address) ChainID {
 	return ChainID(addr[:])
 }
 
-func ChainIDFromObjectID(addr sui.ObjectID) ChainID {
+func ChainIDFromObjectID(addr iotago.ObjectID) ChainID {
 	return ChainID(addr[:])
-}
-
-// ChainIDFromAliasID creates new chain ID from alias address
-func ChainIDFromAliasID(aliasID iotago.AliasID) ChainID {
-	return ChainID(aliasID)
 }
 
 // ChainIDFromBytes reconstructs a ChainID from its binary representation.
 func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
-	_, err = rwutil.ReadFromBytes(data, &ret)
-	return ret, err
+	return bcs.Unmarshal[ChainID](data)
 }
 
 func ChainIDFromString(hexAddress string) (ChainID, error) {
@@ -65,32 +56,13 @@ func ChainIDFromKey(key ChainIDKey) ChainID {
 	return chainID
 }
 
-// RandomChainID creates a random chain ID. Used for testing only
-func RandomChainID(seed ...[]byte) ChainID {
-	var h hashing.HashValue
-	if len(seed) > 0 {
-		h = hashing.HashData(seed[0])
-	} else {
-		h = hashing.PseudoRandomHash(nil)
-	}
-	chainID, err := ChainIDFromBytes(h[:ChainIDLength])
-	if err != nil {
-		panic(err)
-	}
-	return chainID
+func (id ChainID) AsObjectID() iotago.ObjectID {
+	return iotago.ObjectID(id)
 }
 
 func (id ChainID) AsAddress() *cryptolib.Address {
 	addr := cryptolib.Address(id)
 	return &addr
-}
-
-func (id ChainID) AsAliasAddress() iotago.AliasAddress {
-	return iotago.AliasAddress(id)
-}
-
-func (id ChainID) AsAliasID() iotago.AliasID {
-	return iotago.AliasID(id)
 }
 
 func (id ChainID) Bytes() []byte {
@@ -106,7 +78,7 @@ func (id ChainID) Equals(other ChainID) bool {
 }
 
 func (id ChainID) Key() ChainIDKey {
-	return ChainIDKey(id.AsAliasID().String())
+	return ChainIDKey(id.AsObjectID().String())
 }
 
 func (id ChainID) IsSameChain(agentID AgentID) bool {
@@ -123,12 +95,4 @@ func (id ChainID) ShortString() string {
 
 func (id ChainID) String() string {
 	return id.AsAddress().String()
-}
-
-func (id *ChainID) Read(r io.Reader) error {
-	return rwutil.ReadN(r, id[:])
-}
-
-func (id *ChainID) Write(w io.Writer) error {
-	return rwutil.WriteN(w, id[:])
 }

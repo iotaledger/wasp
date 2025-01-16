@@ -2,199 +2,147 @@ package isc
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/ethereum/go-ethereum"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/sui-go/sui"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
-type onLedgerRequestData struct {
-	requestID       sui.ObjectID
-	senderAddress   *cryptolib.Address
-	targetAddress   *cryptolib.Address
-	assets          *Assets
-	requestMetadata *RequestMetadata
+type OnLedgerRequestData struct {
+	requestRef      iotago.ObjectRef   `bcs:"export"`
+	senderAddress   *cryptolib.Address `bcs:"export"`
+	targetAddress   *cryptolib.Address `bcs:"export"`
+	assets          *Assets            `bcs:"export"`
+	assetsBag       *iscmove.AssetsBag `bcs:"export"`
+	requestMetadata *RequestMetadata   `bcs:"export"`
 }
 
 var (
-	_ Request         = new(onLedgerRequestData)
-	_ OnLedgerRequest = new(onLedgerRequestData)
-	_ Calldata        = new(onLedgerRequestData)
+	_ Request         = new(OnLedgerRequestData)
+	_ OnLedgerRequest = new(OnLedgerRequestData)
+	_ Calldata        = new(OnLedgerRequestData)
 )
 
-func OnLedgerFromRequest(request iscmove.Request, anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
-	r := &onLedgerRequestData{
-		requestID:     request.ID,
-		senderAddress: request.Sender,
+func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
+	assets, err := AssetsFromAssetsBagWithBalances(&request.Object.AssetsBag)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse assets from AssetsBag: %w", err)
+	}
+	allowance, err := AssetsFromISCMove(&request.Object.Allowance)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse allowance: %w", err)
+	}
+	r := &OnLedgerRequestData{
+		requestRef:    request.ObjectRef,
+		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
+		assets:        assets,
+		assetsBag:     &request.Object.AssetsBag.AssetsBag,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
 				Target: CallTarget{
-					Contract:   Hname(request.Message.Contract),
-					EntryPoint: Hname(request.Message.Function),
+					Contract:   Hname(request.Object.Message.Contract),
+					EntryPoint: Hname(request.Object.Message.Function),
 				},
-				Params: dict.New(), // TODO: set request.Message.Params (turn dict to list of args)
+				Params: request.Object.Message.Args,
 			},
-			Allowance: NewEmptyAssets(),
-			GasBudget: 0,
+			Allowance: allowance,
+			GasBudget: request.Object.GasBudget,
 		},
 	}
-
 	return r, nil
 }
 
-func (req *onLedgerRequestData) Read(r io.Reader) error {
-	var err error
-	rr := rwutil.NewReader(r)
-
-	rr.ReadKindAndVerify(rwutil.Kind(requestKindOnLedger))
-	rr.ReadN(req.requestID[:])
-	rr.ReadN(req.senderAddress[:])
-	rr.ReadN(req.targetAddress[:])
-
-	req.requestMetadata, err = RequestMetadataFromBytes(rr.ReadBytes())
-	if err != nil {
-		return err
-	}
-
-	return rr.Err
-}
-
-func (req *onLedgerRequestData) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteKind(rwutil.Kind(requestKindOnLedger))
-	ww.WriteN(req.requestID[:])
-	ww.WriteN(req.senderAddress[:])
-	ww.WriteN(req.targetAddress[:])
-	ww.Write(req.requestMetadata)
-
-	return ww.Err
-}
-
-func (req *onLedgerRequestData) Allowance() *Assets {
+func (req *OnLedgerRequestData) Allowance() *Assets {
 	if req.requestMetadata == nil {
 		return NewEmptyAssets()
 	}
 	return req.requestMetadata.Allowance
 }
 
-func (req *onLedgerRequestData) Assets() *Assets {
+func (req *OnLedgerRequestData) Assets() *Assets {
 	return req.assets
 }
 
-func (req *onLedgerRequestData) Bytes() []byte {
-	return rwutil.WriteToBytes(req)
+func (req *OnLedgerRequestData) Bytes() []byte {
+	var r Request = req
+	return bcs.MustMarshal(&r)
 }
 
-func (req *onLedgerRequestData) Message() Message {
+func (req *OnLedgerRequestData) Message() Message {
 	if req.requestMetadata == nil {
 		return Message{}
 	}
-
 	return req.requestMetadata.Message
 }
 
-func (req *onLedgerRequestData) Clone() OnLedgerRequest {
-	outputID := sui.ObjectID{}
-	copy(outputID[:], req.requestID[:])
-
-	ret := &onLedgerRequestData{
-		requestID:     outputID,
-		senderAddress: req.senderAddress.Clone(),
-		targetAddress: req.targetAddress.Clone(),
-	}
-
-	if req.requestMetadata != nil {
-		ret.requestMetadata = req.requestMetadata.Clone()
-	}
-
-	return ret
-}
-
-func (req *onLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
+func (req *OnLedgerRequestData) GasBudget() (gasBudget uint64, isEVM bool) {
 	if req.requestMetadata == nil {
 		return 0, false
 	}
 	return req.requestMetadata.GasBudget, false
 }
 
-func (req *onLedgerRequestData) ID() RequestID {
-	return RequestID(req.requestID)
+func (req *OnLedgerRequestData) ID() RequestID {
+	return RequestID(*req.requestRef.ObjectID)
 }
 
-func (req *onLedgerRequestData) IsOffLedger() bool {
+func (req *OnLedgerRequestData) IsOffLedger() bool {
 	return false
 }
 
-func (req *onLedgerRequestData) RequestID() sui.ObjectID {
-	return req.requestID
+func (req *OnLedgerRequestData) RequestID() iotago.ObjectID {
+	return *req.requestRef.ObjectID
 }
 
-func (req *onLedgerRequestData) SenderAccount() AgentID {
+func (req *OnLedgerRequestData) SenderAccount() AgentID {
 	sender := req.SenderAddress()
 	if sender == nil {
 		return nil
 	}
 	if req.requestMetadata != nil && !req.requestMetadata.SenderContract.Empty() {
-		// if sender.Type() == iotago.AddressAlias {	// TODO: is it needed?
 		chainID := ChainIDFromAddress(sender)
 		return req.requestMetadata.SenderContract.AgentID(chainID)
-		//}
 	}
-	return NewAgentID(sender)
+	return NewAddressAgentID(sender)
 }
 
-func (req *onLedgerRequestData) SenderAddress() *cryptolib.Address {
+func (req *OnLedgerRequestData) SenderAddress() *cryptolib.Address {
 	return req.senderAddress
 }
 
-func (req *onLedgerRequestData) String() string {
+func (req *OnLedgerRequestData) String() string {
 	metadata := req.requestMetadata
 	if metadata == nil {
 		return "onledger request without metadata"
 	}
-	return fmt.Sprintf("onLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, GasBudget: %d }",
+	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, Assets: %v, GasBudget: %d }",
 		req.ID().String(),
 		metadata.SenderContract.String(),
 		metadata.Message.Target.Contract.String(),
 		metadata.Message.Target.EntryPoint.String(),
 		metadata.Message.Params.String(),
+		req.assets,
 		metadata.GasBudget,
 	)
 }
 
-func (req *onLedgerRequestData) TargetAddress() *cryptolib.Address {
+func (req *OnLedgerRequestData) RequestRef() iotago.ObjectRef {
+	return req.requestRef
+}
+
+func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBagWithBalances {
+	return req.assets.AsAssetsBagWithBalances(req.assetsBag)
+}
+
+func (req *OnLedgerRequestData) TargetAddress() *cryptolib.Address {
 	return req.targetAddress
 }
 
-func (req *onLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
+func (req *OnLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
-}
-
-// region RetryOnLedgerRequest //////////////////////////////////////////////////////////////////
-
-type RetryOnLedgerRequest struct {
-	OnLedgerRequest
-	retryOutputID sui.ObjectID
-}
-
-func NewRetryOnLedgerRequest(req OnLedgerRequest, retryOutput sui.ObjectID) *RetryOnLedgerRequest {
-	return &RetryOnLedgerRequest{
-		OnLedgerRequest: req,
-		retryOutputID:   retryOutput,
-	}
-}
-
-func (r *RetryOnLedgerRequest) RetryOutputID() sui.ObjectID {
-	return r.retryOutputID
-}
-
-func (r *RetryOnLedgerRequest) SetRetryOutputID(oid sui.ObjectID) {
-	r.retryOutputID = oid
 }

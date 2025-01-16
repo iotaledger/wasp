@@ -3,14 +3,14 @@ package decode
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	wasp_util "github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -28,42 +28,28 @@ func Init(rootCmd *cobra.Command) {
 
 func initDecodeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "decode <type> <key> <type> ...",
+		Use:   "decode <type> <type> ...",
 		Short: "Decode the output of a contract function call",
 		Args:  cobra.MinimumNArgs(2),
-		Run: func(cmd *cobra.Command, args []string) {
-			d := util.UnmarshalDict()
+		Run: func(cmd *cobra.Command, cmdArgs []string) {
+			callResults := util.ReadCallResultsAsJSON()
 
-			if len(args) == 2 {
-				ktype := args[0]
-				vtype := args[1]
-
-				for key, value := range d {
-					skey := util.ValueToString(ktype, []byte(key))
-					sval := util.ValueToString(vtype, value)
-					log.Printf("%s: %s\n", skey, sval)
-				}
-				return
-			}
-
-			if len(args) < 3 || len(args)%3 != 0 {
+			if len(cmdArgs) < 1 {
 				log.Check(cmd.Help())
 				return
 			}
 
-			for i := 0; i < len(args)/2; i++ {
-				ktype := args[i*2]
-				skey := args[i*2+1]
-				vtype := args[i*2+2]
+			if len(callResults) != len(cmdArgs) {
+				fmt.Println("Number of provided result types does not match number of results: types = %v, results = %v",
+					len(cmdArgs), len(callResults))
+				os.Exit(1)
+				return
+			}
 
-				// chainID is only used to fallback user input, the decode command uses data directly from the server, it's okay to pass empty chainID
-				key := kv.Key(util.ValueFromString(ktype, skey, isc.ChainID{}))
-				val := d.Get(key)
-				if val == nil {
-					log.Printf("%s: <nil>\n", skey)
-				} else {
-					log.Printf("%s: %s\n", skey, util.ValueToString(vtype, val))
-				}
+			for i := 0; i < len(cmdArgs); i++ {
+				vtype := cmdArgs[i]
+				val := util.ValueToString(vtype, callResults[i])
+				log.Printf("[%v]: %s\n", i, val)
 			}
 		},
 	}
@@ -141,7 +127,7 @@ func initDecodeGasFeePolicy() *cobra.Command {
 		Short: "Translates gas fee policy from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			bytes, err := iotago.DecodeHex(args[0])
+			bytes, err := cryptolib.DecodeHex(args[0])
 			log.Check(err)
 			log.Printf(gas.MustFeePolicyFromBytes(bytes).String())
 		},
@@ -178,7 +164,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 				feePolicy.ValidatorFeeShare = validatorFeeShare
 			}
 
-			log.Printf(iotago.EncodeHex(feePolicy.Bytes()))
+			log.Printf(cryptolib.EncodeHex(feePolicy.Bytes()))
 		},
 	}
 

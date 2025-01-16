@@ -9,8 +9,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/spf13/cobra"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -52,7 +54,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 
 	if len(args) == 0 {
 		blockInfo, _, err := client.
-			CorecontractsApi.
+			CorecontractsAPI.
 			BlocklogGetLatestBlockInfo(context.Background(), config.GetChain(chain).String()).
 			Execute() //nolint:bodyclose // false positive
 
@@ -65,7 +67,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 	log.Check(err)
 
 	blockInfo, _, err := client.
-		CorecontractsApi.
+		CorecontractsAPI.
 		BlocklogGetBlockInfo(context.Background(), config.GetChain(chain).String(), uint32(index)).
 		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
@@ -76,7 +78,7 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 
 func logRequestsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
-	receipts, _, err := client.CorecontractsApi.
+	receipts, _, err := client.CorecontractsAPI.
 		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetChain(chain).String(), index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
@@ -91,7 +93,7 @@ func logRequestsInBlock(index uint32, node, chain string) {
 
 func logEventsInBlock(index uint32, node, chain string) {
 	client := cliclients.WaspClient(node)
-	events, _, err := client.CorecontractsApi.
+	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfBlock(context.Background(), config.GetChain(chain).String(), index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
@@ -106,13 +108,13 @@ func hexLenFromByteLen(length int) int {
 
 func reqIDFromString(s string) isc.RequestID {
 	switch len(s) {
-	case hexLenFromByteLen(iotago.OutputIDLength):
+	case hexLenFromByteLen(iotago.AddressLen):
 		// isc ReqID
 		reqID, err := isc.RequestIDFromString(s)
 		log.Check(err)
 		return reqID
 	case hexLenFromByteLen(common.HashLength):
-		bytes, err := iotago.DecodeHex(s)
+		bytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
 		var txHash common.Hash
 		copy(txHash[:], bytes)
@@ -139,7 +141,7 @@ func initRequestCmd() *cobra.Command {
 			reqID := reqIDFromString(args[0])
 
 			// TODO add optional block param?
-			receipt, _, err := client.ChainsApi.
+			receipt, _, err := client.ChainsAPI.
 				GetReceipt(context.Background(), chainID.String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
@@ -160,7 +162,7 @@ func initRequestCmd() *cobra.Command {
 
 func logEventsInRequest(reqID isc.RequestID, node, chain string) {
 	client := cliclients.WaspClient(node)
-	events, _, err := client.CorecontractsApi.
+	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfRequest(context.Background(), config.GetChain(chain).String(), reqID.String()).
 		Execute() //nolint:bodyclose // false positive
 

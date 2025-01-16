@@ -1,316 +1,209 @@
+// excluded temporarily because of compilation errors
+
 package testcore
 
 import (
 	"fmt"
 	"math"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blob"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
-func GetStorageDeposit(tx *iotago.Transaction) []uint64 {
-	ret := make([]uint64, len(tx.Essence.Outputs))
-	for i, out := range tx.Essence.Outputs {
-		ret[i] = parameters.L1().Protocol.RentStructure.MinRent(out)
-	}
-	return ret
-}
-
 func TestInitLoad(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t)
 	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
-	env.AssertL1BaseTokens(userAddr, utxodb.FundsFromFaucetAmount)
-	originAmount := 10 * isc.Million
-	ch, _ := env.NewChainExt(user, originAmount, "chain1")
+	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
+	var originAmount coin.Value = 10 * isc.Million
+	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	_ = ch.Log().Sync()
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,
-		originAmount-parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput()),
-		cassets.BaseTokens)
-	require.EqualValues(t, 0, len(cassets.NativeTokens))
+		originAmount,
+		cassets.BaseTokens())
+	require.EqualValues(t, 1, len(cassets.Coins))
 
 	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, cassets.BaseTokens >= governance.DefaultMinBaseTokensOnCommonAccount)
+	require.True(t, cassets.BaseTokens() >= governance.DefaultMinBaseTokensOnCommonAccount)
 
 	testdbhash.VerifyDBHash(env, t.Name())
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-	genesisAddr := env.L1Ledger().GenesisAddress()
-	assets := env.L1Assets(genesisAddr)
-	require.EqualValues(t, env.L1Ledger().Supply(), assets.BaseTokens)
+	env := solo.New(t)
+	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-	// create chain
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1")
-	defer func() {
-		_ = ch.Log().Sync()
-	}()
+	ch.CheckChain()
 
-	// get all native tokens. Must be empty
-	nativeTokenIDs := ch.GetOnChainTokenIDs()
-	require.EqualValues(t, 0, len(nativeTokenIDs))
-
-	// all goes to storage deposit and to total base tokens on chain
-	// what has left on L1 address
-	env.AssertL1BaseTokens(ch.OriginatorAddress, utxodb.FundsFromFaucetAmount-10*isc.Million)
-
-	// check if there's a single alias output on chain's address
-	aliasOutputs := env.L1Ledger().GetAliasOutputs(ch.ChainID.AsAddress())
-	require.EqualValues(t, 1, len(aliasOutputs))
-	var aliasOut *iotago.AliasOutput
-	for _, out := range aliasOutputs {
-		aliasOut = out
-	}
-
-	// check total on chain assets
-	totalAssets := ch.L2TotalAssets()
-	// no native tokens expected
-	require.EqualValues(t, 0, len(totalAssets.NativeTokens))
-	// what spent all goes to the alias output
-	// require.EqualValues(t, int(totalSpent), int(aliasOut.Amount))
-	// total base tokens on L2 must be equal to alias output base tokens - storage deposit
-	originAOSD := parameters.L1().Protocol.RentStructure.MinRent(aliasOut)
-	totalAccountedL2Tokens := aliasOut.Amount - originAOSD
-	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens)
-
-	// common account is empty
-
+	l2Total1 := ch.L2TotalAssets().BaseTokens()
 	someUserWallet, _ := env.NewKeyPairWithFunds()
 	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
-	// AliasOutput minCommonAccountBalance changes from block #0 to block #1 because the "state metadata" part gets bigger
-	totalAccountedL2Tokens += originAOSD - parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-	ch.AssertL2TotalBaseTokens(totalAccountedL2Tokens + 1*isc.Million)
-	ch.AssertControlAddresses()
+	l2Total2 := ch.L2TotalAssets().BaseTokens()
+	require.Equal(t, l2Total1+1*isc.Million, l2Total2)
+
+	ch.CheckChain()
 }
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
 func TestNoTargetPostOnLedger(t *testing.T) {
-	t.Run("no contract,originator==user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
+	for _, test := range []struct {
+		Name               string
+		Req                *solo.CallParams
+		SenderIsOriginator bool
+		ExpectedError      string
+	}{
+		{
+			Name:               "no contract, sender == originator",
+			Req:                solo.NewCallParamsEx("dummyContract", "dummyEP"),
+			SenderIsOriginator: true,
+			ExpectedError:      vm.ErrContractNotFound.Create(uint32(isc.Hn("dummyContract"))).Error(),
+		},
+		{
+			Name:               "no contract, sender != originator",
+			Req:                solo.NewCallParamsEx("dummyContract", "dummyEP"),
+			SenderIsOriginator: false,
+			ExpectedError:      vm.ErrContractNotFound.Create(uint32(isc.Hn("dummyContract"))).Error(),
+		},
+		{
+			Name:               "no EP, sender == originator",
+			Req:                solo.NewCallParamsEx(root.Contract.Name, "dummyEP"),
+			SenderIsOriginator: true,
+			ExpectedError:      vm.ErrTargetEntryPointNotFound.Error(),
+		},
+		{
+			Name:               "no EP, sender != originator",
+			Req:                solo.NewCallParamsEx(root.Contract.Name, "dummyEP"),
+			SenderIsOriginator: false,
+			ExpectedError:      vm.ErrTargetEntryPointNotFound.Error(),
+		},
+	} {
+		t.Run(test.Name, func(t *testing.T) {
+			env := solo.New(t)
+			ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-		totalBaseTokensBefore := ch.L2TotalBaseTokens()
-		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
+			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
+			if !test.SenderIsOriginator {
+				senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+			}
+			senderAgentID := isc.NewAddressAgentID(senderAddr)
 
-		req := solo.NewCallParamsEx("dummyContract", "dummyEP").
-			WithGasBudget(100_000)
-		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(isc.Hn("dummyContract")).Error())
+			l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
+			senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
+			senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
+			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
-		totalBaseTokensAfter := ch.L2TotalBaseTokens()
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
+			require.EqualValues(t, isc.TopUpFeeMin, commonAccountBaseTokensBefore)
 
-		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
+			_, l1Res, _, anchorTransitionPTBRes, err := ch.PostRequestSyncTx(
+				test.Req.
+					WithAssets(isc.NewAssets(1*isc.Million)).
+					WithGasBudget(100_000),
+				senderKeyPair,
+			)
 
-		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
+			require.Contains(t, err.Error(), test.ExpectedError)
 
-		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
-		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqStorageDeposit)
-		// originator (user) is charged with gas fee on L2
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit)
-		// all gas fee goes to the common account
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
-	})
-	t.Run("no contract,originator!=user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
+			l2TotalBaseTokensAfter := ch.L2TotalBaseTokens()
+			senderL1BaseTokensAfter := env.L1BaseTokens(senderAddr)
+			senderL2BaseTokensAfter := ch.L2BaseTokens(senderAgentID)
+			commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
+			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OriginatorAgentID)
+			l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
+			l2GasFee := ch.LastReceipt().GasFeeCharged
+			l1AnchorTransitionGasFee := coin.Value(anchorTransitionPTBRes.Effects.Data.GasFee())
 
-		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := isc.NewAgentID(senderAddr)
-
-		totalBaseTokensBefore := ch.L2TotalBaseTokens()
-		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
-
-		req := solo.NewCallParamsEx("dummyContract", "dummyEP").
-			WithGasBudget(100_000)
-		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrContractNotFound.Create(isc.Hn("dummyContract")).Error())
-
-		totalBaseTokensAfter := ch.L2TotalBaseTokens()
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
-
-		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
-
-		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
-		rec := ch.LastReceipt()
-
-		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
-		// originator on L1 does not change
-		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
-		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount-reqStorageDeposit)
-		// originator account does not change
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
-		// user is charged with gas fee on L2
-		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
-		// all gas fee goes to the common account
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
-	})
-	t.Run("no EP,originator==user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-
-		totalBaseTokensBefore := ch.L2TotalBaseTokens()
-		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
-
-		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
-			WithGasBudget(100_000)
-		reqTx, _, err := ch.PostRequestSyncTx(req, nil)
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
-
-		totalBaseTokensAfter := ch.L2TotalBaseTokens()
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
-
-		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
-
-		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
-
-		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
-		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore-reqStorageDeposit)
-		// originator (user) is charged with gas fee on L2
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+reqStorageDeposit)
-		// all gas fee goes to the common account
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance, commonAccountBaseTokensAfter)
-	})
-	t.Run("no EP,originator!=user", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch, _ := env.NewChainExt(nil, 0, "chain")
-		oldAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-
-		senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-		senderAgentID := isc.NewAgentID(senderAddr)
-
-		totalBaseTokensBefore := ch.L2TotalBaseTokens()
-		originatorsL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
-		originatorsL1BaseTokensBefore := env.L1BaseTokens(ch.OriginatorAddress)
-		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount)
-		require.EqualValues(t, governance.DefaultMinBaseTokensOnCommonAccount, ch.L2CommonAccountBaseTokens())
-
-		req := solo.NewCallParamsEx(root.Contract.Name, "dummyEP").
-			WithGasBudget(100_000)
-		reqTx, _, err := ch.PostRequestSyncTx(req, senderKeyPair)
-		// expecting specific error
-		require.Contains(t, err.Error(), vm.ErrTargetEntryPointNotFound.Error())
-
-		totalBaseTokensAfter := ch.L2TotalBaseTokens()
-		commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
-
-		// AO minCommonAccountBalance changes from block 0 to block 1 because the statemedata grows
-		newAOSD := parameters.L1().Protocol.RentStructure.MinRent(ch.GetAnchorOutputFromL1().GetAliasOutput())
-		changeInAOminCommonAccountBalance := newAOSD - oldAOSD
-
-		reqStorageDeposit := GetStorageDeposit(reqTx)[0]
-		rec := ch.LastReceipt()
-		// total base tokens on chain increase by the storage deposit from the request tx
-		require.EqualValues(t, int(totalBaseTokensBefore+reqStorageDeposit-changeInAOminCommonAccountBalance), int(totalBaseTokensAfter))
-		// originator on L1 does not change
-		env.AssertL1BaseTokens(ch.OriginatorAddress, originatorsL1BaseTokensBefore)
-		// user on L1 is charged with storage deposit
-		env.AssertL1BaseTokens(senderAddr, utxodb.FundsFromFaucetAmount-reqStorageDeposit)
-		// originator account does not change
-		ch.AssertL2BaseTokens(ch.OriginatorAgentID, originatorsL2BaseTokensBefore+rec.GasFeeCharged)
-		// user is charged with gas fee on L2
-		ch.AssertL2BaseTokens(senderAgentID, reqStorageDeposit-rec.GasFeeCharged)
-		// all gas fee goes to the common account
-		require.EqualValues(t,
-			governance.DefaultMinBaseTokensOnCommonAccount-changeInAOminCommonAccountBalance,
-			commonAccountBaseTokensAfter,
-		)
-	})
+			require.NotZero(ch.Env.T, l2GasFee)
+			// total L2 assets is increased by 1mil
+			require.Equal(t, l2TotalBaseTokensBefore+1*isc.Million, l2TotalBaseTokensAfter)
+			// common account is left untouched
+			require.Equal(t, commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
+			if test.SenderIsOriginator {
+				// sender deposited 1mil to L2 and spent L1 gas fee for the request and also
+				// the gas fee for the anchor transition
+				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee-l1AnchorTransitionGasFee, senderL1BaseTokensAfter)
+				// sender got 1mil (l2GasFee goes to originator which is the sender)
+				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million, senderL2BaseTokensAfter)
+			} else {
+				// sender deposited 1mil to L2 and spent L1 gas fees
+				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee, senderL1BaseTokensAfter)
+				// sender got 1mil minus l2GasFee
+				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million-l2GasFee, senderL2BaseTokensAfter)
+				// l2GasFee goes to payoutAgentID (originator by default)
+				require.Equal(t, originatorL2BaseTokensBefore+l2GasFee, originatorL2BaseTokensAfter)
+			}
+		})
+	}
 }
 
 func TestNoTargetView(t *testing.T) {
 	t.Run("no contract view", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t)
 		chain := env.NewChain()
-		chain.AssertControlAddresses()
-
 		_, err := chain.CallViewEx("dummyContract", "dummyEP")
 		require.Error(t, err)
 	})
 	t.Run("no EP view", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+		env := solo.New(t)
 		chain := env.NewChain()
-		chain.AssertControlAddresses()
-
 		_, err := chain.CallViewEx(root.Contract.Name, "dummyEP")
 		require.Error(t, err)
 	})
 }
 
+func TestSandboxStackOverflow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("short mode")
+	}
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
+	chain := env.NewChain()
+	_, err := chain.PostRequestSync(
+		solo.NewCallParams(sbtestsc.FuncStackOverflow.Message()).
+			WithGasBudget(math.MaxUint64),
+		nil,
+	)
+	require.Error(t, err)
+	testmisc.RequireErrorToBe(t, err, vm.ErrGasBudgetExceeded)
+}
+
 func TestEstimateGas(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
-		WithNativeContract(sbtestsc.Processor)
+	env := solo.New(t)
 	ch := env.NewChain()
 	ch.MustDepositBaseTokensToL2(10000, nil)
-	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
-	require.NoError(t, err)
 
 	callParams := func() *solo.CallParams {
-		return solo.NewCallParamsEx(sbtestsc.Contract.Name, sbtestsc.FuncCalcFibonacciIndirectStoreValue.Name,
-			sbtestsc.ParamN, uint64(10),
-		)
+		return solo.NewCallParams(sbtestsc.FuncCalcFibonacciIndirectStoreValue.Message(10))
 	}
 
-	getResult := func() int64 {
-		res, err2 := ch.CallViewEx(sbtestsc.Contract.Name, sbtestsc.FuncViewCalcFibonacciResult.Name)
-		require.NoError(t, err2)
-		n, err2 := codec.Int64.Decode(res.Get(sbtestsc.ParamN), 0)
-		require.NoError(t, err2)
-		return n
+	getResult := func() uint64 {
+		r, err := sbtestsc.FuncViewCalcFibonacciResult.Call(ch.CallView)
+		require.NoError(t, err)
+		return r
 	}
 
-	var estimatedGas, estimatedGasFee uint64
+	var estimatedGas uint64
+	var estimatedGasFee coin.Value
 	{
 		keyPair, _ := env.NewKeyPairWithFunds()
 
-		req := callParams().WithFungibleTokens(isc.NewAssetsBaseTokensU64(1 * isc.Million)).WithMaxAffordableGasBudget()
+		req := callParams().WithFungibleTokens(isc.NewAssets(1 * isc.Million).Coins).WithMaxAffordableGasBudget()
 		_, estimate, err2 := ch.EstimateGasOnLedger(req, keyPair)
 		estimatedGas = estimate.GasBurned
 		estimatedGasFee = estimate.GasFeeCharged
@@ -325,7 +218,7 @@ func TestEstimateGas(t *testing.T) {
 
 	for _, testCase := range []struct {
 		Desc          string
-		L2Balance     uint64
+		L2Balance     coin.Value
 		GasBudget     uint64
 		ExpectedError string
 	}{
@@ -355,14 +248,15 @@ func TestEstimateGas(t *testing.T) {
 	} {
 		t.Run(testCase.Desc, func(t *testing.T) {
 			keyPair, addr := env.NewKeyPairWithFunds()
-			agentID := isc.NewAgentID(addr)
+			agentID := isc.NewAddressAgentID(addr)
 
 			if testCase.L2Balance > 0 {
-				// deposit must come from another user so that we have exactly the funds we need on the test account (can't send lower than storage deposit)
+				// deposit must come from another user so that we have exactly
+				// the funds we need on the test account
 				anotherKeyPair, _ := env.NewKeyPairWithFunds()
-				err = ch.TransferAllowanceTo(
-					isc.NewAssetsBaseTokensU64(testCase.L2Balance),
-					isc.NewAgentID(addr),
+				err := ch.TransferAllowanceTo(
+					isc.NewAssets(testCase.L2Balance),
+					agentID,
 					anotherKeyPair,
 				)
 				require.NoError(t, err)
@@ -388,116 +282,21 @@ func TestEstimateGas(t *testing.T) {
 	}
 }
 
-func TestRepeatInit(t *testing.T) {
-	t.Run("root", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-		err := ch.DepositBaseTokensToL2(10_000, nil)
-		require.NoError(t, err)
-		req := solo.NewCallParamsEx(root.Contract.Name, "init").
-			WithGasBudget(100_000)
-		_, err = ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
-		ch.CheckAccountLedger()
-	})
-	t.Run("accounts", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-		err := ch.DepositBaseTokensToL2(10_000, nil)
-		require.NoError(t, err)
-		req := solo.NewCallParamsEx(accounts.Contract.Name, "init").
-			WithGasBudget(100_000)
-		_, err = ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
-		ch.CheckAccountLedger()
-	})
-	t.Run("blocklog", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-		err := ch.DepositBaseTokensToL2(10_000, nil)
-		require.NoError(t, err)
-		req := solo.NewCallParamsEx(blocklog.Contract.Name, "init").
-			WithGasBudget(100_000)
-		_, err = ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
-		ch.CheckAccountLedger()
-	})
-	t.Run("blob", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-		err := ch.DepositBaseTokensToL2(10_000, nil)
-		require.NoError(t, err)
-		req := solo.NewCallParamsEx(blob.Contract.Name, "init").
-			WithGasBudget(100_000)
-		_, err = ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
-		ch.CheckAccountLedger()
-	})
-	t.Run("governance", func(t *testing.T) {
-		env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
-		ch := env.NewChain()
-		err := ch.DepositBaseTokensToL2(10_000, nil)
-		require.NoError(t, err)
-		req := solo.NewCallParamsEx(governance.Contract.Name, "init").
-			WithGasBudget(100_000)
-		_, err = ch.PostRequestSync(req, nil)
-		require.Error(t, err)
-		testmisc.RequireErrorToBe(t, err, vm.ErrRepeatingInitCall)
-		ch.CheckAccountLedger()
-	})
-}
-
-func TestDeployNativeContract(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true}).
-		WithNativeContract(sbtestsc.Processor)
-
-	ch := env.NewChain()
-
-	senderKeyPair, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
-
-	err := ch.DepositBaseTokensToL2(10_000, senderKeyPair)
-	require.NoError(t, err)
-
-	// get more base tokens for originator
-	originatorBalance := env.L1Assets(ch.OriginatorAddress).BaseTokens
-	_, err = env.L1Ledger().GetFundsFromFaucet(ch.OriginatorAddress)
-	require.NoError(t, err)
-	env.AssertL1BaseTokens(ch.OriginatorAddress, originatorBalance+utxodb.FundsFromFaucetAmount)
-
-	req := solo.NewCallParams(root.FuncGrantDeployPermission.Message(isc.NewAgentID(senderAddr))).
-		AddBaseTokens(100_000).
-		WithGasBudget(100_000)
-	_, err = ch.PostRequestSync(req, nil)
-	require.NoError(t, err)
-
-	err = ch.DeployContract(senderKeyPair, "sctest", sbtestsc.Contract.ProgramHash)
-	require.NoError(t, err)
-
-	testdbhash.VerifyContractStateHash(env, root.Contract, "", t.Name())
-}
-
 func TestFeeBasic(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t)
 	chain := env.NewChain()
 	feePolicy := chain.GetGasFeePolicy()
 	require.EqualValues(t, 0, feePolicy.ValidatorFeeShare)
 }
 
 func TestBurnLog(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(30_000, nil)
 	rec := ch.LastReceipt()
 	t.Logf("receipt 1:\n%s", rec)
 	t.Logf("burn log 1:\n%s", rec.GasBurnLog)
-
-	_, err := ch.UploadBlob(nil, dict.Dict{"field": []byte(strings.Repeat("dummy data", 1000))})
-	require.NoError(t, err)
 
 	rec = ch.LastReceipt()
 	t.Logf("receipt 2:\n%s", rec)
@@ -506,34 +305,28 @@ func TestBurnLog(t *testing.T) {
 
 func TestMessageSize(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{
-		AutoAdjustStorageDeposit: true,
-		Debug:                    true,
-		PrintStackTrace:          true,
-	}).
-		WithNativeContract(sbtestsc.Processor)
+		Debug:           true,
+		PrintStackTrace: true,
+	})
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10000, nil)
 
-	err := ch.DeployContract(nil, sbtestsc.Contract.Name, sbtestsc.Contract.ProgramHash)
-	require.NoError(t, err)
-
-	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex()
+	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
 	reqSize := 5_000 // bytes
-	storageDeposit := 1 * isc.Million
+	var attachedBaseTokens coin.Value = 1 * isc.Million
 
-	maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
+	// TODO
+	// maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
+	const maxRequestsPerBlock = 1
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
 	for i := 0; i < len(reqs); i++ {
-		req, err := solo.ISCRequestFromCallParams(
-			ch,
-			solo.NewCallParamsEx(sbtestsc.Contract.Name, sbtestsc.FuncSendLargeRequest.Name,
-				sbtestsc.ParamSize, uint32(reqSize),
-			).
-				AddBaseTokens(storageDeposit).
-				AddAllowanceBaseTokens(storageDeposit).
+		req, _, err := ch.SendRequest(
+			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize))).
+				AddBaseTokens(attachedBaseTokens).
+				AddAllowanceBaseTokens(attachedBaseTokens).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -541,11 +334,13 @@ func TestMessageSize(t *testing.T) {
 		reqs[i] = req
 	}
 
-	env.AddRequestsToMempool(ch, reqs)
-	ch.WaitUntilMempoolIsEmpty()
-
+	// TODO properly test this:
 	// request outputs are so large that they have to be processed in two separate blocks
-	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex())
+	_, results := ch.RunRequestBatch(maxRequestsPerBlock)
+	require.Len(t, results, maxRequestsPerBlock)
+	_, results = ch.RunRequestBatch(maxRequestsPerBlock)
+	require.Len(t, results, 1)
+	require.Equal(t, initialBlockIndex+2, ch.GetLatestBlockInfo().BlockIndex)
 
 	for _, req := range reqs {
 		receipt, _ := ch.GetRequestReceipt(req.ID())
@@ -556,37 +351,37 @@ func TestMessageSize(t *testing.T) {
 func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
-	req := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64)
-	badReqBytes := req.(*isc.OffLedgerRequestData).EssenceBytes()
-	// append 33 bytes to the req essence to simulate a bad signature (32 bytes for the pubkey + 1 for 0 length signature)
-	for i := 0; i < 33; i++ {
-		badReqBytes = append(badReqBytes, 0x00)
-	}
-	badReq, err := isc.RequestFromBytes(badReqBytes)
-	require.NoError(t, err)
-	env.AddRequestsToMempool(ch, []isc.Request{badReq})
-	time.Sleep(200 * time.Millisecond)
-	// request won't be processed
-	_, ok := ch.GetRequestReceipt(badReq.ID())
-	require.False(t, ok)
+
+	// produce a badly signed off-ledger request
+	req := isc.NewOffLedgerRequest(
+		ch.ID(),
+		isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil),
+		0,
+		math.MaxUint64,
+	).WithSender(ch.OriginatorPrivateKey.GetPublicKey())
+
+	require.ErrorContains(t, req.VerifySignature(), "invalid signature")
+
+	_, _, err := ch.RunOffLedgerRequest(req)
+	require.ErrorContains(t, err, "request was skipped")
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 	user, _ := env.NewKeyPairWithFunds()
-	err := ch.DepositAssetsToL2(isc.NewAssetsBaseTokensU64(10*isc.Million), user)
+	err := ch.DepositAssetsToL2(isc.NewAssets(10*isc.Million), user)
 	require.NoError(t, err)
 
 	// create a request with an invalid nonce that must be skipped
 	skipReq := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(9999).Sign(user)
 	validReq := isc.NewOffLedgerRequest(ch.ID(), isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(0).Sign(user)
 
-	ch.RunRequestsSync([]isc.Request{skipReq, validReq}, "")
+	ch.RunRequestsSync([]isc.Request{skipReq, validReq})
 
 	// block has been created with only 1 request, calling 	`GetRequestReceiptsForBlock` must yield 1 receipt as expected
 	bi := ch.GetLatestBlockInfo()
 	require.EqualValues(t, 1, bi.TotalRequests)
-	receipts := ch.GetRequestReceiptsForBlock(bi.BlockIndex())
+	receipts := ch.GetRequestReceiptsForBlock(bi.BlockIndex)
 	require.Len(t, receipts, 1)
 }

@@ -2,13 +2,17 @@ package blocklog
 
 import (
 	"fmt"
-	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (
@@ -17,13 +21,15 @@ const (
 
 type BlockInfo struct {
 	SchemaVersion         uint8
+	BlockIndex            uint32
 	Timestamp             time.Time
+	PreviousAnchor        *isc.StateAnchor `bcs:"optional"`
+	L1Params              *parameters.L1Params
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
-	PreviousAnchorRef     *iscmove.RefWithObject[iscmove.Anchor]
-	GasBurned             uint64
-	GasFeeCharged         uint64
+	GasBurned             uint64     `bcs:"compact"`
+	GasFeeCharged         coin.Value `bcs:"compact"`
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index
@@ -33,81 +39,43 @@ func (bi *BlockInfo) RequestTimestamp(requestIndex uint16) time.Time {
 	return bi.Timestamp.Add(time.Duration(-(bi.TotalRequests - requestIndex - 1)) * time.Nanosecond)
 }
 
-func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
-	if bi.PreviousAnchorRef == nil {
-		return nil
-	}
-	l1c, err := state.NewL1CommitmentFromAnchor(bi.PreviousAnchorRef.Object)
-	if err != nil {
-		panic(err)
-	}
-	return l1c
-}
-
 func (bi *BlockInfo) String() string {
 	ret := "{\n"
-	ret += fmt.Sprintf("\tBlock index: %d\n", bi.BlockIndex())
+	ret += fmt.Sprintf("\tBlock index: %d\n", bi.BlockIndex)
 	ret += fmt.Sprintf("\tSchemaVersion: %d\n", bi.SchemaVersion)
 	ret += fmt.Sprintf("\tTimestamp: %d\n", bi.Timestamp.Unix())
+	if bi.PreviousAnchor != nil {
+		ret += fmt.Sprintf("\tPackageID: %v\n", bi.PreviousAnchor.ISCPackage())
+		ret += fmt.Sprintf("\tAnchor: %v\n", bi.PreviousAnchor.Anchor().String())
+	}
+	ret += fmt.Sprintf("\tL1Params: %v\n", bi.L1Params.String())
 	ret += fmt.Sprintf("\tTotal requests: %d\n", bi.TotalRequests)
 	ret += fmt.Sprintf("\toff-ledger requests: %d\n", bi.NumOffLedgerRequests)
 	ret += fmt.Sprintf("\tSuccessful requests: %d\n", bi.NumSuccessfulRequests)
-	ret += fmt.Sprintf("\tPrev AliasOutput: %s\n", bi.PreviousAnchorRef.ObjectID.ShortString())
+	ret += fmt.Sprintf("\tPrev L1Commitment: %v\n", bi.PreviousL1Commitment())
 	ret += fmt.Sprintf("\tGas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("\tGas fee charged: %d\n", bi.GasFeeCharged)
 	ret += "}\n"
 	return ret
 }
 
+func (bi *BlockInfo) PreviousL1Commitment() *state.L1Commitment {
+	if bi.PreviousAnchor == nil {
+		return nil
+	}
+
+	return lo.Must(transaction.L1CommitmentFromAnchor(bi.PreviousAnchor))
+}
+
 func (bi *BlockInfo) Bytes() []byte {
-	return rwutil.WriteToBytes(bi)
+	return bcs.MustMarshal(bi)
 }
 
 func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
-	return rwutil.ReadFromBytes(data, new(BlockInfo))
+	return bcs.Unmarshal[*BlockInfo](data)
 }
 
 // BlockInfoKey a key to access block info record inside SC state
 func BlockInfoKey(index uint32) []byte {
 	return []byte(collections.ArrayElemKey(prefixBlockRegistry, index))
-}
-
-func (bi *BlockInfo) BlockIndex() uint32 {
-	if bi.PreviousAnchorRef == nil {
-		return 0
-	}
-	return bi.PreviousAnchorRef.Object.StateIndex + 1
-}
-
-func (bi *BlockInfo) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	bi.SchemaVersion = rr.ReadUint8()
-	bi.Timestamp = time.Unix(0, rr.ReadInt64())
-	bi.TotalRequests = rr.ReadUint16()
-	bi.NumSuccessfulRequests = rr.ReadUint16()
-	bi.NumOffLedgerRequests = rr.ReadUint16()
-	hasPreviousAliasOutput := rr.ReadBool()
-	if hasPreviousAliasOutput {
-		bi.PreviousAnchorRef = &iscmove.RefWithObject[iscmove.Anchor]{}
-		rr.Read(bi.PreviousAnchorRef)
-	}
-	bi.GasBurned = rr.ReadGas64()
-	bi.GasFeeCharged = rr.ReadGas64()
-	return rr.Err
-}
-
-func (bi *BlockInfo) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteUint8(bi.SchemaVersion)
-	ww.WriteInt64(bi.Timestamp.UnixNano())
-	ww.WriteUint16(bi.TotalRequests)
-	ww.WriteUint16(bi.NumSuccessfulRequests)
-	ww.WriteUint16(bi.NumOffLedgerRequests)
-	ww.WriteBool(bi.PreviousAnchorRef != nil)
-	if bi.PreviousAnchorRef != nil {
-		ww.Write(bi.PreviousAnchorRef)
-	}
-	ww.WriteGas64(bi.GasBurned)
-	ww.WriteGas64(bi.GasFeeCharged)
-	return ww.Err
 }

@@ -10,7 +10,7 @@
  * Do not edit the class manually.
  */
 
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
+import { CoinJSON } from '../models/CoinJSON';
 import { HttpFile } from '../http/http';
 
 export class AssetsResponse {
@@ -18,9 +18,11 @@ export class AssetsResponse {
     * The base tokens (uint64 as string)
     */
     'baseTokens': string;
-    'nativeTokens': Array<NativeTokenJSON>;
+    'nativeTokens': Array<CoinJSON>;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -32,7 +34,7 @@ export class AssetsResponse {
         {
             "name": "nativeTokens",
             "baseName": "nativeTokens",
-            "type": "Array<NativeTokenJSON>",
+            "type": "Array<CoinJSON>",
             "format": ""
         }    ];
 
@@ -43,4 +45,3 @@ export class AssetsResponse {
     public constructor() {
     }
 }
-

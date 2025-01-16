@@ -8,85 +8,57 @@ import (
 
 	"github.com/samber/lo"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
 // handler for ISCAccounts::getL2BalanceBaseTokens
-func (h *magicContractHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentID) uint64 {
-	aid := agentID.MustUnwrap()
+func (h *magicContractHandler) GetL2BalanceBaseTokens(agentID iscmagic.ISCAgentID) iscmagic.CoinValue {
+	aid := lo.Must(agentID.Unwrap())
 	r := h.callView(accounts.ViewBalanceBaseToken.Message(&aid))
-	return lo.Must(accounts.ViewBalanceBaseToken.Output.Decode(r))
+	return iscmagic.CoinValue(lo.Must(accounts.ViewBalanceBaseToken.DecodeOutput(r)))
 }
 
-// handler for ISCAccounts::getL2BalanceNativeTokens
-func (h *magicContractHandler) GetL2BalanceNativeTokens(nativeTokenID iscmagic.NativeTokenID, agentID iscmagic.ISCAgentID) *big.Int {
-	aid := agentID.MustUnwrap()
-	r := h.callView(accounts.ViewBalanceNativeToken.Message(&aid, nativeTokenID.Unwrap()))
-	return lo.Must(accounts.ViewBalanceNativeToken.Output.Decode(r))
+// handler for ISCAccounts::getL2BalanceCoin
+func (h *magicContractHandler) GetL2BalanceCoin(
+	coinType iscmagic.CoinType,
+	agentID iscmagic.ISCAgentID,
+) coin.Value {
+	aid := lo.Must(agentID.Unwrap())
+	r := h.callView(accounts.ViewBalanceCoin.Message(&aid, coin.MustTypeFromString(coinType)))
+	return lo.Must(accounts.ViewBalanceCoin.DecodeOutput(r))
 }
 
-// handler for ISCAccounts::getL2NFTs
-func (h *magicContractHandler) GetL2NFTs(agentID iscmagic.ISCAgentID) []iscmagic.NFTID {
-	aid := agentID.MustUnwrap()
-	r := h.callView(accounts.ViewAccountNFTs.Message(&aid))
-	return lo.Map(lo.Must(accounts.ViewAccountNFTs.Output.Decode(r)), func(nftID isc.NFTID, _ int) iscmagic.NFTID {
-		return iscmagic.NFTID(nftID)
-	})
+// handler for ISCAccounts::getL2Objects
+func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []iotago.ObjectID {
+	aid := lo.Must(agentID.Unwrap())
+	r := h.callView(accounts.ViewAccountObjects.Message(&aid))
+	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(r))
 }
 
-// handler for ISCAccounts::getL2NFTAmount
-func (h *magicContractHandler) GetL2NFTAmount(agentID iscmagic.ISCAgentID) *big.Int {
-	aid := agentID.MustUnwrap()
-	r := h.callView(accounts.ViewAccountNFTAmount.Message(&aid))
-	n := lo.Must(accounts.ViewAccountNFTAmount.Output.Decode(r))
-	return big.NewInt(int64(n))
+// handler for ISCAccounts::getL2ObjectCount
+func (h *magicContractHandler) GetL2ObjectCount(agentID iscmagic.ISCAgentID) *big.Int {
+	// TODO: avoid fetching the whole list of objects
+	return new(big.Int).SetUint64(uint64(len(h.GetL2Objects(agentID))))
 }
 
-// handler for ISCAccounts::getL2NFTsInCollection
-func (h *magicContractHandler) GetL2NFTsInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) []iscmagic.NFTID {
-	aid := agentID.MustUnwrap()
-	r := h.callView(accounts.ViewAccountNFTsInCollection.Message(&aid, collectionID.Unwrap()))
-	return lo.Map(lo.Must(accounts.ViewAccountNFTsInCollection.Output.Decode(r)), func(nftID isc.NFTID, _ int) iscmagic.NFTID {
-		return iscmagic.NFTID(nftID)
-	})
+// handler for ISCAccounts::getL2ObjectsInCollection
+func (h *magicContractHandler) GetL2ObjectsInCollection(
+	agentID iscmagic.ISCAgentID,
+	collectionID iotago.ObjectID,
+) []iotago.ObjectID {
+	aid := lo.Must(agentID.Unwrap())
+	r := h.callView(accounts.ViewAccountObjectsInCollection.Message(&aid, collectionID))
+	return lo.Must(accounts.ViewAccountObjectsInCollection.DecodeOutput(r))
 }
 
-// handler for ISCAccounts::getL2NFTAmountInCollection
-func (h *magicContractHandler) GetL2NFTAmountInCollection(agentID iscmagic.ISCAgentID, collectionID iscmagic.NFTID) *big.Int {
-	aid := agentID.MustUnwrap()
-	r := h.callView(accounts.ViewAccountNFTAmountInCollection.Message(&aid, collectionID.Unwrap()))
-	n := lo.Must(accounts.ViewAccountNFTAmountInCollection.Output.Decode(r))
-	return big.NewInt(int64(n))
-}
-
-// handler for ISCAccounts::foundryCreateNew
-func (h *magicContractHandler) FoundryCreateNew(tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
-	var ts iotago.TokenScheme = &tokenScheme
-	ret := h.call(accounts.FuncFoundryCreateNew.Message(&ts), allowance.Unwrap())
-	return codec.Uint32.MustDecode(ret.Get(accounts.ParamFoundrySN))
-}
-
-func (h *magicContractHandler) CreateNativeTokenFoundry(tokenName string, tickerSymbol string, decimals uint8, tokenScheme iotago.SimpleTokenScheme, allowance iscmagic.ISCAssets) uint32 {
-	var ts iotago.TokenScheme = &tokenScheme
-	ret := h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
-		accounts.FuncNativeTokenCreate.Message(
-			isc.NewIRC30NativeTokenMetadata(tokenName, tickerSymbol, decimals),
-			&ts,
-		),
-		allowance.Unwrap(),
-	)
-	return codec.Uint32.MustDecode(ret.Get(accounts.ParamFoundrySN))
-}
-
-// handler for ISCAccounts::mintBaseTokens
-func (h *magicContractHandler) MintNativeTokens(foundrySN uint32, amount *big.Int, allowance iscmagic.ISCAssets) {
-	h.call(
-		accounts.FuncNativeTokenModifySupply.MintTokens(foundrySN, amount),
-		allowance.Unwrap(),
-	)
+// handler for ISCAccounts::getL2ObjectsCountInCollection
+func (h *magicContractHandler) GetL2ObjectsCountInCollection(
+	agentID iscmagic.ISCAgentID,
+	collectionID iotago.ObjectID,
+) *big.Int {
+	// TODO: avoid fetching the whole list of objects
+	return new(big.Int).SetUint64(uint64(len(h.GetL2ObjectsInCollection(agentID, collectionID))))
 }

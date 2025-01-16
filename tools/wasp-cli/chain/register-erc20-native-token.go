@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -19,7 +20,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 		"register-erc20-native-token",
 		"Call evm core contract registerERC20NativeToken entry point",
 		evm.Contract.Name,
-		evm.FuncRegisterERC20NativeToken.Name,
+		evm.FuncRegisterERC20Coin.Name,
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
 		},
@@ -34,13 +35,15 @@ func initRegisterERC20NativeTokenOnRemoteChainCmd() *cobra.Command {
 		"register-erc20-native-token-on-remote-chain",
 		"Call evm core contract registerERC20NativeTokenOnRemoteChain entry point",
 		evm.Contract.Name,
-		evm.FuncRegisterERC20NativeTokenOnRemoteChain.Name,
+		"", //evm.FuncRegisterERC20CoinOnRemoteChain.Name,
 		func(cmd *cobra.Command) {
 			initRegisterERC20NativeTokenParams(cmd)
 			cmd.Flags().StringVarP(&targetChain, "target", "A", "", "Target chain ID")
 		},
 		func(cmd *cobra.Command) []string {
-			chainID := codec.Address.Encode(config.GetChain(targetChain).AsAddress())
+			panic("refactor me: initRegisterERC20NativeTokenOnRemoteChainCmd")
+
+			chainID := codec.Encode[*cryptolib.Address](config.GetChain(targetChain).AsAddress())
 			extraArgs := []string{"string", "A", "bytes", "0x" + hex.EncodeToString(chainID)}
 			return append(getRegisterERC20NativeTokenArgs(cmd), extraArgs...)
 		},

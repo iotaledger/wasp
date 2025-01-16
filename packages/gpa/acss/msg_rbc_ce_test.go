@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgRBCCEPayloadSerialization(t *testing.T) {
@@ -24,5 +24,5 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 		nil,
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgRBCCEPayload))
+	bcs.TestCodec(t, msg)
 }

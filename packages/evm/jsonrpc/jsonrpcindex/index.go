@@ -191,6 +191,21 @@ func (c *Index) TxByBlockNumberAndIndex(blockNumber *big.Int, txIndex uint64) (t
 	return txs[txIndex], block.Hash()
 }
 
+func (c *Index) TxsByBlockNumber(blockNumber *big.Int) types.Transactions {
+	if blockNumber == nil {
+		return nil
+	}
+	db := c.evmDBFromBlockIndex(uint32(blockNumber.Uint64()))
+	if db == nil {
+		return nil
+	}
+	block := db.GetBlockByNumber(blockNumber.Uint64())
+	if block == nil {
+		return nil
+	}
+	return block.Transactions()
+}
+
 // internals
 
 const (
@@ -206,7 +221,7 @@ func keyLastBlockIndexed() kvstore.Key {
 
 func keyBlockTrieRootByIndex(i uint32) kvstore.Key {
 	key := []byte{prefixBlockTrieRootByIndex}
-	key = append(key, codec.Uint32.Encode(i)...)
+	key = append(key, codec.Encode[uint32](i)...)
 	return key
 }
 
@@ -241,7 +256,7 @@ func (c *Index) set(key kvstore.Key, value []byte) {
 }
 
 func (c *Index) setLastBlockIndexed(n uint32) {
-	c.set(keyLastBlockIndexed(), codec.Uint32.Encode(n))
+	c.set(keyLastBlockIndexed(), codec.Encode[uint32](n))
 }
 
 func (c *Index) lastBlockIndexed() *uint32 {
@@ -249,7 +264,7 @@ func (c *Index) lastBlockIndexed() *uint32 {
 	if bytes == nil {
 		return nil
 	}
-	ret := codec.Uint32.MustDecode(bytes)
+	ret := codec.MustDecode[uint32](bytes)
 	return &ret
 }
 
@@ -270,7 +285,7 @@ func (c *Index) blockTrieRootByIndex(i uint32) *trie.Hash {
 }
 
 func (c *Index) setBlockIndexByTxHash(txHash common.Hash, blockIndex uint32) {
-	c.set(keyBlockIndexByTxHash(txHash), codec.Uint32.Encode(blockIndex))
+	c.set(keyBlockIndexByTxHash(txHash), codec.Encode[uint32](blockIndex))
 }
 
 func (c *Index) blockIndexByTxHash(txHash common.Hash) *uint32 {
@@ -278,12 +293,12 @@ func (c *Index) blockIndexByTxHash(txHash common.Hash) *uint32 {
 	if bytes == nil {
 		return nil
 	}
-	ret := codec.Uint32.MustDecode(bytes)
+	ret := codec.MustDecode[uint32](bytes)
 	return &ret
 }
 
 func (c *Index) setBlockIndexByHash(hash common.Hash, blockIndex uint32) {
-	c.set(keyBlockIndexByHash(hash), codec.Uint32.Encode(blockIndex))
+	c.set(keyBlockIndexByHash(hash), codec.Encode[uint32](blockIndex))
 }
 
 func (c *Index) blockIndexByHash(hash common.Hash) *uint32 {
@@ -291,7 +306,7 @@ func (c *Index) blockIndexByHash(hash common.Hash) *uint32 {
 	if bytes == nil {
 		return nil
 	}
-	ret := codec.Uint32.MustDecode(bytes)
+	ret := codec.MustDecode[uint32](bytes)
 	return &ret
 }
 

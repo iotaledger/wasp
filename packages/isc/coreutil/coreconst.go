@@ -8,18 +8,17 @@ import (
 const (
 	CoreContractRoot            = "root"
 	CoreContractAccounts        = "accounts"
-	CoreContractBlob            = "blob"
 	CoreContractBlocklog        = "blocklog"
 	CoreContractGovernance      = "governance"
 	CoreContractErrors          = "errors"
 	CoreContractEVM             = "evm"
 	CoreEPRotateStateController = "rotateStateController"
+	CoreIncCounter              = "inccounter"
 )
 
 var (
 	CoreContractRootHname            = isc.Hn(CoreContractRoot)
 	CoreContractAccountsHname        = isc.Hn(CoreContractAccounts)
-	CoreContractBlobHname            = isc.Hn(CoreContractBlob)
 	CoreContractBlocklogHname        = isc.Hn(CoreContractBlocklog)
 	CoreContractGovernanceHname      = isc.Hn(CoreContractGovernance)
 	CoreContractErrorsHname          = isc.Hn(CoreContractErrors)
@@ -29,7 +28,6 @@ var (
 	hnames = map[string]isc.Hname{
 		CoreContractRoot:       CoreContractRootHname,
 		CoreContractAccounts:   CoreContractAccountsHname,
-		CoreContractBlob:       CoreContractBlobHname,
 		CoreContractBlocklog:   CoreContractBlocklogHname,
 		CoreContractGovernance: CoreContractGovernanceHname,
 		CoreContractEVM:        CoreContractEVMHname,
@@ -39,10 +37,9 @@ var (
 
 // the global names used in 'blocklog' contract and in 'state' package
 const (
-	StateVarTimestamp           = "T" // covered in TestGetEvents
-	StateVarBlockIndex          = "I" // covered in TestGetEvents
-	StateVarPrevL1Commitment    = "H" // covered in TestGetEvents
-	ParamStateControllerAddress = "S"
+	StateVarTimestamp        = "T" // covered in TestGetEvents
+	StateVarBlockIndex       = "I" // covered in TestGetEvents
+	StateVarPrevL1Commitment = "H" // covered in TestGetEvents
 )
 
 // used in 'state' package as key for timestamp and block index

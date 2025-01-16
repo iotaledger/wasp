@@ -5,10 +5,15 @@ import (
 	"encoding/base64"
 	"testing"
 
+	oldbcs "github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-// $ sui keytool list
+// $ iotago keytool list
 // ╭────────────────────────────────────────────────────────────────────────────────────────────╮
 // │ ╭─────────────────┬──────────────────────────────────────────────────────────────────────╮ │
 // │ │ alias           │  kind-chrysoberyl                                                    │ │
@@ -19,16 +24,16 @@ import (
 // │ │ peerId          │  b65fc7a387d318498bc717c68cb21a1122e40ebb6f229d70771ac5d7ec920b87    │ │
 // │ ╰─────────────────┴──────────────────────────────────────────────────────────────────────╯ │
 // ╰────────────────────────────────────────────────────────────────────────────────────────────╯
-func TestSuiPublicKeyToAddress(t *testing.T) {
-	testSuiPublicKeyToAddress(t, "ALZfx6OH0xhJi8cXxoyyGhEi5A67byKdcHcaxdfskguH", "0x1769589102f3749e02a24a1fcffea70e3fca86bf507cdb9d578a76a9c09e929a")
-	testSuiPublicKeyToAddress(t, "AOOU7NBSgm8KzQyh1wksLYu/b+IHG9u4U93QndtS7qIc", "0xcce6099545a2de67a326ad619e953f97e05cb4b6baaf2dcc74752265396922ef")
+func TestIotaPublicKeyToAddress(t *testing.T) {
+	testIOTAPublicKeyToAddress(t, "ALZfx6OH0xhJi8cXxoyyGhEi5A67byKdcHcaxdfskguH", "0x1769589102f3749e02a24a1fcffea70e3fca86bf507cdb9d578a76a9c09e929a")
+	testIOTAPublicKeyToAddress(t, "AOOU7NBSgm8KzQyh1wksLYu/b+IHG9u4U93QndtS7qIc", "0xcce6099545a2de67a326ad619e953f97e05cb4b6baaf2dcc74752265396922ef")
 }
 
-func testSuiPublicKeyToAddress(t *testing.T, publicKeyBase64, targetAddress string) {
+func testIOTAPublicKeyToAddress(t *testing.T, publicKeyBase64, targetAddress string) {
 	publicKeyWithType, err := base64.StdEncoding.DecodeString(publicKeyBase64)
 	require.NoError(t, err)
 	require.Equal(t, byte(0), publicKeyWithType[0])
-	publicKey, err := PublicKeyFromBytes(publicKeyWithType[1:])
+	publicKey, err := PublicKeyFromBytes(publicKeyWithType)
 	require.NoError(t, err)
 	require.Equal(t, targetAddress, EncodeHex(publicKey.AsAddress().Bytes()))
 }
@@ -63,27 +68,30 @@ func TestAddressToKey(t *testing.T) {
 }
 
 func TestAddressToIota(t *testing.T) {
-	panic("TODO")
-	/*
-		addr1 := NewRandomAddress()
-		addrIota := addr1.AsIotagoAddress()
-		addr2 := NewAddressFromIotago(addrIota)
-		require.True(t, addr1.Equals(addr2))
-	*/
+	addr1 := NewRandomAddress()
+	addrIota := addr1.AsIotaAddress()
+	addr2 := NewAddressFromIota(addrIota)
+	require.True(t, addr1.Equals(addr2))
 }
 
 func TestAddressFromIota(t *testing.T) {
-	panic("TODO")
-	/*
-		data := make([]byte, iotago.Ed25519AddressBytesLength)
-		rand.Read(data)
+	addrIota1 := iotago.Address{}
+	rand.Read(addrIota1[:])
 
-		addrIota1 := &iotago.Ed25519Address{}
-		copy(addrIota1[:], data)
+	addr := NewAddressFromIota(&addrIota1)
+	addrIota2 := addr.AsIotaAddress()
 
-		addr := NewAddressFromIotago(addrIota1)
-		addrIota2 := addr.AsIotagoAddress()
+	require.True(t, addrIota1.Equals(*addrIota2))
+}
 
-		require.True(t, addrIota1.Equal(addrIota2))
-	*/
+func TestAddressBCSCodec(t *testing.T) {
+	addr := NewRandomAddress()
+	encOld := oldbcs.MustMarshal(addr)
+	encNew := bcs.MustMarshal(&addr)
+	encRwutil := rwutil.NewBytesWriter().Write(addr).Bytes()
+
+	require.Equal(t, len(encOld), len(encNew), addr)
+	require.Equal(t, encOld, encNew, addr)
+	require.Equal(t, encNew, encRwutil, addr)
+	require.Equal(t, len(encNew), len(addr), encNew)
 }

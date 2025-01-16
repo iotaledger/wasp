@@ -8,17 +8,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acs"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type SyncACS interface {
-	StateProposalReceived(proposedBaseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.OutMessages
+	StateProposalReceived(proposedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
+	GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
 	ACSOutputReceived(output gpa.Output) gpa.OutMessages
 	String() string
 }
@@ -27,20 +28,39 @@ type SyncACS interface {
 // >     Produce a batch proposal.
 // >     Start the ACS.
 type syncACSImpl struct {
-	BaseAliasOutput  *iscmove.RefWithObject[iscmove.Anchor]
+	BaseStateAnchor  *isc.StateAnchor
 	RequestRefs      []*isc.RequestRef
 	DSSIndexProposal []int
 	TimeData         time.Time
-	inputsReady      bool
-	inputsReadyCB    func(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor], requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages
-	outputReady      bool
-	outputReadyCB    func(output map[gpa.NodeID][]byte) gpa.OutMessages
-	terminated       bool
-	terminatedCB     func()
+	gasCoins         []*coin.CoinWithRef
+	gasPrice         uint64
+
+	inputsReady   bool
+	inputsReadyCB func(
+		baseAliasOutput *isc.StateAnchor,
+		requestRefs []*isc.RequestRef,
+		dssIndexProposal []int,
+		timeData time.Time,
+		gasCoins []*coin.CoinWithRef,
+		gasPrice uint64,
+	) gpa.OutMessages
+
+	outputReady   bool
+	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages
+
+	terminated   bool
+	terminatedCB func()
 }
 
 func NewSyncACS(
-	inputsReadyCB func(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor], requestRefs []*isc.RequestRef, dssIndexProposal []int, timeData time.Time) gpa.OutMessages,
+	inputsReadyCB func(
+		baseAliasOutput *isc.StateAnchor,
+		requestRefs []*isc.RequestRef,
+		dssIndexProposal []int,
+		timeData time.Time,
+		gasCoins []*coin.CoinWithRef,
+		gasPrice uint64,
+	) gpa.OutMessages,
 	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages,
 	terminatedCB func(),
 ) SyncACS {
@@ -51,11 +71,11 @@ func NewSyncACS(
 	}
 }
 
-func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]) gpa.OutMessages {
-	if sub.BaseAliasOutput != nil {
+func (sub *syncACSImpl) StateProposalReceived(proposedBaseAliasOutput *isc.StateAnchor) gpa.OutMessages {
+	if sub.BaseStateAnchor != nil {
 		return nil
 	}
-	sub.BaseAliasOutput = proposedBaseAliasOutput
+	sub.BaseStateAnchor = proposedBaseAliasOutput
 	return sub.tryCompleteInput()
 }
 
@@ -83,12 +103,22 @@ func (sub *syncACSImpl) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 	return nil
 }
 
+func (sub *syncACSImpl) GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
+	if gasCoins != nil {
+		sub.gasCoins = gasCoins
+	}
+	if gasPrice != 0 {
+		sub.gasPrice = gasPrice
+	}
+	return sub.tryCompleteInput()
+}
+
 func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
-	if sub.inputsReady || sub.BaseAliasOutput == nil || sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() {
+	if sub.inputsReady || sub.BaseStateAnchor == nil || sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.gasPrice == 0 {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.BaseAliasOutput, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData)
+	return sub.inputsReadyCB(sub.BaseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.gasPrice)
 }
 
 func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
@@ -119,8 +149,8 @@ func (sub *syncACSImpl) String() string {
 		str += "/WAIT[ACS to complete]"
 	} else {
 		wait := []string{}
-		if sub.BaseAliasOutput == nil {
-			wait = append(wait, "BaseAliasOutput")
+		if sub.BaseStateAnchor == nil {
+			wait = append(wait, "BaseStateAnchor")
 		}
 		if sub.RequestRefs == nil {
 			wait = append(wait, "RequestRefs")
@@ -130,6 +160,12 @@ func (sub *syncACSImpl) String() string {
 		}
 		if sub.TimeData.IsZero() {
 			wait = append(wait, "TimeData")
+		}
+		if sub.gasCoins == nil {
+			wait = append(wait, "GasCoins")
+		}
+		if sub.gasPrice == 0 {
+			wait = append(wait, "GasPrice")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
 	}

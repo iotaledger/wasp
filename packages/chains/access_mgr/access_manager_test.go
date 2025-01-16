@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
@@ -91,7 +92,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	}
 	//
 	// Everyone gives access to everyone.
-	chainID := isc.RandomChainID()
+	chainID := isctest.RandomChainID()
 	for _, am := range accessMgrs {
 		am.ChainAccessNodes(chainID, peerPubKeys)
 	}

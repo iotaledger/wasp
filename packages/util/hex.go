@@ -3,7 +3,9 @@ package util
 import (
 	"encoding"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
 func EncodeHexBinaryMarshaled(value encoding.BinaryMarshaler) (string, error) {
@@ -12,11 +14,11 @@ func EncodeHexBinaryMarshaled(value encoding.BinaryMarshaler) (string, error) {
 		return "", err
 	}
 
-	return iotago.EncodeHex(data), nil
+	return hexutil.Encode(data), nil
 }
 
 func DecodeHexBinaryMarshaled(dataHex string, value encoding.BinaryUnmarshaler) error {
-	data, err := iotago.DecodeHex(dataHex)
+	data, err := cryptolib.DecodeHex(dataHex)
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,7 @@ func EncodeSliceHexBinaryMarshaled[M encoding.BinaryMarshaler](values []M) ([]st
 
 func DecodeSliceHexBinaryMarshaled[M encoding.BinaryUnmarshaler](dataHex []string, values []M) error {
 	for i, hex := range dataHex {
-		data, err := iotago.DecodeHex(hex)
+		data, err := cryptolib.DecodeHex(hex)
 		if err != nil {
 			return err
 		}
@@ -57,7 +59,7 @@ func PrefixHex(data []byte, prefixLen int) string {
 		return "<nil>"
 	}
 	if len(data) <= prefixLen {
-		return iotago.EncodeHex(data)
+		return hexutil.Encode(data)
 	}
-	return iotago.EncodeHex(data[0:prefixLen]) + "..."
+	return hexutil.Encode(data[0:prefixLen]) + "..."
 }

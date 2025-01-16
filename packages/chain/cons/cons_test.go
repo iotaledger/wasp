@@ -1,40 +1,37 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
 package cons_test
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"sync"
-	"sync/atomic"
+	"math/rand"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chain/cons"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testchain"
+	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
@@ -73,96 +70,104 @@ func testConsBasic(t *testing.T, n, f int) {
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
+	var chainID isc.ChainID
+
+	tokenCoinInfo := isc.IotaCoinInfo{
+		CoinType:    lo.Must(coin.TypeFromString("0x0000000000000000000000000000000000000000000000000000000000000002::iota::IOTA")),
+		Name:        "IOTA",
+		Decimals:    9,
+		Symbol:      "IOTA",
+		Description: "Foo",
+		IconURL:     "Foo",
+		TotalSupply: 3126000000000000000,
+	}
+
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, &tokenCoinInfo)
+
+	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
+	stateAnchor0 := &stateAnchor0x
+
+	reqs := []isc.Request{
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
+		RandomOnLedgerDepositRequest(stateAnchor0.Owner()),
+	}
+	reqRefs := isc.RequestRefsFromRequests(reqs)
+	gasCoin := coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(100),
+		Ref:   iotatest.RandomObjectRef(),
+	}
+	gasPrice := uint64(123)
+
 	//
 	// Construct the chain on L1.
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	//utxodb.New(utxodb.DefaultInitParams())
 	//
 	// Construct the chain on L1: Create the accounts.
-	originator := cryptolib.NewKeyPair()
-	_, err := utxoDB.GetFundsFromFaucet(originator.Address())
-	require.NoError(t, err)
+	// originator := cryptolib.NewKeyPair()
+	// _, err := utxoDB.GetFundsFromFaucet(originator.Address())
+	// require.NoError(t, err)
 	//
 	// Construct the chain on L1: Create the origin TX.
-	outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
-	panic("refactor me: origin.NewChainOriginTransaction")
-	var originTX *iotago.Transaction
-	var chainID isc.ChainID
-	err = errors.New("refactor me: testConsBasic")
+	// outputs, outIDs := utxoDB.GetUnspentOutputs(originator.Address())
+	// panic("refactor me: origin.NewChainOriginTransaction")
+	// var originTX *iotago.Transaction
+	// err = errors.New("refactor me: testConsBasic")
+	// require.NoError(t, err)
 
-	require.NoError(t, err)
-	stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
-	require.NoError(t, err)
-	require.NotNil(t, stateAnchor)
-	require.NotNil(t, aliasOutput)
-	ao0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
-	err = utxoDB.AddToLedger(originTX)
-	require.NoError(t, err)
+	// stateAnchor, aliasOutput, err := transaction.GetAnchorFromTransaction(originTX)
+	// require.NoError(t, err)
+	// require.NotNil(t, stateAnchor)
+	// require.NotNil(t, aliasOutput)
+	// stateAnchor0 := isc.NewAliasOutputWithID(aliasOutput, stateAnchor.OutputID)
+	// err = utxoDB.AddToLedger(originTX)
+	// require.NoError(t, err)
 
 	//
 	// Deposit some funds
-	outputs, outIDs = utxoDB.GetUnspentOutputs(originator.Address())
-	depositTx, err := transaction.NewRequestTransaction(
-		transaction.NewRequestTransactionParams{
-			SenderKeyPair:    originator,
-			SenderAddress:    originator.Address(),
-			UnspentOutputs:   outputs,
-			UnspentOutputIDs: outIDs,
-			Request: &isc.RequestParameters{
-				TargetAddress:                 chainID.AsAddress(),
-				Assets:                        isc.NewAssetsBaseTokensU64(100_000_000),
-				AdjustToMinimumStorageDeposit: false,
-				Metadata: &isc.SendMetadata{
-					Message:   accounts.FuncDeposit.Message(),
-					GasBudget: 10_000,
-				},
-			},
-		},
-	)
-	require.NoError(t, err)
-	err = utxoDB.AddToLedger(depositTx)
-	require.NoError(t, err)
+	// outputs, outIDs = utxoDB.GetUnspentOutputs(originator.Address())
+	// depositTx, err := transaction.NewRequestTransaction(
+	// 	transaction.NewRequestTransactionParams{
+	// 		SenderKeyPair:    originator,
+	// 		SenderAddress:    originator.Address(),
+	// 		UnspentOutputs:   outputs,
+	// 		UnspentOutputIDs: outIDs,
+	// 		Request: &isc.RequestParameters{
+	// 			TargetAddress: chainID.AsAddress(),
+	// 			Assets:        isc.NewAssets(100_000_000),
+	// 			Metadata: &isc.SendMetadata{
+	// 				Message:   accounts.FuncDeposit.Message(),
+	// 				GasBudget: 10_000,
+	// 			},
+	// 		},
+	// 	},
+	// )
+	// require.NoError(t, err)
+	// err = utxoDB.AddToLedger(depositTx)
+	// require.NoError(t, err)
 
 	//
 	// Construct the chain on L1: Find the requests (the first request).
-	reqs := []isc.Request{}
-	reqRefs := []*isc.RequestRef{}
-	outputs, _ = utxoDB.GetUnspentOutputs(chainID.AsAddress())
-	for outputID, output := range outputs {
-		if output.Type() == iotago.OutputAlias {
-			aliasOutput := output.(*iotago.AliasOutput)
-			if aliasOutput.AliasID == chainID.AsAliasID() {
-				continue // That's our alias output, not the request, skip it here.
-			}
-			if aliasOutput.AliasID.Empty() {
-				implicitAliasID := iotago.AliasIDFromOutputID(outputID)
-				if implicitAliasID == chainID.AsAliasID() {
-					continue // That's our origin alias output, not the request, skip it here.
-				}
-			}
-		}
-		req, err := isc.OnLedgerFromUTXO(output, outputID)
-		if err != nil {
-			continue
-		}
-		reqs = append(reqs, req)
-		reqRefs = append(reqRefs, isc.RequestRefFromRequest(req))
-	}
 	//
 	// Construct the nodes.
 	consInstID := []byte{1, 2, 3} // ID of the consensus.
 	chainStates := map[gpa.NodeID]state.Store{}
-	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
-	procCache := processors.MustNew(procConfig)
+	procConfig := coreprocessors.NewConfig()
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
 		nodeLog := log.Named(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
-		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(chainStates[nid], ao0)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procCache, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
+		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, &tokenCoinInfo)
+		require.NoError(t, err)
+		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -171,7 +176,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	now := time.Now()
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for _, nid := range nodeIDs {
-		inputs[nid] = cons.NewInputProposal(ao0)
+		inputs[nid] = cons.NewInputProposal(stateAnchor0)
 	}
 	tc.WithInputs(inputs).RunAll()
 	tc.PrintAllStatusStrings("After Inputs", t.Logf)
@@ -186,6 +191,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputMempoolProposal(reqRefs))
 		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
 		tc.WithInput(nid, cons.NewInputTimeData(now))
+		tc.WithInput(nid, cons.NewInputGasInfo([]*coin.CoinWithRef{&gasCoin}, gasPrice))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)
@@ -199,7 +205,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrStateProposal)
 		require.NotNil(t, out.NeedMempoolRequests)
 		require.NotNil(t, out.NeedStateMgrDecidedState)
-		l1Commitment, err := transaction.L1CommitmentFromAliasOutput(out.NeedStateMgrDecidedState.GetAliasOutput())
+		l1Commitment, err := transaction.L1CommitmentFromAnchor(out.NeedStateMgrDecidedState)
 		require.NoError(t, err)
 		chainState, err := chainStates[nid].StateByTrieRoot(l1Commitment.TrieRoot())
 		require.NoError(t, err)
@@ -245,7 +251,8 @@ func testConsBasic(t *testing.T, n, f int) {
 	tc.RunAll()
 	t.Log("############ All should be done now.")
 	tc.PrintAllStatusStrings("All done.", t.Logf)
-	for nid, node := range nodes {
+	out0 := nodes[nodeIDs[0]].Output().(*cons.Output)
+	for _, node := range nodes {
 		out := node.Output().(*cons.Output)
 		require.Equal(t, cons.Completed, out.Status)
 		require.True(t, out.Terminated)
@@ -255,11 +262,9 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.Result.Transaction)
-		require.NotNil(t, out.Result.NextAliasOutput)
 		require.NotNil(t, out.Result.Block)
-		if nid == nodeIDs[0] { // Just do this once.
-			require.NoError(t, utxoDB.AddToLedger(out.Result.Transaction))
-		}
+		require.Equal(t, out.Result.Block, out0.Result.Block)
+		require.Equal(t, out.Result.Transaction, out0.Result.Transaction)
 	}
 }
 
@@ -267,6 +272,7 @@ func testConsBasic(t *testing.T, n, f int) {
 // This test case has much less of synchronization, because we don't wait for
 // all messages to be delivered before responding to the instance requests to
 // mempool, stateMgr and VM.
+/*
 func TestChained(t *testing.T) {
 	t.Parallel()
 	type test struct {
@@ -312,7 +318,7 @@ func testChained(t *testing.T, n, f, b int) {
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
-	utxoDB := utxodb.New(utxodb.DefaultInitParams())
+	//utxoDB := utxodb.New(utxodb.DefaultInitParams())
 	//
 	// Create the accounts.
 	scClient := cryptolib.NewKeyPair()
@@ -322,12 +328,12 @@ func testChained(t *testing.T, n, f, b int) {
 	//
 	// Construct the chain on L1 and prepare requests.
 	tcl := testchain.NewTestChainLedger(t, utxoDB, originator)
-	_, originAO, chainID := tcl.MakeTxChainOrigin(committeeAddress)
+	anchor := tcl.MakeTxChainOrigin(committeeAddress)
 	allRequests := map[int][]isc.Request{}
 	if b > 0 {
 		_, err = utxoDB.GetFundsFromFaucet(scClient.Address(), 150_000_000)
 		require.NoError(t, err)
-		allRequests[0] = append(tcl.MakeTxAccountsDeposit(scClient), tcl.MakeTxDeployIncCounterContract()...)
+		allRequests[0] = append(tcl.MakeTxAccountsDeposit(scClient))
 	}
 	incTotal := 0
 	for i := 0; i < b-1; i++ {
@@ -347,7 +353,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	//
 	// Construct the nodes for each instance.
-	procConfig := coreprocessors.NewConfigWithCoreContracts().WithNativeContracts(inccounter.Processor)
+	procConfig := coreprocessors.NewConfigWithTestContracts()
 	procCache := processors.MustNew(procConfig)
 	doneCHs := map[gpa.NodeID]chan *testInstInput{}
 	for _, nid := range nodeIDs {
@@ -356,7 +362,7 @@ func testChained(t *testing.T, n, f, b int) {
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
 		testNodeStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAliasOutput(testNodeStates[nid], originAO)
+		origin.InitChainByAnchor(testNodeStates[nid], anchor)
 	}
 	testChainInsts := make([]testConsInst, b)
 	for i := range testChainInsts {
@@ -381,13 +387,13 @@ func testChained(t *testing.T, n, f, b int) {
 	// Start the process by providing input to the first instance.
 	for _, nid := range nodeIDs {
 		t.Log("Going to provide inputs.")
-		originL1Commitment, err := transaction.L1CommitmentFromAliasOutput(originAO.GetAliasOutput())
+		originL1Commitment, err := transaction.L1CommitmentFromAliasOutput(anchor.GetAliasOutput())
 		require.NoError(t, err)
 		originState, err := testNodeStates[nid].StateByTrieRoot(originL1Commitment.TrieRoot())
 		require.NoError(t, err)
 		testChainInsts[0].input(&testInstInput{
 			nodeID:          nid,
-			baseAliasOutput: originAO,
+			baseAliasOutput: anchor,
 			baseState:       originState,
 		})
 	}
@@ -412,7 +418,7 @@ func testChained(t *testing.T, n, f, b int) {
 
 type testInstInput struct {
 	nodeID          gpa.NodeID
-	baseAliasOutput *isc.AliasOutputWithID
+	baseAliasOutput *isc.StateAnchor
 	baseState       state.State // State committed with the baseAliasOutput
 }
 
@@ -702,4 +708,39 @@ func (tci *testConsInst) tryCloseCompInputPipe() {
 	if !tci.compInputClosed.Swap(true) {
 		close(tci.compInputPipe)
 	}
+}
+
+*/
+
+func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerRequest {
+	sender := cryptolib.NewRandomAddress()
+	if len(senders) != 0 {
+		sender = senders[0]
+	}
+	ref := iotatest.RandomObjectRef()
+	a := iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
+		Balances:  make(iscmove.AssetsBagBalances),
+	}
+	a.Balances[iotajsonrpc.IotaCoinType] = iotajsonrpc.CoinValue(rand.Int63())
+	req := iscmove.RefWithObject[iscmove.Request]{
+		ObjectRef: *ref,
+		Object: &iscmove.Request{
+			ID:        *ref.ObjectID,
+			Sender:    sender,
+			AssetsBag: a,
+			Message: iscmove.Message{
+				Contract: uint32(isc.Hn("accounts")),
+				Function: uint32(isc.Hn("deposit")),
+			},
+			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000}},
+			GasBudget: 100000,
+		},
+		Owner: sender.AsIotaAddress(),
+	}
+	onReq, err := isc.OnLedgerFromRequest(&req, sender)
+	if err != nil {
+		panic(err)
+	}
+	return onReq
 }

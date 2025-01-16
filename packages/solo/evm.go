@@ -13,11 +13,10 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -46,7 +45,7 @@ func (b *jsonRPCSoloBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetFeePolicy.Output.Decode(ret)
+	return governance.ViewGetFeePolicy.DecodeOutput(ret)
 }
 
 func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
@@ -54,45 +53,62 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMCall(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) ([]byte, error) {
-	return chainutil.EVMCall(b.Chain, aliasOutput, callMsg)
+func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error) {
+	return chainutil.EVMCall(
+		anchor,
+		l1Params,
+		b.Chain.store,
+		b.Chain.proc,
+		b.Chain.log,
+		callMsg,
+	)
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(aliasOutput *isc.AliasOutputWithID, callMsg ethereum.CallMsg) (uint64, error) {
-	return chainutil.EVMEstimateGas(b.Chain, aliasOutput, callMsg)
+func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) (uint64, error) {
+	return chainutil.EVMEstimateGas(
+		anchor,
+		l1Params,
+		b.Chain.store,
+		b.Chain.proc,
+		b.Chain.log,
+		callMsg,
+	)
 }
 
 func (b *jsonRPCSoloBackend) EVMTraceTransaction(
-	aliasOutput *isc.AliasOutputWithID,
+	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex uint64,
+	txIndex *uint64,
+	blockNumber *uint64,
 	tracer *tracers.Tracer,
+	l1Params *parameters.L1Params,
 ) error {
 	return chainutil.EVMTraceTransaction(
-		b.Chain,
-		aliasOutput,
+		anchor,
+		l1Params,
+		b.Chain.store,
+		b.Chain.proc,
+		b.Chain.log,
 		blockTime,
 		iscRequestsInBlock,
 		txIndex,
+		blockNumber,
 		tracer,
 	)
 }
 
-func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message) (dict.Dict, error) {
+func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
 	return b.Chain.CallViewAtState(chainState, msg)
 }
 
-func (b *jsonRPCSoloBackend) ISCLatestAliasOutput() (*isc.AliasOutputWithID, error) {
-	latestAliasOutput, err := b.Chain.LatestAliasOutput(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, fmt.Errorf("could not get latest AliasOutput: %w", err)
-	}
-	return latestAliasOutput, nil
+func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
+	anchor := b.Chain.GetLatestAnchor()
+	return anchor, nil
 }
 
 func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
-	return b.Chain.LatestState(chain.ActiveOrCommittedState)
+	return b.Chain.LatestState()
 }
 
 func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {
@@ -127,7 +143,7 @@ func (b *jsonRPCSoloBackend) TakeSnapshot() (int, error) {
 
 func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	return jsonrpc.NewEVMChain(
-		newJSONRPCSoloBackend(ch, parameters.Token),
+		newJSONRPCSoloBackend(ch, parameters.BaseTokenDefault),
 		ch.Env.publisher,
 		true,
 		hivedb.EngineMapDB,
@@ -136,12 +152,13 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	)
 }
 
-func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (dict.Dict, error) {
+func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (isc.CallArguments, error) {
 	req, err := isc.NewEVMOffLedgerTxRequest(ch.ChainID, tx)
 	if err != nil {
 		return nil, err
 	}
-	return ch.RunOffLedgerRequest(req)
+	_, res, err := ch.RunOffLedgerRequest(req)
+	return res, err
 }
 
 var EthereumAccounts [10]*ecdsa.PrivateKey
@@ -163,7 +180,7 @@ func EthereumAccountByIndex(i int) (*ecdsa.PrivateKey, common.Address) {
 	return key, addr
 }
 
-func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := EthereumAccountByIndex(i)
 	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr
@@ -177,7 +194,7 @@ func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 	return key, crypto.PubkeyToAddress(key.PublicKey)
 }
 
-func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...uint64) (*ecdsa.PrivateKey, common.Address) {
+func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := NewEthereumAccount()
 	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
 	return key, addr

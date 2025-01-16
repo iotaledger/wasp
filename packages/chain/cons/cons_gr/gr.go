@@ -12,11 +12,13 @@ import (
 
 	"go.uber.org/atomic"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -38,17 +40,17 @@ const (
 ////////////////////////////////////////////////////////////////////////////////
 // Interfaces required from other components (MP, SM)
 
-type ConsensusID [iotago.Ed25519AddressBytesLength + 4]byte
+type ConsensusID [iotago.AddressLen + 4]byte
 
 func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) ConsensusID {
 	ret := ConsensusID{}
 	copy(ret[:], cmtAddr.Bytes())
-	copy(ret[iotago.Ed25519AddressBytesLength:], codec.Uint32.Encode(logIndex.AsUint32()))
+	copy(ret[iotago.AddressLen:], codec.Encode[uint32](logIndex.AsUint32()))
 	return ret
 }
 
 type Mempool interface {
-	ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.RefWithObject[iscmove.Anchor], consensusID ConsensusID) <-chan []*isc.RequestRef
+	ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID ConsensusID) <-chan []*isc.RequestRef
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
@@ -59,13 +61,13 @@ type StateMgr interface {
 	// in the database. Context is used to cancel a request.
 	ConsensusStateProposal(
 		ctx context.Context,
-		anchor *iscmove.RefWithObject[iscmove.Anchor],
+		anchor *isc.StateAnchor,
 	) <-chan interface{}
 	// State manager has to ensure all the data needed for the specified alias
 	// output (presented as aliasOutputID+stateCommitment) is present in the DB.
 	ConsensusDecidedState(
 		ctx context.Context,
-		anchor *iscmove.RefWithObject[iscmove.Anchor],
+		anchor *isc.StateAnchor,
 	) <-chan state.State
 	// State manager has to persistently store the block and respond only after
 	// the block was flushed to the disk. A WAL can be used for that as well.
@@ -73,6 +75,18 @@ type StateMgr interface {
 		ctx context.Context,
 		block state.StateDraft,
 	) <-chan state.Block
+}
+
+type NodeConnGasInfo interface {
+	GetGasCoins() []*coin.CoinWithRef
+	GetGasPrice() uint64
+}
+
+type NodeConn interface {
+	ConsensusGasPriceProposal(
+		ctx context.Context,
+		anchor *isc.StateAnchor,
+	) <-chan NodeConnGasInfo
 }
 
 type VM interface {
@@ -92,7 +106,7 @@ func (o *Output) String() string {
 }
 
 type input struct {
-	baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]
+	baseAliasOutput *isc.StateAnchor
 	outputCB        func(*Output)
 	recoverCB       func()
 }
@@ -121,6 +135,9 @@ type ConsGr struct {
 	stateMgrDecidedStateAsked   bool
 	stateMgrSaveBlockRespCh     <-chan state.Block
 	stateMgrSaveBlockAsked      bool
+	nodeConn                    NodeConn
+	nodeConnGasInfoRespCh       <-chan NodeConnGasInfo
+	nodeConnGasInfoAsked        bool
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTaskResult
 	vmAsked                     bool
@@ -142,9 +159,10 @@ func New(
 	dkShare tcrypto.DKShare,
 	logIndex *cmt_log.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
-	procCache *processors.Cache,
+	procCache *processors.Config,
 	mempool Mempool,
 	stateMgr StateMgr,
+	nodeConn NodeConn,
 	net peering.NetworkProvider,
 	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
@@ -172,6 +190,7 @@ func New(
 		printStatusPeriod: printStatusPeriod,
 		mempool:           mempool,
 		stateMgr:          stateMgr,
+		nodeConn:          nodeConn,
 		vm:                NewVMAsync(chainMetrics, log),
 		netRecvPipe:       pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:      netPeeringID,
@@ -212,7 +231,7 @@ func New(
 	return cgr
 }
 
-func (cgr *ConsGr) Input(baseAliasOutput *iscmove.RefWithObject[iscmove.Anchor], outputCB func(*Output), recoverCB func()) {
+func (cgr *ConsGr) Input(baseAliasOutput *isc.StateAnchor, outputCB func(*Output), recoverCB func()) {
 	wasReceivedBefore := cgr.inputReceived.Swap(true)
 	if wasReceivedBefore {
 		panic(fmt.Errorf("duplicate input: %v", baseAliasOutput))
@@ -271,6 +290,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 				continue
 			}
 			cgr.handleConsInput(cons.NewInputTimeData(t))
+
 		case resp, ok := <-cgr.mempoolProposalsRespCh:
 			if !ok {
 				cgr.mempoolProposalsRespCh = nil
@@ -305,6 +325,14 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 				panic(fmt.Errorf("cannot save produced block"))
 			}
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
+
+		case t, ok := <-cgr.nodeConnGasInfoRespCh:
+			if !ok {
+				cgr.nodeConnGasInfoRespCh = nil
+				continue
+			}
+			cgr.handleConsInput(cons.NewInputGasInfo(t.GetGasCoins(), t.GetGasPrice()))
+
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
 				cgr.vmRespCh = nil
@@ -390,6 +418,10 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.ConsensusProducedBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
 		cgr.stateMgrSaveBlockAsked = true
 	}
+	if output.NeedNodeConnGasInfo != nil && !cgr.nodeConnGasInfoAsked {
+		cgr.nodeConnGasInfoRespCh = cgr.nodeConn.ConsensusGasPriceProposal(cgr.ctx, output.NeedNodeConnGasInfo)
+		cgr.nodeConnGasInfoAsked = true
+	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
 		cgr.vmRespCh = cgr.vm.ConsensusRunTask(cgr.ctx, output.NeedVMResult)
 		cgr.vmAsked = true
@@ -416,7 +448,8 @@ func (cgr *ConsGr) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(cgr.netPeeringID, peering.ReceiverChainCons, msgTypeCons, msgBytes)
 		cgr.net.SendMsgByPubKey(cgr.netPeerPubs[msg.Recipient()], pm)
 	})
 }

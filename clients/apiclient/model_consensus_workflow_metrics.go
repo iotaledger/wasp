@@ -13,6 +13,8 @@ package apiclient
 import (
 	"encoding/json"
 	"time"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ConsensusWorkflowMetrics type satisfies the MappedNullable interface at compile time
@@ -58,6 +60,8 @@ type ConsensusWorkflowMetrics struct {
 	TimeVMStarted time.Time `json:"timeVMStarted"`
 }
 
+type _ConsensusWorkflowMetrics ConsensusWorkflowMetrics
+
 // NewConsensusWorkflowMetrics instantiates a new ConsensusWorkflowMetrics object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
@@ -94,7 +98,7 @@ func NewConsensusWorkflowMetricsWithDefaults() *ConsensusWorkflowMetrics {
 
 // GetCurrentStateIndex returns the CurrentStateIndex field value if set, zero value otherwise.
 func (o *ConsensusWorkflowMetrics) GetCurrentStateIndex() uint32 {
-	if o == nil || isNil(o.CurrentStateIndex) {
+	if o == nil || IsNil(o.CurrentStateIndex) {
 		var ret uint32
 		return ret
 	}
@@ -104,7 +108,7 @@ func (o *ConsensusWorkflowMetrics) GetCurrentStateIndex() uint32 {
 // GetCurrentStateIndexOk returns a tuple with the CurrentStateIndex field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ConsensusWorkflowMetrics) GetCurrentStateIndexOk() (*uint32, bool) {
-	if o == nil || isNil(o.CurrentStateIndex) {
+	if o == nil || IsNil(o.CurrentStateIndex) {
 		return nil, false
 	}
 	return o.CurrentStateIndex, true
@@ -112,7 +116,7 @@ func (o *ConsensusWorkflowMetrics) GetCurrentStateIndexOk() (*uint32, bool) {
 
 // HasCurrentStateIndex returns a boolean if a field has been set.
 func (o *ConsensusWorkflowMetrics) HasCurrentStateIndex() bool {
-	if o != nil && !isNil(o.CurrentStateIndex) {
+	if o != nil && !IsNil(o.CurrentStateIndex) {
 		return true
 	}
 
@@ -542,7 +546,7 @@ func (o ConsensusWorkflowMetrics) MarshalJSON() ([]byte, error) {
 
 func (o ConsensusWorkflowMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.CurrentStateIndex) {
+	if !IsNil(o.CurrentStateIndex) {
 		toSerialize["currentStateIndex"] = o.CurrentStateIndex
 	}
 	toSerialize["flagBatchProposalSent"] = o.FlagBatchProposalSent
@@ -563,6 +567,59 @@ func (o ConsensusWorkflowMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize["timeVMResultSigned"] = o.TimeVMResultSigned
 	toSerialize["timeVMStarted"] = o.TimeVMStarted
 	return toSerialize, nil
+}
+
+func (o *ConsensusWorkflowMetrics) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"flagBatchProposalSent",
+		"flagConsensusBatchKnown",
+		"flagInProgress",
+		"flagStateReceived",
+		"flagTransactionFinalized",
+		"flagTransactionPosted",
+		"flagTransactionSeen",
+		"flagVMResultSigned",
+		"flagVMStarted",
+		"timeBatchProposalSent",
+		"timeCompleted",
+		"timeConsensusBatchKnown",
+		"timeTransactionFinalized",
+		"timeTransactionPosted",
+		"timeTransactionSeen",
+		"timeVMResultSigned",
+		"timeVMStarted",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varConsensusWorkflowMetrics := _ConsensusWorkflowMetrics{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varConsensusWorkflowMetrics)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ConsensusWorkflowMetrics(varConsensusWorkflowMetrics)
+
+	return err
 }
 
 type NullableConsensusWorkflowMetrics struct {

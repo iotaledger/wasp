@@ -2,10 +2,9 @@ package gas
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BurnRecord struct {
@@ -27,32 +26,34 @@ func (l *BurnLog) Record(code BurnCode, gas uint64) {
 	}
 }
 
-func (l *BurnLog) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	recordLen := rr.ReadUint32()
+func (l *BurnLog) UnmarshalBCS(d *bcs.Decoder) error {
+	recordLen := d.ReadLen()
 	l.Records = make([]BurnRecord, recordLen)
+
 	for i := 0; i < int(recordLen); i++ {
-		name := rr.ReadString()
-		burnCode := BurnCodeFromName(name)
-		gasBurned := rr.ReadUint64()
+		name := d.ReadString()
+		if err := d.Err(); err != nil {
+			return err
+		}
 
 		l.Records[i] = BurnRecord{
-			Code:      burnCode,
-			GasBurned: gasBurned,
+			Code:      BurnCodeFromName(name),
+			GasBurned: d.ReadUint64(),
 		}
 	}
-	return rr.Err
+
+	return d.Err()
 }
 
-func (l *BurnLog) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	recordLen := len(l.Records)
-	ww.WriteUint32(uint32(recordLen))
+func (l *BurnLog) MarshalBCS(e *bcs.Encoder) error {
+	e.WriteLen(len(l.Records))
+
 	for _, record := range l.Records {
-		ww.WriteString(record.Code.Name())
-		ww.WriteUint64(record.GasBurned)
+		e.WriteString(record.Code.Name())
+		e.WriteUint64(record.GasBurned)
 	}
-	return ww.Err
+
+	return e.Err()
 }
 
 func (l *BurnLog) String() string {

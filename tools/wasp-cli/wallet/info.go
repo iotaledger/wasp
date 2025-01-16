@@ -5,7 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -61,7 +61,7 @@ func initBalanceCmd() *cobra.Command {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
 
-			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsSuiAddress())
+			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
 			log.Check(err)
 
 			model := &BalanceModel{
@@ -82,9 +82,9 @@ func initBalanceCmd() *cobra.Command {
 var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
-	AddressIndex uint32                `json:"AddressIndex"`
-	Address      string                `json:"Address"`
-	Tokens       []*suijsonrpc.Balance `json:"BaseTokens"`
+	AddressIndex uint32                 `json:"AddressIndex"`
+	Address      string                 `json:"Address"`
+	Tokens       []*iotajsonrpc.Balance `json:"BaseTokens"`
 }
 
 func (b *BalanceModel) AsText() (string, error) {

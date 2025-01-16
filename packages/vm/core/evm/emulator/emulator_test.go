@@ -205,7 +205,7 @@ func (ctx *context) SubBaseTokensBalance(addr common.Address, amount *big.Int) {
 	ctx.bal[addr] = new(big.Int).Sub(ctx.bal[addr], amount)
 }
 
-func (*context) BaseTokensDecimals() uint32 {
+func (*context) BaseTokensDecimals() uint8 {
 	return 18 // same as ether decimals
 }
 
@@ -366,8 +366,6 @@ func deployEVMContract(t testing.TB, emu *EVMEmulator, creator *ecdsa.PrivateKey
 		Value: txValue,
 		Data:  data,
 	}, emu)
-	require.NoError(t, err)
-
 	require.NoError(t, err)
 
 	tx, err := types.SignTx(

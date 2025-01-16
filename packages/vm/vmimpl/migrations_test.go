@@ -9,14 +9,14 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -44,19 +44,19 @@ func (e *migrationsTestEnv) setSchemaVersion(v isc.SchemaVersion) {
 	})
 }
 
-func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
+func newMigrationsTest(t *testing.T) *migrationsTestEnv {
 	db := mapdb.NewMapDB()
 	cs := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(0, cs, nil, 0)
+	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
+	anchor := initChain(chainCreator, cs)
 	latest, err := cs.LatestBlock()
 	require.NoError(t, err)
 	stateDraft, err := cs.NewStateDraft(time.Now(), latest.L1Commitment())
 	require.NoError(t, err)
 	task := &vm.VMTask{
-		AnchorOutput: &iotago.AliasOutput{
-			StateIndex:    stateIndex,
-			StateMetadata: []byte{},
-		},
+		Anchor: anchor,
+		// FIXME GasCoinBalance
+		// L1Params
 	}
 	vmctx := &vmContext{
 		task:       task,
@@ -89,24 +89,24 @@ func newMigrationsTest(t *testing.T, stateIndex uint32) *migrationsTestEnv {
 	return env
 }
 
-func TestMigrationsStateIndex1(t *testing.T) {
-	env := newMigrationsTest(t, 1)
+func TestMigrations(t *testing.T) {
+	env := newMigrationsTest(t)
 
-	require.EqualValues(t, 0, env.getSchemaVersion())
+	require.EqualValues(t, allmigrations.LatestSchemaVersion, env.getSchemaVersion())
 
 	env.vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		env.vmctx.runMigrations(chainState, &migrations.MigrationScheme{
-			BaseSchemaVersion: 0,
+			BaseSchemaVersion: allmigrations.LatestSchemaVersion,
 			Migrations:        []migrations.Migration{env.incCounter, env.incCounter, env.incCounter},
 		})
 	})
 
 	require.EqualValues(t, 3, env.counter)
-	require.EqualValues(t, 3, env.getSchemaVersion())
+	require.EqualValues(t, allmigrations.LatestSchemaVersion+3, env.getSchemaVersion())
 }
 
-func TestMigrationsStateIndex1Current1(t *testing.T) {
-	env := newMigrationsTest(t, 1)
+func TestMigrationsCurrent1(t *testing.T) {
+	env := newMigrationsTest(t)
 
 	env.setSchemaVersion(1)
 
@@ -121,8 +121,8 @@ func TestMigrationsStateIndex1Current1(t *testing.T) {
 	require.EqualValues(t, 3, env.getSchemaVersion())
 }
 
-func TestMigrationsStateIndex1Current2Base1(t *testing.T) {
-	env := newMigrationsTest(t, 1)
+func TestMigrationsCurrent2Base1(t *testing.T) {
+	env := newMigrationsTest(t)
 
 	env.setSchemaVersion(2)
 

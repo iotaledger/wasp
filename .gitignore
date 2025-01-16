@@ -11,6 +11,7 @@ cluster-data/
 dist/
 .idea/
 .vscode/
+vendor/
 *.bat
 *.bak
 Cargo.lock
@@ -47,3 +48,4 @@ sdk/
 libiota_sdk.so
 libiota_sdk.dylib
 iota_sdk.dll
+/.testconfig

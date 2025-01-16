@@ -7,11 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -27,15 +27,12 @@ func TestMissingRequests(t *testing.T) {
 	chainID := chain.ChainID
 
 	chEnv := newChainEnv(t, clu, chain)
-	chEnv.deployNativeIncCounterSC()
-
-	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
 	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
 	// deposit funds before sending the off-ledger request
-	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
+	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, clu.Config.ISCPackageID(), userWallet)
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
 	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
@@ -45,9 +42,9 @@ func TestMissingRequests(t *testing.T) {
 	// send off-ledger request to all nodes except #3
 	req := isc.NewOffLedgerRequest(chainID, inccounter.FuncIncCounter.Message(nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
-	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),
-		Request: iotago.EncodeHex(req.Bytes()),
+		Request: cryptolib.EncodeHex(req.Bytes()),
 	}).Execute()
 	require.NoError(t, err)
 
@@ -55,9 +52,9 @@ func TestMissingRequests(t *testing.T) {
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
 	req2 := isc.NewOffLedgerRequest(chainID, isc.NewMessageFromNames("foo", "bar"), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
-	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),
-		Request: iotago.EncodeHex(req2.Bytes()),
+		Request: cryptolib.EncodeHex(req2.Bytes()),
 	}).Execute()
 	require.NoError(t, err)
 	//-------

@@ -1,9 +1,11 @@
 package state
 
 import (
+	"crypto/rand"
 	"fmt"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -20,13 +22,6 @@ func NewBlockHash(hash []byte) (BlockHash, error) {
 	return result, nil
 }
 
-/*func newL1Commitment(c trie.Hash, blockHash BlockHash) *L1Commitment {
-	return &L1Commitment{
-		trieRoot:  c,
-		blockHash: blockHash,
-	}
-}*/
-
 func BlockHashFromString(hash string) (BlockHash, error) {
 	byteSlice, err := cryptolib.DecodeHex(hash)
 	if err != nil {
@@ -42,9 +37,15 @@ func (bh BlockHash) Bytes() []byte {
 }
 
 func (bh BlockHash) String() string {
-	return iotago.EncodeHex(bh[:])
+	return hexutil.Encode(bh[:])
 }
 
 func (bh BlockHash) Equals(other BlockHash) bool {
 	return bh == other
+}
+
+func RandomBlockHash() BlockHash {
+	var b BlockHash
+	_, _ = rand.Read(b[:])
+	return b
 }

@@ -3,17 +3,13 @@ package vmimpl
 import (
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 func (reqctx *requestContext) ChainID() isc.ChainID {
@@ -21,7 +17,7 @@ func (reqctx *requestContext) ChainID() isc.ChainID {
 }
 
 func (vmctx *vmContext) ChainID() isc.ChainID {
-	return isc.ChainID(vmctx.task.AnchorOutput.ID)
+	return isc.ChainID(*vmctx.task.Anchor.GetObjectID())
 }
 
 func (reqctx *requestContext) ChainInfo() *isc.ChainInfo {
@@ -48,8 +44,8 @@ func (reqctx *requestContext) CurrentContractHname() isc.Hname {
 	return reqctx.getCallContext().contract
 }
 
-func (reqctx *requestContext) Params() *isc.Params {
-	return &reqctx.getCallContext().params
+func (reqctx *requestContext) Params() isc.CallArguments {
+	return reqctx.getCallContext().params
 }
 
 func (reqctx *requestContext) Caller() isc.AgentID {
@@ -57,7 +53,7 @@ func (reqctx *requestContext) Caller() isc.AgentID {
 }
 
 func (reqctx *requestContext) Timestamp() time.Time {
-	return reqctx.vm.task.TimeAssumption
+	return reqctx.vm.task.Timestamp
 }
 
 func (reqctx *requestContext) CurrentContractAccountID() isc.AgentID {
@@ -121,38 +117,14 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 }
 
 func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
-	var nilAliasID iotago.AliasID
-	blockset := vmctx.task.AnchorOutput.FeatureSet()
-	senderBlock := blockset.SenderFeature()
-	var sender *cryptolib.Address
-	if senderBlock != nil {
-		sender = cryptolib.NewAddressFromIotago(senderBlock.Address)
-	}
-	return &isc.StateAnchor{
-		ChainID:              vmctx.ChainID(),
-		Sender:               sender,
-		IsOrigin:             vmctx.task.AnchorOutput.AliasID == nilAliasID,
-		StateController:      cryptolib.NewAddressFromIotago(vmctx.task.AnchorOutput.StateController()),
-		GovernanceController: cryptolib.NewAddressFromIotago(vmctx.task.AnchorOutput.GovernorAddress()),
-		StateIndex:           vmctx.task.AnchorOutput.StateIndex,
-		OutputID:             vmctx.task.AnchorOutputID,
-		StateData:            vmctx.task.AnchorOutput.StateMetadata,
-		Deposit:              vmctx.task.AnchorOutput.Amount,
-		NativeTokens:         vmctx.task.AnchorOutput.NativeTokens,
-	}
-}
-
-// DeployContract deploys contract by its program hash with the name specific to the instance
-func (reqctx *requestContext) deployContract(programHash hashing.HashValue, name string, initParams dict.Dict) {
-	reqctx.Debugf("vmcontext.DeployContract: %s, name: %s", programHash.String(), name)
-	// calling root contract from another contract to install contract
-	reqctx.Call(root.FuncDeployContract.Message(name, programHash, initParams), nil)
+	return vmctx.task.Anchor
 }
 
 func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
 	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
-	result := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), nil)
-	errorCode := codec.VMErrorCode.MustDecode(result.Get(errors.ParamErrorCode))
+	args := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), isc.NewEmptyAssets())
+
+	errorCode := lo.Must(errors.FuncRegisterError.DecodeOutput(args))
 	reqctx.Debugf("vmcontext.RegisterError: errorCode: '%s'", errorCode)
 	return isc.NewVMErrorTemplate(errorCode, messageFormat)
 }

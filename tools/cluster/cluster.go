@@ -21,28 +21,32 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
-	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/apilib"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
@@ -81,7 +85,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                clients.NewL1Client(config.L1),
+		l1:                config.L1Client(),
 		DataPath:          dataPath,
 	}
 }
@@ -119,7 +123,7 @@ func (clu *Cluster) AddTrustedNode(peerInfo apiclient.PeeringTrustRequest, onNod
 
 		if _, err = clu.WaspClient(
 			//nolint:bodyclose // false positive
-			nodes[ni]).NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(peerInfo).Execute(); err != nil {
+			nodes[ni]).NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(peerInfo).Execute(); err != nil {
 			return err
 		}
 	}
@@ -130,7 +134,7 @@ func (clu *Cluster) Login() ([]string, error) {
 	allNodes := clu.Config.AllNodes()
 	jwtTokens := make([]string, len(allNodes))
 	for ni := range allNodes {
-		res, _, err := clu.WaspClient(allNodes[ni]).AuthApi.Authenticate(context.Background()).
+		res, _, err := clu.WaspClient(allNodes[ni]).AuthAPI.Authenticate(context.Background()).
 			LoginRequest(*apiclient.NewLoginRequest("wasp", "wasp")).
 			Execute() //nolint:bodyclose // false positive
 		if err != nil {
@@ -154,7 +158,7 @@ func (clu *Cluster) TrustAll(jwtTokens ...string) error {
 	for ni := range allNodes {
 		var err error
 		//nolint:bodyclose // false positive
-		if allPeers[ni], _, err = clients[ni].NodeApi.GetPeeringIdentity(context.Background()).Execute(); err != nil {
+		if allPeers[ni], _, err = clients[ni].NodeAPI.GetPeeringIdentity(context.Background()).Execute(); err != nil {
 			return err
 		}
 	}
@@ -164,7 +168,7 @@ func (clu *Cluster) TrustAll(jwtTokens ...string) error {
 			if ni == pi {
 				continue // dont trust self
 			}
-			if _, err = clients[ni].NodeApi.TrustPeer(context.Background()).PeeringTrustRequest(
+			if _, err = clients[ni].NodeAPI.TrustPeer(context.Background()).PeeringTrustRequest(
 				apiclient.PeeringTrustRequest{
 					Name:       fmt.Sprintf("%d", pi),
 					PublicKey:  allPeers[pi].PublicKey,
@@ -207,7 +211,7 @@ func (clu *Cluster) RunDKG(committeeNodes []int, threshold uint16, timeout ...ti
 	peerPubKeys := make([]string, 0)
 	for _, i := range committeeNodes {
 		//nolint:bodyclose // false positive
-		peeringNodeInfo, _, err := clu.WaspClient(i).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		peeringNodeInfo, _, err := clu.WaspClient(i).NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 		if err != nil {
 			return nil, err
 		}
@@ -252,7 +256,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	committeePubKeys := make([]string, len(chain.CommitteeNodes))
 	for i, nodeIndex := range chain.CommitteeNodes {
 		//nolint:bodyclose // false positive
-		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		peeringNode, _, err2 := clu.WaspClient(nodeIndex).NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 		if err2 != nil {
 			return nil, err2
 		}
@@ -260,13 +264,27 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
-	initParams := dict.Dict{
-		origin.ParamChainOwner:  isc.NewAgentID(chain.OriginatorAddress()).Bytes(),
-		origin.ParamWaspVersion: codec.String.Encode(app.Version),
-	}
-	if len(blockKeepAmount) > 0 {
-		initParams[origin.ParamBlockKeepAmount] = codec.Int32.Encode(blockKeepAmount[0])
-	}
+	encodedInitParams := origin.NewInitParams(
+		isc.NewAddressAgentID(chain.OriginatorAddress()),
+		1074,
+		blockKeepAmount[0],
+		true,
+	).Encode()
+
+	stateMetaData := *transaction.NewStateMetadata(
+		allmigrations.DefaultScheme.LatestSchemaVersion(),
+		origin.L1Commitment(
+			allmigrations.DefaultScheme.LatestSchemaVersion(),
+			encodedInitParams,
+			iotago.ObjectID{},
+			governance.DefaultMinBaseTokensOnCommonAccount,
+			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
+		),
+		&iotago.ObjectID{},
+		gas.DefaultFeePolicy(),
+		encodedInitParams,
+		"",
+	)
 
 	chainID, err := apilib.DeployChain(
 		context.Background(),
@@ -278,9 +296,8 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
-			InitParams:        initParams,
+			StateMetadata:     stateMetaData,
 		},
-		stateAddr,
 		stateAddr,
 	)
 	if err != nil {
@@ -303,7 +320,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			time.Sleep(200 * time.Millisecond)
 			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
 				func(_ int, a *apiclient.APIClient) error {
-					_, _, err2 := a.ChainsApi.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
 					return err2
 				})
 			if err != nil {
@@ -330,7 +347,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	//
 	// Register all nodes as access nodes.
-	addAccessNodesTxs := make([]*iotago.Transaction, len(accessNodes))
+	addAccessNodesTxs := make([]*iotajsonrpc.IotaTransactionBlockResponse, len(accessNodes))
 	for i, a := range accessNodes {
 		tx, err := clu.addAccessNode(a, chain)
 		if err != nil {
@@ -350,12 +367,12 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		}
 	}
 
-	scArgs := governance.NewChangeAccessNodesRequest()
+	pubKeys := []lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction]{}
 	for _, a := range accessNodes {
 		waspClient := clu.WaspClient(a)
 
 		//nolint:bodyclose // false positive
-		accessNodePeering, _, err := waspClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+		accessNodePeering, _, err := waspClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 		if err != nil {
 			return err
 		}
@@ -364,12 +381,13 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		if err != nil {
 			return err
 		}
-		scArgs.Accept(accessNodePubKey)
+
+		pubKeys = append(pubKeys, lo.T2(accessNodePubKey, governance.ChangeAccessNodeActionAccept))
 	}
 	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
 	govClient := chain.Client(chain.OriginatorKeyPair)
 
-	tx, err := govClient.PostRequest(governance.FuncChangeAccessNodes.Message(scArgs), *scParams)
+	tx, err := govClient.PostRequest(context.Background(), governance.FuncChangeAccessNodes.Message(pubKeys), *scParams)
 	if err != nil {
 		return err
 	}
@@ -384,7 +402,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 // addAccessNode introduces node at accessNodeIndex as an access node to the chain.
 // This is done by activating the chain on the node and asking the governance contract
 // to consider it as an access node.
-func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Transaction, error) {
+func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	waspClient := clu.WaspClient(accessNodeIndex)
 	if err := apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, clu.Config.APIHosts([]int{accessNodeIndex}), chain.ChainID); err != nil {
 		return nil, err
@@ -397,7 +415,7 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 	}
 
 	//nolint:bodyclose // false positive
-	accessNodePeering, _, err := waspClient.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+	accessNodePeering, _, err := waspClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 	if err != nil {
 		return nil, err
 	}
@@ -407,38 +425,31 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotago.Tr
 		return nil, err
 	}
 
-	cert, _, err := waspClient.NodeApi.OwnerCertificate(context.Background()).Execute() //nolint:bodyclose // false positive
+	cert, _, err := waspClient.NodeAPI.OwnerCertificate(context.Background()).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		return nil, err
 	}
 
-	decodedCert, err := iotago.DecodeHex(cert.Certificate)
+	decodedCert, err := cryptolib.DecodeHex(cert.Certificate)
 	if err != nil {
 		return nil, err
 	}
 
-	scArgs := governance.AccessNodeInfo{
-		NodePubKey:   accessNodePubKey.AsBytes(),
-		Certificate:  decodedCert,
-		ForCommittee: false,
-		AccessAPI:    clu.Config.APIHost(accessNodeIndex),
-	}
+	accessAPI := clu.Config.APIHost(accessNodeIndex)
+	forCommittee := false
 
 	govClient := chain.Client(validatorKeyPair)
 	tx, err := govClient.PostRequest(
-		governance.FuncAddCandidateNode.Message(&scArgs),
+		context.Background(),
+		governance.FuncAddCandidateNode.Message(accessNodePubKey, decodedCert, accessAPI, forCommittee),
 		*chainclient.NewPostRequestParams().WithBaseTokens(1000),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	txID, err := tx.ID()
-	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, args=%+v\n", txID, scArgs)
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
+		tx.Digest, accessNodePubKey, decodedCert, accessAPI, forCommittee)
 	return tx, nil
 }
 
@@ -832,7 +843,7 @@ func (clu *Cluster) ActiveNodes() []int {
 func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 	// get funds controlled by addr
 
-	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsSuiAddress())
+	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsIotaAddress())
 	if err != nil {
 		clu.log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
 		return nil
@@ -840,27 +851,26 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balance := isc.NewEmptyAssets()
 	for _, out := range balances {
-		panic("refactor me: AddressBalances (Fix isc.Assets to use BigInt)")
-
-		if out.CoinType == parameters.Token.CoinType {
-			//	balance.BaseTokens = out.TotalBalance
+		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.BaseTokenDefault.CoinType) == 0 {
+			balance.SetBaseTokens(coin.Value(out.TotalBalance.Uint64()))
 		} else {
-			//	balance.NativeTokens = out
+			balance.AddCoin(coin.MustTypeFromString(out.CoinType.String()), coin.Value(out.TotalBalance.Uint64()))
 		}
 	}
 
 	return balance
 }
 
-func (clu *Cluster) L1BaseTokens(addr *cryptolib.Address) uint64 {
+func (clu *Cluster) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 	tokens := clu.AddressBalances(addr)
-	return tokens.BaseTokens
+	return tokens.BaseTokens()
 }
 
 func (clu *Cluster) AssertAddressBalances(addr *cryptolib.Address, expected *isc.Assets) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
 
+/*
 func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Address, issuerKeypair *cryptolib.KeyPair) (iotago.OutputID, *iotago.NFTOutput, error) {
 	panic("refactor me: transaction.NewMintNFTsTransaction")
 	/*outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
@@ -890,6 +900,7 @@ func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Addres
 			return oID, oNFT, nil
 		}
 	}
-	*/
+
 	return iotago.OutputID{}, nil, fmt.Errorf("inconsistency: couldn't find newly minted NFT in tx")
 }
+*/

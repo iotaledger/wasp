@@ -9,10 +9,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 )
 
 func testDumpAccounts(t *testing.T, env *ChainEnv) {
@@ -23,7 +22,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		env.DepositFunds(10*isc.Million, keyPair)
-		accs = append(accs, addr.Bech32(parameters.L1().Protocol.Bech32HRP))
+		accs = append(accs, addr.String())
 	}
 
 	for i := 0; i < 5; i++ {
@@ -32,11 +31,11 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		evmAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, evmAddr)
-		env.TransferFundsTo(isc.NewAssetsBaseTokens(utxodb.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+		env.TransferFundsTo(isc.NewAssets(iotaclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
 		accs = append(accs, evmAgentID.String())
 	}
 
-	resp, err := env.NewChainClient().WaspClient.ChainsApi.DumpAccounts(
+	resp, err := env.NewChainClient().WaspClient.ChainsAPI.DumpAccounts(
 		context.Background(),
 		env.Chain.ChainID.String(),
 	).Execute()

@@ -1,7 +1,7 @@
 // TODO: better import syntax?
 import {BaseAPIRequestFactory, RequiredError, COLLECTION_FORMATS} from './baseapi';
 import {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpFile} from '../http/http';
+import {RequestContext, HttpMethod, ResponseContext, HttpFile, HttpInfo} from '../http/http';
 import {ObjectSerializer} from '../models/ObjectSerializer';
 import {ApiException} from './exception';
 import {canConsumeForm, isCodeInRange} from '../util';
@@ -167,7 +167,7 @@ export class NodeApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get information about the shared address DKS configuration
-     * @param sharedAddress SharedAddress (Bech32)
+     * @param sharedAddress SharedAddress (Hex Address)
      */
     public async getDKSInfo(sharedAddress: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
@@ -428,10 +428,10 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to distrustPeer
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async distrustPeer(response: ResponseContext): Promise<void > {
+     public async distrustPeerWithHttpInfo(response: ResponseContext): Promise<HttpInfo<void >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            return;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -450,7 +450,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "void", ""
             ) as void;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -463,14 +463,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to generateDKS
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async generateDKS(response: ResponseContext): Promise<DKSharesInfo > {
+     public async generateDKSWithHttpInfo(response: ResponseContext): Promise<HttpInfo<DKSharesInfo >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: DKSharesInfo = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "DKSharesInfo", ""
             ) as DKSharesInfo;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -486,7 +486,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "DKSharesInfo", ""
             ) as DKSharesInfo;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -499,14 +499,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getAllPeers
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getAllPeers(response: ResponseContext): Promise<Array<PeeringNodeStatusResponse> > {
+     public async getAllPeersWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Array<PeeringNodeStatusResponse> >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: Array<PeeringNodeStatusResponse> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<PeeringNodeStatusResponse>", ""
             ) as Array<PeeringNodeStatusResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -522,7 +522,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<PeeringNodeStatusResponse>", ""
             ) as Array<PeeringNodeStatusResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -535,14 +535,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getConfiguration
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getConfiguration(response: ResponseContext): Promise<{ [key: string]: string; } > {
+     public async getConfigurationWithHttpInfo(response: ResponseContext): Promise<HttpInfo<{ [key: string]: string; } >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: { [key: string]: string; } = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "{ [key: string]: string; }", "string"
             ) as { [key: string]: string; };
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -558,7 +558,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "{ [key: string]: string; }", "string"
             ) as { [key: string]: string; };
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -571,14 +571,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getDKSInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getDKSInfo(response: ResponseContext): Promise<DKSharesInfo > {
+     public async getDKSInfoWithHttpInfo(response: ResponseContext): Promise<HttpInfo<DKSharesInfo >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: DKSharesInfo = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "DKSharesInfo", ""
             ) as DKSharesInfo;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -597,7 +597,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "DKSharesInfo", ""
             ) as DKSharesInfo;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -610,14 +610,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getInfo(response: ResponseContext): Promise<InfoResponse > {
+     public async getInfoWithHttpInfo(response: ResponseContext): Promise<HttpInfo<InfoResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: InfoResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "InfoResponse", ""
             ) as InfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -633,7 +633,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "InfoResponse", ""
             ) as InfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -646,14 +646,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getPeeringIdentity
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getPeeringIdentity(response: ResponseContext): Promise<PeeringNodeIdentityResponse > {
+     public async getPeeringIdentityWithHttpInfo(response: ResponseContext): Promise<HttpInfo<PeeringNodeIdentityResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: PeeringNodeIdentityResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "PeeringNodeIdentityResponse", ""
             ) as PeeringNodeIdentityResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -669,7 +669,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "PeeringNodeIdentityResponse", ""
             ) as PeeringNodeIdentityResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -682,14 +682,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getTrustedPeers
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getTrustedPeers(response: ResponseContext): Promise<Array<PeeringNodeIdentityResponse> > {
+     public async getTrustedPeersWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Array<PeeringNodeIdentityResponse> >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: Array<PeeringNodeIdentityResponse> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<PeeringNodeIdentityResponse>", ""
             ) as Array<PeeringNodeIdentityResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -705,7 +705,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<PeeringNodeIdentityResponse>", ""
             ) as Array<PeeringNodeIdentityResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -718,14 +718,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to getVersion
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getVersion(response: ResponseContext): Promise<VersionResponse > {
+     public async getVersionWithHttpInfo(response: ResponseContext): Promise<HttpInfo<VersionResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: VersionResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "VersionResponse", ""
             ) as VersionResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
@@ -734,7 +734,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "VersionResponse", ""
             ) as VersionResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -747,14 +747,14 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to ownerCertificate
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async ownerCertificate(response: ResponseContext): Promise<NodeOwnerCertificateResponse > {
+     public async ownerCertificateWithHttpInfo(response: ResponseContext): Promise<HttpInfo<NodeOwnerCertificateResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: NodeOwnerCertificateResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "NodeOwnerCertificateResponse", ""
             ) as NodeOwnerCertificateResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -770,7 +770,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "NodeOwnerCertificateResponse", ""
             ) as NodeOwnerCertificateResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -783,10 +783,10 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to shutdownNode
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async shutdownNode(response: ResponseContext): Promise<void > {
+     public async shutdownNodeWithHttpInfo(response: ResponseContext): Promise<HttpInfo<void >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            return;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -802,7 +802,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "void", ""
             ) as void;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -815,10 +815,10 @@ export class NodeApiResponseProcessor {
      * @params response Response returned by the server for a request to trustPeer
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async trustPeer(response: ResponseContext): Promise<void > {
+     public async trustPeerWithHttpInfo(response: ResponseContext): Promise<HttpInfo<void >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            return;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -834,7 +834,7 @@ export class NodeApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "void", ""
             ) as void;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

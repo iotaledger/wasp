@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 const (
@@ -31,13 +32,11 @@ type contractWithMessageCounterEnv struct {
 }
 
 func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
-	env.deployNativeIncCounterSC(0)
-
 	// deposit funds onto the contract account, so it can post a L1 request
 	contractAgentID := isc.NewContractAgentID(env.Chain.ChainID, inccounter.Contract.Hname())
-	tx, err := env.NewChainClient().PostRequest(accounts.FuncTransferAllowanceTo.Message(contractAgentID), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssetsBaseTokensU64(1_500_000),
-		Allowance: isc.NewAssetsBaseTokensU64(1_000_000),
+	tx, err := env.NewChainClient().PostRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(contractAgentID), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(1_500_000),
+		Allowance: isc.NewAssets(1_000_000),
 	})
 	require.NoError(env.t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 30*time.Second)
@@ -45,19 +44,19 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 
 	return &contractWithMessageCounterEnv{
 		contractEnv: &contractEnv{
-			ChainEnv:    env,
-			programHash: inccounter.Contract.ProgramHash,
+			ChainEnv: env,
 		},
 	}
 }
 
 func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hname, tokens int, params map[string]interface{}) {
-	transfer := isc.NewAssets(uint64(tokens), nil)
+	transfer := isc.NewAssets(coin.Value(tokens))
 	b := isc.NewEmptyAssets()
 	if transfer != nil {
 		b = transfer
 	}
-	tx, err := e.NewChainClient().PostRequest(isc.NewMessage(contract, entryPoint, codec.MakeDict(params)), chainclient.PostRequestParams{
+	panic("refactor me: params is nil, used to be codec.MakeDict(params)")
+	tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(contract, entryPoint, nil), chainclient.PostRequestParams{
 		Transfer: b,
 	})
 	require.NoError(e.t, err)
@@ -74,7 +73,7 @@ func (e *contractEnv) checkSC(numRequests int) {
 		cl := e.Chain.Client(nil, i)
 		r, err := cl.CallView(context.Background(), governance.ViewGetChainInfo.Message())
 		require.NoError(e.t, err)
-		info, err := governance.ViewGetChainInfo.Output.Decode(r)
+		info, err := governance.ViewGetChainInfo.DecodeOutput(r)
 		require.NoError(e.t, err)
 
 		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainOwnerID)
@@ -82,13 +81,13 @@ func (e *contractEnv) checkSC(numRequests int) {
 		recs, err := e.Chain.Client(nil, i).CallView(context.Background(), root.ViewGetContractRecords.Message())
 		require.NoError(e.t, err)
 
-		contractRegistry, err := root.ViewGetContractRecords.Output.Decode(recs)
+		contractRegistry, err := root.ViewGetContractRecords.DecodeOutput(recs)
 		require.NoError(e.t, err)
 		require.EqualValues(e.t, len(corecontracts.All)+1, len(contractRegistry))
 
 		cr := contractRegistry[inccounter.Contract.Hname()]
-		require.EqualValues(e.t, e.programHash, cr.ProgramHash)
-		require.EqualValues(e.t, inccounter.Contract.Name, cr.Name)
+		panic("refactor me: this equal check")
+		require.EqualValues(e.t, inccounter.Contract.Name, cr.B)
 	}
 }
 
@@ -107,7 +106,7 @@ func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
 	numRequests := 6
 	entryPoint := isc.Hn("nothing")
 	for i := 0; i < numRequests; i++ {
-		tx, err := e.NewChainClient().PostRequest(isc.NewMessage(inccounter.Contract.Hname(), entryPoint))
+		tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(inccounter.Contract.Hname(), entryPoint), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
@@ -127,7 +126,7 @@ func testIncrement(t *testing.T, env *ChainEnv) {
 
 	entryPoint := isc.Hn("increment")
 	for i := 0; i < numRequests; i++ {
-		tx, err := e.NewChainClient().PostRequest(isc.NewMessage(inccounter.Contract.Hname(), entryPoint))
+		tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(inccounter.Contract.Hname(), entryPoint), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
@@ -192,13 +191,13 @@ func testIncRepeatManyIncrement(t *testing.T, env *ChainEnv) {
 	for i := range e.Chain.CommitteeNodes {
 		b, err := e.Chain.GetStateVariable(inccounter.Contract.Hname(), varCounter, i)
 		require.NoError(t, err)
-		counterValue, err := codec.Int64.Decode(b, 0)
+		counterValue, err := codec.Decode[int64](b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, numRepeats+1, counterValue)
 
 		b, err = e.Chain.GetStateVariable(inccounter.Contract.Hname(), varNumRepeats, i)
 		require.NoError(t, err)
-		repeats, err := codec.Int64.Decode(b, 0)
+		repeats, err := codec.Decode[int64](b, 0)
 		require.NoError(t, err)
 		require.EqualValues(t, 0, repeats)
 	}
@@ -244,8 +243,7 @@ func testIncViewCounter(t *testing.T, env *ChainEnv) {
 			FunctionName:  "getCounter",
 		})
 	require.NoError(t, err)
-
-	counter, err := codec.Int64.Decode(ret.Get(varCounter), 0)
+	counter, err := inccounter.ViewGetCounter.DecodeOutput(ret)
 	require.NoError(t, err)
 	require.EqualValues(t, 1, counter)
 }

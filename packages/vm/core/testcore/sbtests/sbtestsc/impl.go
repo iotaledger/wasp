@@ -1,89 +1,78 @@
 package sbtestsc
 
 import (
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-var testError *isc.VMErrorTemplate
-
-func initialize(ctx isc.Sandbox) dict.Dict {
-	p := ctx.Params().Get(ParamFail)
-	ctx.Requiref(p == nil, "failing on purpose")
-	testError = ctx.RegisterError("ERROR_TEST")
-	return nil
-}
-
 // testEventLogGenericData is called several times in log_test.go
-func testEventLogGenericData(ctx isc.Sandbox) dict.Dict {
-	params := ctx.Params()
-	inc := codec.Uint64.MustDecode(params.Get(VarCounter), 1)
-	eventCounter(ctx, inc)
-	return nil
+func testEventLogGenericData(ctx isc.Sandbox, inc *uint64) {
+	incV := lo.FromPtrOr(inc, 1)
+	eventCounter(ctx, incV)
 }
 
-func testEventLogEventData(ctx isc.Sandbox) dict.Dict {
+func testEventLogEventData(ctx isc.Sandbox) {
 	eventTest(ctx)
-	return nil
 }
 
-func testChainOwnerIDView(ctx isc.SandboxView) dict.Dict {
-	cOwnerID := ctx.ChainOwnerID()
-	return dict.Dict{ParamChainOwnerID: cOwnerID.Bytes()}
+func testChainOwnerIDView(ctx isc.SandboxView) isc.AgentID {
+	return ctx.ChainOwnerID()
 }
 
-func testChainOwnerIDFull(ctx isc.Sandbox) dict.Dict {
-	cOwnerID := ctx.ChainOwnerID()
-	return dict.Dict{ParamChainOwnerID: cOwnerID.Bytes()}
+func testChainOwnerIDFull(ctx isc.Sandbox) isc.AgentID {
+	return ctx.ChainOwnerID()
 }
 
-func testSandboxCall(ctx isc.SandboxView) dict.Dict {
+func testSandboxCall(ctx isc.SandboxView) isc.CallArguments {
 	return ctx.CallView(governance.ViewGetChainInfo.Message())
 }
 
-func testEventLogDeploy(ctx isc.Sandbox) dict.Dict {
+func testEventLogDeploy(ctx isc.Sandbox) {
 	// Deploy the same contract with another name
-	ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
-	return nil
+	panic("TODO: contract deployment")
+	// ctx.DeployContract(Contract.ProgramHash, VarContractNameDeployed, nil)
 }
 
-func testPanicFullEP(ctx isc.Sandbox) dict.Dict {
+func testPanicFullEP(ctx isc.Sandbox) {
 	ctx.Log().Panicf(MsgFullPanic)
-	return nil
 }
 
-func testCustomError(_ isc.Sandbox) dict.Dict {
-	panic(testError.Create("CUSTOM_ERROR"))
-}
-
-func testPanicViewEP(ctx isc.SandboxView) dict.Dict {
+func testPanicViewEP(ctx isc.SandboxView) {
 	ctx.Log().Panicf(MsgViewPanic)
-	return nil
 }
 
-func testJustView(ctx isc.SandboxView) dict.Dict {
+func testJustView(ctx isc.SandboxView) {
 	ctx.Log().Infof("calling empty view entry point")
-	return nil
 }
 
-func testCallPanicFullEP(ctx isc.Sandbox) dict.Dict {
+func testCallPanicFullEP(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicFullEP)
-	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicFullEP.Hname(), nil), nil)
+	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicFullEP.Hname(), nil), isc.NewEmptyAssets())
 }
 
-func testCallPanicViewEPFromFull(ctx isc.Sandbox) dict.Dict {
+func testCallPanicViewEPFromFull(ctx isc.Sandbox) isc.CallArguments {
 	ctx.Log().Infof("will be calling entry point '%s' from full EP", FuncPanicViewEP)
-	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicViewEP.Hname(), nil), nil)
+	return ctx.Call(isc.NewMessage(Contract.Hname(), FuncPanicViewEP.Hname(), nil), isc.NewEmptyAssets())
 }
 
-func testCallPanicViewEPFromView(ctx isc.SandboxView) dict.Dict {
+func testCallPanicViewEPFromView(ctx isc.SandboxView) isc.CallArguments {
 	ctx.Log().Infof("will be calling entry point '%s' from view EP", FuncPanicViewEP)
 	return ctx.CallView(isc.NewMessage(Contract.Hname(), FuncPanicViewEP.Hname(), nil))
 }
 
-func doNothing(ctx isc.Sandbox) dict.Dict {
+func doNothing(ctx isc.Sandbox) {
 	ctx.Log().Infof(MsgDoNothing)
-	return nil
+}
+
+func callViewFunc(ctx isc.SandboxView) func(isc.Message) (isc.CallArguments, error) {
+	return func(m isc.Message) (isc.CallArguments, error) {
+		m.Target.Contract = ctx.Contract()
+		return ctx.CallView(m), nil
+	}
+}
+
+func stackOverflow(ctx isc.Sandbox) {
+	ctx.Call(FuncStackOverflow.Message(), isc.NewEmptyAssets())
 }

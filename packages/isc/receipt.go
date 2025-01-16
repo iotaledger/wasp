@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -13,8 +14,8 @@ type Receipt struct {
 	Error         *UnresolvedVMError `json:"error"`
 	GasBudget     uint64             `json:"gasBudget"`
 	GasBurned     uint64             `json:"gasBurned"`
-	GasFeeCharged uint64             `json:"gasFeeCharged"`
-	SDCharged     uint64             `json:"storageDepositCharged"`
+	GasFeeCharged coin.Value         `json:"gasFeeCharged"`
+	SDCharged     coin.Value         `json:"storageDepositCharged"`
 	BlockIndex    uint32             `json:"blockIndex"`
 	RequestIndex  uint16             `json:"requestIndex"`
 	ResolvedError string             `json:"resolvedError"`

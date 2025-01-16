@@ -52,7 +52,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
+
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -91,13 +91,13 @@ type ChainListener interface {
 
 type Mempool interface {
 	consGR.Mempool
-	// Invoked by the chain, when new alias output is considered as a tip/head
+	// Invoked by the chain, when new anchor is considered as a tip/head
 	// of the chain. Mempool can reorganize its state by removing/rejecting
 	// or re-adding some requests, depending on how the head has changed.
 	// It can mean simple advance of the chain, or a rollback or a reorg.
 	// This function is guaranteed to be called in the order, which is
 	// considered the chain block order by the ChainMgr.
-	TrackNewChainHead(st state.State, from, till *iscmove.RefWithObject[iscmove.Anchor], added, removed []state.Block) <-chan bool
+	TrackNewChainHead(st state.State, from *isc.StateAnchor, added, removed []state.Block) <-chan bool
 	// Invoked by the chain when a new off-ledger request is received from a node user.
 	// Inter-node off-ledger dissemination is NOT performed via this function.
 	ReceiveOnLedgerRequest(request isc.OnLedgerRequest)
@@ -135,9 +135,9 @@ type mempoolImpl struct {
 	chainID                        isc.ChainID
 	tangleTime                     time.Time
 	onLedgerPool                   RequestPool[isc.OnLedgerRequest] // TODO limit this pool
-	offLedgerPool                  *OffLedgerPool
+	offLedgerPool                  *OffLedgerPool                   // TODO maybe use `RequestPool` too?
 	distSync                       gpa.GPA
-	chainHeadAO                    *iscmove.RefWithObject[iscmove.Anchor]
+	chainHeadAnchor                *isc.StateAnchor
 	chainHeadState                 state.State
 	serverNodesUpdatedPipe         pipe.Pipe[*reqServerNodesUpdated]
 	serverNodes                    []*cryptolib.PublicKey
@@ -190,7 +190,7 @@ type reqConsensusInstancesUpdated struct {
 
 type reqConsensusProposal struct {
 	ctx         context.Context
-	aliasOutput *iscmove.RefWithObject[iscmove.Anchor]
+	anchor      *isc.StateAnchor
 	consensusID consGR.ConsensusID
 	responseCh  chan<- []*isc.RequestRef
 }
@@ -208,8 +208,7 @@ type reqConsensusRequests struct {
 
 type reqTrackNewChainHead struct {
 	st         state.State
-	from       *iscmove.RefWithObject[iscmove.Anchor]
-	till       *iscmove.RefWithObject[iscmove.Anchor]
+	from       *isc.StateAnchor
 	added      []state.Block
 	removed    []state.Block
 	responseCh chan<- bool // only for tests, shouldn't be used in the chain package
@@ -235,7 +234,7 @@ func New(
 		tangleTime:                     time.Time{},
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.Named("ONL")),
 		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.Named("OFF")),
-		chainHeadAO:                    nil,
+		chainHeadAnchor:                nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
 		accessNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqAccessNodesUpdated](),
@@ -298,9 +297,9 @@ func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
 	mpi.reqTangleTimeUpdatedPipe.In() <- tangleTime
 }
 
-func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from, till *iscmove.RefWithObject[iscmove.Anchor], added, removed []state.Block) <-chan bool {
+func (mpi *mempoolImpl) TrackNewChainHead(st state.State, from *isc.StateAnchor, added, removed []state.Block) <-chan bool {
 	responseCh := make(chan bool)
-	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, till, added, removed, responseCh}
+	mpi.reqTrackNewChainHeadPipe.In() <- &reqTrackNewChainHead{st, from, added, removed, responseCh}
 	return responseCh
 }
 
@@ -336,11 +335,11 @@ func (mpi *mempoolImpl) ConsensusInstancesUpdated(activeConsensusInstances []con
 	}
 }
 
-func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, aliasOutput *iscmove.RefWithObject[iscmove.Anchor], consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
+func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposal{
 		ctx:         ctx,
-		aliasOutput: aliasOutput,
+		anchor:      anchor,
 		consensusID: consensusID,
 		responseCh:  res,
 	}
@@ -504,8 +503,9 @@ func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 		return false
 	}
 	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
-		mpi.addOffledger(offLedgerReq)
-		return true
+		mpi.log.Warn("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
+
+		return mpi.addOffledger(offLedgerReq)
 	}
 	return false
 }
@@ -547,6 +547,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	if !mpi.accountsState().AccountExists(req.SenderAccount(), mpi.chainID) {
 		// make an exception for gov calls (sender is chan owner and target is gov contract)
 		governanceState := governance.NewStateReaderFromChainState(mpi.chainHeadState)
+		// FIXME chain owner is set to the wrong one!!
 		chainOwner := governanceState.GetChainOwnerID()
 		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.Message().Target.Contract == governance.Contract.Hname()
 		if !isGovRequest && governanceState.GetDefaultGasPrice().Cmp(util.Big0) != 0 {
@@ -562,10 +563,13 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	return nil
 }
 
-func (mpi *mempoolImpl) addOffledger(request isc.OffLedgerRequest) {
-	mpi.offLedgerPool.Add(request)
+func (mpi *mempoolImpl) addOffledger(request isc.OffLedgerRequest) bool {
+	if !mpi.offLedgerPool.Add(request) {
+		return false
+	}
 	mpi.metrics.IncRequestsReceived(request)
 	mpi.log.Debugf("accepted by the mempool, requestID: %s", request.ID().String())
+	return true
 }
 
 func (mpi *mempoolImpl) handleServerNodesUpdated(recv *reqServerNodesUpdated) {
@@ -589,28 +593,24 @@ func (mpi *mempoolImpl) handleAccessNodesUpdated(recv *reqAccessNodesUpdated) {
 // This implementation only tracks a single branch. So, we will only respond
 // to the request matching the TrackNewChainHead call.
 func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
-	if mpi.chainHeadAO == nil || !recv.aliasOutput.Equals(&mpi.chainHeadAO.ObjectRef) {
-		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.aliasOutput)
+	if mpi.chainHeadAnchor == nil || !recv.anchor.Equals(mpi.chainHeadAnchor) {
+		mpi.log.Debugf("handleConsensusProposal, have to wait for chain head to become %v", recv.anchor)
 		mpi.waitChainHead = append(mpi.waitChainHead, recv)
 		return
 	}
-	mpi.log.Debugf("handleConsensusProposal, already have the chain head %v", recv.aliasOutput)
+	mpi.log.Debugf("handleConsensusProposal, already have the chain head %v", recv.anchor)
 	mpi.handleConsensusProposalForChainHead(recv)
 }
 
-//nolint:gocyclo
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
-	// The case for matching ChainHeadAO and request BaseAO
+	// The case for matching ChainHeadAnchor and request BaseAO
 	reqRefs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
 		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
 			reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
 			e.proposedFor = append(e.proposedFor, consensusID)
-			if len(reqRefs) >= mpi.settings.MaxOnledgerToPropose {
-				return false
-			}
-			return true
+			return len(reqRefs) < mpi.settings.MaxOnledgerToPropose
 		})
 	}
 
@@ -791,8 +791,9 @@ func (mpi *mempoolImpl) handleReceiveOnLedgerRequest(request isc.OnLedgerRequest
 
 func (mpi *mempoolImpl) handleReceiveOffLedgerRequest(request isc.OffLedgerRequest) {
 	mpi.log.Debugf("Received request %v from outside.", request.ID())
-	mpi.addOffledger(request)
-	mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	if mpi.addOffledger(request) {
+		mpi.sendMessages(mpi.distSync.Input(distsync.NewInputPublishRequest(request)))
+	}
 }
 
 func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
@@ -810,11 +811,9 @@ func (mpi *mempoolImpl) handleTangleTimeUpdated(tangleTime time.Time) {
 
 // - Re-add all the request from the reverted blocks.
 // - Cleanup requests from the blocks that were added.
-//
-//nolint:gocyclo
 func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	defer close(req.responseCh)
-	mpi.log.Debugf("handleTrackNewChainHead, %v from %v, current=%v", req.till, req.from, mpi.chainHeadAO)
+	mpi.log.Debugf("handleTrackNewChainHead, from %v, current=%v", req.from, mpi.chainHeadAnchor)
 
 	if len(req.removed) != 0 {
 		mpi.log.Infof("Reorg detected, removing %v blocks, adding %v blocks", len(req.removed), len(req.added))
@@ -828,9 +827,6 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		for _, receipt := range blockReceipts {
-			if blocklog.HasUnprocessableRequestBeenRemovedInBlock(block, receipt.Request.ID()) {
-				continue // do not add unprocessable requests that were successfully retried back into the mempool in case of a reorg
-			}
 			mpi.tryReAddRequest(receipt.Request)
 		}
 	}
@@ -847,15 +843,8 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)
 		}
-		unprocessableRequests, err := blocklog.UnprocessableRequestsAddedInBlock(block)
-		if err != nil {
-			panic(fmt.Errorf("cannot extract unprocessable requests from block: %w", err))
-		}
-		for _, req := range unprocessableRequests {
-			mpi.metrics.IncRequestsProcessed()
-			mpi.tryRemoveRequest(req)
-		}
 	}
+
 	//
 	// Cleanup processed requests, if that's the first time we received the state.
 	if mpi.chainHeadState == nil {
@@ -866,7 +855,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 	//
 	// Record the head state.
 	mpi.chainHeadState = req.st
-	mpi.chainHeadAO = req.till
+	mpi.chainHeadAnchor = req.from
 	//
 	// Process the pending consensus proposal requests if any.
 	if len(mpi.waitChainHead) != 0 {
@@ -875,7 +864,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			if waiting.ctx.Err() != nil {
 				continue // Drop it.
 			}
-			if waiting.aliasOutput.Equals(&mpi.chainHeadAO.ObjectRef) {
+			if waiting.anchor.Equals(mpi.chainHeadAnchor) {
 				mpi.handleConsensusProposalForChainHead(waiting)
 				continue // Drop it from wait queue.
 			}
@@ -987,7 +976,8 @@ func (mpi *mempoolImpl) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(mpi.netPeeringID, peering.ReceiverMempool, msgTypeMempool, msgBytes)
 		mpi.net.SendMsgByPubKey(mpi.netPeerPubs[msg.Recipient()], pm)
 	})
 }

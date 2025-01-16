@@ -5,10 +5,10 @@ import (
 	"math/big"
 
 	"github.com/iotaledger/wasp/packages/bigint"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
 )
 
 // CreditToAccount brings new funds to the on chain ledger
@@ -28,17 +28,10 @@ func (s *StateWriter) creditToAccount(accountKey kv.Key, coins isc.CoinBalances)
 	}
 
 	for coinType, amount := range coins {
-		if amount.Sign() == 0 {
+		if amount == 0 {
 			continue
 		}
-		if amount.Sign() < 0 {
-			panic(ErrBadAmount)
-		}
-		balance := s.getCoinBalance(accountKey, coinType)
-		balance.Add(balance, amount)
-		if balance.Cmp(util.MaxUint64) > 0 {
-			panic(ErrOverflow)
-		}
+		balance := s.getCoinBalance(accountKey, coinType) + amount
 		s.setCoinBalance(accountKey, coinType, balance)
 	}
 }
@@ -81,18 +74,14 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances
 	// first check, then mutate
 	coinMutations := isc.NewCoinBalances()
 	for coinType, amount := range coins {
-		if amount.Sign() == 0 {
+		if amount == 0 {
 			continue
 		}
-		if amount.Sign() < 0 {
-			panic(ErrBadAmount)
-		}
 		balance := s.getCoinBalance(accountKey, coinType)
-		balance = balance.Sub(balance, amount)
-		if balance.Sign() < 0 {
+		if balance < amount {
 			return false
 		}
-		coinMutations.Add(coinType, balance)
+		coinMutations[coinType] = balance - amount
 	}
 
 	for coinType, amount := range coinMutations {
@@ -129,10 +118,10 @@ func (s *StateWriter) debitFromAccountFullDecimals(accountKey kv.Key, amount *bi
 // getFungibleTokens returns the fungible tokens owned by an account (base tokens extra decimals will be discarded)
 func (s *StateReader) getFungibleTokens(accountKey kv.Key) isc.CoinBalances {
 	ret := isc.NewCoinBalances()
-	s.coinsMapR(accountKey).Iterate(func(coinType []byte, val []byte) bool {
+	s.accountCoinBalancesMapR(accountKey).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
-			codec.CoinType.MustDecode(coinType),
-			codec.BigIntAbs.MustDecode(val),
+			codec.MustDecode[coin.Type](coinType),
+			codec.MustDecode[coin.Value](val),
 		)
 		return true
 	})

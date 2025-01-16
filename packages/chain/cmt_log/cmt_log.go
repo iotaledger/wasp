@@ -95,7 +95,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -127,10 +126,10 @@ var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 // logIndex (there will be no different baseAliasOutputs for the same logIndex).
 type Output struct {
 	logIndex        LogIndex
-	baseAliasOutput *iscmove.Anchor
+	baseAliasOutput *isc.StateAnchor
 }
 
-func makeOutput(logIndex LogIndex, baseAliasOutput *iscmove.Anchor) *Output {
+func makeOutput(logIndex LogIndex, baseAliasOutput *isc.StateAnchor) *Output {
 	return &Output{logIndex: logIndex, baseAliasOutput: baseAliasOutput}
 }
 
@@ -138,7 +137,7 @@ func (o *Output) GetLogIndex() LogIndex {
 	return o.logIndex
 }
 
-func (o *Output) GetBaseAliasOutput() *iscmove.Anchor {
+func (o *Output) GetBaseAliasOutput() *isc.StateAnchor {
 	return o.baseAliasOutput
 }
 
@@ -314,7 +313,7 @@ func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOu
 // > ON ConsensusOutput/DONE (CD)
 // >   ...
 func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAliasOutputID, input.nextAliasOutput)
+	cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAnchorRef)
 	return cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
 }
 

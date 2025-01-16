@@ -1,4 +1,4 @@
-import { ResponseContext, RequestContext, HttpFile } from '../http/http';
+import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/http';
 import { Configuration} from '../configuration'
 
 import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
@@ -10,14 +10,13 @@ import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
 import { BaseToken } from '../models/BaseToken';
-import { BlobInfoResponse } from '../models/BlobInfoResponse';
-import { BlobValueResponse } from '../models/BlobValueResponse';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
 import { CallTargetJSON } from '../models/CallTargetJSON';
 import { ChainInfoResponse } from '../models/ChainInfoResponse';
 import { ChainMessageMetrics } from '../models/ChainMessageMetrics';
 import { ChainRecord } from '../models/ChainRecord';
+import { CoinJSON } from '../models/CoinJSON';
 import { CommitteeInfoResponse } from '../models/CommitteeInfoResponse';
 import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
@@ -44,17 +43,13 @@ import { InStateOutput } from '../models/InStateOutput';
 import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
 import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
-import { Item } from '../models/Item';
-import { JSONDict } from '../models/JSONDict';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { MilestoneInfo } from '../models/MilestoneInfo';
 import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
-import { NFTJSON } from '../models/NFTJSON';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NativeTokenJSON } from '../models/NativeTokenJSON';
 import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -81,6 +76,7 @@ import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
 import { TransactionMetricItem } from '../models/TransactionMetricItem';
 import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
 import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
+import { Type } from '../models/Type';
 import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
@@ -115,8 +111,24 @@ export class ObjectAuthApi {
      * Get information about the current authentication mode
      * @param param the request object
      */
+    public authInfoWithHttpInfo(param: AuthApiAuthInfoRequest = {}, options?: Configuration): Promise<HttpInfo<AuthInfoModel>> {
+        return this.api.authInfoWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get information about the current authentication mode
+     * @param param the request object
+     */
     public authInfo(param: AuthApiAuthInfoRequest = {}, options?: Configuration): Promise<AuthInfoModel> {
         return this.api.authInfo( options).toPromise();
+    }
+
+    /**
+     * Authenticate towards the node
+     * @param param the request object
+     */
+    public authenticateWithHttpInfo(param: AuthApiAuthenticateRequest, options?: Configuration): Promise<HttpInfo<LoginResponse>> {
+        return this.api.authenticateWithHttpInfo(param.loginRequest,  options).toPromise();
     }
 
     /**
@@ -134,7 +146,8 @@ import { ChainsApiRequestFactory, ChainsApiResponseProcessor} from "../apis/Chai
 
 export interface ChainsApiActivateChainRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiactivateChain
      */
@@ -143,13 +156,15 @@ export interface ChainsApiActivateChainRequest {
 
 export interface ChainsApiAddAccessNodeRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiaddAccessNode
      */
     chainID: string
     /**
      * Name or PubKey (hex) of the trusted peer
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiaddAccessNode
      */
@@ -158,7 +173,8 @@ export interface ChainsApiAddAccessNodeRequest {
 
 export interface ChainsApiCallViewRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApicallView
      */
@@ -173,7 +189,8 @@ export interface ChainsApiCallViewRequest {
 
 export interface ChainsApiDeactivateChainRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApideactivateChain
      */
@@ -182,7 +199,8 @@ export interface ChainsApiDeactivateChainRequest {
 
 export interface ChainsApiDumpAccountsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApidumpAccounts
      */
@@ -191,7 +209,8 @@ export interface ChainsApiDumpAccountsRequest {
 
 export interface ChainsApiEstimateGasOffledgerRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiestimateGasOffledger
      */
@@ -206,7 +225,8 @@ export interface ChainsApiEstimateGasOffledgerRequest {
 
 export interface ChainsApiEstimateGasOnledgerRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiestimateGasOnledger
      */
@@ -221,13 +241,15 @@ export interface ChainsApiEstimateGasOnledgerRequest {
 
 export interface ChainsApiGetChainInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetChainInfo
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetChainInfo
      */
@@ -239,13 +261,15 @@ export interface ChainsApiGetChainsRequest {
 
 export interface ChainsApiGetCommitteeInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetCommitteeInfo
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetCommitteeInfo
      */
@@ -254,13 +278,15 @@ export interface ChainsApiGetCommitteeInfoRequest {
 
 export interface ChainsApiGetContractsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetContracts
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetContracts
      */
@@ -269,7 +295,8 @@ export interface ChainsApiGetContractsRequest {
 
 export interface ChainsApiGetMempoolContentsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetMempoolContents
      */
@@ -278,13 +305,15 @@ export interface ChainsApiGetMempoolContentsRequest {
 
 export interface ChainsApiGetReceiptRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetReceipt
      */
     chainID: string
     /**
      * RequestID (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetReceipt
      */
@@ -293,13 +322,15 @@ export interface ChainsApiGetReceiptRequest {
 
 export interface ChainsApiGetStateValueRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetStateValue
      */
     chainID: string
     /**
      * State Key (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetStateValue
      */
@@ -308,13 +339,15 @@ export interface ChainsApiGetStateValueRequest {
 
 export interface ChainsApiRemoveAccessNodeRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiremoveAccessNode
      */
     chainID: string
     /**
      * Name or PubKey (hex) of the trusted peer
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiremoveAccessNode
      */
@@ -323,7 +356,8 @@ export interface ChainsApiRemoveAccessNodeRequest {
 
 export interface ChainsApiSetChainRecordRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApisetChainRecord
      */
@@ -338,7 +372,8 @@ export interface ChainsApiSetChainRecordRequest {
 
 export interface ChainsApiV1ChainsChainIDEvmPostRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiv1ChainsChainIDEvmPost
      */
@@ -347,7 +382,8 @@ export interface ChainsApiV1ChainsChainIDEvmPostRequest {
 
 export interface ChainsApiV1ChainsChainIDEvmWsGetRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiv1ChainsChainIDEvmWsGet
      */
@@ -356,25 +392,29 @@ export interface ChainsApiV1ChainsChainIDEvmWsGetRequest {
 
 export interface ChainsApiWaitForRequestRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiwaitForRequest
      */
     chainID: string
     /**
      * RequestID (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof ChainsApiwaitForRequest
      */
     requestID: string
     /**
      * The timeout in seconds, maximum 60s
+     * Defaults to: undefined
      * @type number
      * @memberof ChainsApiwaitForRequest
      */
     timeoutSeconds?: number
     /**
      * Wait for the block to be confirmed on L1
+     * Defaults to: undefined
      * @type boolean
      * @memberof ChainsApiwaitForRequest
      */
@@ -392,8 +432,24 @@ export class ObjectChainsApi {
      * Activate a chain
      * @param param the request object
      */
+    public activateChainWithHttpInfo(param: ChainsApiActivateChainRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.activateChainWithHttpInfo(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Activate a chain
+     * @param param the request object
+     */
     public activateChain(param: ChainsApiActivateChainRequest, options?: Configuration): Promise<void> {
         return this.api.activateChain(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Configure a trusted node to be an access node.
+     * @param param the request object
+     */
+    public addAccessNodeWithHttpInfo(param: ChainsApiAddAccessNodeRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.addAccessNodeWithHttpInfo(param.chainID, param.peer,  options).toPromise();
     }
 
     /**
@@ -409,8 +465,25 @@ export class ObjectChainsApi {
      * Call a view function on a contract by Hname
      * @param param the request object
      */
-    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<JSONDict> {
+    public callViewWithHttpInfo(param: ChainsApiCallViewRequest, options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        return this.api.callViewWithHttpInfo(param.chainID, param.contractCallViewRequest,  options).toPromise();
+    }
+
+    /**
+     * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
+     * Call a view function on a contract by Hname
+     * @param param the request object
+     */
+    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<Array<string>> {
         return this.api.callView(param.chainID, param.contractCallViewRequest,  options).toPromise();
+    }
+
+    /**
+     * Deactivate a chain
+     * @param param the request object
+     */
+    public deactivateChainWithHttpInfo(param: ChainsApiDeactivateChainRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.deactivateChainWithHttpInfo(param.chainID,  options).toPromise();
     }
 
     /**
@@ -425,8 +498,24 @@ export class ObjectChainsApi {
      * dump accounts information into a humanly-readable format
      * @param param the request object
      */
+    public dumpAccountsWithHttpInfo(param: ChainsApiDumpAccountsRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.dumpAccountsWithHttpInfo(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * dump accounts information into a humanly-readable format
+     * @param param the request object
+     */
     public dumpAccounts(param: ChainsApiDumpAccountsRequest, options?: Configuration): Promise<void> {
         return this.api.dumpAccounts(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Estimates gas for a given off-ledger ISC request
+     * @param param the request object
+     */
+    public estimateGasOffledgerWithHttpInfo(param: ChainsApiEstimateGasOffledgerRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        return this.api.estimateGasOffledgerWithHttpInfo(param.chainID, param.request,  options).toPromise();
     }
 
     /**
@@ -441,8 +530,24 @@ export class ObjectChainsApi {
      * Estimates gas for a given on-ledger ISC request
      * @param param the request object
      */
+    public estimateGasOnledgerWithHttpInfo(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        return this.api.estimateGasOnledgerWithHttpInfo(param.chainID, param.request,  options).toPromise();
+    }
+
+    /**
+     * Estimates gas for a given on-ledger ISC request
+     * @param param the request object
+     */
     public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.estimateGasOnledger(param.chainID, param.request,  options).toPromise();
+    }
+
+    /**
+     * Get information about a specific chain
+     * @param param the request object
+     */
+    public getChainInfoWithHttpInfo(param: ChainsApiGetChainInfoRequest, options?: Configuration): Promise<HttpInfo<ChainInfoResponse>> {
+        return this.api.getChainInfoWithHttpInfo(param.chainID, param.block,  options).toPromise();
     }
 
     /**
@@ -457,8 +562,24 @@ export class ObjectChainsApi {
      * Get a list of all chains
      * @param param the request object
      */
+    public getChainsWithHttpInfo(param: ChainsApiGetChainsRequest = {}, options?: Configuration): Promise<HttpInfo<Array<ChainInfoResponse>>> {
+        return this.api.getChainsWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get a list of all chains
+     * @param param the request object
+     */
     public getChains(param: ChainsApiGetChainsRequest = {}, options?: Configuration): Promise<Array<ChainInfoResponse>> {
         return this.api.getChains( options).toPromise();
+    }
+
+    /**
+     * Get information about the deployed committee
+     * @param param the request object
+     */
+    public getCommitteeInfoWithHttpInfo(param: ChainsApiGetCommitteeInfoRequest, options?: Configuration): Promise<HttpInfo<CommitteeInfoResponse>> {
+        return this.api.getCommitteeInfoWithHttpInfo(param.chainID, param.block,  options).toPromise();
     }
 
     /**
@@ -473,8 +594,24 @@ export class ObjectChainsApi {
      * Get all available chain contracts
      * @param param the request object
      */
+    public getContractsWithHttpInfo(param: ChainsApiGetContractsRequest, options?: Configuration): Promise<HttpInfo<Array<ContractInfoResponse>>> {
+        return this.api.getContractsWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all available chain contracts
+     * @param param the request object
+     */
     public getContracts(param: ChainsApiGetContractsRequest, options?: Configuration): Promise<Array<ContractInfoResponse>> {
         return this.api.getContracts(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the contents of the mempool.
+     * @param param the request object
+     */
+    public getMempoolContentsWithHttpInfo(param: ChainsApiGetMempoolContentsRequest, options?: Configuration): Promise<HttpInfo<Array<number>>> {
+        return this.api.getMempoolContentsWithHttpInfo(param.chainID,  options).toPromise();
     }
 
     /**
@@ -489,8 +626,24 @@ export class ObjectChainsApi {
      * Get a receipt from a request ID
      * @param param the request object
      */
+    public getReceiptWithHttpInfo(param: ChainsApiGetReceiptRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        return this.api.getReceiptWithHttpInfo(param.chainID, param.requestID,  options).toPromise();
+    }
+
+    /**
+     * Get a receipt from a request ID
+     * @param param the request object
+     */
     public getReceipt(param: ChainsApiGetReceiptRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.getReceipt(param.chainID, param.requestID,  options).toPromise();
+    }
+
+    /**
+     * Fetch the raw value associated with the given key in the chain state
+     * @param param the request object
+     */
+    public getStateValueWithHttpInfo(param: ChainsApiGetStateValueRequest, options?: Configuration): Promise<HttpInfo<StateResponse>> {
+        return this.api.getStateValueWithHttpInfo(param.chainID, param.stateKey,  options).toPromise();
     }
 
     /**
@@ -505,8 +658,24 @@ export class ObjectChainsApi {
      * Remove an access node.
      * @param param the request object
      */
+    public removeAccessNodeWithHttpInfo(param: ChainsApiRemoveAccessNodeRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.removeAccessNodeWithHttpInfo(param.chainID, param.peer,  options).toPromise();
+    }
+
+    /**
+     * Remove an access node.
+     * @param param the request object
+     */
     public removeAccessNode(param: ChainsApiRemoveAccessNodeRequest, options?: Configuration): Promise<void> {
         return this.api.removeAccessNode(param.chainID, param.peer,  options).toPromise();
+    }
+
+    /**
+     * Sets the chain record.
+     * @param param the request object
+     */
+    public setChainRecordWithHttpInfo(param: ChainsApiSetChainRecordRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.setChainRecordWithHttpInfo(param.chainID, param.chainRecord,  options).toPromise();
     }
 
     /**
@@ -521,6 +690,14 @@ export class ObjectChainsApi {
      * Ethereum JSON-RPC
      * @param param the request object
      */
+    public v1ChainsChainIDEvmPostWithHttpInfo(param: ChainsApiV1ChainsChainIDEvmPostRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.v1ChainsChainIDEvmPostWithHttpInfo(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Ethereum JSON-RPC
+     * @param param the request object
+     */
     public v1ChainsChainIDEvmPost(param: ChainsApiV1ChainsChainIDEvmPostRequest, options?: Configuration): Promise<void> {
         return this.api.v1ChainsChainIDEvmPost(param.chainID,  options).toPromise();
     }
@@ -529,8 +706,24 @@ export class ObjectChainsApi {
      * Ethereum JSON-RPC (Websocket transport)
      * @param param the request object
      */
+    public v1ChainsChainIDEvmWsGetWithHttpInfo(param: ChainsApiV1ChainsChainIDEvmWsGetRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.v1ChainsChainIDEvmWsGetWithHttpInfo(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Ethereum JSON-RPC (Websocket transport)
+     * @param param the request object
+     */
     public v1ChainsChainIDEvmWsGet(param: ChainsApiV1ChainsChainIDEvmWsGetRequest, options?: Configuration): Promise<void> {
         return this.api.v1ChainsChainIDEvmWsGet(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Wait until the given request has been processed by the node
+     * @param param the request object
+     */
+    public waitForRequestWithHttpInfo(param: ChainsApiWaitForRequestRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        return this.api.waitForRequestWithHttpInfo(param.chainID, param.requestID, param.timeoutSeconds, param.waitForL1Confirmation,  options).toPromise();
     }
 
     /**
@@ -548,19 +741,22 @@ import { CorecontractsApiRequestFactory, CorecontractsApiResponseProcessor} from
 
 export interface CorecontractsApiAccountsGetAccountBalanceRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountBalance
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountBalance
      */
     agentID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountBalance
      */
@@ -569,19 +765,22 @@ export interface CorecontractsApiAccountsGetAccountBalanceRequest {
 
 export interface CorecontractsApiAccountsGetAccountFoundriesRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountFoundries
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts, Hex for EVM)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountFoundries
      */
     agentID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountFoundries
      */
@@ -590,19 +789,22 @@ export interface CorecontractsApiAccountsGetAccountFoundriesRequest {
 
 export interface CorecontractsApiAccountsGetAccountNFTIDsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNFTIDs
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNFTIDs
      */
     agentID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNFTIDs
      */
@@ -611,19 +813,22 @@ export interface CorecontractsApiAccountsGetAccountNFTIDsRequest {
 
 export interface CorecontractsApiAccountsGetAccountNonceRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNonce
      */
     chainID: string
     /**
-     * AgentID (Bech32 for WasmVM | Hex for EVM)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNonce
      */
     agentID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetAccountNonce
      */
@@ -632,19 +837,23 @@ export interface CorecontractsApiAccountsGetAccountNonceRequest {
 
 export interface CorecontractsApiAccountsGetFoundryOutputRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetFoundryOutput
      */
     chainID: string
     /**
      * Serial Number (uint32)
+     * Minimum: 1
+     * Defaults to: undefined
      * @type number
      * @memberof CorecontractsApiaccountsGetFoundryOutput
      */
     serialNumber: number
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetFoundryOutput
      */
@@ -653,19 +862,22 @@ export interface CorecontractsApiAccountsGetFoundryOutputRequest {
 
 export interface CorecontractsApiAccountsGetNFTDataRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetNFTData
      */
     chainID: string
     /**
      * NFT ID (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetNFTData
      */
     nftID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetNFTData
      */
@@ -674,13 +886,15 @@ export interface CorecontractsApiAccountsGetNFTDataRequest {
 
 export interface CorecontractsApiAccountsGetNativeTokenIDRegistryRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetNativeTokenIDRegistry
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetNativeTokenIDRegistry
      */
@@ -689,82 +903,40 @@ export interface CorecontractsApiAccountsGetNativeTokenIDRegistryRequest {
 
 export interface CorecontractsApiAccountsGetTotalAssetsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetTotalAssets
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiaccountsGetTotalAssets
-     */
-    block?: string
-}
-
-export interface CorecontractsApiBlobsGetBlobInfoRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobInfo
-     */
-    chainID: string
-    /**
-     * BlobHash (Hex)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobInfo
-     */
-    blobHash: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobInfo
-     */
-    block?: string
-}
-
-export interface CorecontractsApiBlobsGetBlobValueRequest {
-    /**
-     * ChainID (Bech32)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
-     */
-    chainID: string
-    /**
-     * BlobHash (Hex)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
-     */
-    blobHash: string
-    /**
-     * FieldKey (String)
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
-     */
-    fieldKey: string
-    /**
-     * Block index or trie root
-     * @type string
-     * @memberof CorecontractsApiblobsGetBlobValue
      */
     block?: string
 }
 
 export interface CorecontractsApiBlocklogGetBlockInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetBlockInfo
      */
     chainID: string
     /**
      * BlockIndex (uint32)
+     * Minimum: 1
+     * Defaults to: undefined
      * @type number
      * @memberof CorecontractsApiblocklogGetBlockInfo
      */
     blockIndex: number
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetBlockInfo
      */
@@ -773,13 +945,15 @@ export interface CorecontractsApiBlocklogGetBlockInfoRequest {
 
 export interface CorecontractsApiBlocklogGetControlAddressesRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetControlAddresses
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetControlAddresses
      */
@@ -788,19 +962,23 @@ export interface CorecontractsApiBlocklogGetControlAddressesRequest {
 
 export interface CorecontractsApiBlocklogGetEventsOfBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfBlock
      */
     chainID: string
     /**
      * BlockIndex (uint32)
+     * Minimum: 1
+     * Defaults to: undefined
      * @type number
      * @memberof CorecontractsApiblocklogGetEventsOfBlock
      */
     blockIndex: number
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfBlock
      */
@@ -809,13 +987,15 @@ export interface CorecontractsApiBlocklogGetEventsOfBlockRequest {
 
 export interface CorecontractsApiBlocklogGetEventsOfLatestBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfLatestBlock
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfLatestBlock
      */
@@ -824,19 +1004,22 @@ export interface CorecontractsApiBlocklogGetEventsOfLatestBlockRequest {
 
 export interface CorecontractsApiBlocklogGetEventsOfRequestRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfRequest
      */
     chainID: string
     /**
      * RequestID (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfRequest
      */
     requestID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetEventsOfRequest
      */
@@ -845,13 +1028,15 @@ export interface CorecontractsApiBlocklogGetEventsOfRequestRequest {
 
 export interface CorecontractsApiBlocklogGetLatestBlockInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetLatestBlockInfo
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetLatestBlockInfo
      */
@@ -860,19 +1045,23 @@ export interface CorecontractsApiBlocklogGetLatestBlockInfoRequest {
 
 export interface CorecontractsApiBlocklogGetRequestIDsForBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIDsForBlock
      */
     chainID: string
     /**
      * BlockIndex (uint32)
+     * Minimum: 1
+     * Defaults to: undefined
      * @type number
      * @memberof CorecontractsApiblocklogGetRequestIDsForBlock
      */
     blockIndex: number
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIDsForBlock
      */
@@ -881,13 +1070,15 @@ export interface CorecontractsApiBlocklogGetRequestIDsForBlockRequest {
 
 export interface CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIDsForLatestBlock
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIDsForLatestBlock
      */
@@ -896,19 +1087,22 @@ export interface CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest {
 
 export interface CorecontractsApiBlocklogGetRequestIsProcessedRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIsProcessed
      */
     chainID: string
     /**
      * RequestID (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIsProcessed
      */
     requestID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestIsProcessed
      */
@@ -917,19 +1111,22 @@ export interface CorecontractsApiBlocklogGetRequestIsProcessedRequest {
 
 export interface CorecontractsApiBlocklogGetRequestReceiptRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceipt
      */
     chainID: string
     /**
      * RequestID (Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceipt
      */
     requestID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceipt
      */
@@ -938,19 +1135,23 @@ export interface CorecontractsApiBlocklogGetRequestReceiptRequest {
 
 export interface CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfBlock
      */
     chainID: string
     /**
      * BlockIndex (uint32)
+     * Minimum: 1
+     * Defaults to: undefined
      * @type number
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfBlock
      */
     blockIndex: number
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfBlock
      */
@@ -959,13 +1160,15 @@ export interface CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest {
 
 export interface CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfLatestBlock
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApiblocklogGetRequestReceiptsOfLatestBlock
      */
@@ -974,25 +1177,30 @@ export interface CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest 
 
 export interface CorecontractsApiErrorsGetErrorMessageFormatRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApierrorsGetErrorMessageFormat
      */
     chainID: string
     /**
      * Contract (Hname as Hex)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApierrorsGetErrorMessageFormat
      */
     contractHname: string
     /**
      * Error Id (uint16)
+     * Minimum: 1
+     * Defaults to: undefined
      * @type number
      * @memberof CorecontractsApierrorsGetErrorMessageFormat
      */
     errorID: number
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApierrorsGetErrorMessageFormat
      */
@@ -1001,13 +1209,15 @@ export interface CorecontractsApiErrorsGetErrorMessageFormatRequest {
 
 export interface CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetAllowedStateControllerAddresses
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetAllowedStateControllerAddresses
      */
@@ -1016,13 +1226,15 @@ export interface CorecontractsApiGovernanceGetAllowedStateControllerAddressesReq
 
 export interface CorecontractsApiGovernanceGetChainInfoRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetChainInfo
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetChainInfo
      */
@@ -1031,13 +1243,15 @@ export interface CorecontractsApiGovernanceGetChainInfoRequest {
 
 export interface CorecontractsApiGovernanceGetChainOwnerRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetChainOwner
      */
     chainID: string
     /**
      * Block index or trie root
+     * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetChainOwner
      */
@@ -1055,8 +1269,24 @@ export class ObjectCorecontractsApi {
      * Get all assets belonging to an account
      * @param param the request object
      */
+    public accountsGetAccountBalanceWithHttpInfo(param: CorecontractsApiAccountsGetAccountBalanceRequest, options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
+        return this.api.accountsGetAccountBalanceWithHttpInfo(param.chainID, param.agentID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all assets belonging to an account
+     * @param param the request object
+     */
     public accountsGetAccountBalance(param: CorecontractsApiAccountsGetAccountBalanceRequest, options?: Configuration): Promise<AssetsResponse> {
         return this.api.accountsGetAccountBalance(param.chainID, param.agentID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all foundries owned by an account
+     * @param param the request object
+     */
+    public accountsGetAccountFoundriesWithHttpInfo(param: CorecontractsApiAccountsGetAccountFoundriesRequest, options?: Configuration): Promise<HttpInfo<AccountFoundriesResponse>> {
+        return this.api.accountsGetAccountFoundriesWithHttpInfo(param.chainID, param.agentID, param.block,  options).toPromise();
     }
 
     /**
@@ -1071,8 +1301,24 @@ export class ObjectCorecontractsApi {
      * Get all NFT ids belonging to an account
      * @param param the request object
      */
+    public accountsGetAccountNFTIDsWithHttpInfo(param: CorecontractsApiAccountsGetAccountNFTIDsRequest, options?: Configuration): Promise<HttpInfo<AccountNFTsResponse>> {
+        return this.api.accountsGetAccountNFTIDsWithHttpInfo(param.chainID, param.agentID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all NFT ids belonging to an account
+     * @param param the request object
+     */
     public accountsGetAccountNFTIDs(param: CorecontractsApiAccountsGetAccountNFTIDsRequest, options?: Configuration): Promise<AccountNFTsResponse> {
         return this.api.accountsGetAccountNFTIDs(param.chainID, param.agentID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the current nonce of an account
+     * @param param the request object
+     */
+    public accountsGetAccountNonceWithHttpInfo(param: CorecontractsApiAccountsGetAccountNonceRequest, options?: Configuration): Promise<HttpInfo<AccountNonceResponse>> {
+        return this.api.accountsGetAccountNonceWithHttpInfo(param.chainID, param.agentID, param.block,  options).toPromise();
     }
 
     /**
@@ -1087,6 +1333,14 @@ export class ObjectCorecontractsApi {
      * Get the foundry output
      * @param param the request object
      */
+    public accountsGetFoundryOutputWithHttpInfo(param: CorecontractsApiAccountsGetFoundryOutputRequest, options?: Configuration): Promise<HttpInfo<FoundryOutputResponse>> {
+        return this.api.accountsGetFoundryOutputWithHttpInfo(param.chainID, param.serialNumber, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the foundry output
+     * @param param the request object
+     */
     public accountsGetFoundryOutput(param: CorecontractsApiAccountsGetFoundryOutputRequest, options?: Configuration): Promise<FoundryOutputResponse> {
         return this.api.accountsGetFoundryOutput(param.chainID, param.serialNumber, param.block,  options).toPromise();
     }
@@ -1095,8 +1349,24 @@ export class ObjectCorecontractsApi {
      * Get the NFT data by an ID
      * @param param the request object
      */
-    public accountsGetNFTData(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<NFTJSON> {
+    public accountsGetNFTDataWithHttpInfo(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.accountsGetNFTDataWithHttpInfo(param.chainID, param.nftID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the NFT data by an ID
+     * @param param the request object
+     */
+    public accountsGetNFTData(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<void> {
         return this.api.accountsGetNFTData(param.chainID, param.nftID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get a list of all registries
+     * @param param the request object
+     */
+    public accountsGetNativeTokenIDRegistryWithHttpInfo(param: CorecontractsApiAccountsGetNativeTokenIDRegistryRequest, options?: Configuration): Promise<HttpInfo<NativeTokenIDRegistryResponse>> {
+        return this.api.accountsGetNativeTokenIDRegistryWithHttpInfo(param.chainID, param.block,  options).toPromise();
     }
 
     /**
@@ -1111,24 +1381,24 @@ export class ObjectCorecontractsApi {
      * Get all stored assets
      * @param param the request object
      */
+    public accountsGetTotalAssetsWithHttpInfo(param: CorecontractsApiAccountsGetTotalAssetsRequest, options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
+        return this.api.accountsGetTotalAssetsWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all stored assets
+     * @param param the request object
+     */
     public accountsGetTotalAssets(param: CorecontractsApiAccountsGetTotalAssetsRequest, options?: Configuration): Promise<AssetsResponse> {
         return this.api.accountsGetTotalAssets(param.chainID, param.block,  options).toPromise();
     }
 
     /**
-     * Get all fields of a blob
+     * Get the block info of a certain block index
      * @param param the request object
      */
-    public blobsGetBlobInfo(param: CorecontractsApiBlobsGetBlobInfoRequest, options?: Configuration): Promise<BlobInfoResponse> {
-        return this.api.blobsGetBlobInfo(param.chainID, param.blobHash, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get the value of the supplied field (key)
-     * @param param the request object
-     */
-    public blobsGetBlobValue(param: CorecontractsApiBlobsGetBlobValueRequest, options?: Configuration): Promise<BlobValueResponse> {
-        return this.api.blobsGetBlobValue(param.chainID, param.blobHash, param.fieldKey, param.block,  options).toPromise();
+    public blocklogGetBlockInfoWithHttpInfo(param: CorecontractsApiBlocklogGetBlockInfoRequest, options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
+        return this.api.blocklogGetBlockInfoWithHttpInfo(param.chainID, param.blockIndex, param.block,  options).toPromise();
     }
 
     /**
@@ -1143,8 +1413,24 @@ export class ObjectCorecontractsApi {
      * Get the control addresses
      * @param param the request object
      */
+    public blocklogGetControlAddressesWithHttpInfo(param: CorecontractsApiBlocklogGetControlAddressesRequest, options?: Configuration): Promise<HttpInfo<ControlAddressesResponse>> {
+        return this.api.blocklogGetControlAddressesWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the control addresses
+     * @param param the request object
+     */
     public blocklogGetControlAddresses(param: CorecontractsApiBlocklogGetControlAddressesRequest, options?: Configuration): Promise<ControlAddressesResponse> {
         return this.api.blocklogGetControlAddresses(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get events of a block
+     * @param param the request object
+     */
+    public blocklogGetEventsOfBlockWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfBlockRequest, options?: Configuration): Promise<HttpInfo<EventsResponse>> {
+        return this.api.blocklogGetEventsOfBlockWithHttpInfo(param.chainID, param.blockIndex, param.block,  options).toPromise();
     }
 
     /**
@@ -1159,8 +1445,24 @@ export class ObjectCorecontractsApi {
      * Get events of the latest block
      * @param param the request object
      */
+    public blocklogGetEventsOfLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest, options?: Configuration): Promise<HttpInfo<EventsResponse>> {
+        return this.api.blocklogGetEventsOfLatestBlockWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get events of the latest block
+     * @param param the request object
+     */
     public blocklogGetEventsOfLatestBlock(param: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest, options?: Configuration): Promise<EventsResponse> {
         return this.api.blocklogGetEventsOfLatestBlock(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get events of a request
+     * @param param the request object
+     */
+    public blocklogGetEventsOfRequestWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfRequestRequest, options?: Configuration): Promise<HttpInfo<EventsResponse>> {
+        return this.api.blocklogGetEventsOfRequestWithHttpInfo(param.chainID, param.requestID, param.block,  options).toPromise();
     }
 
     /**
@@ -1175,8 +1477,24 @@ export class ObjectCorecontractsApi {
      * Get the block info of the latest block
      * @param param the request object
      */
+    public blocklogGetLatestBlockInfoWithHttpInfo(param: CorecontractsApiBlocklogGetLatestBlockInfoRequest, options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
+        return this.api.blocklogGetLatestBlockInfoWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the block info of the latest block
+     * @param param the request object
+     */
     public blocklogGetLatestBlockInfo(param: CorecontractsApiBlocklogGetLatestBlockInfoRequest, options?: Configuration): Promise<BlockInfoResponse> {
         return this.api.blocklogGetLatestBlockInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the request ids for a certain block index
+     * @param param the request object
+     */
+    public blocklogGetRequestIDsForBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIDsForBlockRequest, options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
+        return this.api.blocklogGetRequestIDsForBlockWithHttpInfo(param.chainID, param.blockIndex, param.block,  options).toPromise();
     }
 
     /**
@@ -1191,8 +1509,24 @@ export class ObjectCorecontractsApi {
      * Get the request ids for the latest block
      * @param param the request object
      */
+    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest, options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
+        return this.api.blocklogGetRequestIDsForLatestBlockWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the request ids for the latest block
+     * @param param the request object
+     */
     public blocklogGetRequestIDsForLatestBlock(param: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest, options?: Configuration): Promise<RequestIDsResponse> {
         return this.api.blocklogGetRequestIDsForLatestBlock(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the request processing status
+     * @param param the request object
+     */
+    public blocklogGetRequestIsProcessedWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIsProcessedRequest, options?: Configuration): Promise<HttpInfo<RequestProcessedResponse>> {
+        return this.api.blocklogGetRequestIsProcessedWithHttpInfo(param.chainID, param.requestID, param.block,  options).toPromise();
     }
 
     /**
@@ -1207,8 +1541,24 @@ export class ObjectCorecontractsApi {
      * Get the receipt of a certain request id
      * @param param the request object
      */
+    public blocklogGetRequestReceiptWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        return this.api.blocklogGetRequestReceiptWithHttpInfo(param.chainID, param.requestID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the receipt of a certain request id
+     * @param param the request object
+     */
     public blocklogGetRequestReceipt(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.blocklogGetRequestReceipt(param.chainID, param.requestID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all receipts of a certain block
+     * @param param the request object
+     */
+    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
+        return this.api.blocklogGetRequestReceiptsOfBlockWithHttpInfo(param.chainID, param.blockIndex, param.block,  options).toPromise();
     }
 
     /**
@@ -1223,8 +1573,24 @@ export class ObjectCorecontractsApi {
      * Get all receipts of the latest block
      * @param param the request object
      */
+    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest, options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
+        return this.api.blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get all receipts of the latest block
+     * @param param the request object
+     */
     public blocklogGetRequestReceiptsOfLatestBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest, options?: Configuration): Promise<Array<ReceiptResponse>> {
         return this.api.blocklogGetRequestReceiptsOfLatestBlock(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Get the error message format of a specific error id
+     * @param param the request object
+     */
+    public errorsGetErrorMessageFormatWithHttpInfo(param: CorecontractsApiErrorsGetErrorMessageFormatRequest, options?: Configuration): Promise<HttpInfo<ErrorMessageFormatResponse>> {
+        return this.api.errorsGetErrorMessageFormatWithHttpInfo(param.chainID, param.contractHname, param.errorID, param.block,  options).toPromise();
     }
 
     /**
@@ -1240,17 +1606,44 @@ export class ObjectCorecontractsApi {
      * Get the allowed state controller addresses
      * @param param the request object
      */
+    public governanceGetAllowedStateControllerAddressesWithHttpInfo(param: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest, options?: Configuration): Promise<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
+        return this.api.governanceGetAllowedStateControllerAddressesWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Returns the allowed state controller addresses
+     * Get the allowed state controller addresses
+     * @param param the request object
+     */
     public governanceGetAllowedStateControllerAddresses(param: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest, options?: Configuration): Promise<GovAllowedStateControllerAddressesResponse> {
         return this.api.governanceGetAllowedStateControllerAddresses(param.chainID, param.block,  options).toPromise();
     }
 
     /**
-     * If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+     * Get the chain info
+     * @param param the request object
+     */
+    public governanceGetChainInfoWithHttpInfo(param: CorecontractsApiGovernanceGetChainInfoRequest, options?: Configuration): Promise<HttpInfo<GovChainInfoResponse>> {
+        return this.api.governanceGetChainInfoWithHttpInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
      * @param param the request object
      */
     public governanceGetChainInfo(param: CorecontractsApiGovernanceGetChainInfoRequest, options?: Configuration): Promise<GovChainInfoResponse> {
         return this.api.governanceGetChainInfo(param.chainID, param.block,  options).toPromise();
+    }
+
+    /**
+     * Returns the chain owner
+     * Get the chain owner
+     * @param param the request object
+     */
+    public governanceGetChainOwnerWithHttpInfo(param: CorecontractsApiGovernanceGetChainOwnerRequest, options?: Configuration): Promise<HttpInfo<GovChainOwnerResponse>> {
+        return this.api.governanceGetChainOwnerWithHttpInfo(param.chainID, param.block,  options).toPromise();
     }
 
     /**
@@ -1284,8 +1677,24 @@ export class ObjectDefaultApi {
      * Returns 200 if the node is healthy.
      * @param param the request object
      */
+    public getHealthWithHttpInfo(param: DefaultApiGetHealthRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.getHealthWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Returns 200 if the node is healthy.
+     * @param param the request object
+     */
     public getHealth(param: DefaultApiGetHealthRequest = {}, options?: Configuration): Promise<void> {
         return this.api.getHealth( options).toPromise();
+    }
+
+    /**
+     * The websocket connection service
+     * @param param the request object
+     */
+    public v1WsGetWithHttpInfo(param: DefaultApiV1WsGetRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.v1WsGetWithHttpInfo( options).toPromise();
     }
 
     /**
@@ -1303,7 +1712,8 @@ import { MetricsApiRequestFactory, MetricsApiResponseProcessor} from "../apis/Me
 
 export interface MetricsApiGetChainMessageMetricsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof MetricsApigetChainMessageMetrics
      */
@@ -1312,7 +1722,8 @@ export interface MetricsApiGetChainMessageMetricsRequest {
 
 export interface MetricsApiGetChainPipeMetricsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof MetricsApigetChainPipeMetrics
      */
@@ -1321,7 +1732,8 @@ export interface MetricsApiGetChainPipeMetricsRequest {
 
 export interface MetricsApiGetChainWorkflowMetricsRequest {
     /**
-     * ChainID (Bech32)
+     * ChainID (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof MetricsApigetChainWorkflowMetrics
      */
@@ -1342,8 +1754,24 @@ export class ObjectMetricsApi {
      * Get chain specific message metrics.
      * @param param the request object
      */
+    public getChainMessageMetricsWithHttpInfo(param: MetricsApiGetChainMessageMetricsRequest, options?: Configuration): Promise<HttpInfo<ChainMessageMetrics>> {
+        return this.api.getChainMessageMetricsWithHttpInfo(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Get chain specific message metrics.
+     * @param param the request object
+     */
     public getChainMessageMetrics(param: MetricsApiGetChainMessageMetricsRequest, options?: Configuration): Promise<ChainMessageMetrics> {
         return this.api.getChainMessageMetrics(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Get chain pipe event metrics.
+     * @param param the request object
+     */
+    public getChainPipeMetricsWithHttpInfo(param: MetricsApiGetChainPipeMetricsRequest, options?: Configuration): Promise<HttpInfo<ConsensusPipeMetrics>> {
+        return this.api.getChainPipeMetricsWithHttpInfo(param.chainID,  options).toPromise();
     }
 
     /**
@@ -1358,8 +1786,24 @@ export class ObjectMetricsApi {
      * Get chain workflow metrics.
      * @param param the request object
      */
+    public getChainWorkflowMetricsWithHttpInfo(param: MetricsApiGetChainWorkflowMetricsRequest, options?: Configuration): Promise<HttpInfo<ConsensusWorkflowMetrics>> {
+        return this.api.getChainWorkflowMetricsWithHttpInfo(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Get chain workflow metrics.
+     * @param param the request object
+     */
     public getChainWorkflowMetrics(param: MetricsApiGetChainWorkflowMetricsRequest, options?: Configuration): Promise<ConsensusWorkflowMetrics> {
         return this.api.getChainWorkflowMetrics(param.chainID,  options).toPromise();
+    }
+
+    /**
+     * Get accumulated message metrics.
+     * @param param the request object
+     */
+    public getNodeMessageMetricsWithHttpInfo(param: MetricsApiGetNodeMessageMetricsRequest = {}, options?: Configuration): Promise<HttpInfo<NodeMessageMetrics>> {
+        return this.api.getNodeMessageMetricsWithHttpInfo( options).toPromise();
     }
 
     /**
@@ -1378,6 +1822,7 @@ import { NodeApiRequestFactory, NodeApiResponseProcessor} from "../apis/NodeApi"
 export interface NodeApiDistrustPeerRequest {
     /**
      * Name or PubKey (hex) of the trusted peer
+     * Defaults to: undefined
      * @type string
      * @memberof NodeApidistrustPeer
      */
@@ -1401,7 +1846,8 @@ export interface NodeApiGetConfigurationRequest {
 
 export interface NodeApiGetDKSInfoRequest {
     /**
-     * SharedAddress (Bech32)
+     * SharedAddress (Hex Address)
+     * Defaults to: undefined
      * @type string
      * @memberof NodeApigetDKSInfo
      */
@@ -1446,8 +1892,24 @@ export class ObjectNodeApi {
      * Distrust a peering node
      * @param param the request object
      */
+    public distrustPeerWithHttpInfo(param: NodeApiDistrustPeerRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.distrustPeerWithHttpInfo(param.peer,  options).toPromise();
+    }
+
+    /**
+     * Distrust a peering node
+     * @param param the request object
+     */
     public distrustPeer(param: NodeApiDistrustPeerRequest, options?: Configuration): Promise<void> {
         return this.api.distrustPeer(param.peer,  options).toPromise();
+    }
+
+    /**
+     * Generate a new distributed key
+     * @param param the request object
+     */
+    public generateDKSWithHttpInfo(param: NodeApiGenerateDKSRequest, options?: Configuration): Promise<HttpInfo<DKSharesInfo>> {
+        return this.api.generateDKSWithHttpInfo(param.dKSharesPostRequest,  options).toPromise();
     }
 
     /**
@@ -1462,8 +1924,24 @@ export class ObjectNodeApi {
      * Get basic information about all configured peers
      * @param param the request object
      */
+    public getAllPeersWithHttpInfo(param: NodeApiGetAllPeersRequest = {}, options?: Configuration): Promise<HttpInfo<Array<PeeringNodeStatusResponse>>> {
+        return this.api.getAllPeersWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get basic information about all configured peers
+     * @param param the request object
+     */
     public getAllPeers(param: NodeApiGetAllPeersRequest = {}, options?: Configuration): Promise<Array<PeeringNodeStatusResponse>> {
         return this.api.getAllPeers( options).toPromise();
+    }
+
+    /**
+     * Return the Wasp configuration
+     * @param param the request object
+     */
+    public getConfigurationWithHttpInfo(param: NodeApiGetConfigurationRequest = {}, options?: Configuration): Promise<HttpInfo<{ [key: string]: string; }>> {
+        return this.api.getConfigurationWithHttpInfo( options).toPromise();
     }
 
     /**
@@ -1478,8 +1956,24 @@ export class ObjectNodeApi {
      * Get information about the shared address DKS configuration
      * @param param the request object
      */
+    public getDKSInfoWithHttpInfo(param: NodeApiGetDKSInfoRequest, options?: Configuration): Promise<HttpInfo<DKSharesInfo>> {
+        return this.api.getDKSInfoWithHttpInfo(param.sharedAddress,  options).toPromise();
+    }
+
+    /**
+     * Get information about the shared address DKS configuration
+     * @param param the request object
+     */
     public getDKSInfo(param: NodeApiGetDKSInfoRequest, options?: Configuration): Promise<DKSharesInfo> {
         return this.api.getDKSInfo(param.sharedAddress,  options).toPromise();
+    }
+
+    /**
+     * Returns private information about this node.
+     * @param param the request object
+     */
+    public getInfoWithHttpInfo(param: NodeApiGetInfoRequest = {}, options?: Configuration): Promise<HttpInfo<InfoResponse>> {
+        return this.api.getInfoWithHttpInfo( options).toPromise();
     }
 
     /**
@@ -1494,8 +1988,24 @@ export class ObjectNodeApi {
      * Get basic peer info of the current node
      * @param param the request object
      */
+    public getPeeringIdentityWithHttpInfo(param: NodeApiGetPeeringIdentityRequest = {}, options?: Configuration): Promise<HttpInfo<PeeringNodeIdentityResponse>> {
+        return this.api.getPeeringIdentityWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Get basic peer info of the current node
+     * @param param the request object
+     */
     public getPeeringIdentity(param: NodeApiGetPeeringIdentityRequest = {}, options?: Configuration): Promise<PeeringNodeIdentityResponse> {
         return this.api.getPeeringIdentity( options).toPromise();
+    }
+
+    /**
+     * Get trusted peers
+     * @param param the request object
+     */
+    public getTrustedPeersWithHttpInfo(param: NodeApiGetTrustedPeersRequest = {}, options?: Configuration): Promise<HttpInfo<Array<PeeringNodeIdentityResponse>>> {
+        return this.api.getTrustedPeersWithHttpInfo( options).toPromise();
     }
 
     /**
@@ -1510,8 +2020,24 @@ export class ObjectNodeApi {
      * Returns the node version.
      * @param param the request object
      */
+    public getVersionWithHttpInfo(param: NodeApiGetVersionRequest = {}, options?: Configuration): Promise<HttpInfo<VersionResponse>> {
+        return this.api.getVersionWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Returns the node version.
+     * @param param the request object
+     */
     public getVersion(param: NodeApiGetVersionRequest = {}, options?: Configuration): Promise<VersionResponse> {
         return this.api.getVersion( options).toPromise();
+    }
+
+    /**
+     * Gets the node owner
+     * @param param the request object
+     */
+    public ownerCertificateWithHttpInfo(param: NodeApiOwnerCertificateRequest = {}, options?: Configuration): Promise<HttpInfo<NodeOwnerCertificateResponse>> {
+        return this.api.ownerCertificateWithHttpInfo( options).toPromise();
     }
 
     /**
@@ -1526,8 +2052,24 @@ export class ObjectNodeApi {
      * Shut down the node
      * @param param the request object
      */
+    public shutdownNodeWithHttpInfo(param: NodeApiShutdownNodeRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.shutdownNodeWithHttpInfo( options).toPromise();
+    }
+
+    /**
+     * Shut down the node
+     * @param param the request object
+     */
     public shutdownNode(param: NodeApiShutdownNodeRequest = {}, options?: Configuration): Promise<void> {
         return this.api.shutdownNode( options).toPromise();
+    }
+
+    /**
+     * Trust a peering node
+     * @param param the request object
+     */
+    public trustPeerWithHttpInfo(param: NodeApiTrustPeerRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.trustPeerWithHttpInfo(param.peeringTrustRequest,  options).toPromise();
     }
 
     /**
@@ -1563,6 +2105,14 @@ export class ObjectRequestsApi {
      * Post an off-ledger request
      * @param param the request object
      */
+    public offLedgerWithHttpInfo(param: RequestsApiOffLedgerRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.offLedgerWithHttpInfo(param.offLedgerRequest,  options).toPromise();
+    }
+
+    /**
+     * Post an off-ledger request
+     * @param param the request object
+     */
     public offLedger(param: RequestsApiOffLedgerRequest, options?: Configuration): Promise<void> {
         return this.api.offLedger(param.offLedgerRequest,  options).toPromise();
     }
@@ -1584,6 +2134,7 @@ export interface UsersApiAddUserRequest {
 export interface UsersApiChangeUserPasswordRequest {
     /**
      * The username
+     * Defaults to: undefined
      * @type string
      * @memberof UsersApichangeUserPassword
      */
@@ -1599,6 +2150,7 @@ export interface UsersApiChangeUserPasswordRequest {
 export interface UsersApiChangeUserPermissionsRequest {
     /**
      * The username
+     * Defaults to: undefined
      * @type string
      * @memberof UsersApichangeUserPermissions
      */
@@ -1614,6 +2166,7 @@ export interface UsersApiChangeUserPermissionsRequest {
 export interface UsersApiDeleteUserRequest {
     /**
      * The username
+     * Defaults to: undefined
      * @type string
      * @memberof UsersApideleteUser
      */
@@ -1623,6 +2176,7 @@ export interface UsersApiDeleteUserRequest {
 export interface UsersApiGetUserRequest {
     /**
      * The username
+     * Defaults to: undefined
      * @type string
      * @memberof UsersApigetUser
      */
@@ -1643,8 +2197,24 @@ export class ObjectUsersApi {
      * Add a user
      * @param param the request object
      */
+    public addUserWithHttpInfo(param: UsersApiAddUserRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.addUserWithHttpInfo(param.addUserRequest,  options).toPromise();
+    }
+
+    /**
+     * Add a user
+     * @param param the request object
+     */
     public addUser(param: UsersApiAddUserRequest, options?: Configuration): Promise<void> {
         return this.api.addUser(param.addUserRequest,  options).toPromise();
+    }
+
+    /**
+     * Change user password
+     * @param param the request object
+     */
+    public changeUserPasswordWithHttpInfo(param: UsersApiChangeUserPasswordRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.changeUserPasswordWithHttpInfo(param.username, param.updateUserPasswordRequest,  options).toPromise();
     }
 
     /**
@@ -1659,8 +2229,24 @@ export class ObjectUsersApi {
      * Change user permissions
      * @param param the request object
      */
+    public changeUserPermissionsWithHttpInfo(param: UsersApiChangeUserPermissionsRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.changeUserPermissionsWithHttpInfo(param.username, param.updateUserPermissionsRequest,  options).toPromise();
+    }
+
+    /**
+     * Change user permissions
+     * @param param the request object
+     */
     public changeUserPermissions(param: UsersApiChangeUserPermissionsRequest, options?: Configuration): Promise<void> {
         return this.api.changeUserPermissions(param.username, param.updateUserPermissionsRequest,  options).toPromise();
+    }
+
+    /**
+     * Deletes a user
+     * @param param the request object
+     */
+    public deleteUserWithHttpInfo(param: UsersApiDeleteUserRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.deleteUserWithHttpInfo(param.username,  options).toPromise();
     }
 
     /**
@@ -1675,8 +2261,24 @@ export class ObjectUsersApi {
      * Get a user
      * @param param the request object
      */
+    public getUserWithHttpInfo(param: UsersApiGetUserRequest, options?: Configuration): Promise<HttpInfo<User>> {
+        return this.api.getUserWithHttpInfo(param.username,  options).toPromise();
+    }
+
+    /**
+     * Get a user
+     * @param param the request object
+     */
     public getUser(param: UsersApiGetUserRequest, options?: Configuration): Promise<User> {
         return this.api.getUser(param.username,  options).toPromise();
+    }
+
+    /**
+     * Get a list of all users
+     * @param param the request object
+     */
+    public getUsersWithHttpInfo(param: UsersApiGetUsersRequest = {}, options?: Configuration): Promise<HttpInfo<Array<User>>> {
+        return this.api.getUsersWithHttpInfo( options).toPromise();
     }
 
     /**

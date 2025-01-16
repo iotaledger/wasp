@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ChainInfoResponse type satisfies the MappedNullable interface at compile time
@@ -19,9 +21,9 @@ var _ MappedNullable = &ChainInfoResponse{}
 
 // ChainInfoResponse struct for ChainInfoResponse
 type ChainInfoResponse struct {
-	// ChainID (Bech32-encoded)
+	// ChainID (Hex Address)
 	ChainID string `json:"chainID"`
-	// The chain owner address (Bech32-encoded)
+	// The chain owner address (Hex Address)
 	ChainOwnerId string `json:"chainOwnerId"`
 	// The EVM chain ID
 	EvmChainId uint32 `json:"evmChainId"`
@@ -33,6 +35,8 @@ type ChainInfoResponse struct {
 	// The fully qualified public url leading to the chains metadata
 	PublicURL string `json:"publicURL"`
 }
+
+type _ChainInfoResponse ChainInfoResponse
 
 // NewChainInfoResponse instantiates a new ChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -270,6 +274,50 @@ func (o ChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["metadata"] = o.Metadata
 	toSerialize["publicURL"] = o.PublicURL
 	return toSerialize, nil
+}
+
+func (o *ChainInfoResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"chainID",
+		"chainOwnerId",
+		"evmChainId",
+		"gasFeePolicy",
+		"gasLimits",
+		"isActive",
+		"metadata",
+		"publicURL",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varChainInfoResponse := _ChainInfoResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varChainInfoResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ChainInfoResponse(varChainInfoResponse)
+
+	return err
 }
 
 type NullableChainInfoResponse struct {

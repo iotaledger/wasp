@@ -7,6 +7,7 @@ import (
 	"io"
 	"math"
 
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -18,9 +19,13 @@ type BitVector interface {
 	Write(w io.Writer) error
 }
 
+func init() {
+	bcs.RegisterEnumType1[BitVector, *fixBitVector]()
+}
+
 type fixBitVector struct {
-	size uint16
-	data []byte
+	size uint16 `bcs:"export"`
+	data []byte `bcs:"export"`
 }
 
 func NewFixedSizeBitVector(size uint16) BitVector {

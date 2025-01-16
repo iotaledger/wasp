@@ -7,7 +7,6 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -26,9 +25,9 @@ func (c *Controller) Name() string {
 	return "corecontracts"
 }
 
-func (c *Controller) handleViewCallError(err error, chainID isc.ChainID) error {
+func (c *Controller) handleViewCallError(err error) error {
 	if errors.Is(err, interfaces.ErrChainNotFound) {
-		return apierrors.ChainNotFoundError(chainID.String())
+		return apierrors.ChainNotFoundError()
 	}
 	return apierrors.ContractExecutionError(err)
 }
@@ -75,7 +74,8 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddParamPath("", params.ParamNFTID, params.DescriptionNFTID).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The NFT data", mocker.Get(isc.NFTJSON{}), nil).
+		// FIXME
+		// AddResponse(http.StatusOK, "The NFT data", mocker.Get(isc.NFTJSON{}), nil).
 		SetOperationId("accountsGetNFTData").
 		SetSummary("Get the NFT data by an ID")
 
@@ -108,27 +108,6 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddResponse(http.StatusOK, "All stored assets", mocker.Get(models.AssetsResponse{}), nil).
 		SetOperationId("accountsGetTotalAssets").
 		SetSummary("Get all stored assets")
-}
-
-func (c *Controller) addBlobContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	api.GET("chains/:chainID/core/blobs/:blobHash/data/:fieldKey", c.getBlobValue).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamPath("", params.ParamBlobHash, params.DescriptionBlobHash).
-		AddParamPath("", params.ParamFieldKey, params.DescriptionFieldKey).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The value of the supplied field (key)", mocker.Get(BlobValueResponse{}), nil).
-		SetOperationId("blobsGetBlobValue").
-		SetSummary("Get the value of the supplied field (key)")
-
-	api.GET("chains/:chainID/core/blobs/:blobHash", c.getBlobInfo).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
-		AddParamPath("", params.ParamBlobHash, params.DescriptionBlobHash).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All blob fields and their values", mocker.Get(BlobInfoResponse{}), nil).
-		SetOperationId("blobsGetBlobInfo").
-		SetSummary("Get all fields of a blob")
 }
 
 func (c *Controller) addErrorContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
@@ -287,7 +266,6 @@ func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker 
 
 func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	c.addAccountContractRoutes(publicAPI, mocker)
-	c.addBlobContractRoutes(publicAPI, mocker)
 	c.addBlockLogContractRoutes(publicAPI, mocker)
 	c.addErrorContractRoutes(publicAPI, mocker)
 	c.addGovernanceContractRoutes(publicAPI, mocker)

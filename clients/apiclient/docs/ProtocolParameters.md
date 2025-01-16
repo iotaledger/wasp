@@ -4,7 +4,6 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Bech32Hrp** | **string** | The human readable network prefix | 
 **BelowMaxDepth** | **uint32** | The networks max depth | 
 **MinPowScore** | **uint32** | The minimal PoW score | 
 **NetworkName** | **string** | The network name | 
@@ -16,7 +15,7 @@ Name | Type | Description | Notes
 
 ### NewProtocolParameters
 
-`func NewProtocolParameters(bech32Hrp string, belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32, ) *ProtocolParameters`
+`func NewProtocolParameters(belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32, ) *ProtocolParameters`
 
 NewProtocolParameters instantiates a new ProtocolParameters object
 This constructor will assign default values to properties that have it defined,
@@ -30,26 +29,6 @@ will change when the set of required properties is changed
 NewProtocolParametersWithDefaults instantiates a new ProtocolParameters object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
-
-### GetBech32Hrp
-
-`func (o *ProtocolParameters) GetBech32Hrp() string`
-
-GetBech32Hrp returns the Bech32Hrp field if non-nil, zero value otherwise.
-
-### GetBech32HrpOk
-
-`func (o *ProtocolParameters) GetBech32HrpOk() (*string, bool)`
-
-GetBech32HrpOk returns a tuple with the Bech32Hrp field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetBech32Hrp
-
-`func (o *ProtocolParameters) SetBech32Hrp(v string)`
-
-SetBech32Hrp sets Bech32Hrp field to given value.
-
 
 ### GetBelowMaxDepth
 

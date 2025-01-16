@@ -1,102 +1,53 @@
 package iscmoveclient_test
 
 import (
-	"context"
+	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/contracts"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
-func buildAndDeployISCContracts(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) sui.PackageID {
-	suiSigner := cryptolib.SignerToSuiSigner(signer)
-	iscBytecode := contracts.ISC()
-
-	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
-		Sender:          suiSigner.Address(),
-		CompiledModules: iscBytecode.Modules,
-		Dependencies:    iscBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
-	})
-	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		suiSigner,
-		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
-	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
-
-	return *packageID
+func TestMain(m *testing.M) {
+	l1starter.TestMain(m)
 }
 
-func buildDeployMintTestcoin(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) (*sui.ObjectRef, *sui.ObjectInfo) {
-	testcoinBytecode := contracts.Testcoin()
-	suiSigner := cryptolib.SignerToSuiSigner(signer)
-
-	txnBytes, err := client.Publish(context.Background(), suiclient.PublishRequest{
-		Sender:          signer.Address().AsSuiAddress(),
-		CompiledModules: testcoinBytecode.Modules,
-		Dependencies:    testcoinBytecode.Dependencies,
-		GasBudget:       suijsonrpc.NewBigInt(suiclient.DefaultGasBudget * 10),
-	})
-	require.NoError(t, err)
-	txnResponse, err := client.SignAndExecuteTransaction(
-		context.Background(),
-		suiSigner,
-		txnBytes.TxBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
+func buildDeployMintTestcoin(
+	t *testing.T,
+	client *iscmoveclient.Client,
+	signer cryptolib.Signer,
+) (
+	*iotago.ObjectRef,
+	*iotago.ResourceType,
+) {
+	tokenPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
+		t,
+		client.Client,
+		cryptolib.SignerToIotaSigner(signer),
+		contracts.Testcoin(),
 	)
-	require.NoError(t, err)
-	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	packageID, err := txnResponse.GetPublishedPackageID()
-	require.NoError(t, err)
-	getObjectRes, err := client.GetObject(context.Background(), suiclient.GetObjectRequest{
-		ObjectID: packageID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowType: true},
-	})
-	require.NoError(t, err)
-	packageRef := getObjectRes.Data.Ref()
-
-	treasuryCapRef, err := txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
-	require.NoError(t, err)
-
 	mintAmount := uint64(1000000)
-	txnRes, err := client.MintToken(
-		context.Background(),
-		suiSigner,
-		packageID,
-		"testcoin",
-		treasuryCapRef.ObjectID,
+	coinRef := iotaclienttest.MintCoins(
+		t,
+		client.Client,
+		cryptolib.SignerToIotaSigner(signer),
+		tokenPackageID,
+		contracts.TestcoinModuleName,
+		contracts.TestcoinTypeTag,
+		treasuryCap.ObjectID,
 		mintAmount,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{
-			ShowEffects:       true,
-			ShowObjectChanges: true,
-		},
 	)
-	require.NoError(t, err)
-	require.True(t, txnRes.Effects.Data.IsSuccess())
-
-	coinRef, err := txnRes.GetCreatedObjectInfo("testcoin", "TESTCOIN")
-	require.NoError(t, err)
-	coinInfo := sui.NewObjectInfo(coinRef, &sui.ResourceType{Address: packageID, Module: "testcoin", ObjectName: "TESTCOIN"})
-
-	return &packageRef, coinInfo
+	coinType := lo.Must(iotago.NewResourceType(fmt.Sprintf(
+		"%s::%s::%s",
+		tokenPackageID.String(),
+		contracts.TestcoinModuleName,
+		contracts.TestcoinTypeTag,
+	)))
+	return coinRef, coinType
 }

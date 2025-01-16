@@ -3,18 +3,21 @@ package chainmanager
 import (
 	"testing"
 
-	"github.com/iotaledger/iota.go/v3/tpkg"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner/iotasignertest"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgBlockProducedSerialization(t *testing.T) {
+	randomSignedTransaction := iotasignertest.RandomSignedTransaction()
 	msg := &msgBlockProduced{
 		gpa.BasicMessage{},
-		tpkg.RandTransaction(),
+		&randomSignedTransaction,
 		state.RandomBlock(),
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgBlockProduced))
+	bcs.TestCodec(t, msg, &msgBlockProduced{
+		block: state.NewBlock(),
+	})
 }

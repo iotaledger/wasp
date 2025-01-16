@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the RequestJSON type satisfies the MappedNullable interface at compile time
@@ -20,32 +22,32 @@ var _ MappedNullable = &RequestJSON{}
 // RequestJSON struct for RequestJSON
 type RequestJSON struct {
 	Allowance AssetsJSON `json:"allowance"`
+	Assets AssetsJSON `json:"assets"`
 	CallTarget CallTargetJSON `json:"callTarget"`
-	FungibleTokens AssetsJSON `json:"fungibleTokens"`
 	// The gas budget (uint64 as string)
 	GasBudget string `json:"gasBudget"`
 	IsEVM bool `json:"isEVM"`
 	IsOffLedger bool `json:"isOffLedger"`
-	Nft NFTJSON `json:"nft"`
-	Params JSONDict `json:"params"`
+	Params [][]int32 `json:"params"`
 	RequestId string `json:"requestId"`
 	SenderAccount string `json:"senderAccount"`
 	TargetAddress string `json:"targetAddress"`
 }
 
+type _RequestJSON RequestJSON
+
 // NewRequestJSON instantiates a new RequestJSON object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRequestJSON(allowance AssetsJSON, callTarget CallTargetJSON, fungibleTokens AssetsJSON, gasBudget string, isEVM bool, isOffLedger bool, nft NFTJSON, params JSONDict, requestId string, senderAccount string, targetAddress string) *RequestJSON {
+func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params [][]int32, requestId string, senderAccount string, targetAddress string) *RequestJSON {
 	this := RequestJSON{}
 	this.Allowance = allowance
+	this.Assets = assets
 	this.CallTarget = callTarget
-	this.FungibleTokens = fungibleTokens
 	this.GasBudget = gasBudget
 	this.IsEVM = isEVM
 	this.IsOffLedger = isOffLedger
-	this.Nft = nft
 	this.Params = params
 	this.RequestId = requestId
 	this.SenderAccount = senderAccount
@@ -85,6 +87,30 @@ func (o *RequestJSON) SetAllowance(v AssetsJSON) {
 	o.Allowance = v
 }
 
+// GetAssets returns the Assets field value
+func (o *RequestJSON) GetAssets() AssetsJSON {
+	if o == nil {
+		var ret AssetsJSON
+		return ret
+	}
+
+	return o.Assets
+}
+
+// GetAssetsOk returns a tuple with the Assets field value
+// and a boolean to check if the value has been set.
+func (o *RequestJSON) GetAssetsOk() (*AssetsJSON, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.Assets, true
+}
+
+// SetAssets sets field value
+func (o *RequestJSON) SetAssets(v AssetsJSON) {
+	o.Assets = v
+}
+
 // GetCallTarget returns the CallTarget field value
 func (o *RequestJSON) GetCallTarget() CallTargetJSON {
 	if o == nil {
@@ -107,30 +133,6 @@ func (o *RequestJSON) GetCallTargetOk() (*CallTargetJSON, bool) {
 // SetCallTarget sets field value
 func (o *RequestJSON) SetCallTarget(v CallTargetJSON) {
 	o.CallTarget = v
-}
-
-// GetFungibleTokens returns the FungibleTokens field value
-func (o *RequestJSON) GetFungibleTokens() AssetsJSON {
-	if o == nil {
-		var ret AssetsJSON
-		return ret
-	}
-
-	return o.FungibleTokens
-}
-
-// GetFungibleTokensOk returns a tuple with the FungibleTokens field value
-// and a boolean to check if the value has been set.
-func (o *RequestJSON) GetFungibleTokensOk() (*AssetsJSON, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.FungibleTokens, true
-}
-
-// SetFungibleTokens sets field value
-func (o *RequestJSON) SetFungibleTokens(v AssetsJSON) {
-	o.FungibleTokens = v
 }
 
 // GetGasBudget returns the GasBudget field value
@@ -205,34 +207,10 @@ func (o *RequestJSON) SetIsOffLedger(v bool) {
 	o.IsOffLedger = v
 }
 
-// GetNft returns the Nft field value
-func (o *RequestJSON) GetNft() NFTJSON {
-	if o == nil {
-		var ret NFTJSON
-		return ret
-	}
-
-	return o.Nft
-}
-
-// GetNftOk returns a tuple with the Nft field value
-// and a boolean to check if the value has been set.
-func (o *RequestJSON) GetNftOk() (*NFTJSON, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Nft, true
-}
-
-// SetNft sets field value
-func (o *RequestJSON) SetNft(v NFTJSON) {
-	o.Nft = v
-}
-
 // GetParams returns the Params field value
-func (o *RequestJSON) GetParams() JSONDict {
+func (o *RequestJSON) GetParams() [][]int32 {
 	if o == nil {
-		var ret JSONDict
+		var ret [][]int32
 		return ret
 	}
 
@@ -241,15 +219,15 @@ func (o *RequestJSON) GetParams() JSONDict {
 
 // GetParamsOk returns a tuple with the Params field value
 // and a boolean to check if the value has been set.
-func (o *RequestJSON) GetParamsOk() (*JSONDict, bool) {
+func (o *RequestJSON) GetParamsOk() ([][]int32, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Params, true
+	return o.Params, true
 }
 
 // SetParams sets field value
-func (o *RequestJSON) SetParams(v JSONDict) {
+func (o *RequestJSON) SetParams(v [][]int32) {
 	o.Params = v
 }
 
@@ -336,17 +314,62 @@ func (o RequestJSON) MarshalJSON() ([]byte, error) {
 func (o RequestJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["allowance"] = o.Allowance
+	toSerialize["assets"] = o.Assets
 	toSerialize["callTarget"] = o.CallTarget
-	toSerialize["fungibleTokens"] = o.FungibleTokens
 	toSerialize["gasBudget"] = o.GasBudget
 	toSerialize["isEVM"] = o.IsEVM
 	toSerialize["isOffLedger"] = o.IsOffLedger
-	toSerialize["nft"] = o.Nft
 	toSerialize["params"] = o.Params
 	toSerialize["requestId"] = o.RequestId
 	toSerialize["senderAccount"] = o.SenderAccount
 	toSerialize["targetAddress"] = o.TargetAddress
 	return toSerialize, nil
+}
+
+func (o *RequestJSON) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"allowance",
+		"assets",
+		"callTarget",
+		"gasBudget",
+		"isEVM",
+		"isOffLedger",
+		"params",
+		"requestId",
+		"senderAccount",
+		"targetAddress",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varRequestJSON := _RequestJSON{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varRequestJSON)
+
+	if err != nil {
+		return err
+	}
+
+	*o = RequestJSON(varRequestJSON)
+
+	return err
 }
 
 type NullableRequestJSON struct {

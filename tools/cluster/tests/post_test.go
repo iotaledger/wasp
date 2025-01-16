@@ -2,45 +2,41 @@ package tests
 
 import (
 	"context"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/testutil/utxodb"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
-	_, err := e.Chain.DeployContract(inccounter.Contract.Name, inccounter.Contract.ProgramHash.String(), inccounter.InitParams(42))
+	e.checkCoreContracts()
+
+	myWallet, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)
 
-	e.checkCoreContracts()
+	myClient := e.Chain.Client(myWallet)
+
+	var numRepeats int64 = 42
+	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 * isc.Million),
+		Allowance: isc.NewAssets(9 * isc.Million),
+	})
+	require.NoError(e.t, err)
+
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+	require.NoError(e.t, err)
+
 	for i := range e.Chain.CommitteeNodes {
-		blockIndex, err2 := e.Chain.BlockIndex(i)
-		require.NoError(e.t, err2)
-		require.Greater(e.t, blockIndex, uint32(2))
-
-		contractRegistry, err2 := e.Chain.ContractRegistry(i)
-		require.NoError(e.t, err2)
-
-		cr, ok := lo.Find(contractRegistry, func(item apiclient.ContractInfoResponse) bool {
-			return item.HName == inccounter.Contract.Hname().String()
-		})
-		require.True(e.t, ok)
-		require.NotNil(e.t, cr)
-
-		require.EqualValues(e.t, inccounter.Contract.ProgramHash.Hex(), cr.ProgramHash)
-		require.EqualValues(e.t, cr.Name, inccounter.Contract.Name)
-
 		counterValue, err2 := e.Chain.GetCounterValue(i)
 		require.NoError(e.t, err2)
 		require.EqualValues(e.t, 42, counterValue)
@@ -50,19 +46,13 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 		context.Background(),
 		e.Chain.Cluster.WaspClient(),
 		e.Chain.ChainID.String(),
-		apiclient.ContractCallViewRequest{
-			ContractHName: root.Contract.Hname().String(),
-			FunctionHName: root.ViewFindContract.Hname().String(),
-			Arguments: apiextensions.DictToAPIJsonDict(dict.Dict{
-				root.ParamHname: inccounter.Contract.Hname().Bytes(),
-			}),
-		})
+		apiextensions.CallViewReq(root.ViewFindContract.Message(inccounter.Contract.Hname())),
+	)
 	require.NoError(e.t, err)
 
-	recb := result.Get(root.ParamContractRecData)
-
-	_, err = root.ContractRecordFromBytes(recb)
+	found, _, err := root.ViewFindContract.DecodeOutput(result)
 	require.NoError(e.t, err)
+	require.True(e.t, found)
 
 	e.expectCounter(42)
 	return isc.NewContractAgentID(e.Chain.ChainID, inccounter.Contract.Hname())
@@ -84,7 +74,7 @@ func testPost1Request(t *testing.T, e *ChainEnv) {
 
 	myClient := e.Chain.Client(myWallet)
 
-	tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
+	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
@@ -104,9 +94,9 @@ func testPost3Recursive(t *testing.T, e *ChainEnv) {
 	myClient := e.Chain.Client(myWallet)
 
 	var numRepeats int64 = 3
-	tx, err := myClient.PostRequest(inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssetsBaseTokensU64(10 * isc.Million),
-		Allowance: isc.NewAssetsBaseTokensU64(9 * isc.Million),
+	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncAndRepeatMany.Message(nil, &numRepeats), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 * isc.Million),
+		Allowance: isc.NewAssets(9 * isc.Million),
 	})
 	require.NoError(t, err)
 
@@ -123,15 +113,15 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := isc.NewAgentID(myAddress)
+	myAgentID := isc.NewAddressAgentID(myAddress)
 	myClient := e.Chain.Client(myWallet)
 
-	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, 0)
-	onChainBalance := uint64(0)
+	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, 0)
+	onChainBalance := coin.Value(0)
 	for i := 0; i < 5; i++ {
-		baseTokesSent := 1 * isc.Million
-		tx, err := myClient.PostRequest(inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
-			Transfer: isc.NewAssets(baseTokesSent, nil),
+		baseTokesSent := coin.Value(1 * isc.Million)
+		tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+			Transfer: isc.NewAssets(baseTokesSent),
 		})
 		require.NoError(t, err)
 
@@ -141,11 +131,11 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
 		require.NoError(t, err)
 
-		onChainBalance += baseTokesSent - gasFeeCharged
+		onChainBalance += baseTokesSent - coin.Value(gasFeeCharged)
 	}
 
 	e.expectCounter(42 + 5)
-	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, onChainBalance)
 }
 
 // executed in cluster_test.go
@@ -155,16 +145,16 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 
 	myWallet, myAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	myAgentID := isc.NewAgentID(myAddress)
+	myAgentID := isc.NewAddressAgentID(myAddress)
 
 	myClient := e.Chain.Client(myWallet)
 
-	tx := [5]*iotago.Transaction{}
-	onChainBalance := uint64(0)
-	baseTokesSent := 1 * isc.Million
+	tx := [5]*iotajsonrpc.IotaTransactionBlockResponse{}
+	onChainBalance := coin.Value(0)
+	baseTokesSent := coin.Value(1 * isc.Million)
 	for i := 0; i < 5; i++ {
-		tx[i], err = myClient.PostRequest(inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
-			Transfer: isc.NewAssets(baseTokesSent, nil),
+		tx[i], err = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+			Transfer: isc.NewAssets(baseTokesSent),
 		})
 		require.NoError(t, err)
 	}
@@ -176,14 +166,14 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
 		require.NoError(t, err)
 
-		onChainBalance += baseTokesSent - gasFeeCharged
+		onChainBalance += baseTokesSent - coin.Value(gasFeeCharged)
 	}
 
 	e.expectCounter(42 + 5)
-	e.checkBalanceOnChain(myAgentID, isc.BaseTokenID, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, onChainBalance)
 
 	if !e.Clu.AssertAddressBalances(myAddress,
-		isc.NewAssetsBaseTokensU64(utxodb.FundsFromFaucetAmount-5*baseTokesSent)) {
+		isc.NewAssets(iotaclient.FundsFromFaucetAmount-5*baseTokesSent)) {
 		t.Fatal()
 	}
 }

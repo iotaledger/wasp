@@ -16,12 +16,16 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
 type mustChainStore struct {
@@ -110,9 +114,11 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 	})
 }
 
+var initArgs = origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
+
 func initializedStore(db kvstore.KVStore) state.Store {
 	st := state.NewStoreWithUniqueWriteMutex(db)
-	origin.InitChain(0, st, nil, 0)
+	origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
 	return st
 }
 
@@ -141,18 +147,18 @@ func TestOriginBlock(t *testing.T) {
 
 func TestOriginBlockDeterminism(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
-		deposit := rapid.Uint64().Draw(t, "deposit")
+		deposit := coin.Value(rapid.Uint64().Draw(t, "deposit"))
 		db := mapdb.NewMapDB()
 		st := state.NewStoreWithUniqueWriteMutex(db)
 		require.True(t, st.IsEmpty())
-		blockA := origin.InitChain(0, st, nil, deposit)
-		blockB := origin.InitChain(0, st, nil, deposit)
+		blockA, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, isc.BaseTokenCoinInfo)
+		blockB, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, isc.BaseTokenCoinInfo)
 		require.False(t, st.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
 		st2 := state.NewStoreWithUniqueWriteMutex(db2)
 		require.True(t, st2.IsEmpty())
-		blockC := origin.InitChain(0, st2, nil, deposit)
+		blockC, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st2, initArgs, iotago.ObjectID{}, deposit, isc.BaseTokenCoinInfo)
 		require.False(t, st2.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockC.L1Commitment())
 	})
@@ -257,7 +263,7 @@ func TestEqualStates(t *testing.T) {
 	db1 := mapdb.NewMapDB()
 	cs1 := mustChainStore{initializedStore(db1)}
 	time1 := time.Now()
-	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("variable a"))
 	draft1.Set("b", []byte("variable b"))
 	block1 := cs1.Commit(draft1)
@@ -275,7 +281,7 @@ func TestEqualStates(t *testing.T) {
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
-	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("b", []byte("variable b"))
 	draft1.Set("a", []byte("variable a"))
 	block1 = cs2.Commit(draft1)
@@ -328,14 +334,14 @@ func TestDiffStatesValues(t *testing.T) {
 	db1 := mapdb.NewMapDB()
 	cs1 := mustChainStore{initializedStore(db1)}
 	time1 := time.Now()
-	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("variable a"))
 	block1 := cs1.Commit(draft1)
 	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
-	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("other value of a"))
 	block1 = cs2.Commit(draft1)
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
@@ -348,7 +354,7 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 	db1 := mapdb.NewMapDB()
 	cs1 := mustChainStore{initializedStore(db1)}
 	time1 := time.Now()
-	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("variable a"))
 	block1 := cs1.Commit(draft1)
 	time2 := time.Now()
@@ -359,7 +365,7 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
-	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(0, nil, 0))
+	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("variable a"))
 	draft1.Set("b", []byte("variable b"))
 	block1 = cs2.Commit(draft1)
@@ -374,14 +380,14 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 func TestDiffStatesTimestamp(t *testing.T) {
 	db1 := mapdb.NewMapDB()
 	cs1 := mustChainStore{initializedStore(db1)}
-	draft1 := cs1.NewStateDraft(time.Now(), origin.L1Commitment(0, nil, 0))
+	draft1 := cs1.NewStateDraft(time.Now(), origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("variable a"))
 	block1 := cs1.Commit(draft1)
 	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
-	draft1 = cs2.NewStateDraft(time.Now(), origin.L1Commitment(0, nil, 0))
+	draft1 = cs2.NewStateDraft(time.Now(), origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
 	draft1.Set("a", []byte("variable a"))
 	block1 = cs2.Commit(draft1)
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())

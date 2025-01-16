@@ -13,10 +13,10 @@ import (
 	"pgregory.net/rapid"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/time_util"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -36,10 +36,10 @@ var _ rapid.StateMachine = &blockCacheNoWALTestSM{}
 func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, bcms int, wal BlockWAL, addBlockCallback func(state.Block)) {
 	var err error
 	bcnwtsmT.factory = NewBlockFactory(t)
-	bcnwtsmT.lastBlockCommitment = origin.L1Commitment(0, nil, 0)
+	bcnwtsmT.lastBlockCommitment = bcnwtsmT.factory.GetOriginBlock().L1Commitment()
 	bcnwtsmT.log = testlogger.NewLogger(t)
 	bcnwtsmT.blockCacheMaxSize = bcms
-	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, mockStateManagerMetrics(), bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(time_util.NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, mockStateManagerMetrics(), bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
 	bcnwtsmT.blocks = make(map[BlockKey]state.Block)
@@ -112,7 +112,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) tstGetBlockFromCache(t *rapid.T, blockKey
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bcnwtsmT.bc, err = NewBlockCache(NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, mockStateManagerMetrics(), bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(time_util.NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, mockStateManagerMetrics(), bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blocksInCache = make([]BlockKey, 0)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)

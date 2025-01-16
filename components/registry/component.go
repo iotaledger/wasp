@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	hivep2p "github.com/iotaledger/hive.go/crypto/p2p"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -51,8 +52,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps consensusRegistryDeps) cmt_log.ConsensusStateRegistry {
-		panic("refactor me: do we still need a networkprefix in general?")
-		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path, "NOOP")
+		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path)
 		if err != nil {
 			Component.LogPanic(err)
 		}
@@ -69,9 +69,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps dkSharesRegistryDeps) registry.DKShareRegistryProvider {
-		panic("refactor me: do we still need a networkprefix in general?")
-		
-		dkSharesRegistry, err := registry.NewDKSharesRegistry(ParamsRegistries.DKShares.Path, deps.NodeIdentityProvider.NodeIdentity().GetPrivateKey(), "NOOP")
+		dkSharesRegistry, err := registry.NewDKSharesRegistry(ParamsRegistries.DKShares.Path, deps.NodeIdentityProvider.NodeIdentity().GetPrivateKey())
 		if err != nil {
 			Component.LogPanic(err)
 		}

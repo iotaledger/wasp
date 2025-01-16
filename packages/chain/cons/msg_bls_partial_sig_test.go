@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgBLSPartialSigSerialization(t *testing.T) {
@@ -23,5 +23,5 @@ func TestMsgBLSPartialSigSerialization(t *testing.T) {
 		b,
 	}
 
-	rwutil.ReadWriteTest(t, msg, new(msgBLSPartialSig))
+	bcs.TestCodec(t, msg)
 }

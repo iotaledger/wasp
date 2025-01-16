@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/contracts/native/inccounter"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
@@ -27,7 +28,7 @@ func TestValidatorFees(t *testing.T) {
 	// set custom addresses for each validator
 	modifyConfig := func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
 		configParams.ValidatorKeyPair = validatorKps[nodeIndex]
-		configParams.ValidatorAddress = validatorKps[nodeIndex].Address().Bech32("atoi") // privtangle prefix
+		configParams.ValidatorAddress = validatorKps[nodeIndex].Address().String() // privtangle prefix
 		return configParams
 	}
 	clu := newCluster(t, waspClusterOpts{nNodes: 4, modifyConfig: modifyConfig})
@@ -37,8 +38,6 @@ func TestValidatorFees(t *testing.T) {
 	chainID := chain.ChainID
 
 	chEnv := newChainEnv(t, clu, chain)
-	chEnv.deployNativeIncCounterSC()
-	waitUntil(t, chEnv.contractIsDeployed(), clu.Config.AllNodes(), 30*time.Second)
 
 	// set validator split fees to 50/50
 	{
@@ -62,15 +61,15 @@ func TestValidatorFees(t *testing.T) {
 	// assert each validator has received fees
 	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, userWallet)
+	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, clu.Config.ISCPackageID(), userWallet)
 	for i := 0; i < 20; i++ {
-		reqTx, err := scClient.PostRequest(inccounter.FuncIncCounter.Message(nil))
+		reqTx, err := scClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 	for _, validatorKp := range validatorKps {
-		tokens := chEnv.getBalanceOnChain(isc.NewAgentID(validatorKp.Address()), isc.BaseTokenID)
+		tokens := chEnv.getBalanceOnChain(isc.NewAddressAgentID(validatorKp.Address()), coin.BaseTokenType)
 		require.NotZero(t, tokens)
 	}
 }

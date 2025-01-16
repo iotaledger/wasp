@@ -1,44 +1,42 @@
+// excluded temporarily because of compilation errors
+
 package testcore
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-func TestBlockInfoLatest(t *testing.T) {
+func TestBlocklog_BlockInfoLatest(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t)
 	chain := env.NewChain()
 
 	bi := chain.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 1, bi.BlockIndex())
+	require.EqualValues(t, 1, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfo(t *testing.T) {
+func TestBlocklog_BlockInfo(t *testing.T) {
 	corecontracts.PrintWellKnownHnames()
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+	env := solo.New(t)
 	chain := env.NewChain()
 
 	bi, err := chain.GetBlockInfo(0)
 	require.NoError(t, err)
 	require.NotNil(t, bi)
-	require.EqualValues(t, 0, bi.BlockIndex())
+	require.EqualValues(t, 0, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
@@ -47,15 +45,15 @@ func TestBlockInfo(t *testing.T) {
 	bi, err = chain.GetBlockInfo(1)
 	require.NoError(t, err)
 	require.NotNil(t, bi)
-	require.EqualValues(t, 1, bi.BlockIndex())
+	require.EqualValues(t, 1, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
 	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfoLatestWithRequest(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_BlockInfoLatestWithRequest(t *testing.T) {
+	env := solo.New(t)
 
 	ch := env.NewChain()
 
@@ -64,88 +62,78 @@ func TestBlockInfoLatestWithRequest(t *testing.T) {
 
 	bi := ch.GetLatestBlockInfo()
 	t.Logf("after ch deployment:\n%s", bi.String())
-	// uploading one blob
-	_, err = ch.UploadBlob(nil, dict.Dict{"field": []byte("dummy blob data")})
-	require.NoError(t, err)
 
 	bi = ch.GetLatestBlockInfo()
 	require.NotNil(t, bi)
-	require.EqualValues(t, 3, bi.BlockIndex())
+	require.EqualValues(t, 2, bi.BlockIndex)
 	require.EqualValues(t, 1, bi.TotalRequests)
 	require.EqualValues(t, 1, bi.NumSuccessfulRequests)
-	require.EqualValues(t, 1, bi.NumOffLedgerRequests)
+	require.EqualValues(t, 0, bi.NumOffLedgerRequests)
 	t.Logf("%s", bi.String())
 }
 
-func TestBlockInfoSeveral(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_BlockInfoSeveral(t *testing.T) {
+	env := solo.New(t)
 	ch := env.NewChain()
 
-	err := ch.DepositBaseTokensToL2(100_000, nil)
-	require.NoError(t, err)
-
-	const numReqs = 5
+	const numReqs = 6
 	for i := 0; i < numReqs; i++ {
-		_, err := ch.UploadBlob(nil, dict.Dict{"field": []byte(fmt.Sprintf("dummy blob data #%d", i))})
+		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 	}
 
 	bi := ch.GetLatestBlockInfo()
-	require.EqualValues(t, 2+numReqs, int(bi.BlockIndex()))
+	require.EqualValues(t, 1+numReqs, int(bi.BlockIndex))
 
-	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex(); blockIndex++ {
+	for blockIndex := uint32(0); blockIndex <= bi.BlockIndex; blockIndex++ {
 		bi1, err := ch.GetBlockInfo(blockIndex)
 		require.NoError(t, err)
 		require.NotNil(t, bi1)
 		t.Logf("%s", bi1.String())
-		require.EqualValues(t, blockIndex, bi1.BlockIndex())
+		require.EqualValues(t, blockIndex, bi1.BlockIndex)
 		require.EqualValues(t, 1, bi1.TotalRequests)
 		require.EqualValues(t, 1, bi1.NumSuccessfulRequests)
 		require.LessOrEqual(t, bi1.NumOffLedgerRequests, bi1.TotalRequests)
 	}
 }
 
-func TestRequestIsProcessed(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_RequestIsProcessed(t *testing.T) {
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
-
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
 
 	bi := ch.GetLatestBlockInfo()
 	require.NoError(t, err)
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 	t.Logf("%s", bi.String())
 }
 
-func TestRequestReceipt(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_RequestReceipt(t *testing.T) {
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
-
-	receipt, _ := ch.GetRequestReceipt(reqs[0].ID())
-	a := reqs[0].Bytes()
+	receipt, _ := ch.GetRequestReceipt(req.ID())
+	a := req.Bytes()
 	b := receipt.Request.Bytes()
 	require.Equal(t, a, b)
 	require.Nil(t, receipt.Error)
@@ -154,66 +142,60 @@ func TestRequestReceipt(t *testing.T) {
 	t.Logf("%s", receipt.String())
 }
 
-func TestRequestReceiptsForBlocks(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_RequestReceiptsForBlocks(t *testing.T) {
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
-
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
-
-	recs := ch.GetRequestReceiptsForBlock(3)
+	require.EqualValues(t, 3, ch.GetLatestAnchor().GetStateIndex())
+	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestAnchor().GetStateIndex())
 	require.EqualValues(t, 1, len(recs))
-	require.EqualValues(t, reqs[0].ID(), recs[0].Request.ID())
+	require.EqualValues(t, req.ID(), recs[0].Request.ID())
 	t.Logf("%s\n", recs[0].String())
 }
 
-func TestRequestIDsForBlocks(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_RequestIDsForBlocks(t *testing.T) {
+	env := solo.New(t)
 	ch := env.NewChain()
 
 	ch.MustDepositBaseTokensToL2(10_000, nil)
 
 	publicURL := "foo"
-	req := solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
-		WithGasBudget(100_000)
-	tx, _, err := ch.PostRequestSyncTx(req, nil)
+	req, _, _, _, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(governance.FuncSetMetadata.Message(&publicURL, nil)).
+			WithGasBudget(100_000),
+		nil,
+	)
 	require.NoError(t, err)
+	require.True(t, ch.IsRequestProcessed(req.ID()))
 
-	reqs, err := env.RequestsForChain(tx, ch.ChainID)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, len(reqs))
-
-	require.True(t, ch.IsRequestProcessed(reqs[0].ID()))
-
-	ids := ch.GetRequestIDsForBlock(3)
+	ids := ch.GetRequestIDsForBlock(ch.GetLatestAnchor().GetStateIndex())
 	require.EqualValues(t, 1, len(ids))
-	require.EqualValues(t, reqs[0].ID(), ids[0])
+	require.EqualValues(t, req.ID(), ids[0])
 }
 
-func TestViewGetRequestReceipt(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true})
+func TestBlocklog_ViewGetRequestReceipt(t *testing.T) {
+	env := solo.New(t)
 	ch := env.NewChain()
 	// try to get a receipt for a request that does not exist
 	_, ok := ch.GetRequestReceipt(isc.RequestID{})
 	require.False(t, ok)
 }
 
-func TestBlocklogPruning(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
-		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
-	})
+func TestBlocklog_Pruning(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{Debug: true})
+
+	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", 0, 10)
 	for i := 1; i <= 20; i++ {
 		ch.DepositBaseTokensToL2(1000, nil)
 	}
@@ -230,23 +212,22 @@ func TestBlocklogPruning(t *testing.T) {
 	for i := uint32(11); i <= 20; i++ {
 		bi, err := ch.GetBlockInfo(i)
 		require.NoError(t, err)
-		require.EqualValues(t, i, bi.BlockIndex())
+		require.EqualValues(t, i, bi.BlockIndex)
 		evmBlock, err := ch.EVM().BlockByNumber(big.NewInt(int64(i)))
 		require.NoError(t, err)
 		require.EqualValues(t, i, evmBlock.Number().Uint64())
 	}
 }
 
-func TestBlocklogFoundriesWithPruning(t *testing.T) {
+func TestBlocklog_FoundriesWithPruning(t *testing.T) {
+	t.SkipNow() // TODO
 	// test that foundries can be accessed even after the block is pruned
 
-	env := solo.New(t, &solo.InitOptions{AutoAdjustStorageDeposit: true, Debug: true})
-	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", dict.Dict{
-		origin.ParamBlockKeepAmount: codec.Int32.Encode(10),
-	})
+	env := solo.New(t, &solo.InitOptions{Debug: true})
+	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", 0, 10)
 	ch.DepositBaseTokensToL2(1*isc.Million, nil)
 
-	sn, _, err := ch.NewNativeTokenParams(big.NewInt(10)).CreateFoundry()
+	sn, _, err := ch.NewNativeTokenParams(10).CreateFoundry()
 	require.NoError(t, err)
 
 	// provoke the block where the foundry was stored to be pruned

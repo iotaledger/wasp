@@ -13,11 +13,11 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util/time_util"
 )
 
-var newEmptySnapshotManagerFun = func(_, _ state.Store, _ sm_gpa_utils.TimeProvider, _ *logger.Logger) sm_snapshots.SnapshotManager {
+var newEmptySnapshotManagerFun = func(_, _ state.Store, _ time_util.TimeProvider, _ *logger.Logger) sm_snapshots.SnapshotManager {
 	return sm_snapshots.NewEmptySnapshotManager()
 }
 
@@ -118,7 +118,7 @@ func TestFull(t *testing.T) {
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
-	lastCommitment := origin.L1Commitment(0, nil, 0)
+	lastCommitment := env.bf.GetOriginBlock().L1Commitment()
 
 	testIterationFun := func(i int, baseCommitment *state.L1Commitment, incrementFactor ...uint64) []state.Block {
 		env.t.Logf("Iteration %v: generating %v blocks and sending them to nodes", i, iterationSize)
@@ -234,7 +234,7 @@ func TestMempoolRequestFirstStep(t *testing.T) {
 	env.sendBlocksToNode(nodeID, 0*time.Second, blocks[0])
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, blocks))
 
-	oldCommitment := origin.L1Commitment(0, nil, 0)
+	oldCommitment := env.bf.GetOriginBlock().L1Commitment()
 	newCommitment := blocks[0].L1Commitment()
 	oldBlocks := make([]state.Block, 0)
 	require.True(env.t, env.sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, newCommitment, oldBlocks, blocks, nodeID, 1, 0*time.Second))
@@ -283,7 +283,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	env.sendBlocksToNode(nodeID, 0*time.Second, oldBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, oldBlocks))
 
-	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, origin.L1Commitment(0, nil, 0), 2)
+	newBlocks := env.bf.GetBlocksFrom(branchSize, 1, env.bf.GetOriginBlock().L1Commitment(), 2)
 	env.sendBlocksToNode(nodeID, 0*time.Second, newBlocks...)
 	require.True(env.t, env.ensureStoreContainsBlocksNoWait(nodeID, newBlocks))
 
@@ -320,7 +320,7 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 
 	nodeIDs := gpa.MakeTestNodeIDs(3)
 	newMockedTestBlockWALFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL { return sm_gpa_utils.NewMockedTestBlockWAL() }
-	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
+	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		var snapshotToLoad sm_snapshots.SnapshotInfo
 		if nodeID.Equals(nodeIDs[0]) {
 			snapshotToLoad = nil
@@ -485,7 +485,7 @@ func TestSnapshots(t *testing.T) {
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	nodeID := nodeIDs[0]
-	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
+	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp time_util.TimeProvider, log *logger.Logger) sm_snapshots.SnapshotManager {
 		return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, snapshotDelayPeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
 	}
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newMockedSnapshotManagerFun)

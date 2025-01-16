@@ -6,9 +6,9 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -36,17 +36,24 @@ func initSendFundsCmd() *cobra.Command {
 
 			client := cliclients.L1Client()
 
-			tx, err := client.TransferSui(context.Background(), suiclient.TransferSuiRequest{
-				Signer:    senderAddress.AsSuiAddress(),
-				Amount:    suijsonrpc.NewBigInt(1337),
-				Recipient: targetAddress.AsSuiAddress(),
+			tx, err := client.TransferIota(context.Background(), iotaclient.TransferIotaRequest{
+				Signer:    senderAddress.AsIotaAddress(),
+				Amount:    iotajsonrpc.NewBigInt(1337),
+				Recipient: targetAddress.AsIotaAddress(),
 			})
 			log.Check(err)
 
-			res, err := client.SignAndExecuteTransaction(context.Background(), cryptolib.SignerToSuiSigner(myWallet), tx.TxBytes, &suijsonrpc.SuiTransactionBlockResponseOptions{
-				ShowObjectChanges: true,
-				ShowEvents:        true,
-			})
+			res, err := client.SignAndExecuteTransaction(
+				context.Background(),
+				&iotaclient.SignAndExecuteTransactionRequest{
+					Signer:      cryptolib.SignerToIotaSigner(myWallet),
+					TxDataBytes: tx.TxBytes,
+					Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+						ShowEffects:       true,
+						ShowObjectChanges: true,
+					},
+				},
+			)
 
 			log.Check(err)
 			fmt.Printf("%v", res)

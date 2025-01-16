@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the GovChainInfoResponse type satisfies the MappedNullable interface at compile time
@@ -19,9 +21,9 @@ var _ MappedNullable = &GovChainInfoResponse{}
 
 // GovChainInfoResponse struct for GovChainInfoResponse
 type GovChainInfoResponse struct {
-	// ChainID (Bech32-encoded).
+	// ChainID (Hex Address).
 	ChainID string `json:"chainID"`
-	// The chain owner address (Bech32-encoded).
+	// The chain owner address (Hex Address).
 	ChainOwnerId string `json:"chainOwnerId"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
 	GasLimits Limits `json:"gasLimits"`
@@ -29,6 +31,8 @@ type GovChainInfoResponse struct {
 	// The fully qualified public url leading to the chains metadata
 	PublicURL string `json:"publicURL"`
 }
+
+type _GovChainInfoResponse GovChainInfoResponse
 
 // NewGovChainInfoResponse instantiates a new GovChainInfoResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -214,6 +218,48 @@ func (o GovChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize["metadata"] = o.Metadata
 	toSerialize["publicURL"] = o.PublicURL
 	return toSerialize, nil
+}
+
+func (o *GovChainInfoResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"chainID",
+		"chainOwnerId",
+		"gasFeePolicy",
+		"gasLimits",
+		"metadata",
+		"publicURL",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varGovChainInfoResponse := _GovChainInfoResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varGovChainInfoResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = GovChainInfoResponse(varGovChainInfoResponse)
+
+	return err
 }
 
 type NullableGovChainInfoResponse struct {

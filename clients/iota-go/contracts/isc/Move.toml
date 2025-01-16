@@ -1,0 +1,12 @@
+[package]
+name = "ISC"
+version = "0.0.1"
+edition = "2024.beta"
+
+[dependencies]
+Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev = "releases/iota-v0.7.0-release" }
+
+[addresses]
+isc = "0x0"
+std = "0x1"
+iota = "0x2"

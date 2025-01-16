@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the LoginRequest type satisfies the MappedNullable interface at compile time
@@ -22,6 +24,8 @@ type LoginRequest struct {
 	Password string `json:"password"`
 	Username string `json:"username"`
 }
+
+type _LoginRequest LoginRequest
 
 // NewLoginRequest instantiates a new LoginRequest object
 // This constructor will assign default values to properties that have it defined,
@@ -103,6 +107,44 @@ func (o LoginRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize["password"] = o.Password
 	toSerialize["username"] = o.Username
 	return toSerialize, nil
+}
+
+func (o *LoginRequest) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"password",
+		"username",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varLoginRequest := _LoginRequest{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varLoginRequest)
+
+	if err != nil {
+		return err
+	}
+
+	*o = LoginRequest(varLoginRequest)
+
+	return err
 }
 
 type NullableLoginRequest struct {

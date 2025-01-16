@@ -7,6 +7,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr/am_dist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -218,7 +220,8 @@ func (ami *accessMgrImpl) sendMessages(outMsgs gpa.OutMessages) {
 		return
 	}
 	outMsgs.MustIterate(func(msg gpa.Message) {
-		pm := peering.NewPeerMessageData(ami.netPeeringID, peering.ReceiverAccessMgr, msgTypeAccessMgr, msg)
+		msgBytes := lo.Must(gpa.MarshalMessage(msg))
+		pm := peering.NewPeerMessageData(ami.netPeeringID, peering.ReceiverAccessMgr, msgTypeAccessMgr, msgBytes)
 		ami.net.SendMsgByPubKey(ami.netPeerPubs[msg.Recipient()], pm)
 	})
 }

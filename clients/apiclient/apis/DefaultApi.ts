@@ -1,7 +1,7 @@
 // TODO: better import syntax?
 import {BaseAPIRequestFactory, RequiredError, COLLECTION_FORMATS} from './baseapi';
 import {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpFile} from '../http/http';
+import {RequestContext, HttpMethod, ResponseContext, HttpFile, HttpInfo} from '../http/http';
 import {ObjectSerializer} from '../models/ObjectSerializer';
 import {ApiException} from './exception';
 import {canConsumeForm, isCodeInRange} from '../util';
@@ -71,10 +71,10 @@ export class DefaultApiResponseProcessor {
      * @params response Response returned by the server for a request to getHealth
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async getHealth(response: ResponseContext): Promise<void > {
+     public async getHealthWithHttpInfo(response: ResponseContext): Promise<HttpInfo<void >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            return;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
@@ -83,7 +83,7 @@ export class DefaultApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "void", ""
             ) as void;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -96,7 +96,7 @@ export class DefaultApiResponseProcessor {
      * @params response Response returned by the server for a request to v1WsGet
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async v1WsGet(response: ResponseContext): Promise< void> {
+     public async v1WsGetWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("0", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);
@@ -104,7 +104,7 @@ export class DefaultApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

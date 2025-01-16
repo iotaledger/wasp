@@ -15,10 +15,6 @@ import { HttpFile } from '../http/http';
 
 export class ProtocolParameters {
     /**
-    * The human readable network prefix
-    */
-    'bech32Hrp': string;
-    /**
     * The networks max depth
     */
     'belowMaxDepth': number;
@@ -42,13 +38,9 @@ export class ProtocolParameters {
 
     static readonly discriminator: string | undefined = undefined;
 
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
+
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
-        {
-            "name": "bech32Hrp",
-            "baseName": "bech32Hrp",
-            "type": "string",
-            "format": "string"
-        },
         {
             "name": "belowMaxDepth",
             "baseName": "belowMaxDepth",
@@ -93,4 +85,3 @@ export class ProtocolParameters {
     public constructor() {
     }
 }
-

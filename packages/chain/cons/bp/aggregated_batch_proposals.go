@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Here we store just an aggregated info.
@@ -21,9 +21,11 @@ type AggregatedBatchProposals struct {
 	shouldBeSkipped        bool
 	batchProposalSet       batchProposalSet
 	decidedIndexProposals  map[gpa.NodeID][]int
-	decidedBaseAliasOutput *iscmove.RefWithObject[iscmove.Anchor]
+	decidedBaseAliasOutput *isc.StateAnchor
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
+	aggregatedGasCoins     []*coin.CoinWithRef
+	aggregatedGasPrice     uint64
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
@@ -31,8 +33,7 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
 	for nid := range inputs {
-		var batchProposal *BatchProposal
-		batchProposal, err := rwutil.ReadFromBytes(inputs[nid], new(BatchProposal))
+		batchProposal, err := bcs.Unmarshal[*BatchProposal](inputs[nid])
 		if err != nil {
 			log.Warnf("cannot decode BatchProposal from %v: %v", nid, err)
 			continue
@@ -51,14 +52,22 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	}
 	aggregatedTime := bps.aggregatedTime(f)
 	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
+	aggregatedGasCoins := bps.aggregatedGasCoins(f)
+	aggregatedGasPrice := bps.aggregatedGasPrice(f)
 	abp := &AggregatedBatchProposals{
 		batchProposalSet:       bps,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
+		aggregatedGasCoins:     aggregatedGasCoins,
+		aggregatedGasPrice:     aggregatedGasPrice,
 	}
-	if abp.decidedBaseAliasOutput == nil || len(abp.decidedRequestRefs) == 0 || abp.aggregatedTime.IsZero() {
+	if abp.decidedBaseAliasOutput == nil ||
+		len(abp.decidedRequestRefs) == 0 ||
+		abp.aggregatedTime.IsZero() ||
+		len(abp.aggregatedGasCoins) == 0 ||
+		abp.aggregatedGasPrice == 0 {
 		log.Debugf(
 			"Cant' aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, aggregatedTime=%v",
 			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), abp.aggregatedTime,
@@ -79,7 +88,7 @@ func (abp *AggregatedBatchProposals) DecidedDSSIndexProposals() map[gpa.NodeID][
 	return abp.decidedIndexProposals
 }
 
-func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *iscmove.RefWithObject[iscmove.Anchor] {
+func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *isc.StateAnchor {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
@@ -164,4 +173,18 @@ func (abp *AggregatedBatchProposals) OrderedRequests(requests []isc.Request, ran
 		sorted[i] = sortBuf[i].req
 	}
 	return sorted
+}
+
+func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*coin.CoinWithRef {
+	if abp.shouldBeSkipped {
+		panic("trying to use aggregated proposal marked to be skipped")
+	}
+	return abp.aggregatedGasCoins
+}
+
+func (abp *AggregatedBatchProposals) AggregatedGasPrice() uint64 {
+	if abp.shouldBeSkipped {
+		panic("trying to use aggregated proposal marked to be skipped")
+	}
+	return abp.aggregatedGasPrice
 }

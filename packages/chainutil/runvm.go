@@ -4,13 +4,13 @@ import (
 	"errors"
 	"time"
 
+	"github.com/samber/lo"
 	"go.uber.org/zap"
 
-	"github.com/samber/lo"
-
-	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -18,35 +18,42 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/processors"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 )
 
 func runISCTask(
-	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	anchor *isc.StateAnchor,
+	l1Params *parameters.L1Params,
+	store indexedstore.IndexedStore,
+	processors *processors.Config,
+	log *logger.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
-	estimateGasMode bool,
 	evmTracer *isc.EVMTracer,
 ) ([]*vm.RequestResult, error) {
-	store := ch.Store()
-	migs, err := getMigrationsForBlock(store, aliasOutput)
+	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
 	}
+	estimateGasMode := true
+	if evmTracer != nil {
+		estimateGasMode = false
+	}
 	task := &vm.VMTask{
-		Processors:           ch.Processors(),
-		AnchorOutput:         aliasOutput.GetAliasOutput(),
-		AnchorOutputID:       aliasOutput.OutputID(),
+		Processors:           processors,
+		Anchor:               anchor,
+		GasCoin:              nil,
+		L1Params:             l1Params,
 		Store:                store,
 		Requests:             reqs,
-		TimeAssumption:       blockTime,
+		Timestamp:            blockTime,
 		Entropy:              hashing.PseudoRandomHash(nil),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EnableGasBurnLogging: estimateGasMode,
 		EstimateGasMode:      estimateGasMode,
 		EVMTracer:            evmTracer,
-		Log:                  ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		Log:                  log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		Migrations:           migs,
 	}
 	res, err := vmimpl.Run(task)
@@ -56,8 +63,8 @@ func runISCTask(
 	return res.RequestResults, nil
 }
 
-func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.AliasOutputWithID) (*migrations.MigrationScheme, error) {
-	prevL1Commitment, err := transaction.L1CommitmentFromAliasOutput(aliasOutput.GetAliasOutput())
+func getMigrationsForBlock(store indexedstore.IndexedStore, anchor *isc.StateAnchor) (*migrations.MigrationScheme, error) {
+	prevL1Commitment, err := transaction.L1CommitmentFromAnchor(anchor)
 	if err != nil {
 		panic(err)
 	}
@@ -77,18 +84,22 @@ func getMigrationsForBlock(store indexedstore.IndexedStore, aliasOutput *isc.Ali
 }
 
 func runISCRequest(
-	ch chain.ChainCore,
-	aliasOutput *isc.AliasOutputWithID,
+	anchor *isc.StateAnchor,
+	l1Params *parameters.L1Params,
+	store indexedstore.IndexedStore,
+	processors *processors.Config,
+	log *logger.Logger,
 	blockTime time.Time,
 	req isc.Request,
-	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
-		ch,
-		aliasOutput,
+		anchor,
+		l1Params,
+		store,
+		processors,
+		log,
 		blockTime,
 		[]isc.Request{req},
-		estimateGasMode,
 		nil,
 	)
 	if err != nil {

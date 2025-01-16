@@ -4,197 +4,190 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/fardream/go-bcs/bcs"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/sui-go/sui"
-	"github.com/iotaledger/wasp/sui-go/suiclient"
-	"github.com/iotaledger/wasp/sui-go/suijsonrpc"
 )
+
+func (c *Client) FindCoinsForGasPayment(
+	ctx context.Context,
+	owner *iotago.Address,
+	pt iotago.ProgrammableTransaction,
+	gasPrice uint64,
+	gasBudget uint64,
+) ([]*iotago.ObjectRef, error) {
+	coinType := iotajsonrpc.IotaCoinType.String()
+	coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
+		CoinType: &coinType,
+		Owner:    owner,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
+	}
+	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
+		coinPage.Data,
+		gasBudget,
+		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+	)
+	return gasPayments.CoinRefs(), err
+}
+
+type StartNewChainRequest struct {
+	Signer            cryptolib.Signer
+	ChainOwnerAddress *cryptolib.Address
+	PackageID         iotago.PackageID
+	StateMetadata     []byte
+	InitCoinRef       *iotago.ObjectRef
+	GasPayments       []*iotago.ObjectRef
+	GasPrice          uint64
+	GasBudget         uint64
+}
 
 func (c *Client) StartNewChain(
 	ctx context.Context,
-	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	gasPayments []*sui.ObjectRef, // optional
-	gasPrice uint64,
-	gasBudget uint64,
-	initParams []byte,
-	devMode bool,
-) (*iscmove.RefWithObject[iscmove.Anchor], error) {
-	var err error
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
-
-	ptb := NewStartNewChainPTB(packageID, initParams, cryptolibSigner.Address())
-
-	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
-		}
-		gasPayments = coins.CoinRefs()
-	}
-
-	tx := sui.NewProgrammable(
-		signer.Address(),
-		ptb,
-		gasPayments,
-		gasBudget,
-		gasPrice,
-	)
-
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+	req *StartNewChainRequest,
+) (*iscmove.AnchorWithRef, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	var argInitCoin iotago.Argument
+	if req.InitCoinRef != nil {
+		ptb = PTBOptionSomeIotaCoin(ptb, req.InitCoinRef)
 	} else {
-		txnBytes, err = bcs.Marshal(tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
+		ptb = PTBOptionNoneIotaCoin(ptb)
 	}
-	txnResponse, err := c.SignAndExecuteTransaction(
+	argInitCoin = ptb.LastCommandResultArg()
+
+	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
+
+	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
-		signer,
-		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
+		return nil, fmt.Errorf("start new chain PTB failed: %w", err)
 	}
 
 	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
 	}
-	anchor, err := c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to GetAnchorFromObjectID: %w", err)
-	}
-
-	return anchor, nil
+	return c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
 }
 
-func (c *Client) ReceiveAndUpdateStateRootRequest(
+type ReceiveRequestsAndTransitionRequest struct {
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorRef     *iotago.ObjectRef
+	Reqs          []iotago.ObjectRef
+	StateMetadata []byte
+	TopUpAmount   uint64
+	GasPayment    *iotago.ObjectRef
+	GasPrice      uint64
+	GasBudget     uint64
+}
+
+func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
-	cryptolibSigner cryptolib.Signer,
-	packageID sui.PackageID,
-	anchorRef *sui.ObjectRef,
-	reqs []sui.ObjectRef,
-	stateRoot []byte,
-	gasPayments []*sui.ObjectRef, // optional
-	gasPrice uint64,
-	gasBudget uint64,
-	devMode bool,
-) (*suijsonrpc.SuiTransactionBlockResponse, error) {
-	signer := cryptolib.SignerToSuiSigner(cryptolibSigner)
-
-	reqAssetsBagsMap := make(map[sui.ObjectRef]*iscmove.AssetsBagWithBalances)
-	for _, reqRef := range reqs {
-		req, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
+	req *ReceiveRequestsAndTransitionRequest,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	var reqAssetsBags []*iscmove.AssetsBagWithBalances
+	for _, reqRef := range req.Reqs {
+		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
 			return nil, err
 		}
-		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
+		assetsBag, err := c.GetAssetsBagWithBalances(ctx, &reqWithObj.Object.AssetsBag.ID)
 		if err != nil {
 			return nil, err
 		}
-		reqAssetsBagsMap[reqRef] = assetsBag
+		reqAssetsBags = append(reqAssetsBags, assetsBag)
 	}
 
-	ptb, err := NewReceiveRequestPTB(packageID, anchorRef, reqs, reqAssetsBagsMap, stateRoot)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(gasPayments) == 0 {
-		coins, err := c.GetCoinObjsForTargetAmount(ctx, signer.Address(), gasBudget)
-		if err != nil {
-			return nil, fmt.Errorf("failed to fetch GasPayment object: %w", err)
-		}
-		gasPayments = coins.CoinRefs()
-	}
-	tx := sui.NewProgrammable(
-		signer.Address(),
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBReceiveRequestsAndTransition(
 		ptb,
-		gasPayments,
-		gasBudget,
-		gasPrice,
+		req.PackageID,
+		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}),
+		req.Reqs,
+		reqAssetsBags,
+		req.StateMetadata,
+		req.TopUpAmount,
 	)
-
-	var txnBytes []byte
-	if devMode {
-		txnBytes, err = bcs.Marshal(tx.V1.Kind)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	} else {
-		txnBytes, err = bcs.Marshal(tx)
-		if err != nil {
-			return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
-		}
-	}
-	txnResponse, err := c.SignAndExecuteTransaction(
+	return c.SignAndExecutePTB(
 		ctx,
-		signer,
-		txnBytes,
-		&suijsonrpc.SuiTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
+		req.Signer,
+		ptb.Finish(),
+		[]*iotago.ObjectRef{req.GasPayment},
+		req.GasPrice,
+		req.GasBudget,
 	)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-	if !txnResponse.Effects.Data.IsSuccess() {
-		return nil, fmt.Errorf("failed to execute the transaction: %s", txnResponse.Effects.Data.V1.Status.Error)
-	}
-	return txnResponse, nil
 }
 
 func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
-	anchorObjectID *sui.ObjectID,
-) (*iscmove.RefWithObject[iscmove.Anchor], error) {
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
+	anchorObjectID *iotago.ObjectID,
+) (*iscmove.AnchorWithRef, error) {
+	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
-
-	var anchor iscmove.Anchor
-	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &anchor)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
-	}
-	return &iscmove.RefWithObject[iscmove.Anchor]{
-		ObjectRef: getObjectResponse.Data.Ref(),
-		Object:    &anchor,
-	}, nil
+	return decodeAnchorBCS(
+		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,
+		getObjectResponse.Data.Ref(),
+		getObjectResponse.Data.Owner.AddressOwner,
+	)
 }
 
-func (c *Client) GetRequestFromObjectID(
+func (c *Client) GetPastAnchorFromObjectID(
 	ctx context.Context,
-	id *sui.ObjectID,
-) (*iscmove.Request, error) {
-	getObjectResponse, err := c.GetObject(ctx, suiclient.GetObjectRequest{
-		ObjectID: id,
-		Options:  &suijsonrpc.SuiObjectDataOptions{ShowBcs: true},
+	anchorObjectID *iotago.ObjectID,
+	version uint64,
+) (*iscmove.AnchorWithRef, error) {
+	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+		ObjectID: anchorObjectID,
+		Version:  version,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
+	if getObjectResponse.Data.ObjectDeleted != nil {
+		return nil, fmt.Errorf("failed to get anchor content: deleted")
+	}
+	if getObjectResponse.Data.ObjectNotExists != nil {
+		return nil, fmt.Errorf("failed to get anchor content: object does not exist")
+	}
+	if getObjectResponse.Data.VersionNotFound != nil {
+		return nil, fmt.Errorf("failed to get anchor content: version not found")
+	}
+	if getObjectResponse.Data.VersionTooHigh != nil {
+		return nil, fmt.Errorf("failed to get anchor content: version too high")
+	}
+	return decodeAnchorBCS(
+		getObjectResponse.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes,
+		getObjectResponse.Data.VersionFound.Ref(),
+		getObjectResponse.Data.VersionFound.Owner.AddressOwner,
+	)
+}
 
-	var req iscmove.Request
-	err = suiclient.UnmarshalBCS(getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes, &req)
+func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {
+	var moveAnchor moveAnchor
+	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-
-	return &req, nil
+	return &iscmove.AnchorWithRef{
+		ObjectRef: ref,
+		Object:    moveAnchor.ToAnchor(),
+		Owner:     owner,
+	}, nil
 }

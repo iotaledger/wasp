@@ -1,10 +1,9 @@
 package isc
 
 import (
-	"io"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type Event struct {
@@ -15,7 +14,7 @@ type Event struct {
 }
 
 func EventFromBytes(data []byte) (*Event, error) {
-	return rwutil.ReadFromBytes(data, new(Event))
+	return bcs.Unmarshal[*Event](data)
 }
 
 // ContractIDFromEventBytes is used by blocklog to filter out specific events per contract
@@ -29,25 +28,7 @@ func ContractIDFromEventBytes(eventBytes []byte) (Hname, error) {
 }
 
 func (e *Event) Bytes() []byte {
-	return rwutil.WriteToBytes(e)
-}
-
-func (e *Event) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	rr.Read(&e.ContractID)
-	e.Topic = rr.ReadString()
-	e.Timestamp = rr.ReadUint64()
-	e.Payload = rr.ReadBytes()
-	return rr.Err
-}
-
-func (e *Event) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.Write(&e.ContractID)
-	ww.WriteString(e.Topic)
-	ww.WriteUint64(e.Timestamp)
-	ww.WriteBytes(e.Payload)
-	return ww.Err
+	return bcs.MustMarshal(e)
 }
 
 type EventJSON struct {
@@ -62,6 +43,6 @@ func (e *Event) ToJSONStruct() *EventJSON {
 		ContractID: e.ContractID,
 		Topic:      e.Topic,
 		Timestamp:  e.Timestamp,
-		Payload:    iotago.EncodeHex(e.Payload),
+		Payload:    hexutil.Encode(e.Payload),
 	}
 }

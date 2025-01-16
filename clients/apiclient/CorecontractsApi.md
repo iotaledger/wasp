@@ -12,8 +12,6 @@ Method | HTTP request | Description
 [**accountsGetNFTData**](CorecontractsApi.md#accountsGetNFTData) | **GET** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
 [**accountsGetNativeTokenIDRegistry**](CorecontractsApi.md#accountsGetNativeTokenIDRegistry) | **GET** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
 [**accountsGetTotalAssets**](CorecontractsApi.md#accountsGetTotalAssets) | **GET** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**blobsGetBlobInfo**](CorecontractsApi.md#blobsGetBlobInfo) | **GET** /v1/chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
-[**blobsGetBlobValue**](CorecontractsApi.md#blobsGetBlobValue) | **GET** /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
 [**blocklogGetBlockInfo**](CorecontractsApi.md#blocklogGetBlockInfo) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
 [**blocklogGetControlAddresses**](CorecontractsApi.md#blocklogGetControlAddresses) | **GET** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
 [**blocklogGetEventsOfBlock**](CorecontractsApi.md#blocklogGetEventsOfBlock) | **GET** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
@@ -40,24 +38,23 @@ Method | HTTP request | Description
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetAccountBalanceRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetAccountBalanceRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetAccountBalanceRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    // AgentID (Hex Address for L1 accounts | Hex for EVM)
   agentID: "agentID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetAccountBalance(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetAccountBalance(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -65,8 +62,8 @@ apiInstance.accountsGetAccountBalance(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **agentID** | [**string**] | AgentID (Bech32 for WasmVM | Hex for EVM) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+ **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -100,24 +97,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetAccountFoundriesRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetAccountFoundriesRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetAccountFoundriesRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    // AgentID (Hex Address for L1 accounts, Hex for EVM)
   agentID: "agentID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetAccountFoundries(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetAccountFoundries(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -125,8 +121,8 @@ apiInstance.accountsGetAccountFoundries(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **agentID** | [**string**] | AgentID (Bech32 for WasmVM | Hex for EVM) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+ **agentID** | [**string**] | AgentID (Hex Address for L1 accounts, Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -160,24 +156,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetAccountNFTIDsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetAccountNFTIDsRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetAccountNFTIDsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    // AgentID (Hex Address for L1 accounts | Hex for EVM)
   agentID: "agentID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetAccountNFTIDs(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetAccountNFTIDs(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -185,8 +180,8 @@ apiInstance.accountsGetAccountNFTIDs(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **agentID** | [**string**] | AgentID (Bech32 for WasmVM | Hex for EVM) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+ **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -220,24 +215,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetAccountNonceRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetAccountNonceRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetAccountNonceRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | AgentID (Bech32 for WasmVM | Hex for EVM)
+    // AgentID (Hex Address for L1 accounts | Hex for EVM)
   agentID: "agentID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetAccountNonce(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetAccountNonce(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -245,8 +239,8 @@ apiInstance.accountsGetAccountNonce(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **agentID** | [**string**] | AgentID (Bech32 for WasmVM | Hex for EVM) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+ **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -280,24 +274,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetFoundryOutputRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetFoundryOutputRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetFoundryOutputRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // number | Serial Number (uint32)
+    // Serial Number (uint32)
   serialNumber: 1,
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetFoundryOutput(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetFoundryOutput(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -305,7 +298,7 @@ apiInstance.accountsGetFoundryOutput(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **serialNumber** | [**number**] | Serial Number (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -333,31 +326,30 @@ No authorization required
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
 # **accountsGetNFTData**
-> NFTJSON accountsGetNFTData()
+> accountsGetNFTData()
 
 
 ### Example
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetNFTDataRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetNFTDataRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetNFTDataRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | NFT ID (Hex)
+    // NFT ID (Hex)
   nftID: "nftID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetNFTData(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetNFTData(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -365,14 +357,14 @@ apiInstance.accountsGetNFTData(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **nftID** | [**string**] | NFT ID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
 ### Return type
 
-**NFTJSON**
+void (empty response body)
 
 ### Authorization
 
@@ -387,7 +379,6 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | The NFT data |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
@@ -400,22 +391,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetNativeTokenIDRegistryRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetNativeTokenIDRegistryRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetNativeTokenIDRegistryRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetNativeTokenIDRegistry(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetNativeTokenIDRegistry(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -423,7 +413,7 @@ apiInstance.accountsGetNativeTokenIDRegistry(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -457,22 +447,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiAccountsGetTotalAssetsRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiAccountsGetTotalAssetsRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiAccountsGetTotalAssetsRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.accountsGetTotalAssets(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.accountsGetTotalAssets(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -480,7 +469,7 @@ apiInstance.accountsGetTotalAssets(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -506,129 +495,6 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **blobsGetBlobInfo**
-> BlobInfoResponse blobsGetBlobInfo()
-
-
-### Example
-
-
-```typescript
-import {  } from '';
-import * as fs from 'fs';
-
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
-
-let body:.CorecontractsApiBlobsGetBlobInfoRequest = {
-  // string | ChainID (Bech32)
-  chainID: "chainID_example",
-  // string | BlobHash (Hex)
-  blobHash: "blobHash_example",
-  // string | Block index or trie root (optional)
-  block: "block_example",
-};
-
-apiInstance.blobsGetBlobInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **blobHash** | [**string**] | BlobHash (Hex) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**BlobInfoResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | All blob fields and their values |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **blobsGetBlobValue**
-> BlobValueResponse blobsGetBlobValue()
-
-
-### Example
-
-
-```typescript
-import {  } from '';
-import * as fs from 'fs';
-
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
-
-let body:.CorecontractsApiBlobsGetBlobValueRequest = {
-  // string | ChainID (Bech32)
-  chainID: "chainID_example",
-  // string | BlobHash (Hex)
-  blobHash: "blobHash_example",
-  // string | FieldKey (String)
-  fieldKey: "fieldKey_example",
-  // string | Block index or trie root (optional)
-  block: "block_example",
-};
-
-apiInstance.blobsGetBlobValue(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
- **blobHash** | [**string**] | BlobHash (Hex) | defaults to undefined
- **fieldKey** | [**string**] | FieldKey (String) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**BlobValueResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | The value of the supplied field (key) |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
 # **blocklogGetBlockInfo**
 > BlockInfoResponse blocklogGetBlockInfo()
 
@@ -637,24 +503,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetBlockInfoRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetBlockInfoRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetBlockInfoRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // number | BlockIndex (uint32)
+    // BlockIndex (uint32)
   blockIndex: 1,
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetBlockInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetBlockInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -662,7 +527,7 @@ apiInstance.blocklogGetBlockInfo(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -697,22 +562,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetControlAddressesRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetControlAddressesRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetControlAddressesRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetControlAddresses(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetControlAddresses(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -720,7 +584,7 @@ apiInstance.blocklogGetControlAddresses(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -754,24 +618,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetEventsOfBlockRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetEventsOfBlockRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetEventsOfBlockRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // number | BlockIndex (uint32)
+    // BlockIndex (uint32)
   blockIndex: 1,
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetEventsOfBlock(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetEventsOfBlock(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -779,7 +642,7 @@ apiInstance.blocklogGetEventsOfBlock(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -814,22 +677,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetEventsOfLatestBlockRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetEventsOfLatestBlock(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetEventsOfLatestBlock(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -837,7 +699,7 @@ apiInstance.blocklogGetEventsOfLatestBlock(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -871,24 +733,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetEventsOfRequestRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetEventsOfRequestRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetEventsOfRequestRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | RequestID (Hex)
+    // RequestID (Hex)
   requestID: "requestID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetEventsOfRequest(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetEventsOfRequest(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -896,7 +757,7 @@ apiInstance.blocklogGetEventsOfRequest(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -931,22 +792,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetLatestBlockInfoRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetLatestBlockInfoRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetLatestBlockInfoRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetLatestBlockInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetLatestBlockInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -954,7 +814,7 @@ apiInstance.blocklogGetLatestBlockInfo(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -988,24 +848,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetRequestIDsForBlockRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetRequestIDsForBlockRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetRequestIDsForBlockRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // number | BlockIndex (uint32)
+    // BlockIndex (uint32)
   blockIndex: 1,
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetRequestIDsForBlock(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetRequestIDsForBlock(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1013,7 +872,7 @@ apiInstance.blocklogGetRequestIDsForBlock(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1048,22 +907,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetRequestIDsForLatestBlock(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetRequestIDsForLatestBlock(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1071,7 +929,7 @@ apiInstance.blocklogGetRequestIDsForLatestBlock(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1105,24 +963,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetRequestIsProcessedRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetRequestIsProcessedRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetRequestIsProcessedRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | RequestID (Hex)
+    // RequestID (Hex)
   requestID: "requestID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetRequestIsProcessed(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetRequestIsProcessed(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1130,7 +987,7 @@ apiInstance.blocklogGetRequestIsProcessed(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1165,24 +1022,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetRequestReceiptRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetRequestReceiptRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetRequestReceiptRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | RequestID (Hex)
+    // RequestID (Hex)
   requestID: "requestID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetRequestReceipt(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetRequestReceipt(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1190,7 +1046,7 @@ apiInstance.blocklogGetRequestReceipt(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1225,24 +1081,23 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // number | BlockIndex (uint32)
+    // BlockIndex (uint32)
   blockIndex: 1,
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetRequestReceiptsOfBlock(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetRequestReceiptsOfBlock(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1250,7 +1105,7 @@ apiInstance.blocklogGetRequestReceiptsOfBlock(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1285,22 +1140,21 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.blocklogGetRequestReceiptsOfLatestBlock(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.blocklogGetRequestReceiptsOfLatestBlock(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1308,7 +1162,7 @@ apiInstance.blocklogGetRequestReceiptsOfLatestBlock(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1342,26 +1196,25 @@ No authorization required
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiErrorsGetErrorMessageFormatRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiErrorsGetErrorMessageFormatRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiErrorsGetErrorMessageFormatRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Contract (Hname as Hex)
+    // Contract (Hname as Hex)
   contractHname: "contractHname_example",
-  // number | Error Id (uint16)
+    // Error Id (uint16)
   errorID: 1,
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.errorsGetErrorMessageFormat(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.errorsGetErrorMessageFormat(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1369,7 +1222,7 @@ apiInstance.errorsGetErrorMessageFormat(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **contractHname** | [**string**] | Contract (Hname as Hex) | defaults to undefined
  **errorID** | [**number**] | Error Id (uint16) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
@@ -1406,22 +1259,21 @@ Returns the allowed state controller addresses
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.governanceGetAllowedStateControllerAddresses(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.governanceGetAllowedStateControllerAddresses(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1429,7 +1281,7 @@ apiInstance.governanceGetAllowedStateControllerAddresses(body).then((data:any) =
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1458,28 +1310,27 @@ No authorization required
 # **governanceGetChainInfo**
 > GovChainInfoResponse governanceGetChainInfo()
 
-If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
+If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
 
 ### Example
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiGovernanceGetChainInfoRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiGovernanceGetChainInfoRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiGovernanceGetChainInfoRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.governanceGetChainInfo(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.governanceGetChainInfo(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1487,7 +1338,7 @@ apiInstance.governanceGetChainInfo(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1522,22 +1373,21 @@ Returns the chain owner
 
 
 ```typescript
-import {  } from '';
-import * as fs from 'fs';
+import { createConfiguration, CorecontractsApi } from '';
+import type { CorecontractsApiGovernanceGetChainOwnerRequest } from '';
 
-const configuration = .createConfiguration();
-const apiInstance = new .CorecontractsApi(configuration);
+const configuration = createConfiguration();
+const apiInstance = new CorecontractsApi(configuration);
 
-let body:.CorecontractsApiGovernanceGetChainOwnerRequest = {
-  // string | ChainID (Bech32)
+const request: CorecontractsApiGovernanceGetChainOwnerRequest = {
+    // ChainID (Hex Address)
   chainID: "chainID_example",
-  // string | Block index or trie root (optional)
+    // Block index or trie root (optional)
   block: "block_example",
 };
 
-apiInstance.governanceGetChainOwner(body).then((data:any) => {
-  console.log('API called successfully. Returned data: ' + data);
-}).catch((error:any) => console.error(error));
+const data = await apiInstance.governanceGetChainOwner(request);
+console.log('API called successfully. Returned data:', data);
 ```
 
 
@@ -1545,7 +1395,7 @@ apiInstance.governanceGetChainOwner(body).then((data:any) => {
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Bech32) | defaults to undefined
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
