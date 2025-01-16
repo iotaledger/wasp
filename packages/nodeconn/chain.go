@@ -110,26 +110,31 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, fmt.Errorf("error executing tx: %s", res.Effects.Data.V1.Status.Error)
 		}
 
-		var anchorID *iotago.ObjectID
-		for _, e := range res.Effects.Data.V1.Mutated {
-			objectID := e.Reference.ObjectID
+		time.Sleep(5 * time.Second)
+		res, err = ncc.nodeConn.wsClient.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
+			Digest: &res.Digest,
 
-			obj, _ := ncc.nodeConn.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
-				ObjectID: objectID,
-				Options: &iotajsonrpc.IotaObjectDataOptions{
-					ShowType: true,
-				},
-			})
-
-			resource, err2 := iotago.NewResourceType(*obj.Data.Type)
-			if err2 != nil {
-				ncc.LogInfof("Failed to parse Resource type of AnchorTX %f", err2)
-			} else if resource.Contains(nil, iscmove.AnchorModuleName, iscmove.AnchorObjectName) {
-				anchorID = obj.Data.ObjectID
-			}
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowInput:          true,
+				ShowRawInput:       true,
+				ShowEffects:        true,
+				ShowEvents:         true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
+				ShowRawEffects:     true,
+			},
+		})
+		if err != nil {
+			ncc.LogInfof("GetTransactionBlock, err=%v", err)
+			return nil, err
 		}
 
-		anchor, err := ncc.nodeConn.wsClient.GetAnchorFromObjectID(ctx, anchorID)
+		anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+		if err != nil {
+			return nil, err
+		}
+
+		anchor, err := ncc.nodeConn.wsClient.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
 		if err != nil {
 			return nil, err
 		}

@@ -327,11 +327,13 @@ func (tnc *testNodeConn) PublishTX(
 		TxDataBytes: txBytes,
 		Signatures:  tx.Signatures,
 		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-			ShowObjectChanges:  true,
-			ShowEvents:         true,
-			ShowEffects:        true,
 			ShowInput:          true,
+			ShowRawInput:       true,
+			ShowEffects:        true,
+			ShowEvents:         true,
+			ShowObjectChanges:  true,
 			ShowBalanceChanges: true,
+			ShowRawEffects:     true,
 		},
 		RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 	})
@@ -340,26 +342,34 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	var anchorID *iotago.ObjectID
-	for _, e := range res.Effects.Data.V1.Mutated {
-		objectID := e.Reference.ObjectID
+	time.Sleep(5 * time.Second)
 
-		obj, _ := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
-			ObjectID: objectID,
-			Options: &iotajsonrpc.IotaObjectDataOptions{
-				ShowType: true,
-			},
-		})
+	res, err = tnc.l1Client.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
+		Digest: &res.Digest,
 
-		resource, err2 := iotago.NewResourceType(*obj.Data.Type)
-		if err2 != nil {
-			tnc.t.Logf("Failed to parse Resource type of AnchorTX %f", err2)
-		} else if resource.Contains(nil, iscmove.AnchorModuleName, iscmove.AnchorObjectName) {
-			anchorID = obj.Data.ObjectID
-		}
+		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowInput:          true,
+			ShowRawInput:       true,
+			ShowEffects:        true,
+			ShowEvents:         true,
+			ShowObjectChanges:  true,
+			ShowBalanceChanges: true,
+			ShowRawEffects:     true,
+		},
+	})
+	if err != nil {
+		tnc.t.Logf("GetTransactionBlock, err=%v", err)
+		return err
 	}
 
-	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorID)
+	fmt.Print(res)
+
+	anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	if err != nil {
+		return err
+	}
+
+	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
 	if err != nil {
 		return err
 	}
