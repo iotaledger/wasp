@@ -122,18 +122,19 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
 
 	for i := 0; i < incCount; i++ {
-
+		assets := iscmove.NewAssets(10000000)
+		allowance := iscmove.NewAssets(assets.BaseToken() / 10)
 		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        scClient,
 			PackageID:     te.iscPackageID,
 			AnchorAddress: te.anchor.GetObjectID(),
-			Assets:        iscmove.NewAssets(111),
+			Assets:        assets,
 			Message: &iscmove.Message{
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance:        iscmove.NewAssets(100),
-			OnchainGasBudget: 100,
+			Allowance:        allowance,
+			OnchainGasBudget: 100000,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
 		})
