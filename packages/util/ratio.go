@@ -51,7 +51,7 @@ func (ratio Ratio32) String() string {
 	return fmt.Sprintf("%d:%d", ratio.A, ratio.B)
 }
 
-func ceil(x, dividend, divisor uint64) uint64 {
+func ceilDiv(x, dividend, divisor uint64) uint64 {
 	return (x*dividend + (divisor - 1)) / divisor
 }
 
@@ -62,7 +62,7 @@ func (ratio Ratio32) YFloor64(x uint64) uint64 {
 
 // YCeil64 computes y = ceil(x * b / a)
 func (ratio Ratio32) YCeil64(x uint64) uint64 {
-	return ceil(x, uint64(ratio.B), uint64(ratio.A))
+	return ceilDiv(x, uint64(ratio.B), uint64(ratio.A))
 }
 
 // XFloor64 computes x = floor(y * a / b)
@@ -72,16 +72,17 @@ func (ratio Ratio32) XFloor64(y uint64) uint64 {
 
 // XCeil64 computes x = ceil(y * a / b)
 func (ratio Ratio32) XCeil64(y uint64) uint64 {
-	return ceil(y, uint64(ratio.A), uint64(ratio.B))
+	return ceilDiv(y, uint64(ratio.A), uint64(ratio.B))
 }
 
-// TODO: Validate code
-// Translated by gpt4o from the based on the functions above.
-func ceilBigInt(x, dividend, divisor *big.Int) *big.Int {
+// ceilDivBigInt calculates ceil(x * dividend / divisor)
+func ceilDivBigInt(x, dividend, divisor *big.Int) *big.Int {
 	result := new(big.Int)
-	temp := new(big.Int).Sub(divisor, big.NewInt(1))
-	temp.Mul(x, dividend).Add(temp, temp)
-	return result.Div(temp, divisor)
+	result.Mul(x, dividend)
+	result.Add(result, divisor)
+	result.Sub(result, big.NewInt(1))
+	result.Div(result, divisor)
+	return result
 }
 
 // YFloorBigInt computes y = floor(x * b / a)
@@ -97,7 +98,7 @@ func (ratio Ratio32) YFloorBigInt(x *big.Int) *big.Int {
 func (ratio Ratio32) YCeilBigInt(x *big.Int) *big.Int {
 	b := new(big.Int).SetUint64(uint64(ratio.B))
 	a := new(big.Int).SetUint64(uint64(ratio.A))
-	return ceilBigInt(x, b, a)
+	return ceilDivBigInt(x, b, a)
 }
 
 // XFloorBigInt computes x = floor(y * a / b)
@@ -113,7 +114,7 @@ func (ratio Ratio32) XFloorBigInt(y *big.Int) *big.Int {
 func (ratio Ratio32) XCeilBigInt(y *big.Int) *big.Int {
 	a := new(big.Int).SetUint64(uint64(ratio.A))
 	b := new(big.Int).SetUint64(uint64(ratio.B))
-	return ceilBigInt(y, a, b)
+	return ceilDivBigInt(y, a, b)
 }
 
 // Set is part of the pflag.Value interface. It accepts a string in the form "a:b".

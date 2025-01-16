@@ -19,8 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-// TODO DeployChain on peering domain, not on committee
-
 type CreateChainParams struct {
 	Layer1Client         clients.L1Client
 	CommitteeAPIHosts    []string

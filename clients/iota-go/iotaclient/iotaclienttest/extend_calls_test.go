@@ -65,7 +65,7 @@ func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
 	}
 	coinType := fmt.Sprintf("0x2::coin::Coin<%v>", iotajsonrpc.IotaCoinType)
 	address := iotago.MustAddressFromHex(testcommon.TestAddress)
-	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.TODO(), address, &options, coinType)
+	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.Background(), address, &options, coinType)
 	require.NoError(t, err)
 	t.Log(filterObject)
 }

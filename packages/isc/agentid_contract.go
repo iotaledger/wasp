@@ -39,7 +39,6 @@ func (a *ContractAgentID) Address() *cryptolib.Address {
 }
 
 func (a *ContractAgentID) Bytes() []byte {
-	// TODO: remove this function from codebase because it is not needed anymore
 	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 

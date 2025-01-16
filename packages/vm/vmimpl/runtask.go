@@ -90,13 +90,11 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	vmctx.task.Log.Debugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, l1Commitment, timestamp, rotationAddr)
 
-	// FIXME we may not need to store this when Rotate the address
 	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment, task.GasCoin)
 	vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	if rotationAddr != nil {
 		// rotation happens
 		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
-		// FIXME maybe we need to amend the following debugging message
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
 	// FIXME this may cause a deadlock when the packed the requests are too huge and exceeded the top up fee

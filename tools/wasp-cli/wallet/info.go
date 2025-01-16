@@ -19,36 +19,25 @@ func initAddressCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			myWallet := wallet.Load()
 			address := myWallet.Address()
-
-			model := &AddressModel{Address: address.String(), Index: int(myWallet.AddressIndex())}
-
-			if log.VerboseFlag {
-				verboseOutput := make(map[string]string)
-				// verboseOutput["Private key"] = myWallet.KeyPair.GetPrivateKey().String()
-				// verboseOutput["Public key"] = myWallet.GetPublicKey().String() // TODO: is it needed?
-				model.VerboseOutput = verboseOutput
-			}
-			log.PrintCLIOutput(model)
+			log.PrintCLIOutput(&AddressModel{
+				Address: address.String(),
+				Index:   int(myWallet.AddressIndex()),
+			})
 		},
 	}
 }
 
 type AddressModel struct {
-	Index         int
-	Address       string
-	VerboseOutput map[string]string
+	Index   int
+	Address string
 }
 
 var _ log.CLIOutput = &AddressModel{}
 
 func (a *AddressModel) AsText() (string, error) {
 	addressTemplate := `Address index: {{ .Index }}
-  Address: {{ .Address }}
-
-  {{ range $i, $out := .VerboseOutput }}
-    {{ $i }}: {{ $out }}
-  {{ end }}
-  `
+Address: {{ .Address }}
+`
 	return log.ParseCLIOutputTemplate(a, addressTemplate)
 }
 
@@ -64,13 +53,11 @@ func initBalanceCmd() *cobra.Command {
 			balance, err := cliclients.L1Client().GetAllBalances(context.Background(), address.AsIotaAddress())
 			log.Check(err)
 
-			model := &BalanceModel{
+			log.PrintCLIOutput(&BalanceModel{
 				Address:      address.String(),
 				AddressIndex: myWallet.AddressIndex(),
-				Tokens:       balance,
-			}
-
-			log.PrintCLIOutput(model)
+				Balance:      balance,
+			})
 		},
 	}
 }
@@ -78,9 +65,9 @@ func initBalanceCmd() *cobra.Command {
 var _ log.CLIOutput = &BalanceModel{}
 
 type BalanceModel struct {
-	AddressIndex uint32                 `json:"AddressIndex"`
-	Address      string                 `json:"Address"`
-	Tokens       []*iotajsonrpc.Balance `json:"BaseTokens"`
+	AddressIndex uint32
+	Address      string
+	Balance      []*iotajsonrpc.Balance
 }
 
 func (b *BalanceModel) AsText() (string, error) {
@@ -89,7 +76,7 @@ Address: {{.Address}}
 
 Native Assets:
 
- {{range $i, $out := .Tokens}}
+ {{range $i, $out := .Balance}}
  - {{$out.CoinType}}: {{$out.TotalBalance}}
 {{end}}`
 
