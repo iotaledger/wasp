@@ -24,7 +24,6 @@ import (
 	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -125,11 +124,14 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	for i := 0; i < incCount; i++ {
 
 		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
-			Signer:           scClient,
-			PackageID:        te.iscPackageID,
-			AnchorAddress:    te.anchor.GetObjectID(),
-			Assets:           iscmove.NewAssets(111),
-			Message:          iscmovetest.RandomMessage(),
+			Signer:        scClient,
+			PackageID:     te.iscPackageID,
+			AnchorAddress: te.anchor.GetObjectID(),
+			Assets:        iscmove.NewAssets(111),
+			Message: &iscmove.Message{
+				Contract: uint32(isc.Hn("accounts")),
+				Function: uint32(isc.Hn("deposit")),
+			},
 			Allowance:        iscmove.NewAssets(100),
 			OnchainGasBudget: 100,
 			GasPrice:         iotaclient.DefaultGasPrice,
