@@ -513,6 +513,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)
 	var originDeposit coin.Value
 	te.anchor, originDeposit = te.tcl.MakeTxChainOrigin()
+	te.chainID = te.anchor.ChainID()
 	//
 	// Initialize the nodes.
 	te.nodeConns = make([]*testNodeConn, len(te.peerIdentities))
