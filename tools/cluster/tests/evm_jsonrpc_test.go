@@ -96,7 +96,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 	require.NoError(e.T, err)
 
 	// We have to wait not only for the committee to process the request, but also for access nodes to get that info.
-	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(e.T, err)
 
 	return ethKey, ethAddr
@@ -136,7 +136,7 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 	govClient := e.Chain.Client(e.Chain.OriginatorKeyPair)
 	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(fp1), chainclient.PostRequestParams{})
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	d, err := govClient.CallView(context.Background(), governance.ViewGetFeePolicy.Message())

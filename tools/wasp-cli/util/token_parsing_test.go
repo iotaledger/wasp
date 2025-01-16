@@ -2,9 +2,11 @@ package util
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/wasp/packages/coin"
 )
 
 func TestTokenParsing(t *testing.T) {

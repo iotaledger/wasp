@@ -43,7 +43,7 @@ func TestReboot(t *testing.T) {
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)
@@ -85,7 +85,7 @@ func TestReboot(t *testing.T) {
 	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(3)
 
@@ -108,7 +108,7 @@ func TestReboot2(t *testing.T) {
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)
@@ -164,7 +164,7 @@ func TestReboot2(t *testing.T) {
 	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(3)
@@ -196,7 +196,7 @@ func (icc *incCounterClient) MustIncOnLedger() {
 	tx, err := icc.client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(icc.t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(icc.t, err)
 
 	icc.expected++
@@ -363,7 +363,7 @@ func TestRebootDuringTasks(t *testing.T) {
 			chainclient.PostRequestParams{Allowance: isc.NewAssets(5000)},
 		)
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), true, 10*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(context.Background(), env.Chain.ChainID, req.ID(), true, 10*time.Second)
 		require.NoError(t, err)
 		env.checkBalanceOnChain(targetAgentID, coin.BaseTokenType, 5000)
 	}
@@ -380,7 +380,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)
@@ -404,7 +404,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(3)
 

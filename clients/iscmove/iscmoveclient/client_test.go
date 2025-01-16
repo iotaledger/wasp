@@ -32,7 +32,7 @@ func PTBTestWrapper(
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	return req.Client.SignAndExecutePTB(
-		context.TODO(),
+		context.Background(),
 		req.Signer,
 		f(ptb).Finish(),
 		req.GasPayments,

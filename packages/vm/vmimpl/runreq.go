@@ -57,7 +57,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	result, err := reqctx.callTheContract()
 	if err == nil {
-		err = vmctx.checkTransactionSize() // TODO is this a concern now?
+		err = vmctx.checkTransactionSize()
 	}
 	if err != nil {
 		// skip the request / rollback tx builder (no need to rollback the state, because the mutations will never be applied)
@@ -101,7 +101,7 @@ func (reqctx *requestContext) consumeRequest() {
 	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		// TODO more description about what are the no sender scenarios
+		// should not happen, but just in case...
 		// onledger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
 		reqctx.creditObjectsToAccount(payoutAgentID, req.Assets().Objects.Sorted())
@@ -172,8 +172,6 @@ func (reqctx *requestContext) prepareGasBudget() {
 
 // callTheContract runs the contract. if an error is returned, the request will be skipped
 func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
-	// TODO: do not mutate vmContext's txbuilder
-
 	// pre execution ---------------------------------------------------------------
 	err := panicutil.CatchPanic(func() {
 		// transfer all attached assets to the sender's account

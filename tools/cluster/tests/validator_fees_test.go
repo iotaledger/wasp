@@ -53,7 +53,7 @@ func TestValidatorFees(t *testing.T) {
 			chainclient.PostRequestParams{Nonce: 0},
 		)
 		require.NoError(t, err2)
-		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req.ID(), false, 30*time.Second)
+		_, err2 = clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req.ID(), false, 30*time.Second)
 		require.NoError(t, err2)
 	}
 	// send a bunch of requests
@@ -65,7 +65,7 @@ func TestValidatorFees(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		reqTx, err := scClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 		require.NoError(t, err)
-		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chainID, reqTx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 	for _, validatorKp := range validatorKps {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -15,23 +16,22 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func postRequest(nodeName, chain string, msg isc.Message, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
+//nolint:unparam
+func postRequest(ctx context.Context, client *apiclient.APIClient, chain string, msg isc.Message, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
 	chainID := config.GetChain(chain)
-
-	apiClient := cliclients.WaspClient(nodeName)
-	chainClient := cliclients.ChainClient(apiClient, chainID)
+	chainClient := cliclients.ChainClient(client, chainID)
 
 	if offLedger {
-		util.WithOffLedgerRequest(chainID, nodeName, func() (isc.OffLedgerRequest, error) {
-			return chainClient.PostOffLedgerRequest(context.Background(), msg, params)
+		util.WithOffLedgerRequest(ctx, client, chainID, func() (isc.OffLedgerRequest, error) {
+			return chainClient.PostOffLedgerRequest(ctx, msg, params)
 		})
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	util.WithSCTransaction(config.GetChain(chain), nodeName, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 		return chainClient.PostRequest(ctx, msg, params)
 	})
 }
@@ -52,6 +52,9 @@ func initPostRequestCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+
 			cname := args[0]
 			fname := args[1]
 			params := util.EncodeParams(args[2:], chainID)
@@ -62,7 +65,7 @@ func initPostRequestCmd() *cobra.Command {
 				Transfer:  isc.NewAssets(100000000),
 				Allowance: isc.NewAssets(1000000),
 			}
-			postRequest(node, chain, msg, postParams, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
+			postRequest(ctx, client, chain, msg, postParams, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
 		},
 	}
 

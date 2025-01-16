@@ -13,7 +13,6 @@ type NilAgentID struct{}
 var _ AgentID = &NilAgentID{}
 
 func (a *NilAgentID) Bytes() []byte {
-	// TODO: remove this function from codebase because it is not needed anymore
 	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 

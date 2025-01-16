@@ -55,8 +55,6 @@ func newMigrationsTest(t *testing.T) *migrationsTestEnv {
 	require.NoError(t, err)
 	task := &vm.VMTask{
 		Anchor: anchor,
-		// FIXME GasCoinBalance
-		// L1Params
 	}
 	vmctx := &vmContext{
 		task:       task,

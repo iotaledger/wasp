@@ -68,7 +68,6 @@ func NewAddressFromIota(addr *iotago.Address) *Address {
 	return &a
 }
 
-// TODO: remove when not needed
 func (a *Address) AsIotaAddress() *iotago.Address {
 	result := iotago.Address(a[:])
 	return &result
