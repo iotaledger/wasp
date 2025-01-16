@@ -42,14 +42,14 @@ func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
 func (in *LocalIotaNode) start(ctx context.Context) {
 	in.ctx = ctx
 
-	image := "linux/amd64"
+	imagePlatform := "linux/amd64"
 	if runtime.GOARCH == "arm64" {
-		image = "linux/arm64"
+		imagePlatform = "linux/arm64"
 	}
 
 	req := testcontainers.ContainerRequest{
 		Image:         "iotaledger/iota-tools:v0.9.0-alpha",
-		ImagePlatform: image,
+		ImagePlatform: imagePlatform,
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
 		WaitingFor: wait.ForAll(
 			wait.ForListeningPort("9000/tcp"),
