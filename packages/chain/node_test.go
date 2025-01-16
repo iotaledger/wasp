@@ -339,37 +339,22 @@ func (tnc *testNodeConn) PublishTX(
 	}
 
 	var anchorID *iotago.ObjectID
+	for _, e := range res.Effects.Data.V1.Mutated {
+		objectID := e.Reference.ObjectID
 
-	// Maybe the request was already posted?
-	if res.ObjectChanges == nil {
-		for _, e := range res.Effects.Data.V1.Mutated {
-			objectID := e.Reference.ObjectID
+		obj, _ := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
+			ObjectID: objectID,
+			Options: &iotajsonrpc.IotaObjectDataOptions{
+				ShowType: true,
+			},
+		})
 
-			obj, _ := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
-				ObjectID: objectID,
-				Options: &iotajsonrpc.IotaObjectDataOptions{
-					ShowContent: true,
-					ShowDisplay: true,
-					ShowType:    true,
-				},
-			})
-
-			resource, err2 := iotago.NewResourceType(*obj.Data.Type)
-			if err2 != nil {
-				tnc.t.Logf("Failed to parse Resource type of AnchorTX %f", err2)
-			} else {
-				if resource.Contains(nil, iscmove.AnchorModuleName, iscmove.AnchorObjectName) {
-					anchorID = obj.Data.ObjectID
-				}
-			}
-		}
-	} else {
-		anchorRef, err2 := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+		resource, err2 := iotago.NewResourceType(*obj.Data.Type)
 		if err2 != nil {
-			return err2
+			tnc.t.Logf("Failed to parse Resource type of AnchorTX %f", err2)
+		} else if resource.Contains(nil, iscmove.AnchorModuleName, iscmove.AnchorObjectName) {
+			anchorID = obj.Data.ObjectID
 		}
-
-		anchorID = anchorRef.ObjectID
 	}
 
 	anchor, err := tnc.l2Client.GetAnchorFromObjectID(ctx, anchorID)

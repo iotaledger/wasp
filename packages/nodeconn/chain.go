@@ -89,10 +89,10 @@ func (ncc *ncChain) WaitUntilStopped() {
 func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	defer ncc.shutdownWaitGroup.Done()
 
-	postTx := func(task publishTxTask) error {
+	postTx := func(task publishTxTask) (*isc.StateAnchor, error) {
 		txBytes, err := bcs.Marshal(task.tx.Data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
@@ -104,12 +104,39 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !res.Effects.Data.IsSuccess() {
-			return fmt.Errorf("error executing tx: %s", res.Effects.Data.V1.Status.Error)
+			return nil, fmt.Errorf("error executing tx: %s", res.Effects.Data.V1.Status.Error)
 		}
-		return nil
+
+		var anchorID *iotago.ObjectID
+		for _, e := range res.Effects.Data.V1.Mutated {
+			objectID := e.Reference.ObjectID
+
+			obj, _ := ncc.nodeConn.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+				ObjectID: objectID,
+				Options: &iotajsonrpc.IotaObjectDataOptions{
+					ShowType: true,
+				},
+			})
+
+			resource, err2 := iotago.NewResourceType(*obj.Data.Type)
+			if err2 != nil {
+				ncc.LogInfof("Failed to parse Resource type of AnchorTX %f", err2)
+			} else if resource.Contains(nil, iscmove.AnchorModuleName, iscmove.AnchorObjectName) {
+				anchorID = obj.Data.ObjectID
+			}
+		}
+
+		anchor, err := ncc.nodeConn.wsClient.GetAnchorFromObjectID(ctx, anchorID)
+		if err != nil {
+			return nil, err
+		}
+
+		stateAnchor := isc.NewStateAnchor(anchor, ncc.nodeConn.iscPackageID)
+
+		return &stateAnchor, nil
 	}
 
 	for {
@@ -117,9 +144,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case task := <-ncc.publishTxQueue:
-			err := postTx(task)
-			panic("PLACE NEW STATE ANCHOR HERE (pull mutateObject anchor from above after ExecuteTransactionBlock")
-			task.cb(task.tx, nil, err)
+			stateAnchor, err := postTx(task)
+			task.cb(task.tx, stateAnchor, err)
 		}
 	}
 }
