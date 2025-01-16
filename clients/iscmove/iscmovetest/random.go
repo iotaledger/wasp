@@ -36,6 +36,7 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		initParams,
+		0,
 		"http://url",
 	).Bytes()
 	stateIndex := uint32(rand.Int31())

@@ -80,6 +80,7 @@ func UpdateStateAnchor(anchor *isc.StateAnchor, stateMetadata ...[]byte) *isc.St
 			&iotago.ObjectID{},
 			gas.DefaultFeePolicy(),
 			isc.NewCallArguments([]byte{1, 2, 3}),
+			0,
 			"http://url",
 		).Bytes()
 	}

@@ -2,6 +2,7 @@ package transaction
 
 import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -15,6 +16,7 @@ type StateMetadata struct {
 	GasCoinObjectID *iotago.ObjectID
 	GasFeePolicy    *gas.FeePolicy
 	InitParams      isc.CallArguments
+	InitDeposit     coin.Value
 	PublicURL       string
 }
 
@@ -24,6 +26,7 @@ func NewStateMetadata(
 	gasCoinObjectID *iotago.ObjectID,
 	gasFeePolicy *gas.FeePolicy,
 	initParams isc.CallArguments,
+	initDeposit coin.Value,
 	publicURL string,
 ) *StateMetadata {
 	return &StateMetadata{
@@ -33,6 +36,7 @@ func NewStateMetadata(
 		GasFeePolicy:    gasFeePolicy,
 		PublicURL:       publicURL,
 		InitParams:      initParams,
+		InitDeposit:     initDeposit,
 	}
 }
 

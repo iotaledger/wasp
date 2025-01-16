@@ -14,6 +14,7 @@ func DummyStateMetadata(commitment *state.L1Commitment) *transaction.StateMetada
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		[][]byte{},
+		0,
 		"",
 	)
 }

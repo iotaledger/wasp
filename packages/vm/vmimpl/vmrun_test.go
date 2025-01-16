@@ -165,6 +165,7 @@ func transitionAnchor(
 		stateMetadata.GasCoinObjectID,
 		chainInfo.GasFeePolicy,
 		stateMetadata.InitParams,
+		stateMetadata.InitDeposit,
 		chainInfo.PublicURL,
 	)
 

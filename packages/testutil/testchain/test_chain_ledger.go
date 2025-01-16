@@ -65,9 +65,10 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	require.NoError(tcl.t, err)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(tcl.chainOwner.Address())).Encode()
-
+	originDeposit := resGetCoins.Data[1]
+	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
 	gasCoin := resGetCoins.Data[0].Ref()
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, *gasCoin.ObjectID, 0, isc.BaseTokenCoinInfo)
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, *gasCoin.ObjectID, originDepositVal, isc.BaseTokenCoinInfo)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,
@@ -84,6 +85,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 			ValidatorFeeShare: 5,
 		},
 		initParams,
+		originDepositVal,
 		"https://iota.org",
 	)
 	// FIXME this may refer to the ObjectRef with older version, and trigger panic
@@ -94,7 +96,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 			ChainOwnerAddress: tcl.chainOwner.Address(),
 			PackageID:         *tcl.iscPackage,
 			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       nil,
+			InitCoinRef:       originDeposit.Ref(),
 			GasPayments:       []*iotago.ObjectRef{gasCoin},
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
@@ -105,7 +107,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	require.NotNil(tcl.t, stateAnchor)
 	tcl.chainID = stateAnchor.ChainID()
 
-	return &stateAnchor, 0
+	return &stateAnchor, originDepositVal
 }
 
 func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (isc.Request, error) {

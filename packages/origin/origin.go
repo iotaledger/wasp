@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -162,6 +163,7 @@ func InitChain(
 		&gasCoinObjectID,
 		gas.DefaultFeePolicy(),
 		args,
+		originDeposit,
 		"",
 	)
 }
