@@ -18,7 +18,7 @@ import (
 func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
 	seed[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 	return kp
 }

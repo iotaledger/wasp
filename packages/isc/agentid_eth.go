@@ -41,7 +41,6 @@ func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAge
 }
 
 func (a *EthereumAddressAgentID) Bytes() []byte {
-	// TODO: remove this function from codebase because it is not needed anymore
 	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
 }
 

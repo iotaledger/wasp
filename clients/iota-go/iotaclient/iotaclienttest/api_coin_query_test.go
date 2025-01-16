@@ -17,7 +17,7 @@ import (
 
 func TestGetAllBalances(t *testing.T) {
 	api := l1starter.Instance().L1Client()
-	balances, err := api.GetAllBalances(context.TODO(), iotago.MustAddressFromHex(testcommon.TestAddress))
+	balances, err := api.GetAllBalances(context.Background(), iotago.MustAddressFromHex(testcommon.TestAddress))
 	require.NoError(t, err)
 	for _, balance := range balances {
 		t.Logf(
@@ -47,7 +47,7 @@ func TestGetAllCoins(t *testing.T) {
 			name: "successful with limit",
 			a:    l1starter.Instance().L1Client(),
 			args: args{
-				ctx:     context.TODO(),
+				ctx:     context.Background(),
 				address: iotago.MustAddressFromHex(testcommon.TestAddress),
 				cursor:  nil,
 				limit:   3,
@@ -58,7 +58,7 @@ func TestGetAllCoins(t *testing.T) {
 			name: "successful without limit",
 			a:    l1starter.Instance().L1Client(),
 			args: args{
-				ctx:     context.TODO(),
+				ctx:     context.Background(),
 				address: iotago.MustAddressFromHex(testcommon.TestAddress),
 				cursor:  nil,
 				limit:   0,
@@ -95,14 +95,14 @@ func TestGetAllCoins(t *testing.T) {
 func TestGetBalance(t *testing.T) {
 	api := l1starter.Instance().L1Client()
 	err := iotaclient.RequestFundsFromFaucet(
-		context.TODO(),
+		context.Background(),
 		iotago.MustAddressFromHex(testcommon.TestAddress),
 		l1starter.Instance().FaucetURL(),
 	)
 	require.NoError(t, err)
 
 	balance, err := api.GetBalance(
-		context.TODO(),
+		context.Background(),
 		iotaclient.GetBalanceRequest{Owner: iotago.MustAddressFromHex(testcommon.TestAddress)},
 	)
 	require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestGetBalance(t *testing.T) {
 
 func TestGetCoinMetadata(t *testing.T) {
 	api := l1starter.Instance().L1Client()
-	metadata, err := api.GetCoinMetadata(context.TODO(), iotajsonrpc.IotaCoinType.String())
+	metadata, err := api.GetCoinMetadata(context.Background(), iotajsonrpc.IotaCoinType.String())
 	require.NoError(t, err)
 
 	require.Equal(t, "IOTA", metadata.Name)
@@ -130,7 +130,7 @@ func TestGetCoins(t *testing.T) {
 
 	defaultCoinType := iotajsonrpc.IotaCoinType.String()
 	coins, err := api.GetCoins(
-		context.TODO(), iotaclient.GetCoinsRequest{
+		context.Background(), iotaclient.GetCoinsRequest{
 			Owner:    address,
 			CoinType: &defaultCoinType,
 			Limit:    3,
@@ -163,7 +163,7 @@ func TestGetTotalSupply(t *testing.T) {
 			name: "get Iota supply",
 			api:  l1starter.Instance().L1Client(),
 			args: args{
-				context.TODO(),
+				context.Background(),
 				iotajsonrpc.IotaCoinType.String(),
 			},
 			wantErr: false,

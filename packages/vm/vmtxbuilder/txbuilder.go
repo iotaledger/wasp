@@ -71,8 +71,6 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
-	// FIXME allow assets but not only coin balance
-
 	txb.ptb = iscmoveclient.PTBTakeAndTransferCoinBalance(
 		txb.ptb,
 		txb.iscPackage,

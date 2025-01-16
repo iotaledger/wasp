@@ -91,7 +91,6 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-// FIXME may need to be pointer
 func (a Address) MarshalBCS() ([]byte, error) {
 	return a[:], nil
 }

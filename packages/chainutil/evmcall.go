@@ -43,7 +43,6 @@ func EVMCall(
 	}
 
 	iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
-	// TODO: setting EstimateGasMode = true feels wrong here
 	res, err := runISCRequest(
 		anchor,
 		l1Params,

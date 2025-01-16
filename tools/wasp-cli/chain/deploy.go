@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -134,7 +133,6 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 			},
 		},
 	)
-
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -176,7 +174,7 @@ func initDeployCmd() *cobra.Command {
 			kp := wallet.Load()
 
 			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
-			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)

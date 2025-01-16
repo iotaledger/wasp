@@ -285,13 +285,13 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		if typeOptions.IsCompactInt {
 			v.SetInt(int64(d.ReadCompactUint()))
 		} else {
-			err = d.decodeInt(v, typeOptions.UnderlayingType)
+			err = d.decodeInt(v, typeOptions.UnderlyingType)
 		}
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		if typeOptions.IsCompactInt {
 			v.SetUint(d.ReadCompactUint())
 		} else {
-			err = d.decodeUint(v, typeOptions.UnderlayingType)
+			err = d.decodeUint(v, typeOptions.UnderlyingType)
 		}
 	case reflect.String:
 		v.SetString(d.r.ReadString())
