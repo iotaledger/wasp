@@ -192,6 +192,7 @@ func (ch *Chain) DestroyFoundry(sn uint32, user *cryptolib.KeyPair) error {
 
 func (ch *Chain) MintTokens(sn uint32, amount coin.Value, user *cryptolib.KeyPair) error {
 	panic("refactor me: 'MintTokens'")
+	ch.
 }
 
 // DestroyTokensOnL2 destroys tokens (identified by foundry SN) on user's on-chain account

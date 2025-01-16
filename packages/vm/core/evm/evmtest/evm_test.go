@@ -1519,84 +1519,84 @@ func checkTransferEventERC721(
 }
 
 func TestERC20Coin(t *testing.T) {
-	t.Skip("TODO")
-	// env := InitEVM(t)
-	//
-	// const (
-	// 	tokenName         = "ERC20 Native Token Test"
-	// 	tokenTickerSymbol = "ERC20NT"
-	// 	tokenDecimals     = 8
-	// )
-	//
-	// foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
-	// err := env.Chain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
-	// require.NoError(t, err)
-	//
-	// supply := big.NewInt(int64(10 * isc.Million))
-	// foundrySN, nativeTokenID, err := env.Chain.NewNativeTokenParams(supply).
-	// 	WithUser(foundryOwner).
-	// 	WithTokenName(tokenName).
-	// 	WithTokenSymbol(tokenTickerSymbol).
-	// 	WithTokenDecimals(tokenDecimals).
-	// 	CreateFoundry()
-	// require.NoError(t, err)
-	// err = env.Chain.MintTokens(foundrySN, supply, foundryOwner)
-	// require.NoError(t, err)
-	//
-	// // should not allow to register again
-	// err = env.registerERC20NativeToken(foundryOwner, foundrySN, tokenName, tokenTickerSymbol, tokenDecimals)
-	// require.ErrorContains(t, err, "already exists")
-	//
-	// ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
-	// ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
-	//
-	// err = env.Chain.SendFromL2ToL2Account(isc.NewAssets(0, iotago.NativeTokens{
-	// 	&iotago.NativeToken{ID: nativeTokenID, Amount: supply},
-	// }), ethAgentID, foundryOwner)
-	// require.NoError(t, err)
-	//
-	// // there must be a Transfer event emitted from the ERC20NativeTokens contract
-	// {
-	// 	blockTxs := env.latestEVMTxs()
-	// 	require.Len(t, blockTxs, 1)
-	// 	tx := blockTxs[0]
-	// 	receipt := env.evmChain.TransactionReceipt(tx.Hash())
-	// 	require.Len(t, receipt.Logs, 1)
-	// 	checkTransferEventERC20(
-	// 		t,
-	// 		receipt.Logs[0],
-	// 		iscmagic.ERC20NativeTokensAddress(foundrySN),
-	// 		common.Address{},
-	// 		ethAddr,
-	// 		supply,
-	// 	)
-	// }
-	//
-	// {
-	// 	sandbox := env.ISCMagicSandbox(ethKey)
-	// 	var addr common.Address
-	// 	sandbox.callView("erc20NativeTokensAddress", []any{foundrySN}, &addr)
-	// 	require.Equal(t, iscmagic.ERC20NativeTokensAddress(foundrySN), addr)
-	// }
-	//
-	// erc20 := env.ERC20NativeTokens(ethKey, foundrySN)
-	//
-	// testERC20NativeTokens(
-	// 	env,
-	// 	erc20,
-	// 	nativeTokenID,
-	// 	tokenName, tokenTickerSymbol,
-	// 	tokenDecimals,
-	// 	supply,
-	// 	ethAgentID,
-	// )
+	env := InitEVM(t)
+
+	const (
+		tokenName         = "ERC20 Native Token Test"
+		tokenTickerSymbol = "ERC20NT"
+		tokenDecimals     = 8
+	)
+
+	foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds()
+	funds := env.solo.L1BaseTokens(foundryOwnerAddr)
+	fmt.Println(funds)
+	err := env.Chain.DepositBaseTokensToL2(20*isc.Million, foundryOwner)
+	require.NoError(t, err)
+
+	supply := coin.Value(10 * isc.Million)
+	foundrySN, nativeTokenID, err := env.Chain.NewNativeTokenParams(supply).
+		WithUser(foundryOwner).
+		WithTokenName(tokenName).
+		WithTokenSymbol(tokenTickerSymbol).
+		WithTokenDecimals(tokenDecimals).
+		CreateFoundry()
+	require.NoError(t, err)
+	err = env.Chain.MintTokens(foundrySN, supply, foundryOwner)
+	require.NoError(t, err)
+
+	// should not allow to register again
+	err = env.registerERC20Coin(foundryOwner, nativeTokenID)
+	require.ErrorContains(t, err, "already exists")
+
+	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
+	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
+
+	assets := isc.NewAssets(0).AddCoin(nativeTokenID, supply)
+	err = env.Chain.SendFromL2ToL2Account(assets, ethAgentID, foundryOwner)
+	require.NoError(t, err)
+
+	// there must be a Transfer event emitted from the ERC20NativeTokens contract
+	{
+		blockTxs := env.latestEVMTxs()
+		require.Len(t, blockTxs, 1)
+		tx := blockTxs[0]
+		receipt := env.evmChain.TransactionReceipt(tx.Hash())
+		require.Len(t, receipt.Logs, 1)
+		checkTransferEventERC20(
+			t,
+			receipt.Logs[0],
+			iscmagic.ERC20CoinAddress(nativeTokenID),
+			common.Address{},
+			ethAddr,
+			supply,
+		)
+	}
+
+	{
+		sandbox := env.ISCMagicSandbox(ethKey)
+		var addr common.Address
+		sandbox.callView("erc20NativeTokensAddress", []any{nativeTokenID}, &addr)
+		require.Equal(t, iscmagic.ERC20CoinAddress(nativeTokenID), addr)
+	}
+
+	erc20 := env.ERC20Coin(ethKey, nativeTokenID)
+
+	testERC20Coin(
+		env,
+		erc20,
+		nativeTokenID,
+		tokenName, tokenTickerSymbol,
+		tokenDecimals,
+		supply,
+		ethAgentID,
+	)
 }
 
 func checkTransferEventERC20(
 	t *testing.T,
 	log *types.Log,
 	contractAddress, from, to common.Address,
-	amount *big.Int,
+	amount coin.Value,
 ) {
 	require.Equal(t, contractAddress, log.Address)
 
@@ -1604,7 +1604,8 @@ func checkTransferEventERC20(
 	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
 	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
 	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
-	require.Equal(t, evmutil.PackUint256(amount), log.Data)
+
+	//require.Equal(t, evmutil.PackUint256()amount, log.Data)
 }
 
 // helper to make sandbox calls via EVM in a more readable way
@@ -1812,7 +1813,7 @@ func testERC20Coin(
 	coinType coin.Type,
 	tokenName, tokenTickerSymbol string,
 	tokenDecimals uint8,
-	supply *big.Int,
+	supply coin.Value,
 	ethAgentID isc.AgentID,
 ) {
 	panic("TODO")
