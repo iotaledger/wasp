@@ -165,6 +165,7 @@ type chainNodeImpl struct {
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
 	gasCoin                *coin.CoinWithRef      // Set only when the corresponding state is retrieved.
+	originDeposit          coin.Value             // Initial deposit of the chain.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -260,6 +261,7 @@ func New(
 	smParameters sm_gpa.StateManagerParameters,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
+	originDeposit coin.Value,
 ) (Chain, error) {
 	log.Debugf("Starting the chain, chainID=%v", chainID)
 	if listener == nil {
@@ -308,6 +310,7 @@ func New(
 		latestActiveAO:         nil,
 		latestActiveState:      nil,
 		latestActiveStateAO:    nil,
+		originDeposit:          originDeposit,
 		netRecvPipe:            pipe.NewInfinitePipe[*peering.PeerMessageIn](),
 		netPeeringID:           netPeeringID,
 		netPeerPubs:            map[gpa.NodeID]*cryptolib.PublicKey{},
@@ -671,7 +674,7 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc.StateAnchor) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, &aliasOutput, 0, isc.BaseTokenCoinInfo)
+		initBlock, err := origin.InitChainByAnchor(cni.chainStore, &aliasOutput, cni.originDeposit, isc.BaseTokenCoinInfo)
 		if err != nil {
 			cni.log.Errorf("Ignoring InitialAO for the chain: %v", err)
 			return
