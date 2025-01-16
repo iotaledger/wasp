@@ -31,18 +31,18 @@ func WaspClientForHostName(name string) *apiclient.APIClient {
 	return client
 }
 
-func WaspClient(name string) *apiclient.APIClient {
+func WaspClientWithVersionCheck(ctx context.Context, name string) *apiclient.APIClient {
 	client := WaspClientForHostName(name)
-	assertMatchingNodeVersion(name, client)
+	assertMatchingNodeVersion(ctx, name, client)
 	return client
 }
 
-func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
+func assertMatchingNodeVersion(ctx context.Context, name string, client *apiclient.APIClient) {
 	if SkipCheckVersions {
 		return
 	}
 	nodeVersion, _, err := client.NodeAPI.
-		GetVersion(context.Background()).
+		GetVersion(ctx).
 		Execute()
 	log.Check(err)
 	if app.Version != "v"+nodeVersion.Version {

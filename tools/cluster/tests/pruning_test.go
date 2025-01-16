@@ -78,7 +78,7 @@ func TestPruning(t *testing.T) {
 		err2 = archiveClient.SendTransaction(context.Background(), tx)
 		require.NoError(t, err2)
 		// await tx confirmed
-		_, err2 = clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
+		_, err2 = clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
 		require.NoError(t, err2)
 	}
 

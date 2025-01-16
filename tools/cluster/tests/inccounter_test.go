@@ -39,7 +39,7 @@ func setupContract(env *ChainEnv) *contractWithMessageCounterEnv {
 		Allowance: isc.NewAssets(1_000_000),
 	})
 	require.NoError(env.t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(env.t, err)
 
 	return &contractWithMessageCounterEnv{
@@ -60,7 +60,7 @@ func (e *contractWithMessageCounterEnv) postRequest(contract, entryPoint isc.Hna
 		Transfer: b,
 	})
 	require.NoError(e.t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 60*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 60*time.Second)
 	require.NoError(e.t, err)
 }
 
@@ -108,7 +108,7 @@ func testInvalidEntrypoint(t *testing.T, env *ChainEnv) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(inccounter.Contract.Hname(), entryPoint), chainclient.PostRequestParams{})
 		require.NoError(t, err)
-		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(e.Chain.ChainID, tx, false, 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(receipts))
 		require.Contains(t, *receipts[0].ErrorMessage, vm.ErrTargetEntryPointNotFound.MessageFormat())
@@ -128,7 +128,7 @@ func testIncrement(t *testing.T, env *ChainEnv) {
 	for i := 0; i < numRequests; i++ {
 		tx, err := e.NewChainClient().PostRequest(context.Background(), isc.NewMessage(inccounter.Contract.Hname(), entryPoint), chainclient.PostRequestParams{})
 		require.NoError(t, err)
-		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+		_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 

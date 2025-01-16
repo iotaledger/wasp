@@ -6,11 +6,9 @@ package chain
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients"
@@ -37,29 +35,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
-
-func GetAllWaspNodes() []int {
-	ret := []int{}
-	for index := range viper.GetStringMap("wasp") {
-		i, err := strconv.Atoi(index)
-		log.Check(err)
-		ret = append(ret, i)
-	}
-	return ret
-}
-
-func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
-	if addr == "" {
-		return wallet.Load().Address()
-	}
-	govControllerAddr, err := cryptolib.NewAddressFromHexString(addr)
-	log.Check(err)
-	panic("refactor me: what are we doing without network prefixes here?")
-	/*if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
-		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
-	}*/
-	return govControllerAddr
-}
 
 func initDeployMoveContractCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -123,7 +98,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	}
 
 	result, err := client.SignAndExecuteTransaction(
-		context.Background(),
+		ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
 			TxDataBytes: txnBytes,
@@ -187,8 +162,8 @@ func initDeployCmd() *cobra.Command {
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
 				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
-				N:                 uint16(len(node)),
-				T:                 uint16(quorum),
+				N:                 uint16(len(node)), //nolint:gosec
+				T:                 uint16(quorum),    //nolint:gosec
 				OriginatorKeyPair: kp,
 				Textout:           os.Stdout,
 				PackageID:         packageID,
@@ -200,7 +175,7 @@ func initDeployCmd() *cobra.Command {
 
 			config.AddChain(chainName, chainID.String())
 
-			activateChain(node, chainName, chainID)
+			activateChain(ctx, node, chainName, chainID)
 		},
 	}
 

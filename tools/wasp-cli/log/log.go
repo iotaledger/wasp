@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -165,6 +166,7 @@ func Check(err error, msg ...string) {
 	Fatalf("%v", message)
 }
 
+//nolint:govet
 func PrintTable(header []string, rows [][]string) {
 	if len(rows) == 0 {
 		return

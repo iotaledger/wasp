@@ -13,7 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-const fileName = "secrets.db"
+const (
+	fileName                   = "secrets.db"
+	filePermission os.FileMode = 0o777
+)
 
 var ErrInvalidPassword = errors.New("invalid password")
 
@@ -54,7 +57,7 @@ func (k *KeyChainFile) ReadContents() (map[string][]byte, error) {
 			return nil, neErr
 		}
 
-		neErr = os.WriteFile(k.FilePath(), result, os.ModePerm)
+		neErr = os.WriteFile(k.FilePath(), result, filePermission)
 		if neErr != nil {
 			return nil, neErr
 		}
@@ -129,7 +132,7 @@ func (k *KeyChainFile) Set(key string, value []byte) error {
 		return err
 	}
 
-	err = os.WriteFile(k.FilePath(), payload, os.ModePerm)
+	err = os.WriteFile(k.FilePath(), payload, filePermission)
 	if err != nil {
 		return err
 	}
