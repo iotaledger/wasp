@@ -4,9 +4,12 @@
 package jsonrpctest
 
 import (
+	"bytes"
 	"context"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"slices"
 	"strings"
@@ -624,20 +627,136 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, types.ReceiptStatusSuccessful, rc.Status)
 
-	trace, err := env.traceTransactionWithCallTracer(tx.Hash())
+	t.Run("callTracer_tx", func(t *testing.T) {
+		var trace jsonrpc.CallFrame
+		trace, err = env.traceTransactionWithCallTracer(tx.Hash())
+		require.NoError(t, err)
+		require.Equal(t, evmAddr.String(), trace.To.String())
+		require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
+	})
+
+	t.Run("prestateTracer_tx", func(t *testing.T) {
+		var prestate jsonrpc.PrestateAccountMap
+		prestate, err = env.traceTransactionWithPrestate(tx.Hash())
+		require.NoError(t, err)
+		require.Empty(t, prestate)
+	})
+
+	t.Run("prestateTracerDiff_tx", func(t *testing.T) {
+		var prestateDiff jsonrpc.PrestateDiffResult
+		prestateDiff, err = env.traceTransactionWithPrestateDiff(tx.Hash())
+		require.NoError(t, err)
+		require.Empty(t, prestateDiff.Pre)
+		require.Empty(t, prestateDiff.Post)
+	})
+
+	t.Run("callTracer_block", func(t *testing.T) {
+		callTracer := "callTracer"
+		var res1 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res1,
+			"debug_traceBlockByNumber",
+			hexutil.Uint64(env.BlockNumber()).String(),
+			tracers.TraceConfig{Tracer: &callTracer},
+		)
+		require.NoError(t, err)
+
+		traces := make([]jsonrpc.TxTraceResult, 0)
+		err = json.Unmarshal(res1, &traces)
+		require.NoError(t, err)
+		require.Len(t, traces, 1)
+		require.Equal(t, tx.Hash(), traces[0].TxHash)
+
+		cs := jsonrpc.CallFrame{}
+		err = json.Unmarshal(traces[0].Result, &cs)
+		require.NoError(t, err)
+		require.Equal(t, evmAddr.String(), cs.To.String())
+		require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), cs.Value.String())
+	})
+
+	t.Run("prestateTracer_block", func(t *testing.T) {
+		tracer := "prestateTracer"
+		var res1 json.RawMessage
+		// we have to use the raw client, because the normal client does not support debug methods
+		err = env.RawClient.CallContext(
+			context.Background(),
+			&res1,
+			"debug_traceBlockByNumber",
+			hexutil.Uint64(env.BlockNumber()).String(),
+			tracers.TraceConfig{Tracer: &tracer},
+		)
+		require.NoError(t, err)
+
+		traces := make([]jsonrpc.TxTraceResult, 0)
+		err = json.Unmarshal(res1, &traces)
+		require.NoError(t, err)
+		require.Len(t, traces, 1)
+		require.Equal(t, tx.Hash(), traces[0].TxHash)
+
+		prestate := jsonrpc.PrestateAccountMap{}
+		err = json.Unmarshal(traces[0].Result, &prestate)
+		require.NoError(t, err)
+		require.Empty(t, prestate)
+	})
+}
+
+func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAddress common.Address, contractABI abi.ABI, contractAddress common.Address) {
+	rqs := make([]isc.Request, 0, n)
+	for i := 0; i < n; i++ {
+		tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+			&types.LegacyTx{
+				Nonce:    env.NonceAt(creatorAddress) + uint64(i),
+				To:       &contractAddress,
+				Value:    big.NewInt(123),
+				Gas:      100000,
+				GasPrice: big.NewInt(10000000000),
+				Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))),
+			})
+
+		req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+		rqs = append(rqs, req1)
+	}
+
+	env.soloChain.WaitForRequestsMark()
+	env.soloChain.Env.AddRequestsToMempool(env.soloChain, rqs)
+}
+
+// TestRPCTraceBlockForLargeN requires a large number of requests to be added to the mempool, for that set solo.MaxRequestsInBlock to a large value (>500)
+func TestRPCTraceBlockForLargeN(t *testing.T) {
+	t.Skip("skipping because it requires solo parameters to be set")
+
+	n := 400
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	addNRequests(n, env, creator, creatorAddress, contractABI, contractAddress)
+
+	require.True(t, env.soloChain.WaitForRequestsThrough(n, 5*time.Minute))
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, n, bi.NumSuccessfulRequests)
+
+	callTracer := "callTracer"
+	var res1 json.RawMessage
+	// we have to use the raw client, because the normal client does not support debug methods
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"debug_traceBlockByNumber",
+		hexutil.Uint64(env.BlockNumber()).String(),
+		tracers.TraceConfig{Tracer: &callTracer},
+	)
 	require.NoError(t, err)
 
-	require.Equal(t, evmAddr.String(), trace.To.String())
-	require.Equal(t, hexutil.EncodeUint64(isc.NewAssetsBaseTokens(1000).BaseTokens*1e12), trace.Value.String())
-
-	prestate, err := env.traceTransactionWithPrestate(tx.Hash())
+	var prettyJSON bytes.Buffer
+	err = json.Indent(&prettyJSON, res1, "", "    ")
 	require.NoError(t, err)
-	require.Empty(t, prestate)
-
-	prestateDiff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
-	require.NoError(t, err)
-	require.Empty(t, prestateDiff.Pre)
-	require.Empty(t, prestateDiff.Post)
+	fmt.Println(prettyJSON.String())
 }
 
 func TestRPCTraceBlock(t *testing.T) {
