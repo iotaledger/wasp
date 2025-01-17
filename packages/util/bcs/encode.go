@@ -164,8 +164,8 @@ func (e *Encoder) WriteEnumIdx(variantIdx int) {
 	e.w.WriteSize32(variantIdx)
 }
 
-func (e *Encoder) WriteLen(len int) {
-	e.w.WriteSize32(len)
+func (e *Encoder) WriteLen(length int) {
+	e.w.WriteSize32(length)
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
@@ -177,6 +177,7 @@ func (e *Encoder) WriteBool(v bool) {
 	e.w.WriteBool(v)
 }
 
+//nolint:govet
 func (e *Encoder) WriteByte(v byte) {
 	e.w.WriteByte(v)
 }
@@ -235,6 +236,7 @@ func (e *Encoder) Write(b []byte) (n int, err error) {
 	return n, e.w.Err
 }
 
+//nolint:gocyclo,funlen
 func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, tInfo *typeInfo) error {
 	if tInfo == nil {
 		// Hint about type customization could have been provided by caller when encoding collections.
@@ -255,7 +257,7 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	}
 
 	if tInfo.CustomEncoder != nil {
-		if err := tInfo.CustomEncoder(e, v); err != nil {
+		if err := tInfo.CustomEncoder(e, v); err != nil { //nolint:govet
 			if e.w.Err == nil {
 				e.w.Err = err
 			}
@@ -281,7 +283,7 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if typeOptions.IsCompactInt {
-			e.WriteCompactUint(uint64(v.Int()))
+			e.WriteCompactUint(uint64(v.Int())) //nolint:gosec
 		} else {
 			err = e.encodeInt(v, typeOptions.UnderlyingType)
 		}
@@ -454,7 +456,7 @@ func (e *Encoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 	switch {
 	case kind == reflect.Interface:
 		return typeCustomization{}
-	case kind == reflect.Struct && t.Implements(enumT):
+	case kind == reflect.Struct && t.Implements(structEnumT):
 		return typeCustomization{IsStructEnum: true}
 	case t.Implements(bcsTypeT):
 		return typeCustomization{HasTypeOptions: true}
@@ -500,11 +502,11 @@ func (e *Encoder) encodeInt(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Int8:
-		e.w.WriteInt8(int8(v.Int()))
+		e.w.WriteInt8(int8(v.Int())) //nolint:gosec
 	case reflect.Int16:
-		e.w.WriteInt16(int16(v.Int()))
+		e.w.WriteInt16(int16(v.Int())) //nolint:gosec
 	case reflect.Int32:
-		e.w.WriteInt32(int32(v.Int()))
+		e.w.WriteInt32(int32(v.Int())) //nolint:gosec
 	case reflect.Int64, reflect.Int:
 		e.w.WriteInt64(v.Int())
 	default:
@@ -523,11 +525,11 @@ func (e *Encoder) encodeUint(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Uint8:
-		e.w.WriteUint8(uint8(v.Uint()))
+		e.w.WriteUint8(uint8(v.Uint())) //nolint:gosec
 	case reflect.Uint16:
-		e.w.WriteUint16(uint16(v.Uint()))
+		e.w.WriteUint16(uint16(v.Uint())) //nolint:gosec
 	case reflect.Uint32:
-		e.w.WriteUint32(uint32(v.Uint()))
+		e.w.WriteUint32(uint32(v.Uint())) //nolint:gosec
 	case reflect.Uint64, reflect.Uint:
 		e.w.WriteUint64(v.Uint())
 	default:
@@ -782,7 +784,7 @@ func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumV
 			}
 
 			if enumVariantIdx != -1 {
-				prevSetField := v.Type().Field(int(enumVariantIdx))
+				prevSetField := v.Type().Field(enumVariantIdx)
 				currentField := v.Type().Field(i)
 				return -1, e.handleErrorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
 			}
@@ -859,9 +861,8 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value, enumVariants map[i
 	if enumVariantIdx == -1 {
 		if isNil {
 			return -1, e.handleErrorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", v.Type())
-		} else {
-			return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, v.Type())
 		}
+		return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, v.Type())
 	}
 
 	return enumVariantIdx, nil

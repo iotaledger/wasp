@@ -217,7 +217,7 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 				return FieldOptions{}, fmt.Errorf("invalid len_bytes tag: %s", val)
 			}
 
-			opts.LenSizeInBytes = LenBytesCount(bytes)
+			opts.LenSizeInBytes = LenBytesCount(bytes) //nolint:gosec
 		case "optional":
 			opts.Optional = true
 		case "bytearr":

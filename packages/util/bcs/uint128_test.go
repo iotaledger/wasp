@@ -35,3 +35,6 @@ func testUint128Codec(t *testing.T, v string, expectSuccess bool) {
 		require.Error(t, err)
 	}
 }
+
+func TestInt64asUint128(t *testing.T) {
+}

@@ -114,7 +114,7 @@ func TestEncodingDefferedErrorHandling(t *testing.T) {
 	})
 	require.Error(t, e.Err())
 
-	//Trying again to write something good
+	// Trying again to write something good
 	e.Encode(&FunkyStruct{
 		A:            42,
 		CanSerialize: true,

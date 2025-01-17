@@ -183,18 +183,18 @@ func (d *Decoder) ReadOptionalFlag() bool {
 	case 1:
 		return true
 	default:
-		d.handleErrorf("invalid optional flag value: %v", f)
+		_ = d.handleErrorf("invalid optional flag value: %v", f)
 		return false
 	}
 }
 
 // Enum index is an index of variant in enum type.
 func (d *Decoder) ReadEnumIdx() int {
-	return int(d.r.ReadSize32())
+	return d.r.ReadSize32()
 }
 
 func (d *Decoder) ReadLen() int {
-	return int(d.r.ReadSize32())
+	return d.r.ReadSize32()
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
@@ -206,6 +206,7 @@ func (d *Decoder) ReadBool() bool {
 	return d.r.ReadBool()
 }
 
+//nolint:govet
 func (d *Decoder) ReadByte() byte {
 	return d.r.ReadByte()
 }
@@ -263,6 +264,7 @@ func (d *Decoder) Read(b []byte) (n int, err error) {
 	return n, d.r.Err
 }
 
+//nolint:gocyclo,funlen
 func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, tInfo *typeInfo) error {
 	if tInfo == nil {
 		// Hint about type customization could have been provided by caller when decoding collections.
@@ -313,7 +315,7 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		v.SetBool(d.r.ReadBool())
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		if typeOptions.IsCompactInt {
-			v.SetInt(int64(d.ReadCompactUint()))
+			v.SetInt(int64(d.ReadCompactUint())) //nolint:gosec
 		} else {
 			err = d.decodeInt(v, typeOptions.UnderlyingType)
 		}
@@ -387,7 +389,7 @@ func (d *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 	switch {
 	case kind == reflect.Interface:
 		return typeCustomization{}
-	case kind == reflect.Struct && t.Implements(enumT):
+	case kind == reflect.Struct && t.Implements(structEnumT):
 		return typeCustomization{IsStructEnum: true}
 	case t.Implements(bcsTypeT):
 		return typeCustomization{HasTypeOptions: true}
@@ -610,9 +612,9 @@ func (d *Decoder) decodeSlice(v reflect.Value, typeOpts TypeOptions) error {
 
 	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
-		length = int(d.r.ReadSize16())
+		length = d.r.ReadSize16()
 	case Len4Bytes, 0:
-		length = int(d.r.ReadSize32())
+		length = d.r.ReadSize32()
 	default:
 		return d.handleErrorf("invalid array size type: %v", typeOpts.LenSizeInBytes)
 	}
@@ -673,9 +675,9 @@ func (d *Decoder) decodeMap(v reflect.Value, typeOpts TypeOptions) error {
 
 	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
-		length = int(d.r.ReadSize16())
+		length = d.r.ReadSize16()
 	case Len4Bytes, 0:
-		length = int(d.r.ReadSize32())
+		length = d.r.ReadSize32()
 	default:
 		return d.handleErrorf("invalid map size type: %v", typeOpts.LenSizeInBytes)
 	}
@@ -825,7 +827,7 @@ func (d *Decoder) decodeInterfaceEnum(v reflect.Value, variants map[int]reflect.
 		return d.r.Err
 	}
 
-	if int(variantIdx) >= len(variants) {
+	if variantIdx >= len(variants) {
 		return d.handleErrorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, v.Type(), len(variants))
 	}
 
@@ -850,11 +852,11 @@ func (d *Decoder) decodeStructEnum(v reflect.Value) error {
 
 	t := v.Type()
 
-	if t.NumField() <= int(variantIdx) {
+	if t.NumField() <= variantIdx {
 		return d.handleErrorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, t, t.NumField())
 	}
 
-	return d.decodeValue(v.Field(int(variantIdx)), nil, nil)
+	return d.decodeValue(v.Field(variantIdx), nil, nil)
 }
 
 func (d *Decoder) decodeAsByteArray(dec func() error) error {
@@ -863,7 +865,7 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 	// skip length and continue reading. But that may result in confusing decoding errors in case of corrupted data.
 	// So more reliable way is to separate those bytes and decode from them.
 
-	b := make([]byte, int(d.r.ReadSize32()))
+	b := make([]byte, d.r.ReadSize32())
 	d.r.ReadN(b)
 
 	if d.r.Err != nil {
