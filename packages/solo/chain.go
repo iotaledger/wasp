@@ -352,8 +352,11 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 	require.NoError(ch.Env.T, err)
 }
 
-// request Originator's funds from L1 and merge it into GasCoin
+// TopUp GasCoin from Faucet if Balance is under isc.TopUpFeeMin
 func (ch *Chain) TopUpGasCoinFromFaucet() {
+	if ch.GetLatestGasCoin().Value > isc.TopUpFeeMin {
+		return
+	}
 	owner := cryptolib.SignerToIotaSigner(ch.OriginatorPrivateKey)
 	ch.Env.GetFundsFromFaucet(ch.OriginatorAddress)
 	ownedCoins := ch.Env.L1AllCoins(ch.OriginatorAddress)

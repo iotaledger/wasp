@@ -22,9 +22,7 @@ func TestCounter(t *testing.T) {
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
 	for i := 0; i < 33; i++ {
 		// charge more fund to gas coin every 5 request, otherwise there will be no fund to post request on L1
-		if i%5 == 4 {
-			chain.TopUpGasCoinFromFaucet()
-		}
+		chain.TopUpGasCoinFromFaucet()
 		_, err := chain.PostRequestSync(req, nil)
 		require.NoError(t, err)
 	}
