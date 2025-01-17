@@ -37,7 +37,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 		{
 			name: "case 1",
 			args: args{
-				ctx:            context.TODO(),
+				ctx:            context.Background(),
 				parentObjectID: parentObjectID,
 				name: &iotago.DynamicFieldName{
 					Type:  "address",
@@ -165,7 +165,7 @@ func TestQueryTransactionBlocks(t *testing.T) {
 		{
 			name: "test for queryTransactionBlocks",
 			args: args{
-				ctx: context.TODO(),
+				ctx: context.Background(),
 				query: &iotajsonrpc.IotaTransactionBlockResponseQuery{
 					Filter: &iotajsonrpc.TransactionFilter{
 						FromAddress: iotago.MustAddressFromHex(testcommon.TestAddress),
@@ -267,7 +267,7 @@ func TestSubscribeEvent(t *testing.T) {
 		{
 			name: "test for filter events",
 			args: args{
-				ctx: context.TODO(),
+				ctx: context.Background(),
 				filter: &iotajsonrpc.EventFilter{
 					Package: iotago.MustPackageIDFromHex("0x000000000000000000000000000000000000000000000000000000000000dee9"),
 				},
@@ -330,7 +330,7 @@ func TestSubscribeTransaction(t *testing.T) {
 		{
 			name: "test for filter transaction",
 			args: args{
-				ctx: context.TODO(),
+				ctx: context.Background(),
 				filter: &iotajsonrpc.TransactionFilter{
 					MoveFunction: &iotajsonrpc.TransactionFilterMoveFunction{
 						Package: *iotago.MustPackageIDFromHex("0x2c68443db9e8c813b194010c11040a3ce59f47e4eb97a2ec805371505dad7459"),

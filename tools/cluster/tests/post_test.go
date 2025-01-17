@@ -2,13 +2,15 @@ package tests
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -33,7 +35,7 @@ func deployInccounter42(e *ChainEnv) *isc.ContractAgentID {
 	})
 	require.NoError(e.t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(e.t, err)
 
 	for i := range e.Chain.CommitteeNodes {
@@ -77,7 +79,7 @@ func testPost1Request(t *testing.T, e *ChainEnv) {
 	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	e.expectCounter(43)
@@ -100,7 +102,7 @@ func testPost3Recursive(t *testing.T, e *ChainEnv) {
 	})
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	e.waitUntilCounterEquals(43+3, 10*time.Second)
@@ -125,7 +127,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 		})
 		require.NoError(t, err)
 
-		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
 
 		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
@@ -160,7 +162,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	}
 
 	for i := 0; i < 5; i++ {
-		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx[i], false, 30*time.Second)
+		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx[i], false, 30*time.Second)
 		require.NoError(t, err)
 
 		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)

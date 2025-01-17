@@ -47,7 +47,6 @@ func NewSignature(publicKey *PublicKey, signature []byte) *Signature {
 	return &result
 }
 
-// TODO: is it really needed?
 func (s *Signature) GetPublicKey() *PublicKey {
 	return s.publicKey
 }

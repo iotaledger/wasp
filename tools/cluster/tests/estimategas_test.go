@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -55,7 +56,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		par,
 	)
 	require.NoError(t, err)
-	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, tx, false, 10*time.Second)
+	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, recs[0].GasBurned, estimatedReceipt.GasBurned)
 	require.Equal(t, recs[0].GasFeeCharged, estimatedReceipt.GasFeeCharged)
@@ -161,7 +162,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		par,
 	)
 	require.NoError(t, err)
-	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 10*time.Second)
+	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 10*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, rec.GasBurned, estimatedReceipt.GasBurned)
 	require.Equal(t, rec.GasFeeCharged, estimatedReceipt.GasFeeCharged)

@@ -26,8 +26,8 @@ func initCallViewCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			contractName := args[0]
 			funcName := args[1]
@@ -36,8 +36,9 @@ func initCallViewCmd() *cobra.Command {
 
 			msg := isc.NewMessage(isc.Hn(contractName), isc.Hn(funcName), params)
 
-			result, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
-				ContractCallViewRequest(apiextensions.CallViewReq(msg)).Execute()
+			result, _, err := client.ChainsAPI.CallView(ctx, config.GetChain(chain).String()).
+				ContractCallViewRequest(apiextensions.CallViewReq(msg)).Execute() //nolint:bodyclose // false positive
+
 			log.Check(err)
 
 			decodedResult, err := apiextensions.APIResultToCallArgs(result)

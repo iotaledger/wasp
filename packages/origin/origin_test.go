@@ -59,9 +59,9 @@ func TestCreateOrigin(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	balancesSentSigner1, err := client.GetAllBalances(context.TODO(), sentSigner.Address().AsIotaAddress())
+	balancesSentSigner1, err := client.GetAllBalances(context.Background(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
-	balancesStateSinger1, err := client.GetAllBalances(context.TODO(), stateSigner.Address().AsIotaAddress())
+	balancesStateSinger1, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 
 	originDeposit := resGetCoins.Data[2]
@@ -94,17 +94,17 @@ func TestCreateOrigin(t *testing.T) {
 	require.NoError(t, err)
 	oriAnchor := isc.NewStateAnchor(anchorRef, l1starter.ISCPackageID())
 	require.NotNil(t, oriAnchor)
-	anchor, err := client.GetAnchorFromObjectID(context.TODO(), oriAnchor.GetObjectID())
+	anchor, err := client.GetAnchorFromObjectID(context.Background(), oriAnchor.GetObjectID())
 	require.NoError(t, err)
 	require.EqualValues(t, oriAnchor.ChainID().AsAddress(), anchor.ObjectID)
 	require.EqualValues(t, 0, anchor.Object.StateIndex)
 
 	require.EqualValues(t, anchor.Object.StateMetadata, originStateMetadata.Bytes())
 
-	balancesSentSinger2, err := client.GetAllBalances(context.TODO(), sentSigner.Address().AsIotaAddress())
+	balancesSentSinger2, err := client.GetAllBalances(context.Background(), sentSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.EqualValues(t, balancesSentSigner1[0].TotalBalance.Int64()-originDeposit.Balance.Int64()-txnResponse.Effects.Data.GasFee(), balancesSentSinger2[0].TotalBalance.Int64())
-	balancesStateSinger2, err := client.GetAllBalances(context.TODO(), stateSigner.Address().AsIotaAddress())
+	balancesStateSinger2, err := client.GetAllBalances(context.Background(), stateSigner.Address().AsIotaAddress())
 	require.NoError(t, err)
 	require.Equal(t, balancesStateSinger1[0], balancesStateSinger2[0])
 }
@@ -221,7 +221,7 @@ func startNewChain(
 	ptb = iscmoveclient.PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
 
 	txnResponse, err := client.SignAndExecutePTB(
-		context.TODO(),
+		context.Background(),
 		req.Signer,
 		ptb.Finish(),
 		req.GasPayments,
@@ -232,6 +232,6 @@ func startNewChain(
 
 	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	require.NoError(t, err)
-	anchor, err := client.GetAnchorFromObjectID(context.TODO(), anchorRef.ObjectID)
+	anchor, err := client.GetAnchorFromObjectID(context.Background(), anchorRef.ObjectID)
 	return txnResponse, anchor, err
 }

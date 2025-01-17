@@ -70,6 +70,7 @@ func init() {
 		}
 	}
 
+	//nolint:revive,staticcheck
 	if waspVersion == "" {
 		// panic("unable to initialize app: no version given")
 	}

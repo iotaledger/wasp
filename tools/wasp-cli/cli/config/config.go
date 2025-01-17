@@ -41,11 +41,9 @@ func L1ParamsExpired() bool {
 }
 
 func RefreshL1ParamsFromNode() {
-
 }
 
 func LoadL1ParamsFromConfig() {
-
 }
 
 func locateBaseDir() string {
@@ -121,7 +119,6 @@ func L1FaucetAddress() string {
 		return address
 	}
 	return iotaconn.AlphanetFaucetURL
-
 }
 
 var keyChain keychain.KeyChain

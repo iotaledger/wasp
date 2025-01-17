@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	wasp_util "github.com/iotaledger/wasp/packages/util"
+	wasputil "github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -40,7 +40,7 @@ func initDecodeCmd() *cobra.Command {
 			}
 
 			if len(callResults) != len(cmdArgs) {
-				fmt.Println("Number of provided result types does not match number of results: types = %v, results = %v",
+				log.Printf("Number of provided result types does not match number of results: types = %v, results = %v\n",
 					len(cmdArgs), len(callResults))
 				os.Exit(1)
 				return
@@ -129,7 +129,7 @@ func initDecodeGasFeePolicy() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			bytes, err := cryptolib.DecodeHex(args[0])
 			log.Check(err)
-			log.Printf(gas.MustFeePolicyFromBytes(bytes).String())
+			log.Printf("%v", gas.MustFeePolicyFromBytes(bytes).String())
 		},
 	}
 }
@@ -149,13 +149,13 @@ func initEncodeGasFeePolicy() *cobra.Command {
 			feePolicy := gas.DefaultFeePolicy()
 
 			if gasPerToken != "" {
-				ratio, err := wasp_util.Ratio32FromString(gasPerToken)
+				ratio, err := wasputil.Ratio32FromString(gasPerToken)
 				log.Check(err)
 				feePolicy.GasPerToken = ratio
 			}
 
 			if evmGasRatio != "" {
-				ratio, err := wasp_util.Ratio32FromString(evmGasRatio)
+				ratio, err := wasputil.Ratio32FromString(evmGasRatio)
 				log.Check(err)
 				feePolicy.EVMGasRatio = ratio
 			}
@@ -164,7 +164,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 				feePolicy.ValidatorFeeShare = validatorFeeShare
 			}
 
-			log.Printf(cryptolib.EncodeHex(feePolicy.Bytes()))
+			log.Printf("%s", cryptolib.EncodeHex(feePolicy.Bytes()))
 		},
 	}
 

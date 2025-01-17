@@ -22,10 +22,10 @@ func initListContractsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			contracts, _, err := client.ChainsAPI.
-				GetContracts(context.Background(), config.GetChain(chain).String()).
+				GetContracts(ctx, config.GetChain(chain).String()).
 				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)

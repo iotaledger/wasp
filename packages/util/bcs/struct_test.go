@@ -336,7 +336,7 @@ func TestStructWithNotEnum(t *testing.T) {
 type ShortInt int64
 
 func (v ShortInt) BCSOptions() bcs.TypeOptions {
-	return bcs.TypeOptions{UnderlayingType: reflect.Int16}
+	return bcs.TypeOptions{UnderlyingType: reflect.Int16}
 }
 
 type WithBCSOpts struct {

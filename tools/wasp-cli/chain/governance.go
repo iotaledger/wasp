@@ -35,7 +35,8 @@ func initChangeAccessNodesCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			if len(args)%2 != 0 {
 				log.Fatal("wrong number of arguments")
 			}
@@ -61,8 +62,10 @@ func initChangeAccessNodesCmd() *cobra.Command {
 
 				pars = append(pars, lo.T2(pubkey, actionResult))
 			}
+
 			postRequest(
-				node,
+				ctx,
+				client,
 				chain,
 				governance.FuncChangeAccessNodes.Message(pars),
 				chainclient.PostRequestParams{},
@@ -92,10 +95,11 @@ func initDisableFeePolicyCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			callGovView := func(viewName string) isc.CallResults {
-				apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
+				apiResult, _, err := client.ChainsAPI.CallView(ctx, config.GetChain(chain).String()).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,
@@ -113,7 +117,8 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			feePolicy.GasPerToken = util.Ratio32{}
 
 			postRequest(
-				node,
+				ctx,
+				client,
 				chain,
 				governance.FuncSetFeePolicy.Message(feePolicy),
 				chainclient.PostRequestParams{},
