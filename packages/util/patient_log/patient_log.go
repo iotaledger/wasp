@@ -1,18 +1,18 @@
 package patient_log
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
-var lastLog = map[string]time.Time{}
+var lastLog sync.Map
 
 func LogTimeLimited(key string, duration time.Duration, cb func()) {
-	t, ok := lastLog[key]
-	if !ok {
-		lastLog[key] = time.Now()
-		t = lastLog[key]
-	}
+	item, _ := lastLog.LoadOrStore(key, time.Now())
+	t := item.(time.Time)
 
 	if time.Since(t) > duration {
+		lastLog.Store(key, time.Now())
 		cb()
-		lastLog[key] = time.Now()
 	}
 }
