@@ -39,6 +39,10 @@ type L2Client interface {
 		ctx context.Context,
 		reqID *iotago.ObjectID,
 	) (*iscmove.RefWithObject[iscmove.Request], error)
+	GetCoin(
+		ctx context.Context,
+		coinID *iotago.ObjectID,
+	) (*iscmoveclient.MoveCoin, error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}
