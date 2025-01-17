@@ -751,8 +751,9 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			subCtx, subCancel := context.WithCancel(ctx)
 			cni.publishingTXes.Set(txHash, subCancel)
 			publishStart := time.Now()
-			cni.log.Debugf("XXX: Going to publish TX: %v", txHash)
+			cni.log.Debugf("XXX: PublishTX %v ..., consumed anchor=%v", txHash, needPublishTx.BaseAnchorRef)
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
+				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v", txHash, newStateAnchor)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
