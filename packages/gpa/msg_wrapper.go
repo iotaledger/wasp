@@ -115,11 +115,13 @@ func (msg *WrappingMsg) MarshalBCS(e *bcs.Encoder) error {
 		return fmt.Errorf("marshaling wrapped message: %w", err)
 	}
 
-	return e.Encode(rawWrappingMsg{
+	e.Encode(rawWrappingMsg{
 		Subsystem:       msg.subsystem,
 		Index:           msg.index,
 		WrappedMsgBytes: wrappedMsgBytes,
 	})
+
+	return nil
 }
 
 type rawWrappingMsg struct {

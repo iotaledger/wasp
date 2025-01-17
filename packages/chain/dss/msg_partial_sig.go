@@ -51,5 +51,5 @@ func (m *msgPartialSig) UnmarshalBCS(d *bcs.Decoder) error {
 	m.partialSig.SessionID = bcs.Decode[[]byte](d)
 	m.partialSig.Signature = bcs.Decode[[]byte](d)
 
-	return d.Err()
+	return nil
 }

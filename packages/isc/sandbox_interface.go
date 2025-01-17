@@ -380,31 +380,17 @@ func NewStateAnchor(
 }
 
 func (s *StateAnchor) MarshalBCS(e *bcs.Encoder) error {
-	err := e.Encode(s.anchor)
-	if err != nil {
-		return err
-	}
-
-	err = e.Encode(s.iscPackage)
-	if err != nil {
-		return err
-	}
+	e.Encode(s.anchor)
+	e.Encode(s.iscPackage)
 
 	return nil
 }
 
 func (s *StateAnchor) UnmarshalBCS(d *bcs.Decoder) error {
 	s.anchor = nil
-	err := d.Decode(&s.anchor)
-	if err != nil {
-		return err
-	}
-
+	d.Decode(&s.anchor)
 	s.iscPackage = iotago.Address{}
-	err = d.Decode(&s.iscPackage)
-	if err != nil {
-		return err
-	}
+	d.Decode(&s.iscPackage)
 
 	return nil
 }

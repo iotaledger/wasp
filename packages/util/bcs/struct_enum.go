@@ -6,4 +6,4 @@ type Enum interface {
 	IsBcsEnum()
 }
 
-var enumT = reflect.TypeOf((*Enum)(nil)).Elem()
+var structEnumT = reflect.TypeOf((*Enum)(nil)).Elem()

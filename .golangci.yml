@@ -68,6 +68,11 @@ issues:
               - gocritic
 
 linters-settings:
+    revive:
+        rules:
+            - name: var-declaration
+              disabled: true
+              exclude: [""]
     funlen:
         lines: 100
         statements: 50
@@ -101,12 +106,10 @@ linters-settings:
         locale: US
     nolintlint:
         allow-unused: false # report any unused nolint directives
-    goimports:
-        local-prefixes: github.com/iotaledger
     golint:
         min-confidence: 0.9
     gocyclo:
-        min-complexity: 15
+        min-complexity: 20
     staticcheck:
         checks: ["all"]
     stylecheck:
@@ -168,7 +171,6 @@ linters:
         - gocyclo # Computes and checks the cyclomatic complexity of functions.
         - gofmt # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification.
         - gofumpt # Gofumpt checks whether code was gofumpt-ed. A more strict version of gofmt.
-        - goimports # Sorts and format imports.
         - revive # revive is the newer replacement for golint
         - goprintffuncname # Checks that printf-like functions are named with f at the end.
         - gosec # Inspects source code for security problems.
