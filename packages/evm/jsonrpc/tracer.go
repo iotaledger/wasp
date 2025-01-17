@@ -6,6 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
+
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 )
 
