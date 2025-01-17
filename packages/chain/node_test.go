@@ -48,6 +48,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/util/patient_log"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
@@ -169,7 +170,9 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
-			te.log.Debugf("Counter[node=%v]=%v", i, cnt)
+			patient_log.LogTimeLimited("node_test.counter", 1*time.Second, func() {
+				te.log.Debugf("Counter[node=%v]=%v", i, cnt)
+			})
 			if cnt >= int64(incCount) {
 				// TODO: Double-check with the published TX.
 				/*
@@ -362,8 +365,6 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	fmt.Print(res)
-
 	anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {
 		return err
@@ -373,6 +374,7 @@ func (tnc *testNodeConn) PublishTX(
 	if err != nil {
 		return err
 	}
+	tnc.t.Logf("GOT NEW MUTATED ANCHOR: %v | %v\n", anchorInfo, anchor)
 
 	tnc.published = append(tnc.published, anchor)
 	stateAnchor := isc.NewStateAnchor(anchor, tnc.iscPackageID)

@@ -76,6 +76,7 @@ package chainmanager
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -93,6 +94,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/packages/util/patient_log"
 )
 
 var ErrNotInCommittee = errors.New("ErrNotInCommittee")
@@ -437,7 +439,9 @@ func (cmi *chainMgrImpl) handleInputMilestoneReceived() gpa.OutMessages {
 }
 
 func (cmi *chainMgrImpl) handleInputCanPropose() gpa.OutMessages {
-	cmi.log.Debugf("handleInputCanPropose")
+	patient_log.LogTimeLimited("chainMgrImpl.handleInputCanPropose", 1*time.Second, func() {
+		cmi.log.Debugf("handleInputCanPropose")
+	})
 	return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
 		return cl.Input(cmt_log.NewInputCanPropose())
 	})

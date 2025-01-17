@@ -54,6 +54,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/util/patient_log"
 	"github.com/iotaledger/wasp/packages/util/pipe"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -732,7 +733,9 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 }
 
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
-	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
+	patient_log.LogTimeLimited("node_test.handleChainMgrOutput", 1*time.Second, func() {
+		cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
+	})
 	if outputUntyped == nil { // TODO: Will never be nil, fix it.
 		// Not sure, if it is OK to terminate them immediately at this point.
 		// This is for the case, if the current node is not in a committee of a chain anymore.
@@ -752,8 +755,10 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			cni.publishingTXes.Set(txHash, subCancel)
 			publishStart := time.Now()
 			cni.log.Debugf("XXX: PublishTX %v ..., consumed anchor=%v", txHash, needPublishTx.BaseAnchorRef)
-			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
-				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v", txHash, newStateAnchor)
+			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(nTX iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
+				newTXHash, _ := nTX.Hash()
+
+				cni.log.Debugf("XXX: PublishTX %v (newTX) -> %v done, next anchor=%v", txHash, newTXHash, newStateAnchor)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
@@ -1099,7 +1104,11 @@ func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, er
 			}
 		}
 		if latestConfirmedState != nil {
-			cni.log.Debugf("LatestState(%v) => confirmed = %v", freshness, latestConfirmedState)
+			// Only log if the same kind of log hasn't been n ms ago to prevent spamming hell
+			patient_log.LogTimeLimited("node.last_confirmed_state", 1*time.Second, func() {
+				cni.log.Debugf("LatestState(%v) => confirmed = %v", freshness, latestConfirmedState)
+			})
+
 			return latestConfirmedState, nil
 		}
 		latestInStore, err := cni.chainStore.LatestState()

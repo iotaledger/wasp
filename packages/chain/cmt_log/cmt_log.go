@@ -22,14 +22,17 @@ package cmt_log
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util/byz_quorum"
+	"github.com/iotaledger/wasp/packages/util/patient_log"
 )
 
 // Public interface for this algorithm.
@@ -166,7 +169,9 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
-	cl.log.Debugf("Input %T: %+v", input, input)
+	patient_log.LogTimeLimited("cmtLogImpl.Input", 1*time.Second, func() {
+		cl.log.Debugf("Input %T: %+v", input, input)
+	})
 	switch input := input.(type) {
 	case *inputAnchorConfirmed:
 		return cl.handleInputAnchorConfirmed(input)
