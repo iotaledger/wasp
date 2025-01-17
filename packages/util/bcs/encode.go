@@ -82,135 +82,150 @@ func (e *Encoder) Err() error {
 }
 
 func (e *Encoder) MustEncode(val any) {
-	if err := e.Encode(val); err != nil {
-		panic(err)
+	e.Encode(val)
+	if e.w.Err != nil {
+		panic(e.w.Err)
 	}
 }
 
-func (e *Encoder) Encode(val any) error {
+// If error occurs, it will be stored inside of encoder and can be checked using enc.Err().
+// After error further calls to Encode() will just do nothing.
+// So no need to check error every time.
+// Example:
+//
+//	enc.Encode(&v1)
+//	enc.Encode(&v2)
+//	enc.Encode(&v3)
+//
+//	if err := enc.Err(); err != nil {
+//	    return err
+//	}
+//
+// If Encode() is called inside of MarshalBCS() method, you can even skip checking enc.Err(),
+// because decoder itself will do it for you anyway.
+// Example:
+//
+//	func (p *MyStruct) MarshalBCS(e *bcs.Encoder) error {
+//	    e.Encode(&p.Field1)
+//	    e.Encode(&p.Field2)
+//	    return nil
+//	}
+func (e *Encoder) Encode(val any) {
+	if e.w.Err != nil {
+		return
+	}
+
 	if val == nil {
-		return e.handleErrorf("cannot encode a nil value")
+		_ = e.handleErrorf("cannot encode a nil value")
+		return
 	}
+
 	defer e.typeInfoCache.Save()
+
 	if err := e.encodeValue(reflect.ValueOf(val), nil, nil); err != nil {
-		return fmt.Errorf("encoding %T: %w", val, err)
+		_ = fmt.Errorf("encoding %T: %w", val, err)
+		return
 	}
-	return nil
 }
 
-func (e *Encoder) EncodeOptional(val any) error {
+func (e *Encoder) EncodeOptional(val any) {
+	if e.w.Err != nil {
+		return
+	}
+
 	v := reflect.ValueOf(val)
 
 	switch v.Kind() {
 	case reflect.Ptr, reflect.Interface, reflect.Map:
 	default:
-		return e.handleErrorf("optional value must be a pointer, interface or map, got %v", v.Type())
+		_ = e.handleErrorf("optional value must be a pointer, interface or map, got %v", v.Type())
+		return
 	}
 
 	if v.IsNil() {
 		e.w.WriteByte(0)
-		return e.w.Err
+		return
 	}
 
 	e.w.WriteByte(1)
-
-	return e.Encode(val)
+	e.Encode(val)
 }
 
-func (e *Encoder) WriteOptionalFlag(hasValue bool) error {
+func (e *Encoder) WriteOptionalFlag(hasValue bool) {
 	if hasValue {
 		e.w.WriteByte(1)
 	} else {
 		e.w.WriteByte(0)
 	}
-
-	return e.w.Err
 }
 
 // Enum index is an index of variant in enum type.
-func (e *Encoder) WriteEnumIdx(variantIdx int) error {
+func (e *Encoder) WriteEnumIdx(variantIdx int) {
 	e.w.WriteSize32(variantIdx)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteLen(len int) error {
+func (e *Encoder) WriteLen(len int) {
 	e.w.WriteSize32(len)
-	return e.w.Err
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
-func (e *Encoder) WriteCompactUint(v uint64) error {
+func (e *Encoder) WriteCompactUint(v uint64) {
 	e.w.WriteAmount64(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteBool(v bool) error {
+func (e *Encoder) WriteBool(v bool) {
 	e.w.WriteBool(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteByte(v byte) error {
+func (e *Encoder) WriteByte(v byte) {
 	e.w.WriteByte(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt8(v int8) error {
+func (e *Encoder) WriteInt8(v int8) {
 	e.w.WriteInt8(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt16(v int16) error {
+func (e *Encoder) WriteInt16(v int16) {
 	e.w.WriteInt16(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt32(v int32) error {
+func (e *Encoder) WriteInt32(v int32) {
 	e.w.WriteInt32(v)
-
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt64(v int64) error {
+func (e *Encoder) WriteInt64(v int64) {
 	e.w.WriteInt64(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt(v int) error {
+func (e *Encoder) WriteInt(v int) {
 	e.w.WriteInt64(int64(v))
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint8(v uint8) error {
+func (e *Encoder) WriteUint8(v uint8) {
 	e.w.WriteUint8(v)
-
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint16(v uint16) error {
+func (e *Encoder) WriteUint16(v uint16) {
 	e.w.WriteUint16(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint32(v uint32) error {
+func (e *Encoder) WriteUint32(v uint32) {
 	e.w.WriteUint32(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint64(v uint64) error {
+func (e *Encoder) WriteUint64(v uint64) {
 	e.w.WriteUint64(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint(v uint) error {
+func (e *Encoder) WriteUint(v uint) {
 	e.w.WriteUint64(uint64(v))
-	return e.w.Err
 }
 
-func (e *Encoder) WriteString(v string) error {
+func (e *Encoder) WriteString(v string) {
 	e.w.WriteString(v)
-	return e.w.Err
 }
 
+// For support of io.Writer interface
 func (e *Encoder) Write(b []byte) (n int, err error) {
 	e.w.WriteFromFunc(func(w io.Writer) (int, error) {
 		n, err = w.Write(b)
@@ -219,10 +234,6 @@ func (e *Encoder) Write(b []byte) (n int, err error) {
 
 	return n, e.w.Err
 }
-
-// func (e *Encoder) Writer() *rwutil.Writer {
-// 	return &e.w
-// }
 
 func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, tInfo *typeInfo) error {
 	if tInfo == nil {
@@ -270,13 +281,13 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if typeOptions.IsCompactInt {
-			err = e.WriteCompactUint(uint64(v.Int()))
+			e.WriteCompactUint(uint64(v.Int()))
 		} else {
 			err = e.encodeInt(v, typeOptions.UnderlyingType)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if typeOptions.IsCompactInt {
-			err = e.WriteCompactUint(v.Uint())
+			e.WriteCompactUint(v.Uint())
 		} else {
 			err = e.encodeUint(v, typeOptions.UnderlyingType)
 		}
@@ -906,24 +917,24 @@ func (e *Encoder) handleErrorf(format string, args ...interface{}) error {
 	return e.w.Err
 }
 
+// Pointer is forced here for two reasons:
+//   - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
+//   - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
+//
+// But because of that encoding a value, which is stored in variable of type "any" would be very inconvenient.
+// So to make it more user-friendly, this function treats "*any" as "any".
 func MarshalStream[V any](v *V, dest io.Writer) error {
-	// Forcing pointer here for two reasons:
-	//  - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
-	//  - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
+	e := NewEncoder(dest)
 
 	switch v := interface{}(v).(type) {
 	case *interface{}:
 		// Exception for pointer to "any" just for convenience.
-		if err := NewEncoder(dest).Encode(*v); err != nil {
-			return err
-		}
+		e.Encode(*v)
 	default:
-		if err := NewEncoder(dest).Encode(v); err != nil {
-			return err
-		}
+		e.Encode(v)
 	}
 
-	return nil
+	return e.w.Err
 }
 
 func MustMarshalStream[V any](v *V, dest io.Writer) {

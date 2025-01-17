@@ -352,7 +352,7 @@ func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
 	e.Encode(msgsBytes)
 	e.Encode(msg.acks)
 
-	return e.Err()
+	return nil
 }
 
 func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
@@ -373,7 +373,7 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 
 	msg.acks = bcs.Decode[[]int](d)
 
-	return d.Err()
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
