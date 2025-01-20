@@ -71,7 +71,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 			StateMetadata:     par.StateMetadata.Bytes(),
 			GasPayments:       gasPayments,
 			GasPrice:          referenceGasPrice.Uint64(),
-			GasBudget:         iotaclient.DefaultGasBudget,
+			GasBudget:         iotaclient.DefaultGasBudget * 10,
 		},
 	)
 	if err != nil {

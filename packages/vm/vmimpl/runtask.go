@@ -100,7 +100,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	// FIXME this may cause a deadlock when the packed the requests are too huge and exceeded the top up fee
 	topUpFee := uint64(0)
 	if isc.TopUpFeeMin > task.GasCoin.Value {
-		topUpFee = isc.TopUpFeeMin - task.GasCoin.Value.Uint64()
+		topUpFee = 1_000_000 //isc.TopUpFeeMin - task.GasCoin.Value.Uint64()
 	}
 	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
 	return taskResult
