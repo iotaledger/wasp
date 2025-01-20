@@ -114,11 +114,17 @@ func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *
 }
 
 func (o *Output) String() string {
+	needPublishTX := "{"
+	for txID, needPub := range o.NeedPublishTX().AsMap() {
+		needPublishTX += fmt.Sprintf("%s => %v; ", txID.Hex(), needPub)
+	}
+	needPublishTX += "}"
+
 	return fmt.Sprintf(
-		"{chainMgr.Output, LatestConfirmedAliasOutput=%v, NeedConsensus=%v, NeedPublishTX=%v}",
+		"{chainMgr.Output, LatestConfirmedAliasOutput=%v, NeedConsensus=%v, NeedPublishTX=%s}",
 		o.LatestConfirmedAliasOutput(),
 		o.cmi.needConsensus,
-		o.NeedPublishTX(),
+		needPublishTX,
 	)
 }
 
@@ -130,7 +136,7 @@ type NeedConsensusKey [NeedConsensusKeySize]byte
 
 type NeedConsensusMap = shrinkingmap.ShrinkingMap[NeedConsensusKey, *NeedConsensus]
 
-func makeConsensusKey(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) NeedConsensusKey {
+func MakeConsensusKey(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) NeedConsensusKey {
 	var buf [NeedConsensusKeySize]byte
 	cak := committeeAddr.Key()
 	lib := logIndex.Bytes()
@@ -160,6 +166,15 @@ type NeedPublishTX struct {
 	LogIndex      cmt_log.LogIndex
 	Tx            *iotasigner.SignedTransaction
 	BaseAnchorRef *iotago.ObjectRef // The consumed Anchor object/version.
+}
+
+func (npt *NeedPublishTX) String() string {
+	return fmt.Sprintf(
+		"{chainMgr.NeedPublishTX, CommitteeAddr=%v, LogIndex=%v, TX=..., BaseAnchorRef=%v}",
+		npt.CommitteeAddr.String(),
+		npt.LogIndex,
+		npt.BaseAnchorRef,
+	)
 }
 
 type ChainMgr interface {
@@ -556,7 +571,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 	ids := map[NeedConsensusKey]bool{}
 	mod := false
 	for li, ao := range output {
-		key := makeConsensusKey(cli.committeeAddr, li)
+		key := MakeConsensusKey(cli.committeeAddr, li)
 		ids[key] = true
 		if cmi.needConsensus.Has(key) {
 			continue

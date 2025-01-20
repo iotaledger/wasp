@@ -6,6 +6,7 @@ package jsonrpc
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"strings"
 	"sync/atomic"
@@ -119,12 +120,15 @@ type TxTraceResult struct {
 }
 
 type callTracer struct {
-	callstack []CallFrame
-	config    callTracerConfig
-	gasLimit  uint64
-	depth     int
-	interrupt atomic.Bool // Atomic flag to signal execution interruption
-	reason    error       // Textual reason for the interruption
+	txToStack  map[common.Hash][]CallFrame
+	config     callTracerConfig
+	gasLimit   uint64
+	depth      int
+	interrupt  atomic.Bool // Atomic flag to signal execution interruption
+	reason     error       // Textual reason for the interruption
+	currentTx  common.Hash
+	traceBlock bool
+	blockTxs   []*types.Transaction
 }
 
 type callTracerConfig struct {
@@ -134,8 +138,21 @@ type callTracerConfig struct {
 
 // newCallTracer returns a native go tracer which tracks
 // call frames of a tx, and implements vm.EVMLogger.
-func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
-	t, err := newCallTracerObject(ctx, cfg)
+func newCallTracer(ctx *tracers.Context, cfg json.RawMessage, traceBlock bool, initValue any) (*Tracer, error) {
+	var fakeTxs types.Transactions
+
+	if initValue == nil && traceBlock {
+		return nil, fmt.Errorf("initValue with block transactions is required for block tracing")
+	}
+
+	if initValue != nil {
+		var ok bool
+		fakeTxs, ok = initValue.(types.Transactions)
+		if !ok {
+			return nil, fmt.Errorf("invalid init value type for calltracer: %T", initValue)
+		}
+	}
+	t, err := newCallTracerObject(ctx, cfg, traceBlock, fakeTxs)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +172,7 @@ func newCallTracer(ctx *tracers.Context, cfg json.RawMessage) (*Tracer, error) {
 	}, nil
 }
 
-func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage) (*callTracer, error) {
+func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage, traceBlock bool, blockTxs []*types.Transaction) (*callTracer, error) {
 	var config callTracerConfig
 	if cfg != nil {
 		if err := json.Unmarshal(cfg, &config); err != nil {
@@ -164,7 +181,7 @@ func newCallTracerObject(_ *tracers.Context, cfg json.RawMessage) (*callTracer, 
 	}
 	// First callframe contains tx context info
 	// and is populated on start and end.
-	return &callTracer{callstack: make([]CallFrame, 0, 1), config: config}, nil
+	return &callTracer{txToStack: make(map[common.Hash][]CallFrame), currentTx: common.Hash{}, config: config, traceBlock: traceBlock, blockTxs: blockTxs}, nil
 }
 
 // OnEnter is called when EVM enters a new scope (via call, create or selfdestruct).
@@ -190,7 +207,7 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 	if depth == 0 {
 		call.Gas = hexutil.Uint64(t.gasLimit)
 	}
-	t.callstack = append(t.callstack, call)
+	t.txToStack[t.currentTx] = append(t.txToStack[t.currentTx], call)
 }
 
 // OnExit is called when EVM exits a scope, even if the scope didn't
@@ -206,30 +223,32 @@ func (t *callTracer) OnExit(depth int, output []byte, gasUsed uint64, err error,
 		return
 	}
 
-	size := len(t.callstack)
+	size := len(t.txToStack[t.currentTx])
 	if size <= 1 {
 		return
 	}
 	// Pop call.
-	call := t.callstack[size-1]
-	t.callstack = t.callstack[:size-1]
+	call := t.txToStack[t.currentTx][size-1]
+	t.txToStack[t.currentTx] = t.txToStack[t.currentTx][:size-1]
 	size--
 
 	call.GasUsed = hexutil.Uint64(gasUsed)
 	call.processOutput(output, err, reverted)
 	// Nest call into parent.
-	t.callstack[size-1].Calls = append(t.callstack[size-1].Calls, call)
+	t.txToStack[t.currentTx][size-1].Calls = append(t.txToStack[t.currentTx][size-1].Calls, call)
 }
 
 func (t *callTracer) captureEnd(output []byte, _ uint64, err error, reverted bool) {
-	if len(t.callstack) != 1 {
+	if len(t.txToStack[t.currentTx]) != 1 {
 		return
 	}
-	t.callstack[0].processOutput(output, err, reverted)
+	t.txToStack[t.currentTx][0].processOutput(output, err, reverted)
 }
 
 func (t *callTracer) OnTxStart(env *tracing.VMContext, tx *types.Transaction, from common.Address) {
 	t.gasLimit = tx.Gas()
+	t.currentTx = tx.Hash()
+	t.txToStack[t.currentTx] = make([]CallFrame, 0, 1)
 }
 
 func (t *callTracer) OnTxEnd(receipt *types.Receipt, err error) {
@@ -237,10 +256,10 @@ func (t *callTracer) OnTxEnd(receipt *types.Receipt, err error) {
 	if err != nil {
 		return
 	}
-	t.callstack[0].GasUsed = hexutil.Uint64(receipt.GasUsed)
+	t.txToStack[t.currentTx][0].GasUsed = hexutil.Uint64(receipt.GasUsed)
 	if t.config.WithLog {
 		// Logs are not emitted when the call fails
-		clearFailedLogs(&t.callstack[0], false)
+		clearFailedLogs(&t.txToStack[t.currentTx][0], false)
 	}
 }
 
@@ -261,9 +280,9 @@ func (t *callTracer) OnLog(log *types.Log) {
 		Address:  log.Address,
 		Topics:   log.Topics,
 		Data:     log.Data,
-		Position: hexutil.Uint(len(t.callstack[len(t.callstack)-1].Calls)),
+		Position: hexutil.Uint(len(t.txToStack[t.currentTx][len(t.txToStack[t.currentTx])-1].Calls)),
 	}
-	t.callstack[len(t.callstack)-1].Logs = append(t.callstack[len(t.callstack)-1].Logs, l)
+	t.txToStack[t.currentTx][len(t.txToStack[t.currentTx])-1].Logs = append(t.txToStack[t.currentTx][len(t.txToStack[t.currentTx])-1].Logs, l)
 }
 
 var ErrIncorrectTopLevelCalls = errors.New("incorrect number of top-level calls")
@@ -271,16 +290,21 @@ var ErrIncorrectTopLevelCalls = errors.New("incorrect number of top-level calls"
 // GetResult returns the json-encoded nested list of call traces, and any
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *callTracer) GetResult() (json.RawMessage, error) {
-	if len(t.callstack) != 1 {
-		return nil, ErrIncorrectTopLevelCalls
-	}
-
-	res, err := json.Marshal(t.callstack[0])
-	if err != nil {
-		return nil, err
-	}
-
-	return res, t.reason
+	return GetTraceResults(
+		t.blockTxs,
+		t.traceBlock,
+		t.TraceFakeTx,
+		func(tx *types.Transaction) (json.RawMessage, error) {
+			stack, ok := t.txToStack[tx.Hash()]
+			if !ok {
+				return nil, fmt.Errorf("no call stack for tx %s", tx.Hash().Hex())
+			}
+			return json.Marshal(stack[0])
+		},
+		func() (json.RawMessage, error) {
+			return json.Marshal(t.txToStack[t.currentTx][0])
+		},
+		t.reason)
 }
 
 // Stop terminates execution of the tracer at the first opportune moment.

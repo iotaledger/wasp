@@ -21,7 +21,8 @@ func init() {
 		}
 
 		// We can't just do "return tx.EncodeRLP(e)" because we also need to write number of bytes (see decoding below).
-		if err := e.Encode(b.Bytes()); err != nil {
+		e.Encode(b.Bytes())
+		if err := e.Err(); err != nil {
 			return fmt.Errorf("failed to write transaction bytes: %w", err)
 		}
 
@@ -33,8 +34,8 @@ func init() {
 		// So we need to limit it - either by passing inputLimit or by feeding separate stream.
 		// For some reason inputLimit was not working for me, so using separate stream.
 
-		var b []byte
-		if err := d.Decode(&b); err != nil {
+		b := bcs.Decode[[]byte](d)
+		if err := d.Err(); err != nil {
 			return fmt.Errorf("failed to read transaction bytes: %w", err)
 		}
 

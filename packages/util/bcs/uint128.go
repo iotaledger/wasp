@@ -96,7 +96,7 @@ const ones63 uint64 = (1 << 63) - 1
 var oneLsh63 = big.NewInt(0).Lsh(big.NewInt(1), 63)
 
 func uint64ToBigInt(i uint64) *big.Int {
-	r := big.NewInt(int64(i & ones63))
+	r := big.NewInt(int64(i & ones63)) //nolint:gosec
 	if i > ones63 {
 		r = r.Add(r, oneLsh63)
 	}
