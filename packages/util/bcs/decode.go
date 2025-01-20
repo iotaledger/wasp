@@ -108,40 +108,74 @@ func (d *Decoder) Err() error {
 }
 
 func (d *Decoder) MustDecode(v any) {
-	if err := d.Decode(v); err != nil {
-		panic(err)
+	d.Decode(v)
+	if d.r.Err != nil {
+		panic(d.r.Err)
 	}
 }
 
-func (d *Decoder) Decode(v any) error {
+// If error occurs, it will be stored inside of decoder and can be checked using dec.Err().
+// After error further calls to Decode() will just do nothing.
+// So no need to check error every time.
+// Example:
+//
+//	dec.Decode(&v1)
+//	dec.Decode(&v2)
+//	dec.Decode(&v3)
+//
+//	if err := dec.Err(); err != nil {
+//	    return err
+//	}
+//
+// If Decode() is called inside of UnmarshalBCS() method, you can even skip checking dec.Err(),
+// because decoder itself will do it for you anyway.
+// Example:
+//
+//	func (p *MyStruct) UnmarshalBCS(d *bcs.Decoder) error {
+//	    d.Decode(&p.Field1)
+//	    d.Decode(&p.Field2)
+//	    return nil
+//	}
+func (d *Decoder) Decode(v any) {
+	if d.r.Err != nil {
+		return
+	}
+
 	vR := reflect.ValueOf(v)
 
 	if vR.Kind() != reflect.Ptr {
-		return d.handleErrorf("Decode destination must be a pointer")
+		_ = d.handleErrorf("Decode destination must be a pointer")
+		return
 	}
 	if vR.IsNil() {
-		return d.handleErrorf("Decode destination cannot be nil")
+		_ = d.handleErrorf("Decode destination cannot be nil")
+		return
 	}
 
 	defer d.typeInfoCache.Save()
 
 	if err := d.decodeValue(vR, nil, nil); err != nil {
-		return d.handleErrorf("decoding %T: %w", v, err)
+		_ = d.handleErrorf("decoding %T: %w", v, err)
+		return
 	}
-
-	return nil
 }
 
-func (d *Decoder) DecodeOptional(v any) (bool, error) {
+func (d *Decoder) DecodeOptional(v any) bool {
 	hasValue := d.ReadOptionalFlag()
 	if d.r.Err != nil || !hasValue {
-		return false, d.r.Err
+		return false
 	}
 
-	return true, d.Decode(v)
+	d.Decode(v)
+
+	return true
 }
 
 func (d *Decoder) ReadOptionalFlag() bool {
+	if d.r.Err != nil {
+		return false
+	}
+
 	f := d.r.ReadByte()
 	switch f {
 	case 0:
@@ -149,18 +183,18 @@ func (d *Decoder) ReadOptionalFlag() bool {
 	case 1:
 		return true
 	default:
-		d.r.Err = fmt.Errorf("invalid optional flag value: %v", f)
+		_ = d.handleErrorf("invalid optional flag value: %v", f)
 		return false
 	}
 }
 
 // Enum index is an index of variant in enum type.
 func (d *Decoder) ReadEnumIdx() int {
-	return int(d.r.ReadSize32())
+	return d.r.ReadSize32()
 }
 
 func (d *Decoder) ReadLen() int {
-	return int(d.r.ReadSize32())
+	return d.r.ReadSize32()
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
@@ -172,6 +206,7 @@ func (d *Decoder) ReadBool() bool {
 	return d.r.ReadBool()
 }
 
+//nolint:govet
 func (d *Decoder) ReadByte() byte {
 	return d.r.ReadByte()
 }
@@ -229,10 +264,7 @@ func (d *Decoder) Read(b []byte) (n int, err error) {
 	return n, d.r.Err
 }
 
-// func (d *Decoder) Writer() *rwutil.Writer {
-// 	return &d.w
-// }
-
+//nolint:gocyclo,funlen
 func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, tInfo *typeInfo) error {
 	if tInfo == nil {
 		// Hint about type customization could have been provided by caller when decoding collections.
@@ -283,7 +315,7 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		v.SetBool(d.r.ReadBool())
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		if typeOptions.IsCompactInt {
-			v.SetInt(int64(d.ReadCompactUint()))
+			v.SetInt(int64(d.ReadCompactUint())) //nolint:gosec
 		} else {
 			err = d.decodeInt(v, typeOptions.UnderlyingType)
 		}
@@ -357,7 +389,7 @@ func (d *Decoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 	switch {
 	case kind == reflect.Interface:
 		return typeCustomization{}
-	case kind == reflect.Struct && t.Implements(enumT):
+	case kind == reflect.Struct && t.Implements(structEnumT):
 		return typeCustomization{IsStructEnum: true}
 	case t.Implements(bcsTypeT):
 		return typeCustomization{HasTypeOptions: true}
@@ -580,9 +612,9 @@ func (d *Decoder) decodeSlice(v reflect.Value, typeOpts TypeOptions) error {
 
 	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
-		length = int(d.r.ReadSize16())
+		length = d.r.ReadSize16()
 	case Len4Bytes, 0:
-		length = int(d.r.ReadSize32())
+		length = d.r.ReadSize32()
 	default:
 		return d.handleErrorf("invalid array size type: %v", typeOpts.LenSizeInBytes)
 	}
@@ -643,9 +675,9 @@ func (d *Decoder) decodeMap(v reflect.Value, typeOpts TypeOptions) error {
 
 	switch typeOpts.LenSizeInBytes {
 	case Len2Bytes:
-		length = int(d.r.ReadSize16())
+		length = d.r.ReadSize16()
 	case Len4Bytes, 0:
-		length = int(d.r.ReadSize32())
+		length = d.r.ReadSize32()
 	default:
 		return d.handleErrorf("invalid map size type: %v", typeOpts.LenSizeInBytes)
 	}
@@ -795,7 +827,7 @@ func (d *Decoder) decodeInterfaceEnum(v reflect.Value, variants map[int]reflect.
 		return d.r.Err
 	}
 
-	if int(variantIdx) >= len(variants) {
+	if variantIdx >= len(variants) {
 		return d.handleErrorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, v.Type(), len(variants))
 	}
 
@@ -820,11 +852,11 @@ func (d *Decoder) decodeStructEnum(v reflect.Value) error {
 
 	t := v.Type()
 
-	if t.NumField() <= int(variantIdx) {
+	if t.NumField() <= variantIdx {
 		return d.handleErrorf("invalid variant index %v for enum %v - enum has only %v variants", variantIdx, t, t.NumField())
 	}
 
-	return d.decodeValue(v.Field(int(variantIdx)), nil, nil)
+	return d.decodeValue(v.Field(variantIdx), nil, nil)
 }
 
 func (d *Decoder) decodeAsByteArray(dec func() error) error {
@@ -833,7 +865,7 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 	// skip length and continue reading. But that may result in confusing decoding errors in case of corrupted data.
 	// So more reliable way is to separate those bytes and decode from them.
 
-	b := make([]byte, int(d.r.ReadSize32()))
+	b := make([]byte, d.r.ReadSize32())
 	d.r.ReadN(b)
 
 	if d.r.Err != nil {
@@ -853,19 +885,42 @@ func (d *Decoder) handleErrorf(format string, args ...interface{}) error {
 	return d.r.Err
 }
 
+// Decode() is a helper function to decode single value from stream.
+// It is convenient to use when you don't yet have a variable to store decoded value.
+
+// If error occurs, it will be stored inside of decoder and can be checked using dec.Err().
+// Further calls to Decode() will just fail with same error and do nothing.
+// So no need to check error every time.
+// Example:
+//
+//	v1 := Decode[int](dec)
+//	v2 := Decode[string](dec)
+//	v3 := Decode[bool](dec)
+//
+//	if dec.Err() != nil {
+//	    return dec.Err()
+//	}
+//
+// If Decode() is called inside of UnmarshalBCS() method, you can even skip checking dec.Err(),
+// because decoder itself will do it for you anyway.
+// Example:
+//
+//	func (p *MyStruct) UnmarshalBCS(d *bcs.Decoder) error {
+//	    p.Field1 = Decode[int](d)
+//	    p.Field2 = Decode[string](d)
+//	    return nil
+//	}
 func Decode[V any](dec *Decoder) V {
 	var v V
-	err := dec.Decode(&v)
-	if err != nil {
-		panic(err)
-	}
+	dec.Decode(&v)
+
 	return v
 }
 
 func MustDecode[V any](dec *Decoder) V {
 	v := Decode[V](dec)
-	if err := dec.Err(); err != nil {
-		panic(fmt.Errorf("failed to decode object of type %T: %w", v, err))
+	if dec.r.Err != nil {
+		panic(fmt.Errorf("failed to decode object of type %T: %w", v, dec.r.Err))
 	}
 
 	return v
@@ -874,7 +929,7 @@ func MustDecode[V any](dec *Decoder) V {
 func UnmarshalStream[T any](r io.Reader) (T, error) {
 	dec := NewDecoder(r)
 	v := Decode[T](dec)
-	return v, dec.Err()
+	return v, dec.r.Err
 }
 
 func MustUnmarshalStream[T any](r io.Reader) T {
@@ -900,8 +955,10 @@ func MustUnmarshal[T any](b []byte) T {
 }
 
 func UnmarshalStreamInto[V any](r io.Reader, v *V) (*V, error) {
-	if err := NewDecoder(r).Decode(v); err != nil {
-		return nil, err
+	d := NewDecoder(r)
+	d.Decode(v)
+	if d.r.Err != nil {
+		return nil, d.r.Err
 	}
 
 	return v, nil

@@ -113,7 +113,6 @@ if dec.Err() != nil {
 ###### Classic:
 
 ```
-...
 if err := bcs.Marshal(&v); err != nil {
    return err
 }
@@ -122,10 +121,9 @@ if err := bcs.Marshal(&v); err != nil {
 ###### Deffered:
 
 ```
-...
 dec := bcs.NewDecoder(bytes.NewReader(encoded))
-v1 := bcs.Decode[string](dec) // empty value will be returned on error
-v2 := bcs.Decode[int](dec)    // empty value will be returned on error
+v1 := bcs.Decode[string](dec) // will return empty value if error happen
+v2 := bcs.Decode[int](dec)    // if there was on error on previous line, this line will just do nothing and return empty value
 
 if err := dec.Err(); err != nil {
    return err
@@ -135,8 +133,17 @@ if err := dec.Err(); err != nil {
 ###### Panic:
 
 ```
-...
 v := bcs.MustUnmarshal[string](encoded)
+```
+
+###### Error checked automatically after MarshalBCS/UnmarshalBCS and custom serialization functions
+
+```
+func (p *MyStruct) MarshalBCS(e *bcs.Encoder) error {
+    e.Encode(&p.Field1)
+    e.Encode(&p.Field2) // if an error happened on previous line, this line will just do nothing
+    return nil // the encoder will automatically check if there was an error after call to MarshalBCS
+}
 ```
 
 ## Complex types
@@ -402,6 +409,8 @@ Serizalization of a type can fully customized by implementing custom encoder/dec
 Custom serialization can be provided **for** **any type:** basic types, structs, collections, pointers, third-part types etc.
 
 There are multiple methods available in Encoder and Decoder to help implement manual serialization, including serialization of optionals, collections and enumerations (see sections below).
+
+NOTE: No need to manually check an **error** inside of custom serialization methods and functions - it will be checked automatically by the encoder/decoder after the call.
 
 ###### MarshalBCS/UnmarshalBCS methods:
 

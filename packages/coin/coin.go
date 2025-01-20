@@ -26,13 +26,13 @@ func (v Value) BigInt() *big.Int {
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
-	_ = e.WriteCompactUint(uint64(*v))
-	return e.Err()
+	e.WriteCompactUint(uint64(*v))
+	return nil
 }
 
 func (v *Value) UnmarshalBCS(d *bcs.Decoder) error {
 	*v = Value(d.ReadCompactUint())
-	return d.Err()
+	return nil
 }
 
 func (v Value) Bytes() []byte {
@@ -83,13 +83,12 @@ func MustTypeFromString(s string) Type {
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
 	rt := t.ResourceType()
-	_ = e.Encode(rt)
-	return e.Err()
+	e.Encode(rt)
+	return nil
 }
 
 func (t *Type) UnmarshalBCS(d *bcs.Decoder) error {
-	var rt iotago.ResourceType
-	_ = d.Decode(&rt)
+	rt := bcs.Decode[iotago.ResourceType](d)
 	if d.Err() != nil {
 		return d.Err()
 	}

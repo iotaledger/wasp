@@ -6,23 +6,23 @@ type Option[T any] struct {
 }
 
 func (p *Option[T]) MarshalBCS(e *Encoder) error {
-	err := e.WriteOptionalFlag(!p.None)
-	if err != nil {
-		return err
-	}
+	e.WriteOptionalFlag(!p.None)
 	if p.None {
 		return nil
 	}
-	return e.Encode(&p.Some)
+
+	e.Encode(&p.Some)
+
+	return nil
 }
 
 func (p *Option[T]) UnmarshalBCS(d *Decoder) error {
 	p.None = !d.ReadOptionalFlag()
-	if d.Err() != nil {
-		return d.Err()
-	}
 	if p.None {
 		return nil
 	}
-	return d.Decode(&p.Some)
+
+	d.Decode(&p.Some)
+
+	return nil
 }

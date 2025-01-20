@@ -42,7 +42,7 @@ func (l *BurnLog) UnmarshalBCS(d *bcs.Decoder) error {
 		}
 	}
 
-	return d.Err()
+	return nil
 }
 
 func (l *BurnLog) MarshalBCS(e *bcs.Encoder) error {
@@ -53,7 +53,7 @@ func (l *BurnLog) MarshalBCS(e *bcs.Encoder) error {
 		e.WriteUint64(record.GasBurned)
 	}
 
-	return e.Err()
+	return nil
 }
 
 func (l *BurnLog) String() string {
