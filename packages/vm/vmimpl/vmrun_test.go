@@ -101,7 +101,6 @@ func simulateRunOutput(t *testing.T, output iotago.Output) *vm.VMTaskResult {
 		Entropy:              [32]byte{},
 		ValidatorFeeTarget:   nil,
 		EstimateGasMode:      false,
-		EVMTracer:            &isc.EVMTracer{},
 		EnableGasBurnLogging: false,
 		Migrations:           &migrations.MigrationScheme{},
 		Log:                  testlogger.NewLogger(t),

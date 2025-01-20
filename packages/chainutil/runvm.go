@@ -4,9 +4,9 @@ import (
 	"errors"
 	"time"
 
-	"go.uber.org/zap"
-
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/samber/lo"
+	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -27,7 +27,7 @@ func runISCTask(
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
-	evmTracer *isc.EVMTracer,
+	evmTracer *tracers.Tracer,
 ) ([]*vm.RequestResult, error) {
 	store := ch.Store()
 	migs, err := getMigrationsForBlock(store, aliasOutput)

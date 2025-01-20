@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/samber/lo"
 
@@ -24,7 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
-	"github.com/iotaledger/wasp/packages/vm"
+	iscvm "github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -408,7 +409,7 @@ func tryGetRevertError(res *core.ExecutionResult) error {
 		return nil
 	}
 	if len(res.Revert()) > 0 {
-		return vm.ErrEVMExecutionReverted.Create(hex.EncodeToString(res.Revert()))
+		return iscvm.ErrEVMExecutionReverted.Create(hex.EncodeToString(res.Revert()))
 	}
 	return res.Err
 }
@@ -472,7 +473,7 @@ func AddDummyTxWithTransferEvents(
 	toAddress common.Address,
 	assets *isc.Assets,
 	txData []byte,
-	reuseCurrentTxContext bool,
+	isInRequestContext bool,
 ) {
 	zeroAddress := common.Address{}
 	logs := makeTransferEvents(ctx, zeroAddress, toAddress, assets)
@@ -510,9 +511,33 @@ func AddDummyTxWithTransferEvents(
 	}
 	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
 
-	if !reuseCurrentTxContext {
+	callTracerHooks := func() {
+		tracer := ctx.EVMTracer()
+		if tracer != nil {
+			if tracer.Hooks.OnTxStart != nil {
+				tracer.Hooks.OnTxStart(nil, tx, common.Address{})
+			}
+			if tracer.Hooks.OnEnter != nil {
+				tracer.Hooks.OnEnter(0, byte(vm.CALL), common.Address{}, toAddress, txData, 0, wei)
+			}
+			if tracer.Hooks.OnLog != nil {
+				for _, log := range logs {
+					tracer.Hooks.OnLog(log)
+				}
+			}
+			if tracer.Hooks.OnExit != nil {
+				tracer.Hooks.OnExit(0, nil, receipt.GasUsed, nil, false)
+			}
+			if tracer.Hooks.OnTxEnd != nil {
+				tracer.Hooks.OnTxEnd(receipt, nil)
+			}
+		}
+	}
+
+	if !isInRequestContext {
 		// called from outside vmrun, just add the tx without a gas value
 		createBlockchainDB(ctx.State(), chainInfo).AddTransaction(tx, receipt)
+		callTracerHooks()
 		return
 	}
 
@@ -524,6 +549,7 @@ func AddDummyTxWithTransferEvents(
 		blockchainDB := createBlockchainDB(evmPartition, chainInfo)
 		receipt.CumulativeGasUsed = blockchainDB.GetPendingCumulativeGasUsed() + receipt.GasUsed
 		blockchainDB.AddTransaction(tx, receipt)
+		callTracerHooks()
 	})
 }
 

@@ -14,8 +14,6 @@ func EVMTrace(
 	aliasOutput *isc.AliasOutputWithID,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
 	_, err := runISCTask(
@@ -24,11 +22,7 @@ func EVMTrace(
 		blockTime,
 		iscRequestsInBlock,
 		false,
-		&isc.EVMTracer{
-			Tracer:      tracer,
-			TxIndex:     txIndex,
-			BlockNumber: blockNumber,
-		},
+		tracer,
 	)
 	return err
 }
