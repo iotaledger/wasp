@@ -133,7 +133,7 @@ type WithEmbeddedPrivateWithTag struct {
 
 func TestEmbedded(t *testing.T) {
 	bcs.TestCodec(t, WithEmbedded{Embedded: Embedded{A: 5}, B: 10})
-	bcs.TestCodecAsymmetric(t, WithEmbeddedPrivate{embeddedPrivate: embeddedPrivate{A: 5}, B: 10})
+	bcs.TestCodecIsAsymmetric(t, WithEmbeddedPrivate{embeddedPrivate: embeddedPrivate{A: 5}, B: 10})
 	bcs.TestCodec(t, WithEmbeddedPrivateWithTag{embeddedPrivate: embeddedPrivate{A: 5}, B: 10})
 }
 
@@ -157,6 +157,10 @@ type WithShortSlice struct {
 }
 
 type WithOptionalSlice struct {
+	A []int32 `bcs:"optional"`
+}
+
+type WithOptionalPtrSlice struct {
 	A *[]int32 `bcs:"optional"`
 }
 
@@ -182,22 +186,34 @@ type WithShortMap struct {
 
 func TestStructWithContainers(t *testing.T) {
 	bcs.TestCodecAndBytesVsRef(t, WithSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
-	bcs.TestCodecAndBytesVsRef(t, WithSlice{A: nil}, []byte{0x0})
-	bcs.TestCodecAndBytesVsRef(t, WithOptionalSlice{A: &[]int32{42, 43}}, []byte{1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
-	bcs.TestCodecAndBytesVsRef(t, WithOptionalSlice{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytesVsRef(t, WithSlice{A: []int32{}}, []byte{0x0})
+	bcs.TestAsymmetricCodec(t, WithSlice{A: nil}, WithSlice{A: []int32{}})
+
+	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: nil}, []byte{0x0})
+	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: []int32{}}, []byte{0x1, 0x0})
+	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: []int32{42, 43}}, []byte{0x1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+
+	bcs.TestCodecAndBytesVsRef(t, WithOptionalPtrSlice{A: &[]int32{42, 43}}, []byte{1, 0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytesVsRef(t, WithOptionalPtrSlice{A: nil}, []byte{0x0})
+
 	bcs.TestCodecAndBytes(t, WithShortSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+
 	bcs.TestCodecAndBytesVsRef(t, WithArray{A: [3]int16{42, 43, 44}}, []byte{0x2a, 0x0, 0x2b, 0x0, 0x2c, 0x0})
+
 	bcs.TestCodecAndBytes(t, WithMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
 	bcs.TestCodecAndBytes(t, WithMap{A: map[int16]bool{}}, []byte{0x0})
 	bcs.TestEncodeErr(t, WithMap{A: nil})
+
 	bcs.TestCodecAndBytes(t, WithOptionalMap{A: map[int16]bool{}}, []byte{0x1, 0x0})
 	bcs.TestCodecAndBytes(t, WithOptionalMap{A: nil}, []byte{0x0})
 	bcs.TestCodecAndBytes(t, WithOptionalMap{A: map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
 	bcs.TestCodecAndBytes(t, WithOptionalMapPtr{A: &map[int16]bool{3: true, 1: false, 2: true}}, []byte{0x1, 0x3, 0x1, 0x0, 0x0, 0x2, 0x0, 0x1, 0x3, 0x0, 0x1})
 	var m map[int16]bool
 	bcs.TestEncodeErr(t, WithOptionalMapPtr{A: &m})
+
 	bcs.TestCodecAndBytes(t, MapOptional{A: map[byte]byte{3: 4}}, []byte{0x1, 0x1, 0x3, 0x4})
 	bcs.TestCodecAndBytes(t, MapOptional{A: nil}, []byte{0x0})
+
 	bcs.TestCodecAndBytes(t, MapPtrOptional{A: &map[byte]byte{3: 4}}, []byte{0x1, 0x1, 0x3, 0x4})
 	bcs.TestCodecAndBytes(t, MapPtrOptional{A: nil}, []byte{0x0})
 }

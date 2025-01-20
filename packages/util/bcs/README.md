@@ -522,7 +522,7 @@ type TestStruct struct {
 ###### "optional"
 
 Marks field as optional.
-Applicable to: **pointers**, **interfaces** and **maps**.
+Applicable to: **pointers**, **interfaces, maps, slices**.
 
 When encoding such field, first presense flag is encoded as 1 byte, and then value itself is encoded if present.
 

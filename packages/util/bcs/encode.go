@@ -721,12 +721,12 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 		fieldKind := fieldVal.Kind()
 
-		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
+		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map || fieldKind == reflect.Slice {
 			// The field is nullable
 
 			isNil := fieldVal.IsNil()
 
-			if isNil && !fieldOpts.Optional && fieldKind != reflect.Interface {
+			if isNil && !fieldOpts.Optional && fieldKind != reflect.Interface && fieldKind != reflect.Slice {
 				return e.handleErrorf("%v: non-optional nil value", fieldType.Name)
 			}
 
