@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strings"
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
@@ -83,8 +84,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			return nil
 		}
 
-		panic("refactor me: Validate regex and address validation")
-		sharedAddressHex := filesRegex.FindStringSubmatch(file.Name())[1]
+		sharedAddressHex := strings.Replace(file.Name(), ".json", "", -1)
 		sharedAddress, err := cryptolib.NewAddressFromHexString(sharedAddressHex)
 		if err != nil {
 			return fmt.Errorf("unable to parse shared hex address (%s), error: %w", sharedAddressHex, err)

@@ -100,6 +100,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
+				ShowEffects:        true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
@@ -107,10 +108,10 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, err
 		}
 		if !res.Effects.Data.IsSuccess() {
-			return nil, fmt.Errorf("error executing tx: %s", res.Effects.Data.V1.Status.Error)
+			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 		res, err = ncc.nodeConn.wsClient.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
 			Digest: &res.Digest,
 
