@@ -124,15 +124,24 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	for i := 0; i < incCount; i++ {
 		assets := iscmove.NewAssets(10000000)
 		allowance := iscmove.NewAssets(assets.BaseToken() / 10)
+		one := int64(1)
+		mmm := inccounter.FuncIncCounter.Message(&one)
 		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
 			Signer:        scClient,
 			PackageID:     te.iscPackageID,
 			AnchorAddress: te.anchor.GetObjectID(),
 			Assets:        assets,
 			Message: &iscmove.Message{
-				Contract: uint32(isc.Hn("accounts")),
-				Function: uint32(isc.Hn("deposit")),
+				Contract: uint32(mmm.Target.Contract),
+				Function: uint32(mmm.Target.EntryPoint),
+				Args:     mmm.Params,
 			},
+			// inccounter.FuncIncCounter.Message(nil),
+			// &iscmove.Message{
+			// 	Contract: uint32(inccounter.Contract.Hname()),
+			// 	Function: uint32(inccounter.FuncIncCounter.Hname()),
+			// 	Args:     inccounter.FuncIncCounter.Message(nil).Params.Clone(),
+			// },
 			Allowance:        allowance,
 			OnchainGasBudget: 100000,
 			GasPrice:         iotaclient.DefaultGasPrice,
@@ -184,6 +193,8 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				*/
 				break
 			}
+			time.Sleep(100 * time.Millisecond)
+
 			if reliable {
 				continue
 			}
@@ -199,7 +210,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				).Sign(scClient)
 				te.nodes[0].ReceiveOffLedgerRequest(scRequest, scClient.GetPublicKey())
 			}
-			time.Sleep(100 * time.Millisecond)
 		}
 		// Check if LastAliasOutput() works as expected.
 		awaitPredicate(te, ctxTimeout, "LatestAliasOutput", func() bool {
@@ -362,7 +372,7 @@ func (tnc *testNodeConn) PublishTX(
 		return err
 	}
 
-	fmt.Print(res)
+	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
 
 	anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	if err != nil {

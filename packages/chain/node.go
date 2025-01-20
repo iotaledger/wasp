@@ -656,7 +656,7 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 }
 
 func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
-	cni.log.Debugf("handleTxPublished")
+	cni.log.Debugf("handleTxPublished, txID=%v", txPubResult.txID)
 	if !cni.publishingTXes.Has(txPubResult.txID) {
 		return
 	}
