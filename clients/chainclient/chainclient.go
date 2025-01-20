@@ -121,7 +121,7 @@ func (c *Client) postSingleRequest(
 			Assets:           assets,
 			Message:          msg,
 			Allowance:        allowances,
-			OnchainGasBudget: params.gasBudget,
+			OnchainGasBudget: params.GasBudget(),
 			GasPrice:         parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 			GasBudget:        iotaclient.DefaultGasBudget,
 		},

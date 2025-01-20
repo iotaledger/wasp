@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -28,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -67,7 +69,9 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 }
 
 func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinMaxValue, isc.GasCoinMaxValue)
+	val := 10_000_000
+
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), uint64(val), isc.GasCoinMaxValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -77,7 +81,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinMaxValue)},
+				Amounts: []iotago.Argument{txb.MustPure(val)},
 			},
 		},
 	)
@@ -88,7 +92,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		wallet.Address().AsIotaAddress(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
-		iotaclient.DefaultGasBudget,
+		uint64(val),
 		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 	)
 
