@@ -116,13 +116,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			Digest: &res.Digest,
 
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowInput:          true,
-				ShowRawInput:       true,
-				ShowEffects:        true,
-				ShowEvents:         true,
 				ShowObjectChanges:  true,
 				ShowBalanceChanges: true,
-				ShowRawEffects:     true,
 			},
 		})
 		if err != nil {
