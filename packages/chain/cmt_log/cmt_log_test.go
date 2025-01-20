@@ -25,7 +25,6 @@ import (
 // TODO: Test should involve suspend/resume.
 
 func TestCmtLogBasic(t *testing.T) {
-	t.Skip("flaky")
 	type test struct {
 		n int
 		f int
@@ -62,7 +61,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-		cmtLogInst, err := cmt_log.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.Named(fmt.Sprintf("N%v", i)))
+		cmtLogInst, err := cmt_log.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, nil, log.Named(fmt.Sprintf("N%v", i)))
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}
@@ -76,55 +75,66 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao1 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 1)
 	t.Logf("AO1=%v", ao1)
-	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao1)).RunAll()
+	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
-	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(*cmt_log.Output)
-	for _, n := range gpaNodes {
+	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(cmt_log.Output)
+	cons1Outs := map[gpa.NodeID]cmt_log.Output{}
+	for nid, n := range gpaNodes {
 		require.NotNil(t, n.Output())
 		require.Equal(t, cons1, n.Output())
+		cons1Outs[nid] = n.Output().(cmt_log.Output)
+		require.Equal(t, 1, len(cons1Outs[nid]))
+		require.Nil(t, cons1Outs[nid][cmt_log.LogIndex(1)])
 	}
 	//
 	// Consensus results received (consumed ao1, produced ao2).
 	// FIXME is should be anchor state transition, instead of random anchor
 	ao2 := randomAnchorWithID(*aliasRef.ObjectID, committeeAddress, 2)
 	t.Logf("AO2=%v", ao2)
-	gpaTC.WithInputs(inputConsensusOutput(gpaNodes, cons1, ao2)).RunAll()
+	gpaTC.WithInputs(inputConsensusOutput(cons1Outs, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
-	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(*cmt_log.Output)
+	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(cmt_log.Output)
 	t.Logf("cons2=%v", cons2)
-	require.Equal(t, cons1.GetLogIndex().Next(), cons2.GetLogIndex())
-	require.Equal(t, ao2, cons2.GetBaseAliasOutput())
 	for _, n := range gpaNodes {
-		require.NotNil(t, n.Output())
-		require.Equal(t, cons2, n.Output())
+		out := n.Output().(cmt_log.Output)
+		require.NotNil(t, out)
+		require.Equal(t, cons2, out)
+		require.Equal(t, 2, len(out))
+		require.Nil(t, out[cmt_log.LogIndex(1)])
+		require.Equal(t, ao2, out[cmt_log.LogIndex(2)])
 	}
 	//
 	// AO Confirmed received (nothing changes, we are ahead of it)
-	gpaTC.WithInputs(inputAliasOutputConfirmed(gpaNodes, ao2)).RunAll()
+	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Recv", t.Logf)
 	for _, n := range gpaNodes {
 		require.NotNil(t, n.Output())
 		require.Equal(t, cons2, n.Output())
 	}
-	//
-	// pass another confirmed // TODO: WTF??
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions.
 
-func inputAliasOutputConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmt_log.NewInputAliasOutputConfirmed(ao)
+		inputs[n] = cmt_log.NewInputAnchorConfirmed(ao)
 	}
 	return inputs
 }
 
-func inputConsensusOutput(gpaNodes map[gpa.NodeID]gpa.GPA, consReq *cmt_log.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(consReq map[gpa.NodeID]cmt_log.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
-	for n := range gpaNodes {
-		inputs[n] = cmt_log.NewInputConsensusOutputDone(consReq.GetLogIndex(), *consReq.GetBaseAliasOutput().GetObjectID(), nextAO.GetObjectRef())
+	for nid, outs := range consReq {
+		maxLI := cmt_log.NilLogIndex()
+		for li := range outs {
+			if li <= maxLI {
+				break
+			}
+			maxLI = li
+			inputs[nid] = cmt_log.NewInputConsensusOutputConfirmed(nextAO, li)
+		}
 	}
 	return inputs
 }

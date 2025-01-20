@@ -73,6 +73,7 @@ func TestCreateOrigin(t *testing.T) {
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		initParams,
+		originDepositVal,
 		"https://iota.org",
 	)
 	gasCoin := resGetCoins.Data[0].Ref()

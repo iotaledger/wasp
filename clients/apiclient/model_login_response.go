@@ -21,7 +21,7 @@ var _ MappedNullable = &LoginResponse{}
 
 // LoginResponse struct for LoginResponse
 type LoginResponse struct {
-	Error string `json:"error"`
+	Error *string `json:"error,omitempty"`
 	Jwt string `json:"jwt"`
 }
 
@@ -31,9 +31,8 @@ type _LoginResponse LoginResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewLoginResponse(error_ string, jwt string) *LoginResponse {
+func NewLoginResponse(jwt string) *LoginResponse {
 	this := LoginResponse{}
-	this.Error = error_
 	this.Jwt = jwt
 	return &this
 }
@@ -46,28 +45,36 @@ func NewLoginResponseWithDefaults() *LoginResponse {
 	return &this
 }
 
-// GetError returns the Error field value
+// GetError returns the Error field value if set, zero value otherwise.
 func (o *LoginResponse) GetError() string {
-	if o == nil {
+	if o == nil || IsNil(o.Error) {
 		var ret string
 		return ret
 	}
-
-	return o.Error
+	return *o.Error
 }
 
-// GetErrorOk returns a tuple with the Error field value
+// GetErrorOk returns a tuple with the Error field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *LoginResponse) GetErrorOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Error) {
 		return nil, false
 	}
-	return &o.Error, true
+	return o.Error, true
 }
 
-// SetError sets field value
+// HasError returns a boolean if a field has been set.
+func (o *LoginResponse) HasError() bool {
+	if o != nil && !IsNil(o.Error) {
+		return true
+	}
+
+	return false
+}
+
+// SetError gets a reference to the given string and assigns it to the Error field.
 func (o *LoginResponse) SetError(v string) {
-	o.Error = v
+	o.Error = &v
 }
 
 // GetJwt returns the Jwt field value
@@ -104,7 +111,9 @@ func (o LoginResponse) MarshalJSON() ([]byte, error) {
 
 func (o LoginResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["error"] = o.Error
+	if !IsNil(o.Error) {
+		toSerialize["error"] = o.Error
+	}
 	toSerialize["jwt"] = o.Jwt
 	return toSerialize, nil
 }
@@ -114,7 +123,6 @@ func (o *LoginResponse) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"error",
 		"jwt",
 	}
 

@@ -283,6 +283,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
+		0,
 		"",
 	)
 

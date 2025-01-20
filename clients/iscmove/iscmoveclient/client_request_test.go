@@ -2,7 +2,6 @@ package iscmoveclient_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -73,14 +72,14 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 			},
 		})
 	require.NoError(t, err)
-	fmt.Println(result)
+	t.Logf("SignAndExecuteTransaction, result: %+v", result)
 
 	coinObjects, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)
-	fmt.Println(coinObjects)
+	t.Logf("SignAndExecuteTransaction, contObjects: %+v", coinObjects)
 
 	if len(coinObjects.Data) != 1 {
 		t.Fatalf("Failed to merge all coins into one")

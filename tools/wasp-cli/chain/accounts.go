@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -141,15 +142,17 @@ func initDepositCmd() *cobra.Command {
 
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			if strings.Contains(args[0], ":") {
+			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
+				allowance := isc.NewAssets(tokens.BaseTokens() / 10)
 
 				util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
-							Transfer: tokens,
+							Transfer:  tokens,
+							Allowance: allowance,
 						},
 					)
 				})

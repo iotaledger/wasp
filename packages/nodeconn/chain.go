@@ -89,26 +89,60 @@ func (ncc *ncChain) WaitUntilStopped() {
 func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	defer ncc.shutdownWaitGroup.Done()
 
-	postTx := func(task publishTxTask) error {
+	postTx := func(task publishTxTask) (*isc.StateAnchor, error) {
 		txBytes, err := bcs.Marshal(task.tx.Data)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
+				ShowEffects:        true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !res.Effects.Data.IsSuccess() {
-			return fmt.Errorf("error executing tx: %s", res.Effects.Data.V1.Status.Error)
+			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
 		}
-		return nil
+
+		time.Sleep(1 * time.Second)
+		res, err = ncc.nodeConn.wsClient.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
+			Digest: &res.Digest,
+
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowInput:          true,
+				ShowRawInput:       true,
+				ShowEffects:        true,
+				ShowEvents:         true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
+				ShowRawEffects:     true,
+			},
+		})
+		if err != nil {
+			ncc.LogInfof("GetTransactionBlock, err=%v", err)
+			return nil, err
+		}
+
+		anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+		if err != nil {
+			return nil, err
+		}
+
+		anchor, err := ncc.nodeConn.wsClient.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		if err != nil {
+			return nil, err
+		}
+
+		stateAnchor := isc.NewStateAnchor(anchor, ncc.nodeConn.iscPackageID)
+
+		return &stateAnchor, nil
 	}
 
 	for {
@@ -116,8 +150,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case task := <-ncc.publishTxQueue:
-			err := postTx(task)
-			task.cb(task.tx, err)
+			stateAnchor, err := postTx(task)
+			task.cb(task.tx, stateAnchor, err)
 		}
 	}
 }

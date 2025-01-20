@@ -443,6 +443,10 @@ func (s StateAnchor) Equals(input *StateAnchor) bool {
 	return iscmove.AnchorWithRefEquals(*s.anchor, *input.Anchor())
 }
 
+func (s StateAnchor) String() string {
+	return fmt.Sprintf("{StateAnchor, %v}", s.anchor)
+}
+
 type SendOptions struct {
 	Timelock   time.Time
 	Expiration *Expiration

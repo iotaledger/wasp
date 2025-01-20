@@ -13,12 +13,6 @@ type MsgNextLogIndexCause byte
 
 func (c MsgNextLogIndexCause) String() string {
 	switch c {
-	case MsgNextLogIndexCauseConsOut:
-		return "ConsOut"
-	case MsgNextLogIndexCauseRecover:
-		return "Recover"
-	case MsgNextLogIndexCauseL1RepAO:
-		return "L1RepAO"
 	case MsgNextLogIndexCauseStarted:
 		return "Started"
 	default:
@@ -27,10 +21,7 @@ func (c MsgNextLogIndexCause) String() string {
 }
 
 const (
-	MsgNextLogIndexCauseConsOut MsgNextLogIndexCause = iota // Consensus output received, we can go to the next log index.
-	MsgNextLogIndexCauseL1RepAO                             // L1 replaced an alias output, probably have to start new log index.
-	MsgNextLogIndexCauseRecover                             // Either node is booted or consensus asks for a recovery, try to proceed to next li.
-	MsgNextLogIndexCauseStarted                             // Consensus is started, maybe we have to catch up with it.
+	MsgNextLogIndexCauseStarted MsgNextLogIndexCause = iota // Consensus is started, maybe we have to catch up with it.
 )
 
 type MsgNextLogIndex struct {

@@ -26,16 +26,30 @@ func (li LogIndex) Next() LogIndex {
 	return LogIndex(li.AsUint32() + 1)
 }
 
+func (li LogIndex) Prev() LogIndex {
+	if li == 0 {
+		return li
+	}
+	return LogIndex(li.AsUint32() - 1)
+}
+
+func (li LogIndex) Sub(x uint32) LogIndex {
+	if li.AsUint32() <= x {
+		return NilLogIndex()
+	}
+	return LogIndex(li.AsUint32() - x)
+}
+
 func NilLogIndex() LogIndex {
 	return LogIndex(0)
 }
 
 func MaxLogIndex(lis ...LogIndex) LogIndex {
-	maxLogIndex := NilLogIndex()
+	maxLI := NilLogIndex()
 	for _, li := range lis {
-		if li > maxLogIndex {
-			maxLogIndex = li
+		if li > maxLI {
+			maxLI = li
 		}
 	}
-	return maxLogIndex
+	return maxLI
 }

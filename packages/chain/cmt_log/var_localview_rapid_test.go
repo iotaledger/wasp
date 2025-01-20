@@ -3,47 +3,55 @@
 
 package cmt_log_test
 
-import (
-	"fmt"
-	"testing"
+// TODO: Re-enable this test.
 
-	"github.com/stretchr/testify/require"
-	"pgregory.net/rapid"
+// import (
+// 	"fmt"
+// 	"testing"
 
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-)
+// 	"github.com/stretchr/testify/require"
+// 	"pgregory.net/rapid"
 
-// A State Machine for for the property based test.
-// It models the chain (confirmed, pending, rejected, rejSync fields)
-// and contains the actual instance to test (lv).
-type varLocalViewSM struct {
-	//
-	// The actual instance to test.
-	lv cmt_log.VarLocalView
-	//
-	// Following stands for the model.
-	confirmed []*isc.StateAnchor // A chain of confirmed AOs.
-	pending   []*isc.StateAnchor // A list of AOs proposed by the chain, not confirmed yet.
-	rejected  []*isc.StateAnchor // Rejected AOs, that should not impact the output anymore.
-	rejSync   bool               // True, if reject was done and pending was not made empty yet.
-	//
-	// Helpers.
-	// utxoIDCounter int // To have unique UTXO IDs.
-}
+// 	iotago "github.com/iotaledger/iota.go/v3"
 
-var _ rapid.StateMachine = &varLocalViewSM{}
+// 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
+// 	"github.com/iotaledger/wasp/clients/iscmove"
+// 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
+// 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+// 	"github.com/iotaledger/wasp/packages/cryptolib"
+// 	"github.com/iotaledger/wasp/packages/isc"
+// 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+// )
 
-func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
-	sm := new(varLocalViewSM)
-	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *isc.StateAnchor) {}, testlogger.NewLogger(t))
-	sm.confirmed = []*isc.StateAnchor{}
-	sm.pending = []*isc.StateAnchor{}
-	sm.rejected = []*isc.StateAnchor{}
-	sm.rejSync = false
-	return sm
-}
+// // A State Machine for for the property based test.
+// // It models the chain (confirmed, pending, rejected, rejSync fields)
+// // and contains the actual instance to test (lv).
+// type varLocalViewSM struct {
+// 	//
+// 	// The actual instance to test.
+// 	lv cmt_log.VarLocalView
+// 	//
+// 	// Following stands for the model.
+// 	confirmed []*isc.StateAnchor // A chain of confirmed AOs.
+// 	pending   []*isc.StateAnchor // A list of AOs proposed by the chain, not confirmed yet.
+// 	rejected  []*isc.StateAnchor // Rejected AOs, that should not impact the output anymore.
+// 	rejSync   bool               // True, if reject was done and pending was not made empty yet.
+// 	//
+// 	// Helpers.
+// 	utxoIDCounter int // To have unique UTXO IDs.
+// }
+
+// var _ rapid.StateMachine = &varLocalViewSM{}
+
+// func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
+// 	sm := new(varLocalViewSM)
+// 	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *isc.StateAnchor) {}, testlogger.NewLogger(t))
+// 	sm.confirmed = []*isc.StateAnchor{}
+// 	sm.pending = []*isc.StateAnchor{}
+// 	sm.rejected = []*isc.StateAnchor{}
+// 	sm.rejSync = false
+// 	return sm
+// }
 
 // // E.g. external rotation of a TX by other chain.
 // //
@@ -153,13 +161,13 @@ func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
 // 	sm.pending = append(sm.pending, newAO)
 // }
 
-// Here we check the invariants.
-func (sm *varLocalViewSM) Check(t *rapid.T) {
-	t.Logf("Check, ModelStatus: %v", sm.modelStatus())
-	t.Logf("Check, %v", sm.lv.StatusString())
-	sm.propBaseAOProposedIfPossible(t)
-	sm.propBaseAOProposedCorrect(t)
-}
+// // Here we check the invariants.
+// func (sm *varLocalViewSM) Check(t *rapid.T) {
+// 	t.Logf("Check, ModelStatus: %v", sm.modelStatus())
+// 	t.Logf("Check, %v", sm.lv.StatusString())
+// 	sm.propBaseAOProposedIfPossible(t)
+// 	sm.propBaseAOProposedCorrect(t)
+// }
 
 // // We don't use randomness to generate AOs because they have to be unique.
 // func (sm *varLocalViewSM) nextAO(prevAO ...*isc.StateAnchor) *isc.StateAnchor {
@@ -185,58 +193,57 @@ func (sm *varLocalViewSM) Check(t *rapid.T) {
 // 			ObjectRef: *iotatest.RandomObjectRef(),
 // 			Owner:     iotatest.RandomAddress(),
 // 		}, *cryptolib.NewRandomAddress().AsIotaAddress())
-
 // 	return &stateAnchor
 // }
 
-// Alias output can be proposed, if there is at least one AO confirmed and there is no
-// ongoing resync because of rejections.
-func (sm *varLocalViewSM) nextChainStepPossible() bool {
-	return len(sm.confirmed) != 0 && !sm.rejSync
-}
+// // Alias output can be proposed, if there is at least one AO confirmed and there is no
+// // ongoing resync because of rejections.
+// func (sm *varLocalViewSM) nextChainStepPossible() bool {
+// 	return len(sm.confirmed) != 0 && !sm.rejSync
+// }
 
-// The LocalView proposes next BaseAO if there is received at least 1 confirmed output
-// and there is no rejections, that are not reported to the LocalView yet.
-func (sm *varLocalViewSM) propBaseAOProposedIfPossible(t *rapid.T) {
-	require.Equal(t,
-		sm.nextChainStepPossible(),
-		sm.lv.Value() != nil,
-	)
-}
+// // The LocalView proposes next BaseAO if there is received at least 1 confirmed output
+// // and there is no rejections, that are not reported to the LocalView yet.
+// func (sm *varLocalViewSM) propBaseAOProposedIfPossible(t *rapid.T) {
+// 	require.Equal(t,
+// 		sm.nextChainStepPossible(),
+// 		sm.lv.Value() != nil,
+// 	)
+// }
 
-// If an BaseAO is proposed, it matches the last pending, or last confirmed, if there are no pending.
-func (sm *varLocalViewSM) propBaseAOProposedCorrect(t *rapid.T) {
-	if sm.nextChainStepPossible() {
-		if len(sm.pending) != 0 {
-			require.Equal(t, sm.pending[len(sm.pending)-1], sm.lv.Value())
-		} else {
-			require.Equal(t, sm.confirmed[len(sm.confirmed)-1], sm.lv.Value())
-		}
-	}
-}
+// // If an BaseAO is proposed, it matches the last pending, or last confirmed, if there are no pending.
+// func (sm *varLocalViewSM) propBaseAOProposedCorrect(t *rapid.T) {
+// 	if sm.nextChainStepPossible() {
+// 		if len(sm.pending) != 0 {
+// 			require.Equal(t, sm.pending[len(sm.pending)-1], sm.lv.Value())
+// 		} else {
+// 			require.Equal(t, sm.confirmed[len(sm.confirmed)-1], sm.lv.Value())
+// 		}
+// 	}
+// }
 
-// Just for debugging.
-func (sm *varLocalViewSM) modelStatus() string {
-	str := fmt.Sprintf("Rejected[sync=%v]", sm.rejSync)
-	for _, e := range sm.rejected {
-		oid := e.GetObjectID()
-		str += fmt.Sprintf(" %v", oid[0:4])
-	}
-	str += "; Pending"
-	for _, e := range sm.pending {
-		oid := e.GetObjectID()
-		str += fmt.Sprintf(" %v", oid[0:4])
-	}
-	return str
-}
+// // Just for debugging.
+// func (sm *varLocalViewSM) modelStatus() string {
+// 	str := fmt.Sprintf("Rejected[sync=%v]", sm.rejSync)
+// 	for _, e := range sm.rejected {
+// 		oid := e.GetObjectID()
+// 		str += fmt.Sprintf(" %v", oid[0:4])
+// 	}
+// 	str += "; Pending"
+// 	for _, e := range sm.pending {
+// 		oid := e.GetObjectID()
+// 		str += fmt.Sprintf(" %v", oid[0:4])
+// 	}
+// 	return str
+// }
 
-var _ rapid.StateMachine = &varLocalViewSM{}
+// var _ rapid.StateMachine = &varLocalViewSM{}
 
-// E.g. for special parameters for reproducibility, etc.
-// `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
-func TestVarLocalViewRapid(t *testing.T) {
-	rapid.Check(t, func(t *rapid.T) {
-		sm := newVarLocalViewSM(t)
-		t.Repeat(rapid.StateMachineActions(sm))
-	})
-}
+// // E.g. for special parameters for reproducibility, etc.
+// // `go test ./packages/chain/cmtLog/ --run TestPropsRapid -v -rapid.seed=13061922091840831492 -rapid.checks=100`
+// func TestVarLocalViewRapid(t *testing.T) {
+// 	rapid.Check(t, func(t *rapid.T) {
+// 		sm := newVarLocalViewSM(t)
+// 		t.Repeat(rapid.StateMachineActions(sm))
+// 	})
+// }

@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Here we implement the local view of a chain, maintained by a committee to decide which
-// alias output to propose to the ACS. The alias output decided by the ACS will be used
+// achor object to propose to the ACS. The achor object decided by the ACS will be used
 // as an input for TX we build.
 //
-// The LocalView maintains a list of Alias Outputs (AOs). The are chained based on consumed/produced
-// AOs in a transaction we publish. The goal here is to tract the unconfirmed alias outputs, update
+// The LocalView maintains a list of achor objects (AOs). The are chained based on consumed/produced
+// AOs in a transaction we publish. The goal here is to tract the unconfirmed achor objects, update
 // the list based on confirmations/rejections from the L1.
 //
 // In overall, the LocalView acts as a filter between the L1 and LogIndex assignment in varLogIndex.
@@ -15,12 +15,12 @@
 //
 // We have several inputs:
 //
-//   - **Alias Output Confirmed**.
+//   - **Achor Object Confirmed**.
 //     It can be AO posted by this committee,
 //     as well as by other committee (e.g. chain was rotated to other committee and then back)
 //     or a user (e.g. external rotation TX).
 //
-//   - **Alias Output Rejected**.
+//   - **Achor Object Rejected**.
 //     These events are always for TXes posted by this committee.
 //     We assume for each TX we will get either Confirmation or Rejection.
 //
@@ -28,336 +28,150 @@
 //     Consensus produced a TX, and will post it to the L1.
 //
 //   - **Consensus Skip**.
-//     Consensus completed without producing a TX and a block. So the previous AO is left unspent.
+//     Consensus completed without producing a TX and a block. So the previous AO is left actual.
 //
 //   - **Consensus Recover**.
 //     Consensus is still running, but it takes long time, so maybe something is wrong
 //     and we should consider spawning another consensus for the same base AO.
 //
-// On the pipelining:
-//
-//   - During the normal operation, if consensus produces a TX, it can use the produced AO
-//     to build next TX on it. That's pipelining. It allows to produce multiple blocks per
-//     L1 milestone. This component tracks the AOs build in this way and not confirmed yet.
-//
-//   - If AO produced by the consensus is rejected, then all the AOs build on top of it will
-//     be rejected eventually as well, because they use the rejected AO as an input. On the
-//     other hand, it is unclear if unconfirmed AOs before the rejected one will be confirmed
-//     or rejected, we will wait until L1 decides on all of them.
-//
-//   - If we get a confirmed AO, that is not one of the AOs we have posted (and still waiting
-//     for a decision), then someone from the outside of a committee transitioned the chain.
-//     In this case all our produced/pending transactions are not meaningful anymore and we
-//     have to start building all the chain from the newly received AO.
-//
-//   - Recovery notice is received from a consensus (with SI/LI...) a new consensus will
-//     be started after agreeing on the next LI. The new consensus will take the same AO as
-//     an input and therefore will race with the existing one (maybe it has stuck for some
-//     reason, that's a fallback). In this case we stop building an unconfirmed chain for
-//     the future state indexes and will wait for some AO to be confirmed or all the concurrent
-//     consensus TX'es to be rejected.
+// On the pipelining -- the current L1 model don't allow us to do any kind of pipelining,
+// apart from creating L2 blocks without committing them to the L1. But that's not the
+// responsibility of the local view component.
 //
 // Note on the AO as an input for a consensus. The provided AO is just a proposal. After ACS
 // is completed, the participants will select the actual AO, which can differ from the one
 // proposed by this node.
-//
-// NOTE: On the rejections. When we get a rejection of an AO, we cannot mark all the subsequent
-// StateIndexes as rejected, because it is possible that the rejected AO was started to publish
-// before a reorg/reject. Thus, only that single AO has to be marked as rejected. Nevertheless,
-// the AOs explicitly (via consumed AO) depending on the rejected AO can be cleaned up.
 package cmt_log
 
 import (
 	"fmt"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/samber/lo"
 )
 
 type VarLocalView interface {
 	//
-	// Returns alias output to produce next transaction on, or nil if we should wait.
-	// In the case of nil, we either wait for the first AO to receive, or we are
-	// still recovering from a TX rejection.
-	Value() *isc.StateAnchor
+	// Called in the case of new AO from L1.
+	AnchorObjectConfirmed(confirmedAO *isc.StateAnchor) gpa.OutMessages
 	//
-	// Corresponds to the `tx_posted` event in the specification.
-	// Returns true, if the proposed BaseStateAnchor has changed.
-	ConsensusOutputDone(logIndex LogIndex, consumed *iotago.ObjectRef) (*isc.StateAnchor, bool) // TODO: Recheck, if consumed AO is the decided one.
+	// Called by the consensus to determine if a produced TX can be posted to the L1.
+	TransactionProduced(logIndex LogIndex, consumedAO *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages // TODO: Call it.
 	//
-	// Corresponds to the `ao_received` event in the specification.
-	// Returns true, if the proposed BaseStateAnchor has changed.
-	// Also it returns confirmed log index, if a received AO confirms it, or NIL otherwise.
-	AliasOutputConfirmed(confirmed *isc.StateAnchor) (*isc.StateAnchor, bool, LogIndex)
-	//
-	// Corresponds to the `tx_rejected` event in the specification.
-	// Returns true, if the proposed BaseStateAnchor has changed.
-	AliasOutputRejected(rejected *isc.StateAnchor) (*isc.StateAnchor, bool)
+	// Called if a TX is rejected.
+	// This will always be called after TransactionProduced.
+	TransactionRejected(logIndex LogIndex) gpa.OutMessages // TODO: Call it.
 	//
 	// Support functions.
 	StatusString() string
 }
 
 type varLocalViewEntry struct {
-	output   *isc.StateAnchor // The AO published.
-	consumed iotago.ObjectID  // The AO used as an input for the TX.
-	rejected bool             // True, if the AO as rejected. We keep them to detect the other rejected AOs.
-	logIndex LogIndex         // LogIndex of the consensus produced the output, if any.
+	logIndex    LogIndex
+	consumedAO  *isc.StateAnchor
+	transaction *iotasigner.SignedTransaction
 }
 
 type varLocalViewImpl struct {
+	latestTip *isc.StateAnchor
 	// The latest confirmed AO, as received from L1.
-	// All the pending entries are built on top of this one.
-	// It can be nil, if the latest AO is unclear (either not received yet, or some rejections happened).
-	confirmed *isc.StateAnchor
-	// AOs produced by this committee, but not confirmed yet.
-	// It is possible to have several AOs for a StateIndex in the case of
-	// Recovery/Timeout notices. Then the next consensus is started o build a TX.
-	// Both of them can still produce a TX, but only one of them will be confirmed.
-	pending *shrinkingmap.ShrinkingMap[uint32, []*varLocalViewEntry]
-	// Limit pipelining (a number of unconfirmed TXes to this number.)
-	// -1 -- infinite, 0 -- disabled, x -- up to x TXes ahead.
-	pipeliningLimit int
+	// It can be nil, if the latest AO is unclear (either not received yet).
+	confirmedAO *isc.StateAnchor
+	// Transactions that are ready to be posted.
+	pendingTXes *shrinkingmap.ShrinkingMap[uint32, []*varLocalViewEntry]
 	// Callback for the TIP changes.
-	tipUpdatedCB func(ao *isc.StateAnchor)
+	tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages
 	// Just a logger.
 	log *logger.Logger
 }
 
-func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor), log *logger.Logger) VarLocalView {
+func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages, log *logger.Logger) VarLocalView {
 	log.Debugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &varLocalViewImpl{
-		confirmed:       nil,
-		pending:         shrinkingmap.New[uint32, []*varLocalViewEntry](),
-		pipeliningLimit: pipeliningLimit,
-		tipUpdatedCB:    tipUpdatedCB,
-		log:             log,
+		latestTip:    nil,
+		confirmedAO:  nil,
+		pendingTXes:  shrinkingmap.New[uint32, []*varLocalViewEntry](),
+		tipUpdatedCB: tipUpdatedCB,
+		log:          log,
 	}
 }
 
-// Return latest AO to be used as an input for the following TX.
-// nil means we have to wait: either we have no AO, or we have some rejections and waiting until a re-sync.
-func (lvi *varLocalViewImpl) Value() *isc.StateAnchor {
-	return lvi.findLatestPending()
+func (lvi *varLocalViewImpl) AnchorObjectConfirmed(confirmedAO *isc.StateAnchor) gpa.OutMessages {
+	lvi.confirmedAO = confirmedAO
+	return lvi.processIt()
 }
 
-func (lvi *varLocalViewImpl) ConsensusOutputDone(logIndex LogIndex, consumed *iotago.ObjectRef) (*isc.StateAnchor, bool) {
-	panic("implement: varLocalViewImpl.ConsensusOutputDone") // TODO:
-	// lvi.log.Debugf("ConsensusOutputDone: logIndex=%v, consumed.Ref=%s, published=%v", logIndex, consumed.String())
-	// stateIndex := published.GetStateIndex()
-	// prevLatest := lvi.findLatestPending()
-	// //
-	// // Check, if not outdated.
-	// if lvi.confirmed == nil {
-	// 	lvi.log.Debugf("⊳ Ignoring it, have no confirmed AO.")
-	// 	return prevLatest, false
-	// }
-	// confirmedStateIndex := lvi.confirmed.GetStateIndex()
-	// if stateIndex <= confirmedStateIndex {
-	// 	lvi.log.Debugf("⊳ Ignoring it, outdated, current confirmed=%v", lvi.confirmed)
-	// 	return prevLatest, false
-	// }
-	// //
-	// // Add it to the pending list.
-	// var entries []*varLocalViewEntry
-	// entries, ok := lvi.pending.Get(stateIndex)
-	// if !ok {
-	// 	entries = []*varLocalViewEntry{}
-	// }
-	// if lo.ContainsBy(entries, func(e *varLocalViewEntry) bool { return e.output.Equals(published) }) {
-	// 	lvi.log.Debugf("⊳ Ignoring it, duplicate.")
-	// 	return prevLatest, false
-	// }
-	// entries = append(entries, &varLocalViewEntry{
-	// 	output:   published,
-	// 	consumed: consumed,
-	// 	rejected: false,
-	// 	logIndex: logIndex,
-	// })
-	// lvi.pending.Set(stateIndex, entries)
-	// //
-	// // Check, if the added AO is a new tip for the chain.
-	// if published.Equals(lvi.findLatestPending()) {
-	// 	lvi.log.Debugf("⊳ Will consider consensusOutput=%v as a tip, the current confirmed=%v.", published, lvi.confirmed)
-	// 	lvi.tipUpdatedCB(published)
-	// 	return published, true
-	// }
-	// lvi.log.Debugf("⊳ That's not a tip.")
-	// return lvi.Value(), false
-}
-
-// A confirmed AO is received from L1. Base on that, we either truncate our local
-// history until the received AO (if we know it was posted before), or we replace
-// the entire history with an unseen AO (probably produced not by this chain×cmt).
-func (lvi *varLocalViewImpl) AliasOutputConfirmed(confirmed *isc.StateAnchor) (*isc.StateAnchor, bool, LogIndex) {
-	lvi.log.Debugf("AliasOutputConfirmed: confirmed=%v", confirmed)
-	cnfLogIndex := NilLogIndex()
-	stateIndex := confirmed.GetStateIndex()
-	oldTip := lvi.findLatestPending()
-	lvi.confirmed = confirmed
-	if lvi.isAliasOutputPending(confirmed) {
-		lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
-			if si <= stateIndex {
-				for _, e := range es {
-					lvi.log.Debugf("⊳ Removing[%v≤%v] %v", si, stateIndex, e.output)
-					if e.output.Equals(lvi.confirmed) {
-						cnfLogIndex = e.logIndex
-					}
-				}
-				lvi.pending.Delete(si)
-			}
-			return true
+func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAO *isc.StateAnchor, tx *iotasigner.SignedTransaction) gpa.OutMessages {
+	stateIndex := consumedAO.GetStateIndex()
+	stateIndexEntries, _ := lvi.pendingTXes.GetOrCreate(stateIndex, func() []*varLocalViewEntry { return []*varLocalViewEntry{} })
+	contains := lo.ContainsBy(stateIndexEntries, func(entry *varLocalViewEntry) bool {
+		return lo.Must(tx.Hash()) == (lo.Must(entry.transaction.Hash()))
+	})
+	if !contains {
+		stateIndexEntries = append(stateIndexEntries, &varLocalViewEntry{
+			logIndex:    logIndex,
+			consumedAO:  consumedAO,
+			transaction: tx,
 		})
-		lvi.clearPendingIfAllRejected()
-	} else {
-		lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
-			for _, e := range es {
-				lvi.log.Debugf("⊳ Removing[all] %v", e.output)
-			}
-			lvi.pending.Delete(si)
-			return true
+		lvi.pendingTXes.Set(stateIndex, stateIndexEntries)
+	}
+	return lvi.processIt()
+}
+
+func (lvi *varLocalViewImpl) TransactionRejected(logIndex LogIndex) gpa.OutMessages {
+	lvi.pendingTXes.ForEach(func(stateIndex uint32, entries []*varLocalViewEntry) bool {
+		entries = lo.Filter(entries, func(entry *varLocalViewEntry, index int) bool {
+			return entry.logIndex != logIndex
 		})
-	}
-	outAO, outChanged := lvi.outputIfChanged(oldTip, lvi.findLatestPending())
-	return outAO, outChanged, cnfLogIndex
-}
-
-// Mark the specified AO as rejected.
-// Trim the suffix of rejected AOs.
-func (lvi *varLocalViewImpl) AliasOutputRejected(rejected *isc.StateAnchor) (*isc.StateAnchor, bool) {
-	lvi.log.Debugf("AliasOutputRejected: rejected=%v", rejected)
-	stateIndex := rejected.GetStateIndex()
-	oldTip := lvi.findLatestPending()
-	//
-	// Mark the output as rejected, as well as all the outputs depending on it.
-	if entries, ok := lvi.pending.Get(stateIndex); ok {
-		for _, entry := range entries {
-			if entry.output.Equals(rejected) {
-				lvi.log.Debugf("⊳ Entry marked as rejected.")
-				entry.rejected = true
-				lvi.markDependentAsRejected(rejected)
-			}
+		if len(entries) == 0 {
+			lvi.pendingTXes.Delete(stateIndex)
+		} else {
+			lvi.pendingTXes.Set(stateIndex, entries)
 		}
-	}
-	//
-	// If all remaining are rejected, remove them, and proceed from the confirmed one.
-	lvi.clearPendingIfAllRejected()
-	return lvi.outputIfChanged(oldTip, lvi.findLatestPending())
-}
-
-func (lvi *varLocalViewImpl) markDependentAsRejected(ao *isc.StateAnchor) {
-	accRejected := map[iotago.ObjectIDKey]struct{}{ao.GetObjectID().Key(): {}}
-	for si := ao.GetStateIndex() + 1; ; si++ {
-		es, esFound := lvi.pending.Get(si)
-		if !esFound {
-			break
-		}
-		for _, e := range es {
-			if _, ok := accRejected[e.consumed.Key()]; ok && !e.rejected {
-				lvi.log.Debugf("⊳ Also marking %v as rejected.", e.output)
-				e.rejected = true
-				accRejected[e.output.GetObjectID().Key()] = struct{}{}
-			}
-		}
-	}
-}
-
-func (lvi *varLocalViewImpl) clearPendingIfAllRejected() {
-	if !lvi.allRejected() || lvi.pending.IsEmpty() {
-		return
-	}
-	lvi.log.Debugf("⊳ All entries are rejected, clearing them.")
-	lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
-		for _, e := range es {
-			lvi.log.Debugf("⊳ Clearing %v", e.output)
-		}
-		lvi.pending.Delete(si)
 		return true
 	})
-}
-
-func (lvi *varLocalViewImpl) outputIfChanged(oldTip, newTip *isc.StateAnchor) (*isc.StateAnchor, bool) {
-	if oldTip == nil && newTip == nil {
-		lvi.log.Debugf("⊳ Tip remains nil.")
-		return nil, false
-	}
-	if oldTip == nil || newTip == nil {
-		lvi.log.Debugf("⊳ New tip=%v, was %v", newTip, oldTip)
-		lvi.tipUpdatedCB(newTip)
-		return newTip, true
-	}
-	if oldTip.Equals(newTip) {
-		lvi.log.Debugf("⊳ Tip remains %v.", newTip)
-		return newTip, false
-	}
-	lvi.log.Debugf("⊳ New tip=%v, was %v", newTip, oldTip)
-	lvi.tipUpdatedCB(newTip)
-	return newTip, true
+	return lvi.processIt()
 }
 
 func (lvi *varLocalViewImpl) StatusString() string {
-	return fmt.Sprintf("{varLocalView: confirmed=%v, tip=%v, |pendingSIs|=%v}", lvi.confirmed, lvi.findLatestPending(), lvi.pending.Size())
+	return fmt.Sprintf("{varLocalView: confirmedAO=%v, |pendingTxIndexes|=%v}", lvi.confirmedAO, lvi.pendingTXes.Size())
 }
 
-// Latest pending AO is only considered existing, if the current pending
-// set of AOs is a chain, with no gaps, or alternatives, and all the AOs
-// are not rejected.
-func (lvi *varLocalViewImpl) findLatestPending() *isc.StateAnchor {
-	if lvi.confirmed == nil {
+func (lvi *varLocalViewImpl) processIt() gpa.OutMessages {
+	if lvi.confirmedAO == nil {
+		lvi.updateVal(nil)
 		return nil
 	}
-	latest := lvi.confirmed
-	confirmedSI := lvi.confirmed.GetStateIndex()
-	pendingSICount := uint32(lvi.pending.Size())
-	if lvi.pipeliningLimit >= 0 && pendingSICount > uint32(lvi.pipeliningLimit) {
-		// pipeliningLimit < 0 ==> no limit on the pipelining.
-		// pipeliningLimit = 0 ==> there is no pipelining, we wait each TX to be confirmed first.
-		// pipeliningLimit > 0 ==> up to pipeliningLimit TXes can be build unconfirmed.
+	confirmedStateIndex := lvi.confirmedAO.GetStateIndex()
+
+	//
+	// Cleanup outdated.
+	lvi.pendingTXes.ForEachKey(func(pendingStateIndex uint32) bool {
+		if pendingStateIndex < confirmedStateIndex {
+			lvi.pendingTXes.Delete(pendingStateIndex)
+		}
+		return true
+	})
+
+	entries, found := lvi.pendingTXes.Get(confirmedStateIndex)
+	if found && len(entries) > 0 {
+		return lvi.updateVal(nil)
+	}
+
+	return lvi.updateVal(lvi.confirmedAO)
+}
+
+func (lvi *varLocalViewImpl) updateVal(tip *isc.StateAnchor) gpa.OutMessages {
+	if tip == nil && lvi.latestTip == nil {
 		return nil
 	}
-	for i := uint32(0); i < pendingSICount; i++ {
-		entries, ok := lvi.pending.Get(confirmedSI + i + 1)
-		if !ok {
-			return nil // That's a gap.
-		}
-		if len(entries) != 1 {
-			return nil // Alternatives exist.
-		}
-		if entries[0].rejected {
-			return nil // Some are rejected.
-		}
-		if !latest.GetObjectID().Equals(entries[0].consumed) {
-			return nil // Don't form a chain.
-		}
-		latest = entries[0].output
+	if tip != nil && lvi.latestTip != nil && tip.GetObjectRef().Equals(lvi.latestTip.GetObjectRef()) {
+		return nil
 	}
-	return latest
-}
-
-func (lvi *varLocalViewImpl) isAliasOutputPending(ao *isc.StateAnchor) bool {
-	found := false
-	lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
-		found = lo.ContainsBy(es, func(e *varLocalViewEntry) bool {
-			return e.output.Equals(ao)
-		})
-		return !found
-	})
-	return found
-}
-
-func (lvi *varLocalViewImpl) allRejected() bool {
-	allRejected := true
-	lvi.pending.ForEach(func(si uint32, es []*varLocalViewEntry) bool {
-		containsPending := lo.ContainsBy(es, func(e *varLocalViewEntry) bool {
-			return !e.rejected
-		})
-		allRejected = !containsPending
-		return !containsPending
-	})
-	return allRejected
+	lvi.latestTip = tip
+	return lvi.tipUpdatedCB(tip)
 }

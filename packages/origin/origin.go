@@ -162,6 +162,7 @@ func InitChain(
 		&gasCoinObjectID,
 		gas.DefaultFeePolicy(),
 		args,
+		originDeposit,
 		"",
 	)
 }

@@ -1,93 +1,22 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
-// package cmtLog is responsible for producing a log of chain's block decisions
-// for a particular committee. The main tasks for this module are:
-//   - Track the head of the chain log for a committee.
-//   - Track which blocks are approved, pending or reverted.
-//   - Handle startup and recovery scenarios.
+// package cmt_log is responsible for producing a log of chain's block decisions
+// for a particular committee. The main functions:
 //
-// Main principles of the algorithm:
-// >   - Propose to go to the next log index when
-// >       - a) consensus for the latest known LogIndex has terminated (confirmed | rejected | skip | recover).
-// >            All the previous can be left uncompleted.
-// >       - b) confirmed alias output is received from L1, that we haven't posted in this node.
-// >       - and we have a tip AO (from the local view).
-// >   - If there is a single clean chain, we can use pipelining (consider consDone event
-// >     instead of waiting for confirmed | rejected).
-// >   - We start a consensus instance whenever VLI reports a quorum and we have not started it yet.
-// >     Even if we provided no proposal for that LI.
+//   - Propose to start a consensus instance at a specific LI.
+//   - Propose the input for a consensus instance (AO).
 //
-// The algorithm at a high level:
+// The main idea:
 //
-// > ON Startup:
-// >     Let prevLI <- TRY restoring the last started LogIndex ELSE 0
-// >     MinLI <- prevLI + 1
-// >     LogIndex.Start(prevLI)
-// > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
-// >     LocalView.Update(AO)
-// >     IF LocalView changed THEN
-// >         LogIndex.L1ReplacedBaseAliasOutput()
-// >         TryProposeConsensus()
+//   - In the normal operation, don't consider L1 state at all.
+//     Use the anchor ref returned by L1 as a result the previously posted TX.
 //
-// > ON Startup:
-// >     Let prevLI <- TRY restoring the last started LogIndex ELSE 0
-// >     MinLI <- prevLI + 1
-// >     LogIndex.Start(prevLI)
-// >     TryProposeConsensus()
-// > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
-// >     LocalView.Update(AO)
-// >     IF LocalView changed THEN
-// >         LogIndex.L1ReplacedBaseAliasOutput()
-// >         TryProposeConsensus()
-// > ON ConsensusOutput/DONE (CD)
-// >     LocalView.Update(CD)
-// >     IF LocalView changed THEN
-// >         LogIndex.ConsensusOutput(CD.LogIndex)
-// >         TryProposeConsensus()
-// > ON ConsensusOutput/SKIP (CS)
-// >     LogIndex.ConsensusOutput(CS.LogIndex)
-// >     TryProposeConsensus()
-// > ON ConsensusTimeout (CT)
-// >     LogIndex.ConsensusTimeout(CT.LogIndex)
-// >     TryProposeConsensus()
-// > ON Suspend:
-// >     Suspended <- TRUE
-// >     TryProposeConsensus()
-// > ON Reception of ⟨NextLI, •⟩ message:
-// >     LogIndex.Receive(⟨NextLI, •⟩ message).
-// >     TryProposeConsensus()
-// > PROCEDURE TryProposeConsensus:
-// >     IF ∧ LocalView.BaseAO ≠ NIL
-// >        ∧ LogIndex > ConsensusLI
-// >        ∧ LogIndex ≥ MinLI // ⇒ LogIndex ≠ NIL
-// >        ∧ ¬ Suspended
-// >     THEN
-// >         Persist LogIndex
-// >         ConsensusLI <- LogIndex
-// >         Propose LocalView.BaseAO for LogIndex
-// >     ELSE
-// >         Don't propose any consensus.
+//   - On boot a node proposes ⊥ as a base AO.
+//     It uses ConsStarted Quorum counter to find that?
 //
-// See `WaspChainRecovery.tla` for more precise specification.
+//   - If consensus decides BaseAO=⊥, the nodes will propose latest known L1 AO,
+//     as reported by their clients.
 //
-// Notes and invariants:
-//   - Here only a single consensus instance will be considered needed for this node at a time.
-//     Other instances may continue running, but their results will be ignored. That's
-//     because a consensus takes an input from the previous consensus output (the base
-//     alias ID and other parts that depend on it).
-//   - A consensus is started when we have new log index greater than that we have
-//     crashed with, and there is an alias output received.
-//
-// ## Summary.
-//
-// Inputs expected:
-//   - Consensus: Start -> Done | Timeout.
-//   - AliasOutput: Confirmed | Rejected -> {}.
-//   - Suspend.
-//
-// Messages exchanged:
-//   - NextLogIndex (private, between cmtLog instances).
+//   - A lagging node will join LI-1 instance with ⊥ and then will input its
+//     output to the round LI. This assumes the latest round is LI.
 package cmt_log
 
 import (
@@ -121,29 +50,12 @@ type ConsensusStateRegistry interface {
 
 var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 
-// Output for this protocol indicates, what instance of a consensus
-// is currently required to be run. The unique identifier here is the
-// logIndex (there will be no different baseAliasOutputs for the same logIndex).
-type Output struct {
-	logIndex        LogIndex
-	baseAliasOutput *isc.StateAnchor
-}
-
-func makeOutput(logIndex LogIndex, baseAliasOutput *isc.StateAnchor) *Output {
-	return &Output{logIndex: logIndex, baseAliasOutput: baseAliasOutput}
-}
-
-func (o *Output) GetLogIndex() LogIndex {
-	return o.logIndex
-}
-
-func (o *Output) GetBaseAliasOutput() *isc.StateAnchor {
-	return o.baseAliasOutput
-}
-
-func (o *Output) String() string {
-	return fmt.Sprintf("{Output, logIndex=%v, baseAliasOutput=%v}", o.logIndex, o.baseAliasOutput)
-}
+// The output is a set of log indexes for which we should run the consensus with
+// the values indicated here. Nil means ⊥ here. The output might change AO to ⊥
+// for a particular LI, but not opposite. The updated value should only be used if
+// the previous value was not yet proposed to the consensus (unlikely), otherwise
+// the update can be ignored.
+type Output = map[LogIndex]*isc.StateAnchor
 
 // Protocol implementation.
 type cmtLogImpl struct {
@@ -152,7 +64,9 @@ type cmtLogImpl struct {
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
-	varOutput              VarOutput              // Calculate the output.
+	varConsInsts           VarConsInsts           // The main algorithm.
+	suspended              bool                   // Is this commitee currently suspended?
+	output                 Output                 // The current output.
 	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
 	log                    *logger.Logger
 }
@@ -173,7 +87,6 @@ func New(
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
-	postponeRecoveryMilestones int,
 	cclMetrics *metrics.ChainCmtLogMetrics,
 	log *logger.Logger,
 ) (CmtLog, error) {
@@ -219,19 +132,29 @@ func New(
 		consensusStateRegistry: consensusStateRegistry,
 		varLogIndex:            nil, // Set bellow.
 		varLocalView:           nil, // Set bellow.
-		varOutput:              nil, // Set bellow.
+		varConsInsts:           nil, // Set bellow.
+		suspended:              true,
+		output:                 nil,
 		log:                    log,
 	}
-	cl.varOutput = NewVarOutput(func(li LogIndex) {
+	persistLIFunc := func(li LogIndex) {
 		if err := consensusStateRegistry.Set(chainID, cmtAddr, &State{LogIndex: li}); err != nil {
 			// Nothing to do, if we cannot persist this.
 			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}
-	},
-		postponeRecoveryMilestones,
-		log.Named("VO"))
-	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, cl.varOutput.LogIndexAgreed, cclMetrics, log.Named("VLI"))
-	cl.varLocalView = NewVarLocalView(pipeliningLimit, cl.varOutput.TipAOChanged, log.Named("VLV"))
+	}
+	cl.varConsInsts = NewVarConsInsts(prevLI.Next(), persistLIFunc, func(out Output) {
+		log.Debugf("VarConsInsts: Output received, %v", out)
+		cl.output = out
+	}, log.Named("VCI"))
+	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) gpa.OutMessages {
+		log.Debugf("VarLogIndex: Output received, %v", li)
+		return cl.varConsInsts.LatestSeenLI(li, cl.varLogIndex.ConsensusStarted)
+	}, cclMetrics, log.Named("VLI"))
+	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) gpa.OutMessages {
+		log.Debugf("VarLocalView: Output received, %v", ao)
+		return cl.varConsInsts.LatestL1AO(ao, cl.varLogIndex.ConsensusStarted)
+	}, log.Named("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
 }
@@ -245,10 +168,8 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	cl.log.Debugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
-	case *inputAliasOutputConfirmed:
-		return cl.handleInputAliasOutputConfirmed(input)
-	case *inputConsensusOutputDone:
-		return cl.handleInputConsensusOutputDone(input)
+	case *inputAnchorConfirmed:
+		return cl.handleInputAnchorConfirmed(input)
 	case *inputConsensusOutputSkip:
 		return cl.handleInputConsensusOutputSkip(input)
 	case *inputConsensusOutputConfirmed:
@@ -257,9 +178,6 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cl.handleInputConsensusOutputRejected(input)
 	case *inputConsensusTimeout:
 		return cl.handleInputConsensusTimeout(input)
-	case *inputMilestoneReceived:
-		cl.handleInputMilestoneReceived()
-		return nil
 	case *inputCanPropose:
 		cl.handleInputCanPropose()
 		return nil
@@ -280,67 +198,38 @@ func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 	return cl.handleMsgNextLogIndex(msgNLI)
 }
 
-// > UPON AliasOutput (AO) {Confirmed | Rejected} by L1:
-// >   ...
-func (cl *cmtLogImpl) handleInputAliasOutputConfirmed(input *inputAliasOutputConfirmed) gpa.OutMessages {
-	_, tipUpdated, cnfLogIndex := cl.varLocalView.AliasOutputConfirmed(input.aliasOutput)
-	if tipUpdated {
-		cl.varOutput.Suspended(false)
-		return cl.varLogIndex.L1ReplacedBaseAliasOutput()
-	}
-	if !cnfLogIndex.IsNil() {
-		return cl.varLogIndex.L1ConfirmedAliasOutput(cnfLogIndex)
-	}
-	return nil
+// The latest anchor object's version confirmed at the L1.
+func (cl *cmtLogImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed) gpa.OutMessages {
+	cl.suspended = false
+	return cl.varLocalView.AnchorObjectConfirmed(input.anchor)
 }
 
-// >   ...
-func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
-	return cl.varLogIndex.ConsensusOutputReceived(input.logIndex) // This should be superfluous, always follows handleInputConsensusOutputDone.
-}
-
-// >   ...
-func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
-	cl.varOutput.HaveRejection()
-	msgs := gpa.NoMessages()
-	msgs.AddAll(cl.varLogIndex.ConsensusOutputReceived(input.logIndex)) // This should be superfluous, always follows handleInputConsensusOutputDone.
-	if _, tipUpdated := cl.varLocalView.AliasOutputRejected(input.aliasOutput); tipUpdated {
-		return msgs.AddAll(cl.varLogIndex.L1ReplacedBaseAliasOutput())
-	}
-	return msgs
-}
-
-// > ON ConsensusOutput/DONE (CD)
-// >   ...
-func (cl *cmtLogImpl) handleInputConsensusOutputDone(input *inputConsensusOutputDone) gpa.OutMessages {
-	cl.varLocalView.ConsensusOutputDone(input.logIndex, input.baseAnchorRef)
-	return cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
-}
-
-// > ON ConsensusOutput/SKIP (CS)
-// >   ...
+// Consensus completed with a decision to SKIP/⊥.
 func (cl *cmtLogImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
-	return cl.varLogIndex.ConsensusOutputReceived(input.logIndex)
+	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-// > ON ConsensusTimeout (CT)
-// >   ...
+// Consensus has decided, produced a TX and it is now confirmed by L1.
+func (cl *cmtLogImpl) handleInputConsensusOutputConfirmed(input *inputConsensusOutputConfirmed) gpa.OutMessages {
+	return cl.varConsInsts.ConsOutputDone(input.logIndex, input.nextAnchorObject, cl.varLogIndex.ConsensusStarted)
+}
+
+// Consensus has decided, produced a TX but it was rejected by L1.
+func (cl *cmtLogImpl) handleInputConsensusOutputRejected(input *inputConsensusOutputRejected) gpa.OutMessages {
+	return cl.varConsInsts.ConsOutputSkip(input.logIndex, cl.varLogIndex.ConsensusStarted) // This will cause proposal of our latest L1 AO.
+}
+
+// Consensus tries to decide for too long. Maybe quorum assumption has been violated.
 func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
-	return cl.varLogIndex.ConsensusRecoverReceived(input.logIndex)
-}
-
-func (cl *cmtLogImpl) handleInputMilestoneReceived() {
-	cl.varOutput.HaveMilestone()
+	return cl.varConsInsts.ConsTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
 func (cl *cmtLogImpl) handleInputCanPropose() {
-	cl.varOutput.CanPropose()
+	// TODO: Is it still needed?
 }
 
-// > ON Suspend:
-// >   ...
 func (cl *cmtLogImpl) handleInputSuspend() {
-	cl.varOutput.Suspended(true)
+	cl.suspended = true
 }
 
 // > ON Reception of ⟨NextLI, •⟩ message:
@@ -351,8 +240,8 @@ func (cl *cmtLogImpl) handleMsgNextLogIndex(msg *MsgNextLogIndex) gpa.OutMessage
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Output() gpa.Output {
-	out := cl.varOutput.Value()
-	if out == nil {
+	out := cl.output
+	if out == nil || cl.suspended {
 		return nil // Untyped nil.
 	}
 	return out
@@ -362,7 +251,7 @@ func (cl *cmtLogImpl) Output() gpa.Output {
 func (cl *cmtLogImpl) StatusString() string {
 	return fmt.Sprintf(
 		"{cmtLogImpl, %v, %v, %v}",
-		cl.varOutput.StatusString(),
+		cl.varConsInsts.StatusString(),
 		cl.varLocalView.StatusString(),
 		cl.varLogIndex.StatusString(),
 	)

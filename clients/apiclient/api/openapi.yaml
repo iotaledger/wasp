@@ -2363,6 +2363,7 @@ components:
         coinType:
           s: s
         unit: unit
+        totalSupply: 6
         decimals: 0
         name: name
         tickerSymbol: tickerSymbol
@@ -2395,6 +2396,12 @@ components:
           type: string
           xml:
             name: TickerSymbol
+        totalSupply:
+          description: The total supply of BaseToken
+          format: int64
+          type: integer
+          xml:
+            name: TotalSupply
         unit:
           description: The token unit
           format: string
@@ -2408,10 +2415,12 @@ components:
           xml:
             name: UseMetricPrefix
       required:
+      - coinType
       - decimals
       - name
       - subunit
       - tickerSymbol
+      - totalSupply
       - unit
       - useMetricPrefix
       type: object
@@ -3714,19 +3723,20 @@ components:
         l1Params:
           protocol:
             rentStructure:
-              vByteFactorData: 2
+              vByteFactorData: 7
               vByteCost: 1
-              vByteFactorKey: 7
+              vByteFactorKey: 9
             minPowScore: 1
             tokenSupply: tokenSupply
             networkName: networkName
             belowMaxDepth: 1
-            version: 9
-          maxPayloadSize: 6
+            version: 3
+          maxPayloadSize: 1
           baseToken:
             coinType:
               s: s
             unit: unit
+            totalSupply: 6
             decimals: 0
             name: name
             tickerSymbol: tickerSymbol
@@ -3796,19 +3806,20 @@ components:
       example:
         protocol:
           rentStructure:
-            vByteFactorData: 2
+            vByteFactorData: 7
             vByteCost: 1
-            vByteFactorKey: 7
+            vByteFactorKey: 9
           minPowScore: 1
           tokenSupply: tokenSupply
           networkName: networkName
           belowMaxDepth: 1
-          version: 9
-        maxPayloadSize: 6
+          version: 3
+        maxPayloadSize: 1
         baseToken:
           coinType:
             s: s
           unit: unit
+          totalSupply: 6
           decimals: 0
           name: name
           tickerSymbol: tickerSymbol
@@ -3908,7 +3919,6 @@ components:
           xml:
             name: JWT
       required:
-      - error
       - jwt
       type: object
       xml:
@@ -4378,14 +4388,14 @@ components:
     ProtocolParameters:
       example:
         rentStructure:
-          vByteFactorData: 2
+          vByteFactorData: 7
           vByteCost: 1
-          vByteFactorKey: 7
+          vByteFactorKey: 9
         minPowScore: 1
         tokenSupply: tokenSupply
         networkName: networkName
         belowMaxDepth: 1
-        version: 9
+        version: 3
       properties:
         belowMaxDepth:
           description: The networks max depth
@@ -4656,9 +4666,9 @@ components:
         name: ReceiptResponse
     RentStructure:
       example:
-        vByteFactorData: 2
+        vByteFactorData: 7
         vByteCost: 1
-        vByteFactorKey: 7
+        vByteFactorKey: 9
       properties:
         vByteCost:
           description: The virtual byte cost

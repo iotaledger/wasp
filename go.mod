@@ -42,6 +42,7 @@ require (
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/libp2p/go-libp2p v0.30.0
+	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/multiformats/go-multiaddr v0.13.0
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1

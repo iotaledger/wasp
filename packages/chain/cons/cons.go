@@ -56,13 +56,14 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/minio/blake2b-simd"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
+	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-
-	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
@@ -128,6 +129,7 @@ type Output struct {
 }
 
 type Result struct {
+	DecidedAO   *isc.StateAnchor              // The consumed state anchor.
 	Transaction *iotasigner.SignedTransaction // The TX for committing the block.
 	Block       state.Block                   // The state diff produced.
 }
@@ -392,6 +394,10 @@ func (c *consImpl) StatusString() string {
 // MP -- MemPool
 
 func (c *consImpl) uponMPProposalInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
+	if baseAliasOutput == nil {
+		// If the base AO is nil, we are not going to propose any requests.
+		return c.subMP.ProposalReceived([]*isc.RequestRef{})
+	}
 	c.output.NeedMempoolProposal = baseAliasOutput
 	return nil
 }
@@ -418,6 +424,10 @@ func (c *consImpl) uponMPRequestsReceived(requests []isc.Request) gpa.OutMessage
 // SM -- StateManager
 
 func (c *consImpl) uponSMStateProposalQueryInputsReady(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
+	if baseAliasOutput == nil {
+		// Don't wait for the state if no base AO is known.
+		return c.subSM.StateProposalConfirmedByStateMgr()
+	}
 	c.output.NeedStateMgrStateProposal = baseAliasOutput
 	return nil
 }
@@ -515,17 +525,23 @@ func (c *consImpl) uponACSInputsReceived(
 	gasCoins []*coin.CoinWithRef,
 	gasPrice uint64,
 ) gpa.OutMessages {
-	batchProposal := bp.NewBatchProposal(
-		*c.dkShare.GetIndex(),
-		baseAliasOutput,
-		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
-		timeData,
-		c.validatorAgentID,
-		requestRefs,
-		gasCoins,
-		gasPrice,
-	)
-	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
+	var batchProposalBytes []byte
+	if baseAliasOutput == nil {
+		batchProposalBytes = []byte{}
+	} else {
+		batchProposal := bp.NewBatchProposal(
+			*c.dkShare.GetIndex(),
+			baseAliasOutput,
+			util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+			timeData,
+			c.validatorAgentID,
+			requestRefs,
+			gasCoins,
+			gasPrice,
+		)
+		batchProposalBytes = batchProposal.Bytes()
+	}
+	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposalBytes)
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to the ACS: %w", err))
 	}
@@ -592,8 +608,6 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 // VM
 
 func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchProposals, chainState state.State, randomness *hashing.HashValue, requests []isc.Request) gpa.OutMessages {
-	// TODO: chainState state.State is not used for now. That's because VM takes it form the store by itself.
-	// The decided base alias output can be different from that we have proposed!
 	decidedBaseAliasOutput := aggregatedProposals.DecidedBaseAliasOutput()
 	stateAnchor := isc.NewStateAnchor(decidedBaseAliasOutput.Anchor(), decidedBaseAliasOutput.ISCPackage())
 	gasCoins := aggregatedProposals.AggregatedGasCoins()
@@ -619,7 +633,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		Log:                  c.log.Named("VM"),
 		Migrations:           allmigrations.DefaultScheme,
 	}
-	return nil
+	return c.subTX.AnchorDecided(decidedBaseAliasOutput)
 }
 
 func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedProposals *bp.AggregatedBatchProposals) gpa.OutMessages {
@@ -635,14 +649,18 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
-	signingMsg, err := bcs.Marshal(&unsignedTX)
+	txData := c.makeTransactionData(&unsignedTX, aggregatedProposals)
+	txnBytes, err := bcs.Marshal(txData)
 	if err != nil {
 		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
 	}
+	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
+	txnBytesHash := blake2b.Sum256(txnBytes)
+	txnBytes = txnBytesHash[:]
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
-		AddAll(c.subTX.UnsignedTXReceived(c.makeTransactionData(&unsignedTX, aggregatedProposals))).
-		AddAll(c.subDSS.MessageToSignReceived(signingMsg))
+		AddAll(c.subTX.UnsignedTXReceived(txData)).
+		AddAll(c.subDSS.MessageToSignReceived(txnBytes))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -663,10 +681,11 @@ func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggre
 }
 
 // Everything is ready for the output TX, produce it.
-func (c *consImpl) uponTXInputsReady(unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
+func (c *consImpl) uponTXInputsReady(decidedAO *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
 	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsIotaSignature()
 	signedTX := iotasigner.NewSignedTransaction(unsignedTX, suiSignature)
 	c.output.Result = &Result{
+		DecidedAO:   decidedAO,
 		Transaction: signedTX,
 		Block:       block,
 	}

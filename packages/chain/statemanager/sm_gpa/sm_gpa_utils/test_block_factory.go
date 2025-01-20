@@ -60,6 +60,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		chainInitParams,
+		0,
 		"",
 	)
 	originAnchorData := iscmove.RefWithObject[iscmove.Anchor]{

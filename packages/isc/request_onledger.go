@@ -122,7 +122,7 @@ func (req *OnLedgerRequestData) String() string {
 	}
 	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, Assets: %v, GasBudget: %d }",
 		req.ID().String(),
-		metadata.SenderContract.String(),
+		req.SenderAddress().String(),
 		metadata.Message.Target.Contract.String(),
 		metadata.Message.Target.EntryPoint.String(),
 		metadata.Message.Params.String(),

@@ -17,7 +17,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 		msg := &cmt_log.MsgNextLogIndex{
 			gpa.BasicMessage{},
 			cmt_log.LogIndex(rand.Int31()),
-			cmt_log.MsgNextLogIndexCauseRecover,
+			cmt_log.MsgNextLogIndexCauseStarted,
 			false,
 		}
 
@@ -26,7 +26,7 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 	msg := &cmt_log.MsgNextLogIndex{
 		gpa.BasicMessage{},
 		cmt_log.LogIndex(rand.Int31()),
-		cmt_log.MsgNextLogIndexCauseRecover,
+		cmt_log.MsgNextLogIndexCauseStarted,
 		true,
 	}
 

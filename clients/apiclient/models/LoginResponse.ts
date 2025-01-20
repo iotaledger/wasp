@@ -13,7 +13,7 @@
 import { HttpFile } from '../http/http';
 
 export class LoginResponse {
-    'error': string;
+    'error'?: string;
     'jwt': string;
 
     static readonly discriminator: string | undefined = undefined;

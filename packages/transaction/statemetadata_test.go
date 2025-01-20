@@ -30,6 +30,7 @@ func TestStateMetadataSerialization(t *testing.T) {
 			ValidatorFeeShare: 5,
 		},
 		isc.NewCallArguments([]byte{1, 2, 3}),
+		0,
 		"https://iota.org",
 	)
 	bcs.TestCodec(t, s)

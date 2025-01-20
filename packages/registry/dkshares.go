@@ -4,11 +4,12 @@
 package registry
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
 	"path"
-	"regexp"
+	"strings"
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
@@ -59,9 +60,6 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 		return nil
 	}
 
-	// regex example: atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx.json
-	filesRegex := regexp.MustCompile(`([a-z]{1,4}1[a-z0-9]{59}).json`)
-
 	files, err := os.ReadDir(p.folderPath)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -78,13 +76,12 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			return nil
 		}
 
-		if !filesRegex.MatchString(file.Name()) {
+		if !bytes.HasSuffix([]byte(file.Name()), []byte(".json")) {
 			// ignore unknown files
 			return nil
 		}
 
-		panic("refactor me: Validate regex and address validation")
-		sharedAddressHex := filesRegex.FindStringSubmatch(file.Name())[1]
+		sharedAddressHex := strings.Replace(file.Name(), ".json", "", -1)
 		sharedAddress, err := cryptolib.NewAddressFromHexString(sharedAddressHex)
 		if err != nil {
 			return fmt.Errorf("unable to parse shared hex address (%s), error: %w", sharedAddressHex, err)
