@@ -17,6 +17,8 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -348,6 +350,36 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
+}
+
+// TopUp GasCoin from Faucet if Balance is under isc.TopUpFeeMin
+func (ch *Chain) TopUpGasCoinFromFaucet() {
+	if ch.GetLatestGasCoin().Value > isc.TopUpFeeMin {
+		return
+	}
+	owner := cryptolib.SignerToIotaSigner(ch.OriginatorPrivateKey)
+	ch.Env.GetFundsFromFaucet(ch.OriginatorAddress)
+	ownedCoins := ch.Env.L1AllCoins(ch.OriginatorAddress)
+
+	if len(ownedCoins) < 5 {
+		panic("not enough coins")
+	}
+
+	var coins []*iotago.ObjectRef
+	for i := len(ownedCoins) / 2; i < len(ownedCoins); i++ {
+		if !ch.GetLatestGasCoin().Ref.Equals(ownedCoins[i].Ref()) {
+			coins = append(coins, ownedCoins[i].Ref())
+		}
+	}
+	txnResponse, err := ch.Env.ISCMoveClient().MergeCoinsAndExecute(
+		ch.Env.Ctx(),
+		owner,
+		ch.GetLatestGasCoin().Ref,
+		coins,
+		iotaclient.DefaultGasBudget,
+	)
+	require.NoError(ch.Env.T, err)
+	require.True(ch.Env.T, txnResponse.Effects.Data.IsSuccess())
 }
 
 func (ch *Chain) Store() indexedstore.IndexedStore {

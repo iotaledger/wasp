@@ -167,6 +167,75 @@ func (c *Client) MintToken(
 	return txnResponse, nil
 }
 
+func (c *Client) FindCoinsForGasPayment(
+	ctx context.Context,
+	owner *iotago.Address,
+	pt iotago.ProgrammableTransaction,
+	gasPrice uint64,
+	gasBudget uint64,
+) ([]*iotago.ObjectRef, error) {
+	coinType := iotajsonrpc.IotaCoinType.String()
+	coinPage, err := c.GetCoins(ctx, GetCoinsRequest{
+		CoinType: &coinType,
+		Owner:    owner,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
+	}
+	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
+		coinPage.Data,
+		gasBudget,
+		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+	)
+	return gasPayments.CoinRefs(), err
+}
+
+func (c *Client) MergeCoinsAndExecute(
+	ctx context.Context,
+	owner iotasigner.Signer,
+	destinationCoin *iotago.ObjectRef,
+	sourceCoins []*iotago.ObjectRef,
+	gasBudget uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	var argCoins []iotago.Argument
+	for _, sourceCoin := range sourceCoins {
+		argCoins = append(argCoins, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: sourceCoin}))
+	}
+	ptb.Command(iotago.Command{MergeCoins: &iotago.ProgrammableMergeCoins{
+		Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: destinationCoin}),
+		Sources:     argCoins,
+	}})
+	pt := ptb.Finish()
+	gasPayments, err := c.FindCoinsForGasPayment(ctx, owner.Address(), pt, DefaultGasPrice, DefaultGasBudget)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find gas payment: %w", err)
+	}
+	tx := iotago.NewProgrammable(
+		owner.Address(),
+		pt,
+		gasPayments,
+		DefaultGasBudget,
+		DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	}
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx, &SignAndExecuteTransactionRequest{
+			TxDataBytes: txBytes,
+			Signer:      owner,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+
+	return txnResponse, nil
+}
+
 // NOTE: This a copy the query limit from our Rust JSON RPC backend, this needs to be kept in sync!
 const QUERY_MAX_RESULT_LIMIT = 50
 

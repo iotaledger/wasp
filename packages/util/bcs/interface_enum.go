@@ -80,7 +80,7 @@ func RegisterEnumType[EnumType any](variants ...any) struct{} {
 	variantsMap := make(map[EnumVariantID]any, len(variants))
 
 	for i, v := range variants {
-		variantsMap[EnumVariantID(i)] = v
+		variantsMap[i] = v
 	}
 
 	return RegisterEnumTypeWithIDs[EnumType](variantsMap)

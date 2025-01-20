@@ -52,9 +52,9 @@ func (c *ContractIdentity) MarshalBCS(e *bcs.Encoder) error {
 
 	switch c.kind {
 	case contractIdentityKindHname:
-		return e.WriteUint32(uint32(c.hname))
+		e.WriteUint32(uint32(c.hname))
 	case contractIdentityKindEthereum:
-		return e.Encode(c.evmAddr)
+		e.Encode(c.evmAddr)
 	}
 
 	return nil
@@ -67,10 +67,10 @@ func (c *ContractIdentity) UnmarshalBCS(d *bcs.Decoder) error {
 	case contractIdentityKindHname:
 		c.hname = Hname(d.ReadUint32())
 	case contractIdentityKindEthereum:
-		return d.Decode(&c.evmAddr)
+		d.Decode(&c.evmAddr)
 	}
 
-	return d.Err()
+	return nil
 }
 
 func (c *ContractIdentity) AgentID(chainID ChainID) AgentID {

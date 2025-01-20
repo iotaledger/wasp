@@ -33,9 +33,7 @@ func (w *BasicWithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	}
 
 	var s string
-	if err := d.Decode(&s); err != nil {
-		return err
-	}
+	d.Decode(&s)
 
 	*w = BasicWithCustomCodec(s)
 
@@ -88,9 +86,7 @@ func (w *BasicWithCustomPtrCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	}
 
 	var s string
-	if err := d.Decode(&s); err != nil {
-		return err
-	}
+	d.Decode(&s)
 
 	*w = BasicWithCustomPtrCodec(s)
 
@@ -123,9 +119,7 @@ func (w *BasicWithCustomAndInit) UnmarshalBCS(d *bcs.Decoder) error {
 	}
 
 	var s string
-	if err := d.Decode(&s); err != nil {
-		return err
-	}
+	d.Decode(&s)
 
 	*w = BasicWithCustomAndInit(s)
 
@@ -223,12 +217,14 @@ func TestBasicCodedErr(t *testing.T) {
 	_, err = bcs.Unmarshal[int](nil)
 	require.Error(t, err)
 
-	err = bcs.NewDecoder(bytes.NewReader(nil)).Decode((*int)(nil))
-	require.Error(t, err)
+	d := bcs.NewDecoder(bytes.NewReader(nil))
+	d.Decode((*int)(nil))
+	require.Error(t, d.Err())
 
 	var v int
-	err = bcs.NewDecoder(bytes.NewReader(nil)).Decode(&v)
-	require.Error(t, err)
+	d = bcs.NewDecoder(bytes.NewReader(nil))
+	d.Decode(&v)
+	require.Error(t, d.Err())
 }
 
 func TestMultiPtrCodec(t *testing.T) {
@@ -438,7 +434,9 @@ func (s *StructWithManualCodec) MarshalBCS(e *bcs.Encoder) error {
 	e.WriteString(s.F)
 
 	// Just to mark that this is a manual codec.
-	return e.Encode(byte(1))
+	e.Encode(byte(1))
+
+	return nil
 }
 
 func (s *StructWithManualCodec) UnmarshalBCS(d *bcs.Decoder) error {
@@ -502,19 +500,19 @@ func TestHighLevelCodecFuncs(t *testing.T) {
 func TestMarshalInterfaceEnumByDefault(t *testing.T) {
 	e := bcs.NewEncoderWithOpts(&bytes.Buffer{}, bcs.EncoderConfig{InterfaceIsEnumByDefault: true})
 	var v any = "hello"
-	err := e.Encode(&v)
-	require.Error(t, err)
+	e.Encode(&v)
+	require.Error(t, e.Err())
 
 	var buf bytes.Buffer
 	e = bcs.NewEncoderWithOpts(&buf, bcs.EncoderConfig{InterfaceIsEnumByDefault: true})
-	err = e.Encode(v)
-	require.NoError(t, err)
+	e.Encode(v)
+	require.NoError(t, e.Err())
 	vEnc := buf.Bytes()
 
 	d := bcs.NewDecoderWithOpts(bytes.NewReader(vEnc), bcs.DecoderConfig{InterfaceIsEnumByDefault: true})
 	var vDec any
-	err = d.Decode(&vDec)
-	require.Error(t, err)
+	d.Decode(&vDec)
+	require.Error(t, d.Err())
 }
 
 func TestBytesCoders(t *testing.T) {

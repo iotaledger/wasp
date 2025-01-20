@@ -12,29 +12,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-func (c *Client) FindCoinsForGasPayment(
-	ctx context.Context,
-	owner *iotago.Address,
-	pt iotago.ProgrammableTransaction,
-	gasPrice uint64,
-	gasBudget uint64,
-) ([]*iotago.ObjectRef, error) {
-	coinType := iotajsonrpc.IotaCoinType.String()
-	coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
-		CoinType: &coinType,
-		Owner:    owner,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
-	}
-	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
-		coinPage.Data,
-		gasBudget,
-		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
-	)
-	return gasPayments.CoinRefs(), err
-}
-
 type StartNewChainRequest struct {
 	Signer            cryptolib.Signer
 	ChainOwnerAddress *cryptolib.Address
