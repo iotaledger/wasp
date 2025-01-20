@@ -64,6 +64,11 @@ func Instance() IotaNodeEndpoint {
 	return *in
 }
 
+func IsLocalConfigured() bool {
+	testConfig := LoadConfig()
+	return testConfig.IsLocal
+}
+
 func TestMain(m *testing.M) {
 	if instance.Load() != nil {
 		m.Run()
