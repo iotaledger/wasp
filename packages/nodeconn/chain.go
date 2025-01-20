@@ -111,6 +111,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
 		}
 
+		// TODO: Rather add a retry than a hardcoded sleep value
 		time.Sleep(1 * time.Second)
 		res, err = ncc.nodeConn.wsClient.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
 			Digest: &res.Digest,
