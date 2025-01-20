@@ -724,11 +724,26 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 }
 
 func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
+	//
+	// Start new consensus instances, if requested.
 	upd.ForEach(func(nck chainmanager.NeedConsensusKey, nc *chainmanager.NeedConsensus) bool {
 		cni.ensureConsensusInput(ctx, nc)
 		return true
 	})
-	//	TODO: Implement cleanup.
+	//
+	// Cleanup instances not needed anymore.
+	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+		cmtInsts.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
+			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
+				cmtInsts.Delete(li)
+			}
+			return true
+		})
+		if cmtInsts.Size() == 0 {
+			cni.consensusInsts.Delete(cmtAddr)
+		}
+		return true
+	})
 }
 
 func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
@@ -803,10 +818,6 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 	default:
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
 	}
-	// We can cleanup the instances that are BEFORE the instance that produced
-	// an output, because all the nodes will eventually get the NextLI messages,
-	// and will switch to newer instances.
-	cni.cleanupConsensusInsts(out.request.CommitteeAddr, out.request.LogIndex)
 	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
 	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
@@ -889,30 +900,6 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	// ----
 
 	return consensusInstance
-}
-
-// Cleanup consensus instances, except the instances with LogIndexes above the specified for a particular committee.
-// If nils are provided for the keep* variables, all the instances are cleaned up.
-func (cni *chainNodeImpl) cleanupConsensusInsts(committeeAddr cryptolib.Address, keepLogIndex cmt_log.LogIndex) {
-	consensusInstances, exists := cni.consensusInsts.Get(committeeAddr.Key())
-	if !exists {
-		return
-	}
-
-	consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
-		if li >= keepLogIndex {
-			return true
-		}
-		cni.log.Debugf("Canceling consensus instance for Committee=%v, LogIndex=%v", committeeAddr.String(), li)
-
-		consensusInstance.Cancel()
-		consensusInstances.Delete(li)
-		return true
-	})
-
-	if consensusInstances.Size() == 0 {
-		cni.consensusInsts.Delete(committeeAddr.Key())
-	}
 }
 
 // Cleanup TX'es that are not needed to be posted anymore.
