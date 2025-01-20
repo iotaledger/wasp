@@ -20,8 +20,8 @@ const (
 
 type msgBracha struct {
 	gpa.BasicMessage
-	brachaType msgBrachaType `bcs:"export"` // Type
-	value      []byte        `bcs:"export"` // Value
+	brachaType msgBrachaType `bcs:"export"`          // Type
+	value      []byte        `bcs:"export,optional"` // Value
 }
 
 var _ gpa.Message = new(msgBracha)
