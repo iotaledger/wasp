@@ -37,3 +37,12 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot vmtxbuilder.Transactio
 func (vmctx *vmContext) getTotalL2Coins() isc.CoinBalances {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetTotalL2FungibleTokens()
 }
+
+func (vmctx *vmContext) deductTopUpFeeFromValidatorFeeTarget(fee coin.Value) {
+	bal := isc.NewCoinBalances()
+	bal.AddBaseTokens(fee)
+
+	vmctx.
+		accountsStateWriterFromChainState(vmctx.stateDraft).
+		DebitFromAccount(vmctx.task.ValidatorFeeTarget, bal, vmctx.ChainID())
+}

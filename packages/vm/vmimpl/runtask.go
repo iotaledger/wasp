@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/logger"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 
@@ -44,7 +45,7 @@ func newVmContext(
 }
 
 // TODO: Improve Topping up logic
-func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) uint64 {
+func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) coin.Value {
 	collectedFees := uint64(vmctx.blockGas.feeCharged)
 
 	// If balance is already above minimum, no need to top up
@@ -56,10 +57,10 @@ func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) uint64 {
 
 	// If we've collected enough fees to cover the top-up, cap at what we collected
 	if requiredTopUp > collectedFees {
-		return collectedFees
+		return coin.Value(collectedFees)
 	}
 
-	return requiredTopUp
+	return coin.Value(requiredTopUp)
 }
 
 // runTask runs batch of requests on VM
@@ -118,8 +119,9 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	}
 
 	topUpFee := calculateTopUpFee(vmctx, uint64(task.GasCoin.Value))
+	vmctx.deductTopUpFeeFromValidatorFeeTarget(topUpFee)
 
-	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
+	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, uint64(topUpFee))
 	return taskResult
 }
 
