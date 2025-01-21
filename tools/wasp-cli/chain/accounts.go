@@ -137,10 +137,12 @@ func initDepositCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 
 			chainID := config.GetChain(chain)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*1000)
 			defer cancel()
 
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+
+			util.TryMergeAllCoins(ctx)
 
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
