@@ -309,6 +309,7 @@ type Message struct {
 func NewMessage(contract Hname, ep Hname, params ...CallArguments) Message {
 	msg := Message{
 		Target: CallTarget{Contract: contract, EntryPoint: ep},
+		Params: CallArguments{},
 	}
 	if len(params) > 0 {
 		msg.Params = params[0]
