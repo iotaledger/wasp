@@ -26,8 +26,8 @@ func TestTransactionData(t *testing.T) {
 				Package:       iotago.IotaPackageIDIotaSystem,
 				Module:        iotago.IotaSystemModuleName,
 				Function:      "function",
-				TypeArguments: nil,
-				Arguments:     nil,
+				TypeArguments: []iotago.TypeTag{},
+				Arguments:     []iotago.Argument{},
 			},
 		},
 	)

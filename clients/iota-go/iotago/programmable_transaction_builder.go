@@ -44,7 +44,7 @@ func (p *ProgrammableTransactionBuilder) LastCommandResultArg() Argument {
 }
 
 func (p *ProgrammableTransactionBuilder) Finish() ProgrammableTransaction {
-	var inputs []CallArg
+	inputs := []CallArg{}
 	p.Inputs.ForEach(
 		func(k BuilderArg, v CallArg) {
 			inputs = append(inputs, v)
