@@ -571,6 +571,13 @@ In **rwutil** library this was implemented by choosing between **WriteSize16** a
 
 **NOTE:** This feature was migrated from **rwutil**, but has arguable value. It might be removed.
 
+###### "nil_if_empty"
+
+Deserialize empty slice into `nil` instead of `[]ElemType{}`.
+Applicable to: **slices.**
+
+**NOTE:** you can also achive same effect by implementing that logic in `BCSInit()` method.
+
 ###### "bytearr"
 
 Marks value to be written as slice of bytes.
