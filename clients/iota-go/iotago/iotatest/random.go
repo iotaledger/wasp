@@ -36,8 +36,8 @@ func RandomTransactionData() *iotago.TransactionData {
 				Package:       RandomAddress(),
 				Module:        "test_module",
 				Function:      "test_func",
-				TypeArguments: nil,
-				Arguments:     nil,
+				TypeArguments: []iotago.TypeTag{},
+				Arguments:     []iotago.Argument{},
 			},
 		},
 	)
@@ -45,7 +45,7 @@ func RandomTransactionData() *iotago.TransactionData {
 	tx := iotago.NewProgrammable(
 		RandomAddress(),
 		pt,
-		nil,
+		[]*iotago.ObjectRef{},
 		10000,
 		100,
 	)
