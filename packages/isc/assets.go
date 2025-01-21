@@ -14,8 +14,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -23,30 +21,6 @@ type CoinBalances map[coin.Type]coin.Value
 
 func NewCoinBalances() CoinBalances {
 	return make(CoinBalances)
-}
-
-func (c CoinBalances) ToDict() dict.Dict {
-	ret := dict.New()
-	for coinType, amount := range c {
-		ret.Set(kv.Key(coinType.Bytes()), amount.Bytes())
-	}
-	return ret
-}
-
-func CoinBalancesFromDict(d dict.Dict) (CoinBalances, error) {
-	ret := NewCoinBalances()
-	for key, val := range d {
-		coinType, err := coin.TypeFromBytes([]byte(key))
-		if err != nil {
-			return nil, fmt.Errorf("CoinBalancesFromDict: %w", err)
-		}
-		coinValue, err := coin.ValueFromBytes(val)
-		if err != nil {
-			return nil, fmt.Errorf("CoinBalancesFromDict: %w", err)
-		}
-		ret.Add(coinType, coinValue)
-	}
-	return ret, nil
 }
 
 func (c CoinBalances) IterateSorted(f func(coin.Type, coin.Value) bool) {
@@ -105,6 +79,22 @@ func (c CoinBalances) Get(coinType coin.Type) coin.Value {
 
 func (c CoinBalances) BaseTokens() coin.Value {
 	return c[coin.BaseTokenType]
+}
+
+func (c CoinBalances) NativeTokens() CoinBalances {
+	ret := CoinBalances{}
+
+	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
+		// Exclude BaseTokens
+		if BaseTokenCoinInfo.CoinType.MatchesStringType(t.String()) {
+			return false
+		}
+
+		ret[t] = v
+		return true
+	})
+
+	return ret
 }
 
 func (c CoinBalances) IsEmpty() bool {

@@ -11,8 +11,8 @@ type AccountListResponse struct {
 }
 
 type AssetsResponse struct {
-	BaseTokens   string          `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
-	NativeTokens []*isc.CoinJSON `json:"nativeTokens" swagger:"required"`
+	BaseTokens   string         `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
+	NativeTokens []isc.CoinJSON `json:"nativeTokens" swagger:"required"`
 }
 
 type AccountNFTsResponse struct {

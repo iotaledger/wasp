@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/labstack/echo/v4"
+
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
-	"github.com/labstack/echo/v4"
 )
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
@@ -23,31 +23,13 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 		return c.handleViewCallError(err)
 	}
 
+	nt := assets.NativeTokens()
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: assets.BaseTokens().String(),
-		// TODO: fix this when native tokens reimplemented
-		// NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+		BaseTokens:   assets.BaseTokens().String(),
+		NativeTokens: nt.JSON(),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
-}
-
-func CoinBalancesToCoinJSON(balances isc.CoinBalances) []*isc.CoinJSON {
-	coins := make([]*isc.CoinJSON, 0)
-	for i, bal := range balances {
-		if isc.BaseTokenCoinInfo.CoinType.MatchesStringType(i.String()) {
-			continue
-		}
-
-		x := isc.CoinJSON{
-			CoinType: i,
-			Balance:  bal.String(),
-		}
-
-		coins = append(coins, &x)
-	}
-
-	return coins
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
@@ -66,13 +48,10 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 		return c.handleViewCallError(err)
 	}
 
-	fmt.Println("ALL ASSETS")
-	fmt.Println(assets)
-
+	nt := assets.NativeTokens()
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: assets.BaseTokens().String(),
-		// TODO: fix this when native tokens reimplemented
-		NativeTokens: CoinBalancesToCoinJSON(assets),
+		BaseTokens:   assets.BaseTokens().String(),
+		NativeTokens: nt.JSON(),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
