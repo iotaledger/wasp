@@ -64,11 +64,22 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	ch.CheckChain()
 
-	someUserWallet, _ := env.NewKeyPairWithFunds()
-	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
+	// Deploying a new chain will lead to the ValidatorFeeTarget being empty
 	require.Equal(t, 0, int(ch.L2BaseTokens(ch.ValidatorFeeTarget)))
 
+	someUserWallet, _ := env.NewKeyPairWithFunds()
+
+	err := ch.SendFromL1ToL2Account(isc.TopUpFeeMin*4, isc.NewCoinBalances().AddBaseTokens(isc.TopUpFeeMin*4), ch.ValidatorFeeTarget, someUserWallet)
+	require.NoError(t, err)
 	ch.CheckChain()
+
+	/*
+		isc.TopUpFeeMin*4 == The amount sent to the ValidatorFeeTarget
+		isc.TopUpFeeMin/2 == The amount of the GasCoin balance upon deploying the chain
+		ch.LastReceipt().GasFeeCharged == The Gas cost of the SendFromL1ToL2Request
+		== The difference has been topped up from the ValidatorFeeTarget
+	*/
+	require.Equal(t, int((isc.TopUpFeeMin*4)-(isc.TopUpFeeMin/2)+ch.LastReceipt().GasFeeCharged), int(ch.L2BaseTokens(ch.ValidatorFeeTarget)))
 }
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
