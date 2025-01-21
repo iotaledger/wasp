@@ -46,3 +46,9 @@ func (vmctx *vmContext) deductTopUpFeeFromValidatorFeeTarget(fee coin.Value) {
 		accountsStateWriterFromChainState(vmctx.stateDraft).
 		DebitFromAccount(vmctx.task.ValidatorFeeTarget, bal, vmctx.ChainID())
 }
+
+func (vmctx *vmContext) validatorFeeTargetBalance() coin.Value {
+	return vmctx.
+		accountsStateWriterFromChainState(vmctx.stateDraft).
+		GetBaseTokensBalanceDiscardExtraDecimals(vmctx.task.ValidatorFeeTarget, vmctx.ChainID())
+}

@@ -62,14 +62,11 @@ func TestLedgerBaseConsistency(t *testing.T) {
 func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	env := solo.New(t)
 	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-
 	ch.CheckChain()
 
-	l2Total1 := ch.L2TotalAssets().BaseTokens()
 	someUserWallet, _ := env.NewKeyPairWithFunds()
 	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
-	l2Total2 := ch.L2TotalAssets().BaseTokens()
-	require.Equal(t, l2Total1+1*isc.Million, l2Total2)
+	require.Equal(t, 0, int(ch.L2BaseTokens(ch.ValidatorFeeTarget)))
 
 	ch.CheckChain()
 }

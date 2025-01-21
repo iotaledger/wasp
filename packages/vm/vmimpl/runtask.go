@@ -46,7 +46,7 @@ func newVmContext(
 
 // TODO: Improve Topping up logic
 func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) coin.Value {
-	collectedFees := uint64(vmctx.blockGas.feeCharged)
+	collectedFees := uint64(vmctx.validatorFeeTargetBalance())
 
 	// If balance is already above minimum, no need to top up
 	if gasCoinBalance >= isc.TopUpFeeMin {
