@@ -29,7 +29,11 @@ func TestCodec[V any](t *testing.T, v V, decodeInto ...V) []byte {
 	}
 
 	require.NoError(t, err, "%#v", vEnc)
-	require.Equal(t, v, vDec, vEnc)
+	if reflect.TypeOf(v).Kind() == reflect.Slice && reflect.ValueOf(v).Len() == 0 {
+		require.Empty(t, vDec)
+	} else {
+		require.Equal(t, v, vDec, vEnc)
+	}
 	require.NotEmpty(t, vEnc)
 
 	return vEnc
@@ -94,10 +98,24 @@ func TestDecodeErr[V any, Encoded any](t *testing.T, v Encoded, errMustContain .
 // Checks that:
 //   - encoding and decoding succeed
 //   - decoded value is NOT equal to the original
-func TestCodecAsymmetric[V any](t *testing.T, v V) {
+func TestCodecIsAsymmetric[V any](t *testing.T, v V) {
 	vEnc := lo.Must1(Marshal(&v))
 	vDec := lo.Must1(Unmarshal[V](vEnc))
 	require.NotEqual(t, v, vDec)
+}
+
+// Used to test case, when encoded and decoded values are different.
+// Checks that:
+//   - encoding and decoding succeed
+//   - decoded value is equal to the expected
+func TestAsymmetricCodec[V any](t *testing.T, encode V, expectedDecoded V) []byte {
+	require.NotEqual(t, encode, expectedDecoded)
+
+	vEnc := lo.Must1(Marshal(&encode))
+	vDec := lo.Must1(Unmarshal[V](vEnc))
+	require.Equal(t, expectedDecoded, vDec)
+
+	return vEnc
 }
 
 // Returns empty value of underlaying type.

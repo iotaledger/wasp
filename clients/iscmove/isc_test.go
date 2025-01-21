@@ -27,7 +27,7 @@ func TestIscCodec(t *testing.T) {
 
 	anchor := iscmovetest.RandomAnchor()
 
-	var digest iotago.Base58
+	var digest iotago.Base58 = make([]byte, 10)
 	_, err := rand.Read(digest)
 	require.NoError(t, err)
 

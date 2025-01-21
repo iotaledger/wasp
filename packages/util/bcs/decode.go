@@ -619,11 +619,11 @@ func (d *Decoder) decodeSlice(v reflect.Value, typeOpts TypeOptions) error {
 		return d.handleErrorf("invalid array size type: %v", typeOpts.LenSizeInBytes)
 	}
 
+	v.Set(reflect.MakeSlice(v.Type(), length, length))
+
 	if length == 0 {
 		return nil
 	}
-
-	v.Set(reflect.MakeSlice(v.Type(), length, length))
 
 	return d.decodeArray(v, typeOpts)
 }
@@ -745,7 +745,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 		fieldKind := fieldVal.Kind()
 
-		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
+		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map || fieldKind == reflect.Slice {
 			if fieldOpts.Optional {
 				hasValue := d.ReadOptionalFlag()
 				if d.r.Err != nil {
