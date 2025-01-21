@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -23,6 +24,8 @@ func initRequestFundsCmd() *cobra.Command {
 				Address: address.String(),
 				Message: "success",
 			}
+
+			util.TryMergeAllCoins(context.Background())
 
 			log.PrintCLIOutput(model)
 		},

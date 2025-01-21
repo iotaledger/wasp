@@ -88,7 +88,7 @@ func (p ProgrammableTransaction) IsInInputObjects(targetID *ObjectID) bool {
 
 func (p ProgrammableTransaction) EstimateGasBudget(gasPrice uint64) uint64 {
 	// TODO: Implement this function!
-	return 10000000 // iotaclient.DefaultGasBudget
+	return 10_000_000 // iotaclient.DefaultGasBudget
 }
 
 type TransferObject struct {

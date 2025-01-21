@@ -14,6 +14,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initRequestFundsCmd())
 	rootCmd.AddCommand(initWalletProviderCmd())
 	rootCmd.AddCommand(initMigrateCmd())
+	rootCmd.AddCommand(initMergeCmd())
 
 	rootCmd.PersistentFlags().Uint32VarP(&wallet.AddressIndex, "address-index", "i", 0, "address index")
 }

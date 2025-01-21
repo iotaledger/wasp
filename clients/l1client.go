@@ -200,6 +200,20 @@ type L1Client interface {
 	L2() L2Client
 	IotaClient() *iotaclient.Client
 	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
+	FindCoinsForGasPayment(
+		ctx context.Context,
+		owner *iotago.Address,
+		pt iotago.ProgrammableTransaction,
+		gasPrice uint64,
+		gasBudget uint64,
+	) ([]*iotago.ObjectRef, error)
+	MergeCoinsAndExecute(
+		ctx context.Context,
+		owner iotasigner.Signer,
+		destinationCoin *iotago.ObjectRef,
+		sourceCoins []*iotago.ObjectRef,
+		gasBudget uint64,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 }
 
 var _ L1Client = &l1Client{}

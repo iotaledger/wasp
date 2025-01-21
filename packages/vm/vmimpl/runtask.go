@@ -43,6 +43,25 @@ func newVmContext(
 	}
 }
 
+// TODO: Improve Topping up logic
+func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) uint64 {
+	collectedFees := uint64(vmctx.blockGas.feeCharged)
+
+	// If balance is already above minimum, no need to top up
+	if gasCoinBalance >= isc.TopUpFeeMin {
+		return 0
+	}
+
+	requiredTopUp := isc.TopUpFeeMin - gasCoinBalance
+
+	// If we've collected enough fees to cover the top-up, cap at what we collected
+	if requiredTopUp > collectedFees {
+		return collectedFees
+	}
+
+	return requiredTopUp
+}
+
 // runTask runs batch of requests on VM
 func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	if len(task.Requests) == 0 {
@@ -97,11 +116,9 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-	// FIXME this may cause a deadlock when the packed the requests are too huge and exceeded the top up fee
-	topUpFee := uint64(0)
-	if isc.TopUpFeeMin > task.GasCoin.Value {
-		topUpFee = isc.TopUpFeeMin - task.GasCoin.Value.Uint64()
-	}
+
+	topUpFee := calculateTopUpFee(vmctx, uint64(task.GasCoin.Value))
+
 	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
 	return taskResult
 }
