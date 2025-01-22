@@ -44,23 +44,20 @@ func newVmContext(
 	}
 }
 
-// TODO: Improve Topping up logic
-func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) coin.Value {
-	collectedFees := uint64(vmctx.validatorFeeTargetBalance())
-
-	// If balance is already above minimum, no need to top up
+func (vmctx *vmContext) calculateTopUpFee(gasCoinBalance coin.Value) coin.Value {
 	if gasCoinBalance >= isc.TopUpFeeMin {
 		return 0
 	}
-
-	requiredTopUp := isc.TopUpFeeMin - gasCoinBalance
-
-	// If we've collected enough fees to cover the top-up, cap at what we collected
-	if requiredTopUp > collectedFees {
-		return coin.Value(collectedFees)
+	topUp := isc.TopUpFeeMin - gasCoinBalance
+	bal := vmctx.commonAccountBalance()
+	if bal < topUp {
+		vmctx.task.Log.Warnf(
+			"not enough tokens in common account for topping up gas coin (has %d, want %d)",
+			bal,
+			topUp,
+		)
 	}
-
-	return coin.Value(requiredTopUp)
+	return min(bal, topUp)
 }
 
 // runTask runs batch of requests on VM
@@ -103,6 +100,12 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
+	topUpFee := vmctx.calculateTopUpFee(task.GasCoin.Value)
+	vmctx.task.Log.Debugf("runTask, topUpFee = %d", topUpFee)
+	if topUpFee > 0 {
+		vmctx.deductTopUpFeeFromCommonAccount(topUpFee)
+	}
+
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.extractBlock(
 		numProcessed, numSuccess, numOffLedger,
 	)
@@ -118,10 +121,10 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
 
-	topUpFee := calculateTopUpFee(vmctx, uint64(task.GasCoin.Value))
-	vmctx.deductTopUpFeeFromValidatorFeeTarget(topUpFee)
-
-	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, uint64(topUpFee))
+	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
+		taskResult.StateMetadata,
+		uint64(topUpFee),
+	)
 	return taskResult
 }
 

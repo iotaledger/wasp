@@ -3,8 +3,10 @@ package vmimpl
 import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
@@ -38,17 +40,20 @@ func (vmctx *vmContext) getTotalL2Coins() isc.CoinBalances {
 	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetTotalL2FungibleTokens()
 }
 
-func (vmctx *vmContext) deductTopUpFeeFromValidatorFeeTarget(fee coin.Value) {
+func (vmctx *vmContext) deductTopUpFeeFromCommonAccount(fee coin.Value) {
 	bal := isc.NewCoinBalances()
 	bal.AddBaseTokens(fee)
 
-	vmctx.
-		accountsStateWriterFromChainState(vmctx.stateDraft).
-		DebitFromAccount(vmctx.task.ValidatorFeeTarget, bal, vmctx.ChainID())
+	before := vmctx.commonAccountBalance()
+	vmctx.withStateUpdate(func(chainState kv.KVStore) {
+		vmctx.accountsStateWriterFromChainState(chainState).
+			DebitFromAccount(accounts.CommonAccount(), bal, vmctx.ChainID())
+	})
+	after := vmctx.commonAccountBalance()
+	vmctx.task.Log.Debugf("deducted %s from common account, balance before: %s, after: %s", fee, before, after)
 }
 
-func (vmctx *vmContext) validatorFeeTargetBalance() coin.Value {
-	return vmctx.
-		accountsStateWriterFromChainState(vmctx.stateDraft).
-		GetBaseTokensBalanceDiscardExtraDecimals(vmctx.task.ValidatorFeeTarget, vmctx.ChainID())
+func (vmctx *vmContext) commonAccountBalance() coin.Value {
+	return accounts.NewStateReaderFromChainState(vmctx.schemaVersion, vmctx.stateDraft).
+		GetBaseTokensBalanceDiscardExtraDecimals(accounts.CommonAccount(), vmctx.ChainID())
 }

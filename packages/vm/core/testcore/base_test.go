@@ -3,24 +3,20 @@
 package testcore
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"testing"
-	"time"
 
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -40,9 +36,6 @@ func TestInitLoad(t *testing.T) {
 		originAmount,
 		cassets.BaseTokens())
 	require.EqualValues(t, 1, len(cassets.Coins))
-
-	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, cassets.BaseTokens() >= governance.DefaultMinBaseTokensOnCommonAccount)
 
 	testdbhash.VerifyDBHash(env, t.Name())
 }
@@ -64,65 +57,69 @@ func TestLedgerBaseConsistency(t *testing.T) {
 }
 
 // TestLedgerBaseConsistencyWithRequiredTopUpFee deploys a chain and checks the consistency of L1 and L2 ledgers after topping up fees
-/**
-It creates a chain with 0 init deposit. The GasCoin will have full isc.TopUpFeeMin funds.
-To test the top up correctly, we split the GasCoin in half, which should at the end of the test be at isc.TopUpFeeMin again.
-*/
 func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
-	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
+
+	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	ch.CheckChain()
 
-	// Get coins to be used for a Gas coin to split the actual Gas coin
-	coins, err := env.IotaClient().GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: ch.OriginatorPrivateKey.Address().AsIotaAddress()})
-	require.NoError(t, err)
+	require.EqualValues(
+		t,
+		isc.TopUpFeeMin/2,
+		ch.L2BaseTokens(accounts.CommonAccount()),
+	)
+	require.EqualValues(
+		t,
+		0,
+		ch.L2BaseTokens(ch.OriginatorAgentID),
+	)
+	require.EqualValues(t, coin.Value(isc.TopUpFeeMin/2), ch.L2TotalBaseTokens())
 
-	{ // Split the Chain Gas coin in half
-		latestGasCoin := ch.GetLatestGasCoin()
-		require.Equal(t, uint64(isc.TopUpFeeMin), latestGasCoin.Value.Uint64())
+	gasCoinValueBefore := coin.Value(ch.GetLatestGasCoin().Value)
 
-		selectedGasCoin := lo.Filter(coins.Data, func(c *iotajsonrpc.Coin) bool {
-			return c.CoinObjectID.String() != latestGasCoin.Ref.ObjectID.String()
-		})
-
-		splitTx, err := env.IotaClient().SplitCoin(context.Background(), iotaclient.SplitCoinRequest{
-			Coin:         ch.GetLatestGasCoin().Ref.ObjectID,
-			SplitAmounts: []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(isc.TopUpFeeMin / 2)},
-			Signer:       ch.OriginatorPrivateKey.Address().AsIotaAddress(),
-			GasBudget:    iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-			Gas:          selectedGasCoin[0].CoinObjectID,
-		})
-		require.NoError(t, err)
-
-		res, err := env.IotaClient().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: splitTx.TxBytes,
-			Signer:      cryptolib.SignerToIotaSigner(ch.OriginatorPrivateKey),
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-			},
-		})
-		require.NoError(t, err)
-
-		// Here the gas coin should be half of latestGasCoinBalance == isc.TopUpFeeMin/2
-		require.Equal(t, uint64(isc.TopUpFeeMin/2), ch.GetLatestGasCoin().Value.Uint64())
-
-		t.Log(res)
-		t.Log(ch.GetLatestGasCoin())
-	}
-
-	time.Sleep(1 * time.Second)
-
-	// Send some arbitrary TX
-	someUserWallet, _ := env.NewKeyPairWithFunds()
-	err = ch.SendFromL1ToL2Account(isc.TopUpFeeMin*4, isc.NewCoinBalances().AddBaseTokens(isc.TopUpFeeMin*4), ch.ValidatorFeeTarget, someUserWallet)
+	someUserWallet, someUserAddr := env.NewKeyPairWithFunds()
+	_, _, vmRes, ptbRes, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(accounts.FuncDeposit.Message()).
+			AddBaseTokens(isc.TopUpFeeMin*4).
+			WithGasBudget(math.MaxUint64),
+		someUserWallet,
+	)
+	t.Logf("PTB gas fee: %d", ptbRes.Effects.Data.GasFee())
 	require.NoError(t, err)
 	ch.CheckChain()
 
-	// The top up after the Anchor has been updated was calculated to be isc.TopUpFeeMin/2
-	// It is expected to be therefore at isc.TopUpFeeMin again as it was split into isc.TopUpFeeMin/2 in the beginning of the test
-	// and should have received another isc.TopUpFeeMin/2.
-	require.Equal(t, uint64(isc.TopUpFeeMin), ch.GetLatestGasCoin().Value.Uint64())
+	gasCoinValueAfter := coin.Value(ch.GetLatestGasCoin().Value)
+	t.Logf("gasCoinValueBefore: %d, gasCoinValueAfter: %d", gasCoinValueBefore, gasCoinValueAfter)
+	require.EqualValues(
+		t,
+		isc.TopUpFeeMin-coin.Value(ptbRes.Effects.Data.GasFee()),
+		gasCoinValueAfter,
+	)
+
+	totalDeposited := coin.Value(isc.TopUpFeeMin/2 + isc.TopUpFeeMin*4)
+	totalDeductedForGasCoin := isc.TopUpFeeMin - gasCoinValueBefore
+	totalL2Tokens := totalDeposited - totalDeductedForGasCoin
+	require.EqualValues(t, coin.Value(totalL2Tokens), ch.L2TotalBaseTokens())
+
+	addedToCommonAccount := min(isc.TopUpFeeMin, vmRes.Receipt.GasFeeCharged)
+	require.EqualValues(
+		t,
+		isc.TopUpFeeMin/2+addedToCommonAccount-totalDeductedForGasCoin,
+		ch.L2BaseTokens(accounts.CommonAccount()),
+	)
+	require.EqualValues(
+		t,
+		vmRes.Receipt.GasFeeCharged-addedToCommonAccount,
+		ch.L2BaseTokens(ch.OriginatorAgentID),
+	)
+	require.EqualValues(
+		t,
+		isc.TopUpFeeMin*4-vmRes.Receipt.GasFeeCharged,
+		ch.L2BaseTokens(isc.NewAddressAgentID(someUserAddr)),
+	)
 }
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point

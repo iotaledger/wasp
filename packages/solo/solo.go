@@ -82,9 +82,6 @@ type chainData struct {
 	// It is a default key pair in many of Solo calls which require private key.
 	OriginatorPrivateKey *cryptolib.KeyPair
 
-	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
-	ValidatorFeeTarget isc.AgentID
-
 	db kvstore.KVStore
 
 	migrationScheme *migrations.MigrationScheme
@@ -290,7 +287,6 @@ func (env *Solo) deployChain(
 	)
 
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-	originatorAgentID := isc.NewAddressAgentID(originatorAddr)
 
 	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
 
@@ -344,7 +340,6 @@ func (env *Solo) deployChain(
 		Name:                 name,
 		ChainID:              chainID,
 		OriginatorPrivateKey: chainOriginator,
-		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
 		migrationScheme:      allmigrations.DefaultScheme,
 	}, nil
