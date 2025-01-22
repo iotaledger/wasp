@@ -41,6 +41,11 @@ type sharedLocalNodeInfo struct {
 	Config   Config
 }
 
+type sharedLocalNodeUsageStats struct {
+	MaxUseCount int
+	TotalUsers  int
+}
+
 func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
 	return &LocalIotaNode{
 		iscPackageOwner: iscPackageOwner,
@@ -72,12 +77,13 @@ func (in *LocalIotaNode) runID() string {
 	return hex.EncodeToString(runIDHash[:])
 }
 
+var tmpTestFilesDir = os.TempDir() + "/wasp/testing"
+
 func (in *LocalIotaNode) localNodeInfoFilePath() string {
-	testFilesDir := os.TempDir() + "/wasp/testing"
 	configHash := in.configHash()
 	runID := in.runID()
 
-	localNodeInfoFilePath := testFilesDir + "/shared-local-iota-node-" + configHash
+	localNodeInfoFilePath := tmpTestFilesDir + "/shared-local-iota-node-" + configHash
 	if runID != "" {
 		localNodeInfoFilePath += "-" + runID
 	}
@@ -85,40 +91,53 @@ func (in *LocalIotaNode) localNodeInfoFilePath() string {
 	return localNodeInfoFilePath
 }
 
-func (in *LocalIotaNode) lockAndModifyLocalNodeInfo() (_ *sharedLocalNodeInfo, unlockLocalNodeInfo func()) {
-	localNodeInfoFilePath := in.localNodeInfoFilePath()
-	lo.Must0(os.MkdirAll(path.Dir(localNodeInfoFilePath), 0755))
+func (in *LocalIotaNode) localNodeUsageStatsFilePath() string {
+	return tmpTestFilesDir + "/shared-local-iota-node-usage-stats"
+}
 
+func (in *LocalIotaNode) lockAndModifyLocalNodeInfo() (_ *sharedLocalNodeInfo, _ *sharedLocalNodeUsageStats, unlockLocalNodeInfo func()) {
 	in.logf("Locking shared local node info file...")
+	info, unlockInfo := openJSONFile[sharedLocalNodeInfo](in, "local node info", in.localNodeInfoFilePath())
+	in.logf("Locking shared local node usage stats file...")
+	stats, unlockStats := openJSONFile[sharedLocalNodeUsageStats](in, "local node stats", in.localNodeUsageStatsFilePath())
 
-	lock := fslock.New(localNodeInfoFilePath + ".lock")
-	lock.Lock()
+	return info, stats, sync.OnceFunc(func() {
+		unlockStats()
+		unlockInfo()
+	})
+}
 
-	var info sharedLocalNodeInfo
+func openJSONFile[Data any](in *LocalIotaNode, hmName, filePath string) (_ *Data, saveAndReleaseFile func()) {
+	var data Data
 
-	localNodeInfoFile, err := os.OpenFile(localNodeInfoFilePath, os.O_RDWR, 0644)
+	lo.Must0(os.MkdirAll(path.Dir(filePath), 0755))
+
+	fLock := fslock.New(filePath + ".lock")
+	fLock.Lock()
+
+	f, err := os.OpenFile(filePath, os.O_RDWR, 0644)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			panic(fmt.Errorf("failed to open local node info file: %w", err))
+			panic(fmt.Errorf("failed to open %v file at %v: %w", hmName, filePath, err))
 		}
 
-		in.logf("Shared local node info file does not exist - creating: %s", localNodeInfoFilePath)
-		localNodeInfoFile = lo.Must(os.Create(localNodeInfoFilePath))
-		lo.Must0(json.NewEncoder(localNodeInfoFile).Encode(sharedLocalNodeInfo{}))
-		lo.Must(localNodeInfoFile.Seek(0, 0))
+		in.logf("%v file does not exist - creating: %s", hmName, filePath)
+		f = lo.Must(os.Create(filePath))
+		lo.Must0(json.NewEncoder(f).Encode(lo.Empty[Data]()))
+		lo.Must(f.Seek(0, 0))
 	} else {
-		in.logf("Reading shared local node info file: %s", localNodeInfoFilePath)
-		lo.Must0(json.NewDecoder(localNodeInfoFile).Decode(&info))
+		in.logf("Reading %v file: %s", hmName, filePath)
+		lo.Must0(json.NewDecoder(f).Decode(&data))
 	}
 
-	return &info, sync.OnceFunc(func() {
-		in.logf("Writing shared local node info file...")
-		lo.Must0(localNodeInfoFile.Truncate(0))
-		lo.Must(localNodeInfoFile.Seek(0, 0))
-		lo.Must0(json.NewEncoder(localNodeInfoFile).Encode(info))
-		lo.Must0(localNodeInfoFile.Sync())
-		lo.Must0(localNodeInfoFile.Close())
-		lock.Unlock()
+	return &data, sync.OnceFunc(func() {
+		in.logf("Writing %v file...", hmName)
+		lo.Must0(f.Truncate(0))
+		lo.Must(f.Seek(0, 0))
+		lo.Must0(json.NewEncoder(f).Encode(data))
+		lo.Must0(f.Sync())
+		lo.Must0(f.Close())
+		fLock.Unlock()
 	})
 }
 
@@ -162,7 +181,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 	now := time.Now()
 
-	localNodeInfo, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
+	localNodeInfo, localNodeStats, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
 	defer unlockLocalNodeInfo()
 
 	if localNodeInfo.UseCount == 0 {
@@ -186,6 +205,8 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	if localNodeInfo.UseCount > 0 {
 		in.config = localNodeInfo.Config
 		localNodeInfo.UseCount++
+		localNodeStats.TotalUsers++
+		localNodeStats.MaxUseCount = max(localNodeInfo.UseCount, localNodeStats.MaxUseCount)
 		in.logf("Connected to existing LocalIotaNode container: current users count = %v", localNodeInfo.UseCount)
 		return
 	}
@@ -217,13 +238,15 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.config.IscPackageID = packageID
 
 	localNodeInfo.Config = in.config
-	localNodeInfo.UseCount++
+	localNodeInfo.UseCount = 1
+	localNodeStats.MaxUseCount = 1
+	localNodeStats.TotalUsers = 1
 
 	in.logf("LocalIotaNode started successfully")
 }
 
 func (in *LocalIotaNode) stop() {
-	localNodeInfo, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
+	localNodeInfo, _, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
 	defer unlockLocalNodeInfo()
 
 	localNodeInfo.UseCount--
