@@ -10,31 +10,37 @@
  * Do not edit the class manually.
  */
 
-import { RentStructure } from '../models/RentStructure';
 import { HttpFile } from '../http/http';
 
 export class ProtocolParameters {
     /**
-    * The networks max depth
+    * The protocol\'s current epoch
     */
-    'belowMaxDepth': number;
+    'epoch': number;
     /**
-    * The minimal PoW score
+    * The current epoch\'s duration in ms
     */
-    'minPowScore': number;
+    'epochDurationMs': number;
     /**
-    * The network name
+    * The current epoch\'s start_timestamp in ms
     */
-    'networkName': string;
-    'rentStructure': RentStructure;
+    'epochStartTimestampMs': number;
     /**
-    * The token supply
+    * The iota\'s total_supply
     */
-    'tokenSupply': string;
+    'iotaTotalSupply': number;
     /**
-    * The protocol version
+    * The protocol\'s version
     */
-    'version': number;
+    'protocolVersion': number;
+    /**
+    * The current reference_gas_price
+    */
+    'referenceGasPrice': number;
+    /**
+    * The protocol\'s system_state_version
+    */
+    'systemStateVersion': number;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -42,40 +48,46 @@ export class ProtocolParameters {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "belowMaxDepth",
-            "baseName": "belowMaxDepth",
+            "name": "epoch",
+            "baseName": "epoch",
             "type": "number",
-            "format": "int32"
+            "format": "int64"
         },
         {
-            "name": "minPowScore",
-            "baseName": "minPowScore",
+            "name": "epochDurationMs",
+            "baseName": "epoch_duration_ms",
             "type": "number",
-            "format": "int32"
+            "format": "int64"
         },
         {
-            "name": "networkName",
-            "baseName": "networkName",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "rentStructure",
-            "baseName": "rentStructure",
-            "type": "RentStructure",
-            "format": ""
-        },
-        {
-            "name": "tokenSupply",
-            "baseName": "tokenSupply",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "version",
-            "baseName": "version",
+            "name": "epochStartTimestampMs",
+            "baseName": "epoch_start_timestamp_ms",
             "type": "number",
-            "format": "int32"
+            "format": "int64"
+        },
+        {
+            "name": "iotaTotalSupply",
+            "baseName": "iota_total_supply",
+            "type": "number",
+            "format": "int64"
+        },
+        {
+            "name": "protocolVersion",
+            "baseName": "protocol_version",
+            "type": "number",
+            "format": "int64"
+        },
+        {
+            "name": "referenceGasPrice",
+            "baseName": "reference_gas_price",
+            "type": "number",
+            "format": "int64"
+        },
+        {
+            "name": "systemStateVersion",
+            "baseName": "system_state_version",
+            "type": "number",
+            "format": "int64"
         }    ];
 
     static getAttributeTypeMap() {

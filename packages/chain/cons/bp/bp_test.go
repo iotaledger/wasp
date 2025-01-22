@@ -26,7 +26,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	log := testlogger.NewLogger(t)
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	//
-	// Produce an alias output.
+	// Produce an anchor.
 	chainID := isc.ChainIDFromObjectID(*iotatest.RandomObjectRef().ObjectID)
 	ao0 := isctest.RandomStateAnchor()
 

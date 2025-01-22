@@ -21,17 +21,20 @@ var _ MappedNullable = &ProtocolParameters{}
 
 // ProtocolParameters struct for ProtocolParameters
 type ProtocolParameters struct {
-	// The networks max depth
-	BelowMaxDepth uint32 `json:"belowMaxDepth"`
-	// The minimal PoW score
-	MinPowScore uint32 `json:"minPowScore"`
-	// The network name
-	NetworkName string `json:"networkName"`
-	RentStructure RentStructure `json:"rentStructure"`
-	// The token supply
-	TokenSupply string `json:"tokenSupply"`
-	// The protocol version
-	Version int32 `json:"version"`
+	// The protocol's current epoch
+	Epoch int64 `json:"epoch"`
+	// The current epoch's duration in ms
+	EpochDurationMs int64 `json:"epoch_duration_ms"`
+	// The current epoch's start_timestamp in ms
+	EpochStartTimestampMs int64 `json:"epoch_start_timestamp_ms"`
+	// The iota's total_supply
+	IotaTotalSupply int64 `json:"iota_total_supply"`
+	// The protocol's version
+	ProtocolVersion int64 `json:"protocol_version"`
+	// The current reference_gas_price
+	ReferenceGasPrice int64 `json:"reference_gas_price"`
+	// The protocol's system_state_version
+	SystemStateVersion int64 `json:"system_state_version"`
 }
 
 type _ProtocolParameters ProtocolParameters
@@ -40,14 +43,15 @@ type _ProtocolParameters ProtocolParameters
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewProtocolParameters(belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32) *ProtocolParameters {
+func NewProtocolParameters(epoch int64, epochDurationMs int64, epochStartTimestampMs int64, iotaTotalSupply int64, protocolVersion int64, referenceGasPrice int64, systemStateVersion int64) *ProtocolParameters {
 	this := ProtocolParameters{}
-	this.BelowMaxDepth = belowMaxDepth
-	this.MinPowScore = minPowScore
-	this.NetworkName = networkName
-	this.RentStructure = rentStructure
-	this.TokenSupply = tokenSupply
-	this.Version = version
+	this.Epoch = epoch
+	this.EpochDurationMs = epochDurationMs
+	this.EpochStartTimestampMs = epochStartTimestampMs
+	this.IotaTotalSupply = iotaTotalSupply
+	this.ProtocolVersion = protocolVersion
+	this.ReferenceGasPrice = referenceGasPrice
+	this.SystemStateVersion = systemStateVersion
 	return &this
 }
 
@@ -59,148 +63,172 @@ func NewProtocolParametersWithDefaults() *ProtocolParameters {
 	return &this
 }
 
-// GetBelowMaxDepth returns the BelowMaxDepth field value
-func (o *ProtocolParameters) GetBelowMaxDepth() uint32 {
+// GetEpoch returns the Epoch field value
+func (o *ProtocolParameters) GetEpoch() int64 {
 	if o == nil {
-		var ret uint32
+		var ret int64
 		return ret
 	}
 
-	return o.BelowMaxDepth
+	return o.Epoch
 }
 
-// GetBelowMaxDepthOk returns a tuple with the BelowMaxDepth field value
+// GetEpochOk returns a tuple with the Epoch field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetBelowMaxDepthOk() (*uint32, bool) {
+func (o *ProtocolParameters) GetEpochOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.BelowMaxDepth, true
+	return &o.Epoch, true
 }
 
-// SetBelowMaxDepth sets field value
-func (o *ProtocolParameters) SetBelowMaxDepth(v uint32) {
-	o.BelowMaxDepth = v
+// SetEpoch sets field value
+func (o *ProtocolParameters) SetEpoch(v int64) {
+	o.Epoch = v
 }
 
-// GetMinPowScore returns the MinPowScore field value
-func (o *ProtocolParameters) GetMinPowScore() uint32 {
+// GetEpochDurationMs returns the EpochDurationMs field value
+func (o *ProtocolParameters) GetEpochDurationMs() int64 {
 	if o == nil {
-		var ret uint32
+		var ret int64
 		return ret
 	}
 
-	return o.MinPowScore
+	return o.EpochDurationMs
 }
 
-// GetMinPowScoreOk returns a tuple with the MinPowScore field value
+// GetEpochDurationMsOk returns a tuple with the EpochDurationMs field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetMinPowScoreOk() (*uint32, bool) {
+func (o *ProtocolParameters) GetEpochDurationMsOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.MinPowScore, true
+	return &o.EpochDurationMs, true
 }
 
-// SetMinPowScore sets field value
-func (o *ProtocolParameters) SetMinPowScore(v uint32) {
-	o.MinPowScore = v
+// SetEpochDurationMs sets field value
+func (o *ProtocolParameters) SetEpochDurationMs(v int64) {
+	o.EpochDurationMs = v
 }
 
-// GetNetworkName returns the NetworkName field value
-func (o *ProtocolParameters) GetNetworkName() string {
+// GetEpochStartTimestampMs returns the EpochStartTimestampMs field value
+func (o *ProtocolParameters) GetEpochStartTimestampMs() int64 {
 	if o == nil {
-		var ret string
+		var ret int64
 		return ret
 	}
 
-	return o.NetworkName
+	return o.EpochStartTimestampMs
 }
 
-// GetNetworkNameOk returns a tuple with the NetworkName field value
+// GetEpochStartTimestampMsOk returns a tuple with the EpochStartTimestampMs field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetNetworkNameOk() (*string, bool) {
+func (o *ProtocolParameters) GetEpochStartTimestampMsOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.NetworkName, true
+	return &o.EpochStartTimestampMs, true
 }
 
-// SetNetworkName sets field value
-func (o *ProtocolParameters) SetNetworkName(v string) {
-	o.NetworkName = v
+// SetEpochStartTimestampMs sets field value
+func (o *ProtocolParameters) SetEpochStartTimestampMs(v int64) {
+	o.EpochStartTimestampMs = v
 }
 
-// GetRentStructure returns the RentStructure field value
-func (o *ProtocolParameters) GetRentStructure() RentStructure {
+// GetIotaTotalSupply returns the IotaTotalSupply field value
+func (o *ProtocolParameters) GetIotaTotalSupply() int64 {
 	if o == nil {
-		var ret RentStructure
+		var ret int64
 		return ret
 	}
 
-	return o.RentStructure
+	return o.IotaTotalSupply
 }
 
-// GetRentStructureOk returns a tuple with the RentStructure field value
+// GetIotaTotalSupplyOk returns a tuple with the IotaTotalSupply field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetRentStructureOk() (*RentStructure, bool) {
+func (o *ProtocolParameters) GetIotaTotalSupplyOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.RentStructure, true
+	return &o.IotaTotalSupply, true
 }
 
-// SetRentStructure sets field value
-func (o *ProtocolParameters) SetRentStructure(v RentStructure) {
-	o.RentStructure = v
+// SetIotaTotalSupply sets field value
+func (o *ProtocolParameters) SetIotaTotalSupply(v int64) {
+	o.IotaTotalSupply = v
 }
 
-// GetTokenSupply returns the TokenSupply field value
-func (o *ProtocolParameters) GetTokenSupply() string {
+// GetProtocolVersion returns the ProtocolVersion field value
+func (o *ProtocolParameters) GetProtocolVersion() int64 {
 	if o == nil {
-		var ret string
+		var ret int64
 		return ret
 	}
 
-	return o.TokenSupply
+	return o.ProtocolVersion
 }
 
-// GetTokenSupplyOk returns a tuple with the TokenSupply field value
+// GetProtocolVersionOk returns a tuple with the ProtocolVersion field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetTokenSupplyOk() (*string, bool) {
+func (o *ProtocolParameters) GetProtocolVersionOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.TokenSupply, true
+	return &o.ProtocolVersion, true
 }
 
-// SetTokenSupply sets field value
-func (o *ProtocolParameters) SetTokenSupply(v string) {
-	o.TokenSupply = v
+// SetProtocolVersion sets field value
+func (o *ProtocolParameters) SetProtocolVersion(v int64) {
+	o.ProtocolVersion = v
 }
 
-// GetVersion returns the Version field value
-func (o *ProtocolParameters) GetVersion() int32 {
+// GetReferenceGasPrice returns the ReferenceGasPrice field value
+func (o *ProtocolParameters) GetReferenceGasPrice() int64 {
 	if o == nil {
-		var ret int32
+		var ret int64
 		return ret
 	}
 
-	return o.Version
+	return o.ReferenceGasPrice
 }
 
-// GetVersionOk returns a tuple with the Version field value
+// GetReferenceGasPriceOk returns a tuple with the ReferenceGasPrice field value
 // and a boolean to check if the value has been set.
-func (o *ProtocolParameters) GetVersionOk() (*int32, bool) {
+func (o *ProtocolParameters) GetReferenceGasPriceOk() (*int64, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Version, true
+	return &o.ReferenceGasPrice, true
 }
 
-// SetVersion sets field value
-func (o *ProtocolParameters) SetVersion(v int32) {
-	o.Version = v
+// SetReferenceGasPrice sets field value
+func (o *ProtocolParameters) SetReferenceGasPrice(v int64) {
+	o.ReferenceGasPrice = v
+}
+
+// GetSystemStateVersion returns the SystemStateVersion field value
+func (o *ProtocolParameters) GetSystemStateVersion() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.SystemStateVersion
+}
+
+// GetSystemStateVersionOk returns a tuple with the SystemStateVersion field value
+// and a boolean to check if the value has been set.
+func (o *ProtocolParameters) GetSystemStateVersionOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.SystemStateVersion, true
+}
+
+// SetSystemStateVersion sets field value
+func (o *ProtocolParameters) SetSystemStateVersion(v int64) {
+	o.SystemStateVersion = v
 }
 
 func (o ProtocolParameters) MarshalJSON() ([]byte, error) {
@@ -213,12 +241,13 @@ func (o ProtocolParameters) MarshalJSON() ([]byte, error) {
 
 func (o ProtocolParameters) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["belowMaxDepth"] = o.BelowMaxDepth
-	toSerialize["minPowScore"] = o.MinPowScore
-	toSerialize["networkName"] = o.NetworkName
-	toSerialize["rentStructure"] = o.RentStructure
-	toSerialize["tokenSupply"] = o.TokenSupply
-	toSerialize["version"] = o.Version
+	toSerialize["epoch"] = o.Epoch
+	toSerialize["epoch_duration_ms"] = o.EpochDurationMs
+	toSerialize["epoch_start_timestamp_ms"] = o.EpochStartTimestampMs
+	toSerialize["iota_total_supply"] = o.IotaTotalSupply
+	toSerialize["protocol_version"] = o.ProtocolVersion
+	toSerialize["reference_gas_price"] = o.ReferenceGasPrice
+	toSerialize["system_state_version"] = o.SystemStateVersion
 	return toSerialize, nil
 }
 
@@ -227,12 +256,13 @@ func (o *ProtocolParameters) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"belowMaxDepth",
-		"minPowScore",
-		"networkName",
-		"rentStructure",
-		"tokenSupply",
-		"version",
+		"epoch",
+		"epoch_duration_ms",
+		"epoch_start_timestamp_ms",
+		"iota_total_supply",
+		"protocol_version",
+		"reference_gas_price",
+		"system_state_version",
 	}
 
 	allProperties := make(map[string]interface{})

@@ -17,42 +17,42 @@ import (
 	"fmt"
 )
 
-// checks if the TxInclusionStateMsgMetricItem type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &TxInclusionStateMsgMetricItem{}
+// checks if the AnchorMetricItem type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &AnchorMetricItem{}
 
-// TxInclusionStateMsgMetricItem struct for TxInclusionStateMsgMetricItem
-type TxInclusionStateMsgMetricItem struct {
-	LastMessage TxInclusionStateMsg `json:"lastMessage"`
+// AnchorMetricItem struct for AnchorMetricItem
+type AnchorMetricItem struct {
+	LastMessage StateAnchor `json:"lastMessage"`
 	Messages uint32 `json:"messages"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
-type _TxInclusionStateMsgMetricItem TxInclusionStateMsgMetricItem
+type _AnchorMetricItem AnchorMetricItem
 
-// NewTxInclusionStateMsgMetricItem instantiates a new TxInclusionStateMsgMetricItem object
+// NewAnchorMetricItem instantiates a new AnchorMetricItem object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewTxInclusionStateMsgMetricItem(lastMessage TxInclusionStateMsg, messages uint32, timestamp time.Time) *TxInclusionStateMsgMetricItem {
-	this := TxInclusionStateMsgMetricItem{}
+func NewAnchorMetricItem(lastMessage StateAnchor, messages uint32, timestamp time.Time) *AnchorMetricItem {
+	this := AnchorMetricItem{}
 	this.LastMessage = lastMessage
 	this.Messages = messages
 	this.Timestamp = timestamp
 	return &this
 }
 
-// NewTxInclusionStateMsgMetricItemWithDefaults instantiates a new TxInclusionStateMsgMetricItem object
+// NewAnchorMetricItemWithDefaults instantiates a new AnchorMetricItem object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewTxInclusionStateMsgMetricItemWithDefaults() *TxInclusionStateMsgMetricItem {
-	this := TxInclusionStateMsgMetricItem{}
+func NewAnchorMetricItemWithDefaults() *AnchorMetricItem {
+	this := AnchorMetricItem{}
 	return &this
 }
 
 // GetLastMessage returns the LastMessage field value
-func (o *TxInclusionStateMsgMetricItem) GetLastMessage() TxInclusionStateMsg {
+func (o *AnchorMetricItem) GetLastMessage() StateAnchor {
 	if o == nil {
-		var ret TxInclusionStateMsg
+		var ret StateAnchor
 		return ret
 	}
 
@@ -61,7 +61,7 @@ func (o *TxInclusionStateMsgMetricItem) GetLastMessage() TxInclusionStateMsg {
 
 // GetLastMessageOk returns a tuple with the LastMessage field value
 // and a boolean to check if the value has been set.
-func (o *TxInclusionStateMsgMetricItem) GetLastMessageOk() (*TxInclusionStateMsg, bool) {
+func (o *AnchorMetricItem) GetLastMessageOk() (*StateAnchor, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -69,12 +69,12 @@ func (o *TxInclusionStateMsgMetricItem) GetLastMessageOk() (*TxInclusionStateMsg
 }
 
 // SetLastMessage sets field value
-func (o *TxInclusionStateMsgMetricItem) SetLastMessage(v TxInclusionStateMsg) {
+func (o *AnchorMetricItem) SetLastMessage(v StateAnchor) {
 	o.LastMessage = v
 }
 
 // GetMessages returns the Messages field value
-func (o *TxInclusionStateMsgMetricItem) GetMessages() uint32 {
+func (o *AnchorMetricItem) GetMessages() uint32 {
 	if o == nil {
 		var ret uint32
 		return ret
@@ -85,7 +85,7 @@ func (o *TxInclusionStateMsgMetricItem) GetMessages() uint32 {
 
 // GetMessagesOk returns a tuple with the Messages field value
 // and a boolean to check if the value has been set.
-func (o *TxInclusionStateMsgMetricItem) GetMessagesOk() (*uint32, bool) {
+func (o *AnchorMetricItem) GetMessagesOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -93,12 +93,12 @@ func (o *TxInclusionStateMsgMetricItem) GetMessagesOk() (*uint32, bool) {
 }
 
 // SetMessages sets field value
-func (o *TxInclusionStateMsgMetricItem) SetMessages(v uint32) {
+func (o *AnchorMetricItem) SetMessages(v uint32) {
 	o.Messages = v
 }
 
 // GetTimestamp returns the Timestamp field value
-func (o *TxInclusionStateMsgMetricItem) GetTimestamp() time.Time {
+func (o *AnchorMetricItem) GetTimestamp() time.Time {
 	if o == nil {
 		var ret time.Time
 		return ret
@@ -109,7 +109,7 @@ func (o *TxInclusionStateMsgMetricItem) GetTimestamp() time.Time {
 
 // GetTimestampOk returns a tuple with the Timestamp field value
 // and a boolean to check if the value has been set.
-func (o *TxInclusionStateMsgMetricItem) GetTimestampOk() (*time.Time, bool) {
+func (o *AnchorMetricItem) GetTimestampOk() (*time.Time, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -117,11 +117,11 @@ func (o *TxInclusionStateMsgMetricItem) GetTimestampOk() (*time.Time, bool) {
 }
 
 // SetTimestamp sets field value
-func (o *TxInclusionStateMsgMetricItem) SetTimestamp(v time.Time) {
+func (o *AnchorMetricItem) SetTimestamp(v time.Time) {
 	o.Timestamp = v
 }
 
-func (o TxInclusionStateMsgMetricItem) MarshalJSON() ([]byte, error) {
+func (o AnchorMetricItem) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -129,7 +129,7 @@ func (o TxInclusionStateMsgMetricItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o TxInclusionStateMsgMetricItem) ToMap() (map[string]interface{}, error) {
+func (o AnchorMetricItem) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["lastMessage"] = o.LastMessage
 	toSerialize["messages"] = o.Messages
@@ -137,7 +137,7 @@ func (o TxInclusionStateMsgMetricItem) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-func (o *TxInclusionStateMsgMetricItem) UnmarshalJSON(data []byte) (err error) {
+func (o *AnchorMetricItem) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -161,53 +161,53 @@ func (o *TxInclusionStateMsgMetricItem) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varTxInclusionStateMsgMetricItem := _TxInclusionStateMsgMetricItem{}
+	varAnchorMetricItem := _AnchorMetricItem{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varTxInclusionStateMsgMetricItem)
+	err = decoder.Decode(&varAnchorMetricItem)
 
 	if err != nil {
 		return err
 	}
 
-	*o = TxInclusionStateMsgMetricItem(varTxInclusionStateMsgMetricItem)
+	*o = AnchorMetricItem(varAnchorMetricItem)
 
 	return err
 }
 
-type NullableTxInclusionStateMsgMetricItem struct {
-	value *TxInclusionStateMsgMetricItem
+type NullableAnchorMetricItem struct {
+	value *AnchorMetricItem
 	isSet bool
 }
 
-func (v NullableTxInclusionStateMsgMetricItem) Get() *TxInclusionStateMsgMetricItem {
+func (v NullableAnchorMetricItem) Get() *AnchorMetricItem {
 	return v.value
 }
 
-func (v *NullableTxInclusionStateMsgMetricItem) Set(val *TxInclusionStateMsgMetricItem) {
+func (v *NullableAnchorMetricItem) Set(val *AnchorMetricItem) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableTxInclusionStateMsgMetricItem) IsSet() bool {
+func (v NullableAnchorMetricItem) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableTxInclusionStateMsgMetricItem) Unset() {
+func (v *NullableAnchorMetricItem) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableTxInclusionStateMsgMetricItem(val *TxInclusionStateMsgMetricItem) *NullableTxInclusionStateMsgMetricItem {
-	return &NullableTxInclusionStateMsgMetricItem{value: val, isSet: true}
+func NewNullableAnchorMetricItem(val *AnchorMetricItem) *NullableAnchorMetricItem {
+	return &NullableAnchorMetricItem{value: val, isSet: true}
 }
 
-func (v NullableTxInclusionStateMsgMetricItem) MarshalJSON() ([]byte, error) {
+func (v NullableAnchorMetricItem) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableTxInclusionStateMsgMetricItem) UnmarshalJSON(src []byte) error {
+func (v *NullableAnchorMetricItem) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

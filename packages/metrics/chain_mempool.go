@@ -182,10 +182,6 @@ func (m *ChainMempoolMetrics) IncRequestsProcessed() {
 	m.collectors.requestsProcessed.With(m.labels).Inc()
 }
 
-func (m *ChainMempoolMetrics) IncRequestsAckMessages() {
-	m.collectors.requestsAckMessages.With(m.labels).Inc()
-}
-
 func (m *ChainMempoolMetrics) SetRequestProcessingTime(duration time.Duration) {
 	m.collectors.requestsProcessingTime.With(m.labels).Set(duration.Seconds())
 }

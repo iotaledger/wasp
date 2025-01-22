@@ -16,10 +16,6 @@ import { HttpFile } from '../http/http';
 
 export class L1Params {
     'baseToken': BaseToken;
-    /**
-    * The max payload size
-    */
-    'maxPayloadSize': number;
     'protocol': ProtocolParameters;
 
     static readonly discriminator: string | undefined = undefined;
@@ -32,12 +28,6 @@ export class L1Params {
             "baseName": "baseToken",
             "type": "BaseToken",
             "format": ""
-        },
-        {
-            "name": "maxPayloadSize",
-            "baseName": "maxPayloadSize",
-            "type": "number",
-            "format": "int32"
         },
         {
             "name": "protocol",

@@ -5,14 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BaseToken** | [**BaseToken**](BaseToken.md) |  | 
-**MaxPayloadSize** | **int32** | The max payload size | 
 **Protocol** | [**ProtocolParameters**](ProtocolParameters.md) |  | 
 
 ## Methods
 
 ### NewL1Params
 
-`func NewL1Params(baseToken BaseToken, maxPayloadSize int32, protocol ProtocolParameters, ) *L1Params`
+`func NewL1Params(baseToken BaseToken, protocol ProtocolParameters, ) *L1Params`
 
 NewL1Params instantiates a new L1Params object
 This constructor will assign default values to properties that have it defined,
@@ -45,26 +44,6 @@ and a boolean to check if the value has been set.
 `func (o *L1Params) SetBaseToken(v BaseToken)`
 
 SetBaseToken sets BaseToken field to given value.
-
-
-### GetMaxPayloadSize
-
-`func (o *L1Params) GetMaxPayloadSize() int32`
-
-GetMaxPayloadSize returns the MaxPayloadSize field if non-nil, zero value otherwise.
-
-### GetMaxPayloadSizeOk
-
-`func (o *L1Params) GetMaxPayloadSizeOk() (*int32, bool)`
-
-GetMaxPayloadSizeOk returns a tuple with the MaxPayloadSize field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxPayloadSize
-
-`func (o *L1Params) SetMaxPayloadSize(v int32)`
-
-SetMaxPayloadSize sets MaxPayloadSize field to given value.
 
 
 ### GetProtocol
