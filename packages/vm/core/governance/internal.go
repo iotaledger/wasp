@@ -24,7 +24,7 @@ func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount in
 	s.SetGasLimits(gas.LimitsDefault)
 	s.SetMaintenanceStatus(false)
 	s.SetBlockKeepAmount(blockKeepAmount)
-	s.SetMinCommonAccountBalance(DefaultMinBaseTokensOnCommonAccount)
+	s.SetGasCoinTargetValue(isc.GasCoinTargetValue)
 	s.SetPayoutAgentID(chainOwner)
 }
 
@@ -40,7 +40,7 @@ func (s *StateReader) GetRotationAddress() *cryptolib.Address {
 }
 
 func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
-	s.state.Set(varRotateToAddress, codec.Encode[*cryptolib.Address](a))
+	s.state.Set(varRotateToAddress, codec.Encode(a))
 }
 
 // GetChainInfo returns global variables of the chain
@@ -58,12 +58,12 @@ func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 	return ret
 }
 
-func (s *StateReader) GetMinCommonAccountBalance() coin.Value {
-	return lo.Must(codec.Decode[coin.Value](s.state.Get(varMinBaseTokensOnCommonAccount)))
+func (s *StateReader) GetGasCoinTargetValue() coin.Value {
+	return lo.Must(codec.Decode[coin.Value](s.state.Get(varGasCoinTargetValue)))
 }
 
-func (s *StateWriter) SetMinCommonAccountBalance(m coin.Value) {
-	s.state.Set(varMinBaseTokensOnCommonAccount, codec.Encode[coin.Value](m))
+func (s *StateWriter) SetGasCoinTargetValue(m coin.Value) {
+	s.state.Set(varGasCoinTargetValue, codec.Encode(m))
 }
 
 func (s *StateReader) GetChainOwnerID() isc.AgentID {
@@ -71,7 +71,7 @@ func (s *StateReader) GetChainOwnerID() isc.AgentID {
 }
 
 func (s *StateWriter) SetChainOwnerID(a isc.AgentID) {
-	s.state.Set(varChainOwnerID, codec.Encode[isc.AgentID](a))
+	s.state.Set(varChainOwnerID, codec.Encode(a))
 	if s.GetChainOwnerIDDelegated() != nil {
 		s.state.Del(varChainOwnerIDDelegated)
 	}
@@ -82,7 +82,7 @@ func (s *StateReader) GetChainOwnerIDDelegated() isc.AgentID {
 }
 
 func (s *StateWriter) SetChainOwnerIDDelegated(a isc.AgentID) {
-	s.state.Set(varChainOwnerIDDelegated, codec.Encode[isc.AgentID](a))
+	s.state.Set(varChainOwnerIDDelegated, codec.Encode(a))
 }
 
 func (s *StateReader) GetPayoutAgentID() isc.AgentID {
@@ -90,7 +90,7 @@ func (s *StateReader) GetPayoutAgentID() isc.AgentID {
 }
 
 func (s *StateWriter) SetPayoutAgentID(a isc.AgentID) {
-	s.state.Set(varPayoutAgentID, codec.Encode[isc.AgentID](a))
+	s.state.Set(varPayoutAgentID, codec.Encode(a))
 }
 
 func (s *StateReader) GetGasFeePolicy() *gas.FeePolicy {
@@ -122,15 +122,15 @@ func (s *StateReader) GetBlockKeepAmount() int32 {
 }
 
 func (s *StateWriter) SetBlockKeepAmount(n int32) {
-	s.state.Set(varBlockKeepAmount, codec.Encode[int32](n))
+	s.state.Set(varBlockKeepAmount, codec.Encode(n))
 }
 
 func (s *StateWriter) SetPublicURL(url string) {
-	s.state.Set(varPublicURL, codec.Encode[string](url))
+	s.state.Set(varPublicURL, codec.Encode(url))
 }
 
 func (s *StateReader) GetPublicURL() string {
-	return codec.MustDecode[string](s.state.Get(varPublicURL), "")
+	return codec.MustDecode(s.state.Get(varPublicURL), "")
 }
 
 func (s *StateWriter) SetMetadata(metadata *isc.PublicChainMetadata) {
@@ -178,7 +178,7 @@ func (s *StateReader) GetMaintenanceStatus() bool {
 }
 
 func (s *StateWriter) SetMaintenanceStatus(status bool) {
-	s.state.Set(varMaintenanceStatus, codec.Encode[bool](status))
+	s.state.Set(varMaintenanceStatus, codec.Encode(status))
 }
 
 func (s *StateReader) AccessNodes() []*cryptolib.PublicKey {

@@ -46,8 +46,8 @@ func (vmctx *vmContext) calculateTopUpFee() coin.Value {
 	gasCoinBalance := vmctx.task.GasCoin.Value
 
 	topUp := coin.Value(0)
-	if gasCoinBalance < isc.TopUpFeeMin {
-		topUp = isc.TopUpFeeMin - gasCoinBalance
+	if gasCoinBalance < isc.GasCoinTargetValue {
+		topUp = isc.GasCoinTargetValue - gasCoinBalance
 	}
 
 	bal := vmctx.commonAccountBalance()
@@ -63,7 +63,7 @@ func (vmctx *vmContext) calculateTopUpFee() coin.Value {
 	vmctx.task.Log.Debugf(
 		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
 		gasCoinBalance,
-		isc.TopUpFeeMin,
+		isc.GasCoinTargetValue,
 		bal,
 		topUp,
 	)

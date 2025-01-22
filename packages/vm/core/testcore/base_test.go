@@ -43,7 +43,7 @@ func TestInitLoad(t *testing.T) {
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ch.CheckChain()
 
@@ -63,12 +63,12 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		PrintStackTrace: true,
 	})
 
-	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, isc.GasCoinTargetValue/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	ch.CheckChain()
 
 	require.EqualValues(
 		t,
-		isc.TopUpFeeMin/2,
+		isc.GasCoinTargetValue/2,
 		ch.L2BaseTokens(accounts.CommonAccount()),
 	)
 	require.EqualValues(
@@ -76,14 +76,14 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		0,
 		ch.L2BaseTokens(ch.OriginatorAgentID),
 	)
-	require.EqualValues(t, coin.Value(isc.TopUpFeeMin/2), ch.L2TotalBaseTokens())
+	require.EqualValues(t, coin.Value(isc.GasCoinTargetValue/2), ch.L2TotalBaseTokens())
 
 	gasCoinValueBefore := coin.Value(ch.GetLatestGasCoin().Value)
 
 	someUserWallet, someUserAddr := env.NewKeyPairWithFunds()
 	_, _, vmRes, ptbRes, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(accounts.FuncDeposit.Message()).
-			AddBaseTokens(isc.TopUpFeeMin*4).
+			AddBaseTokens(isc.GasCoinTargetValue*4).
 			WithGasBudget(math.MaxUint64),
 		someUserWallet,
 	)
@@ -95,19 +95,19 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	t.Logf("gasCoinValueBefore: %d, gasCoinValueAfter: %d", gasCoinValueBefore, gasCoinValueAfter)
 	require.EqualValues(
 		t,
-		isc.TopUpFeeMin-coin.Value(ptbRes.Effects.Data.GasFee()),
+		isc.GasCoinTargetValue-coin.Value(ptbRes.Effects.Data.GasFee()),
 		gasCoinValueAfter,
 	)
 
-	totalDeposited := coin.Value(isc.TopUpFeeMin/2 + isc.TopUpFeeMin*4)
-	totalDeductedForGasCoin := isc.TopUpFeeMin - gasCoinValueBefore
+	totalDeposited := coin.Value(isc.GasCoinTargetValue/2 + isc.GasCoinTargetValue*4)
+	totalDeductedForGasCoin := isc.GasCoinTargetValue - gasCoinValueBefore
 	totalL2Tokens := totalDeposited - totalDeductedForGasCoin
 	require.EqualValues(t, coin.Value(totalL2Tokens), ch.L2TotalBaseTokens())
 
-	addedToCommonAccount := min(isc.TopUpFeeMin, vmRes.Receipt.GasFeeCharged)
+	addedToCommonAccount := min(isc.GasCoinTargetValue, vmRes.Receipt.GasFeeCharged)
 	require.EqualValues(
 		t,
-		isc.TopUpFeeMin/2+addedToCommonAccount-totalDeductedForGasCoin,
+		isc.GasCoinTargetValue/2+addedToCommonAccount-totalDeductedForGasCoin,
 		ch.L2BaseTokens(accounts.CommonAccount()),
 	)
 	require.EqualValues(
@@ -117,7 +117,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	)
 	require.EqualValues(
 		t,
-		isc.TopUpFeeMin*4-vmRes.Receipt.GasFeeCharged,
+		isc.GasCoinTargetValue*4-vmRes.Receipt.GasFeeCharged,
 		ch.L2BaseTokens(isc.NewAddressAgentID(someUserAddr)),
 	)
 }
@@ -157,7 +157,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 	} {
 		t.Run(test.Name, func(t *testing.T) {
 			env := solo.New(t)
-			ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+			ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
 			if !test.SenderIsOriginator {
@@ -171,7 +171,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
-			require.EqualValues(t, isc.TopUpFeeMin, commonAccountBaseTokensBefore)
+			require.EqualValues(t, 0, commonAccountBaseTokensBefore)
 
 			_, l1Res, _, anchorTransitionPTBRes, err := ch.PostRequestSyncTx(
 				test.Req.

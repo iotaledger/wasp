@@ -64,7 +64,7 @@ func addCandidateNode(
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
-		state.AccessNodesMap().SetAt(ani.NodePubKey.Bytes(), codec.Encode[bool](true))
+		state.AccessNodesMap().SetAt(ani.NodePubKey.Bytes(), codec.Encode(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 }

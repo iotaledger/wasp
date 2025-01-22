@@ -56,15 +56,15 @@ func getPayoutAgentID(ctx isc.SandboxView) isc.AgentID {
 	return state.GetPayoutAgentID()
 }
 
-func setMinCommonAccountBalance(ctx isc.Sandbox, minCommonAccountBalance coin.Value) {
+func setGasCoinTargetValue(ctx isc.Sandbox, v coin.Value) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
-	state.SetMinCommonAccountBalance(minCommonAccountBalance)
+	state.SetGasCoinTargetValue(v)
 }
 
-func getMinCommonAccountBalance(ctx isc.SandboxView) coin.Value {
+func getGasCoinTargetValue(ctx isc.SandboxView) coin.Value {
 	state := governance.NewStateReaderFromSandbox(ctx)
-	return state.GetMinCommonAccountBalance()
+	return state.GetGasCoinTargetValue()
 }
 
 func getChainOwner(ctx isc.SandboxView) isc.AgentID {

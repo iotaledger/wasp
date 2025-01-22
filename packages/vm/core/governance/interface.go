@@ -41,13 +41,13 @@ var (
 	FuncSetPayoutAgentID = coreutil.NewEP1(Contract, "setPayoutAgentID",
 		coreutil.Field[isc.AgentID](),
 	)
-	FuncSetMinCommonAccountBalance = coreutil.NewEP1(Contract, "setMinCommonAccountBalance",
+	FuncSetGasCoinTargetValue = coreutil.NewEP1(Contract, "setGasCoinTargetValue",
 		coreutil.Field[coin.Value](),
 	)
 	ViewGetPayoutAgentID = coreutil.NewViewEP01(Contract, "getPayoutAgentID",
 		coreutil.Field[isc.AgentID](),
 	)
-	ViewGetMinCommonAccountBalance = coreutil.NewViewEP01(Contract, "getMinCommonAccountBalance",
+	ViewGetGasCoinTargetValue = coreutil.NewViewEP01(Contract, "getGasCoinTargetValue",
 		coreutil.Field[coin.Value](),
 	)
 	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
@@ -128,8 +128,8 @@ const (
 
 	// varPayoutAgentID :: AgentID
 	varPayoutAgentID = "pa" // covered in: TestMetadata
-	// varMinBaseTokensOnCommonAccount :: uint64
-	varMinBaseTokensOnCommonAccount = "vs" // covered in: TestMetadata
+	// varGasCoinTargetValue :: uint64
+	varGasCoinTargetValue = "vs" // covered in: TestMetadata
 
 	// chain owner
 	// varChainOwnerID :: AgentID
@@ -168,9 +168,6 @@ const (
 
 // contract constants
 const (
-	// DefaultMinBaseTokensOnCommonAccount can't harvest the minimum
-	DefaultMinBaseTokensOnCommonAccount = isc.TopUpFeeMin
-
 	BlockKeepAll           = -1
 	DefaultBlockKeepAmount = 10_000
 )

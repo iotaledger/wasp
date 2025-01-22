@@ -289,7 +289,7 @@ func (env *Solo) deployChain(
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.TopUpFeeMin)
+	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue)
 
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
