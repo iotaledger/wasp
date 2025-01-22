@@ -43,14 +43,10 @@ func (vmctx *vmContext) getTotalL2Coins() isc.CoinBalances {
 func (vmctx *vmContext) deductTopUpFeeFromCommonAccount(fee coin.Value) {
 	bal := isc.NewCoinBalances()
 	bal.AddBaseTokens(fee)
-
-	before := vmctx.commonAccountBalance()
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		vmctx.accountsStateWriterFromChainState(chainState).
 			DebitFromAccount(accounts.CommonAccount(), bal, vmctx.ChainID())
 	})
-	after := vmctx.commonAccountBalance()
-	vmctx.task.Log.Debugf("deducted %s from common account, balance before: %s, after: %s", fee, before, after)
 }
 
 func (vmctx *vmContext) commonAccountBalance() coin.Value {

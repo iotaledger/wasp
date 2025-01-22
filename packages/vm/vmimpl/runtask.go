@@ -6,13 +6,11 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -44,11 +42,14 @@ func newVmContext(
 	}
 }
 
-func (vmctx *vmContext) calculateTopUpFee(gasCoinBalance coin.Value) coin.Value {
-	if gasCoinBalance >= isc.TopUpFeeMin {
-		return 0
+func (vmctx *vmContext) calculateTopUpFee() coin.Value {
+	gasCoinBalance := vmctx.task.GasCoin.Value
+
+	topUp := coin.Value(0)
+	if gasCoinBalance < isc.TopUpFeeMin {
+		topUp = isc.TopUpFeeMin - gasCoinBalance
 	}
-	topUp := isc.TopUpFeeMin - gasCoinBalance
+
 	bal := vmctx.commonAccountBalance()
 	if bal < topUp {
 		vmctx.task.Log.Warnf(
@@ -57,7 +58,16 @@ func (vmctx *vmContext) calculateTopUpFee(gasCoinBalance coin.Value) coin.Value 
 			topUp,
 		)
 	}
-	return min(bal, topUp)
+
+	topUp = min(bal, topUp)
+	vmctx.task.Log.Debugf(
+		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
+		gasCoinBalance,
+		isc.TopUpFeeMin,
+		bal,
+		topUp,
+	)
+	return topUp
 }
 
 // runTask runs batch of requests on VM
@@ -100,8 +110,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
-	topUpFee := vmctx.calculateTopUpFee(task.GasCoin.Value)
-	vmctx.task.Log.Debugf("runTask, topUpFee = %d", topUpFee)
+	topUpFee := vmctx.calculateTopUpFee()
 	if topUpFee > 0 {
 		vmctx.deductTopUpFeeFromCommonAccount(topUpFee)
 	}

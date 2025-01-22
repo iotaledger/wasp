@@ -533,7 +533,7 @@ func (v *accountsDepositTest) printBalances(prefix string) {
 	v.env.T.Logf("%s: common account L2: %s", prefix, v.ch.L2CommonAccountAssets())
 }
 
-func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
+func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
 		v := initWithdrawTest(t, isc.TopUpFeeMin)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -681,7 +681,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 		// make the chain produce 2 blocks (prune the previous block with the initial deposit info)
 		for i := 0; i < 2; i++ {
-			_, err = ch2.PostRequestSync(solo.NewCallParamsEx("contract", "func"), nil)
+			_, err = ch2.PostRequestSync(solo.NewCallParamsEx("contract", "func"), v.user)
 			require.Error(t, err)                      // dummy request, so an error is expected
 			require.NotNil(t, ch2.LastReceipt().Error) // but it produced a receipt, thus make the state progress
 		}
@@ -732,13 +732,8 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
+	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.OriginatorPrivateKey)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
-
-	// deposit base tokens for the chain owner (needed for L1 storage deposit to mint tokens)
-	err := v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, accounts.CommonAccount(), v.chainOwner)
-	require.NoError(t, err)
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, v.userAgentID, v.user)
-	require.NoError(t, err)
 
 	v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(100))
 	v.ch.AssertL2TotalCoins(v.coinType, coin.Value(100))
@@ -750,7 +745,7 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// deposit 1 base token to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2BaseTokens(user2AgentID, 0)
 	const baseTokensToSend = 3 * isc.Million
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
+	err := v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
 	v.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
