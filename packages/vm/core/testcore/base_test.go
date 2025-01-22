@@ -63,27 +63,33 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		PrintStackTrace: true,
 	})
 
-	ch, _ := env.NewChainExt(nil, isc.GasCoinTargetValue/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	const initialCommonAccountBalance = isc.GasCoinTargetValue / 2
+
+	ch, _ := env.NewChainExt(nil, initialCommonAccountBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	ch.CheckChain()
 
-	require.EqualValues(
-		t,
-		isc.GasCoinTargetValue/2,
+	// common account has initialCommonAccountBalance
+	require.EqualValues(t,
+		initialCommonAccountBalance,
 		ch.L2BaseTokens(accounts.CommonAccount()),
 	)
-	require.EqualValues(
-		t,
-		0,
-		ch.L2BaseTokens(ch.OriginatorAgentID),
+	// chain owner's account is empty
+	require.Zero(t, ch.L2BaseTokens(ch.OriginatorAgentID))
+
+	// total owned by the chain is initialCommonAccountBalance
+	require.EqualValues(t,
+		coin.Value(initialCommonAccountBalance),
+		ch.L2TotalBaseTokens(),
 	)
-	require.EqualValues(t, coin.Value(isc.GasCoinTargetValue/2), ch.L2TotalBaseTokens())
 
 	gasCoinValueBefore := coin.Value(ch.GetLatestGasCoin().Value)
 
+	const depositedByUser = isc.GasCoinTargetValue * 4
 	someUserWallet, someUserAddr := env.NewKeyPairWithFunds()
+	// user deposits some tokens
 	_, _, vmRes, ptbRes, err := ch.PostRequestSyncTx(
 		solo.NewCallParams(accounts.FuncDeposit.Message()).
-			AddBaseTokens(isc.GasCoinTargetValue*4).
+			AddBaseTokens(depositedByUser).
 			WithGasBudget(math.MaxUint64),
 		someUserWallet,
 	)
@@ -93,32 +99,45 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 
 	gasCoinValueAfter := coin.Value(ch.GetLatestGasCoin().Value)
 	t.Logf("gasCoinValueBefore: %d, gasCoinValueAfter: %d", gasCoinValueBefore, gasCoinValueAfter)
-	require.EqualValues(
-		t,
+
+	// the gas coin is topped up to GasCoinTargetValue, and then it is used
+	// to pay for L1 gas fee
+	require.EqualValues(t,
 		isc.GasCoinTargetValue-coin.Value(ptbRes.Effects.Data.GasFee()),
 		gasCoinValueAfter,
 	)
 
-	totalDeposited := coin.Value(isc.GasCoinTargetValue/2 + isc.GasCoinTargetValue*4)
+	// the total deposited tokens in the chain
+	totalDeposited := coin.Value(initialCommonAccountBalance + depositedByUser)
+	// the amount of tokens that were deducted to top up the gas coin
 	totalDeductedForGasCoin := isc.GasCoinTargetValue - gasCoinValueBefore
+	// the tokens that remain in L2
 	totalL2Tokens := totalDeposited - totalDeductedForGasCoin
 	require.EqualValues(t, coin.Value(totalL2Tokens), ch.L2TotalBaseTokens())
 
-	addedToCommonAccount := min(isc.GasCoinTargetValue, vmRes.Receipt.GasFeeCharged)
-	require.EqualValues(
-		t,
-		isc.GasCoinTargetValue/2+addedToCommonAccount-totalDeductedForGasCoin,
+	// the user pays for the L2 gas fee
+	require.EqualValues(t,
+		depositedByUser-vmRes.Receipt.GasFeeCharged,
+		ch.L2BaseTokens(isc.NewAddressAgentID(someUserAddr)),
+	)
+
+	// the common account is topped up to GasCoinTargetValue, unless the
+	// collected fees are less than that
+	addedToCommonAccount := min(
+		isc.GasCoinTargetValue-initialCommonAccountBalance,
+		vmRes.Receipt.GasFeeCharged,
+	)
+	// also, the deducted tokens for the gas coin are taken from the common account
+	require.EqualValues(t,
+		initialCommonAccountBalance+addedToCommonAccount-totalDeductedForGasCoin,
 		ch.L2BaseTokens(accounts.CommonAccount()),
 	)
-	require.EqualValues(
-		t,
+
+	// the collected fees go to the payout (chain owner by default), minus the
+	// amount used to top up the common account
+	require.EqualValues(t,
 		vmRes.Receipt.GasFeeCharged-addedToCommonAccount,
 		ch.L2BaseTokens(ch.OriginatorAgentID),
-	)
-	require.EqualValues(
-		t,
-		isc.GasCoinTargetValue*4-vmRes.Receipt.GasFeeCharged,
-		ch.L2BaseTokens(isc.NewAddressAgentID(someUserAddr)),
 	)
 }
 

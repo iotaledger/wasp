@@ -58,9 +58,9 @@ func (vmctx *vmContext) calculateTopUpFee() coin.Value {
 			bal,
 			topUp,
 		)
+		topUp = bal
 	}
 
-	topUp = min(bal, topUp)
 	vmctx.task.Log.Debugf(
 		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
 		gasCoinBalance,
