@@ -43,6 +43,7 @@ func TestRequestDataSerialization(t *testing.T) {
 				Message: iscmove.Message{
 					Contract: uint32(isc.Hn("target_contract")),
 					Function: uint32(isc.Hn("entrypoint")),
+					Args:     [][]byte{},
 				},
 				Allowance: iscmove.Assets{
 					Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
