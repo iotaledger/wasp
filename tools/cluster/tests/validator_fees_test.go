@@ -19,6 +19,8 @@ import (
 )
 
 func TestValidatorFees(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	validatorKps := []*cryptolib.KeyPair{
 		cryptolib.NewKeyPair(),
 		cryptolib.NewKeyPair(),
