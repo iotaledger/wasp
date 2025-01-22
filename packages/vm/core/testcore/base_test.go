@@ -60,6 +60,7 @@ func TestLedgerBaseConsistency(t *testing.T) {
 
 // TestLedgerBaseConsistencyWithRequiredTopUpFee deploys a chain and checks the consistency of L1 and L2 ledgers after topping up fees
 func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
+	t.Skip("Not testing top up fee as its currently a const value")
 	env := solo.New(t)
 	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin/2, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 

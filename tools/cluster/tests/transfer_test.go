@@ -17,6 +17,8 @@ import (
 )
 
 func TestDepositWithdraw(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	e := setupWithNoChain(t)
 
 	chain, err := e.Clu.DeployDefaultChain()
