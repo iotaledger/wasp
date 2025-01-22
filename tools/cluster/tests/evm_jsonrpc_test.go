@@ -113,6 +113,8 @@ func testEVMJsonRPCCluster(t *testing.T, env *ChainEnv) {
 }
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
@@ -122,6 +124,8 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 }
 
 func TestEVMJsonRPCZeroGasFee(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)

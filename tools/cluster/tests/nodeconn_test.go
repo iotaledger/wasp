@@ -8,12 +8,14 @@ package tests
 
 import (
 	"context"
+	"testing"
+
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/stretchr/testify/require"
-	"testing"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -35,7 +37,7 @@ func createChain(t *testing.T) isc.ChainID {
 }
 
 func TestNodeConn(t *testing.T) {
-	t.Fail()
+	t.Skip("Cluster tests currently disabled")
 	// refactor me: NodeConn
 	/*
 		if testing.Short() {

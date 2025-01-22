@@ -52,7 +52,7 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 }
 
 func TestWebsocketEvents(t *testing.T) {
-	if !l1starter.IsLocalConfigured() {
+	if l1starter.IsLocalConfigured() {
 		t.Skip("Skipping WebSocket test, as the local node does not support WebSockets")
 	}
 
