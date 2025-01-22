@@ -43,11 +43,12 @@ func newVmContext(
 }
 
 func (vmctx *vmContext) calculateTopUpFee() coin.Value {
+	targetValue := governance.NewStateReaderFromChainState(vmctx.stateDraft).GetGasCoinTargetValue()
 	gasCoinBalance := vmctx.task.GasCoin.Value
 
 	topUp := coin.Value(0)
-	if gasCoinBalance < isc.GasCoinTargetValue {
-		topUp = isc.GasCoinTargetValue - gasCoinBalance
+	if gasCoinBalance < targetValue {
+		topUp = targetValue - gasCoinBalance
 	}
 
 	bal := vmctx.commonAccountBalance()
@@ -63,7 +64,7 @@ func (vmctx *vmContext) calculateTopUpFee() coin.Value {
 	vmctx.task.Log.Debugf(
 		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
 		gasCoinBalance,
-		isc.GasCoinTargetValue,
+		targetValue,
 		bal,
 		topUp,
 	)
