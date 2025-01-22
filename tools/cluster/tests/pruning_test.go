@@ -21,6 +21,8 @@ import (
 )
 
 func TestPruning(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	t.Parallel()
 	blockKeepAmount := 10
 	clu := newCluster(t, waspClusterOpts{

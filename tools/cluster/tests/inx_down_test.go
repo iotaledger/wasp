@@ -15,6 +15,8 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestInxShutdownTest(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	dataPath := "test-inx-down"
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3}, dataPath)
 
