@@ -2,10 +2,18 @@ package l1starter
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"runtime"
+	"sync"
 	"time"
 
+	"github.com/juju/fslock"
+	"github.com/samber/lo"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
@@ -24,19 +32,102 @@ type LocalIotaNode struct {
 	ctx             context.Context
 	config          Config
 	iscPackageOwner iotasigner.Signer
-	iscPackageID    iotago.PackageID
 	container       testcontainers.Container
+	Logger          testcontainers.Logging
+}
+
+type sharedLocalNodeInfo struct {
+	UseCount int
+	Config   Config
 }
 
 func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
 	return &LocalIotaNode{
 		iscPackageOwner: iscPackageOwner,
 		config: Config{
-			Host:   "http://localhost",
-			Ports:  Ports{},
-			Logger: Logger{},
+			Host:  "http://localhost",
+			Ports: Ports{},
 		},
+		Logger: Logger{},
 	}
+}
+
+// Returns hash string based for all of the input parameters of the node.
+func (in *LocalIotaNode) configHash() string {
+	configHashBytes := md5.Sum(in.iscPackageOwner.Address().Bytes())
+	configHash := hex.EncodeToString(configHashBytes[:])
+	return configHash
+}
+
+// Returns ID of the current run. If TEST_RUN_ID is not set, returns empty string.
+// Specifying TEST_RUN_ID helps to avoid reusing same container for next "go test" executions if we were
+// not able to finalize it properly due to being killed/crashed.
+func (in *LocalIotaNode) runID() string {
+	runID := os.Getenv("TEST_RUN_ID")
+	if runID == "" {
+		return ""
+	}
+
+	runIDHash := md5.Sum([]byte(runID))
+	return hex.EncodeToString(runIDHash[:])
+}
+
+func (in *LocalIotaNode) localNodeInfoFilePath() string {
+	testFilesDir := os.TempDir() + "/wasp/testing"
+	configHash := in.configHash()
+	runID := in.runID()
+
+	localNodeInfoFilePath := testFilesDir + "/shared-local-iota-node-" + configHash
+	if runID != "" {
+		localNodeInfoFilePath += "-" + runID
+	}
+
+	return localNodeInfoFilePath
+}
+
+func (in *LocalIotaNode) lockAndModifyLocalNodeInfo() (_ *sharedLocalNodeInfo, unlockLocalNodeInfo func()) {
+	localNodeInfoFilePath := in.localNodeInfoFilePath()
+	lo.Must0(os.MkdirAll(path.Dir(localNodeInfoFilePath), 0755))
+
+	in.logf("Locking shared local node info file...")
+
+	lock := fslock.New(localNodeInfoFilePath + ".lock")
+	lock.Lock()
+
+	var info sharedLocalNodeInfo
+
+	localNodeInfoFile, err := os.OpenFile(localNodeInfoFilePath, os.O_RDWR, 0644)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			panic(fmt.Errorf("failed to open local node info file: %w", err))
+		}
+
+		in.logf("Shared local node info file does not exist - creating: %s", localNodeInfoFilePath)
+		localNodeInfoFile = lo.Must(os.Create(localNodeInfoFilePath))
+		lo.Must0(json.NewEncoder(localNodeInfoFile).Encode(sharedLocalNodeInfo{}))
+		lo.Must(localNodeInfoFile.Seek(0, 0))
+	} else {
+		in.logf("Reading shared local node info file: %s", localNodeInfoFilePath)
+		lo.Must0(json.NewDecoder(localNodeInfoFile).Decode(&info))
+	}
+
+	return &info, sync.OnceFunc(func() {
+		in.logf("Writing shared local node info file...")
+		lo.Must0(localNodeInfoFile.Truncate(0))
+		lo.Must(localNodeInfoFile.Seek(0, 0))
+		lo.Must0(json.NewEncoder(localNodeInfoFile).Encode(info))
+		lo.Must0(localNodeInfoFile.Sync())
+		lo.Must0(localNodeInfoFile.Close())
+		lock.Unlock()
+	})
+}
+
+func (in *LocalIotaNode) deleteLocalNodeInfo() {
+	localNodeInfoFilePath := in.localNodeInfoFilePath()
+
+	in.logf("Deleting shared local node info file: %s", localNodeInfoFilePath)
+	lo.Must0(os.Remove(localNodeInfoFilePath))
+	lo.Must0(os.Remove(localNodeInfoFilePath + ".lock"))
 }
 
 func (in *LocalIotaNode) start(ctx context.Context) {
@@ -47,7 +138,11 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 		imagePlatform = "linux/arm64"
 	}
 
+	configHash := in.configHash()
+
+	contName := "wasp-iota-node-" + configHash
 	req := testcontainers.ContainerRequest{
+		Name:          contName,
 		Image:         "iotaledger/iota-tools:v0.9.0-alpha",
 		ImagePlatform: imagePlatform,
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
@@ -67,16 +162,33 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 	now := time.Now()
 
-	in.logf("Starting LocalIotaNode...")
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
-	if err != nil {
-		panic(fmt.Errorf("failed to start container: %w", err))
+	localNodeInfo, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
+	defer unlockLocalNodeInfo()
+
+	if localNodeInfo.UseCount == 0 {
+		in.logf("Starting LocalIotaNode...")
+	} else {
+		in.logf("LocalIotaNode already started, reusing...")
 	}
 
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          localNodeInfo.UseCount == 0,
+		Reuse:            localNodeInfo.UseCount != 0,
+	})
+	if err != nil {
+		panic(fmt.Errorf("failed to start/reuse container: %w", err))
+	}
+
+	container.SessionID()
 	in.container = container
+
+	if localNodeInfo.UseCount > 0 {
+		in.config = localNodeInfo.Config
+		localNodeInfo.UseCount++
+		in.logf("Connected to existing LocalIotaNode container: current users count = %v", localNodeInfo.UseCount)
+		return
+	}
 
 	webAPIPort, err := container.MappedPort(ctx, "9000")
 	if err != nil {
@@ -102,19 +214,33 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 		panic(fmt.Errorf("isc contract deployment failed: %w", err))
 	}
 
-	in.iscPackageID = packageID
+	in.config.IscPackageID = packageID
+
+	localNodeInfo.Config = in.config
+	localNodeInfo.UseCount++
 
 	in.logf("LocalIotaNode started successfully")
 }
 
 func (in *LocalIotaNode) stop() {
-	in.logf("Stopping...")
-	in.container.Terminate(context.Background(), testcontainers.StopTimeout(0))
+	localNodeInfo, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
+	defer unlockLocalNodeInfo()
+
+	localNodeInfo.UseCount--
+
+	if localNodeInfo.UseCount == 0 {
+		in.logf("Stopping LocalIotaNode...")
+		in.container.Terminate(context.Background(), testcontainers.StopTimeout(0))
+		in.deleteLocalNodeInfo()
+	} else {
+		in.logf("LocalIotaNode still used by %v users, not stopping", localNodeInfo.UseCount)
+	}
+
 	instance.Store(nil)
 }
 
 func (in *LocalIotaNode) ISCPackageID() iotago.PackageID {
-	return in.iscPackageID
+	return in.config.IscPackageID
 }
 
 func (in *LocalIotaNode) APIURL() string {
@@ -183,7 +309,7 @@ func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 }
 
 func (in *LocalIotaNode) logf(msg string, args ...any) {
-	if in.config.Logger != nil {
-		in.config.Logger.Printf("Iota Node: "+msg+"\n", args...)
+	if in.Logger != nil {
+		in.Logger.Printf("Iota Node: "+msg+"\n", args...)
 	}
 }

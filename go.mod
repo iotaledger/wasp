@@ -38,6 +38,7 @@ require (
 	github.com/iotaledger/hive.go/web v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
+	github.com/juju/fslock v0.0.0-20160525022230-4d5c94c67b4b
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0
