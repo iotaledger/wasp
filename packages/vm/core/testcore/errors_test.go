@@ -203,7 +203,8 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
 	require.EqualValues(t, receipt.Error.Code(), typedError.Code())
-	require.EqualValues(t, receipt.Error.Params, typedError.Params())
+	require.Empty(t, typedError.Params())
+	require.Empty(t, receipt.Error.Params)
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) { //nolint:dupl
