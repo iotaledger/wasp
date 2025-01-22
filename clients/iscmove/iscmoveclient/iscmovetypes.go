@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-type referent[T any] struct {
+type Referent[T any] struct {
 	ID    iotago.ObjectID
 	Value *T `bcs:"optional"`
 }
@@ -14,7 +14,7 @@ type referent[T any] struct {
 // moveAnchor is the BCS equivalent for the move type Anchor
 type moveAnchor struct {
 	ID            iotago.ObjectID
-	Assets        referent[iscmove.AssetsBag]
+	Assets        Referent[iscmove.AssetsBag]
 	StateMetadata []byte
 	StateIndex    uint32
 }
@@ -28,17 +28,17 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 	}
 }
 
-type moveRequest struct {
+type MoveRequest struct {
 	ID     iotago.ObjectID
 	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
-	AssetsBag referent[iscmove.AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	AssetsBag Referent[iscmove.AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
 	Message   iscmove.Message
 	Allowance []iscmove.CoinAllowance
 	GasBudget uint64
 }
 
-func (mr *moveRequest) ToRequest() *iscmove.Request {
+func (mr *MoveRequest) ToRequest() *iscmove.Request {
 	assets := iscmove.NewAssets(0)
 	for _, allowance := range mr.Allowance {
 		assets.AddCoin(allowance.CoinType, allowance.Balance)
