@@ -619,11 +619,15 @@ func (d *Decoder) decodeSlice(v reflect.Value, typeOpts TypeOptions) error {
 		return d.handleErrorf("invalid array size type: %v", typeOpts.LenSizeInBytes)
 	}
 
-	v.Set(reflect.MakeSlice(v.Type(), length, length))
-
 	if length == 0 {
+		if !typeOpts.NilIfEmpty {
+			v.Set(reflect.MakeSlice(v.Type(), 0, 0))
+		}
+
 		return nil
 	}
+
+	v.Set(reflect.MakeSlice(v.Type(), length, length))
 
 	return d.decodeArray(v, typeOpts)
 }
