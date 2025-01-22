@@ -109,7 +109,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 func (in *LocalIotaNode) stop() {
 	in.logf("Stopping...")
-	in.container.Terminate(context.Background())
+	in.container.Terminate(context.Background(), testcontainers.StopTimeout(0))
 	instance.Store(nil)
 }
 

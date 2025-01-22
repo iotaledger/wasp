@@ -76,6 +76,9 @@ func (e *VMErrorTemplate) Code() VMErrorCode {
 }
 
 func (e *VMErrorTemplate) Create(params ...VMErrorParam) *VMError {
+	if params == nil {
+		params = []VMErrorParam{}
+	}
 	validateParams(params)
 	return &VMError{
 		template: e,

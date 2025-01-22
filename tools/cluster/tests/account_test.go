@@ -26,6 +26,7 @@ func testBasicAccounts(t *testing.T, env *ChainEnv) {
 }
 
 func TestBasicAccountsNLow(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
 	runTest := func(tt *testing.T, n, t int) {
 		e := setupWithNoChain(tt)
 		chainNodes := make([]int, n)

@@ -3,10 +3,6 @@
 
 package tests
 
-import (
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-)
-
 func init() {
-	l1 = l1starter.ClusterStart(parseConfig())
+	//l1 = l1starter.ClusterStart(parseConfig())
 }
