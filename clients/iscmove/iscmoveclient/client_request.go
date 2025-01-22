@@ -194,7 +194,7 @@ func (c *Client) GetRequestFromObjectID(
 }
 
 func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
-	var req moveRequest
+	var req MoveRequest
 	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
