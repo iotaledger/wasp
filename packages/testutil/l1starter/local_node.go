@@ -6,9 +6,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"path"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
@@ -39,11 +41,13 @@ type LocalIotaNode struct {
 type sharedLocalNodeInfo struct {
 	UseCount int
 	Config   Config
+	RunID    string
 }
 
 type sharedLocalNodeUsageStats struct {
 	MaxUseCount int
-	TotalUsers  int
+	TotalUses   int
+	Startups    int
 }
 
 func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
@@ -64,29 +68,12 @@ func (in *LocalIotaNode) configHash() string {
 	return configHash
 }
 
-// Returns ID of the current run. If TEST_RUN_ID is not set, returns empty string.
-// Specifying TEST_RUN_ID helps to avoid reusing same container for next "go test" executions if we were
-// not able to finalize it properly due to being killed/crashed.
-func (in *LocalIotaNode) runID() string {
-	runID := os.Getenv("TEST_RUN_ID")
-	if runID == "" {
-		return ""
-	}
-
-	runIDHash := md5.Sum([]byte(runID))
-	return hex.EncodeToString(runIDHash[:])
-}
-
 var tmpTestFilesDir = os.TempDir() + "/wasp/testing"
 
 func (in *LocalIotaNode) localNodeInfoFilePath() string {
 	configHash := in.configHash()
-	runID := in.runID()
 
 	localNodeInfoFilePath := tmpTestFilesDir + "/shared-local-iota-node-" + configHash
-	if runID != "" {
-		localNodeInfoFilePath += "-" + runID
-	}
 
 	return localNodeInfoFilePath
 }
@@ -95,9 +82,28 @@ func (in *LocalIotaNode) localNodeUsageStatsFilePath() string {
 	return tmpTestFilesDir + "/shared-local-iota-node-usage-stats"
 }
 
+func (in *LocalIotaNode) nodeInfoHasExpired() bool {
+	infoFileStat := lo.Must(os.Stat(in.localNodeInfoFilePath()))
+	lastKeepaliveTime := infoFileStat.ModTime()
+
+	keepaliveExpires := time.Since(lastKeepaliveTime) > 2*keepaliveInterval
+
+	return keepaliveExpires
+}
+
 func (in *LocalIotaNode) lockAndModifyLocalNodeInfo() (_ *sharedLocalNodeInfo, _ *sharedLocalNodeUsageStats, unlockLocalNodeInfo func()) {
 	in.logf("Locking shared local node info file...")
 	info, unlockInfo := openJSONFile[sharedLocalNodeInfo](in, "local node info", in.localNodeInfoFilePath())
+
+	if in.nodeInfoHasExpired() {
+		in.logf("Local node info file is too old - ignoring old container if exists")
+		*info = sharedLocalNodeInfo{}
+	}
+
+	if info.RunID == "" {
+		info.RunID = strconv.Itoa(rand.Int())
+	}
+
 	in.logf("Locking shared local node usage stats file...")
 	stats, unlockStats := openJSONFile[sharedLocalNodeUsageStats](in, "local node stats", in.localNodeUsageStatsFilePath())
 
@@ -152,14 +158,22 @@ func (in *LocalIotaNode) deleteLocalNodeInfo() {
 func (in *LocalIotaNode) start(ctx context.Context) {
 	in.ctx = ctx
 
+	localNodeInfo, localNodeStats, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
+	defer unlockLocalNodeInfo()
+
+	if localNodeInfo.UseCount == 0 {
+		in.logf("Starting LocalIotaNode...")
+	} else {
+		in.logf("LocalIotaNode already started, reusing...")
+	}
+
+	contName := "wasp-iota-node-" + in.configHash() + "-" + localNodeInfo.RunID
+
 	imagePlatform := "linux/amd64"
 	if runtime.GOARCH == "arm64" {
 		imagePlatform = "linux/arm64"
 	}
 
-	configHash := in.configHash()
-
-	contName := "wasp-iota-node-" + configHash
 	req := testcontainers.ContainerRequest{
 		Name:          contName,
 		Image:         "iotaledger/iota-tools:v0.9.0-alpha",
@@ -181,15 +195,6 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 	now := time.Now()
 
-	localNodeInfo, localNodeStats, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
-	defer unlockLocalNodeInfo()
-
-	if localNodeInfo.UseCount == 0 {
-		in.logf("Starting LocalIotaNode...")
-	} else {
-		in.logf("LocalIotaNode already started, reusing...")
-	}
-
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
 		Started:          localNodeInfo.UseCount == 0,
@@ -202,11 +207,14 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	container.SessionID()
 	in.container = container
 
-	if localNodeInfo.UseCount > 0 {
+	startLocalNodeKeepalive(in.localNodeInfoFilePath())
+
+	localNodeInfo.UseCount++
+	localNodeStats.TotalUses++
+	localNodeStats.MaxUseCount = max(localNodeInfo.UseCount, localNodeStats.MaxUseCount)
+
+	if localNodeInfo.UseCount > 1 {
 		in.config = localNodeInfo.Config
-		localNodeInfo.UseCount++
-		localNodeStats.TotalUsers++
-		localNodeStats.MaxUseCount = max(localNodeInfo.UseCount, localNodeStats.MaxUseCount)
 		in.logf("Connected to existing LocalIotaNode container: current users count = %v", localNodeInfo.UseCount)
 		return
 	}
@@ -238,14 +246,14 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.config.IscPackageID = packageID
 
 	localNodeInfo.Config = in.config
-	localNodeInfo.UseCount = 1
-	localNodeStats.MaxUseCount = 1
-	localNodeStats.TotalUsers = 1
+	localNodeStats.Startups++
 
 	in.logf("LocalIotaNode started successfully")
 }
 
 func (in *LocalIotaNode) stop() {
+	stopLocalNodeKeepalive(in.localNodeInfoFilePath())
+
 	localNodeInfo, _, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
 	defer unlockLocalNodeInfo()
 
@@ -335,4 +343,51 @@ func (in *LocalIotaNode) logf(msg string, args ...any) {
 	if in.Logger != nil {
 		in.Logger.Printf("Iota Node: "+msg+"\n", args...)
 	}
+}
+
+var (
+	runningKeepalives    = make(map[string]struct{})
+	runningKeepaliveLock sync.Mutex
+)
+
+const (
+	keepaliveInterval = time.Second
+)
+
+func startLocalNodeKeepalive(nodeInfoFile string) {
+	runningKeepaliveLock.Lock()
+	defer runningKeepaliveLock.Unlock()
+
+	if _, ok := runningKeepalives[nodeInfoFile]; ok {
+		return
+	}
+
+	runningKeepalives[nodeInfoFile] = struct{}{}
+
+	go func() {
+		ticker := time.NewTicker(keepaliveInterval)
+		defer ticker.Stop()
+
+		for {
+			func() {
+				<-ticker.C
+
+				runningKeepaliveLock.Lock()
+				defer runningKeepaliveLock.Unlock()
+
+				if _, ok := runningKeepalives[nodeInfoFile]; !ok {
+					return
+				}
+
+				lo.Must0(os.Chtimes(nodeInfoFile, time.Time{}, time.Now()))
+			}()
+		}
+	}()
+}
+
+func stopLocalNodeKeepalive(nodeInfoFile string) {
+	runningKeepaliveLock.Lock()
+	defer runningKeepaliveLock.Unlock()
+
+	delete(runningKeepalives, nodeInfoFile)
 }
