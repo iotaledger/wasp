@@ -67,12 +67,6 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	localNodeInfo, localNodeStats, unlockLocalNodeInfo := in.lockAndModifyLocalNodeInfo()
 	defer unlockLocalNodeInfo()
 
-	if localNodeInfo.UseCount == 0 {
-		in.logf("Starting LocalIotaNode...")
-	} else {
-		in.logf("LocalIotaNode already started, reusing...")
-	}
-
 	contName := "wasp-iota-node-" + in.configHash() + "-" + localNodeInfo.RunID
 
 	imagePlatform := "linux/amd64"
@@ -100,6 +94,12 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	}
 
 	now := time.Now()
+
+	if localNodeInfo.UseCount == 0 {
+		in.logf("Starting LocalIotaNode...")
+	} else {
+		in.logf("LocalIotaNode already started, reusing...")
+	}
 
 	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
