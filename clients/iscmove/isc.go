@@ -90,10 +90,7 @@ func (a1 Anchor) Equals(a2 *Anchor) bool {
 	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
 		return false
 	}
-	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
-		return false
-	}
-	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+	if !bytes.Equal(a1.Assets.Value.ID[:], a2.Assets.Value.ID[:]) {
 		return false
 	}
 	if !a1.Assets.ID.Equals(a2.Assets.ID) {

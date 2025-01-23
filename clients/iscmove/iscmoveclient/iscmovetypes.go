@@ -27,7 +27,7 @@ type MoveRequest struct {
 	ID     iotago.ObjectID
 	Sender *cryptolib.Address
 	// XXX balances are empty if we don't fetch the dynamic fields
-	AssetsBag iscmove.Referent[iscmove.AssetsBagWithBalances] // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	AssetsBag iscmove.Referent[iscmove.AssetsBagWithBalances]
 	Message   iscmove.Message
 	Allowance []iscmove.CoinAllowance
 	GasBudget uint64

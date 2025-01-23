@@ -199,7 +199,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					var anchor *iscmove.Anchor
 					err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
-						f.log.Errorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.ID)
+						f.log.Errorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
