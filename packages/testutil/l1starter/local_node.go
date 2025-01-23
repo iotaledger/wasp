@@ -207,48 +207,48 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	container.SessionID()
 	in.container = container
 
-	startLocalNodeKeepalive(in.localNodeInfoFilePath())
+	if localNodeInfo.UseCount == 0 {
+		webAPIPort, err := container.MappedPort(ctx, "9000")
+		if err != nil {
+			container.Terminate(ctx)
+			panic(fmt.Errorf("failed to get web API port: %w", err))
+		}
+
+		faucetPort, err := container.MappedPort(ctx, "9123")
+		if err != nil {
+			container.Terminate(ctx)
+			panic(fmt.Errorf("failed to get faucet port: %w", err))
+		}
+
+		in.config.Ports.RPC = webAPIPort.Int()
+		in.config.Ports.Faucet = faucetPort.Int()
+
+		in.logf("Starting LocalIotaNode... done! took: %v", time.Since(now).Truncate(time.Millisecond))
+		in.waitAllHealthy(5 * time.Minute)
+
+		// TODO: should we deploy separate ISC contracts for each "user" of the node?
+		in.logf("Deploying ISC contracts...")
+		packageID, err := in.L1Client().DeployISCContracts(ctx, in.iscPackageOwner)
+		if err != nil {
+			panic(fmt.Errorf("isc contract deployment failed: %w", err))
+		}
+
+		in.config.IscPackageID = packageID
+
+		localNodeInfo.Config = in.config
+		localNodeStats.Startups++
+
+		in.logf("LocalIotaNode started successfully")
+	} else {
+		in.config = localNodeInfo.Config
+		in.logf("Connected to existing LocalIotaNode container: current users count = %v", localNodeInfo.UseCount+1)
+	}
 
 	localNodeInfo.UseCount++
 	localNodeStats.TotalUses++
 	localNodeStats.MaxUseCount = max(localNodeInfo.UseCount, localNodeStats.MaxUseCount)
 
-	if localNodeInfo.UseCount > 1 {
-		in.config = localNodeInfo.Config
-		in.logf("Connected to existing LocalIotaNode container: current users count = %v", localNodeInfo.UseCount)
-		return
-	}
-
-	webAPIPort, err := container.MappedPort(ctx, "9000")
-	if err != nil {
-		container.Terminate(ctx)
-		panic(fmt.Errorf("failed to get web API port: %w", err))
-	}
-
-	faucetPort, err := container.MappedPort(ctx, "9123")
-	if err != nil {
-		container.Terminate(ctx)
-		panic(fmt.Errorf("failed to get faucet port: %w", err))
-	}
-
-	in.config.Ports.RPC = webAPIPort.Int()
-	in.config.Ports.Faucet = faucetPort.Int()
-
-	in.logf("Starting LocalIotaNode... done! took: %v", time.Since(now).Truncate(time.Millisecond))
-	in.waitAllHealthy(5 * time.Minute)
-	in.logf("Deploying ISC contracts...")
-
-	packageID, err := in.L1Client().DeployISCContracts(ctx, ISCPackageOwner)
-	if err != nil {
-		panic(fmt.Errorf("isc contract deployment failed: %w", err))
-	}
-
-	in.config.IscPackageID = packageID
-
-	localNodeInfo.Config = in.config
-	localNodeStats.Startups++
-
-	in.logf("LocalIotaNode started successfully")
+	startLocalNodeKeepalive(in.localNodeInfoFilePath())
 }
 
 func (in *LocalIotaNode) stop() {
@@ -329,7 +329,7 @@ func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 	})
 
 	tryLoop(func() bool {
-		err := iotaclient.RequestFundsFromFaucet(ctx, ISCPackageOwner.Address(), in.FaucetURL())
+		err := iotaclient.RequestFundsFromFaucet(ctx, in.iscPackageOwner.Address(), in.FaucetURL())
 		if err != nil {
 			in.logf("FaucetLoop: err: %s", err)
 		}
