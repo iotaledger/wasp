@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
@@ -185,7 +186,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
-						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
+						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
 					})
 					if err != nil {
 						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
@@ -198,6 +199,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					var anchor *iscmove.Anchor
 					err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
 					if err != nil {
+						f.log.Errorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.ID)
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}

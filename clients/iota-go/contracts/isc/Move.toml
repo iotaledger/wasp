@@ -4,7 +4,9 @@ version = "0.0.1"
 edition = "2024.beta"
 
 [dependencies]
-Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev = "releases/iota-v0.7.0-release" }
+Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev ="develop" }
+MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/move-stdlib", rev ="develop" }
+Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/stardust",  rev ="develop"  }
 
 [addresses]
 isc = "0x0"
