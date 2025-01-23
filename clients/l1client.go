@@ -239,13 +239,17 @@ func (c *l1Client) Health(ctx context.Context) error {
 
 func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
 	iscBytecode := contracts.ISC()
-	txnBytes := lo.Must(c.Publish(ctx, iotaclient.PublishRequest{
+	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
 		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
-	}))
-	txnResponse := lo.Must(c.SignAndExecuteTransaction(
+	})
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
+	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
@@ -255,7 +259,11 @@ func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Sig
 				ShowObjectChanges: true,
 			},
 		},
-	))
+	)
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
 	if !txnResponse.Effects.Data.IsSuccess() {
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}

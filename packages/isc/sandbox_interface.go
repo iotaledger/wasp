@@ -425,7 +425,7 @@ func (s StateAnchor) GetStateIndex() uint32 {
 }
 
 func (s StateAnchor) GetAssetsBag() *iscmove.AssetsBag {
-	return &s.anchor.Object.Assets
+	return s.anchor.Object.Assets.Value
 }
 
 func (s StateAnchor) ChainID() ChainID {

@@ -303,7 +303,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 		coinType,
 	)
 
-	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.ID)
+	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), assetsBag.Size)
 	bal, ok := assetsBag.Balances[testCointype]

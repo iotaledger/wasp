@@ -55,8 +55,11 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		}
 	}
 	return iscmove.Anchor{
-		ID:            id,
-		Assets:        assets,
+		ID: id,
+		Assets: iscmove.Referent[iscmove.AssetsBag]{
+			ID:    *iotatest.RandomAddress(),
+			Value: &assets,
+		},
 		StateMetadata: stateMetadata,
 		StateIndex:    stateIndex,
 	}
