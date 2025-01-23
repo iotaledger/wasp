@@ -10,10 +10,6 @@ pushd tools/wasp-cli
 go mod tidy
 popd
 
-pushd tools/gascalibration
-go mod tidy
-popd
-
 pushd tools/evm/evmemulator
 go mod tidy
 popd

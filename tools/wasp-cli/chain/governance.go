@@ -40,7 +40,7 @@ func initChangeAccessNodesCmd() *cobra.Command {
 			if len(args)%2 != 0 {
 				log.Fatal("wrong number of arguments")
 			}
-			pars := make([]lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction], 0)
+			pars := make(governance.ChangeAccessNodeActions, 0)
 
 			for i := 1; i < len(args); i += 2 {
 				pubkey, err := cryptolib.PublicKeyFromString(args[i])
