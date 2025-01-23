@@ -53,7 +53,7 @@ func TestUnmarshalBCS(t *testing.T) {
 	req := iscmoveclient.MoveRequest{
 		ID:     *iotatest.RandomAddress(),
 		Sender: cryptolib.NewAddressFromIota(iotatest.RandomAddress()),
-		AssetsBag: iscmoveclient.Referent[iscmove.AssetsBagWithBalances]{
+		AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
 			ID: *iotatest.RandomAddress(),
 			Value: &iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmovetest.RandomAssetsBag(),
