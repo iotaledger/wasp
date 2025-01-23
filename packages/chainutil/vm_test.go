@@ -57,9 +57,12 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		ID:            *iotatest.RandomAddress(),
 		StateMetadata: stateMetadataBytes,
 		StateIndex:    0,
-		Assets: iscmove.AssetsBag{
-			ID:   *iotatest.RandomAddress(),
-			Size: 1,
+		Assets: iscmove.Referent[iscmove.AssetsBag]{
+			ID: *iotatest.RandomAddress(),
+			Value: &iscmove.AssetsBag{
+				ID:   *iotatest.RandomAddress(),
+				Size: 1,
+			},
 		},
 	}
 	stateAnchor := isc.NewStateAnchor(
