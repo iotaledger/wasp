@@ -486,7 +486,7 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
 	ret.userAgentID = isc.NewAddressAgentID(ret.userAddr)
 
-	initBaseTokens := coin.Value(0)
+	initBaseTokens := coin.Value(isc.GasCoinTargetValue)
 	if len(initCommonAccountBaseTokens) != 0 {
 		initBaseTokens = initCommonAccountBaseTokens[0]
 	}
@@ -553,7 +553,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -567,7 +567,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -604,7 +604,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -625,7 +625,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 	t.Run("unwrap use case 2", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -644,7 +644,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
