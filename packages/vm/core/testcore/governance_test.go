@@ -687,7 +687,7 @@ func TestGovernanceSetMustGetPayoutAgentID(t *testing.T) {
 	require.ErrorContains(t, err, "unauthorized access")
 }
 
-func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
+func TestGovernanceSetGetGasCoinTargetValue(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
 	initRetDict, err := ch.CallView(governance.ViewGetMinCommonAccountBalance.Message())
@@ -695,10 +695,10 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	retMinCommonAccountBalance := lo.Must(governance.ViewGetMinCommonAccountBalance.DecodeOutput(initRetDict))
 	require.Equal(t, governance.DefaultMinBaseTokensOnCommonAccount, retMinCommonAccountBalance)
 
-	minCommonAccountBalance := coin.Value(123456)
+	gasCoinTargetValue := coin.Value(123456)
 	_, err = ch.PostRequestSync(
 		solo.NewCallParams(
-			governance.FuncSetMinCommonAccountBalance.Message(minCommonAccountBalance),
+			governance.FuncSetMinCommonAccountBalance.Message(gasCoinTargetValue),
 		).WithMaxAffordableGasBudget(),
 		nil,
 	)
@@ -708,7 +708,7 @@ func TestGovernanceSetGetMinCommonAccountBalance(t *testing.T) {
 	require.NoError(t, err)
 	retMinCommonAccountBalance = lo.Must(governance.ViewGetMinCommonAccountBalance.DecodeOutput(retDict))
 	require.NoError(t, err)
-	require.Equal(t, minCommonAccountBalance, retMinCommonAccountBalance)
+	require.Equal(t, gasCoinTargetValue, retMinCommonAccountBalance)
 }
 
 func TestGovCallsNoBalance(t *testing.T) {

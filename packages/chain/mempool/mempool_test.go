@@ -15,7 +15,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -481,7 +480,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
-			Value: isc.GasCoinMaxValue,
+			Value: isc.GasCoinTargetValue,
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},

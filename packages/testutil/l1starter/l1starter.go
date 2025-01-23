@@ -9,6 +9,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"fmt"
+	"net/url"
 	"sync/atomic"
 	"testing"
 
@@ -86,19 +87,26 @@ func TestMain(m *testing.M) {
 	}
 
 	testConfig := LoadConfig()
+	var node IotaNodeEndpoint
 
 	if !testConfig.IsLocal {
 		iotaNode := NewRemoteIotaNode(testConfig.APIURL, testConfig.FaucetURL, ISCPackageOwner)
 		iotaNode.start(context.Background())
 
-		var iotaNodeEndpoint IotaNodeEndpoint = iotaNode
-		instance.Store(&iotaNodeEndpoint)
+		node = iotaNode
+		instance.Store(&node)
 	} else {
-		node, cancel := StartNode(context.Background())
+		var cancel func()
+		node, cancel = StartNode(context.Background())
 		defer cancel()
 
 		instance.Store(&node)
 	}
+
+	rebasedExplorerUrl := "https://explorer.rebased.iota.org"
+	explorerUrl := rebasedExplorerUrl + "?network=" + url.QueryEscape(node.APIURL())
+	fmt.Printf("L1Starter initialized. \nAPI URL: %s\nFaucet URL: %s\nExplorer URL:%s\n"+
+		"(To use local nodes in the Explorer, it is required to disable CORS via an extension or command flags)\n", node.APIURL(), node.FaucetURL(), explorerUrl)
 
 	m.Run()
 }

@@ -263,7 +263,11 @@ func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (
 func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
 	ret := NewEmptyAssets()
 	for k, v := range assets.Coins {
-		ret.Coins.Add(coin.MustTypeFromString(k.String()), coin.Value(v))
+		coinType, err := coin.TypeFromString(k.String())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse string to coin.Type: %w", err)
+		}
+		ret.Coins.Add(coinType, coin.Value(v))
 	}
 	return ret, nil
 }

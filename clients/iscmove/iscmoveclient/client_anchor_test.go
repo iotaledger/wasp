@@ -126,15 +126,15 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 }
 
 func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.Signer) *iscmove.AnchorWithRef {
-	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinMaxValue)
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(signer), l1starter.Instance().L1Client(), isc.GasCoinTargetValue)
 
-	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinMaxValue, iotaclient.DefaultGasBudget)
+	coinObjects, err := client.GetCoinObjsForTargetAmount(context.Background(), signer.Address().AsIotaAddress(), isc.GasCoinTargetValue, iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
 
-	chainGasCoins, gasCoin, err := coinObjects.PickIOTACoinsWithGas(iotajsonrpc.NewBigInt(isc.GasCoinMaxValue).Int, iotaclient.DefaultGasBudget, iotajsonrpc.PickMethodSmaller)
+	chainGasCoins, gasCoin, err := coinObjects.PickIOTACoinsWithGas(iotajsonrpc.NewBigInt(isc.GasCoinTargetValue).Int, iotaclient.DefaultGasBudget, iotajsonrpc.PickMethodSmaller)
 	require.NoError(t, err)
 
-	selectedChainGasCoin, err := chainGasCoins.PickCoinNoLess(isc.GasCoinMaxValue)
+	selectedChainGasCoin, err := chainGasCoins.PickCoinNoLess(isc.GasCoinTargetValue)
 	require.NoError(t, err)
 
 	anchor, err := client.StartNewChain(

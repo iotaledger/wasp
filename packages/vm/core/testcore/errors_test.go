@@ -22,9 +22,9 @@ import (
 func setupErrorsTest(t *testing.T) *solo.Chain {
 	corecontracts.PrintWellKnownHnames()
 	env := solo.New(t, &solo.InitOptions{Debug: true})
-	chain, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	chain, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-	chain.MustDepositBaseTokensToL2(10_000_000, nil)
+	chain.MustDepositBaseTokensToL2(10*isc.Million, nil)
 	defer chain.Log().Sync()
 
 	chain.CheckChain()
@@ -203,7 +203,8 @@ func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithoutArgs(t *testi
 	require.ErrorAs(t, receipt.Error, &receiptErrorTestType)
 
 	require.EqualValues(t, receipt.Error.Code(), typedError.Code())
-	require.EqualValues(t, receipt.Error.Params, typedError.Params())
+	require.Empty(t, typedError.Params())
+	require.Empty(t, receipt.Error.Params)
 }
 
 func TestUnresolvedErrorIsStoredInReceiptAndIsEqualToVMErrorWithArgs(t *testing.T) { //nolint:dupl

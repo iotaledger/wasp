@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // this type "CoinType" is used only in iota-go and iscmoveclient
@@ -29,6 +30,13 @@ func MustCoinTypeFromString(s string) CoinType {
 
 func (t CoinType) String() string {
 	return string(t)
+}
+
+func (t *CoinType) UnmarshalBCS(d *bcs.Decoder) error {
+	var err error
+	s := bcs.Decode[string](d)
+	*t, err = CoinTypeFromString(s)
+	return err
 }
 
 func (t CoinType) TypeTag() iotago.TypeTag {

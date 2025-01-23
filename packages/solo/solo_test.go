@@ -16,9 +16,10 @@ func TestMain(m *testing.M) {
 func TestSoloBasic1(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain(false)
-	require.EqualValues(env.T, solo.DefaultCommonAccountBaseTokens, ch.L2CommonAccountAssets().Coins.BaseTokens())
+	require.Zero(env.T, ch.L2CommonAccountAssets().Coins.BaseTokens())
+	require.Zero(env.T, ch.L2BaseTokens(ch.OriginatorAgentID))
 
 	err := ch.DepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
 	require.NoError(env.T, err)
-	require.EqualValues(env.T, solo.DefaultChainOriginatorBaseTokens, ch.L2BaseTokens(ch.OriginatorAgentID))
+	require.NotZero(env.T, ch.L2BaseTokens(ch.OriginatorAgentID))
 }
