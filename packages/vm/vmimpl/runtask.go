@@ -131,7 +131,6 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
 
-	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
 	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
 		taskResult.StateMetadata,
 		uint64(topUpFee),
