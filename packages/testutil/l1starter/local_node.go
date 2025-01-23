@@ -110,7 +110,6 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 		panic(fmt.Errorf("failed to start/reuse container: %w", err))
 	}
 
-	container.SessionID()
 	in.container = container
 
 	if localNodeInfo.UseCount == 0 {
