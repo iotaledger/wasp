@@ -19,8 +19,8 @@ var Processor = governance.Contract.Processor(nil,
 	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
 	governance.FuncSetPayoutAgentID.WithHandler(setPayoutAgentID),
 	governance.ViewGetPayoutAgentID.WithHandler(getPayoutAgentID),
-	governance.FuncSetMinCommonAccountBalance.WithHandler(setMinCommonAccountBalance),
-	governance.ViewGetMinCommonAccountBalance.WithHandler(getMinCommonAccountBalance),
+	governance.FuncSetGasCoinTargetValue.WithHandler(setGasCoinTargetValue),
+	governance.ViewGetGasCoinTargetValue.WithHandler(getGasCoinTargetValue),
 	governance.ViewGetChainOwner.WithHandler(getChainOwner),
 
 	// fees

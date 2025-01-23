@@ -6,12 +6,11 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -43,23 +42,33 @@ func newVmContext(
 	}
 }
 
-// TODO: Improve Topping up logic
-func calculateTopUpFee(vmctx *vmContext, gasCoinBalance uint64) uint64 {
-	collectedFees := uint64(vmctx.blockGas.feeCharged)
+func (vmctx *vmContext) calculateTopUpFee() coin.Value {
+	targetValue := governance.NewStateReaderFromChainState(vmctx.stateDraft).GetGasCoinTargetValue()
+	gasCoinBalance := vmctx.task.GasCoin.Value
 
-	// If balance is already above minimum, no need to top up
-	if gasCoinBalance >= isc.TopUpFeeMin {
-		return 0
+	topUp := coin.Value(0)
+	if gasCoinBalance < targetValue {
+		topUp = targetValue - gasCoinBalance
 	}
 
-	requiredTopUp := isc.TopUpFeeMin - gasCoinBalance
-
-	// If we've collected enough fees to cover the top-up, cap at what we collected
-	if requiredTopUp > collectedFees {
-		return collectedFees
+	bal := vmctx.commonAccountBalance()
+	if bal < topUp {
+		vmctx.task.Log.Warnf(
+			"not enough tokens in common account for topping up gas coin (has %d, want %d)",
+			bal,
+			topUp,
+		)
+		topUp = bal
 	}
 
-	return requiredTopUp
+	vmctx.task.Log.Debugf(
+		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
+		gasCoinBalance,
+		targetValue,
+		bal,
+		topUp,
+	)
+	return topUp
 }
 
 // runTask runs batch of requests on VM
@@ -102,6 +111,11 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
+	topUpFee := vmctx.calculateTopUpFee()
+	if topUpFee > 0 {
+		vmctx.deductTopUpFeeFromCommonAccount(topUpFee)
+	}
+
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.extractBlock(
 		numProcessed, numSuccess, numOffLedger,
 	)
@@ -117,9 +131,10 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
 
-	topUpFee := calculateTopUpFee(vmctx, uint64(task.GasCoin.Value))
-
-	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
+	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
+		taskResult.StateMetadata,
+		uint64(topUpFee),
+	)
 	return taskResult
 }
 

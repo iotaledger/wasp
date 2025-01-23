@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -185,7 +184,7 @@ func runRequestsAndTransitionAnchor(
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
-			Value: isc.GasCoinMaxValue,
+			Value: isc.GasCoinTargetValue,
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},
