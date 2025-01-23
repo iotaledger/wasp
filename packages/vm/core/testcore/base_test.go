@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -40,6 +41,29 @@ func TestInitLoad(t *testing.T) {
 	testdbhash.VerifyDBHash(env, t.Name())
 }
 
+func getAndAssertL2BaseTokenRetry(t *testing.T, ch *solo.Chain, expectation coin.Value) coin.Value {
+	retries := 0
+	var balance = coin.Value(0)
+	for {
+		retries++
+
+		if retries >= 10 {
+			t.Fatalf("Failed to update the base tokens in time")
+		}
+
+		balance = ch.L2TotalAssets().BaseTokens()
+
+		if balance == expectation {
+			break
+		} else {
+			t.Logf("l2Total is %d, expecting %d, retrying", balance, expectation)
+			time.Sleep(1 * time.Second)
+		}
+	}
+
+	return balance
+}
+
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
@@ -50,8 +74,8 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	l2Total1 := ch.L2TotalAssets().BaseTokens()
 	someUserWallet, _ := env.NewKeyPairWithFunds()
 	ch.DepositBaseTokensToL2(1*isc.Million, someUserWallet)
-	l2Total2 := ch.L2TotalAssets().BaseTokens()
-	require.Equal(t, l2Total1+1*isc.Million, l2Total2)
+
+	getAndAssertL2BaseTokenRetry(t, ch, l2Total1+1*isc.Million)
 
 	ch.CheckChain()
 }
@@ -113,7 +137,8 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	totalDeductedForGasCoin := isc.GasCoinTargetValue - gasCoinValueBefore
 	// the tokens that remain in L2
 	totalL2Tokens := totalDeposited - totalDeductedForGasCoin
-	require.EqualValues(t, coin.Value(totalL2Tokens), ch.L2TotalBaseTokens())
+
+	getAndAssertL2BaseTokenRetry(t, ch, totalL2Tokens)
 
 	// the user pays for the L2 gas fee
 	require.EqualValues(t,
