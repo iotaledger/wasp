@@ -61,100 +61,6 @@ func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
 	}
 }
 
-// Returns hash string based for all of the input parameters of the node.
-func (in *LocalIotaNode) configHash() string {
-	configHashBytes := md5.Sum(in.iscPackageOwner.Address().Bytes())
-	configHash := hex.EncodeToString(configHashBytes[:])
-	return configHash
-}
-
-var tmpTestFilesDir = os.TempDir() + "/wasp/testing"
-
-func (in *LocalIotaNode) localNodeInfoFilePath() string {
-	configHash := in.configHash()
-
-	localNodeInfoFilePath := tmpTestFilesDir + "/shared-local-iota-node-" + configHash
-
-	return localNodeInfoFilePath
-}
-
-func (in *LocalIotaNode) localNodeUsageStatsFilePath() string {
-	return tmpTestFilesDir + "/shared-local-iota-node-usage-stats"
-}
-
-func (in *LocalIotaNode) nodeInfoHasExpired() bool {
-	infoFileStat := lo.Must(os.Stat(in.localNodeInfoFilePath()))
-	lastKeepaliveTime := infoFileStat.ModTime()
-
-	keepaliveExpires := time.Since(lastKeepaliveTime) > 2*keepaliveInterval
-
-	return keepaliveExpires
-}
-
-func (in *LocalIotaNode) lockAndModifyLocalNodeInfo() (_ *sharedLocalNodeInfo, _ *sharedLocalNodeUsageStats, unlockLocalNodeInfo func()) {
-	in.logf("Locking shared local node info file...")
-	info, unlockInfo := openJSONFile[sharedLocalNodeInfo](in, "local node info", in.localNodeInfoFilePath())
-
-	if in.nodeInfoHasExpired() {
-		in.logf("Local node info file is too old - ignoring old container if exists")
-		*info = sharedLocalNodeInfo{}
-	}
-
-	if info.RunID == "" {
-		info.RunID = strconv.Itoa(rand.Int())
-	}
-
-	in.logf("Locking shared local node usage stats file...")
-	stats, unlockStats := openJSONFile[sharedLocalNodeUsageStats](in, "local node stats", in.localNodeUsageStatsFilePath())
-
-	return info, stats, sync.OnceFunc(func() {
-		unlockStats()
-		unlockInfo()
-	})
-}
-
-func openJSONFile[Data any](in *LocalIotaNode, hmName, filePath string) (_ *Data, saveAndReleaseFile func()) {
-	var data Data
-
-	lo.Must0(os.MkdirAll(path.Dir(filePath), 0755))
-
-	fLock := fslock.New(filePath + ".lock")
-	fLock.Lock()
-
-	f, err := os.OpenFile(filePath, os.O_RDWR, 0644)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			panic(fmt.Errorf("failed to open %v file at %v: %w", hmName, filePath, err))
-		}
-
-		in.logf("%v file does not exist - creating: %s", hmName, filePath)
-		f = lo.Must(os.Create(filePath))
-		lo.Must0(json.NewEncoder(f).Encode(lo.Empty[Data]()))
-		lo.Must(f.Seek(0, 0))
-	} else {
-		in.logf("Reading %v file: %s", hmName, filePath)
-		lo.Must0(json.NewDecoder(f).Decode(&data))
-	}
-
-	return &data, sync.OnceFunc(func() {
-		in.logf("Writing %v file...", hmName)
-		lo.Must0(f.Truncate(0))
-		lo.Must(f.Seek(0, 0))
-		lo.Must0(json.NewEncoder(f).Encode(data))
-		lo.Must0(f.Sync())
-		lo.Must0(f.Close())
-		fLock.Unlock()
-	})
-}
-
-func (in *LocalIotaNode) deleteLocalNodeInfo() {
-	localNodeInfoFilePath := in.localNodeInfoFilePath()
-
-	in.logf("Deleting shared local node info file: %s", localNodeInfoFilePath)
-	lo.Must0(os.Remove(localNodeInfoFilePath))
-	lo.Must0(os.Remove(localNodeInfoFilePath + ".lock"))
-}
-
 func (in *LocalIotaNode) start(ctx context.Context) {
 	in.ctx = ctx
 
@@ -268,6 +174,100 @@ func (in *LocalIotaNode) stop() {
 	}
 
 	instance.Store(nil)
+}
+
+// Returns hash string based for all of the input parameters of the node.
+func (in *LocalIotaNode) configHash() string {
+	configHashBytes := md5.Sum(in.iscPackageOwner.Address().Bytes())
+	configHash := hex.EncodeToString(configHashBytes[:])
+	return configHash
+}
+
+var tmpTestFilesDir = os.TempDir() + "/wasp/testing"
+
+func (in *LocalIotaNode) localNodeInfoFilePath() string {
+	configHash := in.configHash()
+
+	localNodeInfoFilePath := tmpTestFilesDir + "/shared-local-iota-node-" + configHash
+
+	return localNodeInfoFilePath
+}
+
+func (in *LocalIotaNode) localNodeUsageStatsFilePath() string {
+	return tmpTestFilesDir + "/shared-local-iota-node-usage-stats"
+}
+
+func (in *LocalIotaNode) nodeInfoHasExpired() bool {
+	infoFileStat := lo.Must(os.Stat(in.localNodeInfoFilePath()))
+	lastKeepaliveTime := infoFileStat.ModTime()
+
+	keepaliveExpires := time.Since(lastKeepaliveTime) > 2*keepaliveInterval
+
+	return keepaliveExpires
+}
+
+func (in *LocalIotaNode) lockAndModifyLocalNodeInfo() (_ *sharedLocalNodeInfo, _ *sharedLocalNodeUsageStats, unlockLocalNodeInfo func()) {
+	in.logf("Locking shared local node info file...")
+	info, unlockInfo := openJSONFile[sharedLocalNodeInfo](in, "local node info", in.localNodeInfoFilePath())
+
+	if in.nodeInfoHasExpired() {
+		in.logf("Local node info file is too old - ignoring old container if exists")
+		*info = sharedLocalNodeInfo{}
+	}
+
+	if info.RunID == "" {
+		info.RunID = strconv.Itoa(rand.Int())
+	}
+
+	in.logf("Locking shared local node usage stats file...")
+	stats, unlockStats := openJSONFile[sharedLocalNodeUsageStats](in, "local node stats", in.localNodeUsageStatsFilePath())
+
+	return info, stats, sync.OnceFunc(func() {
+		unlockStats()
+		unlockInfo()
+	})
+}
+
+func openJSONFile[Data any](in *LocalIotaNode, hmName, filePath string) (_ *Data, saveAndReleaseFile func()) {
+	var data Data
+
+	lo.Must0(os.MkdirAll(path.Dir(filePath), 0755))
+
+	fLock := fslock.New(filePath + ".lock")
+	fLock.Lock()
+
+	f, err := os.OpenFile(filePath, os.O_RDWR, 0644)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			panic(fmt.Errorf("failed to open %v file at %v: %w", hmName, filePath, err))
+		}
+
+		in.logf("%v file does not exist - creating: %s", hmName, filePath)
+		f = lo.Must(os.Create(filePath))
+		lo.Must0(json.NewEncoder(f).Encode(lo.Empty[Data]()))
+		lo.Must(f.Seek(0, 0))
+	} else {
+		in.logf("Reading %v file: %s", hmName, filePath)
+		lo.Must0(json.NewDecoder(f).Decode(&data))
+	}
+
+	return &data, sync.OnceFunc(func() {
+		in.logf("Writing %v file...", hmName)
+		lo.Must0(f.Truncate(0))
+		lo.Must(f.Seek(0, 0))
+		lo.Must0(json.NewEncoder(f).Encode(data))
+		lo.Must0(f.Sync())
+		lo.Must0(f.Close())
+		fLock.Unlock()
+	})
+}
+
+func (in *LocalIotaNode) deleteLocalNodeInfo() {
+	localNodeInfoFilePath := in.localNodeInfoFilePath()
+
+	in.logf("Deleting shared local node info file: %s", localNodeInfoFilePath)
+	lo.Must0(os.Remove(localNodeInfoFilePath))
+	lo.Must0(os.Remove(localNodeInfoFilePath + ".lock"))
 }
 
 func (in *LocalIotaNode) ISCPackageID() iotago.PackageID {
