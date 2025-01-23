@@ -18,8 +18,6 @@ INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 DOCKER_IMAGE_NAME=wasp
 DOCKER_IMAGE_TAG=develop
 
-TEST_RUN_ID=$(shell date)
-
 all: build-lint
 
 compile-solidity:
