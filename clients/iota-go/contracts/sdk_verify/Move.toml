@@ -5,9 +5,9 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 
 [dependencies]
-MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/move-stdlib", rev = "v0.9.0-alpha" }
-Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/stardust",  rev = "v0.9.0-alpha"  }
-Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev = "v0.9.0-alpha" }
+MoveStdlib = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/move-stdlib", rev = "releases/iota-v0.9.0-release" }
+Stardust = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/stardust",  rev = "releases/iota-v0.9.0-release"  }
+Iota = { git = "git@github.com:iotaledger/iota.git", subdir = "crates/iota-framework/packages/iota-framework",  rev = "releases/iota-v0.9.0-release" }
 
 
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
