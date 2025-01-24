@@ -4,6 +4,7 @@
 package emulator
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
@@ -232,7 +233,7 @@ func makeHeader(h *types.Header) *header {
 
 // note we do not check for excess data bytes because the old format was longer
 func mustHeaderFromBytes(data []byte) (ret *header) {
-	return bcs.MustUnmarshal[*header](data)
+	return bcs.MustUnmarshalStream[*header](bytes.NewReader(data))
 }
 
 func (h *header) Bytes() []byte {
