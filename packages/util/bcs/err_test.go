@@ -71,14 +71,26 @@ type FunkyStruct struct {
 	A            uint64
 	CanSerialize bool   `bcs:"-"`
 	ErrorMessage string `bcs:"-"`
+	MissError    bool   `bcs:"-"`
 }
 
 func (s *FunkyStruct) MarshalBCS(e *bcs.Encoder) error {
 	if !s.CanSerialize {
+		err := fmt.Errorf("test error from FunkyStruct")
 		if s.ErrorMessage != "" {
-			return errors.New(s.ErrorMessage)
+			err = errors.New(s.ErrorMessage)
 		}
-		return fmt.Errorf("test error from FunkyStruct")
+
+		if s.MissError {
+			e.Encode(&FunkyStruct{
+				CanSerialize: false,
+				ErrorMessage: err.Error() + " (missed)",
+			})
+
+			return e.Err()
+		}
+
+		return err
 	}
 
 	e.Encode(s.A)
@@ -87,10 +99,21 @@ func (s *FunkyStruct) MarshalBCS(e *bcs.Encoder) error {
 
 func (s *FunkyStruct) UnmarshalBCS(d *bcs.Decoder) error {
 	if !s.CanSerialize {
+		err := fmt.Errorf("test error from FunkyStruct")
 		if s.ErrorMessage != "" {
-			return errors.New(s.ErrorMessage)
+			err = errors.New(s.ErrorMessage)
 		}
-		return fmt.Errorf("test error from FunkyStruct")
+
+		if s.MissError {
+			d.Decode(&FunkyStruct{
+				CanSerialize: false,
+				ErrorMessage: err.Error() + " (missed)",
+			})
+
+			return d.Err()
+		}
+
+		return err
 	}
 
 	s.A = d.ReadUint64()
@@ -192,7 +215,8 @@ func TestAutomaticErrorCheck(t *testing.T) {
 		b: 123,
 	})
 	require.Error(t, err)
-	require.Equal(t, "test error from FunkyStruct", err.Error())
+	expectedErr := "encoding *bcs_test.StructWithFunkyFields: *bcs_test.StructWithFunkyFields: custom encoder: encoding bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: test error from FunkyStruct"
+	require.Equal(t, expectedErr, err.Error())
 
 	// Also check, that second error won't overwrite first one
 	_, err = bcs.Marshal(&StructWithFunkyFields{
@@ -209,7 +233,8 @@ func TestAutomaticErrorCheck(t *testing.T) {
 		b: 123,
 	})
 	require.Error(t, err)
-	require.Equal(t, "other error", err.Error())
+	expectedErr = "encoding *bcs_test.StructWithFunkyFields: *bcs_test.StructWithFunkyFields: custom encoder: encoding bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: other error"
+	require.Equal(t, expectedErr, err.Error())
 
 	// And check that second error was also there
 	_, err = bcs.Marshal(&StructWithFunkyFields{
@@ -226,5 +251,122 @@ func TestAutomaticErrorCheck(t *testing.T) {
 		b: 123,
 	})
 	require.Error(t, err)
-	require.Equal(t, "test error from FunkyStruct", err.Error())
+	expectedErr = "encoding *bcs_test.StructWithFunkyFields: *bcs_test.StructWithFunkyFields: custom encoder: encoding bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: test error from FunkyStruct"
+	require.Equal(t, expectedErr, err.Error())
+}
+
+func TestExcessBytesErr(t *testing.T) {
+	_, err := bcs.Unmarshal[byte]([]byte{1, 2, 3, 4})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "excess bytes: 3")
+
+	_, err = bcs.Unmarshal[string]([]byte{3, 'a', 'b', 'c', 'd', 'e'})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "excess bytes: 2")
+
+	_, err = bcs.Unmarshal[BasicStruct]([]byte{
+		1, 2, 3, 4, 5, 6, 7, 8,
+		3, 'a', 'b', 'c', 'd',
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "excess bytes: 1")
+
+	_, err = bcs.Unmarshal[WithByteArr]([]byte{
+		3, 'a', 'b', 'c',
+		5, 1, 2, 3, 4, 5,
+		4, 'e', 'f', 'g', 'h',
+	})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "bytearr: excess bytes: 1")
+}
+
+func TestErrorMsg(t *testing.T) {
+	type Inner struct {
+		A int
+		F *FunkyStruct `bcs:"optional"`
+		S []*FunkyStruct
+		C string
+	}
+
+	type Outer struct {
+		D     bool
+		Inner *Inner
+		F     uint32
+	}
+
+	vErrInFieldOfField := Outer{
+		D: true,
+		Inner: &Inner{
+			A: 42,
+			F: &FunkyStruct{
+				A:            42,
+				CanSerialize: true,
+			},
+		},
+		F: 123,
+	}
+
+	vErrInFieldOfField.Inner.F.CanSerialize = false
+	_, err := bcs.Marshal(&vErrInFieldOfField)
+	require.Error(t, err)
+	expectedErr := "encoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: F: *bcs_test.FunkyStruct: custom encoder: test error from FunkyStruct"
+	require.Equal(t, expectedErr, err.Error())
+
+	vErrInFieldOfField.Inner.F.MissError = true
+	_, err = bcs.Marshal(&vErrInFieldOfField)
+	require.Error(t, err)
+	expectedErr = "encoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: F: *bcs_test.FunkyStruct: custom encoder: encoding *bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: test error from FunkyStruct (missed)"
+	require.Equal(t, expectedErr, err.Error())
+
+	vErrInFieldOfField.Inner.F.CanSerialize = true
+	vErrInFieldOfField.Inner.F.MissError = false
+	encodedFF := bcs.MustMarshal(&vErrInFieldOfField)
+
+	vErrInFieldOfField.Inner.F.CanSerialize = false
+	_, err = bcs.UnmarshalInto(encodedFF, &vErrInFieldOfField)
+	require.Error(t, err)
+	expectedErr = "decoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: F: bcs_test.FunkyStruct: custom decoder: test error from FunkyStruct"
+	require.Equal(t, expectedErr, err.Error())
+
+	vErrInFieldOfField.Inner.F.MissError = true
+	_, err = bcs.UnmarshalInto(encodedFF, &vErrInFieldOfField)
+	require.Error(t, err)
+	expectedErr = "decoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: F: bcs_test.FunkyStruct: custom decoder: decoding *bcs_test.FunkyStruct: bcs_test.FunkyStruct: custom decoder: test error from FunkyStruct (missed)"
+	require.Equal(t, expectedErr, err.Error())
+
+	vErrInElemOfSlice := Outer{
+		D: true,
+		Inner: &Inner{
+			A: 42,
+			S: []*FunkyStruct{
+				{
+					A:            42,
+					CanSerialize: true,
+				},
+			},
+		},
+		F: 123,
+	}
+
+	vErrInElemOfSlice.Inner.S[0].CanSerialize = false
+	_, err = bcs.Marshal(&vErrInElemOfSlice)
+	require.Error(t, err)
+	expectedErr = "encoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: S: []*bcs_test.FunkyStruct: [0]: *bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: test error from FunkyStruct"
+	require.Equal(t, expectedErr, err.Error())
+
+	vErrInElemOfSlice.Inner.S[0].MissError = true
+	_, err = bcs.Marshal(&vErrInElemOfSlice)
+	require.Error(t, err)
+	expectedErr = "encoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: S: []*bcs_test.FunkyStruct: [0]: *bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: encoding *bcs_test.FunkyStruct: *bcs_test.FunkyStruct: custom encoder: test error from FunkyStruct (missed)"
+	require.Equal(t, expectedErr, err.Error())
+
+	vErrInElemOfSlice.Inner.S[0].CanSerialize = true
+	vErrInElemOfSlice.Inner.S[0].MissError = false
+	encodedS := bcs.MustMarshal(&vErrInElemOfSlice)
+
+	vErrInElemOfSlice.Inner.S[0].CanSerialize = false
+	_, err = bcs.UnmarshalInto(encodedS, &vErrInElemOfSlice)
+	require.Error(t, err)
+	expectedErr = "decoding *bcs_test.Outer: bcs_test.Outer: Inner: bcs_test.Inner: S: []*bcs_test.FunkyStruct: [0]: bcs_test.FunkyStruct: custom decoder: test error from FunkyStruct"
+	require.Equal(t, expectedErr, err.Error())
 }

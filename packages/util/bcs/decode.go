@@ -285,10 +285,10 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 			if d.r.Err == nil {
 				d.r.Err = err
 			}
-			return fmt.Errorf("%v: custom decoder: %w", v.Type(), err)
+			return d.handleErrorf("%v: custom decoder: %w", v.Type(), err)
 		}
 		if d.r.Err != nil {
-			return fmt.Errorf("%v: custom decoder: %w", v.Type(), d.r.Err)
+			return d.handleErrorf("%v: custom decoder: %w", v.Type(), d.r.Err)
 		}
 
 		if tInfo.Init != nil {
@@ -358,10 +358,10 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	}
 
 	if err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return d.handleErrorf("%v: %w", v.Type(), err)
 	}
 	if d.r.Err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), d.r.Err)
+		return d.handleErrorf("%v: %w", v.Type(), d.r.Err)
 	}
 
 	if tInfo.Init != nil {
@@ -430,7 +430,7 @@ func (d *Decoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
 		var err error
 		res.FieldOptions, res.FieldHasTag, err = FieldOptionsFromStruct(t, d.cfg.TagName)
 		if err != nil {
-			return typeInfo{}, fmt.Errorf("parsing struct fields options: %w", err)
+			return typeInfo{}, d.handleErrorf("parsing struct fields options: %w", err)
 		}
 	}
 
@@ -639,7 +639,7 @@ func (d *Decoder) decodeArray(v reflect.Value, typeOpts TypeOptions) error {
 	// decoder requires addressable value.
 	tInfo, err := d.getEncodedTypeInfo(reflect.PointerTo(elemType))
 	if err != nil {
-		return fmt.Errorf("element: %w", err)
+		return d.handleErrorf("element: %w", err)
 	}
 
 	if !tInfo.HasCustomizations() {
@@ -660,13 +660,13 @@ func (d *Decoder) decodeArray(v reflect.Value, typeOpts TypeOptions) error {
 				return d.decodeValue(v.Index(i).Addr(), nil, &tInfo)
 			})
 			if err != nil {
-				return fmt.Errorf("[%v]: %w", i, err)
+				return d.handleErrorf("[%v]: %w", i, err)
 			}
 		}
 	} else {
 		for i := 0; i < v.Len(); i++ {
 			if err := d.decodeValue(v.Index(i).Addr(), nil, &tInfo); err != nil {
-				return fmt.Errorf("[%v]: %w", i, err)
+				return d.handleErrorf("[%v]: %w", i, err)
 			}
 		}
 	}
@@ -691,12 +691,12 @@ func (d *Decoder) decodeMap(v reflect.Value, typeOpts TypeOptions) error {
 
 	keyTypeInfo, err := d.getEncodedTypeInfo(keyType)
 	if err != nil {
-		return fmt.Errorf("key: %w", err)
+		return d.handleErrorf("key: %w", err)
 	}
 
 	valueTypeInfo, err := d.getEncodedTypeInfo(valueType)
 	if err != nil {
-		return fmt.Errorf("value: %w", err)
+		return d.handleErrorf("value: %w", err)
 	}
 
 	for i := 0; i < length; i++ {
@@ -704,11 +704,11 @@ func (d *Decoder) decodeMap(v reflect.Value, typeOpts TypeOptions) error {
 		value := reflect.New(valueType).Elem()
 
 		if err := d.decodeValue(key, typeOpts.MapKey, &keyTypeInfo); err != nil {
-			return fmt.Errorf("key: %w", err)
+			return d.handleErrorf("key: %w", err)
 		}
 
 		if err := d.decodeValue(value, typeOpts.MapValue, &valueTypeInfo); err != nil {
-			return fmt.Errorf("value: %w", err)
+			return d.handleErrorf("value: %w", err)
 		}
 
 		v.SetMapIndex(key, value)
@@ -753,7 +753,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 			if fieldOpts.Optional {
 				hasValue := d.ReadOptionalFlag()
 				if d.r.Err != nil {
-					return fmt.Errorf("%v: %w", fieldType.Name, d.r.Err)
+					return d.handleErrorf("%v: %w", fieldType.Name, d.r.Err)
 				}
 
 				if !hasValue {
@@ -775,7 +775,7 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 		}
 
 		if err != nil {
-			return fmt.Errorf("%v: %w", fieldType.Name, err)
+			return d.handleErrorf("%v: %w", fieldType.Name, err)
 		}
 	}
 
@@ -843,7 +843,7 @@ func (d *Decoder) decodeInterfaceEnum(v reflect.Value, variants map[int]reflect.
 	variant := reflect.New(variantT).Elem()
 
 	if err := d.decodeValue(variant, nil, nil); err != nil {
-		return fmt.Errorf("%v: %w", variants[variantIdx], err)
+		return d.handleErrorf("%v: %w", variants[variantIdx], err)
 	}
 
 	v.Set(variant)
@@ -873,7 +873,7 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 	d.r.ReadN(b)
 
 	if d.r.Err != nil {
-		return fmt.Errorf("bytearr: %w", d.r.Err)
+		return d.handleErrorf("bytearr: %w", d.r.Err)
 	}
 
 	origStream := d.r
@@ -881,7 +881,18 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 
 	d.r = rwutil.NewBytesReader(b)
 
-	return dec()
+	if err := dec(); err != nil {
+		return err
+	}
+	if d.r.Err != nil {
+		return d.r.Err
+	}
+
+	if avail := d.r.Available(); avail > 0 {
+		return d.handleErrorf("bytearr: excess bytes: %v", avail)
+	}
+
+	return nil
 }
 
 func (d *Decoder) handleErrorf(format string, args ...interface{}) error {
@@ -931,9 +942,9 @@ func MustDecode[V any](dec *Decoder) V {
 }
 
 func UnmarshalStream[T any](r io.Reader) (T, error) {
-	dec := NewDecoder(r)
-	v := Decode[T](dec)
-	return v, dec.r.Err
+	var v T
+	_, err := UnmarshalStreamInto[T](r, &v)
+	return v, err
 }
 
 func MustUnmarshalStream[T any](r io.Reader) T {
@@ -946,7 +957,9 @@ func MustUnmarshalStream[T any](r io.Reader) T {
 }
 
 func Unmarshal[T any](b []byte) (T, error) {
-	return UnmarshalStream[T](bytes.NewReader(b))
+	var v T
+	_, err := UnmarshalInto(b, &v)
+	return v, err
 }
 
 func MustUnmarshal[T any](b []byte) T {
@@ -977,7 +990,17 @@ func MustUnmarshalStreamInto[V any](r io.Reader, v *V) *V {
 }
 
 func UnmarshalInto[V any](b []byte, v *V) (*V, error) {
-	return UnmarshalStreamInto(bytes.NewReader(b), v)
+	r := bytes.NewReader(b)
+	v, err := UnmarshalStreamInto(r, v)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.Len() > 0 {
+		return nil, fmt.Errorf("excess bytes: %v", r.Len())
+	}
+
+	return v, nil
 }
 
 func MustUnmarshalInto[V any](b []byte, v *V) *V {
