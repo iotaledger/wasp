@@ -67,7 +67,7 @@ func UpdateStateAnchor(anchor *isc.StateAnchor, stateMetadata ...[]byte) *isc.St
 		ObjectRef: *anchor.GetObjectRef(),
 		Object: &iscmove.Anchor{
 			ID:         *anchor.Anchor().ObjectID,
-			Assets:     *anchor.GetAssetsBag(),
+			Assets:     anchor.Anchor().Object.Assets,
 			StateIndex: anchor.GetStateIndex() + 1,
 		},
 	}

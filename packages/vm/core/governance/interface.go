@@ -6,8 +6,6 @@
 package governance
 
 import (
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -93,7 +91,7 @@ var (
 		coreutil.Field[[]byte](),               // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
-		coreutil.Field[[]lo.Tuple2[*cryptolib.PublicKey, ChangeAccessNodeAction]](),
+		coreutil.Field[ChangeAccessNodeActions](),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
 		coreutil.Field[[]*AccessNodeInfo](),

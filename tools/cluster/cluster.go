@@ -368,7 +368,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 		}
 	}
 
-	pubKeys := []lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction]{}
+	pubKeys := governance.ChangeAccessNodeActions{}
 	for _, a := range accessNodes {
 		waspClient := clu.WaspClient(a)
 
@@ -383,7 +383,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 			return err
 		}
 
-		pubKeys = append(pubKeys, lo.T2(accessNodePubKey, governance.ChangeAccessNodeActionAccept))
+		pubKeys = append(pubKeys, governance.AcceptAccessNodeAction(accessNodePubKey))
 	}
 	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
 	govClient := chain.Client(chain.OriginatorKeyPair)

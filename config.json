@@ -30,7 +30,7 @@
   },
   "l1": {
     "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe",
-    "packageID": "0x98c8345db84706104dab448acb30a07fd0f6c42c3f96ce6bb37f8f798fcbc9c1",
+    "packageID": "0x7b2fd27e09ad438c914fe2199cc78c174da92208384ac4341f61d2a15a588463",
     "maxConnectionAttempts": 30,
     "targetNetworkName": "IOTA"
   },
