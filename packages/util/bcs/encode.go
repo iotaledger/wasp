@@ -123,7 +123,7 @@ func (e *Encoder) Encode(val any) {
 	defer e.typeInfoCache.Save()
 
 	if err := e.encodeValue(reflect.ValueOf(val), nil, nil); err != nil {
-		_ = fmt.Errorf("encoding %T: %w", val, err)
+		_ = e.handleErrorf("encoding %T: %w", val, err)
 		return
 	}
 }
@@ -253,7 +253,7 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	v, err := e.getEncodedValue(v, tInfo.RefLevelsCount)
 	if err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
 
 	if tInfo.CustomEncoder != nil {
@@ -261,10 +261,10 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 			if e.w.Err == nil {
 				e.w.Err = err
 			}
-			return fmt.Errorf("%v: custom encoder: %w", v.Type(), err)
+			return e.handleErrorf("%v: custom encoder: %w", v.Type(), err)
 		}
 		if e.w.Err != nil {
-			return fmt.Errorf("%v: custom encoder: %w", v.Type(), e.w.Err)
+			return e.handleErrorf("%v: custom encoder: %w", v.Type(), e.w.Err)
 		}
 
 		return nil
@@ -326,10 +326,10 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	}
 
 	if err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
 	if e.w.Err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), e.w.Err)
+		return e.handleErrorf("%v: %w", v.Type(), e.w.Err)
 	}
 
 	return nil
@@ -397,7 +397,7 @@ func (e *Encoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
 		var err error
 		res.FieldOptions, res.FieldHasTag, err = FieldOptionsFromStruct(t, e.cfg.TagName)
 		if err != nil {
-			return typeInfo{}, fmt.Errorf("parsing struct fields options: %v: %w", t, err)
+			return typeInfo{}, e.handleErrorf("parsing struct fields options: %v: %w", t, err)
 		}
 	}
 
@@ -593,7 +593,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 
 	tInfo, err := e.getEncodedTypeInfo(elemType)
 	if err != nil {
-		return fmt.Errorf("element: %w", err)
+		return e.handleErrorf("element: %w", err)
 	}
 
 	if !tInfo.HasCustomizations() {
@@ -613,13 +613,13 @@ func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 				return e.encodeValue(v.Index(i), &typeOpts.ArrayElement.TypeOptions, &tInfo)
 			})
 			if err != nil {
-				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
+				return e.handleErrorf("[%v]: %v: %w", i, elemType, err)
 			}
 		}
 	} else {
 		for i := 0; i < v.Len(); i++ {
 			if err := e.encodeValue(v.Index(i), &typeOpts.ArrayElement.TypeOptions, &tInfo); err != nil {
-				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
+				return e.handleErrorf("[%v]: %v: %w", i, elemType, err)
 			}
 		}
 	}
@@ -644,12 +644,12 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 	t := v.Type()
 	keyTypeInfo, err := e.getEncodedTypeInfo(t.Key())
 	if err != nil {
-		return fmt.Errorf("key: %w", err)
+		return e.handleErrorf("key: %w", err)
 	}
 
 	valTypeInfo, err := e.getEncodedTypeInfo(t.Elem())
 	if err != nil {
-		return fmt.Errorf("value: %w", err)
+		return e.handleErrorf("value: %w", err)
 	}
 
 	entries := make([]*lo.Tuple2[[]byte, reflect.Value], 0, v.Len())
@@ -660,7 +660,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 			return e.encodeValue(elem.Key(), typeOpts.MapKey, &keyTypeInfo)
 		})
 		if err != nil {
-			return fmt.Errorf("key: %w", err)
+			return e.handleErrorf("key: %w", err)
 		}
 
 		entry := lo.T2[[]byte, reflect.Value](encodedKey, elem.Value())
@@ -675,7 +675,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 		e.w.WriteN(entries[i].A)
 
 		if err := e.encodeValue(entries[i].B, typeOpts.MapValue, &valTypeInfo); err != nil {
-			return fmt.Errorf("value: %w", err)
+			return e.handleErrorf("value: %w", err)
 		}
 	}
 
@@ -876,7 +876,7 @@ func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
 	}
 
 	if err := e.encodeValue(v, nil, nil); err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
 
 	return nil
@@ -893,7 +893,7 @@ func (e *Encoder) encodeAsByteArray(enc func() error) error {
 	e.w.WriteN(encodedVal)
 
 	if e.w.Err != nil {
-		return fmt.Errorf("bytearr: %w", e.w.Err)
+		return e.handleErrorf("bytearr: %w", e.w.Err)
 	}
 
 	return nil

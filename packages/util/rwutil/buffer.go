@@ -30,3 +30,7 @@ func (buf *Buffer) Write(data []byte) (int, error) {
 	*buf = append(*buf, data...)
 	return len(data), nil
 }
+
+func (buf *Buffer) Size() int {
+	return len(*buf)
+}
