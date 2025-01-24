@@ -889,7 +889,7 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 	}
 
 	if avail := d.r.Available(); avail > 0 {
-		return d.handleErrorf("bytearr: excessive bytes: %v", avail)
+		return d.handleErrorf("bytearr: excess bytes: %v", avail)
 	}
 
 	return nil
@@ -997,7 +997,7 @@ func UnmarshalInto[V any](b []byte, v *V) (*V, error) {
 	}
 
 	if r.Len() > 0 {
-		return nil, fmt.Errorf("excessive bytes: %v", r.Len())
+		return nil, fmt.Errorf("excess bytes: %v", r.Len())
 	}
 
 	return v, nil

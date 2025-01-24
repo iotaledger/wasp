@@ -255,21 +255,21 @@ func TestAutomaticErrorCheck(t *testing.T) {
 	require.Equal(t, expectedErr, err.Error())
 }
 
-func TestExcessiveBytesErr(t *testing.T) {
+func TestExcessBytesErr(t *testing.T) {
 	_, err := bcs.Unmarshal[byte]([]byte{1, 2, 3, 4})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "excessive bytes: 3")
+	require.Contains(t, err.Error(), "excess bytes: 3")
 
 	_, err = bcs.Unmarshal[string]([]byte{3, 'a', 'b', 'c', 'd', 'e'})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "excessive bytes: 2")
+	require.Contains(t, err.Error(), "excess bytes: 2")
 
 	_, err = bcs.Unmarshal[BasicStruct]([]byte{
 		1, 2, 3, 4, 5, 6, 7, 8,
 		3, 'a', 'b', 'c', 'd',
 	})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "excessive bytes: 1")
+	require.Contains(t, err.Error(), "excess bytes: 1")
 
 	_, err = bcs.Unmarshal[WithByteArr]([]byte{
 		3, 'a', 'b', 'c',
@@ -277,7 +277,7 @@ func TestExcessiveBytesErr(t *testing.T) {
 		4, 'e', 'f', 'g', 'h',
 	})
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "bytearr: excessive bytes: 1")
+	require.Contains(t, err.Error(), "bytearr: excess bytes: 1")
 }
 
 func TestErrorMsg(t *testing.T) {
