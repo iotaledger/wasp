@@ -87,7 +87,7 @@ func revokeAccessNode(
 }
 
 // Can only be invoked by the chain owner.
-func changeAccessNodes(ctx isc.Sandbox, reqs []lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction]) {
+func changeAccessNodes(ctx isc.Sandbox, reqs governance.ChangeAccessNodeActions) {
 	ctx.RequireCallerIsChainOwner()
 
 	state := governance.NewStateWriterFromSandbox(ctx)
