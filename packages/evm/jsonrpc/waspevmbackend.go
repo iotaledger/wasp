@@ -88,8 +88,6 @@ func (b *WaspEVMBackend) EVMTrace(
 	aliasOutput *isc.AliasOutputWithID,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
 	return chainutil.EVMTrace(
@@ -97,8 +95,6 @@ func (b *WaspEVMBackend) EVMTrace(
 		aliasOutput,
 		blockTime,
 		iscRequestsInBlock,
-		txIndex,
-		blockNumber,
 		tracer,
 	)
 }

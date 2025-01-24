@@ -592,15 +592,15 @@ func TestRPCTraceTx(t *testing.T) {
 
 	t.Run("prestate", func(t *testing.T) {
 		accountMap, err := env.traceTransactionWithPrestate(tx1.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
 		require.NoError(t, err)
 		require.NotEmpty(t, accountMap)
-		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
 
 		diff, err := env.traceTransactionWithPrestateDiff(tx1.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
 		require.NoError(t, err)
 		require.NotEmpty(t, diff.Pre)
 		require.NotEmpty(t, diff.Post)
-		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
 	})
 }
 

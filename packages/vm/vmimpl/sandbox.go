@@ -6,6 +6,8 @@ package vmimpl
 import (
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/eth/tracers"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -99,7 +101,7 @@ func (s *contractSandbox) RegisterError(messageFormat string) *isc.VMErrorTempla
 	return s.reqctx.registerError(messageFormat)
 }
 
-func (s *contractSandbox) EVMTracer() *isc.EVMTracer {
+func (s *contractSandbox) EVMTracer() *tracers.Tracer {
 	return s.reqctx.vm.task.EVMTracer
 }
 
