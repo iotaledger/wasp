@@ -56,6 +56,15 @@ func (rr *Reader) CheckAvailable(nrOfBytes int) int {
 	return nrOfBytes
 }
 
+func (rr *Reader) Available() int {
+	buff, ok := rr.r.(*Buffer)
+	if !ok {
+		panic("reader is not a buffer")
+	}
+
+	return buff.Size()
+}
+
 // Close indicates the end of reading from the bytes buffer.
 // If any unread bytes are remaining in the buffer an error will be returned.
 func (rr *Reader) Close() {
