@@ -920,6 +920,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 	// periodically try to refresh On-ledger requests that might have been dropped
 	if time.Since(mpi.lastRefreshTimestamp) > mpi.settings.OnLedgerRefreshMinInterval {
 		if mpi.onLedgerPool.ShouldRefreshRequests() {
+			mpi.log.Info("REFRESHING REQUESTS")
 			mpi.refreshOnLedgerRequests()
 			mpi.lastRefreshTimestamp = time.Now()
 		}

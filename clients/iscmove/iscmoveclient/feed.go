@@ -41,20 +41,25 @@ func (f *ChainFeed) WaitUntilStopped() {
 	f.wsClient.WaitUntilStopped()
 }
 
-// FetchCurrentState fetches the current Anchor and all Requests owned by the
-// anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.RefWithObject[iscmove.Request], error) {
+func (f *ChainFeed) GetCurrentAnchor(ctx context.Context) (*iscmove.AnchorWithRef, error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
+		return nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
+	return anchor, err
+}
 
-	reqs, err := f.wsClient.GetRequests(ctx, f.iscPackageID, &f.anchorAddress)
+// FetchCurrentState fetches the current Anchor and all Requests owned by the
+// anchor address.
+func (f *ChainFeed) FetchCurrentState(ctx context.Context, requestCb func(error, *iscmove.RefWithObject[iscmove.Request])) (*iscmove.AnchorWithRef, error) {
+	anchor, err := f.GetCurrentAnchor(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
+		return nil, err
 	}
+	
+	f.wsClient.GetRequestsWithCB(ctx, f.iscPackageID, &f.anchorAddress, requestCb)
 
-	return anchor, reqs, nil
+	return anchor, nil
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
@@ -128,12 +133,22 @@ func (f *ChainFeed) consumeRequestEvents(
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
+			f.log.Info("POLLING REQUEST\n")
+			f.log.Info(reqEvent.RequestID)
+			f.log.Infof("%s\n", time.Now().String())
+
 			reqWithObj, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
+
+			f.log.Infof("DONE (%s)\n", time.Now().String())
+
 			requests <- reqWithObj
+
+			f.log.Infof("REQUEST SENT TO CHANNEL %s\n", time.Now().String())
+
 		}
 	}
 }
@@ -183,6 +198,8 @@ func (f *ChainFeed) consumeAnchorUpdates(
 			}
 			for _, obj := range change.Data.V1.Mutated {
 				if *obj.Reference.ObjectID == f.anchorAddress {
+					f.log.Infof("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
+
 					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 						ObjectID: &f.anchorAddress,
 						Version:  obj.Reference.Version,
@@ -203,11 +220,15 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
+
+					f.log.Infof("POLLING ANCHOR DONE %s\n", time.Now().String())
 					anchorCh <- &iscmove.AnchorWithRef{
 						ObjectRef: r.Data.VersionFound.Ref(),
 						Object:    anchor,
 						Owner:     r.Data.VersionFound.Owner.AddressOwner,
 					}
+					f.log.Infof("ANCHOR SENT TO CHANNEL %s\n", time.Now().String())
+
 				}
 			}
 		}

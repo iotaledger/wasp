@@ -3,6 +3,7 @@ package iscmoveclient
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/samber/lo"
 
@@ -211,6 +212,46 @@ func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) 
 	}, nil
 }
 
+func (c *Client) GetRequestsWithCB(ctx context.Context,
+	packageID iotago.PackageID,
+	anchorAddress *iotago.ObjectID, cb func(error, *iscmove.RefWithObject[iscmove.Request])) {
+	var lastSeen *iotago.ObjectID
+	for {
+		res, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+			Address: anchorAddress,
+			Query: &iotajsonrpc.IotaObjectResponseQuery{
+				Filter: &iotajsonrpc.IotaObjectDataFilter{
+					StructType: &iotago.StructTag{
+						Address: &packageID,
+						Module:  iscmove.RequestModuleName,
+						Name:    iscmove.RequestObjectName,
+					},
+				},
+				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
+			},
+			Cursor: lastSeen,
+		})
+		if ctx.Err() != nil {
+			cb(fmt.Errorf("failed to fetch requests: %w", err), nil)
+			continue
+		}
+		if len(res.Data) == 0 {
+			break
+		}
+		lastSeen = res.NextCursor
+		for _, reqData := range res.Data {
+
+			fmt.Printf("Polling request id:%s, digest: %s, now:%s\n", reqData.Data.ObjectID, reqData.Data.Digest, time.Now().String())
+			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)
+			if err != nil {
+				cb(fmt.Errorf("failed to decode requests: %w", err), nil)
+			} else {
+				cb(nil, req)
+			}
+		}
+	}
+}
+
 func (c *Client) GetRequests(
 	ctx context.Context,
 	packageID iotago.PackageID,
@@ -244,6 +285,8 @@ func (c *Client) GetRequests(
 		}
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
+
+			fmt.Printf("Polling request id:%s, digest: %s, now:%s\n", reqData.Data.ObjectID, reqData.Data.Digest, time.Now().String())
 			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode request: %w", err)

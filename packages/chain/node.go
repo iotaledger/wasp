@@ -768,15 +768,21 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			publishStart := time.Now()
 			cni.log.Debugf("XXX: PublishTX %v ..., consumed anchor=%v", txHash, needPublishTx.BaseAnchorRef)
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
-				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v", txHash, newStateAnchor)
+				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v, err=%v", txHash, newStateAnchor, err)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
-				cni.recvTxPublishedPipe.In() <- &txPublished{
-					committeeAddr:   txToPost.CommitteeAddr,
-					logIndex:        txToPost.LogIndex,
-					txID:            txHash,
-					nextAliasOutput: newStateAnchor,
-					confirmed:       err == nil,
+
+				if err == nil {
+					cni.recvTxPublishedPipe.In() <- &txPublished{
+						committeeAddr:   txToPost.CommitteeAddr,
+						logIndex:        txToPost.LogIndex,
+						txID:            txHash,
+						nextAliasOutput: newStateAnchor,
+						confirmed:       err == nil,
+					}
+				} else {
+					cni.log.Error(err.Error())
 				}
+
 			}); err != nil {
 				cni.log.Error(err.Error())
 			}
