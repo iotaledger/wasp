@@ -158,18 +158,18 @@ jobs:
           short_description: 'wasp-cli is a command line tool for interacting with IOTA Wasp and its smart contracts.'
           readme_file: 'tools/wasp-cli/README.md'
 
-  release-iscmagic:
-    uses: ./.github/workflows/publish-iscmagic.yml
-    needs: release-docker
-    with:
-      version: ${{ needs.release-docker.outputs.version }}
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #release-iscmagic:
+  #  uses: ./.github/workflows/publish-iscmagic.yml
+  #  needs: release-docker
+  #  with:
+  #    version: ${{ needs.release-docker.outputs.version }}
+  #  secrets:
+  #    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  release-iscutils:
-    uses: ./.github/workflows/publish-iscutils.yml
-    needs: release-docker
-    with:
-      version: ${{ needs.release-docker.outputs.version }}
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #release-iscutils:
+  #  uses: ./.github/workflows/publish-iscutils.yml
+  #  needs: release-docker
+  #  with:
+  #    version: ${{ needs.release-docker.outputs.version }}
+  #  secrets:
+  #    NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
