@@ -101,8 +101,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/iota_sdk.dll
-        dst: iota_sdk.dll
 
   - # Linux
     id: wasp-cli-linux
@@ -120,8 +118,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk.so
-        dst: libiota_sdk.so
 
   - # MacOS ARM64
     id: wasp-cli-macos-arm64
@@ -134,8 +130,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk_arm64.dylib
-        dst: libiota_sdk.dylib
 
   - # MacOS AMD64
     id: wasp-cli-macos-amd64
@@ -148,8 +142,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk_amd64.dylib
-        dst: libiota_sdk.dylib
 
 
 # Checksum
