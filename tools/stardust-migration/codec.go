@@ -6,10 +6,10 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/nnikolash/wasp-types-exported/packages/hashing"
+	"github.com/nnikolash/wasp-types-exported/packages/isc"
+	"github.com/nnikolash/wasp-types-exported/packages/kv/codec"
+	"github.com/nnikolash/wasp-types-exported/packages/util"
 	"github.com/samber/lo"
 )
 

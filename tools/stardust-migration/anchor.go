@@ -4,15 +4,15 @@ import (
 	"bytes"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/nnikolash/wasp-types-exported/packages/kv"
+	"github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	"github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 )
 
 func GetAnchorOutput(chainState kv.KVStoreReader) *iotago.AliasOutput {
 	contractState := getContactStateReader(chainState, blocklog.Contract.Hname())
 
-	registry := collections.NewArrayReadOnly(contractState, PrefixBlockRegistry)
+	registry := collections.NewArrayReadOnly(contractState, blocklog.PrefixBlockRegistry)
 	if registry.Len() == 0 {
 		panic("Block registry is empty")
 	}

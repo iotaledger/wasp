@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/nnikolash/wasp-types-exported/packages/kv"
 )
 
 // Wraps a function and adds to it printing of number of times it was called

@@ -6,9 +6,9 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/nnikolash/wasp-types-exported/packages/kv"
+	"github.com/nnikolash/wasp-types-exported/packages/kv/codec"
+	"github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 )
 
 type SerializableEntity interface {
