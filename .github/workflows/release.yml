@@ -12,17 +12,6 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v4
 
-      - name: Pull IOTA SDK bindings
-        uses: dsaltares/fetch-gh-release-asset@master
-        with:
-          repo: 'iotaledger/iota-sdk-native-bindings'
-          # For now use 'latest'
-          #version: 'tags/v0.1.0'
-          regex: true
-          file: ".*"
-          target: 'sdk/'
-          token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Tar temporary artifacts
         run: tar --exclude='temp.tar' -cf temp.tar ./
 
@@ -50,14 +39,6 @@ jobs:
     steps:
       - name: Create dist folder
         run: mkdir /dist && cd /dist/
-
-      - name: Download temporary artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: wasp
-
-      - name: Untar temporary artifacts, cleanup and set correct permissions
-        run: tar -xf temp.tar && rm temp.tar && chown -R root:root .
 
       - name: Release wasp-cli
         run: goreleaser --debug --clean -f ./tools/wasp-cli/.goreleaser.yml
@@ -126,6 +107,7 @@ jobs:
         with:
           username: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
           password: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
+          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
 
       - name: Build and push WASP to Dockerhub
         uses: docker/build-push-action@v6
@@ -134,7 +116,8 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }},iotaledger/wasp:latest
+
+          tags: ${{ steps.meta.outputs.tags }},${{ secrets.DOCKER_REGISTRY_URL }}/wasp-rebased:latest
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
@@ -146,7 +129,7 @@ jobs:
           file: ./tools/wasp-cli/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta-cli.outputs.tags }},iotaledger/sandbox-wasp-cli:latest
+          tags: ${{ steps.meta-cli.outputs.tags }},${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:latest
           labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
@@ -160,8 +143,9 @@ jobs:
         env:
           DOCKER_USER: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
           DOCKER_PASS: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY_URL }}
         with:
-          destination_container_repo: iotaledger/sandbox-wasp-cli
+          destination_container_repo: ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli
           provider: dockerhub
           short_description: 'wasp-cli is a command line tool for interacting with IOTA Wasp and its smart contracts.'
           readme_file: 'tools/wasp-cli/README.md'
