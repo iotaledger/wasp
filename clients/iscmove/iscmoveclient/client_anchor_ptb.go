@@ -2,9 +2,9 @@ package iscmoveclient
 
 import (
 	"fmt"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
@@ -276,13 +276,17 @@ func PTBReceiveRequestsAndTransition(
 		},
 	})
 	// top up gas coin
-	ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
-		ptb,
-		packageID,
-		argAnchorAssets,
-		topUpAmount,
-		iotajsonrpc.IotaCoinType,
-	)
+
+	if topUpAmount > 0 {
+		ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
+			ptb,
+			packageID,
+			argAnchorAssets,
+			topUpAmount,
+			iotajsonrpc.IotaCoinType,
+		)
+	}
+
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
