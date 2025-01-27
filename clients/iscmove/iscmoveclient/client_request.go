@@ -212,9 +212,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) 
 	}, nil
 }
 
-func (c *Client) GetRequestsWithCB(ctx context.Context,
-	packageID iotago.PackageID,
-	anchorAddress *iotago.ObjectID, cb func(error, *iscmove.RefWithObject[iscmove.Request])) {
+func (c *Client) GetRequestsWithCB(ctx context.Context, packageID iotago.PackageID, anchorAddress *iotago.ObjectID, cb func(error, *iscmove.RefWithObject[iscmove.Request])) error {
 	var lastSeen *iotago.ObjectID
 	for {
 		res, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
@@ -236,10 +234,14 @@ func (c *Client) GetRequestsWithCB(ctx context.Context,
 			continue
 		}
 		if len(res.Data) == 0 {
-			break
+			return nil
 		}
+
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
 
 			fmt.Printf("Polling request id:%s, digest: %s, now:%s\n", reqData.Data.ObjectID, reqData.Data.Digest, time.Now().String())
 			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)

@@ -200,10 +200,8 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
-	ncc.anchorHandler(&anchor)
 
-	moveAnchor, err = ncc.feed.FetchCurrentState(ctx, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
+	_, err = ncc.feed.FetchCurrentState(ctx, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
 		if err != nil {
 			return
 		}
@@ -217,6 +215,9 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
+	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
+	ncc.anchorHandler(&anchor)
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil

@@ -56,8 +56,8 @@ func (f *ChainFeed) FetchCurrentState(ctx context.Context, requestCb func(error,
 	if err != nil {
 		return nil, err
 	}
-	
-	f.wsClient.GetRequestsWithCB(ctx, f.iscPackageID, &f.anchorAddress, requestCb)
+
+	go f.wsClient.GetRequestsWithCB(ctx, f.iscPackageID, &f.anchorAddress, requestCb)
 
 	return anchor, nil
 }
