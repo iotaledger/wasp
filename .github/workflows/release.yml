@@ -137,7 +137,7 @@ jobs:
           file: ./tools/wasp-cli/Dockerfile
           platforms: linux/amd64 #,linux/arm64
           push: true
-          tags: ${{ steps.meta-cli.outputs.tags }},${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:latest
+          tags: ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:latest
           labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
