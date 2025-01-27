@@ -146,6 +146,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
+		ncc.LogInfo("POST TX")
+		ncc.LogInfof("%v %v\n", res, err)
 		if err != nil {
 			return nil, err
 		}
@@ -154,6 +156,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		}
 
 		res, err = ncc.retryGetTransactionBlock(ctx, &res.Digest, MaxRetriesGetAnchorAfterPostTX)
+		ncc.LogInfof("GET RETRY %v %v\n", res, err)
+
 		if err != nil {
 			return nil, err
 		}
@@ -191,19 +195,27 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
+
+	moveAnchor, err := ncc.feed.GetCurrentAnchor(ctx)
 	if err != nil {
 		return err
 	}
 	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
 
-	for _, req := range reqs {
+	moveAnchor, err = ncc.feed.FetchCurrentState(ctx, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
+		if err != nil {
+			return
+		}
+
 		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
 		if err != nil {
-			return err
+			return
 		}
 		ncc.requestHandler(onledgerReq)
+	})
+	if err != nil {
+		return err
 	}
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
