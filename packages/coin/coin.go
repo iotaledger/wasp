@@ -83,7 +83,7 @@ func MustTypeFromString(s string) Type {
 }
 
 func (t *Type) MarshalJSON() ([]byte, error) {
-	return []byte("\"" + t.String() + "\""), nil
+	return json.Marshal(t.s)
 }
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
@@ -165,7 +165,10 @@ type CoinWithRef struct {
 }
 
 func (c CoinWithRef) String() string {
-	b, _ := json.Marshal(&c)
+	b, err := json.MarshalIndent(&c, "", "\t")
+	if err != nil {
+		panic(err)
+	}
 	return string(b)
 }
 

@@ -171,7 +171,6 @@ func (sub *syncACSImpl) String() string {
 			wait = append(wait, "GasCoins")
 		}
 		if sub.l1params == nil {
-			fmt.Println("wait L1Params")
 			wait = append(wait, "L1Params")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))

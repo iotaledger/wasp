@@ -22,7 +22,10 @@ type L1Params struct {
 }
 
 func (l *L1Params) String() string {
-	b, _ := json.Marshal(l)
+	b, err := json.MarshalIndent(l, "", "\t")
+	if err != nil {
+		panic(err)
+	}
 	return string(b)
 }
 
@@ -35,8 +38,7 @@ func (l *L1Params) Bytes() []byte {
 }
 
 func (l *L1Params) Hash() hashing.HashValue {
-	res, _ := hashing.HashValueFromBytes(l.Bytes())
-	return res
+	return hashing.HashData(l.Bytes())
 }
 
 func (l *L1Params) Clone() *L1Params {
@@ -58,7 +60,10 @@ type Protocol struct {
 }
 
 func (p *Protocol) String() string {
-	b, _ := json.Marshal(p)
+	b, err := json.MarshalIndent(p, "", "\t")
+	if err != nil {
+		panic(err)
+	}
 	return string(b)
 }
 
@@ -86,7 +91,10 @@ type BaseToken struct {
 }
 
 func (b *BaseToken) String() string {
-	ret, _ := json.Marshal(b)
+	ret, err := json.MarshalIndent(b, "", "\t")
+	if err != nil {
+		panic(err)
+	}
 	return string(ret)
 }
 

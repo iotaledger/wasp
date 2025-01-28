@@ -146,38 +146,43 @@ type l1paramsCounter struct {
 	l1params *parameters.L1Params
 }
 
-// Use the same aggregation logic as for the timestamp:
-// Take highest value proposed by at least F+1 nodes.
+// Take the L1Params which is shared more than f+1 nodes
 func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
-	ps := make([]*parameters.L1Params, 0, len(bps))
-	gasPriceBPs := make([]uint64, 0, len(bps))
+	ps := make([]*parameters.L1Params, 0, proposalCount)
+	gasPriceBPs := make([]uint64, 0, proposalCount)
 	for _, bp := range bps {
 		ps = append(ps, bp.l1params)
 	}
-	aggregatedGasPrice := aggregatedGasPrice(gasPriceBPs, f)
 
 	// count the amount of each L1Params
 	protocolMap := make(map[string]l1paramsCounter)
+	var l1paramsCounterMax l1paramsCounter
 	for _, l1params := range ps {
-		if elt, ok := protocolMap[l1params.Hash().Hex()]; ok {
+		elt, ok := protocolMap[l1params.Hash().Hex()]
+		if ok {
 			elt.counter += 1
 			protocolMap[l1params.Hash().Hex()] = elt
 		} else {
-			protocolMap[l1params.Hash().Hex()] = l1paramsCounter{
+			elt = l1paramsCounter{
 				counter:  1,
 				l1params: l1params,
 			}
+			protocolMap[l1params.Hash().Hex()] = elt
+		}
+		if elt.counter > l1paramsCounterMax.counter {
+			l1paramsCounterMax.counter = elt.counter
+			l1paramsCounterMax.l1params = elt.l1params
 		}
 	}
-	for _, elt := range protocolMap {
-		if elt.counter >= proposalCount-f {
-			l1 := elt.l1params.Clone()
-			l1.Protocol.ReferenceGasPrice = iotajsonrpc.NewBigInt(aggregatedGasPrice)
-			return l1
-		}
+
+	if l1paramsCounterMax.counter < f {
+		return nil
 	}
-	return nil
+
+	aggregatedGasPrice := aggregatedGasPrice(gasPriceBPs, f)
+	l1paramsCounterMax.l1params.Protocol.ReferenceGasPrice = iotajsonrpc.NewBigInt(aggregatedGasPrice)
+	return l1paramsCounterMax.l1params
 }
 
 // Use the same aggregation logic as for the timestamp:
