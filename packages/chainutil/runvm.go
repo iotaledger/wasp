@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/samber/lo"
 	"go.uber.org/zap"
 
@@ -30,15 +31,12 @@ func runISCTask(
 	log *logger.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
-	evmTracer *isc.EVMTracer,
+	estimateGasMode bool,
+	evmTracer *tracers.Tracer,
 ) ([]*vm.RequestResult, error) {
 	migs, err := getMigrationsForBlock(store, anchor)
 	if err != nil {
 		return nil, err
-	}
-	estimateGasMode := true
-	if evmTracer != nil {
-		estimateGasMode = false
 	}
 	task := &vm.VMTask{
 		Processors:           processors,
@@ -91,6 +89,7 @@ func runISCRequest(
 	log *logger.Logger,
 	blockTime time.Time,
 	req isc.Request,
+	estimateGasMode bool,
 ) (*vm.RequestResult, error) {
 	results, err := runISCTask(
 		anchor,
@@ -100,6 +99,7 @@ func runISCRequest(
 		log,
 		blockTime,
 		[]isc.Request{req},
+		estimateGasMode,
 		nil,
 	)
 	if err != nil {
