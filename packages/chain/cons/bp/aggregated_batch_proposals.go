@@ -5,7 +5,6 @@ package bp
 
 import (
 	"bytes"
-	"fmt"
 	"sort"
 	"time"
 
@@ -31,7 +30,6 @@ type AggregatedBatchProposals struct {
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
-	fmt.Println("!!!AggregateBatchProposals: ")
 	bps := batchProposalSet{}
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
