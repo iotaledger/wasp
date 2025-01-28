@@ -1,11 +1,14 @@
 package iscmoveclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/samber/lo"
+	"golang.org/x/exp/maps"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -212,10 +215,17 @@ func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) 
 	}, nil
 }
 
-func (c *Client) GetRequestsWithCB(ctx context.Context, packageID iotago.PackageID, anchorAddress *iotago.ObjectID, cb func(error, *iscmove.RefWithObject[iscmove.Request])) error {
+func (c *Client) GetRequestsSorted(ctx context.Context, packageID iotago.PackageID, anchorAddress *iotago.ObjectID, maxAmountOfRequests int, cb func(error, *iscmove.RefWithObject[iscmove.Request])) {
 	var lastSeen *iotago.ObjectID
+
+	pulledRequests := map[iotago.ObjectID]*iotajsonrpc.IotaObjectData{}
+	sortedRequestIDs := make([]iotago.ObjectID, 0)
+
+	_ = (pulledRequests)
+	_ = sortedRequestIDs
+
 	for {
-		res, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+		objs, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
 			Address: anchorAddress,
 			Query: &iotajsonrpc.IotaObjectResponseQuery{
 				Filter: &iotajsonrpc.IotaObjectDataFilter{
@@ -229,28 +239,43 @@ func (c *Client) GetRequestsWithCB(ctx context.Context, packageID iotago.Package
 			},
 			Cursor: lastSeen,
 		})
+
 		if ctx.Err() != nil {
 			cb(fmt.Errorf("failed to fetch requests: %w", err), nil)
 			continue
 		}
-		if len(res.Data) == 0 {
-			return nil
+
+		if objs == nil || len(objs.Data) == 0 {
+			break
 		}
 
-		lastSeen = res.NextCursor
-		for _, reqData := range res.Data {
-			if ctx.Err() != nil {
-				return ctx.Err()
-			}
+		lastSeen = objs.NextCursor
 
-			fmt.Printf("Polling request id:%s, digest: %s, now:%s\n", reqData.Data.ObjectID, reqData.Data.Digest, time.Now().String())
-			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)
-			if err != nil {
-				cb(fmt.Errorf("failed to decode requests: %w", err), nil)
-			} else {
-				cb(nil, req)
-			}
+		for _, req := range objs.Data {
+			pulledRequests[*req.Data.ObjectID] = req.Data
 		}
+	}
+
+	// Sort object IDs
+	objectKeys := maps.Keys(pulledRequests)
+	sort.Slice(objectKeys, func(i, j int) bool {
+		return bytes.Compare(objectKeys[i][:], objectKeys[j][:]) < 0
+	})
+
+	if len(objectKeys) >= maxAmountOfRequests {
+		sortedRequestIDs = objectKeys[:maxAmountOfRequests]
+	} else {
+		sortedRequestIDs = objectKeys
+	}
+
+	// We only pass the maxRequests amount of requests into the result, to not overload the mempool.
+	// Periodically, this function will be called by the Chain Manager to pick up the next amount of transactions.
+	// This ensures that we don't suddenly load 20k of Requests into the mempool which fills up at a lower limit.
+	// It improves the startup time of the node and makes sure that the Consensus gets the same IDs across all nodes in a sorted manner.
+
+	for _, reqID := range sortedRequestIDs {
+		ref, err := c.parseRequestAndFetchAssetsBag(pulledRequests[reqID])
+		cb(err, ref)
 	}
 }
 

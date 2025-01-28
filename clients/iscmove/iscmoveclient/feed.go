@@ -51,15 +51,15 @@ func (f *ChainFeed) GetCurrentAnchor(ctx context.Context) (*iscmove.AnchorWithRe
 
 // FetchCurrentState fetches the current Anchor and all Requests owned by the
 // anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context, requestCb func(error, *iscmove.RefWithObject[iscmove.Request])) (*iscmove.AnchorWithRef, error) {
+func (f *ChainFeed) FetchCurrentState(ctx context.Context, maxAmountOfRequests int, requestCb func(error, *iscmove.RefWithObject[iscmove.Request])) (*iscmove.AnchorWithRef, error) {
 	anchor, err := f.GetCurrentAnchor(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	go f.wsClient.GetRequestsWithCB(ctx, f.iscPackageID, &f.anchorAddress, requestCb)
+	f.wsClient.GetRequestsSorted(ctx, f.iscPackageID, &f.anchorAddress, maxAmountOfRequests, requestCb)
 
-	return anchor, nil
+	return anchor, err
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
