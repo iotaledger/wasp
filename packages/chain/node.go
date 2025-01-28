@@ -771,21 +771,18 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v, err=%v", txHash, newStateAnchor, err)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 
-				if err == nil {
-					cni.recvTxPublishedPipe.In() <- &txPublished{
-						committeeAddr:   txToPost.CommitteeAddr,
-						logIndex:        txToPost.LogIndex,
-						txID:            txHash,
-						nextAliasOutput: newStateAnchor,
-						confirmed:       err == nil,
-					}
-				} else {
-					cni.log.Error(err.Error())
+				cni.recvTxPublishedPipe.In() <- &txPublished{
+					committeeAddr:   txToPost.CommitteeAddr,
+					logIndex:        txToPost.LogIndex,
+					txID:            txHash,
+					nextAliasOutput: newStateAnchor,
+					confirmed:       err == nil,
 				}
 
 			}); err != nil {
 				cni.log.Error(err.Error())
 			}
+
 			cni.chainMetrics.NodeConn.TXPublishStarted()
 		}
 

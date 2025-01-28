@@ -149,8 +149,8 @@ jobs:
       - name: push README to Dockerhub
         uses: christian-korneck/update-container-description-action@v1
         env:
-          DOCKER_USER: ${{ secrets.IOTALEDGER_DOCKER_USERNAME }}
-          DOCKER_PASS: ${{ secrets.IOTALEDGER_DOCKER_PASSWORD }}
+          DOCKER_USER: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
           DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY_URL }}
         with:
           destination_container_repo: ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli
