@@ -37,7 +37,7 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, chainID
 
 	ref, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	log.Check(err)
-	log.Printf("Request ID: %s\n", isc.RequestID(ref.ObjectID.Data()).String())
+	log.Printf("Request ID: %s\n", ref.ObjectID.String())
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
