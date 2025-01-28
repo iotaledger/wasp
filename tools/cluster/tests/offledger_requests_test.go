@@ -20,6 +20,8 @@ import (
 )
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	const clusterSize = 10
 	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 

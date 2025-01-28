@@ -19,6 +19,7 @@ type TypeOptions struct {
 	IsCompactInt         bool
 	InterfaceIsNotEnum   bool
 	ExportAnonymousField bool
+	NilIfEmpty           bool
 
 	ArrayElement *ArrayElemOptions
 	MapKey       *TypeOptions
@@ -60,6 +61,9 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	}
 	if other.InterfaceIsNotEnum {
 		o.InterfaceIsNotEnum = true
+	}
+	if other.NilIfEmpty {
+		o.NilIfEmpty = true
 	}
 	if other.ExportAnonymousField {
 		o.ExportAnonymousField = true
@@ -220,6 +224,8 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 			opts.LenSizeInBytes = LenBytesCount(bytes) //nolint:gosec
 		case "optional":
 			opts.Optional = true
+		case "nil_if_empty":
+			opts.NilIfEmpty = true
 		case "bytearr":
 			opts.AsByteArray = true
 		case "not_enum":

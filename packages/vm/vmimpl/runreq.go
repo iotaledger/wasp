@@ -424,19 +424,22 @@ func (reqctx *requestContext) chargeGasFee() {
 		)
 	}
 
-	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
+	// ensure common account has at least GasCoinTargetValue, and transfer the rest of gas fee to payout AgentID
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
-	minBalanceInCommonAccount := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetMinCommonAccountBalance()
+	targetCommonAccountBalance := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetGasCoinTargetValue()
 	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
-	if commonAccountBal < minBalanceInCommonAccount {
-		// pay to common account since the balance of common account is less than minSD
+	reqctx.vm.task.Log.Debugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)
+
+	if commonAccountBal < targetCommonAccountBalance {
+		// pay to common account since the balance of common account is less than min
 		transferToCommonAcc := sendToPayout
 		sendToPayout = 0
-		if commonAccountBal+transferToCommonAcc > minBalanceInCommonAccount {
-			excess := (commonAccountBal + transferToCommonAcc) - minBalanceInCommonAccount
+		if commonAccountBal+transferToCommonAcc > targetCommonAccountBalance {
+			excess := (commonAccountBal + transferToCommonAcc) - targetCommonAccountBalance
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
+		reqctx.vm.task.Log.Debugf("transferring %d to common account", transferToCommonAcc)
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),

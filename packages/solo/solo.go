@@ -82,9 +82,6 @@ type chainData struct {
 	// It is a default key pair in many of Solo calls which require private key.
 	OriginatorPrivateKey *cryptolib.KeyPair
 
-	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
-	ValidatorFeeTarget isc.AgentID
-
 	db kvstore.KVStore
 
 	migrationScheme *migrations.MigrationScheme
@@ -244,11 +241,10 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultCommonAccountBaseTokens   = 50 * isc.Million
 	DefaultChainOriginatorBaseTokens = 50 * isc.Million
 )
 
-// NewChain deploys new default chain instance.
+// NewChain deploys a new default chain instance.
 func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
@@ -265,16 +261,12 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 
 func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
+	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (chainData, *isc.StateAnchor) {
 	env.logger.Debugf("deploying new chain '%s'", name)
-
-	if initBaseTokens == 0 {
-		initBaseTokens = DefaultCommonAccountBaseTokens
-	}
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -290,7 +282,6 @@ func (env *Solo) deployChain(
 	)
 
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-	originatorAgentID := isc.NewAddressAgentID(originatorAddr)
 
 	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
 
@@ -298,24 +289,24 @@ func (env *Solo) deployChain(
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(
-		chainOriginator,
-		initBaseTokens,
-	)
+	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue)
 
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
 		*gasCoinRef.ObjectID,
-		initBaseTokens,
+		initCommonAccountBaseTokens,
 		baseTokenCoinInfo,
 	)
 
-	initCoinRef := env.makeBaseTokenCoin(
-		chainOriginator,
-		initBaseTokens,
-	)
+	var initCoin *iotago.ObjectRef
+	if initCommonAccountBaseTokens > 0 {
+		initCoin = env.makeBaseTokenCoin(
+			chainOriginator,
+			initCommonAccountBaseTokens,
+		)
+	}
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
@@ -324,7 +315,7 @@ func (env *Solo) deployChain(
 			ChainOwnerAddress: chainOriginator.Address(),
 			PackageID:         env.ISCPackageID(),
 			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       initCoinRef,
+			InitCoinRef:       initCoin,
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},
@@ -344,7 +335,6 @@ func (env *Solo) deployChain(
 		Name:                 name,
 		ChainID:              chainID,
 		OriginatorPrivateKey: chainOriginator,
-		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
 		migrationScheme:      allmigrations.DefaultScheme,
 	}, nil
@@ -366,12 +356,18 @@ func (env *Solo) deployChain(
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChainExt(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
+	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (*Chain, *isc.StateAnchor) {
-	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
+	chData, anchorRef := env.deployChain(
+		chainOriginator,
+		initCommonAccountBaseTokens,
+		name,
+		evmChainID,
+		blockKeepAmount,
+	)
 
 	env.chainsMutex.Lock()
 	defer env.chainsMutex.Unlock()

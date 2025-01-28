@@ -3,10 +3,10 @@ package isc
 import "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 
 const (
-	Million         = 1_000_000
-	GasCoinMaxValue = 1 * Million
+	Million = 1_000_000
 )
 
-// TODO Add the comprehensive top up calculation logic, then we can remvoe this constant
-
-const TopUpFeeMin = iotaclient.DefaultGasBudget * 5
+// GasCoinTargetValue is the target value for topping up the gas coin. After
+// each VM run, the gas coin will be topped up taking funds from the common
+// account.
+const GasCoinTargetValue = iotaclient.DefaultGasBudget * 5

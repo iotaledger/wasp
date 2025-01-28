@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -87,9 +86,12 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		ID:            *iotatest.RandomAddress(),
 		StateMetadata: stateMetadataBytes,
 		StateIndex:    0,
-		Assets: iscmove.AssetsBag{
-			ID:   *iotatest.RandomAddress(),
-			Size: 1,
+		Assets: iscmove.Referent[iscmove.AssetsBag]{
+			ID: *iotatest.RandomAddress(),
+			Value: &iscmove.AssetsBag{
+				ID:   *iotatest.RandomAddress(),
+				Size: 1,
+			},
 		},
 	}
 
@@ -185,7 +187,7 @@ func runRequestsAndTransitionAnchor(
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
-			Value: isc.GasCoinMaxValue,
+			Value: isc.GasCoinTargetValue,
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},

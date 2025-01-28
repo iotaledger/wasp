@@ -12,6 +12,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -74,7 +75,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
 		Entropy:            hashing.PseudoRandomHash(nil),
-		ValidatorFeeTarget: ch.ValidatorFeeTarget,
+		ValidatorFeeTarget: ch.OriginatorAgentID,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		// state baseline is always valid in Solo
 		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
@@ -95,18 +96,14 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 	[]*vm.RequestResult,
 ) {
 	res := ch.runTaskNoLock(reqs, false)
-	gasPayment := ch.Env.selectCoinsForGas(
-		ch.OriginatorAddress,
-		&res.UnsignedTransaction,
-		iotaclient.DefaultGasBudget,
-	)
+	gasPayment := ch.GetLatestGasCoin()
 	if os.Getenv("DEBUG") != "" {
 		res.UnsignedTransaction.Print("-- runRequestsNolock -- ")
 	}
 	ptbRes := ch.Env.executePTB(
 		res.UnsignedTransaction,
 		ch.OriginatorPrivateKey,
-		gasPayment,
+		[]*iotago.ObjectRef{gasPayment.Ref},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)

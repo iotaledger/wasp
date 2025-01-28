@@ -211,7 +211,7 @@ func TestBasicInit(t *testing.T) {
 	require.Equal(t, vCustomAndInit+"!", vCustomAndInitDec)
 }
 
-func TestBasicCodedErr(t *testing.T) {
+func TestBasicCodecErr(t *testing.T) {
 	_, err := bcs.Marshal((*int)(nil))
 	require.Error(t, err)
 	_, err = bcs.Unmarshal[int](nil)

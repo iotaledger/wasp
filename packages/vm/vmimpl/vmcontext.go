@@ -108,7 +108,7 @@ func (vmctx *vmContext) extractBlock(
 ) (uint32, *state.L1Commitment, time.Time, *cryptolib.Address) {
 	var rotationAddr *cryptolib.Address
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		rotationAddr = vmctx.saveBlockInfo(numRequests, numSuccess, numOffLedger)
+		rotationAddr = vmctx.saveBlockInfo(chainState, numRequests, numSuccess, numOffLedger)
 		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.Timestamp)
 	})
 
@@ -127,7 +127,7 @@ func (vmctx *vmContext) checkRotationAddress() (ret *cryptolib.Address) {
 }
 
 // saveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
-func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint16) *cryptolib.Address {
+func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuccess, numOffLedger uint16) *cryptolib.Address {
 	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
 		// block was marked fake by the governance contract because it is a committee rotation.
 		// There was only on request in the block
@@ -148,7 +148,7 @@ func (vmctx *vmContext) saveBlockInfo(numRequests, numSuccess, numOffLedger uint
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 	}
 
-	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(vmctx.stateDraft))
+	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState))
 	blocklogState.SaveNextBlockInfo(blockInfo)
 	blocklogState.Prune(blockInfo.BlockIndex, vmctx.chainInfo.BlockKeepAmount)
 	vmctx.task.Log.Debugf("saved blockinfo:\n%s", blockInfo)

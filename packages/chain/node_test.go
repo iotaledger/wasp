@@ -15,7 +15,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -68,12 +67,12 @@ func TestMain(m *testing.M) {
 func TestNodeBasic(t *testing.T) {
 	t.Parallel()
 	tests := []tc{
-		{n: 1, f: 0, reliable: true, timeout: 1000 * time.Second},   // Low N
-		{n: 2, f: 0, reliable: true, timeout: 2000 * time.Second},   // Low N
-		{n: 3, f: 0, reliable: true, timeout: 3000 * time.Second},   // Low N
-		{n: 4, f: 0, reliable: true, timeout: 4000 * time.Second},   // Minimal robust config.
-		{n: 4, f: 1, reliable: true, timeout: 5000 * time.Second},   // Minimal robust config.
-		{n: 10, f: 3, reliable: true, timeout: 13000 * time.Second}, // Typical config.
+		{n: 1, f: 0, reliable: true, timeout: 30 * time.Second},   // Low N
+		{n: 2, f: 0, reliable: true, timeout: 40 * time.Second},   // Low N
+		{n: 3, f: 0, reliable: true, timeout: 50 * time.Second},   // Low N
+		{n: 4, f: 0, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
+		{n: 4, f: 1, reliable: true, timeout: 100 * time.Second},  // Minimal robust config.
+		{n: 10, f: 3, reliable: true, timeout: 150 * time.Second}, // Typical config.
 	}
 	if !testing.Short() {
 		tests = append(tests,
@@ -252,7 +251,7 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 			}
 
 			await(false)
-			//await(true)
+			// await(true)
 			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
@@ -539,7 +538,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.cmtSigner = testpeers.NewTestDSSSigner(te.cmtAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.cmtSigner.Address()))
-	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinMaxValue*10)
+	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()
 	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)

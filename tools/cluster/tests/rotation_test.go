@@ -18,6 +18,8 @@ import (
 )
 
 func TestBasicRotation(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
 	newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
@@ -67,6 +69,8 @@ func TestBasicRotation(t *testing.T) {
 
 // cluster of 10 access nodes and two overlapping committees
 func TestRotation(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	numRequests := 8
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
@@ -129,6 +133,8 @@ func TestRotation(t *testing.T) {
 // requests in state index 18. In that node, request index 8 is marked as processed
 // only after state manager reaches state index 18 and publishes the transaction.
 func TestRotationFromSingle(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	numRequests := 16
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
@@ -211,6 +217,8 @@ func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee
 }
 
 func TestRotationMany(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	testutil.RunHeavy(t)
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")

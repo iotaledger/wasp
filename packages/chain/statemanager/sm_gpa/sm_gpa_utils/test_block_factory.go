@@ -6,11 +6,13 @@ package sm_gpa_utils
 import (
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -70,8 +72,11 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 			Digest:   nil,
 		},
 		Object: &iscmove.Anchor{
-			ID:            chainIDObjID,
-			Assets:        iscmovetest.RandomAssetsBag(),
+			ID: chainIDObjID,
+			Assets: iscmove.Referent[iscmove.AssetsBag]{
+				ID:    *iotatest.RandomAddress(),
+				Value: lo.ToPtr(iscmovetest.RandomAssetsBag()),
+			},
 			StateMetadata: originStateMetadata.Bytes(),
 			StateIndex:    0,
 		},

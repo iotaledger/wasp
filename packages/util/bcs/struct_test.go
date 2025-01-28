@@ -152,6 +152,10 @@ type WithSlice struct {
 	A []int32
 }
 
+type WithSliceNilIfEmpty struct {
+	A []int32 `bcs:"nil_if_empty"`
+}
+
 type WithShortSlice struct {
 	A []int32 `bcs:"len_bytes=2"`
 }
@@ -188,6 +192,10 @@ func TestStructWithContainers(t *testing.T) {
 	bcs.TestCodecAndBytesVsRef(t, WithSlice{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytesVsRef(t, WithSlice{A: []int32{}}, []byte{0x0})
 	bcs.TestAsymmetricCodec(t, WithSlice{A: nil}, WithSlice{A: []int32{}})
+
+	bcs.TestCodecAndBytes(t, WithSliceNilIfEmpty{A: []int32{42, 43}}, []byte{0x2, 0x2a, 0x0, 0x0, 0x0, 0x2b, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, WithSliceNilIfEmpty{A: nil}, []byte{0x0})
+	bcs.TestAsymmetricCodec(t, WithSliceNilIfEmpty{A: []int32{}}, WithSliceNilIfEmpty{A: nil})
 
 	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: nil}, []byte{0x0})
 	bcs.TestCodecAndBytes(t, WithOptionalSlice{A: []int32{}}, []byte{0x1, 0x0})
