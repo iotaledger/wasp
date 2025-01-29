@@ -76,6 +76,7 @@ func EVMEstimateGas(
 			log,
 			blockTime,
 			iscReq,
+			true,
 		)
 		if err != nil {
 			return true, nil, err

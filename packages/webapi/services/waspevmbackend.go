@@ -98,16 +98,14 @@ func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereu
 	)
 }
 
-func (b *WaspEVMBackend) EVMTraceTransaction(
+func (b *WaspEVMBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
 	l1Params *parameters.L1Params,
 ) error {
-	return chainutil.EVMTraceTransaction(
+	return chainutil.EVMTrace(
 		anchor,
 		l1Params,
 		b.chain.Store(),
@@ -115,8 +113,6 @@ func (b *WaspEVMBackend) EVMTraceTransaction(
 		b.chain.Log(),
 		blockTime,
 		iscRequestsInBlock,
-		txIndex,
-		blockNumber,
 		tracer,
 	)
 }
