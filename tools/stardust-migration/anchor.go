@@ -7,6 +7,7 @@ import (
 	"github.com/nnikolash/wasp-types-exported/packages/kv"
 	"github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	"github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	"github.com/samber/lo"
 )
 
 func GetAnchorOutput(chainState kv.KVStoreReader) *iotago.AliasOutput {
@@ -20,7 +21,7 @@ func GetAnchorOutput(chainState kv.KVStoreReader) *iotago.AliasOutput {
 	blockInfoBytes := registry.GetAt(registry.Len() - 1)
 
 	var blockInfo blocklog.BlockInfo
-	must(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
+	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
 
 	return blockInfo.PreviousAliasOutput.GetAliasOutput()
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/nnikolash/wasp-types-exported/packages/kv"
 	"github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	"github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	"github.com/samber/lo"
 )
 
 type SerializableEntity interface {
@@ -38,10 +39,10 @@ func DeserializeEntity[Dest any](b []byte) (Dest, error) {
 
 	f := func(de DeserializableEntity) (Dest, error) {
 		r := bytes.NewReader(b)
-		must(de.Read(r))
+		lo.Must0(de.Read(r))
 
 		if r.Len() != 0 {
-			leftovers := must2(io.ReadAll(r))
+			leftovers := lo.Must(io.ReadAll(r))
 			panic(fmt.Sprintf("Leftover bytes after reading entity of type %T: initialValue = %x, leftover = %x, leftoverLen = %v", v, b, leftovers, r.Len()))
 		}
 
@@ -135,7 +136,7 @@ func migrateEntityState[Src any, Dest any](srcContractState kv.KVStoreReader, de
 }
 
 func migrateEntityBytes[Src any, Dest any](srcKey kv.Key, srcBytes []byte, migrationFunc EntityMigrationFunc[Src, Dest]) (newKey kv.Key, newVal []byte) {
-	srcEntity := must2(DeserializeEntity[Src](srcBytes))
+	srcEntity := lo.Must(DeserializeEntity[Src](srcBytes))
 
 	destKey, destEntity := migrationFunc(srcKey, srcEntity)
 

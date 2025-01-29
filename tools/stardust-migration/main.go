@@ -4,16 +4,10 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math/big"
 	"os"
-	"runtime"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/hive.go/kvstore/rocksdb"
-	"github.com/nnikolash/wasp-types-exported/packages/database"
 	"github.com/nnikolash/wasp-types-exported/packages/isc"
 	"github.com/nnikolash/wasp-types-exported/packages/isc/coreutil"
 	"github.com/nnikolash/wasp-types-exported/packages/kv"
@@ -24,6 +18,7 @@ import (
 	"github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 	"github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
+	"github.com/samber/lo"
 )
 
 func main() {
@@ -34,9 +29,9 @@ func main() {
 	srcChainDBDir := os.Args[1]
 	destChainDBDir := os.Args[2]
 
-	must(os.MkdirAll(destChainDBDir, 0755))
+	lo.Must0(os.MkdirAll(destChainDBDir, 0755))
 
-	entries := must2(os.ReadDir(destChainDBDir))
+	entries := lo.Must(os.ReadDir(destChainDBDir))
 	if len(entries) > 0 {
 		log.Fatalf("destination directory is not empty: %v", destChainDBDir)
 	}
@@ -47,73 +42,17 @@ func main() {
 
 	srcKVS := connectDB(srcChainDBDir)
 	srcStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(srcKVS))
-	srcState := must2(srcStore.LatestState())
+	srcState := lo.Must(srcStore.LatestState())
 
 	//migrateAccountsContractState(srcState, destStateDraft)
 	//migrate<Other Contract>State(srcState, destStateDraft)
 
-	migrateAccountsContractState2(srcState, destStateDraft)
+	migrateAccountsContractState(srcState, destStateDraft)
 	migrateOtherContractStates(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
 	destKVS.Flush()
-}
-
-func createDB(dbDir string) kvstore.KVStore {
-	// TODO: does this need any options?
-	rocksDatabase := must2(rocksdb.CreateDB(dbDir))
-
-	db := database.New(
-		dbDir,
-		rocksdb.New(rocksDatabase),
-		hivedb.EngineRocksDB,
-		true,
-		func() bool { panic("should not be called") },
-	)
-
-	kvs := db.KVStore()
-
-	return kvs
-}
-
-func connectDB(dbDir string) kvstore.KVStore {
-	rocksDatabase, err := rocksdb.OpenDBReadOnly(dbDir,
-		rocksdb.IncreaseParallelism(runtime.NumCPU()-1),
-		rocksdb.Custom([]string{
-			"periodic_compaction_seconds=43200",
-			"level_compaction_dynamic_level_bytes=true",
-			"keep_log_file_num=2",
-			"max_log_file_size=50000000", // 50MB per log file
-		}),
-	)
-	must(err)
-
-	db := database.New(
-		dbDir,
-		rocksdb.New(rocksDatabase),
-		hivedb.EngineRocksDB,
-		true,
-		func() bool { panic("should not be called") },
-	)
-
-	kvs := db.KVStore()
-
-	return kvs
-}
-
-func must(err error) {
-	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
-	}
-}
-
-func must2[RetVal any](retVal RetVal, err error) RetVal {
-	if err != nil {
-		panic(fmt.Sprintf("%+v", err))
-	}
-
-	return retVal
 }
 
 func getContactStateReader(chainState kv.KVStoreReader, contractHname isc.Hname) kv.KVStoreReader {
@@ -124,7 +63,7 @@ func getContactState(chainState kv.KVStore, contractHname isc.Hname) kv.KVStore 
 	return subrealm.New(chainState, kv.Key(contractHname.Bytes()))
 }
 
-func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
+func migrateAccountsContractState(srcChainState kv.KVStoreReader, destChainState state.StateDraft) {
 	srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(accounts.Contract.Name))
 	destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
 
@@ -137,7 +76,7 @@ func migrateAccountsContractState2(srcChainState kv.KVStoreReader, destChainStat
 	oldAgentIDToNewAgentID := map[isc.AgentID]isc.AgentID{}
 
 	count := migrateEntitiesMapByName(srcContractState, destContractState, accounts.KeyAllAccounts, "", p(func(oldAccountKey kv.Key, srcVal bool) (kv.Key, bool) {
-		oldAgentID := must2(accounts.AgentIDFromKey(oldAccountKey, chainID))
+		oldAgentID := lo.Must(accounts.AgentIDFromKey(oldAccountKey, chainID))
 		newAgentID, newV := migrateAccount(oldAgentID, srcVal)
 		oldAgentIDToNewAgentID[oldAgentID] = newAgentID
 
@@ -266,7 +205,7 @@ func migrateOtherContractStates(srcChainState kv.KVStoreReader, destChainState s
 
 	count := 0
 	collections.NewMapReadOnly(getContactStateReader(srcChainState, coreutil.CoreHname(blocklog.Contract.Name)), blocklog.PrefixUnprocessableRequests).Iterate(func(srcKey, srcBytes []byte) bool {
-		reqID := must2(DeserializeEntity[isc.RequestID](srcKey))
+		reqID := lo.Must(DeserializeEntity[isc.RequestID](srcKey))
 		log.Printf("Warning: unprocessable request found %v", reqID.String())
 		count++
 		return true
