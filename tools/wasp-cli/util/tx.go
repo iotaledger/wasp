@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -33,6 +34,10 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, chainID
 	tx, err := f()
 	log.Check(err)
 	log.Printf("Posted on-ledger transaction %s\n", tx.Digest)
+
+	ref, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	log.Check(err)
+	log.Printf("Request ID: %s\n", ref.ObjectID.String())
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")

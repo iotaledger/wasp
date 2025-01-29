@@ -51,6 +51,7 @@ func EVMCall(
 		log,
 		time.Now(),
 		iscReq,
+		true,
 	)
 	if err != nil {
 		return nil, err

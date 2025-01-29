@@ -1,45 +1,4 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
-// Consensus. Single instance of it.
-//
-// Used sub-protocols (on the same thread):
-//   - DSS -- Distributed Schnorr Signature
-//   - ACS -- Asynchronous Common Subset
-//
-// Used components (running on other threads):
-//   - Mempool
-//   - StateMgr
-//   - VM
-//
-// > INPUT: baseAliasOutputID
-// > ON Startup:
-// >     Start a DSS.
-// >     Ask Mempool for backlog (based on baseAliasOutputID).
-// >     Ask StateMgr for a virtual state (based on baseAliasOutputID).
-// > UPON Reception of responses from Mempool, StateMgr and DSS NonceIndexes:
-// >     Produce a batch proposal.
-// >     Start the ACS.
-// > UPON Reception of ACS output:
-// >     IF result is possible THEN
-// >         Submit agreed NonceIndexes to DSS.
-// >         Send the BLS partial signature.
-// >     ELSE
-// >         OUTPUT SKIP
-// > UPON Reception of N-2F BLS partial signatures:
-// >     Start VM.
-// > UPON Reception of VM Result:
-// >     IF result is non-empty THEN
-// >         Save the produced block to SM.
-// >         Submit the result hash to the DSS.
-// >     ELSE
-// >         OUTPUT SKIP
-// > UPON Reception of VM Result and a signature from the DSS
-// >     IF rotation THEN
-// >        OUTPUT Signed Governance TX.
-// >     ELSE
-// >        Save the block to the StateMgr.
-// >        OUTPUT Signed State Transition TX
+// Consensus. A single instance of it.
 //
 // We move all the synchronization logic to separate objects (upon_...). They are
 // responsible for waiting specific data and then triggering the next state action
@@ -183,7 +142,7 @@ var (
 	_ Cons    = &consImpl{}
 )
 
-func New(
+func New( //nolint:funlen
 	chainID isc.ChainID,
 	chainStore state.Store,
 	me gpa.NodeID,

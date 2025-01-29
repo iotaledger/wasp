@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -75,7 +76,7 @@ func (m MockSandBox) RequestIndex() uint16 {
 	panic("implement me")
 }
 
-func (m MockSandBox) EVMTracer() *isc.EVMTracer {
+func (m MockSandBox) EVMTracer() *tracers.Tracer {
 	panic("implement me")
 }
 
@@ -225,7 +226,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 	testNumber := uint32(1024)
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.Encode[uint32](testNumber)),
+			codec.Encode(testNumber)),
 	}
 
 	result := testMutFuncHandler.Call(mock)
@@ -250,7 +251,7 @@ func TestEntryPointMutFunc12(t *testing.T) {
 	testNumber := uint32(1024)
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.Encode[uint32](testNumber)),
+			codec.Encode(testNumber)),
 	}
 
 	result := testMutFuncHandler.Call(mock)

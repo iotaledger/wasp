@@ -672,36 +672,46 @@ func (e *EVMChain) traceTransaction(
 		tracerType = *config.Tracer
 	}
 
-	blockNumber := uint64(blockInfo.BlockIndex)
-
-	tracer, err := newTracer(tracerType, &tracers.Context{
-		BlockHash:   blockHash,
-		BlockNumber: new(big.Int).SetUint64(blockNumber),
-		TxIndex:     int(txIndex),
-		TxHash:      tx.Hash(),
-	}, config.TracerConfig, false, nil)
+	tracer, err := newTracer(
+		tracerType,
+		&tracers.Context{
+			BlockHash:   blockHash,
+			BlockNumber: new(big.Int).SetUint64(uint64(blockInfo.BlockIndex)),
+			TxIndex:     int(txIndex),
+			TxHash:      tx.Hash(),
+		},
+		config.TracerConfig,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	if evmutil.IsFakeTransaction(tx) {
-		return tracer.TraceFakeTx(tx)
-	}
-
-	err = e.backend.EVMTraceTransaction(
+	err = e.backend.EVMTrace(
 		blockInfo.PreviousAnchor,
 		blockInfo.Timestamp,
 		requestsInBlock,
-		&txIndex,
-		&blockNumber,
-		tracer.Tracer,
+		tracer,
 		blockInfo.L1Params,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return tracer.GetResult()
+	res, err := tracer.GetResult()
+	if err != nil {
+		return nil, err
+	}
+
+	var txResults []TxTraceResult
+	err = json.Unmarshal(res, &txResults)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(txResults) <= int(txIndex) {
+		return nil, errors.New("tx trace not found in tracer result")
+	}
+	return txResults[int(txIndex)].Result, nil
 }
 
 func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
@@ -715,31 +725,28 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		tracerType = *config.Tracer
 	}
 
-	blockNumber := uint64(iscBlock.BlockIndex)
-
-	blockTxs := block.Transactions()
-
-	tracer, err := newTracer(tracerType, &tracers.Context{
-		BlockHash:   block.Hash(),
-		BlockNumber: new(big.Int).SetUint64(blockNumber),
-	}, config.TracerConfig, true, blockTxs)
-	if err != nil {
-		return nil, err
-	}
-
-	err = e.backend.EVMTraceTransaction(
-		iscBlock.PreviousAnchor,
-		iscBlock.Timestamp,
-		iscRequestsInBlock,
-		nil,
-		&blockNumber,
-		tracer.Tracer,
-		iscBlock.L1Params,
+	tracer, err := newTracer(
+		tracerType,
+		&tracers.Context{
+			BlockHash:   block.Hash(),
+			BlockNumber: new(big.Int).SetUint64(uint64(iscBlock.BlockIndex)),
+		},
+		config.TracerConfig,
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	err = e.backend.EVMTrace(
+		iscBlock.PreviousAnchor,
+		iscBlock.Timestamp,
+		iscRequestsInBlock,
+		tracer,
+		iscBlock.L1Params,
+	)
+	if err != nil {
+		return nil, err
+	}
 	return tracer.GetResult()
 }
 
