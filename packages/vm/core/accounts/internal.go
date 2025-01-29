@@ -25,9 +25,9 @@ var (
 )
 
 const (
-	// keyAllAccounts stores a map of <agentID> => true
+	// KeyAllAccounts stores a map of <agentID> => true
 	// Covered in: TestFoundries
-	keyAllAccounts = "a"
+	KeyAllAccounts = "a"
 
 	// prefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
 	// Covered in: TestFoundries
@@ -69,7 +69,7 @@ const (
 	keyObjectOwner = "W"
 )
 
-func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
+func AccountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
 	if agentID.BelongsToChain(chainID) {
 		// save bytes by skipping the chainID bytes on agentIDs for this chain
 		return kv.Key(agentID.BytesWithoutChainID())
@@ -78,15 +78,15 @@ func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
 }
 
 func (s *StateWriter) allAccountsMap() *collections.Map {
-	return collections.NewMap(s.state, keyAllAccounts)
+	return collections.NewMap(s.state, KeyAllAccounts)
 }
 
 func (s *StateReader) allAccountsMapR() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, keyAllAccounts)
+	return collections.NewMapReadOnly(s.state, KeyAllAccounts)
 }
 
 func (s *StateReader) AccountExists(agentID isc.AgentID, chainID isc.ChainID) bool {
-	return s.allAccountsMapR().HasAt([]byte(accountKey(agentID, chainID)))
+	return s.allAccountsMapR().HasAt([]byte(AccountKey(agentID, chainID)))
 }
 
 func (s *StateReader) AllAccountsAsDict() dict.Dict {
@@ -100,7 +100,7 @@ func (s *StateReader) AllAccountsAsDict() dict.Dict {
 
 // touchAccount ensures the account is in the list of all accounts
 func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
-	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Encode(true))
+	s.allAccountsMap().SetAt([]byte(AccountKey(agentID, chainID)), codec.Encode(true))
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance
@@ -108,7 +108,7 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 	if allowance == nil || allowance.IsEmpty() {
 		return true
 	}
-	accountKey := accountKey(agentID, chainID)
+	accountKey := AccountKey(agentID, chainID)
 	for coinType, amount := range allowance.Coins {
 		if s.getCoinBalance(accountKey, coinType) < amount {
 			return false
@@ -129,10 +129,10 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 		return nil
 	}
 
-	if !s.debitFromAccount(accountKey(fromAgentID, chainID), assets.Coins) {
+	if !s.debitFromAccount(AccountKey(fromAgentID, chainID), assets.Coins) {
 		return errors.New("MoveBetweenAccounts: not enough funds")
 	}
-	s.creditToAccount(accountKey(toAgentID, chainID), assets.Coins)
+	s.creditToAccount(AccountKey(toAgentID, chainID), assets.Coins)
 
 	for id := range assets.Objects {
 		obj := s.GetObject(id)

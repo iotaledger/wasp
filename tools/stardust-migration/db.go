@@ -5,9 +5,11 @@ import (
 	"runtime"
 
 	"github.com/iotaledger/hive.go/kvstore"
+	old_kvstore "github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
-	"github.com/nnikolash/wasp-types-exported/packages/database"
+	"github.com/iotaledger/wasp/packages/database"
+	old_database "github.com/nnikolash/wasp-types-exported/packages/database"
 	"github.com/samber/lo"
 )
 
@@ -30,7 +32,7 @@ func createDB(dbDir string) kvstore.KVStore {
 	return kvs
 }
 
-func connectDB(dbDir string) kvstore.KVStore {
+func connectDB(dbDir string) old_kvstore.KVStore {
 	log.Printf("Connecting to DB in %v\n", dbDir)
 
 	rocksDatabase := lo.Must(rocksdb.OpenDBReadOnly(dbDir,
@@ -43,7 +45,7 @@ func connectDB(dbDir string) kvstore.KVStore {
 		}),
 	))
 
-	db := database.New(
+	db := old_database.New(
 		dbDir,
 		rocksdb.New(rocksDatabase),
 		hivedb.EngineRocksDB,

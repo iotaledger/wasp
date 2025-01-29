@@ -52,15 +52,15 @@ func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment co
 }
 
 func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts coin.Value, remainder *big.Int) {
-	return s.getBaseTokens(accountKey(agentID, chainID))
+	return s.getBaseTokens(AccountKey(agentID, chainID))
 }
 
 func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID, chainID isc.ChainID) *big.Int {
-	return s.getBaseTokensFullDecimals(accountKey(agentID, chainID))
+	return s.getBaseTokensFullDecimals(AccountKey(agentID, chainID))
 }
 
 func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) coin.Value {
-	bts, _ := s.getBaseTokens(accountKey(agentID, chainID))
+	bts, _ := s.getBaseTokens(AccountKey(agentID, chainID))
 	return bts
 }
 

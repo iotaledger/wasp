@@ -16,7 +16,7 @@ func (s *StateWriter) CreditToAccount(agentID isc.AgentID, coins isc.CoinBalance
 	if len(coins) == 0 {
 		return
 	}
-	s.creditToAccount(accountKey(agentID, chainID), coins)
+	s.creditToAccount(AccountKey(agentID, chainID), coins)
 	s.creditToAccount(L2TotalsAccount, coins)
 	s.touchAccount(agentID, chainID)
 }
@@ -40,7 +40,7 @@ func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, wei *big.
 	if !bigint.IsPositive(wei) {
 		return
 	}
-	s.creditToAccountFullDecimals(accountKey(agentID, chainID), wei)
+	s.creditToAccountFullDecimals(AccountKey(agentID, chainID), wei)
 	s.creditToAccountFullDecimals(L2TotalsAccount, wei)
 	s.touchAccount(agentID, chainID)
 }
@@ -55,7 +55,7 @@ func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalanc
 	if len(coins) == 0 {
 		return
 	}
-	if !s.debitFromAccount(accountKey(agentID, chainID), coins) {
+	if !s.debitFromAccount(AccountKey(agentID, chainID), coins) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", coins, agentID, ErrNotEnoughFunds))
 	}
 	if !s.debitFromAccount(L2TotalsAccount, coins) {
@@ -95,7 +95,7 @@ func (s *StateWriter) DebitFromAccountFullDecimals(agentID isc.AgentID, amount *
 	if !bigint.IsPositive(amount) {
 		return
 	}
-	if !s.debitFromAccountFullDecimals(accountKey(agentID, chainID), amount) {
+	if !s.debitFromAccountFullDecimals(AccountKey(agentID, chainID), amount) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", amount.String(), agentID, ErrNotEnoughFunds))
 	}
 
@@ -130,7 +130,7 @@ func (s *StateReader) getFungibleTokens(accountKey kv.Key) isc.CoinBalances {
 
 // GetAccountFungibleTokens returns all fungible tokens belonging to the agentID on the state
 func (s *StateReader) GetAccountFungibleTokens(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
-	return s.getFungibleTokens(accountKey(agentID, chainID))
+	return s.getFungibleTokens(AccountKey(agentID, chainID))
 }
 
 func (s *StateReader) GetTotalL2FungibleTokens() isc.CoinBalances {

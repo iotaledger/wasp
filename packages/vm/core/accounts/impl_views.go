@@ -14,7 +14,7 @@ import (
 func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) isc.CoinBalances {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	ctx.Log().Debugf("accounts.viewBalance %s", aid)
-	return NewStateReaderFromSandbox(ctx).getFungibleTokens(accountKey(aid, ctx.ChainID()))
+	return NewStateReaderFromSandbox(ctx).getFungibleTokens(AccountKey(aid, ctx.ChainID()))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
@@ -32,7 +32,7 @@ func viewBalanceBaseTokenEVM(ctx isc.SandboxView, optionalAgentID *isc.AgentID) 
 func viewBalanceCoin(ctx isc.SandboxView, optionalAgentID *isc.AgentID, coinID coin.Type) coin.Value {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getCoinBalance(
-		accountKey(aid, ctx.ChainID()),
+		AccountKey(aid, ctx.ChainID()),
 		coinID,
 	)
 }

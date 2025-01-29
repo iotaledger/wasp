@@ -7,7 +7,7 @@ import (
 )
 
 func nonceKey(callerAgentID isc.AgentID, chainID isc.ChainID) kv.Key {
-	return keyNonce + accountKey(callerAgentID, chainID)
+	return keyNonce + AccountKey(callerAgentID, chainID)
 }
 
 // AccountNonce returns the "total request count" for an account (it's the AccountNonce that is expected in the next request)
