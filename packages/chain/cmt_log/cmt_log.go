@@ -65,7 +65,7 @@ type cmtLogImpl struct {
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
 	varConsInsts           VarConsInsts           // The main algorithm.
-	suspended              bool                   // Is this commitee currently suspended?
+	suspended              bool                   // Is this committee currently suspended?
 	output                 Output                 // The current output.
 	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
 	log                    *logger.Logger
