@@ -738,6 +738,7 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		cmtInsts.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
 			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
+				ci.Cancel()
 				cmtInsts.Delete(li)
 			}
 			return true
