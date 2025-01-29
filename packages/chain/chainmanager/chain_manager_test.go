@@ -98,6 +98,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		needConsensusCB := func(upd *chainmanager.NeedConsensusMap) {
 			needCons[nid] = upd
 		}
+		needPublishCB := func(upd *chainmanager.NeedPublishTXMap) {}
 		cm, err := chainmanager.New(
 			nid,
 			anchor.ChainID(),
@@ -106,6 +107,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			dkRegs[i],
 			gpa.NodeIDFromPublicKey,
 			needConsensusCB,
+			needPublishCB,
 			activeAccessNodesCB,
 			trackActiveStateCB,
 			savePreliminaryBlockCB,
