@@ -342,6 +342,10 @@ func New(
 			log.Debugf("needConsensusCB called with %v", upd)
 			cni.handleNeedConsensus(ctx, upd)
 		},
+		func(upd *chainmanager.NeedPublishTXMap) {
+			log.Debugf("needPublishCB called with %v", upd)
+			cni.handleNeedPublishTX(ctx, upd)
+		},
 		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			cni.accessLock.RLock()
 			defer cni.accessLock.RUnlock()
@@ -512,13 +516,13 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				recvTxPublishedPipeOutCh = nil
 				continue
 			}
-			cni.handleTxPublished(ctx, txPublishResult)
+			cni.handleTxPublished(txPublishResult)
 		case aliasOutput, ok := <-recvAnchorPipeOutCh:
 			if !ok {
 				recvAnchorPipeOutCh = nil
 				continue
 			}
-			cni.handleAliasOutput(ctx, aliasOutput)
+			cni.handleAliasOutput(aliasOutput)
 		case timestamp := <-timestampTicker.C:
 			cni.handleMilestoneTimestamp(timestamp)
 		case recv, ok := <-netRecvPipeOutCh:
@@ -526,19 +530,19 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				netRecvPipeOutCh = nil
 				continue
 			}
-			cni.handleNetMessage(ctx, recv)
+			cni.handleNetMessage(recv)
 		case recv, ok := <-consOutputPipeOutCh:
 			if !ok {
 				consOutputPipeOutCh = nil
 				continue
 			}
-			cni.handleConsensusOutput(ctx, recv)
+			cni.handleConsensusOutput(recv)
 		case recv, ok := <-consRecoverPipeOutCh:
 			if !ok {
 				consRecoverPipeOutCh = nil
 				continue
 			}
-			cni.handleConsensusRecover(ctx, recv)
+			cni.handleConsensusRecover(recv)
 		case cfg, ok := <-cni.configUpdatedCh:
 			if !ok {
 				cni.configUpdatedCh = nil
@@ -573,10 +577,8 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 			}
 		case <-consensusDelayTicker.C:
 			cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputCanPropose()))
-			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case t := <-redeliveryPeriodTicker.C:
 			cni.sendMessages(cni.chainMgr.Input(cni.chainMgr.MakeTickInput(t)))
-			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case <-ctx.Done():
 			continue
 		}
@@ -655,7 +657,7 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 	cni.updateServerNodes(serverNodes)
 }
 
-func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
+func (cni *chainNodeImpl) handleTxPublished(txPubResult *txPublished) {
 	cni.log.Debugf("handleTxPublished, txID=%v", txPubResult.txID)
 	if !cni.publishingTXes.Has(txPubResult.txID) {
 		return
@@ -666,10 +668,9 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc.StateAnchor) {
+func (cni *chainNodeImpl) handleAliasOutput(aliasOutput isc.StateAnchor) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
 		sm, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
@@ -689,18 +690,21 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc
 
 	cni.stateTrackerCnf.TrackAliasOutput(&aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(&aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
+
+	cni.accessLock.Lock()
+	cni.latestConfirmedAO = &aliasOutput
+	cni.latestActiveAO = &aliasOutput
+	cni.accessLock.Unlock()
+
 	outMsgs := cni.chainMgr.Input(
 		chainmanager.NewInputAnchorConfirmed(aliasOutput.Owner(), &aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
-	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
-	cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputMilestoneReceived()))
 	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
@@ -712,7 +716,7 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	})
 }
 
-func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.PeerMessageIn) {
+func (cni *chainNodeImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 	msg, err := cni.chainMgr.UnmarshalMessage(recv.MsgData)
 	if err != nil {
 		cni.log.Warnf("cannot parse message: %v", err)
@@ -720,7 +724,6 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 	}
 	msg.SetSender(cni.pubKeyAsNodeID(recv.SenderPubKey))
 	cni.sendMessages(cni.chainMgr.Message(msg))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
@@ -746,19 +749,8 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	})
 }
 
-func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
-	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
-	if outputUntyped == nil { // TODO: Will never be nil, fix it.
-		// Not sure, if it is OK to terminate them immediately at this point.
-		// This is for the case, if the current node is not in a committee of a chain anymore.
-		cni.cleanupPublishingTXes(nil)
-		return
-	}
-	output := outputUntyped.(*chainmanager.Output)
-	//
-	// Start publishing TX'es, if there not being posted already.
-	outputNeedPostTXes := output.NeedPublishTX()
-	outputNeedPostTXes.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
+func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainmanager.NeedPublishTXMap) {
+	upd.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
 		txToPost := needPublishTx // Have to take a copy to be used in callback.
 		txHash := lo.Must(txToPost.Tx.Hash())
 
@@ -786,20 +778,11 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 		return true
 	})
 
-	cni.cleanupPublishingTXes(outputNeedPostTXes)
-	//
-	// Update info for access by other components.
-	cni.accessLock.Lock()
-	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
-	cni.latestActiveAO = output.LatestActiveAnchorObject()
-	// if cni.latestActiveAO == nil {	// TODO: Check, how is this handled in the case of rejections.
-	// 	cni.latestActiveState = nil
-	// 	cni.latestActiveStateAO = nil
-	// }
-	cni.accessLock.Unlock()
+	cni.cleanupPublishingTXes(upd)
+
 }
 
-func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
+func (cni *chainNodeImpl) handleConsensusOutput(out *consOutput) {
 	cni.log.Debugf("handleConsensusOutput, %v", out)
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
@@ -819,17 +802,15 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
 	}
 	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
+func (cni *chainNodeImpl) handleConsensusRecover(out *consRecover) {
 	cni.log.Debugf("handleConsensusRecover: %v", out)
 	chainMgrInput := chainmanager.NewInputConsensusTimeout(
 		out.request.CommitteeAddr,
 		out.request.LogIndex,
 	)
 	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainmanager.NeedConsensus) {
