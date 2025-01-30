@@ -54,150 +54,43 @@ func main() {
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 	srcState := lo.Must(srcStore.LatestState())
 
-	//migrateAccountsContractState(srcState, destStateDraft)
-	//migrate<Other Contract>State(srcState, destStateDraft)
-
-	migrateAccountsContractState(srcState, destStateDraft)
-	migrateOtherContractStates(srcState, destStateDraft)
+	migrateAccountsContract(srcState, destStateDraft)
+	migrateBlocklogContract(srcState, destStateDraft)
+	migrateGovernanceContract(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
 	destKVS.Flush()
 }
 
-func migrateAccountsContractState(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
-	srcContractState := getContactStateReader(srcChainState, old_accounts.Contract.Hname())
-	destContractState := getContactState(destChainState, accounts.Contract.Hname())
+func migrateAccountsContract(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
+	log.Print("Migrating accounts contract...\n")
+
+	srcState := getContactStateReader(srcChainState, old_accounts.Contract.Hname())
+	destState := getContactState(destChainState, accounts.Contract.Hname())
 
 	oldChainID := old_isc.ChainID(GetAnchorOutput(srcChainState).AliasID)
 	newChainID := isc.ChainID(oldChainID)
 
-	log.Print("Migrating accounts contract state...\n")
-
-	// Accounts
-	log.Printf("Migrating accounts...\n")
 	oldAgentIDToNewAgentID := map[old_isc.AgentID]isc.AgentID{}
 
-	count := migrateEntitiesMapByName(srcContractState, destContractState, old_accounts.KeyAllAccounts, accounts.KeyAllAccounts, p(func(oldAccountKey old_kv.Key, srcVal bool) (kv.Key, bool) {
-		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChainID))
-		newAgentID, newV := migrateAccount(oldAgentID, srcVal)
-		oldAgentIDToNewAgentID[oldAgentID] = newAgentID
+	migrateAccounts(srcState, destState, oldChainID, newChainID, &oldAgentIDToNewAgentID)
+	migrateFoundries(srcState, destState)
+	migrateFoundriesPerAccount(srcState, destState, oldAgentIDToNewAgentID)
+	migrateBaseTokenBalances(srcState, destState)
+	migrateNativeTokenBalances(srcState, destState, oldChainID, newChainID, oldAgentIDToNewAgentID)
+	migrateAccountToNFT(srcState, destState, oldAgentIDToNewAgentID)
+	migrateNFTtoOwner(srcState, destState)
+	migrateNFTsByCollection(srcState, destState, oldAgentIDToNewAgentID)
+	migrateNativeTokenOutputs(srcState, destState)
+	migrateNativeTokenBalanceTotal(srcState, destState)
+	migrateAllMintedNfts(srcState, destState)
 
-		return accounts.AccountKey(newAgentID, newChainID), newV
-	}))
-
-	log.Printf("Migrated %v accounts\n", count)
-
-	// // All foundries
-	// log.Printf("Migrating list of all foundries...\n")
-	// count = migrateEntitiesMapByName(srcContractState, destContractState, accounts.KeyFoundryOutputRecords, "", p(migrateFoundryOutput))
-	// log.Printf("Migrated %v foundries\n", count)
-
-	// // Founries per account
-	// // mapMame := PrefixFoundries + string(agentID.Bytes())
-	// log.Printf("Migrating foundries of accounts...\n")
-
-	// count = 0
-	// migrateFoundriesOfAccount := p(migrateFoundriesOfAccount)
-	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-	// 	oldMapName := accounts.PrefixFoundries + string(oldAgentID.Bytes())
-	// 	newMapName := accounts.PrefixFoundries + string(newAgentID.Bytes())
-
-	// 	count += migrateEntitiesMapByName(srcContractState, destContractState, oldMapName, newMapName, migrateFoundriesOfAccount)
-	// }
-	// log.Printf("Migrated %v foundries of accounts\n", count)
-
-	// // Base token blances
-	// log.Printf("Migrating base token balances...\n")
-
-	// count = migrateEntitiesByPrefix(srcContractState, destContractState, accounts.PrefixBaseTokens, p(migrateBaseTokenBalance))
-
-	// log.Printf("Migrated %v base token balances\n", count)
-
-	// // Native token balances
-	// // mapName := PrefixNativeTokens + string(accountKey)
-	// log.Printf("Migrating native token balances...\n")
-
-	// count = 0
-	// migrateNativeTokenBalance := p(migrateNativeTokenBalance)
-	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-	// 	oldMapName := accounts.PrefixNativeTokens + string(accounts.AccountKey(oldAgentID, oldChainID))
-	// 	newMapName := accounts.PrefixNativeTokens + string(accounts.AccountKey(newAgentID, oldChainID))
-	// 	count += migrateEntitiesMapByName(srcContractState, destContractState, oldMapName, newMapName, migrateNativeTokenBalance)
-	// }
-
-	// log.Printf("Migrated %v native token balances\n", count)
-
-	// // Account to NFT
-	// // mapName := PrefixNFTs + string(agentID.Bytes())
-	// log.Printf("Migrating NFTs per account...\n")
-
-	// count = 0
-	// migrateNFT := p(migrateNFT)
-	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-	// 	oldMapName := accounts.PrefixNFTs + string(oldAgentID.Bytes())
-	// 	newMapName := accounts.PrefixNFTs + string(newAgentID.Bytes())
-	// 	count += migrateEntitiesMapByName(srcContractState, destContractState, oldMapName, newMapName, migrateNFT)
-	// }
-
-	// log.Printf("Migrated %v NFTs per account\n", count)
-
-	// // NFT to Owner
-	// log.Printf("Migrating NFT owners...\n")
-
-	// count = migrateEntitiesMapByName(srcContractState, destContractState, accounts.KeyNFTOwner, "", p(migrateNFTOwners))
-
-	// log.Printf("Migrated %v NFT owners\n", count)
-
-	// // NFTs by collection
-	// // mapName := PrefixNFTsByCollection + string(agentID.Bytes()) + string(collectionID.Bytes())
-	// log.Printf("Migrating NFTs by collection...\n")
-
-	// // NOTE: There is no easy way to retrieve list of referenced collections
-	// count = 0
-	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-	// 	oldPrefix := accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
-	// 	count += migrateEntitiesByPrefix(srcContractState, destContractState, oldPrefix, func(oldKey kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
-	// 		return migrateNFTByCollection(oldKey, srcVal, oldAgentID, newAgentID)
-	// 	})
-	// }
-
-	// log.Printf("Migrated %v NFTs by collection\n", count)
-
-	// // Native token outputs
-	// log.Printf("Migrating native token outputs...\n")
-
-	// count = migrateEntitiesMapByName(srcContractState, destContractState, accounts.KeyNativeTokenOutputMap, "", p(migrateNativeTokenOutput))
-
-	// log.Printf("Migrated %v native token outputs\n", count)
-
-	// // Native token total balance
-	// log.Printf("Migrating native token total balance...\n")
-
-	// count = migrateEntitiesMapByName(srcContractState, destContractState, accounts.PrefixNativeTokens+accounts.L2TotalsAccount, "", p(migrateNativeTokenBalanceTotal))
-
-	// log.Printf("Migrated %v native token total balance\n", count)
-
-	// // All minted NFTs
-	// // prefixMintIDMap stores a map of <internal NFTID> => <NFTID>
-	// log.Printf("Migrating All minted NFTs...\n")
-
-	// count = migrateEntitiesMapByName(srcContractState, destContractState, accounts.PrefixMintIDMap, "", p(migrateAllMintedNfts))
-
-	// log.Printf("Migrated %v All minted NFTs\n", count)
-
-	log.Print("Migrated accounts contract state\n")
+	log.Print("Migrated accounts contract\n")
 }
 
-func migrateOtherContractStates(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
-
-	//srcContractState := getContactStateReader(srcChainState, coreutil.CoreHname(blocklog.Contract.Name))
-	// destContractState := getContactState(destChainState, coreutil.CoreHname(accounts.Contract.Name))
-
-	governanceContractStateSrc := getContactStateReader(srcChainState, old_governance.Contract.Hname())
-	governanceContractStateDest := getContactState(destChainState, governance.Contract.Hname())
-
-	log.Print("Migrating other contracts states\n")
+func migrateBlocklogContract(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
+	log.Print("Migrating blocklog contract\n")
 
 	// Unprocessable Requests (blocklog contract)
 	// No need to migrate. Just print a warning if there are any
@@ -206,98 +99,263 @@ func migrateOtherContractStates(srcChainState old_kv.KVStoreReader, destChainSta
 	blocklogContractStateSrc := getContactStateReader(srcChainState, old_blocklog.Contract.Hname())
 	count := 0
 	old_collections.NewMapReadOnly(blocklogContractStateSrc, old_blocklog.PrefixUnprocessableRequests).Iterate(func(srcKey, srcBytes []byte) bool {
-		reqID := lo.Must(DeserializeEntity[isc.RequestID](srcKey))
+		reqID := lo.Must(Deserialize[isc.RequestID](srcKey))
 		log.Printf("Warning: unprocessable request found %v", reqID.String())
 		count++
 		return true
 	})
+
 	log.Printf("Listing Unprocessable Requests completed (found %v entities)\n", count)
+
+	log.Print("Migrated blocklog contract\n")
+}
+
+func migrateGovernanceContract(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
+	srcState := getContactStateReader(srcChainState, old_governance.Contract.Hname())
+	destState := getContactState(destChainState, governance.Contract.Hname())
+
+	log.Print("Migrating governance contract\n")
 
 	// Chain Owner
 	log.Printf("Migrating chain owner...\n")
-	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, old_governance.VarChainOwnerID, migrateAsIs)
+	migrateEntityState(srcState, destState, old_governance.VarChainOwnerID, migrateAsIs(""))
 	log.Printf("Migrated chain owner\n")
 
 	// Chain Owner delegated
 	log.Printf("Migrating chain owner delegated...\n")
-	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, old_governance.VarChainOwnerIDDelegated, migrateAsIs)
+	migrateEntityState(srcState, destState, old_governance.VarChainOwnerIDDelegated, migrateAsIs(""))
 	log.Printf("Migrated chain owner delegated\n")
 
 	// Payout agent
 	log.Printf("Migrating Payout agent...\n")
-	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, old_governance.VarPayoutAgentID, migrateAsIs)
+	migrateEntityState(srcState, destState, old_governance.VarPayoutAgentID, migrateAsIs(""))
 	log.Printf("Migrated Payout agent\n")
 
 	// Min Base Tokens On Common Account
 	log.Printf("Migrating Min Base Tokens On Common Account...\n")
-	migrateEntityState(governanceContractStateSrc, governanceContractStateDest, old_governance.VarMinBaseTokensOnCommonAccount, migrateAsIs)
+	migrateEntityState(srcState, destState, old_governance.VarMinBaseTokensOnCommonAccount, migrateAsIs(""))
 	log.Printf("Migrated Min Base Tokens On Common Account\n")
 
-	log.Print("Migrated other contracts states\n")
+	log.Print("Migrated governance contract\n")
 }
 
-func migrateAsIs(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-	return kv.Key(srcKey), srcVal
-}
-
-func migrateAccount(oldAgentID old_isc.AgentID, srcVal bool) (newAgentID isc.AgentID, destVal bool) {
-	//return isc.AgentID(oldAgentID), srcVal
-	panic("not implemented")
-}
-
-func migrateFoundryOutput(srcKey old_kv.Key, srcVal old_accounts.FoundryOutputRec) (destKey kv.Key, destVal string) {
-	return kv.Key(srcKey), "dummy new value"
-}
-
-func migrateFoundriesOfAccount(srcKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
-	return kv.Key(srcKey) + "dummy new key", srcVal
-}
-
-func migrateBaseTokenBalance(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-	return kv.Key(srcKey) + "dummy new key", srcVal
-}
-
-func migrateNativeTokenBalance(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-	return kv.Key(srcKey) + "dummy new key", srcVal
-}
-
-func migrateNFT(srcKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
-	return kv.Key(srcKey) + "dummy new key", srcVal
-}
-
-func migrateNFTOwners(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-	return kv.Key(srcKey) + "dummy new key", append(srcVal, []byte("dummy new value")...)
-}
-
-func migrateNFTByCollection(oldKey old_kv.Key, srcVal bool, oldAgentID, newAgentID isc.AgentID) (destKey kv.Key, destVal bool) {
-	oldMapName, oldMapElemKey := SplitMapKey(oldKey)
-
-	oldPrefix := old_accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
-	collectionIDBytes := oldMapName[len(oldPrefix):]
-
-	newMapName := old_accounts.PrefixNFTsByCollection + string(newAgentID.Bytes()) + string(collectionIDBytes)
-
-	newKey := newMapName
-
-	if oldMapElemKey != "" {
-		// If this record is map element - we form map element key.
-		nftID := oldMapElemKey
-		// TODO: migrate NFT ID
-		newKey += "." + string(nftID)
+// Old bytes are copied into new state
+func migrateAsIs(newKey kv.Key) EntityMigrationFunc[[]byte, []byte] {
+	if newKey == "" {
+		panic("newKey cannot be empty")
 	}
 
-	return kv.Key(newKey), srcVal
+	return func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+		return newKey, srcVal
+	}
 }
 
-func migrateNativeTokenOutput(srcKey old_kv.Key, srcVal old_accounts.NativeTokenOutputRec) (destKey kv.Key, destVal old_accounts.NativeTokenOutputRec) {
-	return kv.Key(srcKey), srcVal
+// Old bytes are just decoded and re-encoded again as new bytes
+func migrateEncoding[ValueType any](newKey kv.Key) EntityMigrationFunc[ValueType, ValueType] {
+	if newKey == "" {
+		panic("newKey cannot be empty")
+	}
+
+	return func(srcKey old_kv.Key, srcVal ValueType) (destKey kv.Key, destVal ValueType) {
+		if _, ok := interface{}(srcVal).([]byte); ok {
+			panic("srcVal cannot be []byte - use migrateAsIs instead")
+		}
+
+		return newKey, srcVal
+	}
 }
 
-func migrateNativeTokenBalanceTotal(srcKey old_kv.Key, srcVal *big.Int) (destKey kv.Key, destVal []byte) {
-	// TODO: new amount format (if not big.Int)
-	return kv.Key(srcKey), []byte{0}
+func migrateAccounts(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChID old_isc.ChainID, newChID isc.ChainID, oldAgentIDToNewAgentID *map[old_isc.AgentID]isc.AgentID) {
+	log.Printf("Migrating accounts...\n")
+
+	migrateAccount := func(oldAgentID old_isc.AgentID, srcVal bool) (newAgentID isc.AgentID, destVal bool) {
+		// switch oldAgentID {
+		// case old_accounts.ChainOwnerAgentID:
+		// 	return isc.ChainOwnerAgentID, srcVal
+		panic("XXX: implement me")
+	}
+
+	migrateAccountAndUpdateMapping := p(func(oldAccountKey old_kv.Key, srcVal bool) (kv.Key, bool) {
+		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChID))
+		newAgentID, newV := migrateAccount(oldAgentID, srcVal)
+
+		// While migrating accounts, also gathering mapping of old AgentID to new AgentID.
+		// Pointer is not needed here, but its here just to emphasize that it is output argument.
+		(*oldAgentIDToNewAgentID)[oldAgentID] = newAgentID
+
+		return accounts.AccountKey(newAgentID, newChID), newV
+	})
+
+	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyAllAccounts, accounts.KeyAllAccounts, migrateAccountAndUpdateMapping)
+
+	log.Printf("Migrated %v accounts\n", count)
 }
 
-func migrateAllMintedNfts(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-	return kv.Key(srcKey), []byte{0}
+func migrateFoundries(srcState old_kv.KVStoreReader, destState kv.KVStore) {
+	log.Printf("Migrating list of all foundries...\n")
+
+	migrateEntry := func(srcKey old_kv.Key, srcVal old_accounts.FoundryOutputRec) (destKey kv.Key, destVal string) {
+		return kv.Key(srcKey), "dummy new value"
+	}
+
+	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyFoundryOutputRecords, "", p(migrateEntry))
+
+	log.Printf("Migrated %v foundries\n", count)
+}
+
+func migrateFoundriesPerAccount(srcState old_kv.KVStoreReader, destState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
+	// log.Printf("Migrating foundries of accounts...\n")
+
+	// var count uint32
+
+	// migrateFoundriesOfAccount := p(func(srcKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
+	// 	return kv.Key(srcKey) + "dummy new key", srcVal
+	// })
+
+	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+	// 	// mapMame := PrefixFoundries + string(agentID.Bytes())
+	// 	oldMapName := old_accounts.PrefixFoundries + string(oldAgentID.Bytes())
+	// 	newMapName := accounts.PrefixFoundries + string(newAgentID.Bytes())
+
+	// 	count += migrateEntitiesMapByName(srcState, destState, oldMapName, newMapName, migrateFoundriesOfAccount)
+	// }
+
+	// log.Printf("Migrated %v foundries of accounts\n", count)
+}
+
+func migrateBaseTokenBalances(srcState old_kv.KVStoreReader, destState kv.KVStore) {
+	log.Printf("Migrating base token balances...\n")
+
+	migrateEntry := func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+		return kv.Key(srcKey) + "dummy new key", srcVal
+	}
+
+	count := migrateEntitiesByPrefix(srcState, destState, old_accounts.PrefixBaseTokens, p(migrateEntry))
+
+	log.Printf("Migrated %v base token balances\n", count)
+}
+
+func migrateNativeTokenBalances(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
+	// log.Printf("Migrating native token balances...\n")
+
+	// var count uint32
+	// migrateEntry := p(func (srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+	// 	return kv.Key(srcKey) + "dummy new key", srcVal
+	// })
+
+	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+	// 	// mapName := PrefixNativeTokens + string(accountKey)
+	// 	oldMapName := old_accounts.PrefixNativeTokens + string(old_accounts.AccountKey(oldAgentID, oldChainID))
+	// 	newMapName := accounts.PrefixNativeTokens + string(accounts.AccountKey(newAgentID, newChainID))
+
+	// 	count += migrateEntitiesMapByName(srcState, destState, oldMapName, newMapName, migrateEntry)
+	// }
+
+	// log.Printf("Migrated %v native token balances\n", count)
+}
+
+func migrateAccountToNFT(srcState old_kv.KVStoreReader, destState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
+	// log.Printf("Migrating NFTs per account...\n")
+
+	// var count uint32
+	// migrateEntry := p(func(srcKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
+	// 	return kv.Key(srcKey) + "dummy new key", srcVal
+	// })
+
+	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+	// 	// mapName := PrefixNFTs + string(agentID.Bytes())
+	// 	oldMapName := old_accounts.PrefixNFTs + string(oldAgentID.Bytes())
+	// 	newMapName := accounts.PrefixNFTs + string(newAgentID.Bytes())
+
+	// 	count += migrateEntitiesMapByName(srcState, destState, oldMapName, newMapName, migrateEntry)
+	// }
+
+	// log.Printf("Migrated %v NFTs per account\n", count)
+}
+
+func migrateNFTtoOwner(srcState old_kv.KVStoreReader, destState kv.KVStore) {
+	log.Printf("Migrating NFT owners...\n")
+
+	migrateEntry := func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+		return kv.Key(srcKey) + "dummy new key", append(srcVal, []byte("dummy new value")...)
+	}
+
+	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyNFTOwner, "", p(migrateEntry))
+	log.Printf("Migrated %v NFT owners\n", count)
+}
+
+func migrateNFTsByCollection(srcState old_kv.KVStoreReader, destState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
+	// log.Printf("Migrating NFTs by collection...\n")
+
+	// var count uint32
+
+	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+	// 	// mapName := PrefixNFTsByCollection + string(agentID.Bytes()) + string(collectionID.Bytes())
+	// 	// NOTE: There is no easy way to retrieve list of referenced collections
+	// 	oldPrefix := old_accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
+
+	// 	count += migrateEntitiesByPrefix(srcState, destState, oldPrefix, func(oldKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
+	// 		return migrateNFTsByCollectionEntry(oldKey, srcVal, oldAgentID, newAgentID)
+	// 	})
+	// }
+
+	// log.Printf("Migrated %v NFTs by collection\n", count)
+}
+
+// func migrateNFTsByCollectionEntry(oldKey old_kv.Key, srcVal bool, oldAgentID old_isc.AgentID, newAgentID isc.AgentID) (destKey kv.Key, destVal bool) {
+// 	oldMapName, oldMapElemKey := SplitMapKey(oldKey)
+
+// 	oldPrefix := old_accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
+// 	collectionIDBytes := oldMapName[len(oldPrefix):]
+
+// 	newMapName := accounts.PrefixNFTsByCollection + string(newAgentID.Bytes()) + string(collectionIDBytes)
+
+// 	newKey := newMapName
+
+// 	if oldMapElemKey != "" {
+// 		// If this record is map element - we form map element key.
+// 		nftID := oldMapElemKey
+// 		// TODO: migrate NFT ID
+// 		newKey += "." + string(nftID)
+// 	}
+
+// 	return kv.Key(newKey), srcVal
+// }
+
+func migrateNativeTokenOutputs(srcState old_kv.KVStoreReader, destState kv.KVStore) {
+	log.Printf("Migrating native token outputs...\n")
+
+	migrateEntry := func(srcKey old_kv.Key, srcVal old_accounts.NativeTokenOutputRec) (destKey kv.Key, destVal old_accounts.NativeTokenOutputRec) {
+		return kv.Key(srcKey), srcVal
+	}
+
+	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyNativeTokenOutputMap, "", p(migrateEntry))
+
+	log.Printf("Migrated %v native token outputs\n", count)
+}
+
+func migrateNativeTokenBalanceTotal(srcState old_kv.KVStoreReader, destState kv.KVStore) {
+	log.Printf("Migrating native token total balance...\n")
+
+	migrateEntry := func(srcKey old_kv.Key, srcVal *big.Int) (destKey kv.Key, destVal []byte) {
+		// TODO: new amount format (if not big.Int)
+		return kv.Key(srcKey), []byte{0}
+	}
+
+	count := migrateEntitiesMapByName(srcState, destState, old_accounts.PrefixNativeTokens+accounts.L2TotalsAccount, "", p(migrateEntry))
+
+	log.Printf("Migrated %v native token total balance\n", count)
+}
+
+func migrateAllMintedNfts(srcState old_kv.KVStoreReader, destState kv.KVStore) {
+	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID>
+	log.Printf("Migrating All minted NFTs...\n")
+
+	migrateEntry := func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+		return kv.Key(srcKey), []byte{0}
+	}
+
+	count := migrateEntitiesMapByName(srcState, destState, old_accounts.PrefixMintIDMap, "", p(migrateEntry))
+
+	log.Printf("Migrated %v All minted NFTs\n", count)
 }
