@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
+	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -58,7 +59,13 @@ func OldTokensCountToNewCoinValue(oldTokensCount uint64) coin.Value {
 
 func DecodeOldTokens(b []byte) uint64 {
 	amount := old_codec.MustDecodeBigIntAbs(b, big.NewInt(0))
+	// TODO: would this make sense for native tokens?
 	convertedAmount, _ := old_util.EthereumDecimalsToBaseTokenDecimals(amount, oldBaseTokenDecimals)
 
 	return convertedAmount
+}
+
+func OldNativeTokemIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
+	// TODO: Implement properly
+	panic("Not implemented")
 }

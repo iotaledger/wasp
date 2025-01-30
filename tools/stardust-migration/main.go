@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"strings"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -87,10 +86,10 @@ func migrateAccountsContract(srcChainState old_kv.KVStoreReader, destChainState 
 	oldAgentIDToNewAgentID := map[old_isc.AgentID]isc.AgentID{}
 
 	migrateAccountsList(srcState, destState, oldChainID, newChainID, &oldAgentIDToNewAgentID)
-	migrateBaseTokenBalances(srcState, destState, oldChainID)
+	migrateBaseTokenBalances(srcState, destState, oldChainID, oldAgentIDToNewAgentID)
+	migrateNativeTokenBalances(srcState, destState, oldChainID, oldAgentIDToNewAgentID)
 	// migrateFoundriesOutputs(srcState, destState)
 	// migrateFoundriesPerAccount(srcState, destState, oldAgentIDToNewAgentID)
-	// migrateNativeTokenBalances(srcState, destState, oldChainID, newChainID, oldAgentIDToNewAgentID)
 	// migrateAccountToNFT(srcState, destState, oldAgentIDToNewAgentID)
 	// migrateNFTtoOwner(srcState, destState)
 	// migrateNFTsByCollection(srcState, destState, oldAgentIDToNewAgentID)
@@ -173,23 +172,56 @@ func migrateAccountsList(srcState old_kv.KVStoreReader, destState kv.KVStore, ol
 	log.Printf("Migrated list of %v accounts\n", count)
 }
 
-func migrateBaseTokenBalances(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChainID old_isc.ChainID) {
+func migrateBaseTokenBalances(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChainID old_isc.ChainID, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
 	log.Printf("Migrating base token balances...\n")
 
-	count := IterateByPrefix(srcState, old_accounts.PrefixBaseTokens, func(srcKey old_kv.Key, srcVal []byte) {
-		oldAccountKey := strings.TrimPrefix(string(srcKey), old_accounts.PrefixBaseTokens)
-		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(oldAccountKey), oldChainID))
-		oldAmount := DecodeOldTokens(srcVal)
+	// NOTE: Simply iterating by prefix is unsafe - the prefix might be a subprefix of another prefix
 
-		newAgentID := OldAgentIDtoNewAgentID(oldAgentID)
+	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+		oldKey := old_accounts.BaseTokensKey(old_accounts.AccountKey(oldAgentID, oldChainID))
+		oldValBytes := srcState.Get(oldKey)
+		// TODO: Could it be missing? How that would work?
+		oldAmount := DecodeOldTokens(oldValBytes)
+
 		newAccountKey := accounts.AccountKey(newAgentID, OldChainIDToNewChainID(oldChainID))
 		newAmount := OldTokensCountToNewCoinValue(oldAmount)
 
 		coinBalances := collections.NewMap(destState, accounts.AccountCoinBalancesKey(newAccountKey))
 		coinBalances.SetAt(coin.BaseTokenType.Bytes(), codec.Encode(newAmount))
-	})
+	}
 
-	log.Printf("Migrated %v base token balances\n", count)
+	log.Printf("Migrated %v base token balances\n", len(oldAgentIDToNewAgentID))
+}
+
+func migrateNativeTokenBalances(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChainID old_isc.ChainID, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
+	log.Printf("Migrating native token balances...\n")
+
+	var count uint32
+
+	// NOTE: Simply iterating by prefix is unsafe - the prefix might be a subprefix of another prefix
+
+	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
+		oldTokensMap := old_accounts.NativeTokensMapR(srcState, old_accounts.AccountKey(oldAgentID, oldChainID))
+
+		oldTokensMap.Iterate(func(oldNativeTokenIDBytes []byte, oldTokenAmountBytes []byte) bool {
+			oldNativeTokenID := old_isc.MustNativeTokenIDFromBytes(oldNativeTokenIDBytes)
+			// TODO: Does base and native token have same encoding?...
+			oldAmount := DecodeOldTokens(oldTokenAmountBytes)
+
+			newCoinType := OldNativeTokemIDtoNewCoinType(oldNativeTokenID)
+			newAccountKey := accounts.AccountKey(newAgentID, OldChainIDToNewChainID(oldChainID))
+			newAmount := OldTokensCountToNewCoinValue(oldAmount)
+
+			coinBalances := collections.NewMap(destState, accounts.AccountCoinBalancesKey(newAccountKey))
+			coinBalances.SetAt(newCoinType.Bytes(), codec.Encode(newAmount))
+
+			count++
+
+			return true
+		})
+	}
+
+	log.Printf("Migrated %v native token balances\n", count)
 }
 
 func migrateFoundriesOutputs(srcState old_kv.KVStoreReader, destState kv.KVStore) {
@@ -223,26 +255,6 @@ func migrateFoundriesPerAccount(srcState old_kv.KVStoreReader, destState kv.KVSt
 	}
 
 	log.Printf("Migrated %v foundries of accounts\n", count)
-}
-
-func migrateNativeTokenBalances(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
-	log.Printf("Migrating native token balances...\n")
-
-	var count uint32
-	migrateEntry := p(func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-		return kv.Key(srcKey) + "dummy new key", srcVal
-	})
-
-	for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-		// mapName := PrefixNativeTokens + string(accountKey)
-		oldMapName := old_accounts.PrefixNativeTokens + string(old_accounts.AccountKey(oldAgentID, oldChainID))
-		_ = newAgentID
-		newMapName := "" // accounts.PrefixNativeTokens + string(accounts.AccountKey(newAgentID, newChainID))
-
-		count += migrateEntitiesMapByName(srcState, destState, oldMapName, newMapName, migrateEntry)
-	}
-
-	log.Printf("Migrated %v native token balances\n", count)
 }
 
 func migrateAccountToNFT(srcState old_kv.KVStoreReader, destState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
