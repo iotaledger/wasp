@@ -42,6 +42,9 @@ func TestPeeringNetDynamicReliable(t *testing.T) {
 }
 
 func TestPeeringNetDynamicUnreliable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
@@ -79,6 +82,9 @@ func TestPeeringNetDynamicUnreliable(t *testing.T) {
 }
 
 func TestPeeringNetDynamicChanging(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
@@ -169,6 +175,9 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) { //nolint:dupl
 }
 
 func TestPeeringNetDynamicRepeatingChannel(t *testing.T) { //nolint:dupl
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 10000)
 	stopCh := make(chan bool)
@@ -194,6 +203,9 @@ func TestPeeringNetDynamicRepeatingChannel(t *testing.T) { //nolint:dupl
 }
 
 func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
@@ -219,6 +231,9 @@ func TestPeeringNetDynamicDelayingChannel(t *testing.T) {
 }
 
 func TestPeeringNetDynamicPeerDisconnected(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
 	inChD := make(chan *peeringMsg)
