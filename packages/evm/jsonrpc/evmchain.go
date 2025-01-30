@@ -26,7 +26,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpcindex"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -52,7 +51,7 @@ type EVMChain struct {
 	chainID  uint16 // cache
 	newBlock *event.Event1[*NewBlockEvent]
 	log      *logger.Logger
-	index    *jsonrpcindex.Index // only indexes blocks that will be pruned from the active state
+	index    *Index // only indexes blocks that will be pruned from the active state
 }
 
 type NewBlockEvent struct {
@@ -77,7 +76,11 @@ func NewEVMChain(
 		backend:  backend,
 		newBlock: event.New1[*NewBlockEvent](),
 		log:      log,
-		index:    jsonrpcindex.New(blockchainDB, backend.ISCStateByTrieRoot, indexDbEngine, path.Join(indexDbPath, backend.ISCChainID().String())),
+		index: NewIndex(
+			backend.ISCStateByTrieRoot,
+			indexDbEngine,
+			path.Join(indexDbPath, backend.ISCChainID().String()),
+		),
 	}
 
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
@@ -92,9 +95,13 @@ func NewEVMChain(
 	// publish blocks on a separate goroutine so that we don't block the publisher
 	go func() {
 		for ev := range blocksFromPublisher.Out() {
-			e.publishNewBlock(ev.BlockInfo.BlockIndex, ev.TrieRoot)
+			blockIndex := ev.BlockInfo.BlockIndex
+			e.publishNewBlock(blockIndex, ev.TrieRoot)
 			if isArchiveNode {
-				e.index.IndexBlock(ev.TrieRoot)
+				err := e.index.IndexBlock(ev.TrieRoot)
+				if err != nil {
+					log.Errorf("EVMChain.index.IndexBlock() (index %d): %v", blockIndex, err)
+				}
 			}
 		}
 	}()
