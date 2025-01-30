@@ -23,6 +23,7 @@ import (
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpcindex"
@@ -259,13 +260,13 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 		if bn == nil {
 			return e.backend.ISCLatestAnchor()
 		}
-		stateIndex = blockNumberToStateIndex(bn) + 1
+		stateIndex = blockNumberToStateIndex(bn)
 	} else {
 		blockHash, _ := blockNumberOrHash.Hash()
 		block := e.BlockByHash(blockHash)
-		stateIndex = blockNumberToStateIndex(block.Number()) + 1
+		stateIndex = blockNumberToStateIndex(block.Number())
 	}
-	return e.previousAnchor(stateIndex + 1)
+	return e.previousAnchor(stateIndex)
 }
 
 // Returns the anchor, which was used to form state of given index.
