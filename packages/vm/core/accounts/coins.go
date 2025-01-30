@@ -8,16 +8,16 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
-func accountCoinBalancesKey(accountKey kv.Key) string {
+func AccountCoinBalancesKey(accountKey kv.Key) string {
 	return prefixAccountCoinBalances + string(accountKey)
 }
 
 func (s *StateReader) accountCoinBalancesMapR(accountKey kv.Key) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, accountCoinBalancesKey(accountKey))
+	return collections.NewMapReadOnly(s.state, AccountCoinBalancesKey(accountKey))
 }
 
 func (s *StateWriter) accountCoinBalancesMap(accountKey kv.Key) *collections.Map {
-	return collections.NewMap(s.state, accountCoinBalancesKey(accountKey))
+	return collections.NewMap(s.state, AccountCoinBalancesKey(accountKey))
 }
 
 func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType coin.Type) coin.Value {

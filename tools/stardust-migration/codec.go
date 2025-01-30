@@ -8,7 +8,7 @@ import (
 	"time"
 
 	iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	old_hashing "github.com/nnikolash/wasp-types-exported/packages/hashing"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
@@ -124,6 +124,6 @@ func DecodeInto[Res any](b []byte, dest *Res) error {
 	return nil
 }
 
-func Serialize(entity any) []byte {
-	return bcs.MustMarshal(&entity)
+func Serialize[ValType any](entity ValType) []byte {
+	return codec.Encode(entity)
 }

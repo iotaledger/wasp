@@ -108,8 +108,47 @@ func migrateEntityBytes[Src any, Dest any](srcKey old_kv.Key, srcBytes []byte, m
 	return destKey, Serialize(destEntity)
 }
 
+// Old bytes are copied into new state
+func migrateAsIs(newKey kv.Key) EntityMigrationFunc[[]byte, []byte] {
+	if newKey == "" {
+		panic("newKey cannot be empty")
+	}
+
+	return func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
+		return newKey, srcVal
+	}
+}
+
+// Old bytes are just decoded and re-encoded again as new bytes
+func migrateEncoding[ValueType any](newKey kv.Key) EntityMigrationFunc[ValueType, ValueType] {
+	if newKey == "" {
+		panic("newKey cannot be empty")
+	}
+
+	return func(srcKey old_kv.Key, srcVal ValueType) (destKey kv.Key, destVal ValueType) {
+		if _, ok := interface{}(srcVal).([]byte); ok {
+			panic("srcVal cannot be []byte - use migrateAsIs instead")
+		}
+
+		return newKey, srcVal
+	}
+}
+
+func IterateByPrefix[Src any](srcContractState old_kv.KVStoreReader, prefix string, f func(k old_kv.Key, v Src)) uint32 {
+	var count uint32
+
+	srcContractState.Iterate(old_kv.Key(prefix), func(k old_kv.Key, b []byte) bool {
+		count++
+		v := lo.Must(Deserialize[Src](b))
+		f(k, v)
+		return true
+	})
+
+	return count
+}
+
 // Iterate by prefix and return all matchign entries
-func listByPrefix(store kv.KVStoreReader, prefix string) map[kv.Key][]byte {
+func ListByPrefix(store kv.KVStoreReader, prefix string) map[kv.Key][]byte {
 	entries := map[kv.Key][]byte{}
 
 	store.Iterate(kv.Key(prefix), func(key kv.Key, val []byte) bool {
