@@ -57,10 +57,27 @@ func OldTokensCountToNewCoinValue(oldTokensCount uint64) coin.Value {
 	return coin.Value(oldTokensCount)
 }
 
+// Base token balance storage format:
+//   New IOTA rebased (uint64 IOTA + big.Int Wei remainder):
+//     Acc1 = 4 IOTA
+//     Rem1 = 0.5 IOTA
+//     Acc2 = 5 IOTA
+//     Rem2 = 0.5 IOTA
+//     Total = 10 IOTA
+//   Old IOTA with new schema (big.Int):
+//     Acc1 = 4.5 IOTA
+//     Acc2 = 5.5 IOTA
+//     Total = 10 IOTA
+//   Old IOTA with old schema (uint64 + added zeros in evm)
+//     Acc1 = 4.000 IOTA
+//     Acc2 = 5.000 IOTA
+//     Total = 9 IOTA
+
 func DecodeOldTokens(b []byte) uint64 {
 	amount := old_codec.MustDecodeBigIntAbs(b, big.NewInt(0))
-	// TODO: would this make sense for native tokens?
-	convertedAmount, _ := old_util.EthereumDecimalsToBaseTokenDecimals(amount, oldBaseTokenDecimals)
+	// TODO: This is incorrect for native tokens and for base tokens of old schema
+	convertedAmount, remainder := old_util.EthereumDecimalsToBaseTokenDecimals(amount, oldBaseTokenDecimals)
+	_ = remainder
 
 	return convertedAmount
 }
