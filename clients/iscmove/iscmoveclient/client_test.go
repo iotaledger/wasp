@@ -1,11 +1,11 @@
 package iscmoveclient_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -72,38 +73,95 @@ func TestKeys(t *testing.T) {
 	fmt.Println(txnResponse)
 }
 
+type CompiledMoveModules struct {
+	Modules      []*iotago.Base64Data `json:"modules"`
+	Dependencies []*iotago.Address    `json:"dependencies"`
+	Digest       []int                `json:"digest"`
+}
+
 func TestBuildISCContract(t *testing.T) {
-	fmt.Println("===========1")
-	execPath, err := os.Executable()
-	if err != nil {
-		fmt.Printf("Failed to get the executable path: %v\n", err)
-		return
+	var err error
+	cmd := exec.Command("iotago", "move", "build", "--dump-bytecode-as-base64")
+	// TODO skip to fetch latest deps if there is no internet
+	// cmd := exec.Command("iotago", "move", "build", "--dump-bytecode-as-base64", "--skip-fetch-latest-git-deps")
+	cmd.Dir = "clients/iota-go/contracts/isc/Move.toml"
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err = cmd.Run()
+	require.NoError(t, err)
+
+	var modules CompiledMoveModules
+	err = json.Unmarshal(stdout.Bytes(), &modules)
+	require.NoError(t, err)
+
+	client := iscmoveclient.NewClient(iotaclient.NewHTTP("https://api.iota-rebased-alphanet.iota.cafe", iotaclient.WaitForEffectsDisabled), "https://faucet.iota-rebased-alphanet.iota.cafe/gas")
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
+
+	txnBytes, err := client.Publish(
+		context.Background(),
+		iotaclient.PublishRequest{
+			Sender:          cryptolibSigner.Address().AsIotaAddress(),
+			CompiledModules: modules.Modules,
+			Dependencies:    modules.Dependencies,
+			GasBudget:       iotajsonrpc.NewBigInt(10 * iotaclient.DefaultGasBudget),
+		},
+	)
+	require.NoError(t, err)
+
+	txnResponse, err := client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      signer,
+			TxDataBytes: txnBytes.TxBytes,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
+	if err != nil || !txnResponse.Effects.Data.IsSuccess() {
+		panic(err)
 	}
-	fmt.Println("===========2")
-	scriptDir := filepath.Dir(execPath)
+	packageId, err := txnResponse.GetPublishedPackageID()
+	require.NoError(t, err)
 
-	// Construct the relative path
-	fmt.Println("===========3")
-	relativePath := "clients/iota-go/contracts/isc/"
-	fmt.Println("===========4")
-	targetPath := filepath.Join(scriptDir, relativePath)
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
+	require.NoError(t, err)
 
-	// Change to the target directory
-	fmt.Println("===========5")
-	if err := os.Chdir(targetPath); err != nil {
-		fmt.Printf("Failed to change directory to %s: %v\n", targetPath, err)
-		return
-	}
+	anchor1, err := client.StartNewChain(
+		context.Background(),
+		&iscmoveclient.StartNewChainRequest{
+			Signer:            cryptolibSigner,
+			ChainOwnerAddress: cryptolibSigner.Address(),
+			PackageID:         *packageId,
+			StateMetadata:     []byte{1, 2, 3, 4},
+			InitCoinRef:       getCoinsRes.Data[1].Ref(),
+			GasPrice:          iotaclient.DefaultGasPrice,
+			GasBudget:         iotaclient.DefaultGasBudget,
+		},
+	)
 
-	// Define the command to run
-	fmt.Println("===========6")
-	cmd := exec.Command("sh", "-c", "iota move build --dump-bytecode-as-base64 > bytecode.json")
+	txnResponse, err = newAssetsBag(client, cryptolibSigner)
+	require.NoError(t, err)
+	sentAssetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	require.NoError(t, err)
 
-	// Run the command
-	fmt.Println("===========7")
-	if output, err := cmd.CombinedOutput(); err != nil {
-		fmt.Printf("Failed to execute command: %v\nOutput: %s\n", err, string(output))
-	} else {
-		fmt.Println("Command executed successfully. Output written to bytecode.json.")
-	}
+	getCoinsRes, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
+	require.NoError(t, err)
+
+	_, err = assetsBagPlaceCoinAmountWithGasCoin(
+		client,
+		cryptolibSigner,
+		sentAssetsBagRef,
+		iotajsonrpc.IotaCoinType,
+		10,
+	)
+	require.NoError(t, err)
+
+	sentAssetsBagRef, err = client.UpdateObjectRef(context.Background(), sentAssetsBagRef)
+	require.NoError(t, err)
+
 }
