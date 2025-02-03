@@ -19,23 +19,18 @@ func migrateGovernanceContract(srcChainState old_kv.KVStoreReader, destChainStat
 
 	// Chain Owner
 	log.Printf("Migrating chain owner...\n")
-	migrateRecord(srcState, destState, old_governance.VarChainOwnerID, copyBytes(""))
+	MigrateVariable(srcState, destState, old_governance.VarChainOwnerID, governance.VarChainOwnerID, OldAgentIDtoNewAgentID)
 	log.Printf("Migrated chain owner\n")
 
 	// Chain Owner delegated
 	log.Printf("Migrating chain owner delegated...\n")
-	migrateRecord(srcState, destState, old_governance.VarChainOwnerIDDelegated, copyBytes(""))
+	MigrateVariable(srcState, destState, old_governance.VarChainOwnerIDDelegated, governance.VarChainOwnerIDDelegated, OldAgentIDtoNewAgentID)
 	log.Printf("Migrated chain owner delegated\n")
 
 	// Payout agent
 	log.Printf("Migrating Payout agent...\n")
-	migrateRecord(srcState, destState, old_governance.VarPayoutAgentID, copyBytes(""))
+	MigrateVariable(srcState, destState, old_governance.VarPayoutAgentID, governance.VarPayoutAgentID, OldAgentIDtoNewAgentID)
 	log.Printf("Migrated Payout agent\n")
-
-	// Min Base Tokens On Common Account
-	log.Printf("Migrating Min Base Tokens On Common Account...\n")
-	migrateRecord(srcState, destState, old_governance.VarMinBaseTokensOnCommonAccount, copyBytes(""))
-	log.Printf("Migrated Min Base Tokens On Common Account\n")
 
 	log.Print("Migrated governance contract\n")
 }

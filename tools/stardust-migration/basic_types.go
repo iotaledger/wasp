@@ -9,9 +9,14 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_util "github.com/nnikolash/wasp-types-exported/packages/util"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+	"github.com/samber/lo"
 )
 
 func OldChainIDToNewChainID(oldChainID old_isc.ChainID) isc.ChainID {
@@ -49,6 +54,15 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID) isc.AgentID {
 
 	default:
 		panic(fmt.Sprintf("Unknown agent ID kind: %v = %v", oldAgentID.Kind(), oldAgentID))
+	}
+}
+
+// Creates converter from old account key to new account key.
+func OldAccountKeyToNewAccountKey(oldChainID old_isc.ChainID, newChainID isc.ChainID) func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
+	return func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
+		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChainID))
+		newAgentID := OldAgentIDtoNewAgentID(oldAgentID)
+		return accounts.AccountKey(newAgentID, newChainID)
 	}
 }
 

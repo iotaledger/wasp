@@ -27,23 +27,28 @@ func migrateAccountsContract(srcChainState old_kv.KVStoreReader, destChainState 
 	newChainID := OldChainIDToNewChainID(oldChainID)
 
 	oldAgentIDToNewAgentID := map[old_isc.AgentID]isc.AgentID{}
+	oldAgentIDKeys := []old_kv.Key{}
 
-	migrateAccountsList(srcState, destState, oldChainID, newChainID, &oldAgentIDToNewAgentID)
+	migrateAccountsList(srcState, destState, oldChainID, newChainID, &oldAgentIDKeys, &oldAgentIDToNewAgentID)
 	migrateBaseTokenBalances(srcState, destState, oldChainID, oldAgentIDToNewAgentID)
 	migrateNativeTokenBalances(srcState, destState, oldChainID, oldAgentIDToNewAgentID)
+	// migrateNativeTokenBalanceTotal(srcState, destState)
 	// migrateFoundriesOutputs(srcState, destState)
 	// migrateFoundriesPerAccount(srcState, destState, oldAgentIDToNewAgentID)
+	// migrateNativeTokenOutputs(srcState, destState)
 	// migrateAccountToNFT(srcState, destState, oldAgentIDToNewAgentID)
 	// migrateNFTtoOwner(srcState, destState)
 	// migrateNFTsByCollection(srcState, destState, oldAgentIDToNewAgentID)
-	// migrateNativeTokenOutputs(srcState, destState)
-	// migrateNativeTokenBalanceTotal(srcState, destState)
+	// prefixNewlyMintedNFTs ignored
 	// migrateAllMintedNfts(srcState, destState)
+	migrateNonce(srcState, destState, oldAgentIDKeys)
 
 	log.Print("Migrated accounts contract\n")
 }
 
-func migrateAccountsList(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChID old_isc.ChainID, newChID isc.ChainID, oldAgentIDToNewAgentID *map[old_isc.AgentID]isc.AgentID) {
+func migrateAccountsList(srcState old_kv.KVStoreReader, destState kv.KVStore, oldChID old_isc.ChainID, newChID isc.ChainID,
+	oldAgentIDKeys *[]old_kv.Key, oldAgentIDToNewAgentID *map[old_isc.AgentID]isc.AgentID) {
+
 	log.Printf("Migrating accounts list...\n")
 
 	migrateAccountAndSaveNewAgentID := p(func(oldAccountKey old_kv.Key, srcVal bool) (kv.Key, bool) {
@@ -52,11 +57,12 @@ func migrateAccountsList(srcState old_kv.KVStoreReader, destState kv.KVStore, ol
 
 		// Pointer is not needed here, but its here just to emphasize that it is output argument.
 		(*oldAgentIDToNewAgentID)[oldAgentID] = newAgentID
+		*oldAgentIDKeys = append(*oldAgentIDKeys, oldAccountKey)
 
 		return accounts.AccountKey(newAgentID, newChID), srcVal
 	})
 
-	count := migrateEntitiesMapByName(
+	count := MigrateMapByName(
 		srcState, destState,
 		old_accounts.KeyAllAccounts, accounts.KeyAllAccounts,
 		migrateAccountAndSaveNewAgentID,
@@ -126,7 +132,7 @@ func migrateFoundriesOutputs(srcState old_kv.KVStoreReader, destState kv.KVStore
 		return kv.Key(srcKey), "dummy new value"
 	}
 
-	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyFoundryOutputRecords, "", p(migrateEntry))
+	count := MigrateMapByName(srcState, destState, old_accounts.KeyFoundryOutputRecords, "", p(migrateEntry))
 
 	log.Printf("Migrated %v foundry outputs\n", count)
 }
@@ -148,7 +154,7 @@ func migrateFoundriesPerAccount(srcState old_kv.KVStoreReader, destState kv.KVSt
 		_ = newAgentID
 		newMapName := "" //accounts.PrefixFoundries + string(newAgentID.Bytes())
 
-		count += migrateEntitiesMapByName(srcState, destState, oldMapName, newMapName, migrateFoundriesOfAccount)
+		count += MigrateMapByName(srcState, destState, oldMapName, newMapName, migrateFoundriesOfAccount)
 	}
 
 	log.Printf("Migrated %v foundries of accounts\n", count)
@@ -170,7 +176,7 @@ func migrateAccountToNFT(srcState old_kv.KVStoreReader, destState kv.KVStore, ol
 		_ = newAgentID
 		newMapName := "" // accounts.PrefixNFTs + string(newAgentID.Bytes())
 
-		count += migrateEntitiesMapByName(srcState, destState, oldMapName, newMapName, migrateEntry)
+		count += MigrateMapByName(srcState, destState, oldMapName, newMapName, migrateEntry)
 	}
 
 	log.Printf("Migrated %v NFTs per account\n", count)
@@ -185,7 +191,7 @@ func migrateNFTtoOwner(srcState old_kv.KVStoreReader, destState kv.KVStore) {
 		return kv.Key(srcKey) + "dummy new key", append(srcVal, []byte("dummy new value")...)
 	}
 
-	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyNFTOwner, "", p(migrateEntry))
+	count := MigrateMapByName(srcState, destState, old_accounts.KeyNFTOwner, "", p(migrateEntry))
 	log.Printf("Migrated %v NFT owners\n", count)
 }
 
@@ -200,8 +206,9 @@ func migrateNFTsByCollection(srcState old_kv.KVStoreReader, destState kv.KVStore
 		// mapName := PrefixNFTsByCollection + string(agentID.Bytes()) + string(collectionID.Bytes())
 		// NOTE: There is no easy way to retrieve list of referenced collections
 		oldPrefix := old_accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
+		newPrefix := "" // accounts.PrefixNFTsByCollection + string(newAgentID.Bytes())
 
-		count += migrateEntitiesByPrefix(srcState, destState, oldPrefix, func(oldKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
+		count += MigrateByPrefix(srcState, destState, oldPrefix, newPrefix, func(oldKey old_kv.Key, srcVal bool) (destKey kv.Key, destVal bool) {
 			return migrateNFTsByCollectionEntry(oldKey, srcVal, oldAgentID, newAgentID)
 		})
 	}
@@ -241,7 +248,7 @@ func migrateNativeTokenOutputs(srcState old_kv.KVStoreReader, destState kv.KVSto
 		return kv.Key(srcKey), srcVal
 	}
 
-	count := migrateEntitiesMapByName(srcState, destState, old_accounts.KeyNativeTokenOutputMap, "", p(migrateEntry))
+	count := MigrateMapByName(srcState, destState, old_accounts.KeyNativeTokenOutputMap, "", p(migrateEntry))
 
 	log.Printf("Migrated %v native token outputs\n", count)
 }
@@ -256,7 +263,7 @@ func migrateNativeTokenBalanceTotal(srcState old_kv.KVStoreReader, destState kv.
 		return kv.Key(srcKey), []byte{0}
 	}
 
-	count := migrateEntitiesMapByName(srcState, destState, old_accounts.PrefixNativeTokens+accounts.L2TotalsAccount, "", p(migrateEntry))
+	count := MigrateMapByName(srcState, destState, old_accounts.PrefixNativeTokens+accounts.L2TotalsAccount, "", p(migrateEntry))
 
 	log.Printf("Migrated %v native token total balance\n", count)
 }
@@ -271,7 +278,20 @@ func migrateAllMintedNfts(srcState old_kv.KVStoreReader, destState kv.KVStore) {
 		return kv.Key(srcKey), []byte{0}
 	}
 
-	count := migrateEntitiesMapByName(srcState, destState, old_accounts.PrefixMintIDMap, "", p(migrateEntry))
+	count := MigrateMapByName(srcState, destState, old_accounts.PrefixMintIDMap, "", p(migrateEntry))
 
 	log.Printf("Migrated %v All minted NFTs\n", count)
+}
+
+func migrateNonce(srcState old_kv.KVStoreReader, destState kv.KVStore, oldAgentIDKeys []old_kv.Key) {
+	log.Printf("Migrating nonce...\n")
+
+	MigrateByKeys(
+		srcState, destState,
+		old_accounts.KeyNonce, accounts.KeyNonce,
+		oldAgentIDKeys,
+		ConvertKV(OldAgentIDtoNewAgentID, AsIs[uint32]),
+	)
+
+	log.Printf("Migrated %v nonce\n", len(oldAgentIDKeys))
 }

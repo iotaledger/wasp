@@ -8,37 +8,116 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
-	"github.com/samber/lo"
 )
 
-// Defines a function signature for a single entry migration.
-// NOTE: if SrcRecord and/or DestRecord types are []byte, they are not encoded/decoded and just passed as is.
-type RecordMigrationFunc[SrcKey, SrcRecord, DestKey, DestRecord any] func(srcKey SrcKey, srcVal SrcRecord) (destKey DestKey, _ DestRecord)
-
-// Iterate by prefix and migrate each entry from old state to new state
-func migrateEntitiesByPrefix[SrcK, SrcV, DestK, DestV any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, oldPrefix string, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
-	count := uint32(0)
-
-	srcContractState.Iterate(old_kv.Key(oldPrefix), func(srcKey old_kv.Key, srcBytes []byte) bool {
-		migrateRecord(srcContractState, destContractState, srcKey, migrationFunc)
+// Iterate state by prefix.
+// Prefix is REMOVED before calling the callback.
+// Key is automatically deserialized if it is not old_kv.Key.
+// Value is automatically deserialized if it is not []byte.
+// WARNING: It is UNSAFE to use in some cases, because the prefix could be subprefix of another prefix.
+func IterateByPrefix[OldK, OldV any](oldContractState old_kv.KVStoreReader, prefix string, f func(k OldK, v OldV)) (count uint32) {
+	oldContractState.Iterate(old_kv.Key(prefix), func(kBytes old_kv.Key, vBytes []byte) bool {
+		keyWithoutPrefix := old_kv.Key(strings.TrimPrefix(string(kBytes), prefix))
+		k := DeserializeKey[OldK](keyWithoutPrefix)
+		v := DeserializeValue[OldV](vBytes)
+		f(k, v)
 		count++
-
 		return true
 	})
 
 	return count
 }
 
-// Migrate records from Go map into destination state
-func migrateEntitiesByKV[SrcK, SrcV, DestK, DestV any](srcEntities map[old_kv.Key][]byte, destContractState kv.KVStore, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) {
-	for srcKey, srcBytes := range srcEntities {
-		newK, newV := migrateRecordBytes(srcKey, srcBytes, migrationFunc)
-		destContractState.Set(newK, newV)
-	}
+// Get list of entries by prefix.
+// Prefix is REMOVED before calling the callback.
+// Key is automatically deserialized if it is not old_kv.Key.
+// Value is automatically deserialized if it is not []byte.
+// WARNING: It is UNSAFE to use in some cases, because the prefix could be subprefix of another prefix.
+func ListByPrefix[K comparable, V any](store old_kv.KVStoreReader, prefix string) map[K]V {
+	entries := map[K]V{}
+
+	IterateByPrefix(store, prefix, func(k K, v V) {
+		entries[k] = v
+	})
+
+	return entries
 }
 
-// Migrate records from the named map int another named map
-func migrateEntitiesMapByName[SrcK, SrcV, DestK, DestV any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, oldMapName, newMapName string, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
+// Iterate state by prefix and migrate each entry from old state to new state.
+// Old prefix is REMOVED from the key before calling callback and new prefix is ADDED to the new key after the callback.
+// If you do not want new prefix to be added automatically, just use empty string.
+// Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
+// WARNING: It is UNSAFE to use in some cases, because the prefix could be subprefix of another prefix.
+func MigrateByPrefix[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldPrefix, newPrefix string, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) uint32 {
+	return IterateByPrefix(oldContractState, oldPrefix, func(oldKey OldK, oldVal OldV) {
+		newKey, newVal := migrationFunc(oldKey, oldVal)
+
+		newKeyBytes := kv.Key(newPrefix) + SerializeKey(newKey)
+		newValBytes := SerializeValue(newVal)
+
+		newContractState.Set(newKeyBytes, newValBytes)
+	})
+}
+
+// Iterate specified keys in state.
+// Prefix is REMOVED from the key before calling callback.
+// Key is automatically deserialized if it is not old_kv.Key.
+// Value is automatically deserialized if it is not []byte.
+// This is safe version of IterateByPrefix, because it does not rely on prefix - it uses exact keys.
+func IterateByKeys[OldK, OldV any](oldContractState old_kv.KVStoreReader, oldPrefix string, oldKeys []old_kv.Key, f func(k OldK, v OldV)) {
+	for _, oldKey := range oldKeys {
+		oldKeyBytesWithPrefix := old_kv.Key(oldPrefix + string(oldKey))
+		oldValBytes := oldContractState.Get(oldKeyBytesWithPrefix)
+
+		k := DeserializeKey[OldK](oldKey)
+		v := DeserializeValue[OldV](oldValBytes)
+
+		f(k, v)
+	}
+
+	return
+}
+
+// Iterate specified keys in state and migrate each entry from old state to new state.
+// Old prefix is REMOVED from the key before calling callback and new prefix is ADDED to the new key after the callback.
+// If you do not want to add new prefix automatically, just use empty string.
+// Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
+// This is safe version of MigrateByPrefix, because it does not rely on prefix - it uses exact keys.
+func MigrateByKeys[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldPrefix, newPrefix string, oldKeys []old_kv.Key, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) {
+	IterateByKeys(oldContractState, oldPrefix, oldKeys, func(oldKey OldK, oldVal OldV) {
+		newKey, newVal := migrationFunc(oldKey, oldVal)
+
+		newKeyBytes := kv.Key(newPrefix) + SerializeKey(newKey)
+		newValBytes := SerializeValue(newVal)
+
+		newContractState.Set(newKeyBytes, newValBytes)
+	})
+}
+
+// Iterate named map.
+// Key is automatically deserialized if it is not old_kv.Key.
+// Value is automatically deserialized if it is not []byte.
+func IterateMapByName[OldK, OldV any](oldContractState old_kv.KVStoreReader, oldMapName string, f func(k OldK, v OldV)) (count uint32) {
+	oldMap := old_collections.NewMapReadOnly(oldContractState, oldMapName)
+	IterateMap(oldMap, f)
+	return oldMap.Len()
+}
+
+// Iterate map.
+// Key is automatically deserialized if it is not old_kv.Key.
+// Value is automatically deserialized if it is not []byte.
+func IterateMap[OldK, OldV any](oldRecords *old_collections.ImmutableMap, f func(k OldK, v OldV)) {
+	oldRecords.Iterate(func(kBytes []byte, vBytes []byte) bool {
+		k := DeserializeKey[OldK](old_kv.Key(kBytes))
+		v := DeserializeValue[OldV](vBytes)
+		f(k, v)
+		return true
+	})
+}
+
+// Migrate records from named map into another named map.
+// Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
+func MigrateMapByName[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldMapName, newMapName string, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) uint32 {
 	if oldMapName == "" {
 		panic("oldMapName is empty")
 	}
@@ -46,26 +125,48 @@ func migrateEntitiesMapByName[SrcK, SrcV, DestK, DestV any](srcContractState old
 		panic("newMapName is empty")
 	}
 
-	srcEntities := old_collections.NewMapReadOnly(srcContractState, oldMapName)
-	destEntities := collections.NewMap(destContractState, newMapName)
+	oldRecords := old_collections.NewMapReadOnly(oldContractState, oldMapName)
+	newRecords := collections.NewMap(newContractState, newMapName)
 
-	migrateEntitiesMap(srcEntities, destEntities, migrationFunc)
+	MigrateMap(oldRecords, newRecords, migrationFunc)
 
-	return srcEntities.Len()
+	return oldRecords.Len()
 }
 
-// Migrate records from state map into another state map
-func migrateEntitiesMap[SrcK, SrcV, DestK, DestV any](srcEntities *old_collections.ImmutableMap, destEntities *collections.Map, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) {
-	srcEntities.Iterate(func(srcKey, srcBytes []byte) bool {
-		newK, newV := migrateRecordBytes(old_kv.Key(srcKey), srcBytes, migrationFunc)
-		destEntities.SetAt([]byte(newK), newV)
+// Migrate records from state map into another state map.
+// Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
+func MigrateMap[OldK, OldV, NewK, NewV any](oldRecords *old_collections.ImmutableMap, newRecords *collections.Map, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) {
+	IterateMap(oldRecords, func(k OldK, v OldV) {
+		newKey, newVal := migrationFunc(k, v)
 
-		return true
+		newKeyBytes := SerializeKey(newKey)
+		newValBytes := SerializeValue(newVal)
+
+		newRecords.SetAt([]byte(newKeyBytes), newValBytes)
 	})
 }
 
-// Migrate records from the named array into another named array
-func migrateEntitiesArrayByName[SrcK, SrcV, DestK, DestV any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, oldArrName, newArrName string, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
+// Iterate named array.
+// Value is automatically deserialized if it is not []byte.
+func IterateArrayByName[OldV any](oldContractState old_kv.KVStoreReader, oldArrName string, f func(k uint32, v OldV)) (count uint32) {
+	oldRecords := old_collections.NewArrayReadOnly(oldContractState, oldArrName)
+	IterateArray(oldRecords, f)
+	return oldRecords.Len()
+}
+
+// Iterate map.
+// Value is automatically deserialized if it is not []byte.
+func IterateArray[OldV any](oldArr *old_collections.ArrayReadOnly, f func(k uint32, v OldV)) {
+	for i := uint32(0); i < oldArr.Len(); i++ {
+		oldBytes := oldArr.GetAt(i)
+		v := DeserializeValue[OldV](oldBytes)
+		f(i, v)
+	}
+}
+
+// Migrate records from the named array into another named array.
+// Values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
+func MigrateArrayByName[OldV, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldArrName, newArrName string, migrationFunc ArrayMigrationFunc[OldV, NewV]) uint32 {
 	if oldArrName == "" {
 		panic("oldArrName is empty")
 	}
@@ -73,93 +174,47 @@ func migrateEntitiesArrayByName[SrcK, SrcV, DestK, DestV any](srcContractState k
 		panic("newArrName is empty")
 	}
 
-	srcEntities := collections.NewArrayReadOnly(srcContractState, oldArrName)
-	destEntities := collections.NewArray(destContractState, newArrName)
+	oldRecords := old_collections.NewArrayReadOnly(oldContractState, oldArrName)
+	newRecords := collections.NewArray(newContractState, newArrName)
 
-	migrateEntitiesArray(srcEntities, destEntities, migrationFunc)
+	MigrateArray(oldRecords, newRecords, migrationFunc)
 
-	return srcEntities.Len()
+	return oldRecords.Len()
 }
 
-// Migrate records from state array into another state array
-func migrateEntitiesArray[SrcK, SrcV, DestK, DestV any](srcEntities *collections.ArrayReadOnly, destEntities *collections.Array, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
-	for i := uint32(0); i < srcEntities.Len(); i++ {
-		srcBytes := srcEntities.GetAt(i)
-		_, newV := migrateRecordBytes("", srcBytes, migrationFunc)
-		destEntities.SetAt(i, newV)
-	}
-
-	return srcEntities.Len()
-}
-
-// Migrate record from old state to new state
-func migrateRecord[SrcK, SrcV, DestK, DestV any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, srcKey old_kv.Key, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) {
-	srcBytes := srcContractState.Get(srcKey)
-
-	newKey, newVal := migrateRecordBytes(srcKey, srcBytes, migrationFunc)
-
-	destContractState.Set(newKey, newVal)
-}
-
-// Migrate record from old bytes to new bytes
-func migrateRecordBytes[SrcK, SrcV, DestK, DestV any](srcKeyBytes old_kv.Key, srcValueBytes []byte, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) (newKeyBytes kv.Key, newValBytes []byte) {
-	srcKey := lo.Must(Deserialize[SrcK]([]byte(srcKeyBytes)))
-	srcValue := lo.Must(Deserialize[SrcV](srcValueBytes))
-
-	destKey, destRecord := migrationFunc(srcKey, srcValue)
-
-	return kv.Key(Serialize(destKey)), Serialize(destRecord)
-}
-
-// Old bytes are copied into new state
-func copyBytes(newKey kv.Key) RecordMigrationFunc[old_kv.Key, []byte, kv.Key, []byte] {
-	if newKey == "" {
-		panic("newKey cannot be empty")
-	}
-
-	return func(srcKey old_kv.Key, srcVal []byte) (destKey kv.Key, destVal []byte) {
-		return newKey, srcVal
-	}
-}
-
-// Old bytes are just decoded and re-encoded again as new bytes
-func asIs[Value any](newKey kv.Key) RecordMigrationFunc[old_kv.Key, Value, kv.Key, Value] {
-	if newKey == "" {
-		panic("newKey cannot be empty")
-	}
-
-	return func(srcKey old_kv.Key, srcVal Value) (destKey kv.Key, destVal Value) {
-		if _, ok := interface{}(srcVal).([]byte); ok {
-			panic("srcVal cannot be []byte - use migrateAsIs instead")
-		}
-
-		return newKey, srcVal
-	}
-}
-
-func IterateByPrefix[Src any](srcContractState old_kv.KVStoreReader, prefix string, f func(k old_kv.Key, v Src)) uint32 {
-	var count uint32
-
-	srcContractState.Iterate(old_kv.Key(prefix), func(k old_kv.Key, b []byte) bool {
-		count++
-		v := lo.Must(Deserialize[Src](b))
-		f(k, v)
-		return true
+// Migrate records from state array into another state array.
+// Values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
+func MigrateArray[OldV, NewV any](oldRecords *old_collections.ArrayReadOnly, newRecords *collections.Array, migrationFunc ArrayMigrationFunc[OldV, NewV]) {
+	IterateArray(oldRecords, func(k uint32, v OldV) {
+		newVal := migrationFunc(k, v)
+		newValBytes := SerializeValue(newVal)
+		newRecords.Push(newValBytes)
 	})
-
-	return count
 }
 
-// Iterate by prefix and return all matchign entries
-func ListByPrefix(store kv.KVStoreReader, prefix string) map[kv.Key][]byte {
-	entries := map[kv.Key][]byte{}
+// Migrate simple high-level variable from old state to new state.
+func MigrateVariable[OldV, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldKey old_kv.Key, newKey kv.Key, migrationFunc VariableMigrationFunc[OldV, NewV]) {
+	oldValueBytes := oldContractState.Get(oldKey)
+	oldValue := DeserializeValue[OldV](oldValueBytes)
+	newVal := migrationFunc(oldValue)
+	newValBytes := SerializeValue(newVal)
+	newContractState.Set(newKey, newValBytes)
+}
 
-	store.Iterate(kv.Key(prefix), func(key kv.Key, val []byte) bool {
-		entries[key] = val
-		return true
-	})
+// Can be used with MigrateVariable to migrate variable as by re-encoding.
+// Also can be used as an argument of ConvertKV.
+func AsIs[Value any](value Value) Value {
+	return value
+}
 
-	return entries
+// Creates KVMigrationFunc from specified separate converters for key and value.
+func ConvertKV[OldK, OldV, NewK, NewV any](
+	convertKey func(OldK) NewK,
+	convertValue func(OldV) NewV,
+) KVMigrationFunc[OldK, OldV, NewK, NewV] {
+	return func(oldKey OldK, oldVal OldV) (NewK, NewV) {
+		return convertKey(oldKey), convertValue(oldVal)
+	}
 }
 
 // Split map key into map name and element key
@@ -176,15 +231,33 @@ func SplitMapKey(storeKey old_kv.Key) (mapName, elemKey old_kv.Key) {
 }
 
 // Wraps a function and adds to it printing of number of times it was called
-func p[SrcK, SrcV, DestK, DestV any](f RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) RecordMigrationFunc[SrcK, SrcV, DestK, DestV] {
+func p[OldK, OldV, NewK, NewV any](f KVMigrationFunc[OldK, OldV, NewK, NewV]) KVMigrationFunc[OldK, OldV, NewK, NewV] {
 	callCount := 0
 
-	return func(oldKey SrcK, srcVal SrcV) (DestK, DestV) {
+	return func(oldKey OldK, oldVal OldV) (NewK, NewV) {
 		callCount++
 		if callCount%100 == 0 {
 			fmt.Printf("\rProcessed: %v         ", callCount)
 		}
 
-		return f(oldKey, srcVal)
+		return f(oldKey, oldVal)
 	}
 }
+
+// This is a migration function for a single KV pair.
+// Used for maps and for KV storages itself.
+// Keys and values are automatically deserialized/serialized if they are not of following types:
+// * OldKey - old_kv.Key
+// * OldValue - []byte
+// * NewKey - kv.Key
+// * NewValue - []byte
+type KVMigrationFunc[OldKey, OldValue, NewKey, NewValue any] func(OldKey, OldValue) (NewKey, NewValue)
+
+// This is a migration function for a single KV pair.
+// Used for maps and for KV storages itself.
+// Values are automatically deserialized/serialized if they are not of type []byte.
+type ArrayMigrationFunc[OldValue, NewValue any] func(index uint32, oldVal OldValue) NewValue
+
+// This is a migration function for a single high-level variable migration.
+// Value is automatically deserialized/serialized if it is not of type []byte.
+type VariableMigrationFunc[OldValue, NewValue any] func(oldVal OldValue) NewValue

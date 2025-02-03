@@ -124,16 +124,16 @@ const (
 	// varRotateToAddress :: Address (should never persist in the state)
 	varRotateToAddress = "r"
 
-	// varPayoutAgentID :: AgentID
-	varPayoutAgentID = "pa" // covered in: TestMetadata
+	// VarPayoutAgentID :: AgentID
+	VarPayoutAgentID = "pa" // covered in: TestMetadata
 	// varGasCoinTargetValue :: uint64
 	varGasCoinTargetValue = "vs" // covered in: TestMetadata
 
 	// chain owner
-	// varChainOwnerID :: AgentID
-	varChainOwnerID = "o" // covered in: TestMetadata
-	// varChainOwnerIDDelegated :: AgentID
-	varChainOwnerIDDelegated = "n" // covered in: TestMaintenanceMode
+	// VarChainOwnerID :: AgentID
+	VarChainOwnerID = "o" // covered in: TestMetadata
+	// VarChainOwnerIDDelegated :: AgentID
+	VarChainOwnerIDDelegated = "n" // covered in: TestMaintenanceMode
 
 	// gas
 	// varGasFeePolicyBytes :: gas.FeePolicy

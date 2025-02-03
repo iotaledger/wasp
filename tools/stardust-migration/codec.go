@@ -22,16 +22,36 @@ type Deserializable interface {
 	Read(src io.Reader) error
 }
 
-func Deserialize[Dest any](b []byte) (Dest, error) {
-	var v Dest
-	_, err := DeserializeInto(b, &v)
-	return v, err
+func DeserializeKey[OldKey any](b old_kv.Key) OldKey {
+	switch interface{}(lo.Empty[OldKey]()).(type) {
+	case []byte:
+		panic(fmt.Errorf("old key is never expected to have []byte type - use old_kv.Key instead"))
+	case old_kv.Key:
+		return interface{}(b).(OldKey)
+	default:
+		var v OldKey
+		_ = lo.Must(deserializeInto([]byte(b), &v))
+		return v
+	}
+}
+
+func DeserializeValue[OldValue any](b []byte) OldValue {
+	switch interface{}(lo.Empty[OldValue]()).(type) {
+	case []byte:
+		return interface{}(b).(OldValue)
+	case *old_kv.Key:
+		panic(fmt.Errorf("old value is never expected to have old_kv.Key type - use []byte instead"))
+	default:
+		var v OldValue
+		_ = lo.Must(deserializeInto(b, &v))
+		return v
+	}
 }
 
 // Attempts to first use Read method of Deserializable interface,
-// and if fails - uses DecodeInto for basic types decoding.
+// and if fails - uses decodeInto for basic types decoding.
 // If the type is raw bytes or old kv.Key - does nothing.
-func DeserializeInto[Dest any](b []byte, v *Dest) (*Dest, error) {
+func deserializeInto[Dest any](b []byte, v *Dest) (*Dest, error) {
 	f := func(de Deserializable) (*Dest, error) {
 		r := bytes.NewReader(b)
 		lo.Must0(de.Read(r))
@@ -54,13 +74,13 @@ func DeserializeInto[Dest any](b []byte, v *Dest) (*Dest, error) {
 		return f(deserializable)
 	}
 
-	DecodeInto(b, v)
+	decodeInto(b, v)
 
 	return v, nil
 }
 
 // DecodeInto decodes basic types. If the type is raw bytes or old kv.Key - does nothing.
-func DecodeInto[Res any](b []byte, dest *Res) error {
+func decodeInto[Res any](b []byte, dest *Res) error {
 	var res interface{} = lo.Empty[*Res]()
 	var err error
 
@@ -134,15 +154,28 @@ func DecodeInto[Res any](b []byte, dest *Res) error {
 	return nil
 }
 
+// Serialize converts the key to bytes using new codec (which is BCS).
+// If the value is already bytes or kv.Key - does nothing.
+func SerializeKey[Key any](k Key) kv.Key {
+	switch k := interface{}(k).(type) {
+	case []byte:
+		panic("new key is never expected to have []byte type - use kv.Key instead")
+	case kv.Key:
+		return k
+	default:
+		return kv.Key(codec.Encode(k))
+	}
+}
+
 // Serialize converts the value to bytes using new codec (which is BCS).
 // If the value is already bytes or kv.Key - does nothing.
-func Serialize[ValType any](val ValType) []byte {
-	switch val := interface{}(val).(type) {
+func SerializeValue[Val any](v Val) []byte {
+	switch v := interface{}(v).(type) {
 	case []byte:
-		return val
+		return v
 	case kv.Key:
-		return []byte(val)
+		panic("new value is never expected to have kv.Key type - use []byte instead")
 	default:
-		return codec.Encode(val)
+		return codec.Encode(v)
 	}
 }

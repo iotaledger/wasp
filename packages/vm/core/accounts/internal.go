@@ -53,9 +53,9 @@ const (
 	// Covered in: TestNFTMint
 	noCollection = "-"
 
-	// keyNonce stores a map of <agentID> => nonce (uint64)
+	// KeyNonce stores a map of <agentID> => nonce (uint64)
 	// Covered in: TestNFTMint
-	keyNonce = "m"
+	KeyNonce = "m"
 
 	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
