@@ -5,9 +5,6 @@
 // once. This way we hope to solve a lot of race conditions gracefully. The `upon`
 // predicates and the corresponding done functions should not depend on each other.
 // If some data is needed at several places, it should be passed to several predicates.
-//
-// TODO: Handle the requests gracefully in the VM before getting the initTX.
-// TODO: Reconsider the termination. Do we need to wait for DSS, RND?
 package cons
 
 import (
@@ -16,6 +13,7 @@ import (
 	"time"
 
 	"github.com/minio/blake2b-simd"
+	"github.com/samber/lo"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
@@ -94,14 +92,12 @@ type Result struct {
 }
 
 func (r *Result) String() string {
-	panic("TODO: Implement cons.Result.String") // TODO: refactor
-	/*
-		txID, err := r.Transaction.ID()
-		if err != nil {
-			txID = iotago.TransactionID{}
-		}
-		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseStateAnchor.ToHex(), r.NextAliasOutput)
-	*/
+	return fmt.Sprintf(
+		"{cons.Result, txHash=%v, baseAO=%v, outBlockHash=%v}",
+		lo.Must(r.Transaction.Hash()).Hex(),
+		r.DecidedAO,
+		r.Block.Hash(),
+	)
 }
 
 type consImpl struct {
