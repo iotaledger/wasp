@@ -7,10 +7,12 @@ import (
 	"math/big"
 	"time"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	old_iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	old_hashing "github.com/nnikolash/wasp-types-exported/packages/hashing"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_util "github.com/nnikolash/wasp-types-exported/packages/util"
 	"github.com/samber/lo"
@@ -26,7 +28,9 @@ func Deserialize[Dest any](b []byte) (Dest, error) {
 	return v, err
 }
 
-// Attempts to first use Read method of Deserializable interface, and if fails - uses basic types decoding.
+// Attempts to first use Read method of Deserializable interface,
+// and if fails - uses DecodeInto for basic types decoding.
+// If the type is raw bytes or old kv.Key - does nothing.
 func DeserializeInto[Dest any](b []byte, v *Dest) (*Dest, error) {
 	f := func(de Deserializable) (*Dest, error) {
 		r := bytes.NewReader(b)
@@ -34,7 +38,10 @@ func DeserializeInto[Dest any](b []byte, v *Dest) (*Dest, error) {
 
 		if r.Len() != 0 {
 			leftovers := lo.Must(io.ReadAll(r))
-			panic(fmt.Sprintf("Leftover bytes after reading entity of type %T: initialValue = %x, leftover = %x, leftoverLen = %v", v, b, leftovers, r.Len()))
+			panic(fmt.Sprintf(
+				"Leftover bytes after reading record of type %T: initialValue = %x, leftover = %x, leftoverLen = %v",
+				v, b, leftovers, r.Len(),
+			))
 		}
 
 		return v, nil
@@ -52,11 +59,16 @@ func DeserializeInto[Dest any](b []byte, v *Dest) (*Dest, error) {
 	return v, nil
 }
 
+// DecodeInto decodes basic types. If the type is raw bytes or old kv.Key - does nothing.
 func DecodeInto[Res any](b []byte, dest *Res) error {
 	var res interface{} = lo.Empty[*Res]()
 	var err error
 
 	switch res.(type) {
+	case *[]byte, *old_kv.Key:
+		res = b
+	case *kv.Key:
+		panic("new kv.Key is not expected to appear in decoding of old bytes")
 	case *bool:
 		res, err = old_codec.DecodeBool(b)
 	case *int: // default to int64
@@ -81,13 +93,11 @@ func DecodeInto[Res any](b []byte, dest *Res) error {
 		res, err = old_codec.DecodeString(b)
 	case **big.Int:
 		res, err = old_codec.DecodeBigIntAbs(b)
-	case *[]byte:
-		res = b
 	case **old_hashing.HashValue:
 		res, err = old_codec.DecodeHashValue(b)
 	case *old_hashing.HashValue:
 		res, err = old_codec.DecodeHashValue(b)
-	case *iotago.Address:
+	case *old_iotago.Address:
 		res, err = old_codec.DecodeAddress(b)
 	case **old_isc.ChainID:
 		res, err = old_codec.DecodeChainID(b)
@@ -101,7 +111,7 @@ func DecodeInto[Res any](b []byte, dest *Res) error {
 		res, err = old_codec.DecodeRequestID(b)
 	case *old_isc.Hname:
 		res, err = old_codec.DecodeHname(b)
-	case *iotago.NFTID:
+	case *old_iotago.NFTID:
 		res, err = old_codec.DecodeNFTID(b)
 	case *old_isc.VMErrorCode:
 		res, err = old_codec.DecodeVMErrorCode(b)
@@ -124,6 +134,15 @@ func DecodeInto[Res any](b []byte, dest *Res) error {
 	return nil
 }
 
-func Serialize[ValType any](entity ValType) []byte {
-	return codec.Encode(entity)
+// Serialize converts the value to bytes using new codec (which is BCS).
+// If the value is already bytes or kv.Key - does nothing.
+func Serialize[ValType any](val ValType) []byte {
+	switch val := interface{}(val).(type) {
+	case []byte:
+		return val
+	case kv.Key:
+		return []byte(val)
+	default:
+		return codec.Encode(val)
+	}
 }

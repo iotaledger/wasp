@@ -12,15 +12,15 @@ import (
 )
 
 // Defines a function signature for a single entry migration.
-// NOTE: if SrcEntity and/or DestEntity types are []byte, they are not encoded/decoded and just passed as is.
-type EntityMigrationFunc[SrcEntity any, DestEntity any] func(srcKey old_kv.Key, srcVal SrcEntity) (destKey kv.Key, _ DestEntity)
+// NOTE: if SrcRecord and/or DestRecord types are []byte, they are not encoded/decoded and just passed as is.
+type RecordMigrationFunc[SrcKey, SrcRecord, DestKey, DestRecord any] func(srcKey SrcKey, srcVal SrcRecord) (destKey DestKey, _ DestRecord)
 
 // Iterate by prefix and migrate each entry from old state to new state
-func migrateEntitiesByPrefix[Src any, Dest any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, oldPrefix string, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+func migrateEntitiesByPrefix[SrcK, SrcV, DestK, DestV any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, oldPrefix string, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
 	count := uint32(0)
 
 	srcContractState.Iterate(old_kv.Key(oldPrefix), func(srcKey old_kv.Key, srcBytes []byte) bool {
-		migrateEntityState(srcContractState, destContractState, srcKey, migrationFunc)
+		migrateRecord(srcContractState, destContractState, srcKey, migrationFunc)
 		count++
 
 		return true
@@ -29,16 +29,16 @@ func migrateEntitiesByPrefix[Src any, Dest any](srcContractState old_kv.KVStoreR
 	return count
 }
 
-// Migrate entities from Go map into destination state
-func migrateEntitiesByKV[Src any, Dest any](srcEntities map[old_kv.Key][]byte, destContractState kv.KVStore, migrationFunc EntityMigrationFunc[Src, Dest]) {
+// Migrate records from Go map into destination state
+func migrateEntitiesByKV[SrcK, SrcV, DestK, DestV any](srcEntities map[old_kv.Key][]byte, destContractState kv.KVStore, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) {
 	for srcKey, srcBytes := range srcEntities {
-		newK, newV := migrateEntityBytes(srcKey, srcBytes, migrationFunc)
+		newK, newV := migrateRecordBytes(srcKey, srcBytes, migrationFunc)
 		destContractState.Set(newK, newV)
 	}
 }
 
-// Migrate entities from the named map int another named map
-func migrateEntitiesMapByName[Src any, Dest any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, oldMapName, newMapName string, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+// Migrate records from the named map int another named map
+func migrateEntitiesMapByName[SrcK, SrcV, DestK, DestV any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, oldMapName, newMapName string, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
 	if oldMapName == "" {
 		panic("oldMapName is empty")
 	}
@@ -54,18 +54,18 @@ func migrateEntitiesMapByName[Src any, Dest any](srcContractState old_kv.KVStore
 	return srcEntities.Len()
 }
 
-// Migrate entities from state map into another state map
-func migrateEntitiesMap[Src any, Dest any](srcEntities *old_collections.ImmutableMap, destEntities *collections.Map, migrationFunc EntityMigrationFunc[Src, Dest]) {
+// Migrate records from state map into another state map
+func migrateEntitiesMap[SrcK, SrcV, DestK, DestV any](srcEntities *old_collections.ImmutableMap, destEntities *collections.Map, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) {
 	srcEntities.Iterate(func(srcKey, srcBytes []byte) bool {
-		newK, newV := migrateEntityBytes(old_kv.Key(srcKey), srcBytes, migrationFunc)
+		newK, newV := migrateRecordBytes(old_kv.Key(srcKey), srcBytes, migrationFunc)
 		destEntities.SetAt([]byte(newK), newV)
 
 		return true
 	})
 }
 
-// Migrate entities from the named array into another named array
-func migrateEntitiesArrayByName[Src any, Dest any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, oldArrName, newArrName string, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+// Migrate records from the named array into another named array
+func migrateEntitiesArrayByName[SrcK, SrcV, DestK, DestV any](srcContractState kv.KVStoreReader, destContractState kv.KVStore, oldArrName, newArrName string, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
 	if oldArrName == "" {
 		panic("oldArrName is empty")
 	}
@@ -81,35 +81,38 @@ func migrateEntitiesArrayByName[Src any, Dest any](srcContractState kv.KVStoreRe
 	return srcEntities.Len()
 }
 
-// Migrate entities from state array into another state array
-func migrateEntitiesArray[Src any, Dest any](srcEntities *collections.ArrayReadOnly, destEntities *collections.Array, migrationFunc EntityMigrationFunc[Src, Dest]) uint32 {
+// Migrate records from state array into another state array
+func migrateEntitiesArray[SrcK, SrcV, DestK, DestV any](srcEntities *collections.ArrayReadOnly, destEntities *collections.Array, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) uint32 {
 	for i := uint32(0); i < srcEntities.Len(); i++ {
 		srcBytes := srcEntities.GetAt(i)
-		_, newV := migrateEntityBytes("", srcBytes, migrationFunc)
+		_, newV := migrateRecordBytes("", srcBytes, migrationFunc)
 		destEntities.SetAt(i, newV)
 	}
 
 	return srcEntities.Len()
 }
 
-// Migrate entity from old state to new state
-func migrateEntityState[Src any, Dest any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, srcKey old_kv.Key, migrationFunc EntityMigrationFunc[Src, Dest]) {
+// Migrate record from old state to new state
+func migrateRecord[SrcK, SrcV, DestK, DestV any](srcContractState old_kv.KVStoreReader, destContractState kv.KVStore, srcKey old_kv.Key, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) {
 	srcBytes := srcContractState.Get(srcKey)
 
-	newKey, newVal := migrateEntityBytes(srcKey, srcBytes, migrationFunc)
+	newKey, newVal := migrateRecordBytes(srcKey, srcBytes, migrationFunc)
 
 	destContractState.Set(newKey, newVal)
 }
 
-// Migrate entity from old bytes to new bytes
-func migrateEntityBytes[Src any, Dest any](srcKey old_kv.Key, srcBytes []byte, migrationFunc EntityMigrationFunc[Src, Dest]) (newKey kv.Key, newVal []byte) {
-	srcEntity := lo.Must(Deserialize[Src](srcBytes))
-	destKey, destEntity := migrationFunc(srcKey, srcEntity)
-	return destKey, Serialize(destEntity)
+// Migrate record from old bytes to new bytes
+func migrateRecordBytes[SrcK, SrcV, DestK, DestV any](srcKeyBytes old_kv.Key, srcValueBytes []byte, migrationFunc RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) (newKeyBytes kv.Key, newValBytes []byte) {
+	srcKey := lo.Must(Deserialize[SrcK]([]byte(srcKeyBytes)))
+	srcValue := lo.Must(Deserialize[SrcV](srcValueBytes))
+
+	destKey, destRecord := migrationFunc(srcKey, srcValue)
+
+	return kv.Key(Serialize(destKey)), Serialize(destRecord)
 }
 
 // Old bytes are copied into new state
-func migrateAsIs(newKey kv.Key) EntityMigrationFunc[[]byte, []byte] {
+func copyBytes(newKey kv.Key) RecordMigrationFunc[old_kv.Key, []byte, kv.Key, []byte] {
 	if newKey == "" {
 		panic("newKey cannot be empty")
 	}
@@ -120,12 +123,12 @@ func migrateAsIs(newKey kv.Key) EntityMigrationFunc[[]byte, []byte] {
 }
 
 // Old bytes are just decoded and re-encoded again as new bytes
-func migrateEncoding[ValueType any](newKey kv.Key) EntityMigrationFunc[ValueType, ValueType] {
+func asIs[Value any](newKey kv.Key) RecordMigrationFunc[old_kv.Key, Value, kv.Key, Value] {
 	if newKey == "" {
 		panic("newKey cannot be empty")
 	}
 
-	return func(srcKey old_kv.Key, srcVal ValueType) (destKey kv.Key, destVal ValueType) {
+	return func(srcKey old_kv.Key, srcVal Value) (destKey kv.Key, destVal Value) {
 		if _, ok := interface{}(srcVal).([]byte); ok {
 			panic("srcVal cannot be []byte - use migrateAsIs instead")
 		}
@@ -173,10 +176,10 @@ func SplitMapKey(storeKey old_kv.Key) (mapName, elemKey old_kv.Key) {
 }
 
 // Wraps a function and adds to it printing of number of times it was called
-func p[Src any, Dest any](f EntityMigrationFunc[Src, Dest]) EntityMigrationFunc[Src, Dest] {
+func p[SrcK, SrcV, DestK, DestV any](f RecordMigrationFunc[SrcK, SrcV, DestK, DestV]) RecordMigrationFunc[SrcK, SrcV, DestK, DestV] {
 	callCount := 0
 
-	return func(oldKey old_kv.Key, srcVal Src) (kv.Key, Dest) {
+	return func(oldKey SrcK, srcVal SrcV) (DestK, DestV) {
 		callCount++
 		if callCount%100 == 0 {
 			fmt.Printf("\rProcessed: %v         ", callCount)

@@ -73,6 +73,11 @@ func OldTokensCountToNewCoinValue(oldTokensCount uint64) coin.Value {
 //     Acc2 = 5.000 IOTA
 //     Total = 9 IOTA
 
+const (
+	// TODO: what is the correct value?
+	oldBaseTokenDecimals uint32 = 6
+)
+
 func DecodeOldTokens(b []byte) uint64 {
 	amount := old_codec.MustDecodeBigIntAbs(b, big.NewInt(0))
 	// TODO: This is incorrect for native tokens and for base tokens of old schema
