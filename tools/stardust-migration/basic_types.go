@@ -19,15 +19,11 @@ import (
 	"github.com/samber/lo"
 )
 
-func OldChainIDToNewChainID(oldChainID old_isc.ChainID) isc.ChainID {
-	return isc.ChainID(oldChainID)
-}
-
 func OldHnameToNewHname(oldHname old_isc.Hname) isc.Hname {
 	return isc.Hname(oldHname)
 }
 
-func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID) isc.AgentID {
+func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, newChainID isc.ChainID) isc.AgentID {
 	switch oldAgentID.Kind() {
 	case old_isc.AgentIDKindAddress:
 		oldAddr := oldAgentID.(*old_isc.AddressAgentID).Address()
@@ -36,15 +32,13 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID) isc.AgentID {
 
 	case old_isc.AgentIDKindContract:
 		oldAgentID := oldAgentID.(*old_isc.ContractAgentID)
-		chID := OldChainIDToNewChainID(oldAgentID.ChainID())
 		hname := OldHnameToNewHname(oldAgentID.Hname())
-		return isc.NewContractAgentID(chID, hname)
+		return isc.NewContractAgentID(newChainID, hname)
 
 	case old_isc.AgentIDKindEthereumAddress:
 		oldAgentID := oldAgentID.(*old_isc.EthereumAddressAgentID)
-		chID := OldChainIDToNewChainID(oldAgentID.ChainID())
 		ethAddr := oldAgentID.EthAddress()
-		return isc.NewEthereumAddressAgentID(chID, ethAddr)
+		return isc.NewEthereumAddressAgentID(newChainID, ethAddr)
 
 	case old_isc.AgentIDIsNil:
 		panic(fmt.Sprintf("Found agent ID with kind = AgentIDIsNil: %v", oldAgentID))
@@ -61,14 +55,16 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID) isc.AgentID {
 func OldAccountKeyToNewAccountKey(oldChainID old_isc.ChainID, newChainID isc.ChainID) func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
 	return func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
 		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChainID))
-		newAgentID := OldAgentIDtoNewAgentID(oldAgentID)
+		newAgentID := OldAgentIDtoNewAgentID(oldAgentID, newChainID)
 		return accounts.AccountKey(newAgentID, newChainID)
 	}
 }
 
-func OldTokensCountToNewCoinValue(oldTokensCount uint64) coin.Value {
+func OldBaseTokensBalanceToNewBalance(oldTokensBalance *big.Int) (balance coin.Value, remainder *big.Int) {
 	// TODO: what is the conversion rate?
-	return coin.Value(oldTokensCount)
+	var newBalance uint64
+	newBalance, remainder = old_util.EthereumDecimalsToBaseTokenDecimals(oldTokensBalance, oldBaseTokenDecimals)
+	return coin.Value(newBalance), remainder
 }
 
 // Base token balance storage format:

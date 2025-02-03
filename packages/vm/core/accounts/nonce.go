@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-func nonceKey(callerAgentID isc.AgentID, chainID isc.ChainID) kv.Key {
+func NonceKey(callerAgentID isc.AgentID, chainID isc.ChainID) kv.Key {
 	return KeyNonce + AccountKey(callerAgentID, chainID)
 }
 
@@ -15,7 +15,7 @@ func (s *StateReader) AccountNonce(callerAgentID isc.AgentID, chainID isc.ChainI
 	if callerAgentID.Kind() == isc.AgentIDKindEthereumAddress {
 		panic("to get EVM nonce, call EVM contract")
 	}
-	data := s.state.Get(nonceKey(callerAgentID, chainID))
+	data := s.state.Get(NonceKey(callerAgentID, chainID))
 	if data == nil {
 		return 0
 	}
@@ -28,5 +28,5 @@ func (s *StateWriter) IncrementNonce(callerAgentID isc.AgentID, chainID isc.Chai
 		return
 	}
 	next := s.AccountNonce(callerAgentID, chainID)
-	s.state.Set(nonceKey(callerAgentID, chainID), codec.Encode(next))
+	s.state.Set(NonceKey(callerAgentID, chainID), codec.Encode(next))
 }

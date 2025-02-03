@@ -74,8 +74,6 @@ func IterateByKeys[OldK, OldV any](oldContractState old_kv.KVStoreReader, oldPre
 
 		f(k, v)
 	}
-
-	return
 }
 
 // Iterate specified keys in state and migrate each entry from old state to new state.

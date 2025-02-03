@@ -5,16 +5,12 @@ import (
 	"fmt"
 	"io"
 	"math/big"
-	"time"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	old_hashing "github.com/nnikolash/wasp-types-exported/packages/hashing"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
-	old_util "github.com/nnikolash/wasp-types-exported/packages/util"
 	"github.com/samber/lo"
 )
 
@@ -113,34 +109,36 @@ func decodeInto[Res any](b []byte, dest *Res) error {
 		res, err = old_codec.DecodeString(b)
 	case **big.Int:
 		res, err = old_codec.DecodeBigIntAbs(b)
-	case **old_hashing.HashValue:
-		res, err = old_codec.DecodeHashValue(b)
-	case *old_hashing.HashValue:
-		res, err = old_codec.DecodeHashValue(b)
-	case *old_iotago.Address:
-		res, err = old_codec.DecodeAddress(b)
-	case **old_isc.ChainID:
-		res, err = old_codec.DecodeChainID(b)
-	case *old_isc.ChainID:
-		res, err = old_codec.DecodeChainID(b)
-	case *old_isc.AgentID:
-		res, err = old_codec.DecodeAgentID(b)
-	case *old_isc.RequestID:
-		res, err = old_codec.DecodeRequestID(b)
-	case **old_isc.RequestID:
-		res, err = old_codec.DecodeRequestID(b)
-	case *old_isc.Hname:
-		res, err = old_codec.DecodeHname(b)
-	case *old_iotago.NFTID:
-		res, err = old_codec.DecodeNFTID(b)
-	case *old_isc.VMErrorCode:
-		res, err = old_codec.DecodeVMErrorCode(b)
-	case *time.Time:
-		res, err = old_codec.DecodeTime(b)
-	case *old_util.Ratio32:
-		res, err = old_codec.DecodeRatio32(b)
-	case **old_util.Ratio32:
-		res, err = old_codec.DecodeRatio32(b)
+	case *old_iotago.NativeTokenID:
+		res, err = old_codec.DecodeNativeTokenID(b)
+	// case **old_hashing.HashValue:
+	// 	res, err = old_codec.DecodeHashValue(b)
+	// case *old_hashing.HashValue:
+	// 	res, err = old_codec.DecodeHashValue(b)
+	// case *old_iotago.Address:
+	// 	res, err = old_codec.DecodeAddress(b)
+	// case **old_isc.ChainID:
+	// 	res, err = old_codec.DecodeChainID(b)
+	// case *old_isc.ChainID:
+	// 	res, err = old_codec.DecodeChainID(b)
+	// case *old_isc.AgentID:
+	// 	res, err = old_codec.DecodeAgentID(b)
+	// case *old_isc.RequestID:
+	// 	res, err = old_codec.DecodeRequestID(b)
+	// case **old_isc.RequestID:
+	// 	res, err = old_codec.DecodeRequestID(b)
+	// case *old_isc.Hname:
+	// 	res, err = old_codec.DecodeHname(b)
+	// case *old_iotago.NFTID:
+	// 	res, err = old_codec.DecodeNFTID(b)
+	// case *old_isc.VMErrorCode:
+	// 	res, err = old_codec.DecodeVMErrorCode(b)
+	// case *time.Time:
+	// 	res, err = old_codec.DecodeTime(b)
+	// case *old_util.Ratio32:
+	// 	res, err = old_codec.DecodeRatio32(b)
+	// case **old_util.Ratio32:
+	// 	res, err = old_codec.DecodeRatio32(b)
 	default:
 		panic(fmt.Sprintf("Attempt to decode unexpected type %T: value = %x", res, b))
 	}
