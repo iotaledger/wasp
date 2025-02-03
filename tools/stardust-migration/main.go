@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	"github.com/samber/lo"
@@ -24,12 +26,13 @@ import (
 // TODO: New state draft might be huge, but it is stored in memory - might be an issue.
 
 func main() {
-	if len(os.Args) < 3 {
-		log.Fatalf("usage: %s <src-chain-db-dir> <dest-chain-db-dir>", os.Args[0])
+	if len(os.Args) < 4 {
+		log.Fatalf("usage: %s <src-chain-db-dir> <dest-chain-db-dir> <new-chain-id>", os.Args[0])
 	}
 
 	srcChainDBDir := os.Args[1]
 	destChainDBDir := os.Args[2]
+	newChainIDStr := os.Args[3]
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0755))
 
@@ -38,16 +41,19 @@ func main() {
 		log.Fatalf("destination directory is not empty: %v", destChainDBDir)
 	}
 
-	destKVS := createDB(destChainDBDir)
-	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
-	destStateDraft := destStore.NewOriginStateDraft()
-
 	srcKVS := connectDB(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 	srcState := lo.Must(srcStore.LatestState())
 
+	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
+	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
+
+	destKVS := createDB(destChainDBDir)
+	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
+	destStateDraft := destStore.NewOriginStateDraft()
+
 	migrateRootContract(srcState, destStateDraft)
-	migrateAccountsContract(srcState, destStateDraft)
+	migrateAccountsContract(srcState, destStateDraft, oldChainID, newChainID)
 	// migrateBlocklogContract(srcState, destStateDraft)
 	// migrateGovernanceContract(srcState, destStateDraft)
 

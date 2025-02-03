@@ -14,7 +14,7 @@ import (
 )
 
 func migrateGovernanceContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, newChainID isc.ChainID) {
-	panic("TODO: review")
+	panic("TODO: implement")
 
 	oldContractState := getContactStateReader(oldChainState, old_governance.Contract.Hname())
 	newContractState := getContactState(newChainState, governance.Contract.Hname())

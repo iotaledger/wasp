@@ -28,21 +28,18 @@ type migratedAccount struct {
 	NewAgentID isc.AgentID
 }
 
-func migrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
+func migrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	log.Print("Migrating accounts contract...\n")
 
 	oldState := getContactStateReader(oldChainState, old_accounts.Contract.Hname())
 	newState := getContactState(newChainState, accounts.Contract.Hname())
-
-	oldChainID := old_isc.ChainID(GetAnchorOutput(oldChainState).AliasID)
-	newChainID := isc.ChainID{} // TODO: Add as CLI argument
 
 	migratedAccounts := map[old_kv.Key]migratedAccount{}
 
 	migrateAccountsList(oldState, newState, oldChainID, newChainID, &migratedAccounts)
 	migrateBaseTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
 	migrateNativeTokenBalances(oldState, newState, oldChainID, migratedAccounts)
-	// migrateNativeTokenBalanceTotal(oldState, newState)
+	migrateNativeTokenBalanceTotal(oldState, newState)
 	// migrateFoundriesOutputs(oldState, newState)
 	// migrateFoundriesPerAccount(oldState, newState, oldAgentIDToNewAgentID)
 	// migrateNativeTokenOutputs(oldState, newState)
@@ -127,7 +124,7 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 }
 
 func migrateFoundriesOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating list of foundry outputs...\n")
 
@@ -141,7 +138,7 @@ func migrateFoundriesOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore)
 }
 
 func migrateFoundriesPerAccount(oldState old_kv.KVStoreReader, newState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating foundries of accounts...\n")
 
@@ -164,7 +161,7 @@ func migrateFoundriesPerAccount(oldState old_kv.KVStoreReader, newState kv.KVSto
 }
 
 func migrateAccountToNFT(oldState old_kv.KVStoreReader, newState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating NFTs per account...\n")
 
@@ -186,7 +183,7 @@ func migrateAccountToNFT(oldState old_kv.KVStoreReader, newState kv.KVStore, old
 }
 
 func migrateNFTtoOwner(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating NFT owners...\n")
 
@@ -199,7 +196,7 @@ func migrateNFTtoOwner(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 }
 
 func migrateNFTsByCollection(oldState old_kv.KVStoreReader, newState kv.KVStore, oldAgentIDToNewAgentID map[old_isc.AgentID]isc.AgentID) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating NFTs by collection...\n")
 
@@ -220,7 +217,7 @@ func migrateNFTsByCollection(oldState old_kv.KVStoreReader, newState kv.KVStore,
 }
 
 func migrateNFTsByCollectionEntry(oldKey old_kv.Key, oldVal bool, oldAgentID old_isc.AgentID, newAgentID isc.AgentID) (newKey kv.Key, newVal bool) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	oldMapName, oldMapElemKey := SplitMapKey(oldKey)
 
@@ -243,7 +240,7 @@ func migrateNFTsByCollectionEntry(oldKey old_kv.Key, oldVal bool, oldAgentID old
 }
 
 func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating native token outputs...\n")
 
@@ -257,7 +254,7 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 }
 
 func migrateNativeTokenBalanceTotal(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	log.Printf("Migrating native token total balance...\n")
 
@@ -272,7 +269,7 @@ func migrateNativeTokenBalanceTotal(oldState old_kv.KVStoreReader, newState kv.K
 }
 
 func migrateAllMintedNfts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: review")
+	panic("TODO: implement (using existing business logic)")
 
 	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID>
 	log.Printf("Migrating All minted NFTs...\n")
