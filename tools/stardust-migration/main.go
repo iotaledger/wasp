@@ -65,6 +65,7 @@ func main() {
 	migrations.MigrateAccountsContract(srcState, destStateDraft, oldChainID, newChainID)
 	// migrations.MigrateBlocklogContract(srcState, destStateDraft)
 	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
+	migrations.MigrateEVMContract(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
