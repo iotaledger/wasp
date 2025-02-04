@@ -7,6 +7,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/iotaledger/stardust-migration/db"
+	"github.com/iotaledger/stardust-migration/migrations"
+	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -41,21 +44,21 @@ func main() {
 		log.Fatalf("destination directory is not empty: %v", destChainDBDir)
 	}
 
-	srcKVS := connectDB(srcChainDBDir)
+	srcKVS := db.Connect(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 	srcState := lo.Must(srcStore.LatestState())
 
-	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
+	oldChainID := old_isc.ChainID(oldstate.GetAnchorOutput(srcState).AliasID)
 	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
 
-	destKVS := createDB(destChainDBDir)
+	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 	destStateDraft := destStore.NewOriginStateDraft()
 
-	migrateRootContract(srcState, destStateDraft)
-	migrateAccountsContract(srcState, destStateDraft, oldChainID, newChainID)
-	// migrateBlocklogContract(srcState, destStateDraft)
-	// migrateGovernanceContract(srcState, destStateDraft)
+	migrations.MigrateRootContract(srcState, destStateDraft)
+	migrations.MigrateAccountsContract(srcState, destStateDraft, oldChainID, newChainID)
+	// migrations.MigrateBlocklogContract(srcState, destStateDraft)
+	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())

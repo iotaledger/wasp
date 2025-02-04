@@ -1,4 +1,4 @@
-package main
+package migrations
 
 import (
 	"fmt"
@@ -215,6 +215,24 @@ func ConvertKV[OldK, OldV, NewK, NewV any](
 	}
 }
 
+// This is a migration function for a single KV pair.
+// Used for maps and for KV storages itself.
+// Keys and values are automatically deserialized/serialized if they are not of following types:
+// * OldKey - old_kv.Key
+// * OldValue - []byte
+// * NewKey - kv.Key
+// * NewValue - []byte
+type KVMigrationFunc[OldKey, OldValue, NewKey, NewValue any] func(OldKey, OldValue) (NewKey, NewValue)
+
+// This is a migration function for a single KV pair.
+// Used for maps and for KV storages itself.
+// Values are automatically deserialized/serialized if they are not of type []byte.
+type ArrayMigrationFunc[OldValue, NewValue any] func(index uint32, oldVal OldValue) NewValue
+
+// This is a migration function for a single high-level variable migration.
+// Value is automatically deserialized/serialized if it is not of type []byte.
+type VariableMigrationFunc[OldValue, NewValue any] func(oldVal OldValue) NewValue
+
 // Split map key into map name and element key
 func SplitMapKey(storeKey old_kv.Key) (mapName, elemKey old_kv.Key) {
 	const elemSep = "."
@@ -241,21 +259,3 @@ func p[OldK, OldV, NewK, NewV any](f KVMigrationFunc[OldK, OldV, NewK, NewV]) KV
 		return f(oldKey, oldVal)
 	}
 }
-
-// This is a migration function for a single KV pair.
-// Used for maps and for KV storages itself.
-// Keys and values are automatically deserialized/serialized if they are not of following types:
-// * OldKey - old_kv.Key
-// * OldValue - []byte
-// * NewKey - kv.Key
-// * NewValue - []byte
-type KVMigrationFunc[OldKey, OldValue, NewKey, NewValue any] func(OldKey, OldValue) (NewKey, NewValue)
-
-// This is a migration function for a single KV pair.
-// Used for maps and for KV storages itself.
-// Values are automatically deserialized/serialized if they are not of type []byte.
-type ArrayMigrationFunc[OldValue, NewValue any] func(index uint32, oldVal OldValue) NewValue
-
-// This is a migration function for a single high-level variable migration.
-// Value is automatically deserialized/serialized if it is not of type []byte.
-type VariableMigrationFunc[OldValue, NewValue any] func(oldVal OldValue) NewValue

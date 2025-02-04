@@ -1,4 +1,4 @@
-package main
+package migrations
 
 import (
 	"github.com/iotaledger/wasp/packages/state"
@@ -7,7 +7,7 @@ import (
 	old_root "github.com/nnikolash/wasp-types-exported/packages/vm/core/root"
 )
 
-func migrateRootContract(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
+func MigrateRootContract(srcChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
 	MigrateVariable(srcChainState, destChainState, old_root.VarSchemaVersion, root.VarSchemaVersion, AsIs[uint32])
 
 	MigrateVariable(srcChainState, destChainState, old_root.VarContractRegistry, root.VarContractRegistry,

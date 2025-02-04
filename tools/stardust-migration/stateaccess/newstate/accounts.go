@@ -1,4 +1,4 @@
-package main
+package newstate
 
 import (
 	"github.com/iotaledger/wasp/packages/isc"
@@ -9,7 +9,7 @@ import (
 
 // This file contains pieces of business logic, which are missing in the codebase.
 
-func setAccountNonce(state kv.KVStore, agentID isc.AgentID, chainID isc.ChainID, nonce uint64) {
+func SetAccountNonce(state kv.KVStore, agentID isc.AgentID, chainID isc.ChainID, nonce uint64) {
 	if agentID.Kind() == isc.AgentIDKindEthereumAddress {
 		// don't update EVM nonces
 		return

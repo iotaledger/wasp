@@ -1,8 +1,10 @@
-package main
+package migrations
 
 import (
 	"log"
 
+	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
@@ -13,11 +15,11 @@ import (
 	"github.com/samber/lo"
 )
 
-func migrateGovernanceContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, newChainID isc.ChainID) {
+func MigrateGovernanceContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, newChainID isc.ChainID) {
 	panic("TODO: implement")
 
-	oldContractState := getContactStateReader(oldChainState, old_governance.Contract.Hname())
-	newContractState := getContactState(newChainState, governance.Contract.Hname())
+	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
+	newContractState := newstate.GetContactState(newChainState, governance.Contract.Hname())
 
 	log.Print("Migrating governance contract\n")
 

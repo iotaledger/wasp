@@ -1,19 +1,20 @@
-package main
+package migrations
 
 import (
 	"log"
 
+	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 )
 
-func migrateBlocklogContract(oldChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
 	panic("TODO: implement")
 
 	log.Print("Migrating blocklog contract\n")
-	oldContractState := getContactStateReader(oldChainState, old_blocklog.Contract.Hname())
+	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 
 	printWarningsForUnprocessableRequests(oldContractState)
 

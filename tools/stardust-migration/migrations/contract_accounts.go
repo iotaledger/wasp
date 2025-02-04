@@ -1,10 +1,11 @@
-package main
+package migrations
 
 import (
 	"fmt"
 	"log"
-	"math/big"
 
+	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -28,18 +29,18 @@ type migratedAccount struct {
 	NewAgentID isc.AgentID
 }
 
-func migrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func MigrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	log.Print("Migrating accounts contract...\n")
 
-	oldState := getContactStateReader(oldChainState, old_accounts.Contract.Hname())
-	newState := getContactState(newChainState, accounts.Contract.Hname())
+	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
+	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
 
 	migratedAccounts := map[old_kv.Key]migratedAccount{}
 
 	migrateAccountsList(oldState, newState, oldChainID, newChainID, &migratedAccounts)
 	migrateBaseTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
 	migrateNativeTokenBalances(oldState, newState, oldChainID, migratedAccounts)
-	migrateNativeTokenBalanceTotal(oldState, newState)
+	// L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
 	// migrateFoundriesOutputs(oldState, newState)
 	// migrateFoundriesPerAccount(oldState, newState, oldAgentIDToNewAgentID)
 	// migrateNativeTokenOutputs(oldState, newState)
@@ -83,7 +84,7 @@ func migrateBaseTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore
 	for _, acc := range migratedAccs {
 		oldBalance := old_accounts.GetBaseTokensBalanceFullDecimals(oldSchema, oldState, acc.OldAgentID, oldChainID)
 
-		// NOTE: Next like affects also L2TotalsAccount, so its does not need to be migrated, only compared
+		// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
 		// TODO: What is the conversion rate here?
 		w := accounts.NewStateWriter(newSchema, newState)
 		w.CreditToAccountFullDecimals(acc.NewAgentID, oldBalance, newChainID)
@@ -111,10 +112,9 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 			newCoinType := OldNativeTokemIDtoNewCoinType(oldNativeToken.ID)
 			newBalance := coin.Value(oldBalance) // TODO: What is the conversion rate?
 
+			// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
 			w := accounts.NewStateWriter(newSchema, newState)
-			w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{
-				newCoinType: newBalance,
-			}, isc.ChainID(oldChainID))
+			w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, isc.ChainID(oldChainID))
 		}
 
 		count += len(oldNativeTokes)
@@ -253,21 +253,6 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 	log.Printf("Migrated %v native token outputs\n", count)
 }
 
-func migrateNativeTokenBalanceTotal(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: implement (using existing business logic)")
-
-	log.Printf("Migrating native token total balance...\n")
-
-	migrateEntry := func(oldKey old_kv.Key, oldVal *big.Int) (newKey kv.Key, newVal []byte) {
-		// TODO: new amount format (if not big.Int)
-		return kv.Key(oldKey), []byte{0}
-	}
-
-	count := MigrateMapByName(oldState, newState, old_accounts.PrefixNativeTokens+accounts.L2TotalsAccount, "", p(migrateEntry))
-
-	log.Printf("Migrated %v native token total balance\n", count)
-}
-
 func migrateAllMintedNfts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	panic("TODO: implement (using existing business logic)")
 
@@ -288,7 +273,7 @@ func migrateNonce(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID
 
 	for _, acc := range migratedAccounts {
 		nonce := old_accounts.AccountNonce(oldState, acc.OldAgentID, oldChainID)
-		setAccountNonce(newState, acc.NewAgentID, isc.ChainID(oldChainID), nonce)
+		newstate.SetAccountNonce(newState, acc.NewAgentID, isc.ChainID(oldChainID), nonce)
 	}
 
 	log.Printf("Migrated %v nonce\n", len(migratedAccounts))

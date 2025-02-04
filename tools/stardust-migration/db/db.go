@@ -1,4 +1,4 @@
-package main
+package db
 
 import (
 	"log"
@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func createDB(dbDir string) kvstore.KVStore {
+func Create(dbDir string) kvstore.KVStore {
 	log.Printf("Creating DB in %v\n", dbDir)
 
 	// TODO: BlockCacheSize - what value should be there?
@@ -32,7 +32,7 @@ func createDB(dbDir string) kvstore.KVStore {
 	return kvs
 }
 
-func connectDB(dbDir string) old_kvstore.KVStore {
+func Connect(dbDir string) old_kvstore.KVStore {
 	log.Printf("Connecting to DB in %v\n", dbDir)
 
 	rocksDatabase := lo.Must(rocksdb.OpenDBReadOnly(dbDir,
