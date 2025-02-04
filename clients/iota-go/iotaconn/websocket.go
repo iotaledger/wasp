@@ -24,7 +24,9 @@ type WebsocketClient struct {
 	readers           sync.Map // id -> chan *jsonrpcMessage
 	log               *logger.Logger
 	shutdownWaitGroup sync.WaitGroup
-	reconnectMx       sync.RWMutex
+	reconnectMx       sync.Mutex
+	subscriptions     []*subscription
+	pendingCalls      sync.Map
 }
 
 func NewWebsocketClient(
@@ -34,9 +36,10 @@ func NewWebsocketClient(
 ) (*WebsocketClient, error) {
 
 	c := &WebsocketClient{
-		url:        url,
-		writeQueue: make(chan *jsonrpcMessage),
-		log:        log,
+		url:           url,
+		writeQueue:    make(chan *jsonrpcMessage),
+		log:           log,
+		subscriptions: make([]*subscription, 0, 2),
 	}
 
 	c.reconnect(ctx)
@@ -201,15 +204,11 @@ type subscription struct {
 	uuid   uuid.UUID
 }
 
-var subscriptions = make([]*subscription, 0, 2)
-
 type call struct {
 	method JsonRPCMethod
 	args   []interface{}
 	id     string
 }
-
-var pendingCalls sync.Map
 
 func (c *WebsocketClient) CallContext(
 	ctx context.Context,
@@ -226,9 +225,9 @@ func (c *WebsocketClient) CallContext(
 		return err
 	}
 
-	pendingCalls.Store(id, &call{method: method, args: args, id: id})
+	c.pendingCalls.Store(id, &call{method: method, args: args, id: id})
 	defer func() {
-		pendingCalls.Delete(id)
+		c.pendingCalls.Delete(id)
 	}()
 
 	readCh, _ := c.readers.Load(id)
@@ -260,7 +259,7 @@ func (c *WebsocketClient) Subscribe(
 	readCh := make(chan *jsonrpcMessage)
 	c.readers.Store(id, readCh)
 
-	subscriptions = append(subscriptions, &subscription{
+	c.subscriptions = append(c.subscriptions, &subscription{
 		method: method,
 		args:   args,
 		id:     id,
@@ -363,7 +362,7 @@ func (c *WebsocketClient) reconnect(ctx context.Context) error {
 
 // recreatePendingCalls recreates pending calls. Errors in this function will cause particular calls to not complete, so no need to fail other calls
 func (c *WebsocketClient) recreatePendingCalls() {
-	pendingCalls.Range(func(key, value interface{}) bool {
+	c.pendingCalls.Range(func(key, value interface{}) bool {
 		call := value.(*call)
 		oldId := key.(string)
 
@@ -394,10 +393,10 @@ func (c *WebsocketClient) recreatePendingCalls() {
 
 // resubscribe to subscriptions. Errors in this function probably mean that subscription configurations themself contain errors, so ignoring
 func (c *WebsocketClient) resubscribe(ctx context.Context) {
-	c.log.Debugf("resubscribing to %d subscriptions", len(subscriptions))
+	c.log.Debugf("resubscribing to %d subscriptions", len(c.subscriptions))
 	defer c.log.Debugf("resubscribed")
 
-	for _, sub := range subscriptions {
+	for _, sub := range c.subscriptions {
 		c.log.Debugf("resubscribing to %s, %+v", sub.method, sub.args)
 		defer c.log.Debugf("resubscribed to %s", sub.method)
 
