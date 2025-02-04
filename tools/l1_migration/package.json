@@ -1,0 +1,17 @@
+{
+  "name": "l1_migration",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@iota/iota-sdk": "^0.4.1"
+  },
+  "devDependencies": {
+    "prettier": "3.4.2"
+  }
+}
