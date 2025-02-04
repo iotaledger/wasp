@@ -234,16 +234,47 @@ type ArrayMigrationFunc[OldValue, NewValue any] func(index uint32, oldVal OldVal
 type VariableMigrationFunc[OldValue, NewValue any] func(oldVal OldValue) NewValue
 
 // Split map key into map name and element key
-func SplitMapKey(storeKey old_kv.Key) (mapName, elemKey old_kv.Key) {
+func SplitMapKey(storeKey old_kv.Key, prefixToRemove ...string) (mapName, elemKey old_kv.Key) {
+	if len(prefixToRemove) > 0 {
+		storeKey = MustRemovePrefix(storeKey, prefixToRemove[0])
+	}
+
 	const elemSep = "."
 	pos := strings.Index(string(storeKey), elemSep)
 
-	isMap := pos >= 0 && pos < len(storeKey)-1
-	if !isMap {
-		return storeKey, ""
+	sepFound := pos >= 0
+	sepIsNotLastChar := pos < len(storeKey)-1
+	isMapElement := sepFound && sepIsNotLastChar
+
+	if isMapElement {
+		return storeKey[:pos], storeKey[pos+1:]
 	}
 
-	return storeKey[:pos], storeKey[pos+1:]
+	// Not a map element - maybe map itself or just something else
+	return storeKey, ""
+}
+
+func MustRemovePrefix[T ~string](v T, prefix string) T {
+	r, found := strings.CutPrefix(string(v), prefix)
+	if !found {
+		panic(fmt.Sprintf("Prefix '%v' not found: %v", prefix, v))
+	}
+
+	return T(r)
+}
+
+func DecodeKey[Value any](k old_kv.Key, prefixToRemove string, decodeFunc func([]byte) (Value, error)) Value {
+	valueBytes, hadPrefix := strings.CutPrefix(string(k), prefixToRemove)
+	if !hadPrefix {
+		panic(fmt.Sprintf("Key does not have prefix '%v': %v", prefixToRemove, k))
+	}
+
+	v, err := decodeFunc([]byte(valueBytes))
+	if err != nil {
+		panic(err)
+	}
+
+	return v
 }
 
 // Wraps a function and adds to it printing of number of times it was called

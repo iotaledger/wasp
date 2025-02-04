@@ -10,7 +10,7 @@ import (
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 )
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, destChainState state.StateDraft) {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
 	panic("TODO: implement")
 
 	log.Print("Migrating blocklog contract\n")
