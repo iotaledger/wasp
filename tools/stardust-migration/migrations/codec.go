@@ -14,6 +14,8 @@ import (
 	"github.com/samber/lo"
 )
 
+// DEPRECATED (see utils.go)
+
 type Deserializable interface {
 	Read(src io.Reader) error
 }

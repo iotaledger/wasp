@@ -9,14 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
-	old_util "github.com/nnikolash/wasp-types-exported/packages/util"
-	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
-	"github.com/samber/lo"
 )
 
 func OldHnameToNewHname(oldHname old_isc.Hname) isc.Hname {
@@ -51,21 +44,25 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, newChainID isc.ChainID) 
 	}
 }
 
-// Creates converter from old account key to new account key.
-func OldAccountKeyToNewAccountKey(oldChainID old_isc.ChainID, newChainID isc.ChainID) func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
-	return func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
-		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChainID))
-		newAgentID := OldAgentIDtoNewAgentID(oldAgentID, newChainID)
-		return accounts.AccountKey(newAgentID, newChainID)
-	}
+func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
+	panic("Not implemented")
 }
 
-func OldBaseTokensBalanceToNewBalance(oldTokensBalance *big.Int) (balance coin.Value, remainder *big.Int) {
-	// TODO: what is the conversion rate?
-	var newBalance uint64
-	newBalance, remainder = old_util.EthereumDecimalsToBaseTokenDecimals(oldTokensBalance, oldBaseTokenDecimals)
-	return coin.Value(newBalance), remainder
-}
+// // Creates converter from old account key to new account key.
+// func OldAccountKeyToNewAccountKey(oldChainID old_isc.ChainID, newChainID isc.ChainID) func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
+// 	return func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
+// 		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChainID))
+// 		newAgentID := OldAgentIDtoNewAgentID(oldAgentID, newChainID)
+// 		return accounts.AccountKey(newAgentID, newChainID)
+// 	}
+// }
+
+// func OldBaseTokensFullDecimalBalanceToNewBalance(oldTokensBalance *big.Int) (balance coin.Value, remainder *big.Int) {
+// 	// TODO: what is the conversion rate?
+// 	var newBalance uint64
+// 	newBalance, remainder = old_util.EthereumDecimalsToBaseTokenDecimals(oldTokensBalance, oldBaseTokenDecimals)
+// 	return coin.Value(newBalance), remainder
+// }
 
 // Base token balance storage format:
 //   New IOTA rebased (uint64 IOTA + big.Int Wei remainder):
@@ -83,21 +80,50 @@ func OldBaseTokensBalanceToNewBalance(oldTokensBalance *big.Int) (balance coin.V
 //     Acc2 = 5.000 IOTA
 //     Total = 9 IOTA
 
-const (
-	// TODO: what is the correct value?
-	oldBaseTokenDecimals uint32 = 6
-)
+// const (
+// 	// TODO: what is the correct value?
+// 	oldBaseTokenDecimals uint32 = 6
+// )
 
-func DecodeOldTokens(b []byte) uint64 {
-	amount := old_codec.MustDecodeBigIntAbs(b, big.NewInt(0))
-	// TODO: This is incorrect for native tokens and for base tokens of old schema
-	convertedAmount, remainder := old_util.EthereumDecimalsToBaseTokenDecimals(amount, oldBaseTokenDecimals)
-	_ = remainder
+// func DecodeOldTokens(b []byte) uint64 {
+// 	amount := old_codec.MustDecodeBigIntAbs(b, big.NewInt(0))
+// 	// TODO: This is incorrect for native tokens and for base tokens of old schema
+// 	convertedAmount, remainder := old_util.EthereumDecimalsToBaseTokenDecimals(amount, oldBaseTokenDecimals)
+// 	_ = remainder
 
-	return convertedAmount
-}
+// 	return convertedAmount
+// }
 
 func OldNativeTokemIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	// TODO: Implement properly
 	panic("Not implemented")
+}
+
+func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {
+	// TODO: There is no cinversion rate, right?
+
+	if !oldNativeTokenAmount.IsUint64() {
+		panic(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
+	}
+
+	return coin.Value(oldNativeTokenAmount.Uint64())
+}
+
+func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
+	// TODO: conversion rate?
+	newBaseTokensBalance := coin.Value(oldAssets.BaseTokens)
+	newAssets := isc.NewAssets(newBaseTokensBalance)
+
+	for _, oldToken := range oldAssets.NativeTokens {
+		newCoinType := OldNativeTokemIDtoNewCoinType(oldToken.ID)
+		newBalance := OldNativeTokenBalanceToNewCoinValue(oldToken.Amount)
+		newAssets.Coins.Add(newCoinType, newBalance)
+	}
+
+	for _, nftID := range oldAssets.NFTs {
+		nftObjID := OldNFTIDtoNewObjectID(nftID)
+		newAssets.Objects.Add(nftObjID)
+	}
+
+	return newAssets
 }

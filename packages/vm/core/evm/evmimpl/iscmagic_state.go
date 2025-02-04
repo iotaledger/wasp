@@ -31,28 +31,28 @@ const (
 )
 
 // directory of EVM contracts that have access to the privileged methods of ISC magic
-func keyPrivileged(addr common.Address) kv.Key {
+func KeyPrivileged(addr common.Address) kv.Key {
 	return prefixPrivileged + kv.Key(addr.Bytes())
 }
 
 func isCallerPrivileged(ctx isc.SandboxBase, addr common.Address) bool {
 	state := evm.ISCMagicSubrealmR(ctx.StateR())
-	return state.Has(keyPrivileged(addr))
+	return state.Has(KeyPrivileged(addr))
 }
 
 func addToPrivileged(evmState kv.KVStore, addr common.Address) {
 	state := evm.ISCMagicSubrealm(evmState)
-	state.Set(keyPrivileged(addr), []byte{1})
+	state.Set(KeyPrivileged(addr), []byte{1})
 }
 
 // allowance between two EVM accounts
-func keyAllowance(from, to common.Address) kv.Key {
+func KeyAllowance(from, to common.Address) kv.Key {
 	return prefixAllowance + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
 }
 
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	state := evm.ISCMagicSubrealmR(ctx.StateR())
-	key := keyAllowance(from, to)
+	key := KeyAllowance(from, to)
 	b := state.Get(key)
 	if b == nil {
 		return isc.NewEmptyAssets()
@@ -84,7 +84,7 @@ func withAllowance(ctx isc.Sandbox, from, to common.Address, f func(*isc.Assets)
 	allowance := getAllowance(ctx, from, to)
 	f(allowance)
 	state := evm.ISCMagicSubrealm(ctx.State())
-	key := keyAllowance(from, to)
+	key := KeyAllowance(from, to)
 	state.Set(key, allowance.Bytes())
 }
 
@@ -96,7 +96,7 @@ func subtractFromAllowance(ctx isc.Sandbox, from, to common.Address, taken *isc.
 		panic(errFundsNotAllowed)
 	}
 	state := evm.ISCMagicSubrealm(ctx.State())
-	key := keyAllowance(from, to)
+	key := KeyAllowance(from, to)
 	if remaining.IsEmpty() {
 		state.Del(key)
 	} else {

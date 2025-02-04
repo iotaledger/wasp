@@ -7,10 +7,10 @@ import (
 	old_root "github.com/nnikolash/wasp-types-exported/packages/vm/core/root"
 )
 
-func MigrateRootContract(srcChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
-	MigrateVariable(srcChainState, newChainState, old_root.VarSchemaVersion, root.VarSchemaVersion, AsIs[uint32])
+func MigrateRootContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
+	MigrateVariable(oldChainState, newChainState, old_root.VarSchemaVersion, root.VarSchemaVersion, AsIs[uint32])
 
-	MigrateVariable(srcChainState, newChainState, old_root.VarContractRegistry, root.VarContractRegistry,
+	MigrateVariable(oldChainState, newChainState, old_root.VarContractRegistry, root.VarContractRegistry,
 		func(r old_root.ContractRecord) root.ContractRecord {
 			return root.ContractRecord{
 				Name: r.Name,

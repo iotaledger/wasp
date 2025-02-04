@@ -1,14 +1,13 @@
 package migrations
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -39,8 +38,8 @@ func MigrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState s
 
 	migrateAccountsList(oldState, newState, oldChainID, newChainID, &migratedAccounts)
 	migrateBaseTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
-	migrateNativeTokenBalances(oldState, newState, oldChainID, migratedAccounts)
-	// L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
+	migrateNativeTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
+	// NOTE: L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
 	// migrateFoundriesOutputs(oldState, newState)
 	// migrateFoundriesPerAccount(oldState, newState, oldAgentIDToNewAgentID)
 	// migrateNativeTokenOutputs(oldState, newState)
@@ -49,7 +48,7 @@ func MigrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState s
 	// migrateNFTsByCollection(oldState, newState, oldAgentIDToNewAgentID)
 	// prefixNewlyMintedNFTs ignored
 	// migrateAllMintedNfts(oldState, newState)
-	migrateNonce(oldState, newState, oldChainID, migratedAccounts)
+	migrateNonce(oldState, newState, oldChainID, newChainID, migratedAccounts)
 
 	log.Print("Migrated accounts contract\n")
 }
@@ -93,7 +92,7 @@ func migrateBaseTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore
 	log.Printf("Migrated %v base token balances\n", len(migratedAccs))
 }
 
-func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, migratedAccounts map[old_kv.Key]migratedAccount) {
+func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccounts map[old_kv.Key]migratedAccount) {
 	log.Printf("Migrating native token balances...\n")
 
 	var count int
@@ -102,19 +101,12 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 		oldNativeTokes := old_accounts.GetNativeTokens(oldState, acc.OldAgentID, oldChainID)
 
 		for _, oldNativeToken := range oldNativeTokes {
-			if !oldNativeToken.Amount.IsUint64() {
-				panic(fmt.Errorf("old native token amount cannot be represented as uint64: agentID = %v, token = %v, balance = %v",
-					acc.OldAgentID, oldNativeToken.ID, oldNativeToken.Amount))
-			}
-
-			oldBalance := oldNativeToken.Amount.Uint64()
-
 			newCoinType := OldNativeTokemIDtoNewCoinType(oldNativeToken.ID)
-			newBalance := coin.Value(oldBalance) // TODO: What is the conversion rate?
+			newBalance := OldNativeTokenBalanceToNewCoinValue(oldNativeToken.Amount)
 
 			// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
 			w := accounts.NewStateWriter(newSchema, newState)
-			w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, isc.ChainID(oldChainID))
+			w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, newChainID)
 		}
 
 		count += len(oldNativeTokes)
@@ -268,12 +260,17 @@ func migrateAllMintedNfts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	log.Printf("Migrated %v All minted NFTs\n", count)
 }
 
-func migrateNonce(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, migratedAccounts map[old_kv.Key]migratedAccount) {
+func migrateNonce(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccounts map[old_kv.Key]migratedAccount) {
 	log.Printf("Migrating nonce...\n")
 
 	for _, acc := range migratedAccounts {
+		if acc.NewAgentID.Kind() == isc.AgentIDKindEthereumAddress {
+			// don't update EVM nonces
+			return
+		}
+
 		nonce := old_accounts.AccountNonce(oldState, acc.OldAgentID, oldChainID)
-		newstate.SetAccountNonce(newState, acc.NewAgentID, isc.ChainID(oldChainID), nonce)
+		newState.Set(accounts.NonceKey(acc.NewAgentID, newChainID), codec.Encode(nonce))
 	}
 
 	log.Printf("Migrated %v nonce\n", len(migratedAccounts))

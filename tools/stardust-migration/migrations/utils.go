@@ -10,6 +10,10 @@ import (
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 )
 
+// DEPRECATED:
+// Although using existing business logic is more complicated and cumbersome, still that approachis more explicit and solid.
+// So these functions are not expected to be used anymore.
+
 // Iterate state by prefix.
 // Prefix is REMOVED before calling the callback.
 // Key is automatically deserialized if it is not old_kv.Key.
@@ -288,5 +292,28 @@ func p[OldK, OldV, NewK, NewV any](f KVMigrationFunc[OldK, OldV, NewK, NewV]) KV
 		}
 
 		return f(oldKey, oldVal)
+	}
+}
+
+const defaultPrintingPeriod = 100
+
+func NewProgressPrinter(printingPeriod ...uint32) *ProgressPrinter {
+	var period uint32 = defaultPrintingPeriod
+	if len(printingPeriod) > 0 {
+		period = printingPeriod[0]
+	}
+
+	return &ProgressPrinter{period: period}
+}
+
+type ProgressPrinter struct {
+	Count  uint32
+	period uint32
+}
+
+func (p *ProgressPrinter) Print() {
+	p.Count++
+	if p.Count%p.period == 0 {
+		fmt.Printf("\rProcessed: %v         ", p.Count)
 	}
 }
