@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/minio/blake2b-simd"
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
@@ -14,15 +13,12 @@ import (
 	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
@@ -56,7 +52,6 @@ func initSignAndPostCmd() *cobra.Command {
 			// Read the serialized TX Data.
 			txBytesFile := args[0]
 			txBytes := lo.Must(os.ReadFile(txBytesFile))
-			txData := bcs.Decode[*iotago.TransactionData](&(bcs.NewBytesDecoder(txBytes)).Decoder)
 			//
 			// Parse the committee address.
 			committeeAddressStr := args[1]
@@ -97,25 +92,20 @@ func initSignAndPostCmd() *cobra.Command {
 			log := logger.NewLogger("disrec")
 			signer := testpeers.NewTestDSSSigner(committeeAddress, dkRegistries, nodeIDs, peerIdentities, log)
 			//
-			// Sign it.
-			txBytesHash := blake2b.Sum256(txBytes)
-			txSignature := lo.Must(signer.Sign(txBytesHash[:]))
-			signedTX := iotasigner.NewSignedTransaction(txData, txSignature.AsIotaSignature())
-			//
-			// Post the TX to the L1.
+			// Sign and Post the TX to the L1.
 			iotaWsUrl := args[3]
 			ctx := context.Background()
 			wsClient := lo.Must(iscmoveclient.NewWebsocketClient(ctx, iotaWsUrl, "", iotaclient.WaitForEffectsDisabled, log))
-			res := lo.Must(wsClient.ExecuteTransactionBlock(ctx, iotaclient.ExecuteTransactionBlockRequest{
+			res, err := wsClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
 				TxDataBytes: txBytes,
-				Signatures:  signedTX.Signatures,
+				Signer:      cryptolib.SignerToIotaSigner(signer),
 				Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-					ShowObjectChanges:  true,
-					ShowBalanceChanges: true,
-					ShowEffects:        true,
+					ShowEffects: true,
 				},
-				RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
-			}))
+			})
+			if err != nil {
+				panic(fmt.Errorf("error executing tx: %s Digest: %s", err, res.Digest))
+			}
 			if !res.Effects.Data.IsSuccess() {
 				panic(fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest))
 			}
