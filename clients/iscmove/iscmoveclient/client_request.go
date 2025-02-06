@@ -1,10 +1,13 @@
 package iscmoveclient
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/samber/lo"
+	"golang.org/x/exp/maps"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -190,16 +193,16 @@ func (c *Client) GetRequestFromObjectID(
 	if getObjectResponse.Data == nil {
 		return nil, fmt.Errorf("request %s not found", *reqID)
 	}
-	return c.parseRequestAndFetchAssetsBag(getObjectResponse.Data)
+	return c.parseRequestAndFetchAssetsBag(ctx, getObjectResponse.Data)
 }
 
-func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
+func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
 	var req MoveRequest
 	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	bals, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
@@ -211,45 +214,124 @@ func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) 
 	}, nil
 }
 
+func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anchorAddress *iotago.ObjectID, maxAmountOfRequests int) (map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, error) {
+	pulledRequests := make(map[iotago.ObjectID]*iotajsonrpc.IotaObjectData, maxAmountOfRequests)
+
+	query := &iotajsonrpc.IotaObjectResponseQuery{
+		Filter: &iotajsonrpc.IotaObjectDataFilter{
+			StructType: &iotago.StructTag{
+				Address: &packageID,
+				Module:  iscmove.RequestModuleName,
+				Name:    iscmove.RequestObjectName,
+			},
+		},
+		Options: &iotajsonrpc.IotaObjectDataOptions{
+			ShowBcs:   true,
+			ShowOwner: true,
+		},
+	}
+
+	var cursor *iotago.ObjectID
+	for len(pulledRequests) < maxAmountOfRequests {
+		objs, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+			Address: anchorAddress,
+			Query:   query,
+			Cursor:  cursor,
+		})
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch requests: %w", err)
+		}
+
+		if err := ctx.Err(); err != nil {
+			return nil, fmt.Errorf("context error while fetching requests: %w", err)
+		}
+
+		if objs == nil || len(objs.Data) == 0 {
+			break
+		}
+
+		// Process the fetched objects
+		for _, req := range objs.Data {
+			if req.Data == nil || req.Data.ObjectID == nil {
+				continue
+			}
+
+			pulledRequests[*req.Data.ObjectID] = req.Data
+			if len(pulledRequests) >= maxAmountOfRequests {
+				break
+			}
+		}
+
+		// Update cursor for next iteration
+		if objs.NextCursor == nil {
+			break
+		}
+
+		cursor = objs.NextCursor
+	}
+
+	return pulledRequests, nil
+}
+
+// GetRequestsSorted pulls all requests owned by a certain address, sorts their ids, and returns a certain amount of them.
+// This is needed, so the Consensus has the same requests to work with, because GetOwnedObjects would return a random ordered list.
+func (c *Client) GetRequestsSorted(ctx context.Context, packageID iotago.PackageID, anchorAddress *iotago.ObjectID, maxAmountOfRequests int, cb func(error, *iscmove.RefWithObject[iscmove.Request])) error {
+	pulledRequests, err := c.pullRequests(ctx, packageID, anchorAddress, maxAmountOfRequests)
+	if err != nil {
+		return err
+	}
+
+	objectKeys := maps.Keys(pulledRequests)
+	sort.Slice(objectKeys, func(i, j int) bool {
+		return bytes.Compare(objectKeys[i][:], objectKeys[j][:]) < 0
+	})
+
+	var sortedRequestIDs []iotago.ObjectID
+
+	if len(objectKeys) >= maxAmountOfRequests {
+		sortedRequestIDs = objectKeys[:maxAmountOfRequests]
+	} else {
+		sortedRequestIDs = objectKeys
+	}
+
+	// We only pass the maxRequests amount of requests into the result, to not overload the mempool.
+	// This function will be called periodically by the Chain Manager to pick up the next amount of transactions.
+	// This ensures that we don't suddenly load a huge amount of Requests into the mempool which fills up at a lower limit.
+	// It improves the startup time of the node and makes sure that the Consensus gets the same IDs, as GetOwnedObjects is unsorted.
+	// TODO: Improve loading of the requests by requesting in parallel
+	for _, reqID := range sortedRequestIDs {
+		ref, err := c.parseRequestAndFetchAssetsBag(ctx, pulledRequests[reqID])
+		cb(err, ref)
+	}
+
+	return nil
+}
+
 func (c *Client) GetRequests(
 	ctx context.Context,
 	packageID iotago.PackageID,
 	anchorAddress *iotago.ObjectID,
+	maxAmountOfRequests int,
 ) (
 	[]*iscmove.RefWithObject[iscmove.Request],
 	error,
 ) {
-	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
-	var lastSeen *iotago.ObjectID
-	for {
-		res, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
-			Address: anchorAddress,
-			Query: &iotajsonrpc.IotaObjectResponseQuery{
-				Filter: &iotajsonrpc.IotaObjectDataFilter{
-					StructType: &iotago.StructTag{
-						Address: &packageID,
-						Module:  iscmove.RequestModuleName,
-						Name:    iscmove.RequestObjectName,
-					},
-				},
-				Options: &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
-			},
-			Cursor: lastSeen,
-		})
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("failed to fetch requests: %w", err)
-		}
-		if len(res.Data) == 0 {
-			break
-		}
-		lastSeen = res.NextCursor
-		for _, reqData := range res.Data {
-			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)
-			if err != nil {
-				return nil, fmt.Errorf("failed to decode request: %w", err)
-			}
-			reqs = append(reqs, req)
-		}
+	requests, err := c.pullRequests(ctx, packageID, anchorAddress, maxAmountOfRequests)
+	if err != nil {
+		return nil, err
 	}
-	return reqs, nil
+
+	parsedRequests := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+
+	for _, reqData := range requests {
+		req, err := c.parseRequestAndFetchAssetsBag(ctx, reqData)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode request: %w", err)
+		}
+
+		parsedRequests = append(parsedRequests, req)
+	}
+
+	return parsedRequests, nil
 }
