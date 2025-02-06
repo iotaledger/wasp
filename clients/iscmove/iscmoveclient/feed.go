@@ -147,7 +147,7 @@ func (f *ChainFeed) consumeRequestEvents(
 
 			requests <- reqWithObj
 
-			f.log.Infof("REQUEST[%s] SENT TO CHANNEL %s\n", reqEvent.RequestID.String(), time.Now().String())
+			f.log.Debugf("REQUEST[%s] SENT TO CHANNEL %s\n", reqEvent.RequestID.String(), time.Now().String())
 		}
 	}
 }
@@ -200,7 +200,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					continue
 				}
 
-				f.log.Infof("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
+				f.log.Debugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
 				r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 					ObjectID: &f.anchorAddress,
@@ -229,7 +229,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 					Object:    anchor,
 					Owner:     r.Data.VersionFound.Owner.AddressOwner,
 				}
-				f.log.Infof("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
+				f.log.Debugf("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
 			}
 		}
 	}

@@ -2,9 +2,9 @@ package iscmoveclient
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )

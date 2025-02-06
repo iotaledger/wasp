@@ -88,46 +88,6 @@ func (ncc *ncChain) WaitUntilStopped() {
 	ncc.shutdownWaitGroup.Wait()
 }
 
-func (ncc *ncChain) retryGetTransactionBlock(
-	ctx context.Context,
-	digest *iotago.TransactionDigest,
-	maxAttempts int,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		res, err := ncc.nodeConn.wsClient.GetTransactionBlock(ctx, iotaclient.GetTransactionBlockRequest{
-			Digest: digest,
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-				ShowEffects:        true,
-			},
-		})
-
-		if err == nil && (res.Effects != nil && res.Effects.Data.IsSuccess()) {
-			return res, nil
-		}
-
-		// Log the error
-		ncc.LogInfof("Anchor GetTransactionBlock attempt %d/%d failed, err=%v", attempt, maxAttempts, err)
-
-		// If this was our last attempt, return the error
-		if attempt == maxAttempts {
-			return nil, fmt.Errorf("failed after %d attempts: %w", maxAttempts, err)
-		}
-
-		// Wait before the next retry
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(2 * time.Second):
-			continue
-		}
-	}
-
-	// This should never be reached due to the return in the loop
-	return nil, fmt.Errorf("unexpected error in retry logic")
-}
-
 func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	defer ncc.shutdownWaitGroup.Done()
 
@@ -155,13 +115,6 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		}
 		if !res.Effects.Data.IsSuccess() {
 			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
-		}
-
-		res, err = ncc.retryGetTransactionBlock(ctx, &res.Digest, MaxRetriesGetAnchorAfterPostTX)
-		ncc.LogInfof("POSTING RETRY %v %v\n", res, err)
-		if err != nil {
-			ncc.LogInfof("GetTransactionBlock, err=%v", err)
-			return nil, err
 		}
 
 		anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)

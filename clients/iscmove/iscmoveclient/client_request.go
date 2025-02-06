@@ -276,6 +276,9 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 
 // GetRequestsSorted pulls all requests owned by a certain address, sorts their ids, and returns a certain amount of them.
 // This is needed, so the Consensus has the same requests to work with, because GetOwnedObjects would return a random ordered list.
+// Additionally, the mempool has a certain limit we don't want to overflow.
+// This function will be called periodically by the Chain Manager to pick up the next amount of transactions.
+// This ensures that we don't suddenly load a huge amount of Requests into the mempool which fills up at a lower limit.
 func (c *Client) GetRequestsSorted(ctx context.Context, packageID iotago.PackageID, anchorAddress *iotago.ObjectID, maxAmountOfRequests int, cb func(error, *iscmove.RefWithObject[iscmove.Request])) error {
 	pulledRequests, err := c.pullRequests(ctx, packageID, anchorAddress, maxAmountOfRequests)
 	if err != nil {
@@ -295,10 +298,6 @@ func (c *Client) GetRequestsSorted(ctx context.Context, packageID iotago.Package
 		sortedRequestIDs = objectKeys
 	}
 
-	// We only pass the maxRequests amount of requests into the result, to not overload the mempool.
-	// This function will be called periodically by the Chain Manager to pick up the next amount of transactions.
-	// This ensures that we don't suddenly load a huge amount of Requests into the mempool which fills up at a lower limit.
-	// It improves the startup time of the node and makes sure that the Consensus gets the same IDs, as GetOwnedObjects is unsorted.
 	// TODO: Improve loading of the requests by requesting in parallel
 	for _, reqID := range sortedRequestIDs {
 		ref, err := c.parseRequestAndFetchAssetsBag(ctx, pulledRequests[reqID])

@@ -3,8 +3,6 @@ package iotaclient
 import (
 	"context"
 	"fmt"
-	"strings"
-	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -71,37 +69,14 @@ func (c *Client) ExecuteTransactionBlock(
 	if err != nil {
 		return nil, err
 	}
-	if req.RequestType == iotajsonrpc.TxnRequestTypeWaitForLocalExecution && c.WaitUntilEffectsVisible != nil {
-		return c.waitUntilEffectsVisible(ctx, &resp, c.WaitUntilEffectsVisible)
-	}
-	return &resp, nil
-}
 
-func (c *Client) waitUntilEffectsVisible(
-	ctx context.Context,
-	resp *iotajsonrpc.IotaTransactionBlockResponse,
-	waitParams *WaitParams,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	if resp.ConfirmedLocalExecution == nil {
-		panic("expected ConfirmedLocalExecution != nil")
-	}
-	if *resp.ConfirmedLocalExecution {
-		// effects are already visible
-		return resp, nil
-	}
-	attempts := waitParams.Attempts
-	for {
-		time.Sleep(waitParams.DelayBetweenAttempts)
-		_, err := c.GetTransactionBlock(ctx, GetTransactionBlockRequest{Digest: &resp.Digest})
-		if err == nil {
-			return resp, nil
+	if !isResponseComplete(&resp, req.Options) {
+		if c.WaitUntilEffectsVisible == nil && req.RequestType == iotajsonrpc.TxnRequestTypeWaitForLocalExecution {
+			return &resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
 		}
-		if !strings.Contains(err.Error(), "Could not find the referenced transaction") {
-			return nil, err
-		}
-		attempts--
-		if attempts == 0 {
-			return nil, fmt.Errorf("timed out waiting for the transaction effects to be visible")
-		}
+
+		return c.retryGetTransactionBlock(ctx, &resp.Digest, req.Options)
 	}
+
+	return &resp, nil
 }

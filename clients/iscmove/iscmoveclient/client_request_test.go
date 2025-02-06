@@ -2,6 +2,7 @@ package iscmoveclient_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -275,7 +276,9 @@ func TestCreateAndSendRequest(t *testing.T) {
 			},
 		)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), `function_name: Some("create_and_send_request") }, 1`)
+		fmt.Println(err)
+		require.Contains(t, err.Error(), `failed to execute the transaction:`)
+		require.Contains(t, err.Error(), `create_and_send_request`)
 	})
 }
 
