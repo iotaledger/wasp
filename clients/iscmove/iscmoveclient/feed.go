@@ -37,6 +37,10 @@ func NewChainFeed(
 	}
 }
 
+func (f *ChainFeed) ConnectionRecreated() <-chan struct{} {
+	return f.wsClient.ConnectionRecreated()
+}
+
 func (f *ChainFeed) WaitUntilStopped() {
 	f.wsClient.WaitUntilStopped()
 }
@@ -63,6 +67,7 @@ func (f *ChainFeed) SubscribeToUpdates(
 	anchorID iotago.ObjectID,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 	requestsCh chan<- *iscmove.RefWithObject[iscmove.Request],
+
 ) {
 	go f.subscribeToAnchorUpdates(ctx, anchorCh)
 	go f.subscribeToNewRequests(ctx, anchorID, requestsCh)
@@ -73,6 +78,10 @@ func (f *ChainFeed) subscribeToNewRequests(
 	anchorID iotago.ObjectID,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
+	f.log.Info("subscribeToNewRequests: loop started")
+	defer f.log.Info("subscribeToNewRequests: loop exited")
+	defer close(requests)
+
 	for {
 		events := make(chan *iotajsonrpc.IotaEvent)
 		err := f.wsClient.SubscribeEvent(
@@ -115,8 +124,13 @@ func (f *ChainFeed) consumeRequestEvents(
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
+		if ctx.Err() != nil {
+			f.log.Info("consumeRequestEvents: context done")
+			return
+		}
 		select {
 		case <-ctx.Done():
+			f.log.Info("consumeRequestEvents: context done")
 			return
 		case ev, ok := <-events:
 			if !ok {
@@ -128,12 +142,19 @@ func (f *ChainFeed) consumeRequestEvents(
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
+
 			reqWithObj, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
-			requests <- reqWithObj
+
+			select {
+			case <-ctx.Done():
+				f.log.Info("consumeRequestEvents: context done")
+				return
+			case requests <- reqWithObj:
+			}
 		}
 	}
 }
@@ -142,6 +163,10 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 	ctx context.Context,
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
+	f.log.Info("subscribeToAnchorUpdates: loop started")
+	defer f.log.Info("subscribeToAnchorUpdates: loop exited")
+	defer close(anchorCh)
+
 	for {
 		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
 		err := f.wsClient.SubscribeTransaction(
@@ -174,8 +199,14 @@ func (f *ChainFeed) consumeAnchorUpdates(
 	anchorCh chan<- *iscmove.AnchorWithRef,
 ) {
 	for {
+		if ctx.Err() != nil {
+			f.log.Info("consumeRequestEvents: context done")
+			return
+		}
+
 		select {
 		case <-ctx.Done():
+			f.log.Info("consumeAnchorUpdates: context done")
 			return
 		case change, ok := <-changes:
 			if !ok {
@@ -203,10 +234,16 @@ func (f *ChainFeed) consumeAnchorUpdates(
 						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
 						continue
 					}
-					anchorCh <- &iscmove.AnchorWithRef{
+
+					select {
+					case <-ctx.Done():
+						f.log.Info("consumeAnchorUpdates: context done")
+						return
+					case anchorCh <- &iscmove.AnchorWithRef{
 						ObjectRef: r.Data.VersionFound.Ref(),
 						Object:    anchor,
 						Owner:     r.Data.VersionFound.Owner.AddressOwner,
+					}:
 					}
 				}
 			}

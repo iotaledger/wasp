@@ -190,16 +190,16 @@ func (c *Client) GetRequestFromObjectID(
 	if getObjectResponse.Data == nil {
 		return nil, fmt.Errorf("request %s not found", *reqID)
 	}
-	return c.parseRequestAndFetchAssetsBag(getObjectResponse.Data)
+	return c.parseRequestAndFetchAssetsBag(ctx, getObjectResponse.Data)
 }
 
-func (c *Client) parseRequestAndFetchAssetsBag(obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
+func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
 	var req MoveRequest
 	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(context.Background(), &req.AssetsBag.Value.ID)
+	bals, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
@@ -244,7 +244,7 @@ func (c *Client) GetRequests(
 		}
 		lastSeen = res.NextCursor
 		for _, reqData := range res.Data {
-			req, err := c.parseRequestAndFetchAssetsBag(reqData.Data)
+			req, err := c.parseRequestAndFetchAssetsBag(ctx, reqData.Data)
 			if err != nil {
 				return nil, fmt.Errorf("failed to decode request: %w", err)
 			}

@@ -25,6 +25,10 @@ func (h *httpTransport) Call(ctx context.Context, v any, method iotaconn.JsonRPC
 	return h.client.CallContext(ctx, v, method, args...)
 }
 
+func (h *httpTransport) ConnectionRecreated() <-chan struct{} {
+	return make(chan struct{})
+}
+
 func (h *httpTransport) Subscribe(
 	ctx context.Context,
 	v chan<- []byte,

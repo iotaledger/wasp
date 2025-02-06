@@ -119,7 +119,32 @@ func (nc *nodeConnection) AttachChain(
 			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
 			true)
 	}
-	ncc.subscribeToUpdates(ctx, chainID.AsObjectID())
+
+	subscriptionCtx, cancelSubscriptions := context.WithCancel(ctx)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ncc.feed.ConnectionRecreated():
+				nc.LogInfo("Connection recreated, resubscribing to updates")
+				// oldCancel := cancelSubscriptions
+				cancelSubscriptions()
+
+				nc.LogInfo("subscriptions cancelled")
+				// TODO: REMOVE THIS HACK, probably we can run cancel in parallel
+				time.Sleep(2 * time.Second)
+				nc.LogInfo("resubscribing to updates")
+				subscriptionCtx, cancelSubscriptions = context.WithCancel(ctx)
+				ncc.subscribeToUpdates(subscriptionCtx, chainID.AsObjectID())
+				nc.LogInfo("resubscribed to updates")
+				// oldCancel()
+			}
+		}
+	}()
+
+	ncc.subscribeToUpdates(subscriptionCtx, chainID.AsObjectID())
 
 	// disconnect the chain after the context is done
 	go func() {

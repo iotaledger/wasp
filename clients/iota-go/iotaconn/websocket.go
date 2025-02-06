@@ -21,6 +21,9 @@ type WebsocketClient struct {
 	readers           sync.Map // id -> chan *jsonrpcMessage
 	log               *logger.Logger
 	shutdownWaitGroup sync.WaitGroup
+	url               string
+	ctx               context.Context
+	disconnected      chan struct{}
 }
 
 func NewWebsocketClient(
@@ -28,16 +31,22 @@ func NewWebsocketClient(
 	url string,
 	log *logger.Logger,
 ) (*WebsocketClient, error) {
+	c := &WebsocketClient{
+		url:          url,
+		ctx:          ctx,
+		writeQueue:   make(chan *jsonrpcMessage),
+		log:          log,
+		disconnected: make(chan struct{}),
+	}
+
 	dialer := websocket.Dialer{}
-	conn, _, err := dialer.DialContext(ctx, url, nil)
+	conn, _, err := dialer.DialContext(c.ctx, c.url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to websocket server: %w", err)
 	}
-	c := &WebsocketClient{
-		conn:       conn,
-		writeQueue: make(chan *jsonrpcMessage),
-		log:        log,
-	}
+
+	c.conn = conn
+
 	c.shutdownWaitGroup.Add(1)
 	go c.loop(ctx)
 	return c, nil
@@ -50,6 +59,20 @@ func (c *WebsocketClient) WaitUntilStopped() {
 func (c *WebsocketClient) loop(ctx context.Context) {
 	defer c.shutdownWaitGroup.Done()
 
+	if err := c.runLoop(ctx); err != nil {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			close(c.disconnected)
+			return
+		}
+	}
+}
+
+var counter int
+
+func (c *WebsocketClient) runLoop(ctx context.Context) error {
 	type readMsgResult struct {
 		messageType int
 		p           []byte
@@ -72,7 +95,7 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			return
+			return nil
 		case msgToSend := <-c.writeQueue:
 			reqBody, err := json.Marshal(msgToSend)
 			if err != nil {
@@ -82,11 +105,16 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 			err = c.conn.WriteMessage(websocket.TextMessage, reqBody)
 			if err != nil {
 				c.log.Errorf("WebsocketClient: write error: %s", err)
-				return
+				return fmt.Errorf("connection closed: %w", err)
 			}
 		case receivedMsg, ok := <-receivedMsgs:
 			if !ok {
-				return
+				return fmt.Errorf("connection closed")
+			}
+			counter++
+			if counter%30 == 0 {
+				c.log.Info("simulate connection loss")
+				c.conn.Close()
 			}
 			switch receivedMsg.messageType {
 			case websocket.TextMessage:
@@ -128,7 +156,7 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 	}
 }
 
-func (c *WebsocketClient) writeMsg(method JsonRPCMethod, args ...interface{}) (string, error) {
+func (c *WebsocketClient) writeMsg(ctx context.Context, method JsonRPCMethod, args ...interface{}) (string, error) {
 	msg, err := c.newMessage(method.String(), args...)
 	if err != nil {
 		return "", err
@@ -136,8 +164,14 @@ func (c *WebsocketClient) writeMsg(method JsonRPCMethod, args ...interface{}) (s
 	id := string(msg.ID)
 	readCh := make(chan *jsonrpcMessage)
 	c.readers.Store(id, readCh)
-	c.writeQueue <- msg
-	return id, nil
+
+	select {
+	case <-ctx.Done():
+		c.log.Info("writeMsg: context done")
+		return "", ctx.Err()
+	case c.writeQueue <- msg:
+		return id, nil
+	}
 }
 
 func (c *WebsocketClient) CallContext(
@@ -149,16 +183,24 @@ func (c *WebsocketClient) CallContext(
 	if result != nil && reflect.TypeOf(result).Kind() != reflect.Ptr {
 		return fmt.Errorf("call result parameter must be pointer or nil interface: %v", result)
 	}
-	id, err := c.writeMsg(method, args...)
+	id, err := c.writeMsg(ctx, method, args...)
 	if err != nil {
 		return err
 	}
 	readCh, _ := c.readers.Load(id)
 	defer c.readers.Delete(id)
-	respmsg := <-readCh.(chan *jsonrpcMessage)
-	if respmsg.Error != nil {
-		return respmsg.Error
+
+	var respmsg *jsonrpcMessage
+	select {
+	case <-ctx.Done():
+		c.log.Info("CallContext: context done")
+		return ctx.Err()
+	case respmsg = <-readCh.(chan *jsonrpcMessage):
+		if respmsg.Error != nil {
+			return respmsg.Error
+		}
 	}
+
 	if len(respmsg.Result) == 0 {
 		return ErrNoResult
 	}
@@ -228,4 +270,8 @@ func (c *WebsocketClient) newMessage(method string, paramsIn ...interface{}) (*j
 func (c *WebsocketClient) nextID() string {
 	id := atomic.AddUint32(&c.idCounter, 1)
 	return strconv.FormatUint(uint64(id), 10)
+}
+
+func (c *WebsocketClient) Disconnected() <-chan struct{} {
+	return c.disconnected
 }

@@ -27,8 +27,13 @@ type transport interface {
 	Call(ctx context.Context, v any, method iotaconn.JsonRPCMethod, args ...any) error
 	Subscribe(ctx context.Context, v chan<- []byte, method iotaconn.JsonRPCMethod, args ...any) error
 	WaitUntilStopped()
+	ConnectionRecreated() <-chan struct{}
 }
 
 func (c *Client) WaitUntilStopped() {
 	c.transport.WaitUntilStopped()
+}
+
+func (c *Client) ConnectionRecreated() <-chan struct{} {
+	return c.transport.ConnectionRecreated()
 }

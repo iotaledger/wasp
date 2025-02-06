@@ -213,19 +213,29 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.ObjectID) {
 	anchorUpdates := make(chan *iscmove.AnchorWithRef)
 	newRequests := make(chan *iscmove.RefWithObject[iscmove.Request])
+
 	ncc.feed.SubscribeToUpdates(ctx, anchorID, anchorUpdates, newRequests)
 
 	ncc.shutdownWaitGroup.Add(1)
 	go func() {
+		ncc.LogInfo("subscribeToUpdates: loop started")
+		defer ncc.LogInfo("subscribeToUpdates: loop exited")
 		defer ncc.shutdownWaitGroup.Done()
-		for {
+
+		for anchorUpdates != nil || newRequests != nil {
 			select {
-			case <-ctx.Done():
-				return
-			case moveAnchor := <-anchorUpdates:
+			case moveAnchor, ok := <-anchorUpdates:
+				if !ok {
+					anchorUpdates = nil
+					continue
+				}
 				anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 				ncc.anchorHandler(&anchor)
-			case req := <-newRequests:
+			case req, ok := <-newRequests:
+				if !ok {
+					newRequests = nil
+					continue
+				}
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
 				if err != nil {
 					panic(err)
