@@ -41,20 +41,30 @@ func (f *ChainFeed) WaitUntilStopped() {
 	f.wsClient.WaitUntilStopped()
 }
 
-// FetchCurrentState fetches the current Anchor and all Requests owned by the
-// anchor address.
-func (f *ChainFeed) FetchCurrentState(ctx context.Context) (*iscmove.AnchorWithRef, []*iscmove.RefWithObject[iscmove.Request], error) {
+func (f *ChainFeed) GetCurrentAnchor(ctx context.Context) (*iscmove.AnchorWithRef, error) {
 	anchor, err := f.wsClient.GetAnchorFromObjectID(ctx, &f.anchorAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch anchor: %w", err)
+		return nil, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
+	return anchor, err
+}
 
-	reqs, err := f.wsClient.GetRequests(ctx, f.iscPackageID, &f.anchorAddress)
+// FetchCurrentState fetches the current Anchor and all Requests owned by the
+// anchor address.
+func (f *ChainFeed) FetchCurrentState(ctx context.Context, maxAmountOfRequests int, requestCb func(error, *iscmove.RefWithObject[iscmove.Request])) (*iscmove.AnchorWithRef, error) {
+	anchor, err := f.GetCurrentAnchor(ctx)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to fetch requests: %w", err)
+		return nil, err
 	}
 
-	return anchor, reqs, nil
+	// This was refactored from a return based function to a callback based one, as pulling many requests takes
+	// a lot of time (~5-10 requests per second) and it would halt ISC on start up, until all requests are pulled.
+	// This gives us the option to run this call in a separate goroutine.
+	// During my testing I found, that just adding `go` in front of it, isn't enough, and it requires further synchronization from the caller.
+	// I kept it as a callback based function for now, as pulling the requests needs improvement and it seems to be the way to go.
+	err = f.wsClient.GetRequestsSorted(ctx, f.iscPackageID, &f.anchorAddress, maxAmountOfRequests, requestCb)
+
+	return anchor, err
 }
 
 // SubscribeToUpdates starts fetching updated versions of the Anchor and newly received requests in background.
@@ -128,12 +138,16 @@ func (f *ChainFeed) consumeRequestEvents(
 				f.log.Errorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
+
 			reqWithObj, err := f.wsClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
 				f.log.Errorf("consumeRequestEvents: cannot fetch Request: %s", err)
 				continue
 			}
+
 			requests <- reqWithObj
+
+			f.log.Infof("REQUEST[%s] SENT TO CHANNEL %s\n", reqEvent.RequestID.String(), time.Now().String())
 		}
 	}
 }
@@ -182,33 +196,40 @@ func (f *ChainFeed) consumeAnchorUpdates(
 				return
 			}
 			for _, obj := range change.Data.V1.Mutated {
-				if *obj.Reference.ObjectID == f.anchorAddress {
-					r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
-						ObjectID: &f.anchorAddress,
-						Version:  obj.Reference.Version,
-						Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
-					})
-					if err != nil {
-						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
-						continue
-					}
-					if r.Data.VersionFound == nil {
-						f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
-						continue
-					}
-					var anchor *iscmove.Anchor
-					err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
-					if err != nil {
-						f.log.Errorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
-						f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
-						continue
-					}
-					anchorCh <- &iscmove.AnchorWithRef{
-						ObjectRef: r.Data.VersionFound.Ref(),
-						Object:    anchor,
-						Owner:     r.Data.VersionFound.Owner.AddressOwner,
-					}
+				if *obj.Reference.ObjectID != f.anchorAddress {
+					continue
 				}
+
+				f.log.Infof("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
+
+				r, err := f.wsClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+					ObjectID: &f.anchorAddress,
+					Version:  obj.Reference.Version,
+					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
+				})
+				if err != nil {
+					f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: %s", err)
+					continue
+				}
+				if r.Data.VersionFound == nil {
+					f.log.Errorf("consumeAnchorUpdates: cannot fetch Anchor: version %d not found", obj.Reference.Version)
+					continue
+				}
+
+				var anchor *iscmove.Anchor
+				err = iotaclient.UnmarshalBCS(r.Data.VersionFound.Bcs.Data.MoveObject.BcsBytes, &anchor)
+				if err != nil {
+					f.log.Errorf("ID: %s\nAssetBagID: %s\n", anchor.ID, anchor.Assets.Value.ID)
+					f.log.Errorf("consumeAnchorUpdates: failed to unmarshal BCS: %s", err)
+					continue
+				}
+
+				anchorCh <- &iscmove.AnchorWithRef{
+					ObjectRef: r.Data.VersionFound.Ref(),
+					Object:    anchor,
+					Owner:     r.Data.VersionFound.Owner.AddressOwner,
+				}
+				f.log.Infof("ANCHOR[%s] SENT TO CHANNEL %s\n", anchor.ID.String(), time.Now().String())
 			}
 		}
 	}
