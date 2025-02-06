@@ -2,7 +2,6 @@ package iscmoveclient_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -83,10 +82,6 @@ func TestRequestsFeed(t *testing.T) {
 
 	ownedReqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
 	updatedAnchor, err := chainFeed.FetchCurrentState(ctx, 1000, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
-
-		fmt.Println(i.Owner.String())
-		fmt.Println(anchor.ObjectID.String())
-
 		require.NoError(t, err)
 		ownedReqs = append(ownedReqs, i)
 	})
