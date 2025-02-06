@@ -10,6 +10,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -44,7 +45,9 @@ func (b *block) Equals(other Block) bool {
 
 // Hash calculates a hash from the mutations and previousL1Commitment
 func (b *block) Hash() (ret BlockHash) {
-	data := bcs.MustMarshal(b.mutations)
+	sortedMutations := b.mutations.SetsSorted()
+	data := bcs.MustMarshal(&sortedMutations)
+
 	if b.previousL1Commitment != nil {
 		data = append(data, bcs.MustMarshal(b.previousL1Commitment)...)
 	}
