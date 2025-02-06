@@ -2,7 +2,7 @@ package chain
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"strings"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -163,32 +162,39 @@ func initDepositCmd() *cobra.Command {
 				agentID := util.AgentIDFromString(args[0], chainID)
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 
-				allowance := tokens.Clone()
-				{
-					// adjust allowance to leave enough for fee if needed
-					feeNeeded := baseTokensForDepositFee(client, chain)
-					senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
-					senderOnChainBalance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
-					log.Check(err)
-					senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
-					log.Check(err)
+				/*
+					allowance := tokens.Clone()
+					{
+						// adjust allowance to leave enough for fee if needed
+						feeNeeded := coin.Value(10000)
 
-					if coin.Value(senderOnChainBaseTokens) < feeNeeded {
-						allowance.Spend(isc.NewAssets(feeNeeded - coin.Value(senderOnChainBaseTokens)))
-					}
-				}
+						senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
+						senderOnChainBalance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
+						log.Check(err)
+						senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
+						log.Check(err)
 
-				util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-					return cliclients.ChainClient(client, chainID).PostRequest(
-						ctx,
-						accounts.FuncTransferAllowanceTo.Message(agentID),
-						chainclient.PostRequestParams{
-							Transfer:  tokens,
-							Allowance: allowance,
-						},
-					)
-				})
+						if coin.Value(senderOnChainBaseTokens) < feeNeeded {
+							allowance.Spend(isc.NewAssets(feeNeeded - coin.Value(senderOnChainBaseTokens)))
+						}
+					}*/
+
+				allowance := isc.NewAssets(tokens.BaseTokens() - 10000)
+
+				res, err := cliclients.ChainClient(client, chainID).PostRequest(
+					ctx,
+					accounts.FuncTransferAllowanceTo.Message(agentID),
+					chainclient.PostRequestParams{
+						Transfer:  tokens,
+						Allowance: allowance,
+					},
+				)
+
+				log.Check(err)
+				fmt.Printf("Posted TX: %s\n", res.Digest)
+
 			}
+
 		},
 	}
 
