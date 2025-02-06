@@ -25,6 +25,7 @@ func Init(rootCmd *cobra.Command) {
 
 	rootCmd.AddCommand(authCmd)
 	rootCmd.AddCommand(loginCmd)
+	authCmd.AddCommand(initSetTokenCmd())
 
 	authCmd.AddCommand(loginCmd)
 	authCmd.AddCommand(infoCmd)
@@ -32,4 +33,5 @@ func Init(rootCmd *cobra.Command) {
 
 	loginCmd.PersistentFlags().StringVarP(&username, "username", "u", "", "username")
 	loginCmd.PersistentFlags().StringVarP(&password, "password", "p", "", "password")
+
 }

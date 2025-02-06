@@ -3,6 +3,7 @@ package authentication
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"syscall"
 
@@ -20,6 +21,25 @@ var (
 	username string
 	password string
 )
+
+func initSetTokenCmd() *cobra.Command {
+	var node string
+	cmd := &cobra.Command{
+		Use:   "set-token",
+		Short: "Manually sets a token for a given node",
+		Args:  cobra.ExactArgs(1),
+		// Args:  cobra.ArbitraryArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultWaspNodeFallback(node)
+
+			config.SetToken(node, args[0])
+
+			fmt.Printf("Set token for %s", node)
+		},
+	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
+}
 
 func initLoginCmd() *cobra.Command {
 	var node string
