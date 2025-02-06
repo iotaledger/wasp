@@ -176,7 +176,6 @@ func initDepositCmd() *cobra.Command {
 				fmt.Printf("Posted TX: %s\n", res.Digest)
 
 			}
-
 		},
 	}
 
