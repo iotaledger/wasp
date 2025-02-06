@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -60,9 +61,10 @@ type nodeConnection struct {
 	iscPackageID iotago.PackageID
 	wsClient     *iscmoveclient.Client
 
-	synced     sync.WaitGroup
-	chainsLock sync.RWMutex
-	chainsMap  *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
+	maxNumberOfRequests int
+	synced              sync.WaitGroup
+	chainsLock          sync.RWMutex
+	chainsMap           *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
 
 	shutdownHandler *shutdown.ShutdownHandler
 }
@@ -72,6 +74,7 @@ var _ chain.NodeConnection = &nodeConnection{}
 func New(
 	ctx context.Context,
 	iscPackageID iotago.PackageID,
+	maxNumberOfRequests int,
 	wsURL string,
 	log *logger.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
@@ -81,9 +84,10 @@ func New(
 		return nil, err
 	}
 	return &nodeConnection{
-		WrappedLogger: logger.NewWrappedLogger(log),
-		iscPackageID:  iscPackageID,
-		wsClient:      wsClient,
+		WrappedLogger:       logger.NewWrappedLogger(log),
+		iscPackageID:        iscPackageID,
+		wsClient:            wsClient,
+		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
 			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),

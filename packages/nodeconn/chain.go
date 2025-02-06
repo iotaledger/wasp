@@ -146,6 +146,10 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
+
+		ncc.LogInfo("POSTING TX")
+		ncc.LogInfof("%v %v\n", res, err)
+
 		if err != nil {
 			return nil, err
 		}
@@ -154,10 +158,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		}
 
 		res, err = ncc.retryGetTransactionBlock(ctx, &res.Digest, MaxRetriesGetAnchorAfterPostTX)
-		if err != nil {
-			return nil, err
-		}
-
+		ncc.LogInfof("POSTING RETRY %v %v\n", res, err)
 		if err != nil {
 			ncc.LogInfof("GetTransactionBlock, err=%v", err)
 			return nil, err
@@ -191,20 +192,28 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
+
+	moveAnchor, err := ncc.feed.FetchCurrentState(ctx, ncc.nodeConn.maxNumberOfRequests, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
+		if err != nil {
+			return
+		}
+
+		// The owner will always be the Anchor, so instead of pulling the Anchor and using its ID
+		// the owner address will be used.
+		onLedgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(req.Owner))
+		if err != nil {
+			return
+		}
+
+		ncc.LogInfof("Sending %s to request handler", req.ObjectID)
+		ncc.requestHandler(onLedgerReq)
+	})
 	if err != nil {
 		return err
 	}
+
 	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
-
-	for _, req := range reqs {
-		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
-		if err != nil {
-			return err
-		}
-		ncc.requestHandler(onledgerReq)
-	}
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil
