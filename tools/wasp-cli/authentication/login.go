@@ -28,7 +28,6 @@ func initSetTokenCmd() *cobra.Command {
 		Use:   "set-token",
 		Short: "Manually sets a token for a given node",
 		Args:  cobra.ExactArgs(1),
-		// Args:  cobra.ArbitraryArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 

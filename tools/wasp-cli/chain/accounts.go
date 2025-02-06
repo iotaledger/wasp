@@ -161,24 +161,6 @@ func initDepositCmd() *cobra.Command {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0], chainID)
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
-
-				/*
-					allowance := tokens.Clone()
-					{
-						// adjust allowance to leave enough for fee if needed
-						feeNeeded := coin.Value(10000)
-
-						senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
-						senderOnChainBalance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
-						log.Check(err)
-						senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
-						log.Check(err)
-
-						if coin.Value(senderOnChainBaseTokens) < feeNeeded {
-							allowance.Spend(isc.NewAssets(feeNeeded - coin.Value(senderOnChainBaseTokens)))
-						}
-					}*/
-
 				allowance := isc.NewAssets(tokens.BaseTokens() - 10000)
 
 				res, err := cliclients.ChainClient(client, chainID).PostRequest(
