@@ -43,22 +43,9 @@ func (b *block) Equals(other Block) bool {
 	return b.Hash().Equals(other.Hash())
 }
 
-// This needs to be public for bcs to function
-type BlockHashCreate struct {
-	Sets kv.Items
-	Dels []kv.Key
-}
-
 // Hash calculates a hash from the mutations and previousL1Commitment
 func (b *block) Hash() (ret BlockHash) {
-	// TODO: The hash should be calculated by bcs.MustMarshal(b.Mutations()), but it currently does not get properly sorted
-	// TODO: Once the bcs ordering is fixed, remove the Create struct + MustMarshal here and Marshal(b.Mutations()) instead.
-	bb := BlockHashCreate{
-		Sets: b.mutations.Clone().SetsSorted(),
-		Dels: b.mutations.Clone().DelsSorted(),
-	}
-
-	data := bcs.MustMarshal[BlockHashCreate](&bb)
+	data := bcs.MustMarshal(&b)
 
 	if b.previousL1Commitment != nil {
 		data = append(data, bcs.MustMarshal(b.previousL1Commitment)...)
