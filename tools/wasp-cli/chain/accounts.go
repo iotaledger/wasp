@@ -2,7 +2,7 @@ package chain
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"strings"
 	"time"
 
@@ -20,7 +20,6 @@ import (
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -93,6 +92,8 @@ func initAccountNFTsCmd() *cobra.Command {
 }
 
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
+//
+//nolint:unused
 func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
 		apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
@@ -162,32 +163,19 @@ func initDepositCmd() *cobra.Command {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0], chainID)
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
+				allowance := isc.NewAssets(tokens.BaseTokens() - 10000)
 
-				allowance := tokens.Clone()
-				{
-					// adjust allowance to leave enough for fee if needed
-					feeNeeded := baseTokensForDepositFee(client, chain)
-					senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
-					senderOnChainBalance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
-					log.Check(err)
-					senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
-					log.Check(err)
+				res, err := cliclients.ChainClient(client, chainID).PostRequest(
+					ctx,
+					accounts.FuncTransferAllowanceTo.Message(agentID),
+					chainclient.PostRequestParams{
+						Transfer:  tokens,
+						Allowance: allowance,
+					},
+				)
 
-					if coin.Value(senderOnChainBaseTokens) < feeNeeded {
-						allowance.Spend(isc.NewAssets(feeNeeded - coin.Value(senderOnChainBaseTokens)))
-					}
-				}
-
-				util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-					return cliclients.ChainClient(client, chainID).PostRequest(
-						ctx,
-						accounts.FuncTransferAllowanceTo.Message(agentID),
-						chainclient.PostRequestParams{
-							Transfer:  tokens,
-							Allowance: allowance,
-						},
-					)
-				})
+				log.Check(err)
+				fmt.Printf("Posted TX: %s\n", res.Digest)
 			}
 		},
 	}

@@ -69,9 +69,7 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 }
 
 func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
-	val := 10_000_000
-
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), uint64(val), isc.GasCoinTargetValue)
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -81,7 +79,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(val)},
+				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinTargetValue)},
 			},
 		},
 	)
@@ -92,7 +90,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		wallet.Address().AsIotaAddress(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
-		uint64(val),
+		uint64(isc.GasCoinTargetValue),
 		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 	)
 

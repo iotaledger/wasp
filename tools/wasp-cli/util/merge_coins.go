@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -12,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/samber/lo"
 )
 
 func TryMergeAllCoins(ctx context.Context) {
@@ -25,10 +26,7 @@ func TryMergeAllCoins(ctx context.Context) {
 	log.Check(err)
 
 	baseCoins := lo.Filter(coins.Data, func(item *iotajsonrpc.Coin, index int) bool {
-		if coin.BaseTokenType.MatchesStringType(item.CoinType.String()) {
-			return true
-		}
-		return false
+		return coin.BaseTokenType.MatchesStringType(item.CoinType.String())
 	})
 
 	// For now a hard coded limit where it would start to make sense to merge the coins again.

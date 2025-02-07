@@ -2,6 +2,7 @@ package iotaclient
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -47,7 +48,13 @@ type GetObjectRequest struct {
 
 func (c *Client) GetObject(ctx context.Context, req GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
 	var resp iotajsonrpc.IotaObjectResponse
-	return &resp, c.transport.Call(ctx, &resp, getObject, req.ObjectID, req.Options)
+	err := c.transport.Call(ctx, &resp, getObject, req.ObjectID, req.Options)
+	if err != nil {
+		return &resp, err
+	} else if resp.ResponseError() != nil {
+		return &resp, resp.ResponseError()
+	}
+	return &resp, nil
 }
 
 func (c *Client) GetProtocolConfig(
@@ -86,7 +93,16 @@ func (c *Client) MultiGetObjects(ctx context.Context, req MultiGetObjectsRequest
 	error,
 ) {
 	var resp []iotajsonrpc.IotaObjectResponse
-	return resp, c.transport.Call(ctx, &resp, multiGetObjects, req.ObjectIDs, req.Options)
+	err := c.transport.Call(ctx, &resp, multiGetObjects, req.ObjectIDs, req.Options)
+	if err != nil {
+		return resp, err
+	}
+	for i, elt := range resp {
+		if elt.ResponseError() != nil {
+			return resp, fmt.Errorf("index: %d: %w", i, elt.ResponseError())
+		}
+	}
+	return resp, nil
 }
 
 type MultiGetTransactionBlocksRequest struct {
