@@ -25,8 +25,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-const MaxRetriesGetAnchorAfterPostTX = 5
-
 // ncChain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
 	*logger.WrappedLogger
@@ -107,8 +105,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
 
-		ncc.LogInfo("POSTING TX")
-		ncc.LogInfof("%v %v\n", res, err)
+		ncc.LogDebug("POSTING TX")
+		ncc.LogDebugf("%v %v\n", res, err)
 
 		if err != nil {
 			return nil, err
@@ -158,7 +156,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 			return
 		}
 
-		ncc.LogInfof("Sending %s to request handler", req.ObjectID)
+		ncc.LogDebugf("Sending %s to request handler", req.ObjectID)
 		ncc.requestHandler(onLedgerReq)
 	})
 	if err != nil {
