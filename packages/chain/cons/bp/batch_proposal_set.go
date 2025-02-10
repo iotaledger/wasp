@@ -176,7 +176,7 @@ func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 		}
 	}
 
-	if l1paramsCounterMax.counter < f {
+	if l1paramsCounterMax.counter <= f {
 		return nil
 	}
 
