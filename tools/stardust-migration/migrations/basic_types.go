@@ -4,19 +4,23 @@ import (
 	"fmt"
 	"math/big"
 
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
+
+var newSchema isc.SchemaVersion = allmigrations.SchemaVersionIotaRebased
 
 func OldHnameToNewHname(oldHname old_isc.Hname) isc.Hname {
 	return isc.Hname(oldHname)
 }
 
-func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, newChainID isc.ChainID) isc.AgentID {
+func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.AgentID {
 	switch oldAgentID.Kind() {
 	case old_isc.AgentIDKindAddress:
 		oldAddr := oldAgentID.(*old_isc.AddressAgentID).Address()
@@ -25,11 +29,19 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, newChainID isc.ChainID) 
 
 	case old_isc.AgentIDKindContract:
 		oldAgentID := oldAgentID.(*old_isc.ContractAgentID)
+		oldAgentChainID := oldAgentID.ChainID()
+		if !oldAgentChainID.Equals(oldChainID) {
+			panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
+		}
 		hname := OldHnameToNewHname(oldAgentID.Hname())
 		return isc.NewContractAgentID(newChainID, hname)
 
 	case old_isc.AgentIDKindEthereumAddress:
 		oldAgentID := oldAgentID.(*old_isc.EthereumAddressAgentID)
+		oldAgentChainID := oldAgentID.ChainID()
+		if !oldAgentChainID.Equals(oldChainID) {
+			panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
+		}
 		ethAddr := oldAgentID.EthAddress()
 		return isc.NewEthereumAddressAgentID(newChainID, ethAddr)
 

@@ -4,10 +4,17 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"os"
 
-	"bytes"
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
+	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/stardust-migration/db"
@@ -16,13 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
-	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
-	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
-	"github.com/samber/lo"
 )
 
 // NOTE: Every record type should be explicitly included in migration
@@ -43,7 +43,7 @@ func main() {
 	destChainDBDir := os.Args[2]
 	newChainIDStr := os.Args[3]
 
-	lo.Must0(os.MkdirAll(destChainDBDir, 0755))
+	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
 	entries := lo.Must(os.ReadDir(destChainDBDir))
 	if len(entries) > 0 {
@@ -61,8 +61,8 @@ func main() {
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 	destStateDraft := destStore.NewOriginStateDraft()
 
-	migrations.MigrateRootContract(srcState, destStateDraft)
-	migrations.MigrateAccountsContract(srcState, destStateDraft, oldChainID, newChainID)
+	v := migrations.MigrateRootContract(srcState, destStateDraft)
+	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
 	// migrations.MigrateBlocklogContract(srcState, destStateDraft)
 	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
 	migrations.MigrateEVMContract(srcState, destStateDraft)

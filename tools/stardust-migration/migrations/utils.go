@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
 // DEPRECATED:
@@ -195,12 +196,13 @@ func MigrateArray[OldV, NewV any](oldRecords *old_collections.ArrayReadOnly, new
 }
 
 // Migrate simple high-level variable from old state to new state.
-func MigrateVariable[OldV, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldKey old_kv.Key, newKey kv.Key, migrationFunc VariableMigrationFunc[OldV, NewV]) {
+func MigrateVariable[OldV, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldKey old_kv.Key, newKey kv.Key, migrationFunc VariableMigrationFunc[OldV, NewV]) (OldV, NewV) {
 	oldValueBytes := oldContractState.Get(oldKey)
 	oldValue := DeserializeValue[OldV](oldValueBytes)
 	newVal := migrationFunc(oldValue)
 	newValBytes := SerializeValue(newVal)
 	newContractState.Set(newKey, newValBytes)
+	return oldValue, newVal
 }
 
 // Can be used with MigrateVariable to migrate variable as by re-encoding.

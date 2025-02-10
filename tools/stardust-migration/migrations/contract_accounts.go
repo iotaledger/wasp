@@ -2,6 +2,12 @@ package migrations
 
 import (
 	"log"
+	"math/big"
+
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
@@ -10,17 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
-	old_allmigrations "github.com/nnikolash/wasp-types-exported/packages/vm/core/migrations/allmigrations"
-	"github.com/samber/lo"
-)
-
-var (
-	oldSchema old_isc.SchemaVersion = old_allmigrations.DefaultScheme.LatestSchemaVersion()
-	newSchema isc.SchemaVersion     = allmigrations.SchemaVersionIotaRebased
 )
 
 type migratedAccount struct {
@@ -28,16 +23,15 @@ type migratedAccount struct {
 	NewAgentID isc.AgentID
 }
 
-func MigrateAccountsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func MigrateAccountsContract(v old_isc.SchemaVersion, oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	log.Print("Migrating accounts contract...\n")
-
 	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
 	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
 
 	migratedAccounts := map[old_kv.Key]migratedAccount{}
 
 	migrateAccountsList(oldState, newState, oldChainID, newChainID, &migratedAccounts)
-	migrateBaseTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
+	migrateBaseTokenBalances(v, oldState, newState, oldChainID, newChainID, migratedAccounts)
 	migrateNativeTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
 	// NOTE: L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
 	// migrateFoundriesOutputs(oldState, newState)
@@ -58,7 +52,7 @@ func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, old
 
 	migrateAccountAndSaveNewAgentID := p(func(oldAccountKey old_kv.Key, v bool) (kv.Key, bool) {
 		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChID))
-		newAgentID := OldAgentIDtoNewAgentID(oldAgentID, newChID)
+		newAgentID := OldAgentIDtoNewAgentID(oldAgentID, oldChID, newChID)
 
 		(*migratedAccs)[oldAccountKey] = migratedAccount{
 			OldAgentID: oldAgentID,
@@ -77,16 +71,20 @@ func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, old
 	log.Printf("Migrated list of %v accounts\n", count)
 }
 
-func migrateBaseTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccs map[old_kv.Key]migratedAccount) {
+func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
+	panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
+	return oldBalanceFullDecimals
+}
+
+func migrateBaseTokenBalances(v old_isc.SchemaVersion, oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccs map[old_kv.Key]migratedAccount) {
 	log.Printf("Migrating base token balances...\n")
 
 	for _, acc := range migratedAccs {
-		oldBalance := old_accounts.GetBaseTokensBalanceFullDecimals(oldSchema, oldState, acc.OldAgentID, oldChainID)
+		oldBalance := old_accounts.GetBaseTokensBalanceFullDecimals(v, oldState, acc.OldAgentID, oldChainID)
 
 		// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
-		// TODO: What is the conversion rate here?
 		w := accounts.NewStateWriter(newSchema, newState)
-		w.CreditToAccountFullDecimals(acc.NewAgentID, oldBalance, newChainID)
+		w.CreditToAccountFullDecimals(acc.NewAgentID, convertBaseTokens(oldBalance), newChainID)
 	}
 
 	log.Printf("Migrated %v base token balances\n", len(migratedAccs))
@@ -144,7 +142,7 @@ func migrateFoundriesPerAccount(oldState old_kv.KVStoreReader, newState kv.KVSto
 		// mapMame := PrefixFoundries + string(agentID.Bytes())
 		oldMapName := old_accounts.PrefixFoundries + string(oldAgentID.Bytes())
 		_ = newAgentID
-		newMapName := "" //accounts.PrefixFoundries + string(newAgentID.Bytes())
+		newMapName := "" // accounts.PrefixFoundries + string(newAgentID.Bytes())
 
 		count += MigrateMapByName(oldState, newState, oldMapName, newMapName, migrateFoundriesOfAccount)
 	}

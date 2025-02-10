@@ -5,6 +5,7 @@ go 1.22
 replace github.com/iotaledger/wasp => ../..
 
 require (
+	github.com/ethereum/go-ethereum v1.14.12
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v0.0.0-00010101000000-000000000000
@@ -29,7 +30,6 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.4.3 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.0 // indirect
-	github.com/ethereum/go-ethereum v1.14.12 // indirect
 	github.com/ethereum/go-verkle v0.1.1-0.20240829091221-dffa7562dbe9 // indirect
 	github.com/fardream/go-bcs v0.7.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
