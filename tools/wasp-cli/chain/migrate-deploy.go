@@ -4,8 +4,10 @@
 package chain
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -14,7 +16,9 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -30,6 +34,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	cliutil "github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -42,6 +47,89 @@ func initializeMigrateChainState(stateController *cryptolib.Address, gasCoinObje
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
 	return stateMetadata
+}
+
+func PrintIotaBlock(block iotajsonrpc.IotaProgrammableTransactionBlock) {
+	fmt.Println("IotaProgrammableTransactionBlock:")
+
+	// Print Inputs
+	fmt.Println("Inputs:")
+	for i, input := range block.Inputs {
+		fmt.Printf("%d) ", i)
+		prettyPrint(input, 1)
+		fmt.Println()
+	}
+
+	// Print Commands
+	fmt.Println("Commands:")
+	for i, command := range block.Commands {
+		fmt.Printf("%d) ", i)
+		prettyPrint(command, 1)
+		fmt.Println()
+	}
+}
+
+func prettyPrint(v interface{}, indent int) {
+	padding := strings.Repeat("  ", indent)
+
+	switch val := v.(type) {
+	case map[string]interface{}:
+		fmt.Println()
+		for key, value := range val {
+			fmt.Printf("%s%s: ", padding, key)
+			prettyPrint(value, indent+1)
+		}
+	case []interface{}:
+		if len(val) == 0 {
+			fmt.Println("[]")
+			return
+		}
+		fmt.Println()
+		for _, item := range val {
+			fmt.Printf("%s- ", padding)
+			prettyPrint(item, indent+1)
+		}
+	case map[interface{}]interface{}:
+		fmt.Println()
+		for key, value := range val {
+			fmt.Printf("%s%v: ", padding, key)
+			prettyPrint(value, indent+1)
+		}
+	default:
+		fmt.Printf("%v\n", val)
+	}
+}
+
+func dryRunL1MigrationTransactionAndValidate(ctx context.Context, packageID iotago.PackageID, kp wallets.Wallet, l1Client clients.L1Client) {
+	result, err := l1Client.DryRunTransaction(ctx, lo.Must(hexutil.Decode(TEST_TX)))
+	log.Check(err)
+	ownAddress := kp.Address().AsIotaAddress()
+
+	if !result.Input.Data.V1.Sender.Equals(*ownAddress) {
+		log.Fatal("The L1 migration sender address does not match the cli users address!")
+	}
+
+	log.Printf("[Check] Printing the transactions PTB inputs/commands.\n")
+	PrintIotaBlock(*result.Input.Data.V1.Transaction.Data.ProgrammableTransaction)
+
+	log.Printf("[Check] The cli users address matches the transaction senders address!\n")
+
+	// This is a bit hacky, but there is no nicer way to do this.
+	// Check if the assetsbag type used in the PTB is from the same PackageID as configured in the wasp-cli
+	newAssetsBag := result.Input.Data.V1.Transaction.Data.ProgrammableTransaction.Commands[0].(map[string]interface{})
+	moveCall := newAssetsBag["MoveCall"].(map[string]interface{})
+	moveCallPackageID := moveCall["package"]
+
+	testPackageID, err := iotago.PackageIDFromHex(moveCallPackageID.(string))
+	if err != nil {
+		log.Fatal("Could not parse the package id of the PTB")
+	}
+
+	if !bytes.Equal(packageID.Bytes(), testPackageID.Bytes()) {
+		log.Fatalf("The package id configured in the wasp-cli is different to the one in the PTB! own:[%s], ptb:[%s]", packageID.String(), testPackageID.String())
+	}
+
+	log.Printf("[Check] The configured package id matches the one in the PTB.")
 }
 
 func initMigrateDeployCmd() *cobra.Command {
@@ -72,13 +160,9 @@ func initMigrateDeployCmd() *cobra.Command {
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 
-			tx := lo.Must(hexutil.Decode(TEST_TX))
-
-			fmt.Println(kp.Address().String())
-
-			iotago.ProgrammableTransactionBuilder{}
-
 			packageID := config.GetPackageID()
+			dryRunL1MigrationTransactionAndValidate(ctx, packageID, kp, l1Client)
+
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
 
 			/**
