@@ -68,7 +68,7 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 	return stateMetadata
 }
 
-func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
+func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
 	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
@@ -156,7 +156,7 @@ func initDeployCmd() *cobra.Command {
 
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
 
-			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
 			log.Check(err)
 
 			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
