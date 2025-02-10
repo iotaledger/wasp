@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -24,46 +27,22 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	cliutil "github.com/iotaledger/wasp/tools/wasp-cli/util"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	cliutil "github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
-func initDeployMoveContractCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "deploy-move-contract",
-		Short: "Deploy a new move contract and save its package id",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-			defer cancel()
-
-			l1Client := cliclients.L1Client()
-			kp := wallet.Load()
-			packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
-			log.Check(err)
-
-			config.SetPackageID(packageID)
-
-			log.Printf("Move contract deployed.\nPackageID: %v\n", packageID.String())
-		},
-	}
-
-	return cmd
-}
-
-func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
+func initializeMigrateChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID, anchor *iscmove.AnchorWithRef) *transaction.StateMetadata {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
 	return stateMetadata
 }
 
-func initDeployCmd() *cobra.Command {
+func initMigrateDeployCmd() *cobra.Command {
 	var (
 		node             string
 		peers            []string
@@ -75,8 +54,8 @@ func initDeployCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "deploy --chain=<name>",
-		Short: "Deploy a new chain",
+		Use:   "migrate-deploy --chain=<name>",
+		Short: "Migrates a Stardust chain to Rebased",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
@@ -90,17 +69,42 @@ func initDeployCmd() *cobra.Command {
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
-
-			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
-			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
-
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
+
+			/**
+			Stardust -> Rebased migration
+
+			1) Use the TypeScript L1 AliasOutput migration tool, which prints unsigned, hex-encoded transaction data.
+			2) Execute the transaction right here using the wallet which owns the AliasOutput (Governor Address)
+			3) Receive the AssetsBag after the transaction has been executed.
+			4) Store the AssetsBagRef
+			5) CreateAndSendGasCoin
+			6) CreateAnchorWithAssetsBagRef(assetsBagRef)
+			7) Migrate the StateDB using the ChainID returned from CreateAnchorWithAssetsBagRef
+			8) Extract the StateMetadata out of the StateDB Migration
+			9) Update the Anchor using UpdateAnchorStateMetadata
+			10) Proceed like a normal deployment (Activate chain on all nodes)
+			*/
 
 			gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
 			log.Check(err)
 
-			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
+			anchor, err := l1Client.L2().CreateAnchorWithAssetsBagRef(ctx, &iscmoveclient.CreateAnchorWithAssetsBagRefRequest{})
+
+			fmt.Println(anchor.ObjectID) // <-- ChainID
+
+			// Here we collect the migrated state
+			stateMetadata := initializeMigrateChainState(stateControllerAddress, gasCoin, anchor)
+
+			success, err := l1Client.L2().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
+				AnchorRef:     &anchor.ObjectRef,
+				StateMetadata: stateMetadata.Bytes(),
+			})
+
+			if !success || err != nil {
+				panic("omg")
+			}
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,

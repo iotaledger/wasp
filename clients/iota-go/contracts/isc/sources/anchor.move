@@ -41,10 +41,26 @@ module isc::anchor {
         Anchor{
             id: object::new(ctx),
             assets: borrow::new(assets_bag, ctx),
-            state_metadata: state_metadata,
+            state_metadata,
             state_index: 0,
         }
     }
+
+
+    /// Creates an empty Anchor with a referenced AssetsBag (This is required for the L2 migration).
+    public fun create_anchor_with_assets_bag_ref(assets_bag: AssetsBag, ctx: &mut TxContext): Anchor {
+        Anchor{
+            id: object::new(ctx),
+            assets: borrow::new(assets_bag, ctx),
+            state_metadata: std::vector::empty(),
+            state_index: 0,
+        }
+    }
+
+    public fun update_anchor_state_metadata(self:&mut Anchor, state_metadata: vector<u8>) {
+        self.state_metadata = state_metadata
+    }
+
 
     /// Destroys an Anchor object and returns its assets bag.
     public fun destroy(self: Anchor): AssetsBag {

@@ -23,6 +23,72 @@ type StartNewChainRequest struct {
 	GasBudget         uint64
 }
 
+type CreateAnchorWithAssetsBagRefRequest struct {
+	Signer            cryptolib.Signer
+	ChainOwnerAddress *cryptolib.Address
+	PackageID         iotago.PackageID
+	AssetsBagRef      *iotago.ObjectRef
+	GasPayments       []*iotago.ObjectRef
+	GasPrice          uint64
+	GasBudget         uint64
+}
+
+func (c *Client) CreateAnchorWithAssetsBagRef(ctx context.Context, req *CreateAnchorWithAssetsBagRefRequest) (*iscmove.AnchorWithRef, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBCreateAnchorWithAssetsBagRef(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AssetsBagRef}), req.ChainOwnerAddress)
+
+	txnResponse, err := c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create Anchor PTB failed: %w", err)
+	}
+
+	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
+	}
+	return c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
+}
+
+type UpdateAnchorStateMetadataRequest struct {
+	Signer            cryptolib.Signer
+	ChainOwnerAddress *cryptolib.Address
+	PackageID         iotago.PackageID
+	AnchorRef         *iotago.ObjectRef
+	StateMetadata     []byte
+	GasPayments       []*iotago.ObjectRef
+	GasPrice          uint64
+	GasBudget         uint64
+}
+
+func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAnchorStateMetadataRequest) (bool, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBUpdateAnchorStateMetadata(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}), req.StateMetadata)
+	res, err := c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
+	)
+	if err != nil {
+		return false, fmt.Errorf("updating ptb state metadata failed: %w", err)
+	}
+
+	if len(res.Errors) > 0 {
+		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.Errors)
+	}
+
+	return true, nil
+}
+
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	req *StartNewChainRequest,
