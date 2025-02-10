@@ -12,12 +12,12 @@ import (
 
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/samber/lo"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -150,7 +150,6 @@ type l1paramsCounter struct {
 func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
 	ps := make([]*parameters.L1Params, 0, proposalCount)
-	gasPriceBPs := make([]uint64, 0, proposalCount)
 	for _, bp := range bps {
 		ps = append(ps, bp.l1params)
 	}
@@ -176,30 +175,14 @@ func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 		}
 	}
 
-	if l1paramsCounterMax.counter <= f {
+	matchingCount := lo.CountBy(lo.Values(protocolMap), func(elt l1paramsCounter) bool {
+		return elt.counter > f
+	})
+	if matchingCount != 1 {
 		return nil
 	}
 
-	aggregatedGasPrice := aggregatedGasPrice(gasPriceBPs, f)
-	l1paramsCounterMax.l1params.Protocol.ReferenceGasPrice = iotajsonrpc.NewBigInt(aggregatedGasPrice)
 	return l1paramsCounterMax.l1params
-}
-
-// Use the same aggregation logic as for the timestamp:
-// Take highest value proposed by at least F+1 nodes.
-func aggregatedGasPrice(gaspriceBPs []uint64, f int) uint64 {
-	proposals := make([]uint64, 0, len(gaspriceBPs))
-	copy(proposals, gaspriceBPs)
-
-	sort.Slice(proposals, func(i, j int) bool {
-		return proposals[i] < proposals[j]
-	})
-
-	proposalCount := len(gaspriceBPs) // |acsProposals| >= N-F by ACS logic.
-	if proposalCount <= f {
-		return 0 // Zero time marks a failure.
-	}
-	return proposals[proposalCount-f-1] // Max(|acsProposals|-F Lowest) ~= 66 percentile.
 }
 
 // Here we return coins that are proposed by at least F+1 peers.
