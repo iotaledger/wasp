@@ -1,4 +1,4 @@
-package jsonrpcindex
+package jsonrpc
 
 import (
 	"errors"
@@ -20,16 +20,16 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
+// Index allows efficient retrieval of EVM blocks and transactions given the block number.
+// The indexed information is stored in a database (either persisted or in-memory).
 type Index struct {
 	store           kvstore.KVStore
-	blockchainDB    func(chainState state.State) *emulator.BlockchainDB
 	stateByTrieRoot func(trieRoot trie.Hash) (state.State, error)
 
-	mu sync.Mutex
+	mu sync.RWMutex
 }
 
-func New(
-	blockchainDB func(chainState state.State) *emulator.BlockchainDB,
+func NewIndex(
 	stateByTrieRoot func(trieRoot trie.Hash) (state.State, error),
 	indexDbEngine hivedb.Engine,
 	indexDbPath string,
@@ -40,26 +40,31 @@ func New(
 	}
 	return &Index{
 		store:           db.KVStore(),
-		blockchainDB:    blockchainDB,
 		stateByTrieRoot: stateByTrieRoot,
-		mu:              sync.Mutex{},
+		mu:              sync.RWMutex{},
 	}
 }
 
-func (c *Index) IndexBlock(trieRoot trie.Hash) {
+// IndexBlock is called only in an archive node, whenever a block is published.
+//
+// It walks back following the previous trie root until the latest cached
+// block, associating the EVM block and transaction hashes with the
+// corresponding block index.
+func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	state, err := c.stateByTrieRoot(trieRoot)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("stateByTrieRoot: %w", err)
 	}
 	blockKeepAmount := governance.NewStateReaderFromChainState(state).GetBlockKeepAmount()
 	if blockKeepAmount == -1 {
-		return // pruning disabled, never cache anything
+		return nil // pruning disabled, never cache anything
 	}
 	// cache the block that will be pruned next (this way reorgs are okay, as long as it never reorgs more than `blockKeepAmount`, which would be catastrophic)
 	if state.BlockIndex() < uint32(blockKeepAmount-1) {
-		return
+		return nil
 	}
 	blockIndexToCache := state.BlockIndex() - uint32(blockKeepAmount-1)
 	cacheUntil := uint32(0)
@@ -71,13 +76,13 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 	// we need to look at the next block to get the trie commitment of the block we want to cache
 	nextBlockInfo, found := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(blockIndexToCache + 1)
 	if !found {
-		panic(fmt.Errorf("block %d not found on active state %d", blockIndexToCache, state.BlockIndex()))
+		return fmt.Errorf("block %d not found on active state %d", blockIndexToCache, state.BlockIndex())
 	}
 
 	// start in the active state of the block to cache
 	activeStateToCache, err := c.stateByTrieRoot(nextBlockInfo.PreviousL1Commitment().TrieRoot())
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("stateByTrieRoot: %w", err)
 	}
 
 	for i := blockIndexToCache; i >= cacheUntil; i-- {
@@ -85,10 +90,10 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 
 		blockinfo, found := blocklog.NewStateReaderFromChainState(activeStateToCache).GetBlockInfo(i)
 		if !found {
-			panic(fmt.Errorf("block %d not found on active state %d", i, state.BlockIndex()))
+			return fmt.Errorf("block %d not found on active state %d", i, state.BlockIndex())
 		}
 
-		db := c.blockchainDB(activeStateToCache)
+		db := blockchainDB(activeStateToCache)
 		blockTrieRoot := activeStateToCache.TrieRoot()
 		c.setBlockTrieRootByIndex(i, blockTrieRoot)
 
@@ -106,17 +111,22 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) {
 		}
 		activeStateToCache, err = c.stateByTrieRoot(blockinfo.PreviousL1Commitment().TrieRoot())
 		if err != nil {
-			panic(err)
+			return fmt.Errorf("stateByTrieRoot: %w", err)
 		}
 	}
 	c.setLastBlockIndexed(blockIndexToCache)
 	c.store.Flush()
+	return nil
 }
 
 func (c *Index) BlockByNumber(n *big.Int) *types.Block {
 	if n == nil {
 		return nil
 	}
+
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	db := c.evmDBFromBlockIndex(uint32(n.Uint64()))
 	if db == nil {
 		return nil
@@ -125,6 +135,9 @@ func (c *Index) BlockByNumber(n *big.Int) *types.Block {
 }
 
 func (c *Index) BlockByHash(hash common.Hash) *types.Block {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	blockIndex := c.blockIndexByHash(hash)
 	if blockIndex == nil {
 		return nil
@@ -133,10 +146,16 @@ func (c *Index) BlockByHash(hash common.Hash) *types.Block {
 }
 
 func (c *Index) BlockTrieRootByIndex(n uint32) *trie.Hash {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	return c.blockTrieRootByIndex(n)
 }
 
 func (c *Index) TxByHash(hash common.Hash) (tx *types.Transaction, blockHash common.Hash, blockNumber, txIndex uint64) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	blockIndex := c.blockIndexByTxHash(hash)
 	if blockIndex == nil {
 		return nil, common.Hash{}, 0, 0
@@ -149,6 +168,9 @@ func (c *Index) TxByHash(hash common.Hash) (tx *types.Transaction, blockHash com
 }
 
 func (c *Index) GetReceiptByTxHash(hash common.Hash) *types.Receipt {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	blockIndex := c.blockIndexByTxHash(hash)
 	if blockIndex == nil {
 		return nil
@@ -157,6 +179,9 @@ func (c *Index) GetReceiptByTxHash(hash common.Hash) *types.Receipt {
 }
 
 func (c *Index) TxByBlockHashAndIndex(blockHash common.Hash, txIndex uint64) (tx *types.Transaction, blockNumber uint64) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	blockIndex := c.blockIndexByHash(blockHash)
 	if blockIndex == nil {
 		return nil, 0
@@ -173,6 +198,9 @@ func (c *Index) TxByBlockHashAndIndex(blockHash common.Hash, txIndex uint64) (tx
 }
 
 func (c *Index) TxByBlockNumberAndIndex(blockNumber *big.Int, txIndex uint64) (tx *types.Transaction, blockHash common.Hash) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	if blockNumber == nil {
 		return nil, common.Hash{}
 	}
@@ -192,6 +220,9 @@ func (c *Index) TxByBlockNumberAndIndex(blockNumber *big.Int, txIndex uint64) (t
 }
 
 func (c *Index) TxsByBlockNumber(blockNumber *big.Int) types.Transactions {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
 	if blockNumber == nil {
 		return nil
 	}
@@ -209,10 +240,10 @@ func (c *Index) TxsByBlockNumber(blockNumber *big.Int) types.Transactions {
 // internals
 
 const (
-	prefixLastBlockIndexed = iota
-	prefixBlockTrieRootByIndex
-	prefixBlockIndexByTxHash
-	prefixBlockIndexByHash
+	prefixLastBlockIndexed     = iota // ISC block index (uint32)
+	prefixBlockTrieRootByIndex        // ISC block index (uint32) => ISC trie root
+	prefixBlockIndexByTxHash          // EVM tx hash => ISC block index (uint32)
+	prefixBlockIndexByHash            // EVM block hash => ISC block index (uint32)
 )
 
 func keyLastBlockIndexed() kvstore.Key {
@@ -221,7 +252,7 @@ func keyLastBlockIndexed() kvstore.Key {
 
 func keyBlockTrieRootByIndex(i uint32) kvstore.Key {
 	key := []byte{prefixBlockTrieRootByIndex}
-	key = append(key, codec.Encode[uint32](i)...)
+	key = append(key, codec.Encode(i)...)
 	return key
 }
 
@@ -256,7 +287,7 @@ func (c *Index) set(key kvstore.Key, value []byte) {
 }
 
 func (c *Index) setLastBlockIndexed(n uint32) {
-	c.set(keyLastBlockIndexed(), codec.Encode[uint32](n))
+	c.set(keyLastBlockIndexed(), codec.Encode(n))
 }
 
 func (c *Index) lastBlockIndexed() *uint32 {
@@ -285,7 +316,7 @@ func (c *Index) blockTrieRootByIndex(i uint32) *trie.Hash {
 }
 
 func (c *Index) setBlockIndexByTxHash(txHash common.Hash, blockIndex uint32) {
-	c.set(keyBlockIndexByTxHash(txHash), codec.Encode[uint32](blockIndex))
+	c.set(keyBlockIndexByTxHash(txHash), codec.Encode(blockIndex))
 }
 
 func (c *Index) blockIndexByTxHash(txHash common.Hash) *uint32 {
@@ -298,7 +329,7 @@ func (c *Index) blockIndexByTxHash(txHash common.Hash) *uint32 {
 }
 
 func (c *Index) setBlockIndexByHash(hash common.Hash, blockIndex uint32) {
-	c.set(keyBlockIndexByHash(hash), codec.Encode[uint32](blockIndex))
+	c.set(keyBlockIndexByHash(hash), codec.Encode(blockIndex))
 }
 
 func (c *Index) blockIndexByHash(hash common.Hash) *uint32 {
@@ -319,5 +350,5 @@ func (c *Index) evmDBFromBlockIndex(n uint32) *emulator.BlockchainDB {
 	if err != nil {
 		panic(err)
 	}
-	return c.blockchainDB(state)
+	return blockchainDB(state)
 }

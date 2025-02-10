@@ -65,6 +65,10 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 		},
 	}
 
+	if runtime.GOOS == "linux" {
+		req.Tmpfs = map[string]string{"/tmp": ""}
+	}
+
 	now := time.Now()
 
 	in.logf("Starting LocalIotaNode...")

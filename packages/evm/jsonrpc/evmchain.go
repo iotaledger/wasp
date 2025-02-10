@@ -25,7 +25,6 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpcindex"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
@@ -51,7 +50,7 @@ type EVMChain struct {
 	chainID  uint16 // cache
 	newBlock *event.Event1[*NewBlockEvent]
 	log      *logger.Logger
-	index    *jsonrpcindex.Index // only indexes blocks that will be pruned from the active state
+	index    *Index // only indexes blocks that will be pruned from the active state
 }
 
 type NewBlockEvent struct {
@@ -76,7 +75,11 @@ func NewEVMChain(
 		backend:  backend,
 		newBlock: event.New1[*NewBlockEvent](),
 		log:      log,
-		index:    jsonrpcindex.New(blockchainDB, backend.ISCStateByTrieRoot, indexDbEngine, path.Join(indexDbPath, backend.ISCChainID().String())),
+		index: NewIndex(
+			backend.ISCStateByTrieRoot,
+			indexDbEngine,
+			path.Join(indexDbPath, backend.ISCChainID().String()),
+		),
 	}
 
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
@@ -91,9 +94,13 @@ func NewEVMChain(
 	// publish blocks on a separate goroutine so that we don't block the publisher
 	go func() {
 		for ev := range blocksFromPublisher.Out() {
-			e.publishNewBlock(ev.BlockInfo.BlockIndex, ev.TrieRoot)
+			blockIndex := ev.BlockInfo.BlockIndex
+			e.publishNewBlock(blockIndex, ev.TrieRoot)
 			if isArchiveNode {
-				e.index.IndexBlock(ev.TrieRoot)
+				err := e.index.IndexBlock(ev.TrieRoot)
+				if err != nil {
+					log.Errorf("EVMChain.index.IndexBlock() (index %d): %v", blockIndex, err)
+				}
 			}
 		}
 	}()
@@ -248,10 +255,18 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 	return e.iscStateFromEVMBlockNumber(block.Number())
 }
 
-// Returns the anchor _immediately after_ the given block
+// Returns the anchor corresponding to the given block (i.e. such that
+// anchor.StateIndex == blockNumber; running the VM from this anchor will
+// produce block n+1).
+//
+// [anchor n-1] -> VM -> [state n] -> [anchor n] -> VM -> [state n+1] -> [anchor n+1] ...
 func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.StateAnchor, error) {
+	latest, err := e.backend.ISCLatestAnchor()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
+	}
 	if blockNumberOrHash == nil {
-		return e.backend.ISCLatestAnchor()
+		return latest, nil
 	}
 	var stateIndex uint32
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
@@ -259,21 +274,23 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 		if bn == nil {
 			return e.backend.ISCLatestAnchor()
 		}
-		stateIndex = blockNumberToStateIndex(bn) + 1
+		stateIndex = blockNumberToStateIndex(bn)
 	} else {
 		blockHash, _ := blockNumberOrHash.Hash()
 		block := e.BlockByHash(blockHash)
-		stateIndex = blockNumberToStateIndex(block.Number()) + 1
+		stateIndex = blockNumberToStateIndex(block.Number())
+	}
+	if stateIndex == latest.GetStateIndex() {
+		return latest, nil
+	}
+	if stateIndex > latest.GetStateIndex() {
+		return nil, fmt.Errorf("block %d not found", stateIndex)
 	}
 	return e.previousAnchor(stateIndex + 1)
 }
 
 // Returns the anchor, which was used to form state of given index.
 func (e *EVMChain) previousAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	latest, err := e.backend.ISCLatestAnchor()
-	if stateIndex == latest.GetStateIndex() {
-		return latest, nil
-	}
 	state, err := e.backend.ISCLatestState()
 	if err != nil {
 		return nil, fmt.Errorf("retrieving latest state: %w", err)

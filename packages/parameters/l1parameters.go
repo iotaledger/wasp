@@ -43,9 +43,10 @@ func (l *L1Params) Hash() hashing.HashValue {
 
 func (l *L1Params) Clone() *L1Params {
 	protocol := l.Protocol.Clone()
+	basetoken := l.BaseToken.Clone()
 	return &L1Params{
 		Protocol:  &protocol,
-		BaseToken: l.BaseToken,
+		BaseToken: &basetoken,
 	}
 }
 
@@ -96,6 +97,19 @@ func (b *BaseToken) String() string {
 		panic(err)
 	}
 	return string(ret)
+}
+
+func (b *BaseToken) Clone() BaseToken {
+	return BaseToken{
+		Name:            b.Name,
+		TickerSymbol:    b.TickerSymbol,
+		Unit:            b.Unit,
+		Subunit:         b.Subunit,
+		Decimals:        b.Decimals,
+		UseMetricPrefix: b.UseMetricPrefix,
+		CoinType:        b.CoinType,
+		TotalSupply:     b.TotalSupply,
+	}
 }
 
 const (

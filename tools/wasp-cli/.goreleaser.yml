@@ -12,8 +12,6 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
-    tags:
-      - no_wasmhost
     goos:
       - linux
     goarch:
@@ -30,8 +28,6 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
-    tags:
-      - no_wasmhost
     goos:
       - linux
     goarch:
@@ -44,8 +40,6 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
-    tags:
-      - no_wasmhost
     goos:
       - darwin
     goarch:
@@ -58,8 +52,6 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
-    tags:
-      - no_wasmhost
     goos:
       - darwin
     goarch:
@@ -76,8 +68,6 @@ builds:
       - -s -w -X=github.com/iotaledger/wasp/components/app.Version={{ .Summary }}
     main: main.go
     dir: ./tools/wasp-cli
-    tags:
-      - no_wasmhost
     goos:
       - windows
     goarch:
@@ -101,8 +91,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/iota_sdk.dll
-        dst: iota_sdk.dll
 
   - # Linux
     id: wasp-cli-linux
@@ -120,8 +108,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk.so
-        dst: libiota_sdk.so
 
   - # MacOS ARM64
     id: wasp-cli-macos-arm64
@@ -134,8 +120,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk_arm64.dylib
-        dst: libiota_sdk.dylib
 
   - # MacOS AMD64
     id: wasp-cli-macos-amd64
@@ -148,8 +132,6 @@ archives:
     files:
       - README.md
       - LICENSE
-      - src: sdk/libiota_sdk_amd64.dylib
-        dst: libiota_sdk.dylib
 
 
 # Checksum
@@ -169,4 +151,4 @@ release:
   prerelease: auto
   github:
     owner: iotaledger
-    name: wasp
+    name: isc-private
