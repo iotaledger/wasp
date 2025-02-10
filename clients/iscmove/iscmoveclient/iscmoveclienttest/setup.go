@@ -29,7 +29,10 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 }
 
 func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {
-	panic("Right now no WS support")
+	if l1starter.IsLocalConfigured() {
+		panic("Right now no WS support")
+	}
+
 	return iscmoveclient.NewWebsocketClient(
 		ctx,
 		iotaconn.AlphanetWebsocketEndpointURL,

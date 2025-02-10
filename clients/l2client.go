@@ -15,6 +15,11 @@ type L2Client interface {
 		ctx context.Context,
 		req *iscmoveclient.StartNewChainRequest,
 	) (*iscmove.AnchorWithRef, error)
+	CreateAnchorWithAssetsBagRef(
+		ctx context.Context,
+		req *iscmoveclient.CreateAnchorWithAssetsBagRefRequest,
+	) (*iscmove.AnchorWithRef, error)
+	UpdateAnchorStateMetadata(ctx context.Context, req *iscmoveclient.UpdateAnchorStateMetadataRequest) (bool, error)
 	CreateAndSendRequest(
 		ctx context.Context,
 		req *iscmoveclient.CreateAndSendRequestRequest,

@@ -80,7 +80,11 @@ func TestRequestsFeed(t *testing.T) {
 	req := <-newRequests
 	require.Equal(t, *requestRef.ObjectID, req.Object.ID)
 
-	updatedAnchor, ownedReqs, err := chainFeed.FetchCurrentState(ctx)
+	ownedReqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	updatedAnchor, err := chainFeed.FetchCurrentState(ctx, 1000, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
+		require.NoError(t, err)
+		ownedReqs = append(ownedReqs, i)
+	})
 	require.NoError(t, err)
 
 	require.Equal(t, anchor.Version, updatedAnchor.Version)
