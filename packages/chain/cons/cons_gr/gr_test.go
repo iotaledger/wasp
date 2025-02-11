@@ -146,6 +146,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
 			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
+			nil,
 			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod

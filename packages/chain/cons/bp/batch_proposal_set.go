@@ -12,6 +12,7 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -96,6 +97,28 @@ func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*is
 		decided = append(decided, requestsByKey[key])
 	}
 	return decided
+}
+
+func (bps batchProposalSet) decidedRotateTo(f int) *iotago.Address {
+	votes := map[iotago.Address]int{}
+	for _, bp := range bps {
+		if bp.rotateTo != nil {
+			votes[*bp.rotateTo] += 1
+		}
+	}
+
+	var found *iotago.Address
+	for address, count := range votes {
+		thisAddr := address
+		if count > f {
+			if found != nil {
+				// 2 values with counter > f, thus a collision.
+				return nil
+			}
+			found = &thisAddr
+		}
+	}
+	return found
 }
 
 // Returns zero time, if fails to aggregate the time.

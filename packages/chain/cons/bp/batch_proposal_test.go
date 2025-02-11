@@ -35,6 +35,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 		10,
 		&stateAnchor,
 		util.NewFixedSizeBitVector(11),
+		nil,
 		time.Now(),
 		isctest.NewRandomAgentID(),
 		reqRefs,

@@ -167,7 +167,19 @@ func testConsBasic(t *testing.T, n, f int) {
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, &tokenCoinInfo)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
+		nodes[nid] = cons.New(
+			chainID,
+			chainStates[nid],
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil, // rotateTo
+			procConfig,
+			consInstID,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//

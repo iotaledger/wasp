@@ -46,6 +46,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 		0,
 		&ao0,
 		util.NewFixedSizeBitVector(1).SetBits([]int{0}),
+		nil,
 		time.Now(),
 		isctest.NewRandomAgentID(),
 		isc.RequestRefsFromRequests(rs),

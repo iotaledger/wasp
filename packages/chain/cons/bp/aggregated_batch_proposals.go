@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -23,6 +24,7 @@ type AggregatedBatchProposals struct {
 	decidedIndexProposals  map[gpa.NodeID][]int
 	decidedBaseAliasOutput *isc.StateAnchor
 	decidedRequestRefs     []*isc.RequestRef
+	decidedRotateTo        *iotago.Address
 	aggregatedTime         time.Time
 	aggregatedGasCoins     []*coin.CoinWithRef
 	aggregatedGasPrice     uint64
@@ -68,12 +70,14 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
+		decidedRotateTo:        bps.decidedRotateTo(f),
 		aggregatedTime:         aggregatedTime,
 		aggregatedGasCoins:     aggregatedGasCoins,
 		aggregatedGasPrice:     aggregatedGasPrice,
 	}
 	if abp.decidedBaseAliasOutput == nil ||
 		len(abp.decidedRequestRefs) == 0 ||
+		// No need to check the rotateTo field here.
 		abp.aggregatedTime.IsZero() ||
 		len(abp.aggregatedGasCoins) == 0 ||
 		abp.aggregatedGasPrice == 0 {
@@ -102,6 +106,13 @@ func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *isc.StateAnchor {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
 	return abp.decidedBaseAliasOutput
+}
+
+func (abp *AggregatedBatchProposals) DecidedRotateTo() *iotago.Address {
+	if abp.shouldBeSkipped {
+		panic("trying to use aggregated proposal marked to be skipped")
+	}
+	return abp.decidedRotateTo
 }
 
 func (abp *AggregatedBatchProposals) AggregatedTime() time.Time {
