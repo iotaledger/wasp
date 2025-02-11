@@ -143,6 +143,13 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("deactivateChain").
 		SetSummary("Deactivate a chain")
 
+	adminAPI.POST("chains/:chainID/rotate", c.rotateChain, authentication.ValidatePermissions([]string{permissions.Write})).
+		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+		AddParamBody(mocker.Get(models.RotateChainRequest{}), "RotateRequest", "RotateRequest", false).
+		AddResponse(http.StatusOK, "Chain rotation was requested", nil, nil).
+		SetOperationId("rotateChain").
+		SetSummary("Rotate a chain")
+
 	adminAPI.GET("chains/:chainID/committee", c.getCommitteeInfo, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).

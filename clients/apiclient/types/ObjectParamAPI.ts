@@ -69,6 +69,7 @@ import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
+import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
 import { Transaction } from '../models/Transaction';
@@ -352,6 +353,22 @@ export interface ChainsApiRemoveAccessNodeRequest {
      * @memberof ChainsApiremoveAccessNode
      */
     peer: string
+}
+
+export interface ChainsApiRotateChainRequest {
+    /**
+     * ChainID (Hex Address)
+     * Defaults to: undefined
+     * @type string
+     * @memberof ChainsApirotateChain
+     */
+    chainID: string
+    /**
+     * RotateRequest
+     * @type RotateChainRequest
+     * @memberof ChainsApirotateChain
+     */
+    rotateRequest?: RotateChainRequest
 }
 
 export interface ChainsApiSetChainRecordRequest {
@@ -668,6 +685,22 @@ export class ObjectChainsApi {
      */
     public removeAccessNode(param: ChainsApiRemoveAccessNodeRequest, options?: Configuration): Promise<void> {
         return this.api.removeAccessNode(param.chainID, param.peer,  options).toPromise();
+    }
+
+    /**
+     * Rotate a chain
+     * @param param the request object
+     */
+    public rotateChainWithHttpInfo(param: ChainsApiRotateChainRequest, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.rotateChainWithHttpInfo(param.chainID, param.rotateRequest,  options).toPromise();
+    }
+
+    /**
+     * Rotate a chain
+     * @param param the request object
+     */
+    public rotateChain(param: ChainsApiRotateChainRequest, options?: Configuration): Promise<void> {
+        return this.api.rotateChain(param.chainID, param.rotateRequest,  options).toPromise();
     }
 
     /**

@@ -19,6 +19,7 @@ Method | HTTP request | Description
 [**getReceipt**](ChainsApi.md#getReceipt) | **GET** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
 [**getStateValue**](ChainsApi.md#getStateValue) | **GET** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**removeAccessNode**](ChainsApi.md#removeAccessNode) | **DELETE** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
+[**rotateChain**](ChainsApi.md#rotateChain) | **POST** /v1/chains/{chainID}/rotate | Rotate a chain
 [**setChainRecord**](ChainsApi.md#setChainRecord) | **POST** /v1/chains/{chainID}/chainrecord | Sets the chain record.
 [**v1ChainsChainIDEvmPost**](ChainsApi.md#v1ChainsChainIDEvmPost) | **POST** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
 [**v1ChainsChainIDEvmWsGet**](ChainsApi.md#v1ChainsChainIDEvmWsGet) | **GET** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
@@ -851,6 +852,64 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | Access node was successfully removed |  -  |
+**401** | Unauthorized (Wrong permissions, missing token) |  -  |
+
+[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
+
+# **rotateChain**
+> void rotateChain()
+
+
+### Example
+
+
+```typescript
+import { createConfiguration, ChainsApi } from '';
+import type { ChainsApiRotateChainRequest } from '';
+
+const configuration = createConfiguration();
+const apiInstance = new ChainsApi(configuration);
+
+const request: ChainsApiRotateChainRequest = {
+    // ChainID (Hex Address)
+  chainID: "chainID_example",
+    // RotateRequest (optional)
+  rotateRequest: {
+    rotateToAddress: "rotateToAddress_example",
+  },
+};
+
+const data = await apiInstance.rotateChain(request);
+console.log('API called successfully. Returned data:', data);
+```
+
+
+### Parameters
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **rotateRequest** | **RotateChainRequest**| RotateRequest |
+ **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+
+
+### Return type
+
+**void**
+
+### Authorization
+
+[Authorization](README.md#Authorization)
+
+### HTTP request headers
+
+ - **Content-Type**: application/json
+ - **Accept**: application/json
+
+
+### HTTP response details
+| Status code | Description | Response headers |
+|-------------|-------------|------------------|
+**200** | Chain rotation was requested |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)

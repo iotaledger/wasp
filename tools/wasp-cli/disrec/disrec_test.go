@@ -36,7 +36,7 @@ func TestCreateTX(t *testing.T) {
 
 	// It really is the Committee Address (Not the Anchor Object ID aka ChainID as this transaction will be signed by the committee)
 	// This specific address is the product of the committee keys in `test_committee_keys`.
-	var CommitteeAddress = lo.Must(cryptolib.AddressFromHex("0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894"))
+	CommitteeAddress := lo.Must(cryptolib.AddressFromHex("0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894"))
 
 	client := cliclients.L1Client()
 	kp := cryptolib.NewKeyPair()
