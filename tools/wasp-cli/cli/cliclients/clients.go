@@ -60,7 +60,7 @@ func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    config.L1APIAddress(),
 		FaucetURL: config.L1FaucetAddress(),
-	}, iotaclient.WaitForEffectsDisabled)
+	}, iotaclient.WaitForEffectsEnabled)
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {

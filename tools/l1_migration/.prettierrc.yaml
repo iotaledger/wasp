@@ -1,0 +1,4 @@
+printWidth: 160 # I will gladly die on this hill.
+singleQuote: true
+proseWrap: 'preserve'
+arrowParens: 'avoid'

@@ -75,7 +75,11 @@ func (h *HexData) UnmarshalJSON(data []byte) error {
 }
 
 func (h HexData) ShortString() string {
-	return "0x" + strings.TrimLeft(hex.EncodeToString(h), "0")
+	shortenData := strings.TrimLeft(hex.EncodeToString(h), "0")
+	if len(shortenData) == 0 {
+		shortenData = "0"
+	}
+	return "0x" + shortenData
 }
 
 type Base64Data []byte
