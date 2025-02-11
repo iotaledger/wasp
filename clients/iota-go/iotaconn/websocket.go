@@ -42,7 +42,10 @@ func NewWebsocketClient(
 		subscriptions: make([]*subscription, 0, 2),
 	}
 
-	c.reconnect(ctx)
+	err := c.reconnect(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	c.shutdownWaitGroup.Add(1)
 	go c.loop(ctx)
@@ -52,8 +55,6 @@ func NewWebsocketClient(
 func (c *WebsocketClient) WaitUntilStopped() {
 	c.shutdownWaitGroup.Wait()
 }
-
-// var counter = 0
 
 func (c *WebsocketClient) loop(ctx context.Context) {
 	defer c.shutdownWaitGroup.Done()
@@ -103,13 +104,6 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 			if !ok {
 				return
 			}
-
-			// uncomment to simulate connection loss
-			// counter++
-			// if counter%30 == 0 {
-			// 	c.log.Infof("simulating connection loss")
-			// 	c.conn.Close()
-			// }
 
 			switch receivedMsg.messageType {
 			case websocket.TextMessage:
@@ -414,7 +408,7 @@ func (c *WebsocketClient) resubscribe(ctx context.Context) {
 
 		// store reader channel with new id
 		ch, ok := c.readers.Load(oldId)
-		defer c.readers.Delete(oldId)
+		c.readers.Delete(oldId)
 		if !ok {
 			c.log.Errorf("reader for old id %s not found", oldId)
 			continue
