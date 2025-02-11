@@ -8,6 +8,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -218,4 +219,13 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	case <-ctxTimeout.Done():
 		return nil, apierrors.Timeout("timeout while waiting for request to be processed")
 	}
+}
+
+func (c *ChainService) RotateTo(ctx context.Context, chainID isc.ChainID, rotateToAddress *iotago.Address) error {
+	ch, err := c.GetChainByID(chainID)
+	if err != nil {
+		return err
+	}
+	ch.RotateTo(rotateToAddress)
+	return nil
 }

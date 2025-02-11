@@ -28,7 +28,7 @@ type RequestJSON struct {
 	GasBudget string `json:"gasBudget"`
 	IsEVM bool `json:"isEVM"`
 	IsOffLedger bool `json:"isOffLedger"`
-	Params [][]string `json:"params"`
+	Params [][]int32 `json:"params"`
 	RequestId string `json:"requestId"`
 	SenderAccount string `json:"senderAccount"`
 	TargetAddress string `json:"targetAddress"`
@@ -40,7 +40,7 @@ type _RequestJSON RequestJSON
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params [][]string, requestId string, senderAccount string, targetAddress string) *RequestJSON {
+func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params [][]int32, requestId string, senderAccount string, targetAddress string) *RequestJSON {
 	this := RequestJSON{}
 	this.Allowance = allowance
 	this.Assets = assets
@@ -208,9 +208,9 @@ func (o *RequestJSON) SetIsOffLedger(v bool) {
 }
 
 // GetParams returns the Params field value
-func (o *RequestJSON) GetParams() [][]string {
+func (o *RequestJSON) GetParams() [][]int32 {
 	if o == nil {
-		var ret [][]string
+		var ret [][]int32
 		return ret
 	}
 
@@ -219,7 +219,7 @@ func (o *RequestJSON) GetParams() [][]string {
 
 // GetParamsOk returns a tuple with the Params field value
 // and a boolean to check if the value has been set.
-func (o *RequestJSON) GetParamsOk() ([][]string, bool) {
+func (o *RequestJSON) GetParamsOk() ([][]int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -227,7 +227,7 @@ func (o *RequestJSON) GetParamsOk() ([][]string, bool) {
 }
 
 // SetParams sets field value
-func (o *RequestJSON) SetParams(v [][]string) {
+func (o *RequestJSON) SetParams(v [][]int32) {
 	o.Params = v
 }
 
