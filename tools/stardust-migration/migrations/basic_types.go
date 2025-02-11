@@ -107,8 +107,11 @@ func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
 // }
 
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
-	// TODO: Implement properly
-	panic("Not implemented")
+	panic("TODO: Not implemented")
+}
+
+func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) isc.IotaCoinInfo {
+	panic("TODO: Not implemented")
 }
 
 func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {

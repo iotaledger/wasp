@@ -13,6 +13,7 @@ import (
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -84,7 +85,14 @@ func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
 	return oldBalanceFullDecimals
 }
 
-func migrateBaseTokenBalances(v old_isc.SchemaVersion, oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccs map[old_kv.Key]migratedAccount) {
+func migrateBaseTokenBalances(
+	v old_isc.SchemaVersion,
+	oldState old_kv.KVStoreReader,
+	newState kv.KVStore,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+	migratedAccs map[old_kv.Key]migratedAccount,
+) {
 	log.Printf("Migrating base token balances...\n")
 
 	w := accounts.NewStateWriter(newSchema, newState)
@@ -246,8 +254,10 @@ func migrateNFTsByCollectionEntry(oldKey old_kv.Key, oldVal bool, oldAgentID old
 func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	log.Printf("Migrating native token outputs...\n")
 
-	migrateEntry := func(oldKey old_kv.Key, oldVal old_accounts.NativeTokenOutputRec) (newKey kv.Key, newVal isc.IotaCoinInfo) {
-		panic("TODO: how to migrate native tokens => coins")
+	migrateEntry := func(ntID old_iotago.NativeTokenID, rec old_accounts.NativeTokenOutputRec) (coin.Type, isc.IotaCoinInfo) {
+		coinType := OldNativeTokenIDtoNewCoinType(ntID)
+		coinInfo := OldNativeTokenIDtoNewCoinInfo(ntID)
+		return coinType, coinInfo
 	}
 
 	// old: KeyNativeTokenOutputMap stores a map of <nativeTokenID> => nativeTokenOutputRec
