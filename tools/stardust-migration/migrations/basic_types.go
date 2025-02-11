@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
@@ -57,7 +58,11 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 }
 
 func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
-	panic("Not implemented")
+	panic("TODO: Not implemented")
+}
+
+func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) accounts.ObjectRecord {
+	panic("TODO: Not implemented")
 }
 
 // // Creates converter from old account key to new account key.

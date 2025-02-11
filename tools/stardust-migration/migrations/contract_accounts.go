@@ -13,6 +13,7 @@ import (
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -46,6 +47,7 @@ func MigrateAccountsContract(
 	migrateFoundriesOutputs(oldState, newState)
 	migrateFoundriesPerAccount(oldState, newState, oldChainID, newChainID)
 	migrateNativeTokenOutputs(oldState, newState)
+	migrateNFTOutputRecords(oldState, newState)
 	migrateAccountToNFT(oldState, newState, oldChainID, newChainID)
 	migrateNFTtoOwner(oldState, newState)
 	// migrateNFTsByCollection(oldState, newState)
@@ -265,6 +267,28 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 	count := MigrateMapByName(oldState, newState, old_accounts.KeyNativeTokenOutputMap, "RC", p(migrateEntry))
 
 	log.Printf("Migrated %v native token outputs\n", count)
+}
+
+func migrateNFTOutputRecords(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+	log.Printf("Migrating NFT outputs...\n")
+
+	migrateEntry := func(nftID old_iotago.NFTID, _ old_accounts.NFTOutputRec) (iotago.ObjectID, accounts.ObjectRecord) {
+		objectID := OldNFTIDtoNewObjectID(nftID)
+		rec := OldNFTIDtoNewObjectRecord(nftID)
+		return objectID, rec
+	}
+
+	// old: KeyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
+	// new: keyObjectRecords ("RO") stores a map of <ObjectID> => ObjectRecord
+	count := MigrateMapByName(
+		oldState,
+		newState,
+		old_accounts.KeyNFTOutputRecords,
+		"RO",
+		p(migrateEntry),
+	)
+
+	log.Printf("Migrated %v NFT outputs\n", count)
 }
 
 func migrateAllMintedNfts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
