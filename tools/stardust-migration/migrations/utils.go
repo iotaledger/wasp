@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"strings"
 
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	"github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
@@ -116,6 +120,22 @@ func IterateMap[OldK, OldV any](oldRecords *old_collections.ImmutableMap, f func
 		f(k, v)
 		return true
 	})
+}
+
+func BackupMapByName(
+	oldContractState old_kv.KVStoreReader,
+	newContractState kv.KVStore,
+	oldMapName string,
+) uint32 {
+	return MigrateMapByName(
+		oldContractState,
+		newContractState,
+		oldMapName,
+		WithBackupPrefix(oldMapName),
+		func(oldKey []byte, oldValue []byte) ([]byte, []byte) {
+			return oldKey, oldValue
+		},
+	)
 }
 
 // Migrate records from named map into another named map.
@@ -318,4 +338,56 @@ func (p *ProgressPrinter) Print() {
 	if p.Count%p.period == 0 {
 		fmt.Printf("\rProcessed: %v         ", p.Count)
 	}
+}
+
+func WithBackupPrefix(k string) string {
+	return "__" + k
+}
+
+func IterateAccountMaps(
+	oldContractState old_kv.KVStoreReader,
+	prefix old_kv.Key,
+	sizeOfMapKeys int,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+	f func(agentID isc.AgentID, mapKey []byte, value []byte),
+) uint32 {
+	count := uint32(0)
+	oldContractState.Iterate(prefix, func(k old_kv.Key, v []byte) bool {
+		agentIDBytes := k[:len(k)-sizeOfMapKeys-1]
+		agentID := codec.MustDecodeAgentID([]byte(agentIDBytes))
+		newAgentID := OldAgentIDtoNewAgentID(agentID, oldChainID, newChainID)
+		mapKey := k[len(k)-sizeOfMapKeys:]
+		f(newAgentID, []byte(mapKey), v)
+		count++
+		return true
+	})
+	return count
+}
+
+func BackupAccountMaps(
+	oldContractState old_kv.KVStoreReader,
+	newContractState kv.KVStore,
+	prefix old_kv.Key,
+	sizeOfMapKeys int,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) uint32 {
+	return IterateAccountMaps(
+		oldContractState,
+		prefix,
+		sizeOfMapKeys,
+		oldChainID,
+		newChainID,
+		func(agentID isc.AgentID, mapKey []byte, v []byte) {
+			newContractState.Set(
+				kv.Key(collections.MapElemKey(
+					WithBackupPrefix(old_accounts.PrefixFoundries+string(agentID.Bytes())),
+					[]byte(mapKey),
+				)),
+				v,
+			)
+			panic("TODO: what should we do with foundries?")
+		},
+	)
 }

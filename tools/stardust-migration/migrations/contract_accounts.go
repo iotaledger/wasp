@@ -25,7 +25,13 @@ type migratedAccount struct {
 	NewAgentID isc.AgentID
 }
 
-func MigrateAccountsContract(v old_isc.SchemaVersion, oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func MigrateAccountsContract(
+	v old_isc.SchemaVersion,
+	oldChainState old_kv.KVStoreReader,
+	newChainState state.StateDraft,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) {
 	log.Print("Migrating accounts contract...\n")
 	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
 	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
@@ -37,9 +43,9 @@ func MigrateAccountsContract(v old_isc.SchemaVersion, oldChainState old_kv.KVSto
 	migrateNativeTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
 	// NOTE: L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
 	migrateFoundriesOutputs(oldState, newState)
-	migrateFoundriesPerAccount(oldState, newState)
+	migrateFoundriesPerAccount(oldState, newState, oldChainID, newChainID)
 	migrateNativeTokenOutputs(oldState, newState)
-	migrateAccountToNFT(oldState, newState)
+	migrateAccountToNFT(oldState, newState, oldChainID, newChainID)
 	migrateNFTtoOwner(oldState, newState)
 	// migrateNFTsByCollection(oldState, newState)
 	// prefixNewlyMintedNFTs ignored
@@ -119,42 +125,63 @@ func migrateFoundriesOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore)
 	log.Printf("Migrating list of foundry outputs...\n")
 
 	// old: KeyFoundryOutputRecords stores a map of <foundrySN> => foundryOutputRec
-	// new: ??
-	migrateEntry := func(oldKey old_kv.Key, oldVal old_accounts.FoundryOutputRec) (newKey kv.Key, newVal string) {
-		panic("TODO: what should we do with foundries?")
-	}
+	// new: foundries not supported, just backup the map
 
-	count := MigrateMapByName(oldState, newState, old_accounts.KeyFoundryOutputRecords, "", p(migrateEntry))
+	count := BackupMapByName(
+		oldState,
+		newState,
+		old_accounts.KeyFoundryOutputRecords,
+	)
 
 	log.Printf("Migrated %v foundry outputs\n", count)
 }
 
-func migrateFoundriesPerAccount(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+func migrateFoundriesPerAccount(
+	oldState old_kv.KVStoreReader,
+	newState kv.KVStore,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) {
 	log.Printf("Migrating foundries of accounts...\n")
 
 	// old: PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
-	// new: ??
+	// new: foundries not supported, just backup the maps
 
 	const sizeofFoundrySN = 4
-	count := oldstate.IterateAccountMaps(oldState, old_accounts.PrefixFoundries, sizeofFoundrySN, func(oldAgentID *old_isc.AgentID, mapKey old_kv.Key, _ []byte) {
-		foundrySN := old_codec.MustDecodeUint32([]byte(mapKey))
-		_ = foundrySN
-		panic("TODO: what should we do with foundries?")
-	})
+	count := BackupAccountMaps(
+		oldState,
+		newState,
+		old_accounts.PrefixFoundries,
+		sizeofFoundrySN,
+		oldChainID,
+		newChainID,
+	)
 
 	log.Printf("Migrated %v foundries of accounts\n", count)
 }
 
-func migrateAccountToNFT(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+func migrateAccountToNFT(
+	oldState old_kv.KVStoreReader,
+	newState kv.KVStore,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) {
 	log.Printf("Migrating NFTs per account...\n")
 
 	// old: PrefixNFTs | <agentID> stores a map of <NFTID> => true
 	// new: prefixObjects "o" | <agentID> stores a map of <ObjectID> => true
-	count := oldstate.IterateAccountMaps(oldState, old_accounts.PrefixNFTs, old_iotago.NFTIDLength, func(oldAgentID *old_isc.AgentID, mapKey old_kv.Key, _ []byte) {
-		nftID := old_codec.MustDecodeNFTID([]byte(mapKey))
-		_ = nftID
-		panic("TODO: what should we do with NFTs?")
-	})
+	count := IterateAccountMaps(
+		oldState,
+		old_accounts.PrefixNFTs,
+		old_iotago.NFTIDLength,
+		oldChainID,
+		newChainID,
+		func(agentID isc.AgentID, nftIDBytes []byte, boolBytes []byte) {
+			nftID := old_codec.MustDecodeNFTID([]byte(nftIDBytes))
+			_ = nftID
+			panic("TODO: what should we do with NFTs?")
+		},
+	)
 
 	log.Printf("Migrated %v NFTs per account\n", count)
 }
