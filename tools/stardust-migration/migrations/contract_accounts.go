@@ -102,7 +102,7 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 		oldNativeTokes := old_accounts.GetNativeTokens(oldState, acc.OldAgentID, oldChainID)
 
 		for _, oldNativeToken := range oldNativeTokes {
-			newCoinType := OldNativeTokemIDtoNewCoinType(oldNativeToken.ID)
+			newCoinType := OldNativeTokenIDtoNewCoinType(oldNativeToken.ID)
 			newBalance := OldNativeTokenBalanceToNewCoinValue(oldNativeToken.Amount)
 
 			// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.

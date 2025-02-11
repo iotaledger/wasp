@@ -106,7 +106,7 @@ func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
 // 	return convertedAmount
 // }
 
-func OldNativeTokemIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
+func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	// TODO: Implement properly
 	panic("Not implemented")
 }
@@ -127,7 +127,7 @@ func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 	newAssets := isc.NewAssets(newBaseTokensBalance)
 
 	for _, oldToken := range oldAssets.NativeTokens {
-		newCoinType := OldNativeTokemIDtoNewCoinType(oldToken.ID)
+		newCoinType := OldNativeTokenIDtoNewCoinType(oldToken.ID)
 		newBalance := OldNativeTokenBalanceToNewCoinValue(oldToken.Amount)
 		newAssets.Coins.Add(newCoinType, newBalance)
 	}
