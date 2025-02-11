@@ -134,6 +134,14 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
+		ptb.Command(iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{
+					iotago.GetArgumentGasCoin(),
+				},
+				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+			},
+		})
 	}
 	return ptb.Finish()
 }
