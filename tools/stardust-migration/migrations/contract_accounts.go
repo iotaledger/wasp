@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
@@ -50,8 +49,8 @@ func MigrateAccountsContract(
 	migrateNativeTokenOutputs(oldState, newState)
 	migrateNFTs(oldState, newState, oldChainID, newChainID)
 	// prefixNewlyMintedNFTs ignored
-	// migrateAllMintedNfts(oldState, newState)
-	migrateNonce(oldState, newState, oldChainID, newChainID, migratedAccounts)
+	// PrefixMintIDMap ignored
+	migrateNonce(oldState, newState, oldChainID, newChainID)
 
 	log.Print("Migrated accounts contract\n")
 }
@@ -209,33 +208,23 @@ func migrateNFTs(
 	log.Printf("Migrated %v NFTs\n", count)
 }
 
-func migrateAllMintedNfts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: implement (using existing business logic)")
-
-	// prefixMintIDMap stores a map of <internal NFTID> => <NFTID>
-	log.Printf("Migrating All minted NFTs...\n")
-
-	migrateEntry := func(oldKey old_kv.Key, oldVal []byte) (newKey kv.Key, newVal []byte) {
-		return kv.Key(oldKey), []byte{0}
-	}
-
-	count := MigrateMapByName(oldState, newState, old_accounts.PrefixMintIDMap, "", p(migrateEntry))
-
-	log.Printf("Migrated %v All minted NFTs\n", count)
-}
-
-func migrateNonce(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccounts map[old_kv.Key]migratedAccount) {
+func migrateNonce(
+	oldState old_kv.KVStoreReader,
+	newState kv.KVStore,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) {
 	log.Printf("Migrating nonce...\n")
 
-	for _, acc := range migratedAccounts {
-		if acc.NewAgentID.Kind() == isc.AgentIDKindEthereumAddress {
-			// don't update EVM nonces
-			return
-		}
+	count := MigrateMapByName(
+		oldState,
+		newState,
+		old_accounts.KeyNonce,
+		accounts.KeyNonce,
+		func(a old_isc.AgentID, nonce uint64) (isc.AgentID, uint64) {
+			return OldAgentIDtoNewAgentID(a, oldChainID, newChainID), nonce
+		},
+	)
 
-		nonce := old_accounts.AccountNonce(oldState, acc.OldAgentID, oldChainID)
-		newState.Set(accounts.NonceKey(acc.NewAgentID, newChainID), codec.Encode(nonce))
-	}
-
-	log.Printf("Migrated %v nonce\n", len(migratedAccounts))
+	log.Printf("Migrated %d nonces\n", count)
 }
