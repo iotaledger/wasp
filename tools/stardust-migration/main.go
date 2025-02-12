@@ -17,12 +17,14 @@ import (
 	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/stardust-migration/db"
-	"github.com/iotaledger/stardust-migration/migrations"
-	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+
+	"github.com/iotaledger/wasp/tools/stardust-migration/db"
+	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
 // NOTE: Every record type should be explicitly included in migration
@@ -63,7 +65,7 @@ func main() {
 
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
 	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
-	// migrations.MigrateBlocklogContract(srcState, destStateDraft)
+	migrations.MigrateBlocklogContract(srcState, destStateDraft)
 	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
 	migrations.MigrateEVMContract(srcState, destStateDraft)
 

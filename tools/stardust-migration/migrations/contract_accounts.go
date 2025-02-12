@@ -11,8 +11,7 @@ import (
 	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -20,6 +19,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
 type migratedAccount struct {

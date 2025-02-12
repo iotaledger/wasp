@@ -3,15 +3,15 @@ package migrations
 import (
 	"log"
 
-	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
 func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
-	panic("TODO: implement")
 
 	log.Print("Migrating blocklog contract\n")
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())

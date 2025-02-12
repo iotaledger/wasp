@@ -1,15 +1,16 @@
 package migrations
 
 import (
-	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_errors "github.com/nnikolash/wasp-types-exported/packages/vm/core/errors"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
 func MigrateErrorsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {

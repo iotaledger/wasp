@@ -9,12 +9,12 @@ import (
 	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
 func MigrateGovernanceContract(
@@ -23,8 +23,6 @@ func MigrateGovernanceContract(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	panic("TODO: implement")
-
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, governance.Contract.Hname())
 

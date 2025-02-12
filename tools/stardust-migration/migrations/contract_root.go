@@ -5,11 +5,11 @@ import (
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_root "github.com/nnikolash/wasp-types-exported/packages/vm/core/root"
 
-	"github.com/iotaledger/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
 // returns old schema version
