@@ -45,7 +45,7 @@ func createRequestLookupKeys(blocks uint32, requests uint16) []byte {
 }
 
 func validatePrunedRequestIndexLookupBlock(t *testing.T, partition kv.KVStore, contract kv.Key, prunedBlockIndex uint32) {
-	requestLookup := collections.NewMap(partition, prefixRequestLookupIndex)
+	requestLookup := collections.NewMap(partition, PrefixRequestLookupIndex)
 	requestKeys, err := RequestLookupKeyListFromBytes(requestLookup.GetAt([]byte(contract)))
 	require.NoError(t, err)
 
@@ -64,7 +64,7 @@ func TestPruneRequestIndexLookupTable(t *testing.T) {
 
 	d := dict.Dict{}
 
-	requestIndexLUT := collections.NewMap(d, prefixRequestLookupIndex)
+	requestIndexLUT := collections.NewMap(d, PrefixRequestLookupIndex)
 	requestIndexLUT.SetAt(requestIDDigest0[:], createRequestLookupKeys(maxBlocks, requestsToCreate))
 	requestIndexLUT.SetAt(requestIDDigest1[:], createRequestLookupKeys(maxBlocks, requestsToCreate))
 
@@ -139,9 +139,9 @@ func TestGetEventsInternal(t *testing.T) {
 
 	d := dict.Dict{}
 
-	registry := collections.NewArray(d, prefixBlockRegistry)
+	registry := collections.NewArray(d, PrefixBlockRegistry)
 
-	eventMap := collections.NewMap(d, prefixRequestEvents)
+	eventMap := collections.NewMap(d, PrefixRequestEvents)
 	createEventLookupKeys(registry, eventMap, contractID, maxBlocks, maxRequests, maxEventsPerRequest)
 
 	events := NewStateWriter(d).getSmartContractEventsInternal(EventsForContractQuery{contractID, &BlockRange{blockFrom, blockTo}})

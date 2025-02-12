@@ -50,23 +50,23 @@ var (
 const (
 	// Array of blockIndex => BlockInfo (pruned)
 	// Covered in: TestGetEvents
-	prefixBlockRegistry = "a"
+	PrefixBlockRegistry = "a"
 
 	// Map of request.ID().LookupDigest() => []RequestLookupKey (pruned)
 	//   LookupDigest = reqID[:6] | outputIndex
 	//   RequestLookupKey = blockIndex | requestIndex
 	// Covered in: TestGetEvents
-	prefixRequestLookupIndex = "b"
+	PrefixRequestLookupIndex = "b"
 
 	// Map of RequestLookupKey => RequestReceipt (pruned)
 	//   RequestLookupKey = blockIndex | requestIndex
 	// Covered in: TestGetEvents
-	prefixRequestReceipts = "c"
+	PrefixRequestReceipts = "c"
 
 	// Map of EventLookupKey => event (pruned)
 	//   EventLookupKey = blockIndex | requestIndex | eventIndex
 	// Covered in: TestGetEvents
-	prefixRequestEvents = "d"
+	PrefixRequestEvents = "d"
 )
 
 type OutputRequestReceipt struct{}

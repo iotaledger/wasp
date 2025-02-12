@@ -51,7 +51,7 @@ func (s *StateReader) IsRequestProcessed(requestID isc.RequestID) (bool, error) 
 // returns nil if receipt was not found
 func (s *StateReader) GetRequestRecordDataByRequestID(reqID isc.RequestID) (*RequestReceipt, error) {
 	lookupDigest := reqID.LookupDigest()
-	lookupTable := collections.NewMapReadOnly(s.state, prefixRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(s.state, PrefixRequestLookupIndex)
 	lookupKeyListBin := lookupTable.GetAt(lookupDigest[:])
 	if lookupKeyListBin == nil {
 		return nil, nil
@@ -78,7 +78,7 @@ func (s *StateReader) GetRequestRecordDataByRequestID(reqID isc.RequestID) (*Req
 
 func (s *StateReader) GetEventsByBlockIndex(blockIndex uint32, totalRequests uint16) [][]byte {
 	var ret [][]byte
-	events := collections.NewMapReadOnly(s.state, prefixRequestEvents)
+	events := collections.NewMapReadOnly(s.state, PrefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
