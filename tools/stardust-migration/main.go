@@ -49,7 +49,8 @@ func main() {
 
 	entries := lo.Must(os.ReadDir(destChainDBDir))
 	if len(entries) > 0 {
-		log.Fatalf("destination directory is not empty: %v", destChainDBDir)
+		// TODO: Disabled this check now, so you can run the migrator multiple times for testing
+		// log.Fatalf("destination directory is not empty: %v", destChainDBDir)
 	}
 
 	srcKVS := db.Connect(srcChainDBDir)

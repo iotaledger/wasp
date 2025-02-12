@@ -73,7 +73,7 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		break
 	}
 
-	fmt.Printf("Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
+	fmt.Printf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
 
 	for i := uint32(lastUnprunedBlock); i < oldBlocks.Len(); i++ {
 		oldData := oldBlocks.GetAt(i)
@@ -105,16 +105,17 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	fmt.Printf("blockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
-	log.Print("Migrating blocklog contract\n")
+func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+	oldBlocks := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
+	_ = collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
 
-	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
-	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
+	oldBlocks.IterateKeys(func(elemKey []byte) bool {
+		oldIndex := oldBlocks.GetAt(elemKey)
 
-	printWarningsForUnprocessableRequests(oldContractState)
-	migrateBlockRegistry(oldContractState, newContractState)
-	
-	log.Print("Migrated blocklog contract\n")
+		fmt.Printf("%s\n", oldIndex)
+
+		return true
+	})
 }
 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
@@ -127,4 +128,17 @@ func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
 	})
 
 	log.Printf("Listing Unprocessable Requests completed (found %v records)\n", count)
+}
+
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
+	log.Print("Migrating blocklog contract\n")
+
+	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
+	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
+
+	printWarningsForUnprocessableRequests(oldContractState)
+	migrateBlockRegistry(oldContractState, newContractState)
+	migrateRequestLookupIndex(oldContractState, newContractState)
+
+	log.Print("Migrated blocklog contract\n")
 }
