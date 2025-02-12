@@ -27,7 +27,7 @@ func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState state.
 
 	migrateISCMagicPrivileged(oldMagicState, newMagicState)
 	migrateISCMagicAllowance(oldMagicState, newMagicState)
-	//migrateISCMagicERC20ExternalNativeTokens(oldMagicState, newMagicState)
+	migrateISCMagicERC20ExternalNativeTokens(oldMagicState, newMagicState)
 
 	log.Print("Migrated evm contract\n")
 }
@@ -98,7 +98,14 @@ func migrateISCMagicERC20ExternalNativeTokens(oldMagicState old_kv.KVStoreReader
 
 	count := 0
 
-	panic("TODO: implement")
+	// Simply copying all bytes, because for now not sure what to do with it, plus according to the information about keys usage
+	// this feature seems not even being used.
+	// TODO: revisit this before doing actual migration.
+	oldMagicState.Iterate(old_evmimpl.PrefixERC20ExternalNativeTokens, func(k old_kv.Key, v []byte) bool {
+		newMagicState.Set(kv.Key(k), v)
+		count++
+		return true
+	})
 
 	log.Print("Migrated %v keys for iscmagic/erc20_external_native_tokens\n", count)
 }
