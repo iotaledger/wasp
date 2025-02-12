@@ -41,6 +41,10 @@ func MigrateGovernanceContract(
 	migrateGasLimits(oldContractState, newContractState)
 	migrateAccessNodes(oldContractState, newContractState)
 	migrateAccessNodeCandidates(oldContractState, newContractState)
+	migrateMaintenanceStatus(oldContractState, newContractState)
+	migrateMetadata(oldContractState, newContractState)
+	migratePublicURL(oldContractState, newContractState)
+	migrateBlockKeepAmount(oldContractState, newContractState)
 	// NOTE: VarRotateToAddress ignored
 	// NOTE: VarMinBaseTokensOnCommonAccount ignored, thus deleted
 
@@ -183,4 +187,60 @@ func migrateAccessNodeCandidates(
 	})
 
 	log.Print("Migrated access node candidates\n")
+}
+
+func migrateMaintenanceStatus(
+	oldContractState old_kv.KVStoreReader,
+	newContractState kv.KVStore,
+) {
+	log.Print("Migrating maintenance status...\n")
+
+	maintenanceStatus := old_codec.MustDecodeBool(oldContractState.Get(old_governance.VarMaintenanceStatus))
+	governance.NewStateWriter(newContractState).SetMaintenanceStatus(maintenanceStatus)
+
+	log.Print("Migrated maintenance status\n")
+}
+
+func migrateMetadata(
+	oldContractState old_kv.KVStoreReader,
+	newContractState kv.KVStore,
+) {
+	log.Print("Migrating public chain metadata...\n")
+
+	oldMetadata := old_governance.MustGetMetadata(oldContractState)
+	newMetadata := isc.PublicChainMetadata{
+		EVMJsonRPCURL:   oldMetadata.EVMJsonRPCURL,
+		EVMWebSocketURL: oldMetadata.EVMWebSocketURL,
+		Name:            oldMetadata.Name,
+		Description:     oldMetadata.Description,
+		Website:         oldMetadata.Website,
+	}
+
+	governance.NewStateWriter(newContractState).SetMetadata(&newMetadata)
+
+	log.Print("Migrated ublic chain metadata\n")
+}
+
+func migratePublicURL(
+	oldContractState old_kv.KVStoreReader,
+	newContractState kv.KVStore,
+) {
+	log.Print("Migrating public URL...\n")
+
+	publicURL := lo.Must(old_governance.GetPublicURL(oldContractState))
+	governance.NewStateWriter(newContractState).SetPublicURL(publicURL)
+
+	log.Print("Migrated public URL\n")
+}
+
+func migrateBlockKeepAmount(
+	oldContractState old_kv.KVStoreReader,
+	newContractState kv.KVStore,
+) {
+	log.Print("Migrating block keep amount...\n")
+
+	blockKeepAmount := old_governance.GetBlockKeepAmount(oldContractState)
+	governance.NewStateWriter(newContractState).SetBlockKeepAmount(blockKeepAmount)
+
+	log.Print("Migrated block keep amount\n")
 }
