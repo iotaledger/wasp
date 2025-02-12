@@ -62,10 +62,10 @@ type NodeConnection interface {
 	WaitUntilInitiallySynced(context.Context) error
 	GetL1Params() *parameters.L1Params
 
-	ConsensusGasPriceProposal(
+	ConsensusL1InfoProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,
-	) <-chan cons_gr.NodeConnGasInfo
+	) <-chan cons_gr.NodeConnL1Info
 }
 
 type StateFreshness byte
