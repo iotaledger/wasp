@@ -12,13 +12,13 @@ import (
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
@@ -48,10 +48,7 @@ func MigrateAccountsContract(
 	migrateFoundriesOutputs(oldState, newState)
 	migrateFoundriesPerAccount(oldState, newState, oldChainID, newChainID)
 	migrateNativeTokenOutputs(oldState, newState)
-	migrateNFTOutputRecords(oldState, newState)
-	migrateAccountToNFT(oldState, newState, oldChainID, newChainID)
-	migrateNFTtoOwner(oldState, newState)
-	// migrateNFTsByCollection(oldState, newState)
+	migrateNFTs(oldState, newState, oldChainID, newChainID)
 	// prefixNewlyMintedNFTs ignored
 	// migrateAllMintedNfts(oldState, newState)
 	migrateNonce(oldState, newState, oldChainID, newChainID, migratedAccounts)
@@ -171,89 +168,6 @@ func migrateFoundriesPerAccount(
 	log.Printf("Migrated %v foundries of accounts\n", count)
 }
 
-func migrateAccountToNFT(
-	oldState old_kv.KVStoreReader,
-	newState kv.KVStore,
-	oldChainID old_isc.ChainID,
-	newChainID isc.ChainID,
-) {
-	log.Printf("Migrating NFTs per account...\n")
-
-	// old: PrefixNFTs | <agentID> stores a map of <NFTID> => true
-	// new: prefixObjects "o" | <agentID> stores a map of <ObjectID> => true
-	count := IterateAccountMaps(
-		oldState,
-		old_accounts.PrefixNFTs,
-		old_iotago.NFTIDLength,
-		oldChainID,
-		newChainID,
-		func(agentID isc.AgentID, nftIDBytes []byte, boolBytes []byte) {
-			nftID := old_codec.MustDecodeNFTID([]byte(nftIDBytes))
-			_ = nftID
-			panic("TODO: what should we do with NFTs?")
-		},
-	)
-
-	log.Printf("Migrated %v NFTs per account\n", count)
-}
-
-func migrateNFTtoOwner(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	log.Printf("Migrating NFT owners...\n")
-
-	// old: KeyNFTOwner stores a map of <NFTID> => isc.AgentID
-	// new: keyObjectOwner "W" stores a map of <ObjectID> => isc.AgentID
-	migrateEntry := func(oldKey old_kv.Key, oldVal []byte) (newKey kv.Key, newVal []byte) {
-		panic("TODO: what should we do with NFTs?")
-	}
-
-	count := MigrateMapByName(oldState, newState, old_accounts.KeyNFTOwner, "", p(migrateEntry))
-	log.Printf("Migrated %v NFT owners\n", count)
-}
-
-func migrateNFTsByCollection(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	panic("TODO: implement (using existing business logic)")
-
-	log.Printf("Migrating NFTs by collection...\n")
-
-	var count uint32
-
-	// for oldAgentID, newAgentID := range oldAgentIDToNewAgentID {
-	// 	// mapName := PrefixNFTsByCollection + string(agentID.Bytes()) + string(collectionID.Bytes())
-	// 	// NOTE: There is no easy way to retrieve list of referenced collections
-	// 	oldPrefix := old_accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
-	// 	newPrefix := "" // accounts.PrefixNFTsByCollection + string(newAgentID.Bytes())
-	//
-	// 	count += MigrateByPrefix(oldState, newState, oldPrefix, newPrefix, func(oldKey old_kv.Key, oldVal bool) (newKey kv.Key, newVal bool) {
-	// 		return migrateNFTsByCollectionEntry(oldKey, oldVal, oldAgentID, newAgentID)
-	// 	})
-	// }
-	//
-	log.Printf("Migrated %v NFTs by collection\n", count)
-}
-
-func migrateNFTsByCollectionEntry(oldKey old_kv.Key, oldVal bool, oldAgentID old_isc.AgentID, newAgentID isc.AgentID) (newKey kv.Key, newVal bool) {
-	panic("TODO: implement (using existing business logic)")
-
-	oldMapName, oldMapElemKey := SplitMapKey(oldKey)
-
-	oldPrefix := old_accounts.PrefixNFTsByCollection + string(oldAgentID.Bytes())
-	collectionIDBytes := oldMapName[len(oldPrefix):]
-	_ = collectionIDBytes
-
-	var newMapName kv.Key = "" // accounts.PrefixNFTsByCollection + string(newAgentID.Bytes()) + string(collectionIDBytes)
-
-	newKey = newMapName
-
-	if oldMapElemKey != "" {
-		// If this record is map element - we form map element key.
-		nftID := oldMapElemKey
-		// TODO: migrate NFT ID
-		newKey += "." + kv.Key(nftID)
-	}
-
-	return kv.Key(newKey), oldVal
-}
-
 func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	log.Printf("Migrating native token outputs...\n")
 
@@ -270,26 +184,29 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 	log.Printf("Migrated %v native token outputs\n", count)
 }
 
-func migrateNFTOutputRecords(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	log.Printf("Migrating NFT outputs...\n")
+func migrateNFTs(
+	oldState old_kv.KVStoreReader,
+	newState kv.KVStore,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) {
+	log.Printf("Migrating NFTs...\n")
 
-	migrateEntry := func(nftID old_iotago.NFTID, _ old_accounts.NFTOutputRec) (iotago.ObjectID, accounts.ObjectRecord) {
-		objectID := OldNFTIDtoNewObjectID(nftID)
-		rec := OldNFTIDtoNewObjectRecord(nftID)
-		return objectID, rec
-	}
+	oldNFTOutputs := old_accounts.NftOutputMapR(oldState)
+	w := accounts.NewStateWriter(newSchema, newState)
 
-	// old: KeyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
-	// new: keyObjectRecords ("RO") stores a map of <ObjectID> => ObjectRecord
-	count := MigrateMapByName(
-		oldState,
-		newState,
-		old_accounts.KeyNFTOutputRecords,
-		"RO",
-		p(migrateEntry),
-	)
+	var count uint32
+	oldNFTOutputs.IterateKeys(func(k []byte) bool {
+		nftID := old_codec.MustDecodeNFTID([]byte(k))
+		oldNFT := old_accounts.GetNFTData(oldState, nftID)
+		owner := OldAgentIDtoNewAgentID(oldNFT.Owner, oldChainID, newChainID)
+		newObjectRecord := OldNFTIDtoNewObjectRecord(nftID)
+		w.CreditObjectToAccount(owner, newObjectRecord, newChainID)
+		count++
+		return true
+	})
 
-	log.Printf("Migrated %v NFT outputs\n", count)
+	log.Printf("Migrated %v NFTs\n", count)
 }
 
 func migrateAllMintedNfts(oldState old_kv.KVStoreReader, newState kv.KVStore) {

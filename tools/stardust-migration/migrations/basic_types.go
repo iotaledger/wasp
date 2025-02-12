@@ -61,7 +61,7 @@ func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
 	panic("TODO: Not implemented")
 }
 
-func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) accounts.ObjectRecord {
+func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
 	panic("TODO: Not implemented")
 }
 
