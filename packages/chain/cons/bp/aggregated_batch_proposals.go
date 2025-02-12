@@ -35,7 +35,6 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	nilCount := 0
 	for nid := range inputs {
 		if len(inputs[nid]) == 0 {
-			bps[nid] = nil
 			nilCount++
 		} else {
 			batchProposal, err := bcs.Unmarshal[*BatchProposal](inputs[nid])
@@ -52,12 +51,12 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	}
 	//
 	// Store the aggregated values.
-	if len(bps) == 0 {
-		log.Debugf("Can't aggregate batch proposal: have 0 batch proposals.")
-		return &AggregatedBatchProposals{shouldBeSkipped: true}
-	}
 	if nilCount > f {
 		log.Debugf("Can't aggregate batch proposal: have >= f+1 nil proposals.")
+		return &AggregatedBatchProposals{shouldBeSkipped: true}
+	}
+	if len(bps) == 0 {
+		log.Debugf("Can't aggregate batch proposal: have 0 batch proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	aggregatedTime := bps.aggregatedTime(f)

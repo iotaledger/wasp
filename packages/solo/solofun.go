@@ -26,8 +26,13 @@ func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
 }
 
 func (env *Solo) NewKeyPairFromIndex(index int) *cryptolib.KeyPair {
-	seed := env.NewSeedFromIndex(index)
-	return cryptolib.KeyPairFromSeed(*seed)
+	var seed cryptolib.Seed
+	if testkey.UseRandomSeed() {
+		seed = cryptolib.NewSeed()
+	} else {
+		seed = *env.NewSeedFromIndex(index)
+	}
+	return cryptolib.KeyPairFromSeed(seed)
 }
 
 func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {

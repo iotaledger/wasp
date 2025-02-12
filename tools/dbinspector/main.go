@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
+
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -38,6 +39,9 @@ func main() {
 	args := flag.Args()
 	var f processFunc
 	switch args[0] {
+	// This stats function is for a Stardust ISC DB only!
+	case "state-stats-per-hname-with-keys":
+		f = stateStatsPerHnameWithKeys
 	case "state-stats-per-hname":
 		f = stateStatsPerHname
 	case "trie-stats":

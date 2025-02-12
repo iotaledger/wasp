@@ -14,7 +14,7 @@ type UnsafeInMemoryTestingSeed struct {
 	addressIndex uint32
 }
 
-func newUnsafeInMemoryTestingSeed(keyPair *cryptolib.KeyPair, addressIndex uint32) *UnsafeInMemoryTestingSeed {
+func NewUnsafeInMemoryTestingSeed(keyPair *cryptolib.KeyPair, addressIndex uint32) *UnsafeInMemoryTestingSeed {
 	return &UnsafeInMemoryTestingSeed{
 		Signer:       keyPair,
 		addressIndex: addressIndex,
@@ -32,7 +32,7 @@ func LoadUnsafeInMemoryTestingSeed(addressIndex uint32) wallets.Wallet {
 	useLegacyDerivation := config.GetUseLegacyDerivation()
 	keyPair := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(seed, addressIndex, useLegacyDerivation))
 
-	return newUnsafeInMemoryTestingSeed(keyPair, addressIndex)
+	return NewUnsafeInMemoryTestingSeed(keyPair, addressIndex)
 }
 
 func CreateUnsafeInMemoryTestingSeed() {

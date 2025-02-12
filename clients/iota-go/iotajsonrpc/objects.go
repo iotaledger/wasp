@@ -167,6 +167,22 @@ type IotaObjectResponseError struct {
 	} `json:"displayError"`
 }
 
+func (e IotaObjectResponseError) String() string {
+	if e.NotExists != nil {
+		return fmt.Sprintf("object not exists: %s", e.NotExists.ObjectID.String())
+	}
+	if e.Deleted != nil {
+		return fmt.Sprintf("deleted obj{id=%s, version=%v, digest=%s}", e.Deleted.ObjectID.String(), e.Deleted.Version, e.Deleted.Digest.String())
+	}
+	if e.UnKnown != nil {
+		return "unknown object"
+	}
+	if e.DisplayError != nil {
+		return fmt.Sprintf("display err: %s", e.DisplayError.Error)
+	}
+	return ""
+}
+
 func (e IotaObjectResponseError) Tag() string {
 	return "code"
 }
@@ -178,6 +194,13 @@ func (e IotaObjectResponseError) Content() string {
 type IotaObjectResponse struct {
 	Data  *IotaObjectData                                 `json:"data,omitempty"`
 	Error *serialization.TagJson[IotaObjectResponseError] `json:"error,omitempty"`
+}
+
+func (r IotaObjectResponse) ResponseError() error {
+	if r.Error != nil {
+		return fmt.Errorf("%s", r.Error.Data.String())
+	}
+	return nil
 }
 
 type CheckpointSequenceNumber = uint64

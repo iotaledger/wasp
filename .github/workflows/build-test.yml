@@ -48,8 +48,7 @@ jobs:
         run: |
           go get -v -t -d ./...
 
-      - name: Build
-        run: make build
+      # Here used to be a make build step, but we separated it into another job
 
       - name: Test
         run: make test-short

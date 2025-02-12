@@ -198,7 +198,6 @@ func runRequestsAndTransitionAnchor(
 		Entropy:              [32]byte{},
 		ValidatorFeeTarget:   nil,
 		EstimateGasMode:      false,
-		EVMTracer:            nil,
 		EnableGasBurnLogging: false,
 		Migrations:           allmigrations.DefaultScheme,
 		Log:                  testlogger.NewLogger(t),

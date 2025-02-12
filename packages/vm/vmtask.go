@@ -3,6 +3,8 @@ package vm
 import (
 	"time"
 
+	"github.com/ethereum/go-ethereum/eth/tracers"
+
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -30,13 +32,9 @@ type VMTask struct {
 	Entropy            hashing.HashValue
 	ValidatorFeeTarget isc.AgentID
 	L1Params           *parameters.L1Params
-	// If EstimateGasMode is enabled, signature and nonce checks will be skipped,
-	// and no PTB will be produced.
-	EstimateGasMode bool
-	// If EVMTracer is set, all requests will be executed normally up until the EVM
-	// tx with the given index, which will then be executed with the given tracer.
-	// No PTB will be produced.
-	EVMTracer            *isc.EVMTracer
+	// If EstimateGasMode is enabled, signature and nonce checks will be skipped
+	EstimateGasMode      bool
+	EVMTracer            *tracers.Tracer
 	EnableGasBurnLogging bool // for testing and Solo only
 
 	Migrations *migrations.MigrationScheme // for testing and Solo only

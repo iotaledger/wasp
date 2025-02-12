@@ -11,6 +11,10 @@ module isc::request {
 
     // The allowance coin_types vector and balances vector are not in the same size
     const EAllowanceVecUnequal: u64 = 0;
+    // The size of the assets bag of a request exceeds the size limit
+    const EAssetsBagSizeExceedLmit: u64 = 1;
+
+    const ReqAssetsBagSizeLimit: u32 = 25;
 
     // === Main structs ===
 
@@ -67,7 +71,9 @@ module isc::request {
         mut allowance_balances: vector<u64>,
         gas_budget: u64,
         ctx: &mut TxContext,
-    ) {
+    ) {        
+        assert!(assets_bag.get_size() <= ReqAssetsBagSizeLimit as u64, EAssetsBagSizeExceedLmit);
+
         let mut allowance_cointypes_len = vector::length<String>(&allowance_cointypes);
         assert!(allowance_cointypes_len == vector::length<u64>(&allowance_balances), EAllowanceVecUnequal);
 

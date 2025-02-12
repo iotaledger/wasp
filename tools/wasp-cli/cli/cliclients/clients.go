@@ -46,7 +46,8 @@ func assertMatchingNodeVersion(ctx context.Context, name string, client *apiclie
 		Execute()
 	log.Check(err)
 	if app.Version != "v"+nodeVersion.Version {
-		log.Fatalf("node [%s] version: %s, does not match wasp-cli version: %s. You can skip this check by re-running with command with --skip-version-check",
+		// IOTA CLI only warns about a version mismatch, we should do the same. There are rarely real differences between the versions which are relevant.
+		log.Printf("node [%s] version: %s, does not match wasp-cli version: %s. You can skip this check by re-running with command with --skip-version-check",
 			name, nodeVersion.Version, app.Version)
 	}
 }
@@ -59,7 +60,7 @@ func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    config.L1APIAddress(),
 		FaucetURL: config.L1FaucetAddress(),
-	}, iotaclient.WaitForEffectsDisabled)
+	}, iotaclient.WaitForEffectsEnabled)
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {

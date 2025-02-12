@@ -42,6 +42,10 @@ module isc::assets_bag {
         id.delete();
     }
 
+    public fun get_size(self: &AssetsBag): u64 {
+        self.size
+    }
+
     // === Place into the AssetsBag ===
 
     /// Adds a the balance of a Coin as a dynamic field of the AssetsBag where the key is

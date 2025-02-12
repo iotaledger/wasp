@@ -1,54 +1,10 @@
-// Copyright 2020 IOTA Stiftung
-// SPDX-License-Identifier: Apache-2.0
-
-// Consensus. Single instance of it.
-//
-// Used sub-protocols (on the same thread):
-//   - DSS -- Distributed Schnorr Signature
-//   - ACS -- Asynchronous Common Subset
-//
-// Used components (running on other threads):
-//   - Mempool
-//   - StateMgr
-//   - VM
-//
-// > INPUT: baseAliasOutputID
-// > ON Startup:
-// >     Start a DSS.
-// >     Ask Mempool for backlog (based on baseAliasOutputID).
-// >     Ask StateMgr for a virtual state (based on baseAliasOutputID).
-// > UPON Reception of responses from Mempool, StateMgr and DSS NonceIndexes:
-// >     Produce a batch proposal.
-// >     Start the ACS.
-// > UPON Reception of ACS output:
-// >     IF result is possible THEN
-// >         Submit agreed NonceIndexes to DSS.
-// >         Send the BLS partial signature.
-// >     ELSE
-// >         OUTPUT SKIP
-// > UPON Reception of N-2F BLS partial signatures:
-// >     Start VM.
-// > UPON Reception of VM Result:
-// >     IF result is non-empty THEN
-// >         Save the produced block to SM.
-// >         Submit the result hash to the DSS.
-// >     ELSE
-// >         OUTPUT SKIP
-// > UPON Reception of VM Result and a signature from the DSS
-// >     IF rotation THEN
-// >        OUTPUT Signed Governance TX.
-// >     ELSE
-// >        Save the block to the StateMgr.
-// >        OUTPUT Signed State Transition TX
+// Consensus. A single instance of it.
 //
 // We move all the synchronization logic to separate objects (upon_...). They are
 // responsible for waiting specific data and then triggering the next state action
 // once. This way we hope to solve a lot of race conditions gracefully. The `upon`
 // predicates and the corresponding done functions should not depend on each other.
 // If some data is needed at several places, it should be passed to several predicates.
-//
-// TODO: Handle the requests gracefully in the VM before getting the initTX.
-// TODO: Reconsider the termination. Do we need to wait for DSS, RND?
 package cons
 
 import (
@@ -57,6 +13,7 @@ import (
 	"time"
 
 	"github.com/minio/blake2b-simd"
+	"github.com/samber/lo"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
@@ -135,14 +92,12 @@ type Result struct {
 }
 
 func (r *Result) String() string {
-	panic("TODO: Implement cons.Result.String") // TODO: refactor
-	/*
-		txID, err := r.Transaction.ID()
-		if err != nil {
-			txID = iotago.TransactionID{}
-		}
-		return fmt.Sprintf("{cons.Result, txID=%v, baseAO=%v, nextAO=%v}", txID, r.BaseStateAnchor.ToHex(), r.NextAliasOutput)
-	*/
+	return fmt.Sprintf(
+		"{cons.Result, txHash=%v, baseAO=%v, outBlockHash=%v}",
+		lo.Must(r.Transaction.Hash()).Hex(),
+		r.DecidedAO,
+		r.Block.Hash(),
+	)
 }
 
 type consImpl struct {
@@ -183,7 +138,7 @@ var (
 	_ Cons    = &consImpl{}
 )
 
-func New(
+func New( //nolint:funlen
 	chainID isc.ChainID,
 	chainStore state.Store,
 	me gpa.NodeID,
