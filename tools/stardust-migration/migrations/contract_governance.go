@@ -12,7 +12,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
@@ -31,6 +33,12 @@ func MigrateGovernanceContract(
 	migrateChainOwnerID(oldChainState, newContractState, oldChainID, newChainID) // WARNING: oldChainState is specifically used here
 	migrateChainOwnerIDDelegetaed(oldContractState, newContractState, oldChainID, newChainID)
 	migratePayoutAgent(oldContractState, newContractState, oldChainID, newChainID)
+	migrateGasFeePolicy(oldContractState, newContractState)
+	migrateGasLimits(oldContractState, newContractState)
+	// NOTE: VarRotateToAddress ignored
+	// NOTE: VarMinBaseTokensOnCommonAccount ignored, thus deleted
+
+	// TODO: VarAllowedStateControllerAddresses
 
 	log.Print("Migrated governance contract\n")
 }
@@ -82,4 +90,35 @@ func migratePayoutAgent(
 	governance.NewStateWriter(newContractState).SetPayoutAgentID(newPayoutAgentID)
 
 	log.Printf("Migrated Payout agent\n")
+}
+
+func migrateGasFeePolicy(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
+	log.Print("Migrating gas fee policy...\n")
+
+	oldPolicy := old_governance.MustGetGasFeePolicy(oldContractState)
+	newPolicy := gas.FeePolicy{
+		EVMGasRatio:       lo.Must(util.Ratio32FromString(oldPolicy.EVMGasRatio.String())),
+		GasPerToken:       lo.Must(util.Ratio32FromString(oldPolicy.GasPerToken.String())),
+		ValidatorFeeShare: oldPolicy.ValidatorFeeShare,
+	}
+
+	governance.NewStateWriter(newContractState).SetGasFeePolicy(&newPolicy)
+
+	log.Print("Migrated gas fee policy\n")
+}
+
+func migrateGasLimits(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
+	log.Print("Migrating gas limits...\n")
+
+	oldLimits := old_governance.MustGetGasLimits(oldContractState)
+	newLimits := gas.Limits{
+		MaxGasPerBlock:         oldLimits.MaxGasPerBlock,
+		MinGasPerRequest:       oldLimits.MinGasPerRequest,
+		MaxGasPerRequest:       oldLimits.MaxGasPerRequest,
+		MaxGasExternalViewCall: oldLimits.MaxGasExternalViewCall,
+	}
+
+	governance.NewStateWriter(newContractState).SetGasLimits(&newLimits)
+
+	log.Print("Migrated gas limits\n")
 }
