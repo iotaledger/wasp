@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"log"
 
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -26,6 +27,7 @@ import (
 )
 
 func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+	log.Print("Migrating block registry")
 	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(oldBlocks.Len())
@@ -73,7 +75,8 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		break
 	}
 
-	fmt.Printf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
+	log.Printf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
+	progress := NewProgressPrinter(500)
 
 	for i := uint32(lastUnprunedBlock); i < oldBlocks.Len(); i++ {
 		oldData := oldBlocks.GetAt(i)
@@ -99,23 +102,145 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 			L1Params:              defaultL1Params,
 		}
 
-		newBlocks.SetAt(i, bcs.MustMarshal(&newBlockInfo))
+		newBlocks.SetAt(i, newBlockInfo.Bytes())
+		progress.Print()
 	}
 
-	fmt.Printf("blockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
+	log.Printf("\nblockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
 }
 
 func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	oldBlocks := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
-	_ = collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
+	log.Print("Migrating request lookup index")
 
-	oldBlocks.IterateKeys(func(elemKey []byte) bool {
-		oldIndex := oldBlocks.GetAt(elemKey)
+	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
+	newLookup := collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
 
-		fmt.Printf("%s\n", oldIndex)
+	progress := NewProgressPrinter(500)
+	oldLookup.IterateKeys(func(elemKey []byte) bool {
+		oldIndex := oldLookup.GetAt(elemKey)
+		oldLookupKeys, err := old_blocklog.RequestLookupKeyListFromBytes(oldIndex)
+		if err != nil {
+			panic(fmt.Errorf("requestLookupIndex migration error: %v", err))
+		}
+
+		newLookupKeys := blocklog.RequestLookupKeyList{}
+		for _, l := range oldLookupKeys {
+			newLookupKeys = append(newLookupKeys, blocklog.NewRequestLookupKey(l.BlockIndex(), l.RequestIndex()))
+		}
+
+		// TODO: Check if we can take over the original key, I assume so. But double check it
+		newLookup.SetAt(elemKey, newLookupKeys.Bytes())
+		progress.Print()
+		return true
+	})
+}
+
+func migrateSingleRequest(req old_isc.Request) isc.Request {
+	switch req.(type) {
+	case old_isc.OnLedgerRequest:
+		break
+
+	case old_isc.OffLedgerRequest:
+		break
+
+	case old_isc.UnsignedOffLedgerRequest:
+		break
+
+	case old_isc.ImpersonatedOffLedgerRequest:
+		break
+
+	default:
+		panic(fmt.Errorf("migrateSingleRequest: invalid request type: %T", req))
+	}
+
+	return nil
+}
+
+func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt) blocklog.RequestReceipt {
+	var burnLog *gas.BurnLog
+
+	if receipt.GasBurnLog != nil {
+		burnLog = &gas.BurnLog{}
+
+		for _, b := range receipt.GasBurnLog.Records {
+			burnLog.Records = append(burnLog.Records, gas.BurnRecord{
+				Code:      gas.BurnCode(b.Code),
+				GasBurned: b.GasBurned,
+			})
+		}
+	}
+
+	var receiptError *isc.UnresolvedVMError
+	if receipt.Error != nil {
+		errorParams := make([]isc.VMErrorParam, len(receipt.Error.Params))
+
+		for i, e := range receipt.Error.Params {
+			errorParams[i] = isc.VMErrorParam(e)
+		}
+
+		receiptError = &isc.UnresolvedVMError{
+			ErrorCode: isc.VMErrorCode{
+				ID:         receipt.Error.ErrorCode.ID,
+				ContractID: OldHnameToNewHname(receipt.Error.ErrorCode.ContractID),
+			},
+			Params: errorParams,
+		}
+	}
+
+	return blocklog.RequestReceipt{
+		Request:       migrateSingleRequest(receipt.Request),
+		Error:         receiptError,
+		GasBudget:     receipt.GasBudget,
+		GasBurned:     receipt.GasBurned,
+		GasFeeCharged: coin.Value(receipt.GasFeeCharged),
+		GasBurnLog:    burnLog,
+		BlockIndex:    receipt.BlockIndex,
+		RequestIndex:  receipt.RequestIndex,
+	}
+}
+
+type lutCollection struct {
+	k []byte
+	v []byte
+}
+
+func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
+	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
+
+	log.Printf("Migrating request receipts (%d)\n", oldRequests.Len())
+
+	_ = collections.NewMap(newState, blocklog.PrefixRequestReceipts)
+
+	progress := NewProgressPrinter(500)
+
+	oldLUT := make([]old_blocklog.RequestLookupKeyList, 0)
+	oldLookup.Iterate(func(elemKey []byte, value []byte) bool {
+		oldLookupKeys, err := old_blocklog.RequestLookupKeyListFromBytes(value)
+		if err != nil {
+			panic(fmt.Errorf("requestReceipts migration error: %v", err))
+		}
+
+		oldLUT = append(oldLUT, oldLookupKeys)
+
+		progress.Print()
 
 		return true
 	})
+
+	progress = NewProgressPrinter(500)
+
+	for _, l := range oldLUT {
+		for _, k := range l {
+			oldReceipt, err := old_blocklog.RequestReceiptFromBytes(oldRequests.GetAt(k.Bytes()), k.BlockIndex(), k.RequestIndex())
+			if err != nil {
+				panic(fmt.Errorf("requestReceipt migration error: %v", err))
+			}
+
+			migrateSingleReceipt(oldReceipt)
+			progress.Print()
+		}
+	}
 }
 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
@@ -137,8 +262,9 @@ func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState s
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
 	printWarningsForUnprocessableRequests(oldContractState)
-	migrateBlockRegistry(oldContractState, newContractState)
-	migrateRequestLookupIndex(oldContractState, newContractState)
+	//migrateBlockRegistry(oldContractState, newContractState)
+	//migrateRequestLookupIndex(oldContractState, newContractState)
+	migrateRequestReceipts(oldContractState, newContractState)
 
 	log.Print("Migrated blocklog contract\n")
 }
