@@ -34,7 +34,7 @@ func (msg *msgBlockProduced) MsgType() gpa.MessageType {
 
 func (msg *msgBlockProduced) String() string {
 	return fmt.Sprintf(
-		"{chainMgr.msgBlockProduced, stateIndex=%v, l1Commitment=%v, txHash=%v}",
-		msg.block.StateIndex(), msg.block.L1Commitment(), lo.Must(msg.tx.Hash()).Hex(),
+		"{chainMgr.msgBlockProduced, stateIndex=%v, l1Commitment=%v, txDigest=%s}",
+		msg.block.StateIndex(), msg.block.L1Commitment(), lo.Must(msg.tx.Digest()),
 	)
 }
