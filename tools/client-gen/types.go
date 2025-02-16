@@ -1,4 +1,4 @@
-package client_gen
+package main
 
 import (
 	"reflect"
