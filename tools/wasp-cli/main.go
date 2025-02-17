@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/setup"
 	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
+	"github.com/iotaledger/wasp/tools/wasp-cli/disrec"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/metrics"
 	"github.com/iotaledger/wasp/tools/wasp-cli/peering"
@@ -70,11 +71,6 @@ func init() {
 		}
 	}
 
-	//nolint:revive,staticcheck
-	if waspVersion == "" {
-		// panic("unable to initialize app: no version given")
-	}
-
 	rootCmd = initRootCmd(waspVersion)
 	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", true, "skip-version-check")
 
@@ -88,6 +84,7 @@ func init() {
 	decode.Init(rootCmd)
 	peering.Init(rootCmd)
 	metrics.Init(rootCmd)
+	disrec.Init(rootCmd)
 }
 
 func main() {

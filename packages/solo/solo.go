@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -466,14 +467,12 @@ func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 
 // collateBatch selects requests to be processed in a batch
 func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
-	reqs, err := ch.Env.ISCMoveClient().GetRequests(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress())
-	require.NoError(ch.Env.T, err)
-	slices.SortFunc(reqs, func(a, b *iscmove.RefWithObject[iscmove.Request]) int {
-		return bytes.Compare(a.ObjectID[:], b.ObjectID[:])
+	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	err := ch.Env.ISCMoveClient().GetRequestsSorted(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress(), maxRequestsInBlock, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
+		require.NoError(ch.Env.T, err)
+		reqs = append(reqs, i)
 	})
-	if len(reqs) > maxRequestsInBlock {
-		reqs = reqs[:maxRequestsInBlock]
-	}
+	require.NoError(ch.Env.T, err)
 	return lo.Map(reqs, func(req *iscmove.RefWithObject[iscmove.Request], _ int) isc.Request {
 		r, err := isc.OnLedgerFromRequest(req, ch.ChainID.AsAddress())
 		require.NoError(ch.Env.T, err)

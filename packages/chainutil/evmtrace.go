@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
-func EVMTraceTransaction(
+func EVMTrace(
 	anchor *isc.StateAnchor,
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
@@ -20,8 +20,6 @@ func EVMTraceTransaction(
 	log *logger.Logger,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
 ) error {
 	_, err := runISCTask(
@@ -32,11 +30,8 @@ func EVMTraceTransaction(
 		log,
 		blockTime,
 		iscRequestsInBlock,
-		&isc.EVMTracer{
-			Tracer:      tracer,
-			TxIndex:     txIndex,
-			BlockNumber: blockNumber,
-		},
+		false,
+		tracer,
 	)
 	return err
 }

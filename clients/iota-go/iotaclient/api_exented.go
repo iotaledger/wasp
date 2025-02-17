@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -21,7 +22,13 @@ func (c *Client) GetDynamicFieldObject(
 	req GetDynamicFieldObjectRequest,
 ) (*iotajsonrpc.IotaObjectResponse, error) {
 	var resp iotajsonrpc.IotaObjectResponse
-	return &resp, c.transport.Call(ctx, &resp, getDynamicFieldObject, req.ParentObjectID, req.Name)
+	err := c.transport.Call(ctx, &resp, getDynamicFieldObject, req.ParentObjectID, req.Name)
+	if err != nil {
+		return &resp, err
+	} else if resp.ResponseError() != nil {
+		return &resp, resp.ResponseError()
+	}
+	return &resp, nil
 }
 
 type GetDynamicFieldsRequest struct {
@@ -56,7 +63,16 @@ func (c *Client) GetOwnedObjects(
 	req GetOwnedObjectsRequest,
 ) (*iotajsonrpc.ObjectsPage, error) {
 	var resp iotajsonrpc.ObjectsPage
-	return &resp, c.transport.Call(ctx, &resp, getOwnedObjects, req.Address, req.Query, req.Cursor, req.Limit)
+	err := c.transport.Call(ctx, &resp, getOwnedObjects, req.Address, req.Query, req.Cursor, req.Limit)
+	if err != nil {
+		return &resp, err
+	}
+	for i, elt := range resp.Data {
+		if elt.ResponseError() != nil {
+			return &resp, fmt.Errorf("index: %d: %w", i, elt.ResponseError())
+		}
+	}
+	return &resp, nil
 }
 
 type QueryEventsRequest struct {

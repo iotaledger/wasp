@@ -15,6 +15,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
@@ -249,6 +250,8 @@ func (cgr *ConsGr) Time(t time.Time) {
 	cgr.inputTimeCh <- t
 }
 
+var lastLogStr = ""
+
 func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 	defer util.ExecuteIfNotNil(cgr.netDisconnect)
 	defer func() {
@@ -360,7 +363,14 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
-			cgr.log.Debugf("Consensus Instance: %v", cgr.consInst.StatusString())
+
+			// TODO: Improve Consensus logging. Without that check, we spam the logs heavily with the same message.
+			lgStr := fmt.Sprintf("Consensus Instance: %v\n", cgr.consInst.StatusString())
+			if lastLogStr != lgStr {
+				lastLogStr = lgStr
+				cgr.log.Debug(lastLogStr)
+			}
+
 		case <-ctxClose:
 			cgr.log.Debugf("Closing ConsGr because context closed.")
 			return

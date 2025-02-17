@@ -127,7 +127,7 @@ type Sandbox interface {
 
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
 	// (e.g. with the debug_traceTransaction JSONRPC method).
-	EVMTracer() *EVMTracer
+	EVMTracer() *tracers.Tracer
 
 	// TakeStateSnapshot takes a snapshot of the state. This is useful to implement the try/catch
 	// behavior in Solidity, where the state is reverted after a low level call fails.
@@ -489,10 +489,4 @@ type BLS interface {
 	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
 	AddressFromPublicKey(pubKey []byte) (iotago.Address, error)
 	AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error)
-}
-
-type EVMTracer struct {
-	Tracer      *tracers.Tracer
-	TxIndex     *uint64
-	BlockNumber *uint64
 }

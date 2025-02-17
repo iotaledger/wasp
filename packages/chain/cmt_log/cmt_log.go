@@ -65,8 +65,9 @@ type cmtLogImpl struct {
 	varLogIndex            VarLogIndex            // Calculates the current log index.
 	varLocalView           VarLocalView           // Tracks the pending alias outputs.
 	varConsInsts           VarConsInsts           // The main algorithm.
-	suspended              bool                   // Is this commitee currently suspended?
+	suspended              bool                   // Is this committee currently suspended?
 	output                 Output                 // The current output.
+	first                  bool                   // A workaround to senf the first nextLI messages.
 	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
 	log                    *logger.Logger
 }
@@ -135,6 +136,7 @@ func New(
 		varConsInsts:           nil, // Set bellow.
 		suspended:              true,
 		output:                 nil,
+		first:                  true,
 		log:                    log,
 	}
 	persistLIFunc := func(li LogIndex) {
@@ -179,8 +181,7 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputConsensusTimeout:
 		return cl.handleInputConsensusTimeout(input)
 	case *inputCanPropose:
-		cl.handleInputCanPropose()
-		return nil
+		return cl.handleInputCanPropose()
 	case *inputSuspend:
 		cl.handleInputSuspend()
 		return nil
@@ -224,8 +225,19 @@ func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) 
 	return cl.varConsInsts.ConsTimeout(input.logIndex, cl.varLogIndex.ConsensusStarted)
 }
 
-func (cl *cmtLogImpl) handleInputCanPropose() {
+func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
+	if cl.first && cl.output != nil && len(cl.output) > 0 {
+		// This is a workaround for sending initial NextLI messages on boot.
+		cl.first = false
+		msgs := gpa.NoMessages()
+		for li := range cl.output {
+			cl.log.Debugf("Sending initial NextLI messages for LI=%v", li)
+			msgs.AddAll(cl.varLogIndex.ConsensusStarted(li))
+		}
+		return msgs
+	}
 	// TODO: Is it still needed?
+	return nil
 }
 
 func (cl *cmtLogImpl) handleInputSuspend() {

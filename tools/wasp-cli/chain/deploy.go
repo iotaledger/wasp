@@ -68,10 +68,8 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 	return stateMetadata
 }
 
-func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
-	val := 10_000_000
-
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), uint64(val), isc.GasCoinTargetValue)
+func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -81,7 +79,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(val)},
+				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinTargetValue)},
 			},
 		},
 	)
@@ -92,7 +90,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		wallet.Address().AsIotaAddress(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
-		uint64(val),
+		uint64(isc.GasCoinTargetValue),
 		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 	)
 
@@ -158,7 +156,7 @@ func initDeployCmd() *cobra.Command {
 
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
 
-			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
 			log.Check(err)
 
 			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
