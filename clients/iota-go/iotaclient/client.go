@@ -8,7 +8,7 @@ import (
 )
 
 type Client struct {
-	transport transport
+	transport Transport
 
 	// If WaitUntilEffectsVisible is set, it takes effect on any sent transaction with WaitForLocalExecution. It is
 	// necessary because if the L1 node is overloaded, it may return an effects cert without actually having ececuted
@@ -27,7 +27,7 @@ var WaitForEffectsEnabled *WaitParams = &WaitParams{
 	DelayBetweenAttempts: 2 * time.Second,
 }
 
-type transport interface {
+type Transport interface {
 	Call(ctx context.Context, v any, method iotaconn.JsonRPCMethod, args ...any) error
 	Subscribe(ctx context.Context, v chan<- []byte, method iotaconn.JsonRPCMethod, args ...any) error
 	WaitUntilStopped()

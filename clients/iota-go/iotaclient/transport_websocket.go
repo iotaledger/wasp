@@ -11,7 +11,7 @@ type wsTransport struct {
 	client *iotaconn.WebsocketClient
 }
 
-var _ transport = &wsTransport{}
+var _ Transport = &wsTransport{}
 
 func NewWebsocket(
 	ctx context.Context,

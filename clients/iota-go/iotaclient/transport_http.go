@@ -10,7 +10,7 @@ type httpTransport struct {
 	client *iotaconn.HTTPClient
 }
 
-var _ transport = &httpTransport{}
+var _ Transport = &httpTransport{}
 
 func NewHTTP(url string, waitUntilEffectsVisible *WaitParams) *Client {
 	return &Client{

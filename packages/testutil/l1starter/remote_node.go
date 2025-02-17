@@ -7,7 +7,9 @@ import (
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/clients/l1simulator"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/samber/lo"
 )
 
 type RemoteIotaNode struct {
@@ -38,10 +40,10 @@ func (r *RemoteIotaNode) FaucetURL() string {
 }
 
 func (r *RemoteIotaNode) L1Client() clients.L1Client {
-	return clients.NewL1Client(clients.L1Config{
+	return l1simulator.NewClient(clients.L1Config{
 		APIURL:    r.APIURL(),
 		FaucetURL: r.FaucetURL(),
-	}, WaitUntilEffectsVisible)
+	}, "http://localhost:30003")
 }
 
 func (in *RemoteIotaNode) IsLocal() bool {
@@ -55,6 +57,9 @@ func (r *RemoteIotaNode) start(ctx context.Context) {
 	if err != nil {
 		panic(fmt.Errorf("faucet request failed: %w for url: %s", err, r.faucetURL))
 	}
+
+	fmt.Println(lo.Must(client.GetAllBalances(ctx, r.iscPackageOwner.Address())))
+	fmt.Println(lo.Must(client.GetAllBalances(ctx, r.iscPackageOwner.Address())))
 
 	r.iscPackageID, err = client.DeployISCContracts(ctx, r.iscPackageOwner)
 	if err != nil {
