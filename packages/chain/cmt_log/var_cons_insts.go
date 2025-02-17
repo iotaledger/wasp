@@ -22,15 +22,16 @@ type VarConsInsts interface {
 
 // consInsts implements the algorithm modeled in WaspChainCmtLogSUI.tla
 type varConsInstsImpl struct {
-	lis       map[LogIndex]*isc.StateAnchor
-	minLI     LogIndex         // Do not participate in LI lower than this.
-	maxLI     LogIndex         // Cleanup all LIs smaller than this - hist.
-	lastLI    LogIndex         // Just to wait for lastAO, if needed but not provided.
-	lastAO    *isc.StateAnchor // Last AO seen confirmed in L1.
-	hist      uint32           // How many instances to keep running.
-	persistCB func(li LogIndex)
-	outputCB  func(lis Output)
-	log       *logger.Logger
+	haveConsOut bool
+	lis         map[LogIndex]*isc.StateAnchor
+	minLI       LogIndex         // Do not participate in LI lower than this.
+	maxLI       LogIndex         // Cleanup all LIs smaller than this - hist.
+	lastLI      LogIndex         // Just to wait for lastAO, if needed but not provided.
+	lastAO      *isc.StateAnchor // Last AO seen confirmed in L1.
+	hist        uint32           // How many instances to keep running.
+	persistCB   func(li LogIndex)
+	outputCB    func(lis Output)
+	log         *logger.Logger
 }
 
 var _ VarConsInsts = &varConsInstsImpl{}
@@ -43,6 +44,7 @@ func NewVarConsInsts(
 	log *logger.Logger,
 ) VarConsInsts {
 	vci := &varConsInstsImpl{
+		haveConsOut: false,
 		lis: map[LogIndex]*isc.StateAnchor{
 			minLI: nil,
 		},
@@ -61,11 +63,13 @@ func NewVarConsInsts(
 
 // Consensus at LI produced a TX.
 func (vci *varConsInstsImpl) ConsOutputDone(li LogIndex, producedAO *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
+	vci.haveConsOut = true
 	return vci.trySet(li.Next(), producedAO, cb)
 }
 
 // Consensus at LI terminate with a SKIP/⊥ decision.
 func (vci *varConsInstsImpl) ConsOutputSkip(li LogIndex, cb onLIInc) gpa.OutMessages {
+	vci.haveConsOut = true
 	if vci.lastAO == nil {
 		vci.lastLI = li.Next() // Will be set in LatestL1AO.
 		return nil
@@ -81,7 +85,14 @@ func (vci *varConsInstsImpl) ConsTimeout(li LogIndex, cb onLIInc) gpa.OutMessage
 // If we see consensus proposals from F+1 nodes at seenLI...
 func (vci *varConsInstsImpl) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages {
 	vci.maxLI = MaxLogIndex(vci.maxLI, seenLI)
-	return vci.trySet(seenLI.Prev(), nil, cb)
+	msgs := gpa.NoMessages()
+	msgs.AddAll(vci.trySet(seenLI.Prev(), nil, cb))
+	if !vci.haveConsOut {
+		// Still don't have the initial round succeesed,
+		// thus keep proposing the NIL.
+		msgs.AddAll(vci.trySet(seenLI, nil, cb))
+	}
+	return msgs
 }
 
 // Here we get the latest L1 state.

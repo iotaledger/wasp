@@ -168,7 +168,12 @@ func (cl *cmtLogImpl) AsGPA() gpa.GPA {
 
 // Implements the gpa.GPA interface.
 func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
-	cl.log.Debugf("Input %T: %+v", input, input)
+	switch input.(type) {
+	case *inputCanPropose:
+		break // Don't log, its periodic.
+	default:
+		cl.log.Debugf("Input %T: %+v", input, input)
+	}
 	switch input := input.(type) {
 	case *inputAnchorConfirmed:
 		return cl.handleInputAnchorConfirmed(input)
