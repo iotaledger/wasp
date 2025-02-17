@@ -58,9 +58,10 @@ func (g *SingleGasCoinInfo) GetGasPrice() uint64 {
 type nodeConnection struct {
 	*logger.WrappedLogger
 
-	iscPackageID iotago.PackageID
-	wsClient     *iscmoveclient.Client
-
+	iscPackageID        iotago.PackageID
+	httpClient          *iscmoveclient.Client
+	wsURL               string
+	httpURL             string
 	maxNumberOfRequests int
 	synced              sync.WaitGroup
 	chainsLock          sync.RWMutex
@@ -76,17 +77,19 @@ func New(
 	iscPackageID iotago.PackageID,
 	maxNumberOfRequests int,
 	wsURL string,
+	httpURL string,
 	log *logger.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
-	wsClient, err := iscmoveclient.NewWebsocketClient(ctx, wsURL, "", iotaclient.WaitForEffectsEnabled, log)
-	if err != nil {
-		return nil, err
-	}
+
+	httpClient := iscmoveclient.NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
+
 	return &nodeConnection{
 		WrappedLogger:       logger.NewWrappedLogger(log),
 		iscPackageID:        iscPackageID,
-		wsClient:            wsClient,
+		wsURL:               wsURL,
+		httpURL:             httpURL,
+		httpClient:          httpClient,
 		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
@@ -103,19 +106,25 @@ func (nc *nodeConnection) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
-) {
-	ncc := func() *ncChain {
+) error {
+	ncc, err := func() (*ncChain, error) {
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		ncc := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor)
+		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		if err != nil {
+			return nil, err
+		}
 
 		nc.chainsMap.Set(chainID, ncc)
 		util.ExecuteIfNotNil(onChainConnect)
 		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
 
-		return ncc
+		return ncc, nil
 	}()
+	if err != nil {
+		return err
+	}
 
 	if err := ncc.syncChainState(ctx); err != nil {
 		nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", chainID, err.Error()))
@@ -137,6 +146,8 @@ func (nc *nodeConnection) AttachChain(
 		util.ExecuteIfNotNil(onChainDisconnect)
 		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
 	}()
+
+	return nil
 }
 
 func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
@@ -168,7 +179,7 @@ func (nc *nodeConnection) ConsensusGasPriceProposal(
 			panic(err)
 		}
 
-		gasCoinGetObjectRes, err := nc.wsClient.GetObject(ctx, iotaclient.GetObjectRequest{
+		gasCoinGetObjectRes, err := nc.httpClient.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 		})
@@ -224,7 +235,7 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 			return ctx.Err()
 
 		case <-ticker.C:
-			_, err := nc.wsClient.GetLatestIotaSystemState(ctx)
+			_, err := nc.httpClient.GetLatestIotaSystemState(ctx)
 			if err != nil {
 				nc.LogWarnf("WaitUntilInitiallySynced: %s", err)
 				continue

@@ -399,7 +399,7 @@ func (tnc *testNodeConn) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
-) {
+) error {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
 	}
@@ -408,6 +408,7 @@ func (tnc *testNodeConn) AttachChain(
 	tnc.recvAnchor = recvAnchor
 	tnc.recvRequest = recvRequest
 	tnc.attachWG.Done()
+	return nil
 }
 
 func (tnc *testNodeConn) Run(ctx context.Context) error {

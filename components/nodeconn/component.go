@@ -48,13 +48,14 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
-		address := lo.Must(iotago.AddressFromHex(ParamsWS.PackageID))
+		address := lo.Must(iotago.AddressFromHex(ParamsL1.PackageID))
 
 		nodeConnection, err := nodeconn.New(
 			Component.Daemon().ContextStopped(),
 			*address,
 			chains.ParamsChains.MempoolMaxOnledgerInPool,
-			ParamsWS.WebsocketURL,
+			ParamsL1.WebsocketURL,
+			ParamsL1.HttpURL,
 			Component.Logger().Named("nc"),
 			deps.ShutdownHandler,
 		)

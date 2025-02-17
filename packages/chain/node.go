@@ -455,7 +455,10 @@ func New(
 		cni.chainMetrics.NodeConn.L1AnchorReceived()
 		recvAnchorPipeInCh <- *anchor
 	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	if err != nil {
+		return nil, err
+	}
 	//
 	// Run the main thread.
 
