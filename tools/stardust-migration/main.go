@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
@@ -44,6 +46,13 @@ func main() {
 	srcChainDBDir := os.Args[1]
 	destChainDBDir := os.Args[2]
 	newChainIDStr := os.Args[3]
+
+	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
+	destChainDBDir = lo.Must(filepath.Abs(destChainDBDir))
+
+	if strings.HasPrefix(destChainDBDir, srcChainDBDir) {
+		log.Fatalf("destination database cannot reside inside source database folder")
+	}
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
