@@ -7,25 +7,26 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
-	"path/filepath"
-	"strings"
-	"time"
+	"sync"
 
+	"github.com/dgravesa/go-parallel/parallel"
+	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
-	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
+	"github.com/nnikolash/wasp-types-exported/packages/trie"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
-
-	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
@@ -43,14 +44,173 @@ import (
 // TODO: Need to migrate ALL trie roots to support tracing.
 // TODO: New state draft might be huge, but it is stored in memory - might be an issue.
 
-func main() {
-	if len(os.Args) < 4 {
-		log.Fatalf("usage: %s <src-chain-db-dir> <dest-chain-db-dir> <new-chain-id>", os.Args[0])
+func saveTrieRoots(p *sync.Map) {
+	copy := map[uint32]trie.Hash{}
+
+	p.Range(func(k, v interface{}) bool {
+		copy[k.(uint32)] = v.(trie.Hash)
+		return true
+	})
+
+	os.WriteFile("trieroots_mainnet.bcs", bcs.MustMarshal(&copy), 0600)
+}
+
+func loadTrieRoots() map[uint32]trie.Hash {
+	return bcs.MustUnmarshal[map[uint32]trie.Hash](lo.Must(os.ReadFile("trieroots_mainnet.bcs")))
+}
+
+func dumpTrieRoots(srcChainDBDir string) {
+	srcKVS := db.Connect(srcChainDBDir)
+	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
+
+	var trieRoots sync.Map
+
+	parallel.WithStrategy(parallel.StrategyFetchNextIndex).WithCPUProportion(95).For(1000000, func(i int, _ int) {
+		srcState, err := srcStore.StateByIndex(uint32(i))
+		if err != nil {
+			panic(err)
+		}
+
+		trieRoots.Store(uint32(i), srcState.TrieRoot())
+
+		if i > 0 && i%1000 == 0 {
+			fmt.Printf("\n\n\nINDEX: %d\n\n", i)
+			saveTrieRoots(&trieRoots)
+		}
+	})
+
+	saveTrieRoots(&trieRoots)
+}
+
+func exportSrcDBWithoutTrie(srcChainDBDir string, destChainDBDir string) {
+	srcKVS := db.Connect(srcChainDBDir)
+	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
+
+	lenKeys := 0
+	lenBytes := 0
+	iState, _ := srcStore.LatestState()
+
+	c := 0
+	iState.Iterate("", func(key old_kv.Key, v []byte) bool {
+
+		lenKeys += len(key)
+		lenBytes += len(v)
+
+		c++
+		if c > 0 && c%20000 == 0 {
+			fmt.Printf("lenKey: %d, lenvals: %d, lenKey: %dMB, lenvals: %dMB, count: %d\n", lenKeys, lenBytes, lenKeys/1024/1024, lenBytes/1024/1024, c)
+		}
+
+		return true
+	})
+
+	fmt.Printf("lenKey: %d, lenvals: %d\n", lenKeys, lenBytes)
+
+	/*
+		for c := 0; c < 2_000_000_000; c += 10000 {
+			log.Printf("Starting new batch c:%d\n", c)
+			parallel.WithStrategy(parallel.StrategyFetchNextIndex).WithCPUProportion(95).For(10000, func(i int, _ int) {
+				ic := c + i
+
+				iState, _ := srcStore.StateByIndex(uint32(ic))
+				iState.Iterate("", func(key old_kv.Key, value []byte) bool {
+					newKey := strconv.Itoa(ic) + "." + string(key)
+					destKVS.Set([]byte(newKey), value)
+					return true
+				})
+
+				processed++
+				fmt.Printf("\n\n\nINDEX: %d, c: %d, ic:%d, processed: %d\n\n", i, c, ic, processed)
+
+			})
+			destKVS.Flush()
+		}*/
+
+}
+
+func dumpCoreContractCalls(srcChainDBDir string) {
+	srcKVS := db.Connect(srcChainDBDir)
+	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
+
+	//destKVS := db.Create(destChainDBDir)
+	//destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
+	//destStateDraft := destStore.NewOriginStateDraft()
+
+	migrations.BuildContractNameFuncs()
+
+	trieRoots := loadTrieRoots()
+
+	lenKeys := 0
+	lenBytes := 0
+
+	//var newDB kvstore.KVStore // This would be a DB without a Store (so without tries, just a kv store that gets persisted to the HDD via rocksdb)
+	for i := 0; i < 10; i++ {
+		iState, _ := srcStore.StateByIndex(uint32(i))
+		iState.Iterate("", func(key old_kv.Key, value []byte) bool {
+
+			lenKeys += len(key)
+			lenBytes += len(value)
+
+			//newKey := strconv.Itoa(i) + "." + string(key)
+			//newDB.Set([]byte(newKey), value)
+			fmt.Printf("lenKey: %d, lenvals: %d\n", lenKeys, lenBytes)
+
+			return true
+		})
 	}
 
-	srcChainDBDir := os.Args[1]
-	destChainDBDir := os.Args[2]
-	newChainIDStr := os.Args[3]
+	fmt.Printf("lenKey: %d, lenvals: %d\n", lenKeys, lenBytes)
+
+	return
+
+	parallel.WithStrategy(parallel.StrategyFetchNextIndex).WithCPUProportion(95).For(20000, func(i int, _ int) {
+		trieRootForBlock := trieRoots[uint32(i)]
+
+		k, _ := srcStore.StateByIndex(uint32(i))
+
+		k.Iterate("", func(key old_kv.Key, value []byte) bool {
+			fmt.Printf("%v %v", key, value)
+
+			return true
+		})
+
+		srcState, err := srcStore.StateByTrieRoot(trieRootForBlock)
+		if err != nil {
+			panic(err)
+		}
+
+		migrations.TestCalls(srcState)
+
+		if i > 0 && i%1000 == 0 {
+			fmt.Print("")
+			fmt.Print("")
+			fmt.Print("")
+			fmt.Printf("\n\n\nINDEX: %d\n\n", i)
+
+			migrations.PrintCalledContracts()
+		}
+
+	})
+	fmt.Println("DONE")
+	migrations.PrintCalledContracts()
+}
+
+func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	if len(os.Args) < 4 {
+		//	log.Fatalf("usage: %s <src-chain-db-dir> <dest-chain-db-dir> <new-chain-id>", os.Args[0])
+	}
+
+	srcChainDBDir := os.Args[1]  //os.Args[1]
+	destChainDBDir := os.Args[2] //os.Args[2]
+	newChainIDStr := ""          //os.Args[3]
+
+	//	dumpTrieRoots(srcChainDBDir)
+	exportSrcDBWithoutTrie(srcChainDBDir, destChainDBDir)
+	return
 
 	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
 	destChainDBDir = lo.Must(filepath.Abs(destChainDBDir))
@@ -82,7 +242,8 @@ func main() {
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 	destStateDraft := destStore.NewOriginStateDraft()
 
-	//migrateAllBlocks(srcStore, destStore)
+	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
+	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
 
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
 	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)

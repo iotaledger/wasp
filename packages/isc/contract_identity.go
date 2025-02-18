@@ -37,6 +37,14 @@ func ContractIdentityFromEVMAddress(addr common.Address) ContractIdentity {
 	return ContractIdentity{evmAddr: addr, kind: contractIdentityKindEthereum}
 }
 
+func NewContractIdentity(kind byte, evmAddr common.Address, hname Hname) ContractIdentity {
+	return ContractIdentity{
+		kind:    contractIdentityKind(kind),
+		evmAddr: evmAddr,
+		hname:   hname,
+	}
+}
+
 func (c *ContractIdentity) String() string {
 	switch c.kind {
 	case contractIdentityKindHname:
