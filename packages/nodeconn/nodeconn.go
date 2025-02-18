@@ -193,7 +193,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		err = parameters.InitL1(*nc.wsClient.Client, nc.Logger())
+		err = parameters.InitL1(*nc.httpClient.Client, nc.Logger())
 		if err != nil {
 			panic(err)
 		}
