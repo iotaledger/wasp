@@ -50,15 +50,23 @@ func newNCChain(
 	chainID isc.ChainID,
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
-) *ncChain {
+	wsURL string,
+	httpURL string,
+) (*ncChain, error) {
 	anchorAddress := chainID.AsAddress().AsIotaAddress()
-	feed := iscmoveclient.NewChainFeed(
+
+	feed, err := iscmoveclient.NewChainFeed(
 		ctx,
-		nodeConn.wsClient,
 		nodeConn.iscPackageID,
 		*anchorAddress,
 		nodeConn.Logger(),
+		wsURL,
+		httpURL,
 	)
+	if err != nil {
+		return nil, err
+	}
+
 	ncc := &ncChain{
 		WrappedLogger:  logger.NewWrappedLogger(nodeConn.Logger()),
 		nodeConn:       nodeConn,
@@ -72,7 +80,7 @@ func newNCChain(
 	ncc.shutdownWaitGroup.Add(1)
 	go ncc.postTxLoop(ctx)
 
-	return ncc
+	return ncc, nil
 }
 
 func (ncc *ncChain) WaitUntilStopped() {
@@ -87,7 +95,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		if err != nil {
 			return nil, err
 		}
-		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
+		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
@@ -113,7 +121,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, err
 		}
 
-		anchor, err := ncc.nodeConn.wsClient.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		anchor, err := ncc.nodeConn.httpClient.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
 		if err != nil {
 			return nil, err
 		}
