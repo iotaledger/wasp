@@ -1,21 +1,26 @@
 package parameters_test
 
 import (
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/stretchr/testify/require"
 )
 
-func TestL1Syncer(t *testing.T) {
+func TestInitL1(t *testing.T) {
 	client := iotaclient.NewHTTP(iotaconn.AlphanetEndpointURL, iotaclient.WaitForEffectsDisabled)
 	logger := testlogger.NewLogger(t)
-	l1syncer := parameters.NewL1Syncer(client, 1000*time.Millisecond, logger)
-	go l1syncer.Start()
-	time.Sleep(500 * time.Millisecond)
-	fmt.Println("parameters.L1Params", parameters.L1())
+	l1params0 := parameters.L1().Clone()
+	err := parameters.InitL1(*client, logger)
+	require.NoError(t, err)
+	l1params1 := parameters.L1().Clone()
+	b0, err := bcs.Marshal[parameters.L1Params](l1params0)
+	require.NoError(t, err)
+	b1, err := bcs.Marshal[parameters.L1Params](l1params1)
+	require.NoError(t, err)
+	require.NotEqual(t, b0, b1)
 }
