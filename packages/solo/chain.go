@@ -26,6 +26,7 @@ import (
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -748,4 +749,15 @@ func (ch *Chain) LatestBlockIndex() uint32 {
 
 func (ch *Chain) GetMempoolContents() io.Reader {
 	panic("unimplemented")
+}
+
+// SaveDB saves a RocksDB database with the contents of the chain DB
+func (ch *Chain) SaveDB(path string) {
+	db := lo.Must(database.NewDatabase("rocksdb", path, true, false, database.CacheSizeDefault))
+	store := db.KVStore()
+	lo.Must0(ch.db.Iterate(nil, func(k []byte, v []byte) bool {
+		lo.Must0(store.Set(k, v))
+		return true
+	}))
+	lo.Must0(store.Flush())
 }
