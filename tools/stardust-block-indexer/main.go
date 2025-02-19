@@ -142,7 +142,7 @@ func reverseIterateStates(s old_indexedstore.IndexedStore, f func(trieRoot old_t
 }
 
 func periodicAction(period time.Duration, lastActionTime *time.Time, action func()) {
-	if lastActionTime == nil || time.Since(*lastActionTime) >= period {
+	if time.Since(*lastActionTime) >= period {
 		action()
 		*lastActionTime = time.Now()
 	}
