@@ -21,6 +21,7 @@ import (
 	old_database "github.com/nnikolash/wasp-types-exported/packages/database"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 )
 
 func main() {
@@ -59,7 +60,7 @@ func main() {
 	prevBlocksLeft := blocksLeft
 	lastEstimateUpdateTime := time.Now()
 
-	reverseIterateStates(targetStore, func(state old_state.State) bool {
+	reverseIterateStates(targetStore, func(trieRoot old_trie.Hash, state old_state.State) bool {
 		blocksLeft--
 
 		const period = time.Second
@@ -115,11 +116,12 @@ func ConnectToDB(dbDir string) old_kvstore.KVStore {
 	return kvs
 }
 
-func reverseIterateStates(s old_indexedstore.IndexedStore, f func(state old_state.State) bool) {
+func reverseIterateStates(s old_indexedstore.IndexedStore, f func(trieRoot old_trie.Hash, state old_state.State) bool) {
 	state := lo.Must(s.LatestState())
+	trieRoot := state.TrieRoot()
 
 	for {
-		if !f(state) {
+		if !f(trieRoot, state) {
 			return
 		}
 
@@ -134,7 +136,8 @@ func reverseIterateStates(s old_indexedstore.IndexedStore, f func(state old_stat
 			break
 		}
 
-		state = lo.Must(s.StateByTrieRoot(prevL1Commitment.TrieRoot()))
+		trieRoot = prevL1Commitment.TrieRoot()
+		state = lo.Must(s.StateByTrieRoot(trieRoot))
 	}
 }
 
