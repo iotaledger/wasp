@@ -45,6 +45,33 @@ func main() {
 
 	targetKVS := ConnectToDB(targetChainDBDir)
 	targetStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(targetKVS))
+
+	var almostLastState old_state.State
+	timeForGettingAlmostLastState := measureTime(func() {
+		almostLastState = lo.Must(targetStore.StateByIndex(lo.Must(targetStore.LatestBlockIndex()) - uint32(1000)))
+	})
+
+	var firstState old_state.State
+	timeForGettingFirstState := measureTime(func() {
+		firstState = lo.Must(targetStore.StateByIndex(0))
+	})
+
+	log.Printf("Time for getting almost last state by index: %v\n", timeForGettingAlmostLastState)
+	log.Printf("Time for getting first state by index: %v\n", timeForGettingFirstState)
+
+	almostLastStateHash := almostLastState.TrieRoot()
+	timeForGettingAlmostLastState = measureTime(func() {
+		lo.Must(targetStore.StateByTrieRoot(almostLastStateHash))
+	})
+
+	firstStateHash := firstState.TrieRoot()
+	timeForGettingFirstState = measureTime(func() {
+		lo.Must(targetStore.StateByTrieRoot(firstStateHash))
+	})
+
+	log.Printf("Time for getting almost last state by hash: %v\n", timeForGettingAlmostLastState)
+	log.Printf("Time for getting first state by hash: %v\n", timeForGettingFirstState)
+
 	latestState := lo.Must(targetStore.LatestState())
 
 	fmt.Printf("Last block index: %v\n", latestState.BlockIndex())
@@ -154,4 +181,10 @@ func newStatsPrinter(latestState old_state.State) func(state old_state.State) {
 		fmt.Printf("\rBlocks left: %v. Speed: %v blocks/sec. Avg speed: %v blocks/sec. Estimate time left: %v           ",
 			blocksLeft, currentSpeed, avgSpeed, estimateRunTime)
 	}
+}
+
+func measureTime(f func()) time.Duration {
+	start := time.Now()
+	f()
+	return time.Since(start)
 }
