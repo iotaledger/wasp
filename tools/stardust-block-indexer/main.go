@@ -50,38 +50,10 @@ func main() {
 	fmt.Printf("Last block index: %v\n", latestState.BlockIndex())
 
 	startTime := time.Now()
-
-	totalBlocksCount := latestState.BlockIndex() + 1
-	blocksLeft := totalBlocksCount
-
-	var estimateRunTime time.Duration
-	var avgSpeed int
-	var currentSpeed int
-	prevBlocksLeft := blocksLeft
-	lastEstimateUpdateTime := time.Now()
+	printStats := newStatsPrinter(latestState)
 
 	reverseIterateStates(targetStore, func(trieRoot old_trie.Hash, state old_state.State) bool {
-		blocksLeft--
-
-		const period = time.Second
-		periodicAction(period, &lastEstimateUpdateTime, func() {
-			if state.BlockIndex() != blocksLeft {
-				// Just double-checking
-				panic(fmt.Errorf("blocks left: state block index %d does not match expected block index %d", state.BlockIndex(), blocksLeft))
-			}
-
-			totalBlocksProcessed := totalBlocksCount - blocksLeft
-			relProgress := float64(totalBlocksProcessed) / float64(totalBlocksCount)
-			estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
-			avgSpeed = int(float64(totalBlocksProcessed) / time.Since(startTime).Seconds())
-
-			recentBlocksProcessed := prevBlocksLeft - blocksLeft
-			currentSpeed = int(float64(recentBlocksProcessed) / period.Seconds())
-			prevBlocksLeft = blocksLeft
-		})
-
-		fmt.Printf("\rBlocks left: %v. Speed: %v blocks/sec. Avg speed: %v blocks/sec. Estimate time left: %v           ",
-			blocksLeft, currentSpeed, avgSpeed, estimateRunTime)
+		printStats(state)
 
 		return true
 	})
@@ -145,5 +117,41 @@ func periodicAction(period time.Duration, lastActionTime *time.Time, action func
 	if time.Since(*lastActionTime) >= period {
 		action()
 		*lastActionTime = time.Now()
+	}
+}
+
+func newStatsPrinter(latestState old_state.State) func(state old_state.State) {
+	totalBlocksCount := latestState.BlockIndex() + 1
+	blocksLeft := totalBlocksCount
+
+	var estimateRunTime time.Duration
+	var avgSpeed int
+	var currentSpeed int
+	prevBlocksLeft := blocksLeft
+	startTime := time.Now()
+	lastEstimateUpdateTime := time.Now()
+
+	return func(state old_state.State) {
+		blocksLeft--
+
+		const period = time.Second
+		periodicAction(period, &lastEstimateUpdateTime, func() {
+			if state.BlockIndex() != blocksLeft {
+				// Just double-checking
+				panic(fmt.Errorf("blocks left: state block index %d does not match expected block index %d", state.BlockIndex(), blocksLeft))
+			}
+
+			totalBlocksProcessed := totalBlocksCount - blocksLeft
+			relProgress := float64(totalBlocksProcessed) / float64(totalBlocksCount)
+			estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
+			avgSpeed = int(float64(totalBlocksProcessed) / time.Since(startTime).Seconds())
+
+			recentBlocksProcessed := prevBlocksLeft - blocksLeft
+			currentSpeed = int(float64(recentBlocksProcessed) / period.Seconds())
+			prevBlocksLeft = blocksLeft
+		})
+
+		fmt.Printf("\rBlocks left: %v. Speed: %v blocks/sec. Avg speed: %v blocks/sec. Estimate time left: %v           ",
+			blocksLeft, currentSpeed, avgSpeed, estimateRunTime)
 	}
 }
