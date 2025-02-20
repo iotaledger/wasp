@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/dgravesa/go-parallel/parallel"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -14,8 +15,12 @@ import (
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	"github.com/samber/lo"
 
 	new_isc "github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
@@ -117,8 +122,17 @@ func TestMigrateBlocklog(t *testing.T) {
 
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 
+	// Coming from packages/origin/origin.go InitChain()
+	destStateDraft := destStore.NewOriginStateDraft()
+	destStateDraft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
+	destStateDraft.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
+
+	block := destStore.Commit(destStateDraft)
+	destStore.SetLatest(block.TrieRoot())
+
 	for i := 0; i < len(trieRoots); i++ {
-		destStateDraft := destStore.NewOriginStateDraft()
+		newDraft := lo.Must(destStore.NewStateDraft(time.Now(), block.L1Commitment()))
+
 		trieRootForBlock := trieRoots[uint32(i)]
 
 		k, err := srcStore.BlockByTrieRoot(trieRootForBlock)
@@ -127,10 +141,10 @@ func TestMigrateBlocklog(t *testing.T) {
 		}
 
 		reader := k.MutationsReader()
-		migrations.MigrateBlocklogContract(reader, destStateDraft, old_isc.EmptyChainID(), new_isc.EmptyChainID())
+		migrations.MigrateBlocklogContract(reader, newDraft, old_isc.EmptyChainID(), new_isc.EmptyChainID())
 
-		newBlock := destStore.Commit(destStateDraft)
-		destStore.SetLatest(newBlock.TrieRoot())
+		block = destStore.Commit(newDraft)
+		destStore.SetLatest(block.TrieRoot())
 
 		if i > 0 && i%1000 == 0 {
 			fmt.Printf("\n\n\nINDEX: %d\n\n", i)
