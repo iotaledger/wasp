@@ -17,6 +17,7 @@ import (
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
@@ -62,28 +63,12 @@ func main() {
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 	srcState := lo.Must(srcStore.LatestState())
 
-	indexer := blockindex.LoadOrCreate(srcStore)
-	printIndexerStats(indexer, srcStore)
-
 	if newChainIDStr == "dummy" {
 		// just for easier testing
 		newChainIDStr = "0x00000000000000000000000000000000000000000000000000000000000000ff"
 	}
 	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
 	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
-
-	// CODE for testing of blockindexer
-	// totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
-	// printProgress := newProgressPrinter(totalBlocksCount)
-
-	// for i := uint32(0); i <= totalBlocksCount; i++ {
-	// 	printProgress(func() uint32 { return i })
-
-	// 	block := indexer.BlockByIndex(i)
-	// 	_ = block
-	// }
-
-	// os.Exit(0)
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
@@ -97,6 +82,8 @@ func main() {
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 	destStateDraft := destStore.NewOriginStateDraft()
 
+	//migrateAllBlocks(srcStore, destStore)
+
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
 	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
 	migrations.MigrateBlocklogContract(srcState, destStateDraft)
@@ -108,20 +95,62 @@ func main() {
 	destKVS.Flush()
 }
 
-func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
-	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
+// migrateAllBlocks calls migration functions for all mutations of each block.
+func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore) {
+	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block *old_state.Block) {
 
-	registry := old_collections.NewArrayReadOnly(contractState, old_blocklog.PrefixBlockRegistry)
-	if registry.Len() == 0 {
-		panic("Block registry is empty")
+	})
+}
+
+// forEachBlock iterates over all blocks.
+// It uses index file index.bin if it is present, otherwise it uses indexing on-the-fly with blockindex.BlockIndexer.
+// If index file does not have enough entries, it retrieves the rest of the blocks without indexing.
+func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint32, blockHash old_trie.Hash, block *old_state.Block)) {
+	totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
+	printProgress := newProgressPrinter(totalBlocksCount)
+
+	const indexFilePath = "index.bin"
+	cli.Logf("Trying to read index from %v", indexFilePath)
+
+	blockTrieRoots, indexFileFound := blockindex.ReadIndexFromFile(indexFilePath)
+	if indexFileFound {
+		if len(blockTrieRoots) > int(totalBlocksCount) {
+			panic(fmt.Errorf("index file contains more entries than there are blocks: %v > %v", len(blockTrieRoots), totalBlocksCount))
+		}
+		if len(blockTrieRoots) < int(totalBlocksCount) {
+			cli.Logf("Index file contains less entries than there are blocks - last %v blocks will be retrieves without indexing: %v < %v",
+				len(blockTrieRoots), totalBlocksCount, totalBlocksCount-uint32(len(blockTrieRoots)))
+		}
+
+		for i, trieRoot := range blockTrieRoots {
+			printProgress(func() uint32 { return uint32(i) })
+			block := lo.Must(srcStore.BlockByTrieRoot(trieRoot))
+			f(uint32(i), trieRoot, &block)
+		}
+
+		cli.Logf("Retrieving next blocks without indexing...")
+
+		for i := uint32(len(blockTrieRoots)); i < totalBlocksCount; i++ {
+			printProgress(func() uint32 { return uint32(i) })
+			block := lo.Must(srcStore.BlockByIndex(i))
+			f(uint32(i), block.TrieRoot(), &block)
+		}
+
+		return
 	}
 
-	blockInfoBytes := registry.GetAt(registry.Len() - 1)
+	cli.Logf("Index file NOT found at %v, using on-the-fly indexing", indexFilePath)
 
-	var blockInfo old_blocklog.BlockInfo
-	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
+	// Index file is not available - using on-the-fly indexer
+	indexer := blockindex.LoadOrCreate(srcStore)
+	printIndexerStats(indexer, srcStore)
 
-	return blockInfo.PreviousAliasOutput.GetAliasOutput()
+	for i := uint32(0); i < totalBlocksCount; i++ {
+		printProgress(func() uint32 { return i })
+
+		block, trieRoot := indexer.BlockByIndex(i)
+		f(i, trieRoot, &block)
+	}
 }
 
 func measureTime(f func()) time.Duration {
@@ -152,7 +181,7 @@ func periodicAction(period time.Duration, lastActionTime *time.Time, action func
 	}
 }
 
-func newProgressPrinter(totalBlocksCount uint32) func(getBlockIndex func() uint32) {
+func newProgressPrinter(totalBlocksCount uint32) (printProgress func(getBlockIndex func() uint32)) {
 	blocksLeft := totalBlocksCount
 
 	var estimateRunTime time.Duration
@@ -180,4 +209,20 @@ func newProgressPrinter(totalBlocksCount uint32) func(getBlockIndex func() uint3
 		fmt.Printf("\rBlocks left: %v. Speed: %v blocks/sec. Avg speed: %v blocks/sec. Estimate time left: %v",
 			blocksLeft, currentSpeed, avgSpeed, estimateRunTime)
 	}
+}
+
+func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
+	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
+
+	registry := old_collections.NewArrayReadOnly(contractState, old_blocklog.PrefixBlockRegistry)
+	if registry.Len() == 0 {
+		panic("Block registry is empty")
+	}
+
+	blockInfoBytes := registry.GetAt(registry.Len() - 1)
+
+	var blockInfo old_blocklog.BlockInfo
+	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
+
+	return blockInfo.PreviousAliasOutput.GetAliasOutput()
 }

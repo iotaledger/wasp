@@ -103,7 +103,7 @@ func main() {
 	w := bufio.NewWriter(f)
 	defer w.Flush()
 
-	log.Printf("Allocating memory %v entries of index...", totalBlocksCount)
+	log.Printf("Allocating memory for %v entries of index...", totalBlocksCount)
 	indexEntries := make([]old_trie.Hash, 0, totalBlocksCount)
 
 	log.Printf("Building index for blocks in range [0; %v]...", lastState.BlockIndex())

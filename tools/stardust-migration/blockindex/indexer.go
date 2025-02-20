@@ -72,7 +72,7 @@ func LoadOrCreate(db old_state.Store) *BlockIndexer {
 }
 
 func LoadOrCreateFromFile(db old_state.Store, indexFilePath string) *BlockIndexer {
-	cli.Logf("Loading index from %v...\n", indexFilePath)
+	cli.Logf("Loading index from %v...", indexFilePath)
 
 	indexBytes, err := os.ReadFile(indexFilePath)
 	if err != nil {
@@ -80,13 +80,13 @@ func LoadOrCreateFromFile(db old_state.Store, indexFilePath string) *BlockIndexe
 			panic(err)
 		}
 
-		cli.Logf("Index file not found at %v, building index...\n", indexFilePath)
+		cli.Logf("Index file not found, building index...")
 		startTime := time.Now()
 		index := BuildIndex(db)
 		cli.Logf("Index built: time = %v, edge states = %v, first edge index = %v, last edge index = %v.",
 			time.Since(startTime), len(index), index[0].Index, index[len(index)-1].Index)
 
-		cli.Logf("Saving index to %v...\n", indexFilePath)
+		cli.Logf("Saving index to %v...", indexFilePath)
 		indexBytes = lo.Must(json.MarshalIndent(index, "", "  "))
 		lo.Must0(os.MkdirAll(path.Dir(indexFilePath), 0o755))
 		lo.Must0(os.WriteFile(indexFilePath, indexBytes, 0o655))
@@ -120,7 +120,7 @@ type BlockIndexer struct {
 	edgeTrieRoots []TrieRootWithIndex
 }
 
-func (bi *BlockIndexer) BlockByIndex(index uint32) old_state.Block {
+func (bi *BlockIndexer) BlockByIndex(index uint32) (old_state.Block, old_trie.Hash) {
 	if latestIndex := bi.LatestBlockIndex(); index > latestIndex {
 		panic(fmt.Errorf("block index %v is out of range [0; %v]", index, latestIndex))
 	}
@@ -137,35 +137,37 @@ func (bi *BlockIndexer) BlockByIndex(index uint32) old_state.Block {
 	})
 
 	if exactMatch {
-		block := lo.Must(bi.s.BlockByTrieRoot(bi.edgeTrieRoots[i].Hash))
+		trieRoot := bi.edgeTrieRoots[i].Hash
+		block := lo.Must(bi.s.BlockByTrieRoot(trieRoot))
 		if block.StateIndex() != index {
 			// Just double checking
 			// TODO: remove for perf
 			panic(fmt.Errorf("unexpected block index %v, expected %v", block.StateIndex(), index))
 		}
 
-		return block
+		return block, trieRoot
 	}
 	if i >= len(bi.edgeTrieRoots) {
 		panic("unexpected")
 	}
 
-	edgeStateRoot := bi.edgeTrieRoots[i].Hash
-	state := lo.Must(bi.s.StateByTrieRoot(edgeStateRoot))
+	edgeTrieRoot := bi.edgeTrieRoots[i].Hash
+	state := lo.Must(bi.s.StateByTrieRoot(edgeTrieRoot))
 
 	nextBlockInfo, ok := old_blocklog.NewStateAccess(state).BlockInfo(index + 1)
 	if !ok {
 		panic(fmt.Errorf("state %v does not have info about block %v", state.BlockIndex(), index+1))
 	}
 
-	block := lo.Must(bi.s.BlockByTrieRoot(nextBlockInfo.PreviousL1Commitment().TrieRoot()))
+	trieRoot := nextBlockInfo.PreviousL1Commitment().TrieRoot()
+	block := lo.Must(bi.s.BlockByTrieRoot(trieRoot))
 	if block.StateIndex() != index {
 		// Just double checking
 		// TODO: remove for perf
 		panic(fmt.Errorf("unexpected block index %v, expected %v", block.StateIndex(), index))
 	}
 
-	return block
+	return block, trieRoot
 }
 
 func (bi *BlockIndexer) LatestBlockIndex() uint32 {
