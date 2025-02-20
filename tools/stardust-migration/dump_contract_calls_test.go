@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"testing"
 	"time"
@@ -15,6 +16,7 @@ import (
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	"github.com/pbnjay/memory"
 	"github.com/samber/lo"
 
 	new_isc "github.com/iotaledger/wasp/packages/isc"
@@ -115,6 +117,16 @@ func dumpCoreContractCalls(srcChainDBDir string, indexFilePath string) {
 	PrintCalledContracts()
 }
 
+func printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+
+	allocatedMB := float64(m.Alloc) / 1024 / 1024
+	systemMB := float64(m.Sys) / 1024 / 1024
+
+	fmt.Printf("Memory usage: %.2fMB (Allocated) %.2fMB (System)\n", allocatedMB, systemMB)
+}
+
 func TestMigrateBlocklog(t *testing.T) {
 	srcDbPath := "/home/luke/dev/wasp_stardust_mainnet/chains/data/iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5"
 	indexFilePath := "/home/luke/dev/wasp_stardust_mainnet/trie_db.bcs"
@@ -130,6 +142,8 @@ func TestMigrateBlocklog(t *testing.T) {
 	block := destStore.Commit(destStateDraft)
 	destStore.SetLatest(block.TrieRoot())
 
+	now := time.Now()
+
 	for i := 0; i < len(trieRoots); i++ {
 		newDraft := lo.Must(destStore.NewStateDraft(time.Now(), block.L1Commitment()))
 
@@ -139,17 +153,38 @@ func TestMigrateBlocklog(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-
 		reader := k.MutationsReader()
 		migrations.MigrateBlocklogContract(reader, newDraft, old_isc.EmptyChainID(), new_isc.EmptyChainID())
+
+		// Handle deletions
+		// Here its easy, because the key remains the same for both databases
+		// For the whole migration we probably should create some OldToNewKey function handler to solve the differences.
+		// I think most of all keys are just 1:1 mappings.
+		for del, _ := range k.Mutations().Dels {
+			if newDraft.Has(kv.Key(del[:])) {
+				newDraft.Del(kv.Key(del[:]))
+			}
+		}
 
 		block = destStore.Commit(newDraft)
 		destStore.SetLatest(block.TrieRoot())
 
 		if i > 0 && i%1000 == 0 {
 			fmt.Printf("\n\n\nINDEX: %d\n\n", i)
+
+			fmt.Printf("Time start: %s, time now: %s\n", now.String(), time.Now().String())
+
+			printMemUsage()
+
+			freeMemory := memory.FreeMemory()
+			totalMemory := memory.TotalMemory()
+
+			fmt.Printf("Free memory: %d, total memory: %d\n", freeMemory, totalMemory)
 		}
+
 	}
+
+	fmt.Printf("Time start: %s, time now: %s\nDONE!", now.String(), time.Now().String())
 }
 
 func TestDumpContractCalls(t *testing.T) {
