@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
+	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
@@ -15,7 +16,7 @@ import (
 )
 
 func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
-	log.Print("Migrating evm contract...\n")
+	cli.Log("Migrating evm contract...\n")
 
 	oldContractState := old_evm.ContractPartitionR(oldChainState)
 	newContractState := evm.ContractPartition(newChainState)
@@ -29,11 +30,11 @@ func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState state.
 	migrateISCMagicAllowance(oldMagicState, newMagicState)
 	migrateISCMagicERC20ExternalNativeTokens(oldMagicState, newMagicState)
 
-	log.Print("Migrated evm contract\n")
+	cli.Log("Migrated evm contract\n")
 }
 
 func migrateEVMEmulator(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
-	log.Print("Migrating evm/emulator...\n")
+	cli.Log("Migrating evm/emulator...\n")
 
 	oldEmulatorState := old_evm.EmulatorStateSubrealmR(oldContractState)
 	newEmulatorState := evm.EmulatorStateSubrealm(newContractState)
@@ -47,11 +48,11 @@ func migrateEVMEmulator(oldContractState old_kv.KVStoreReader, newContractState 
 		return true
 	})
 
-	log.Print("Migrated %v keys for evm/emulator\n", progress.Count)
+	cli.Log("Migrated %v keys for evm/emulator\n", progress.Count)
 }
 
 func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
-	log.Print("Migrating iscmagic/privileged...\n")
+	cli.Log("Migrating iscmagic/privileged...\n")
 
 	count := 0
 
@@ -62,11 +63,11 @@ func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState
 		return true
 	})
 
-	log.Print("Migrated %v keys for iscmagic/privileged\n", count)
+	cli.Log("Migrated %v keys for iscmagic/privileged\n", count)
 }
 
 func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
-	log.Print("Migrating iscmagic/allowance...\n")
+	cli.Log("Migrating iscmagic/allowance...\n")
 
 	progress := NewProgressPrinter()
 
@@ -90,11 +91,11 @@ func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState 
 		return true
 	})
 
-	log.Print("Migrated %v keys for iscmagic/allowance\n", progress.Count)
+	cli.Log("Migrated %v keys for iscmagic/allowance\n", progress.Count)
 }
 
 func migrateISCMagicERC20ExternalNativeTokens(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
-	log.Print("Migrating iscmagic/erc20_external_native_tokens...\n")
+	cli.Log("Migrating iscmagic/erc20_external_native_tokens...\n")
 
 	count := 0
 
@@ -107,5 +108,5 @@ func migrateISCMagicERC20ExternalNativeTokens(oldMagicState old_kv.KVStoreReader
 		return true
 	})
 
-	log.Print("Migrated %v keys for iscmagic/erc20_external_native_tokens\n", count)
+	cli.Log("Migrated %v keys for iscmagic/erc20_external_native_tokens\n", count)
 }

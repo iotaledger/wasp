@@ -5,10 +5,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
@@ -24,6 +26,8 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 
+	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
+	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
@@ -54,6 +58,20 @@ func main() {
 		log.Fatalf("destination database cannot reside inside source database folder")
 	}
 
+	srcKVS := db.Connect(srcChainDBDir)
+	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
+	srcState := lo.Must(srcStore.LatestState())
+
+	indexer := blockindex.LoadOrCreate(srcStore)
+	printIndexerStats(indexer, srcStore)
+
+	if newChainIDStr == "dummy" {
+		// just for easier testing
+		newChainIDStr = "0x00000000000000000000000000000000000000000000000000000000000000ff"
+	}
+	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
+	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
+
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
 	entries := lo.Must(os.ReadDir(destChainDBDir))
@@ -61,13 +79,6 @@ func main() {
 		// TODO: Disabled this check now, so you can run the migrator multiple times for testing
 		// log.Fatalf("destination directory is not empty: %v", destChainDBDir)
 	}
-
-	srcKVS := db.Connect(srcChainDBDir)
-	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
-	srcState := lo.Must(srcStore.LatestState())
-
-	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
-	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
 
 	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
@@ -98,4 +109,25 @@ func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
 	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
 
 	return blockInfo.PreviousAliasOutput.GetAliasOutput()
+}
+
+func measureTime(f func()) time.Duration {
+	start := time.Now()
+	f()
+	return time.Since(start)
+}
+
+func measureTimeAndPrint(descr string, f func()) {
+	d := measureTime(f)
+	cli.Logf("%v: %v\n", descr, d)
+}
+
+func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
+	latestBlockIndex := lo.Must(s.LatestBlockIndex())
+	measureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
+	measureTimeAndPrint("Time for retrieving block 100", func() { indexer.BlockByIndex(100) })
+	measureTimeAndPrint("Time for retrieving block 10000", func() { indexer.BlockByIndex(10000) })
+	measureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
+	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
+	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
 }

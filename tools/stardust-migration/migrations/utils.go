@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 )
 
 // DEPRECATED:
@@ -310,7 +311,7 @@ func p[OldK, OldV, NewK, NewV any](f KVMigrationFunc[OldK, OldV, NewK, NewV]) KV
 	return func(oldKey OldK, oldVal OldV) (NewK, NewV) {
 		callCount++
 		if callCount%100 == 0 {
-			fmt.Printf("\rProcessed: %v         ", callCount)
+			cli.Printf("\rProcessed: %v         ", callCount)
 		}
 
 		return f(oldKey, oldVal)
@@ -336,7 +337,7 @@ type ProgressPrinter struct {
 func (p *ProgressPrinter) Print() {
 	p.Count++
 	if p.Count%p.period == 0 {
-		fmt.Printf("\rProcessed: %v         ", p.Count)
+		cli.Printf("\rProcessed: %v         ", p.Count)
 	}
 }
 
