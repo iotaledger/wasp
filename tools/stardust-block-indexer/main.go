@@ -73,14 +73,15 @@ func main() {
 	log.Printf("Time for getting first state by hash: %v\n", timeForGettingFirstState)
 
 	latestState := lo.Must(targetStore.LatestState())
+	totalBlocksCount := latestState.BlockIndex() + 1
 
 	fmt.Printf("Last block index: %v\n", latestState.BlockIndex())
 
 	startTime := time.Now()
-	printStats := newStatsPrinter(latestState)
+	printStats := newStatsPrinter(totalBlocksCount)
 
-	reverseIterateStates(targetStore, func(trieRoot old_trie.Hash, state old_state.State) bool {
-		printStats(state)
+	reverseIterateBlocks(targetStore, func(trieRoot old_trie.Hash, block old_state.Block) bool {
+		printStats(block.StateIndex)
 
 		return true
 	})
@@ -128,7 +129,7 @@ func reverseIterateStates(s old_indexedstore.IndexedStore, f func(trieRoot old_t
 		if prevL1Commitment == nil {
 			if state.BlockIndex() != 0 {
 				// Just double-checking
-				panic(fmt.Errorf("iterating the chain: state block index %d has no previous L1 commitment", state.BlockIndex()))
+				panic(fmt.Errorf("state block index %d has no previous L1 commitment", state.BlockIndex()))
 			}
 
 			// done
@@ -140,6 +141,31 @@ func reverseIterateStates(s old_indexedstore.IndexedStore, f func(trieRoot old_t
 	}
 }
 
+func reverseIterateBlocks(s old_indexedstore.IndexedStore, f func(trieRoot old_trie.Hash, block old_state.Block) bool) {
+	block := lo.Must(s.LatestBlock())
+	trieRoot := block.TrieRoot()
+
+	for {
+		if !f(trieRoot, block) {
+			return
+		}
+
+		prevL1Commitment := block.PreviousL1Commitment()
+		if prevL1Commitment == nil {
+			if block.StateIndex() != 0 {
+				// Just double-checking
+				panic(fmt.Errorf("block index %d has no previous L1 commitment", block.StateIndex()))
+			}
+
+			// done
+			break
+		}
+
+		trieRoot = prevL1Commitment.TrieRoot()
+		block = lo.Must(s.BlockByTrieRoot(trieRoot))
+	}
+}
+
 func periodicAction(period time.Duration, lastActionTime *time.Time, action func()) {
 	if time.Since(*lastActionTime) >= period {
 		action()
@@ -147,8 +173,7 @@ func periodicAction(period time.Duration, lastActionTime *time.Time, action func
 	}
 }
 
-func newStatsPrinter(latestState old_state.State) func(state old_state.State) {
-	totalBlocksCount := latestState.BlockIndex() + 1
+func newStatsPrinter(totalBlocksCount uint32) func(getBlockIndex func() uint32) {
 	blocksLeft := totalBlocksCount
 
 	var estimateRunTime time.Duration
@@ -158,14 +183,14 @@ func newStatsPrinter(latestState old_state.State) func(state old_state.State) {
 	startTime := time.Now()
 	lastEstimateUpdateTime := time.Now()
 
-	return func(state old_state.State) {
+	return func(getBlockIndex func() uint32) {
 		blocksLeft--
 
 		const period = time.Second
 		periodicAction(period, &lastEstimateUpdateTime, func() {
-			if state.BlockIndex() != blocksLeft {
+			if getBlockIndex() != blocksLeft {
 				// Just double-checking
-				panic(fmt.Errorf("blocks left: state block index %d does not match expected block index %d", state.BlockIndex(), blocksLeft))
+				panic(fmt.Errorf("state block index %d does not match expected block index %d", getBlockIndex(), blocksLeft))
 			}
 
 			totalBlocksProcessed := totalBlocksCount - blocksLeft
