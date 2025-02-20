@@ -97,7 +97,7 @@ func main() {
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
 func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore) {
-	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block *old_state.Block) {
+	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
 
 	})
 }
@@ -105,7 +105,8 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 // forEachBlock iterates over all blocks.
 // It uses index file index.bin if it is present, otherwise it uses indexing on-the-fly with blockindex.BlockIndexer.
 // If index file does not have enough entries, it retrieves the rest of the blocks without indexing.
-func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint32, blockHash old_trie.Hash, block *old_state.Block)) {
+// Index file is created using stardust-block-indexer tool.
+func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
 	totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
 	printProgress := newProgressPrinter(totalBlocksCount)
 
@@ -125,7 +126,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 		for i, trieRoot := range blockTrieRoots {
 			printProgress(func() uint32 { return uint32(i) })
 			block := lo.Must(srcStore.BlockByTrieRoot(trieRoot))
-			f(uint32(i), trieRoot, &block)
+			f(uint32(i), trieRoot, block)
 		}
 
 		cli.Logf("Retrieving next blocks without indexing...")
@@ -133,7 +134,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 		for i := uint32(len(blockTrieRoots)); i < totalBlocksCount; i++ {
 			printProgress(func() uint32 { return uint32(i) })
 			block := lo.Must(srcStore.BlockByIndex(i))
-			f(uint32(i), block.TrieRoot(), &block)
+			f(uint32(i), block.TrieRoot(), block)
 		}
 
 		return
@@ -149,7 +150,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 		printProgress(func() uint32 { return i })
 
 		block, trieRoot := indexer.BlockByIndex(i)
-		f(i, trieRoot, &block)
+		f(i, trieRoot, block)
 	}
 }
 
