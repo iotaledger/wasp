@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 )
 
 func Create(dbDir string) kvstore.KVStore {
