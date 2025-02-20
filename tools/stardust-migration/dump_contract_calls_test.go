@@ -135,38 +135,38 @@ func TestMigrateBlocklog(t *testing.T) {
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 
 	// Coming from packages/origin/origin.go InitChain()
-	destStateDraft := destStore.NewOriginStateDraft()
-	destStateDraft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
-	destStateDraft.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
+	originStateDraft := destStore.NewOriginStateDraft()
+	originStateDraft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
+	originStateDraft.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
 
-	block := destStore.Commit(destStateDraft)
+	block := destStore.Commit(originStateDraft)
 	destStore.SetLatest(block.TrieRoot())
 
 	now := time.Now()
 
 	for i := 0; i < len(trieRoots); i++ {
-		newDraft := lo.Must(destStore.NewStateDraft(time.Now(), block.L1Commitment()))
+		destStateDraft := lo.Must(destStore.NewStateDraft(time.Now(), block.L1Commitment()))
 
 		trieRootForBlock := trieRoots[uint32(i)]
 
-		k, err := srcStore.BlockByTrieRoot(trieRootForBlock)
+		srcBlock, err := srcStore.BlockByTrieRoot(trieRootForBlock)
 		if err != nil {
 			panic(err)
 		}
-		reader := k.MutationsReader()
-		migrations.MigrateBlocklogContract(reader, newDraft, old_isc.EmptyChainID(), new_isc.EmptyChainID())
 
 		// Handle deletions
 		// Here its easy, because the key remains the same for both databases
 		// For the whole migration we probably should create some OldToNewKey function handler to solve the differences.
 		// I think most of all keys are just 1:1 mappings.
-		for del, _ := range k.Mutations().Dels {
-			if newDraft.Has(kv.Key(del[:])) {
-				newDraft.Del(kv.Key(del[:]))
+		for del, _ := range srcBlock.Mutations().Dels {
+			if destStateDraft.Has(kv.Key(del[:])) {
+				destStateDraft.Del(kv.Key(del[:]))
 			}
 		}
 
-		block = destStore.Commit(newDraft)
+		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, old_isc.EmptyChainID(), new_isc.EmptyChainID())
+
+		block = destStore.Commit(destStateDraft)
 		destStore.SetLatest(block.TrieRoot())
 
 		if i > 0 && i%1000 == 0 {
