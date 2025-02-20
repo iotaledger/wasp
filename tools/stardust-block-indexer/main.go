@@ -32,11 +32,16 @@ func main() {
 	defer stop()
 
 	if len(os.Args) < 3 {
-		log.Fatalf("usage: %s <chain-db-dir> <dest-index-file>", os.Args[0])
+		log.Fatalf("usage: %s <chain-db-dir> <dest-index-file> [lastBlockIdx]", os.Args[0])
 	}
 
 	targetChainDBDir := os.Args[1]
 	destIndexFile := os.Args[2]
+
+	var lastBlockIdx uint32
+	if len(os.Args) > 3 {
+		lo.Must(fmt.Sscanf(os.Args[3], "%d", &lastBlockIdx))
+	}
 
 	targetChainDBDir = lo.Must(filepath.Abs(targetChainDBDir))
 	destIndexFile = lo.Must(filepath.Abs(destIndexFile))
@@ -78,10 +83,16 @@ func main() {
 	log.Printf("Time for getting almost last state by hash: %v\n", timeForGettingAlmostLastState)
 	log.Printf("Time for getting first state by hash: %v\n", timeForGettingFirstState)
 
-	latestState := lo.Must(targetStore.LatestState())
-	totalBlocksCount := latestState.BlockIndex() + 1
+	var lastState old_state.State
+	if lastBlockIdx == 0 {
+		lastState = lo.Must(targetStore.LatestState())
+	} else {
+		lastState = lo.Must(targetStore.StateByIndex(lastBlockIdx))
+	}
 
-	fmt.Printf("Last block index: %v\n", latestState.BlockIndex())
+	totalBlocksCount := lastState.BlockIndex() + 1
+
+	fmt.Printf("Last block index: %v\n", lastState.BlockIndex())
 
 	startTime := time.Now()
 	printStats := newStatsPrinter(totalBlocksCount)
@@ -95,8 +106,8 @@ func main() {
 	log.Printf("Allocating memory %v entries of index...", totalBlocksCount)
 	indexEntries := make([]old_trie.Hash, 0, totalBlocksCount)
 
-	log.Printf("Building index...")
-	reverseIterateBlocks(targetStore, func(trieRoot old_trie.Hash, block old_state.Block) bool {
+	log.Printf("Building index for blocks in range [0; %v]...", lastState.BlockIndex())
+	reverseIterateBlocks(targetStore, lastBlockIdx, func(trieRoot old_trie.Hash, block old_state.Block) bool {
 		printStats(block.StateIndex)
 		indexEntries = append(indexEntries, trieRoot)
 
@@ -168,9 +179,17 @@ func reverseIterateStates(s old_indexedstore.IndexedStore, f func(trieRoot old_t
 	}
 }
 
-func reverseIterateBlocks(s old_indexedstore.IndexedStore, f func(trieRoot old_trie.Hash, block old_state.Block) bool) {
-	block := lo.Must(s.LatestBlock())
-	trieRoot := block.TrieRoot()
+func reverseIterateBlocks(s old_indexedstore.IndexedStore, fromIdx uint32, f func(trieRoot old_trie.Hash, block old_state.Block) bool) {
+	var block old_state.Block
+	var trieRoot old_trie.Hash
+
+	if fromIdx == 0 {
+		block = lo.Must(s.LatestBlock())
+		trieRoot = block.TrieRoot()
+	} else {
+		block = lo.Must(s.BlockByIndex(fromIdx))
+		trieRoot = block.TrieRoot()
+	}
 
 	for {
 		if !f(trieRoot, block) {
