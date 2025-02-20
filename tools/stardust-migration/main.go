@@ -72,6 +72,19 @@ func main() {
 	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
 	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
 
+	// CODE for testing of blockindexer
+	// totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
+	// printProgress := newProgressPrinter(totalBlocksCount)
+
+	// for i := uint32(0); i <= totalBlocksCount; i++ {
+	// 	printProgress(func() uint32 { return i })
+
+	// 	block := indexer.BlockByIndex(i)
+	// 	_ = block
+	// }
+
+	// os.Exit(0)
+
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
 	entries := lo.Must(os.ReadDir(destChainDBDir))
@@ -130,4 +143,41 @@ func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	measureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
+}
+
+func periodicAction(period time.Duration, lastActionTime *time.Time, action func()) {
+	if time.Since(*lastActionTime) >= period {
+		action()
+		*lastActionTime = time.Now()
+	}
+}
+
+func newProgressPrinter(totalBlocksCount uint32) func(getBlockIndex func() uint32) {
+	blocksLeft := totalBlocksCount
+
+	var estimateRunTime time.Duration
+	var avgSpeed int
+	var currentSpeed int
+	prevBlocksLeft := blocksLeft
+	startTime := time.Now()
+	lastEstimateUpdateTime := time.Now()
+
+	return func(getBlockIndex func() uint32) {
+		blocksLeft--
+
+		const period = time.Second
+		periodicAction(period, &lastEstimateUpdateTime, func() {
+			totalBlocksProcessed := totalBlocksCount - blocksLeft
+			relProgress := float64(totalBlocksProcessed) / float64(totalBlocksCount)
+			estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
+			avgSpeed = int(float64(totalBlocksProcessed) / time.Since(startTime).Seconds())
+
+			recentBlocksProcessed := prevBlocksLeft - blocksLeft
+			currentSpeed = int(float64(recentBlocksProcessed) / period.Seconds())
+			prevBlocksLeft = blocksLeft
+		})
+
+		fmt.Printf("\rBlocks left: %v. Speed: %v blocks/sec. Avg speed: %v blocks/sec. Estimate time left: %v",
+			blocksLeft, currentSpeed, avgSpeed, estimateRunTime)
+	}
 }
