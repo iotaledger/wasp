@@ -4,10 +4,13 @@
 package main
 
 import (
+	"bufio"
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -25,6 +28,9 @@ import (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	if len(os.Args) < 3 {
 		log.Fatalf("usage: %s <chain-db-dir> <dest-index-file>", os.Args[0])
 	}
@@ -80,14 +86,35 @@ func main() {
 	startTime := time.Now()
 	printStats := newStatsPrinter(totalBlocksCount)
 
+	log.Printf("Creating empty index file at %v...", destIndexFile)
+	f := lo.Must(os.Create(destIndexFile))
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	defer w.Flush()
+
+	log.Printf("Allocating memory %v entries of index...", totalBlocksCount)
+	indexEntries := make([]old_trie.Hash, 0, totalBlocksCount)
+
+	log.Printf("Building index...")
 	reverseIterateBlocks(targetStore, func(trieRoot old_trie.Hash, block old_state.Block) bool {
 		printStats(block.StateIndex)
+		indexEntries = append(indexEntries, trieRoot)
 
-		return true
+		return ctx.Err() == nil
 	})
 
 	fmt.Println()
 	fmt.Printf("Elapsed time: %v\n", time.Since(startTime))
+
+	log.Printf("Saving index to %v...", destIndexFile)
+
+	for i := len(indexEntries) - 1; i >= 0; i-- {
+		if _, err := w.Write(indexEntries[i].Bytes()); err != nil {
+			panic(err)
+		}
+	}
+
+	log.Printf("Index saved to %v", destIndexFile)
 }
 
 func ConnectToDB(dbDir string) old_kvstore.KVStore {
