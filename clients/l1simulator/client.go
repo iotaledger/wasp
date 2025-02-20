@@ -144,13 +144,64 @@ func (c *Client) AdvanceEpoch() error {
 	return nil
 }
 
-func (c *Client) ProgressL1() error {
+func (c *Client) GetCheckpointForTesting() (*Checkpoint, error) {
+	resp, err := c.httpClient.Get(c.baseURL + "/checkpoint")
+	if err != nil {
+		return nil, fmt.Errorf("create checkpoint request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	var checkpoint Checkpoint
+	if err := json.NewDecoder(resp.Body).Decode(&checkpoint); err != nil {
+		return nil, fmt.Errorf("decoding response failed: %w", err)
+	}
+
+	return &checkpoint, nil
+}
+
+func (c *Client) WaitForNewCheckpoint(currentCheckpoint *Checkpoint) error {
+	// Add reasonable timeout to prevent infinite polling
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("timeout waiting for new checkpoint")
+		case <-ticker.C:
+			newCheckpoint, err := c.GetCheckpointForTesting()
+			if err != nil {
+				return fmt.Errorf("failed to get checkpoint: %w", err)
+			}
+
+			fmt.Println("Wait for new checkpoint")
+
+			if newCheckpoint.Summary.SequenceNumber > currentCheckpoint.Summary.SequenceNumber {
+				return nil
+			}
+		}
+	}
+}
+
+func (c *Client) ProgressL1(currentCheckpoint *Checkpoint) error {
 	_, err := c.CreateCheckpoint()
 	if err != nil {
 		return err
 	}
 
 	err = c.AdvanceClock(1000)
+	if err != nil {
+		return err
+	}
+
+	err = c.WaitForNewCheckpoint(currentCheckpoint)
 	if err != nil {
 		return err
 	}
@@ -162,11 +213,17 @@ func (c *Client) Publish(
 	ctx context.Context,
 	req iotaclient.PublishRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := c.L1Client.Publish(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ProgressL1()
+
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -177,11 +234,16 @@ func (c *Client) MergeCoins(
 	ctx context.Context,
 	req iotaclient.MergeCoinsRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := c.L1Client.MergeCoins(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ProgressL1()
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -192,11 +254,16 @@ func (c *Client) ExecuteTransactionBlock(
 	ctx context.Context,
 	req iotaclient.ExecuteTransactionBlockRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := c.L1Client.ExecuteTransactionBlock(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ProgressL1()
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -207,11 +274,16 @@ func (c *Client) DryRunTransaction(
 	ctx context.Context,
 	txDataBytes iotago.Base64Data,
 ) (*iotajsonrpc.DryRunTransactionBlockResponse, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := c.L1Client.DryRunTransaction(ctx, txDataBytes)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ProgressL1()
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -222,11 +294,16 @@ func (c *Client) SplitCoin(
 	ctx context.Context,
 	req iotaclient.SplitCoinRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := c.L1Client.SplitCoin(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ProgressL1()
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -237,11 +314,16 @@ func (c *Client) SignAndExecuteTransaction(
 	ctx context.Context,
 	req *iotaclient.SignAndExecuteTransactionRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := c.L1Client.SignAndExecuteTransaction(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	err = c.ProgressL1()
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -256,11 +338,16 @@ func (c *Client) PublishContract(
 	gasBudget uint64,
 	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, *iotago.PackageID, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	ret, packageID, err := c.PublishContract(ctx, signer, modules, dependencies, gasBudget, options)
 	if err != nil {
 		return nil, nil, err
 	}
-	err = c.ProgressL1()
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -268,11 +355,17 @@ func (c *Client) PublishContract(
 }
 
 func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) error {
-	err := c.L1Client.RequestFunds(ctx, address)
+	checkpoint, err := c.GetCheckpointForTesting()
 	if err != nil {
 		return err
 	}
-	err = c.ProgressL1()
+
+	err = c.L1Client.RequestFunds(ctx, address)
+	if err != nil {
+		return err
+	}
+
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return err
 	}
@@ -280,13 +373,20 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) er
 }
 
 func (c *Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
+	checkpoint, err := c.GetCheckpointForTesting()
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
 	ret, err := c.L1Client.DeployISCContracts(ctx, signer)
 	if err != nil {
 		return iotago.PackageID{}, err
 	}
-	err = c.ProgressL1()
+
+	err = c.ProgressL1(checkpoint)
 	if err != nil {
 		return iotago.PackageID{}, err
 	}
+
 	return ret, nil
 }
