@@ -7,13 +7,12 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
-func MigrateErrorsContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
+func MigrateErrorsContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_errors.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, errors.Contract.Hname())
 

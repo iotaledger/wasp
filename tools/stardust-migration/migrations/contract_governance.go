@@ -5,7 +5,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -23,7 +22,7 @@ import (
 
 func MigrateGovernanceContract(
 	oldChainState old_kv.KVStoreReader,
-	newChainState state.StateDraft,
+	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
@@ -31,7 +30,7 @@ func MigrateGovernanceContract(
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, governance.Contract.Hname())
 
-	cli.Log("Migrating governance contract\n")
+	cli.DebugLog("Migrating governance contract\n")
 
 	migrateChainOwnerID(oldChainState, newContractState, oldChainID, newChainID) // WARNING: oldChainState is specifically used here
 	migrateChainOwnerIDDelegetaed(oldContractState, newContractState, oldChainID, newChainID)
@@ -49,7 +48,7 @@ func MigrateGovernanceContract(
 
 	// TODO: VarAllowedStateControllerAddresses
 
-	cli.Log("Migrated governance contract\n")
+	cli.DebugLog("Migrated governance contract\n")
 }
 
 func migrateChainOwnerID(
@@ -58,13 +57,13 @@ func migrateChainOwnerID(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Log("Migrating chain owner...\n")
+	cli.DebugLog("Migrating chain owner...\n")
 
 	oldChainOwnerID := old_governance.NewStateAccess(oldChainState).ChainOwnerID()
 	newChainOwnerID := OldAgentIDtoNewAgentID(oldChainOwnerID, oldChainID, newChainID)
 	governance.NewStateWriter(newContractState).SetChainOwnerID(newChainOwnerID)
 
-	cli.Log("Migrated chain owner\n")
+	cli.DebugLog("Migrated chain owner\n")
 }
 
 func migrateChainOwnerIDDelegetaed(
@@ -73,7 +72,7 @@ func migrateChainOwnerIDDelegetaed(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Log("Migrating chain owner delegated...\n")
+	cli.DebugLog("Migrating chain owner delegated...\n")
 
 	oldChainOwnerDelegatedIDBytes := oldContractState.Get(old_governance.VarChainOwnerIDDelegated)
 	if len(oldChainOwnerDelegatedIDBytes) != 0 {
@@ -82,7 +81,7 @@ func migrateChainOwnerIDDelegetaed(
 		governance.NewStateWriter(newContractState).SetChainOwnerIDDelegated(newChainIDOwnerDelegatedID)
 	}
 
-	cli.Log("Migrated chain owner delegated\n")
+	cli.DebugLog("Migrated chain owner delegated\n")
 }
 
 func migratePayoutAgent(
@@ -91,18 +90,18 @@ func migratePayoutAgent(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Logf("Migrating Payout agent...\n")
+	cli.DebugLogf("Migrating Payout agent...\n")
 
 	oldPayoudAgentID := old_governance.MustGetPayoutAgentID(oldContractState)
 	newPayoutAgentID := OldAgentIDtoNewAgentID(oldPayoudAgentID, oldChainID, newChainID)
 
 	governance.NewStateWriter(newContractState).SetPayoutAgentID(newPayoutAgentID)
 
-	cli.Logf("Migrated Payout agent\n")
+	cli.DebugLogf("Migrated Payout agent\n")
 }
 
 func migrateGasFeePolicy(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
-	cli.Log("Migrating gas fee policy...\n")
+	cli.DebugLog("Migrating gas fee policy...\n")
 
 	oldPolicy := old_governance.MustGetGasFeePolicy(oldContractState)
 	newPolicy := gas.FeePolicy{
@@ -113,11 +112,11 @@ func migrateGasFeePolicy(oldContractState old_kv.KVStoreReader, newContractState
 
 	governance.NewStateWriter(newContractState).SetGasFeePolicy(&newPolicy)
 
-	cli.Log("Migrated gas fee policy\n")
+	cli.DebugLog("Migrated gas fee policy\n")
 }
 
 func migrateGasLimits(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
-	cli.Log("Migrating gas limits...\n")
+	cli.DebugLog("Migrating gas limits...\n")
 
 	oldLimits := old_governance.MustGetGasLimits(oldContractState)
 	newLimits := gas.Limits{
@@ -129,14 +128,14 @@ func migrateGasLimits(oldContractState old_kv.KVStoreReader, newContractState kv
 
 	governance.NewStateWriter(newContractState).SetGasLimits(&newLimits)
 
-	cli.Log("Migrated gas limits\n")
+	cli.DebugLog("Migrated gas limits\n")
 }
 
 func migrateAccessNodes(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 ) {
-	cli.Log("Migrating access nodes...\n")
+	cli.DebugLog("Migrating access nodes...\n")
 
 	oldAccessNodes := old_governance.AccessNodesMapR(oldContractState)
 	newAccessNodes := governance.NewStateWriter(newContractState).AccessNodesMap()
@@ -151,14 +150,14 @@ func migrateAccessNodes(
 		return true
 	})
 
-	cli.Log("Migrated access nodes\n")
+	cli.DebugLog("Migrated access nodes\n")
 }
 
 func migrateAccessNodeCandidates(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 ) {
-	cli.Log("Migrating access node candidates...\n")
+	cli.DebugLog("Migrating access node candidates...\n")
 
 	oldCandidates := old_governance.AccessNodeCandidatesMapR(oldContractState)
 	newCandidates := governance.NewStateWriter(newContractState).AccessNodeCandidatesMap()
@@ -185,26 +184,26 @@ func migrateAccessNodeCandidates(
 		return true
 	})
 
-	cli.Log("Migrated access node candidates\n")
+	cli.DebugLog("Migrated access node candidates\n")
 }
 
 func migrateMaintenanceStatus(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 ) {
-	cli.Log("Migrating maintenance status...\n")
+	cli.DebugLog("Migrating maintenance status...\n")
 
 	maintenanceStatus := old_codec.MustDecodeBool(oldContractState.Get(old_governance.VarMaintenanceStatus))
 	governance.NewStateWriter(newContractState).SetMaintenanceStatus(maintenanceStatus)
 
-	cli.Log("Migrated maintenance status\n")
+	cli.DebugLog("Migrated maintenance status\n")
 }
 
 func migrateMetadata(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 ) {
-	cli.Log("Migrating public chain metadata...\n")
+	cli.DebugLog("Migrating public chain metadata...\n")
 
 	oldMetadata := old_governance.MustGetMetadata(oldContractState)
 	newMetadata := isc.PublicChainMetadata{
@@ -217,29 +216,29 @@ func migrateMetadata(
 
 	governance.NewStateWriter(newContractState).SetMetadata(&newMetadata)
 
-	cli.Log("Migrated ublic chain metadata\n")
+	cli.DebugLog("Migrated ublic chain metadata\n")
 }
 
 func migratePublicURL(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 ) {
-	cli.Log("Migrating public URL...\n")
+	cli.DebugLog("Migrating public URL...\n")
 
 	publicURL := lo.Must(old_governance.GetPublicURL(oldContractState))
 	governance.NewStateWriter(newContractState).SetPublicURL(publicURL)
 
-	cli.Log("Migrated public URL\n")
+	cli.DebugLog("Migrated public URL\n")
 }
 
 func migrateBlockKeepAmount(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 ) {
-	cli.Log("Migrating block keep amount...\n")
+	cli.DebugLog("Migrating block keep amount...\n")
 
 	blockKeepAmount := old_governance.GetBlockKeepAmount(oldContractState)
 	governance.NewStateWriter(newContractState).SetBlockKeepAmount(blockKeepAmount)
 
-	cli.Log("Migrated block keep amount\n")
+	cli.DebugLog("Migrated block keep amount\n")
 }

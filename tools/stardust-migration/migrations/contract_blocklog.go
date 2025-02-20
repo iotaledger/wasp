@@ -19,7 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
@@ -27,7 +26,7 @@ import (
 )
 
 func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.Log("Migrating block registry")
+	cli.DebugLog("Migrating block registry")
 	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(oldBlocks.Len())
@@ -75,7 +74,7 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		break
 	}
 
-	cli.Logf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
+	cli.DebugLogf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
 	progress := NewProgressPrinter(500)
 
 	for i := uint32(lastUnprunedBlock); i < oldBlocks.Len(); i++ {
@@ -106,11 +105,11 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		progress.Print()
 	}
 
-	cli.Logf("\nblockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
+	cli.DebugLogf("\nblockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
 }
 
 func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.Log("Migrating request lookup index")
+	cli.DebugLog("Migrating request lookup index")
 
 	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
 	newLookup := collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
@@ -208,7 +207,7 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore) 
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
 	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
 
-	cli.Logf("Migrating request receipts (%d)\n", oldRequests.Len())
+	cli.DebugLogf("Migrating request receipts (%d)\n", oldRequests.Len())
 
 	_ = collections.NewMap(newState, blocklog.PrefixRequestReceipts)
 
@@ -246,17 +245,17 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore) 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
 	// No need to migrate. Just print a warning if there are any
 
-	cli.Logf("Listing Unprocessable Requests...\n")
+	cli.DebugLogf("Listing Unprocessable Requests...\n")
 
 	count := IterateByPrefix(oldState, old_blocklog.PrefixUnprocessableRequests, func(k isc.RequestID, v []byte) {
-		cli.Logf("Warning: unprocessable request found %v", k.String())
+		cli.DebugLogf("Warning: unprocessable request found %v", k.String())
 	})
 
-	cli.Logf("Listing Unprocessable Requests completed (found %v records)\n", count)
+	cli.DebugLogf("Listing Unprocessable Requests completed (found %v records)\n", count)
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) {
-	cli.Log("Migrating blocklog contract\n")
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
+	cli.DebugLog("Migrating blocklog contract\n")
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
@@ -266,5 +265,5 @@ func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState s
 	//migrateRequestLookupIndex(oldContractState, newContractState)
 	migrateRequestReceipts(oldContractState, newContractState)
 
-	cli.Log("Migrated blocklog contract\n")
+	cli.DebugLog("Migrated blocklog contract\n")
 }

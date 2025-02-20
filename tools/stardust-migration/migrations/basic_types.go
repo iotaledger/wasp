@@ -58,11 +58,16 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 }
 
 func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
-	panic("TODO: Not implemented")
+	//panic("TODO: Not implemented")
+	return iotago.ObjectID{}
 }
 
 func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
-	panic("TODO: Not implemented")
+	//panic("TODO: Not implemented")
+	return &accounts.ObjectRecord{
+		ID:  iotago.ObjectID{},
+		BCS: []byte{1, 2, 3, 4, 5},
+	}
 }
 
 // // Creates converter from old account key to new account key.
@@ -112,11 +117,21 @@ func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
 // }
 
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
-	panic("TODO: Not implemented")
+	//panic("TODO: Not implemented")
+	return coin.BaseTokenType
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) isc.IotaCoinInfo {
-	panic("TODO: Not implemented")
+	//panic("TODO: Not implemented")
+	return isc.IotaCoinInfo{
+		CoinType:    coin.BaseTokenType,
+		Decimals:    6,
+		Name:        "DUMMY",
+		Symbol:      "DUMMY",
+		Description: "DUMMY",
+		IconURL:     "DUMMY",
+		TotalSupply: 123456,
+	}
 }
 
 func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {

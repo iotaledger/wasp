@@ -19,3 +19,12 @@ func Log(v ...interface{}) {
 		log.Print(v...)
 	})
 }
+
+func DebugLogf(format string, s ...interface{}) {
+}
+
+func DebugLogln(v ...interface{}) {
+}
+
+func DebugLog(v ...interface{}) {
+}

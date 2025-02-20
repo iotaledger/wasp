@@ -14,6 +14,7 @@ import (
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
@@ -82,13 +83,13 @@ func main() {
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 	destStateDraft := destStore.NewOriginStateDraft()
 
-	//migrateAllBlocks(srcStore, destStore)
+	migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
 
-	v := migrations.MigrateRootContract(srcState, destStateDraft)
-	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
-	migrations.MigrateBlocklogContract(srcState, destStateDraft)
-	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
-	migrations.MigrateEVMContract(srcState, destStateDraft)
+	// v := migrations.MigrateRootContract(srcState, destStateDraft)
+	// migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
+	// migrations.MigrateBlocklogContract(srcState, destStateDraft)
+	// // migrations.MigrateGovernanceContract(srcState, destStateDraft)
+	// migrations.MigrateEVMContract(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
@@ -96,9 +97,51 @@ func main() {
 }
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
-func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore) {
-	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+	var prevL1Commitment *state.L1Commitment
 
+	lastPrintTime := time.Now()
+	oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
+	//oldState := old_trie.NewTrieUpdatable(oldState)
+	newState := NewInMemoryKVStore(true)
+
+	blocksProcessedAfterLastPrint := 0
+	mutationsProcessedAfterLastPrint := 0
+
+	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+		oldMuts := block.Mutations()
+		oldMuts.ApplyTo(oldState)
+
+		v := migrations.MigrateRootContract(oldState, newState)
+		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
+		migrations.MigrateBlocklogContract(oldState, newState)
+		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
+		migrations.MigrateEVMContract(oldState, newState)
+
+		newMuts := newState.Commit()
+		blocksProcessedAfterLastPrint++
+		mutationsProcessedAfterLastPrint += len(newMuts.Sets) + len(newMuts.Dels)
+
+		// TODO: time??
+		var nextStateDraft state.StateDraft
+		if prevL1Commitment == nil {
+			nextStateDraft = destStore.NewOriginStateDraft()
+		} else {
+			// TODO: NewStateDraft, which most likely needs SaveNextBlockInfo for Commit
+			nextStateDraft = lo.Must(destStore.NewEmptyStateDraft(prevL1Commitment))
+		}
+		newMuts.ApplyTo(newState)
+
+		// TODO: SaveNextBlockInfo?
+		newBlock := destStore.Commit(nextStateDraft)
+		prevL1Commitment = newBlock.L1Commitment()
+
+		periodicAction(3*time.Second, &lastPrintTime, func() {
+			cli.Logf("Mutations per state processed: %v", float64(mutationsProcessedAfterLastPrint)/float64(blocksProcessedAfterLastPrint))
+			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState.Mutations().Sets), newState.CommittedSize())
+			blocksProcessedAfterLastPrint = 0
+			mutationsProcessedAfterLastPrint = 0
+		})
 	})
 }
 
@@ -154,17 +197,6 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 	}
 }
 
-func measureTime(f func()) time.Duration {
-	start := time.Now()
-	f()
-	return time.Since(start)
-}
-
-func measureTimeAndPrint(descr string, f func()) {
-	d := measureTime(f)
-	cli.Logf("%v: %v\n", descr, d)
-}
-
 func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	latestBlockIndex := lo.Must(s.LatestBlockIndex())
 	measureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
@@ -173,13 +205,6 @@ func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	measureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
-}
-
-func periodicAction(period time.Duration, lastActionTime *time.Time, action func()) {
-	if time.Since(*lastActionTime) >= period {
-		action()
-		*lastActionTime = time.Now()
-	}
 }
 
 func newProgressPrinter(totalBlocksCount uint32) (printProgress func(getBlockIndex func() uint32)) {
