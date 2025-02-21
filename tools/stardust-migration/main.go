@@ -112,7 +112,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 	oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
 	oldStateTriePrevRoot := oldStateTrie.Root()
 
-	newState := NewInMemoryKVStore(true)
+	newState := NewInMemoryKVStore(true, true, true)
 
 	lastPrintTime := time.Now()
 	blocksProcessed := 0

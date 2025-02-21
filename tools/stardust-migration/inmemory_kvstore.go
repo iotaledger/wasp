@@ -7,21 +7,27 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 )
 
-func NewInMemoryKVStore(onlyEffectiveMutations bool) *InMemoryKVStore {
+func NewInMemoryKVStore(onlyEffectiveMuts, deleteIfNotSet, readOnlyUncommitted bool) *InMemoryKVStore {
 	committed := buffered.NewBufferedKVStore(NoopKVStoreReader[kv.Key]{})
 	uncommitted := buffered.NewBufferedKVStore(committed)
 
+	if readOnlyUncommitted {
+		uncommitted = buffered.NewBufferedKVStore(NoopKVStoreReader[kv.Key]{})
+	}
+
 	return &InMemoryKVStore{
-		committed:              committed,
-		uncommitted:            uncommitted,
-		onlyEffectiveMutations: onlyEffectiveMutations,
+		committed:         committed,
+		uncommitted:       uncommitted,
+		onlyEffectiveMuts: onlyEffectiveMuts,
+		deleteIfNotSet:    deleteIfNotSet,
 	}
 }
 
 type InMemoryKVStore struct {
-	committed              *buffered.BufferedKVStore
-	uncommitted            *buffered.BufferedKVStore
-	onlyEffectiveMutations bool
+	committed         *buffered.BufferedKVStore
+	uncommitted       *buffered.BufferedKVStore
+	onlyEffectiveMuts bool
+	deleteIfNotSet    bool
 }
 
 var _ kv.KVStoreReader = &InMemoryKVStore{}
@@ -40,32 +46,50 @@ func (b *InMemoryKVStore) MutationsCount() int {
 }
 
 func (b *InMemoryKVStore) Commit() *buffered.Mutations {
+	if b.deleteIfNotSet {
+		committedSets := b.committed.Mutations().Sets
+		uncommittedSets := b.uncommitted.Mutations().Sets
+		for key := range committedSets {
+			_, ok := uncommittedSets[key]
+			if !ok {
+				b.uncommitted.Del(key)
+			}
+		}
+	}
+
+	if b.onlyEffectiveMuts {
+		committedSets := b.committed.Mutations().Sets
+		uncommittedSets := b.uncommitted.Mutations().Sets
+
+		for key, value := range uncommittedSets {
+			committed, ok := committedSets[key]
+			if ok && bytes.Equal(committed, value) {
+				delete(uncommittedSets, key)
+			}
+		}
+
+		uncommittedDels := b.uncommitted.Mutations().Dels
+
+		for key := range uncommittedDels {
+			_, ok := committedSets[key]
+			if !ok {
+				delete(uncommittedDels, key)
+			}
+		}
+	}
+
 	muts := b.uncommitted.Mutations()
 	muts.ApplyTo(b.committed)
-	b.uncommitted = buffered.NewBufferedKVStore(b.committed)
+	b.uncommitted.SetMutations(buffered.NewMutations())
+
 	return muts
 }
 
 func (b *InMemoryKVStore) Set(key kv.Key, value []byte) {
-	if b.onlyEffectiveMutations {
-		committed := b.committed.Get(key)
-		if bytes.Equal(committed, value) {
-			delete(b.uncommitted.Mutations().Dels, key)
-			return
-		}
-	}
-
 	b.uncommitted.Set(key, value)
 }
 
 func (b *InMemoryKVStore) Del(key kv.Key) {
-	if b.onlyEffectiveMutations {
-		if !b.committed.Has(key) {
-			delete(b.uncommitted.Mutations().Sets, key)
-			return
-		}
-	}
-
 	b.uncommitted.Del(key)
 }
 
