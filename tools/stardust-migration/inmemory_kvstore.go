@@ -35,6 +35,10 @@ func (b *InMemoryKVStore) Mutations() *buffered.Mutations {
 	return b.uncommitted.Mutations()
 }
 
+func (b *InMemoryKVStore) MutationsCount() int {
+	return len(b.uncommitted.Mutations().Sets) + len(b.uncommitted.Mutations().Dels)
+}
+
 func (b *InMemoryKVStore) Commit() *buffered.Mutations {
 	muts := b.uncommitted.Mutations()
 	muts.ApplyTo(b.committed)

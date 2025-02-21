@@ -105,22 +105,30 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 	//oldState := old_trie.NewTrieUpdatable(oldState)
 	newState := NewInMemoryKVStore(true)
 
-	blocksProcessedAfterLastPrint := 0
-	mutationsProcessedAfterLastPrint := 0
+	blocksProcessed := 0
+	oldMutationsProcessed, newMutationsProcessed := 0, 0
+	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
 
 	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
 		oldMuts := block.Mutations()
 		oldMuts.ApplyTo(oldState)
 
 		v := migrations.MigrateRootContract(oldState, newState)
+		rootMuts := newState.MutationsCount()
+
 		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
+		accountsMuts := newState.MutationsCount() - rootMuts
+
 		migrations.MigrateBlocklogContract(oldState, newState)
+		blocklogMuts := newState.MutationsCount() - accountsMuts - rootMuts
+
 		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
+		governanceMuts := newState.MutationsCount() - blocklogMuts - accountsMuts - rootMuts
+
 		migrations.MigrateEVMContract(oldState, newState)
+		evmMuts := newState.MutationsCount() - governanceMuts - blocklogMuts - accountsMuts - rootMuts
 
 		newMuts := newState.Commit()
-		blocksProcessedAfterLastPrint++
-		mutationsProcessedAfterLastPrint += len(newMuts.Sets) + len(newMuts.Dels)
 
 		// TODO: time??
 		var nextStateDraft state.StateDraft
@@ -136,11 +144,29 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		newBlock := destStore.Commit(nextStateDraft)
 		prevL1Commitment = newBlock.L1Commitment()
 
+		//Ugly stats code
+		blocksProcessed++
+		oldMutationsProcessed += len(oldMuts.Sets) + len(oldMuts.Dels)
+		newMutationsProcessed += len(newMuts.Sets) + len(newMuts.Dels)
+		rootMutsProcessed += rootMuts
+		accountMutsProcessed += accountsMuts
+		blocklogMutsProcessed += blocklogMuts
+		govMutsProcessed += governanceMuts
+		evmMutsProcessed += evmMuts
+
 		periodicAction(3*time.Second, &lastPrintTime, func() {
-			cli.Logf("Mutations per state processed: %v", float64(mutationsProcessedAfterLastPrint)/float64(blocksProcessedAfterLastPrint))
+			cli.Logf("Blocks processed: %v", blocksProcessed)
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState.Mutations().Sets), newState.CommittedSize())
-			blocksProcessedAfterLastPrint = 0
-			mutationsProcessedAfterLastPrint = 0
+			cli.Logf("Mutations per state processed: old = %v, new = %v", float64(oldMutationsProcessed)/float64(blocksProcessed), float64(newMutationsProcessed)/float64(blocksProcessed))
+			cli.Logf("New mutations per block by contracts:\n\tRoot: %.2v\n\tAccounts: %.2v\n\tBlocklog: %.2v\n\tGovernance: %.2v\n\tEVM: %.2v",
+				float64(rootMutsProcessed)/float64(blocksProcessed), float64(accountMutsProcessed)/float64(blocksProcessed),
+				float64(blocklogMutsProcessed)/float64(blocksProcessed), float64(govMutsProcessed)/float64(blocksProcessed),
+				float64(evmMutsProcessed)/float64(blocksProcessed),
+			)
+
+			blocksProcessed = 0
+			oldMutationsProcessed, newMutationsProcessed = 0, 0
+			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0
 		})
 	})
 }
