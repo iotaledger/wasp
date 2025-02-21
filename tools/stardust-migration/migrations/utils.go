@@ -133,8 +133,8 @@ func BackupMapByName(
 		newContractState,
 		oldMapName,
 		WithBackupPrefix(oldMapName),
-		func(oldKey []byte, oldValue []byte) ([]byte, []byte) {
-			return oldKey, oldValue
+		func(oldKey old_kv.Key, oldValue []byte) (kv.Key, []byte) {
+			return kv.Key(oldKey), oldValue
 		},
 	)
 }
