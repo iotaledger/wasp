@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,6 +47,10 @@ import (
 // TODO: New state draft might be huge, but it is stored in memory - might be an issue.
 
 func main() {
+	go func() {
+		lo.Must0(http.ListenAndServe("localhost:6161", nil))
+	}()
+
 	if len(os.Args) < 4 {
 		log.Fatalf("usage: %s <src-chain-db-dir> <dest-chain-db-dir> <new-chain-id>", os.Args[0])
 	}
@@ -119,7 +125,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
 		accountsMuts := newState.MutationsCount() - rootMuts
 
-		migrations.MigrateBlocklogContract(oldState, newState)
+		//migrations.MigrateBlocklogContract(oldState, newState)
 		blocklogMuts := newState.MutationsCount() - accountsMuts - rootMuts
 
 		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
