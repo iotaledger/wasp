@@ -113,6 +113,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 	oldStateStore := old_trietest.NewInMemoryKVStore()
 	oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
 	oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
+	oldStateTriePrevRoot := oldStateTrie.Root()
 
 	newState := NewInMemoryKVStore(true)
 
@@ -129,7 +130,9 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		for k := range oldMuts.Dels {
 			oldStateTrie.Delete([]byte(k))
 		}
-		oldStateTrie.Commit(oldStateStore)
+		oldStateTrieRoot, _ := oldStateTrie.Commit(oldStateStore)
+		lo.Must(old_trie.Prune(oldStateStore, oldStateTriePrevRoot))
+		oldStateTriePrevRoot = oldStateTrieRoot
 
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.MutationsCount()
