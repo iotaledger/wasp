@@ -155,6 +155,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		evmMutsProcessed += evmMuts
 
 		periodicAction(3*time.Second, &lastPrintTime, func() {
+			cli.Logf("Blocks index: %v", blockIndex)
 			cli.Logf("Blocks processed: %v", blocksProcessed)
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState.Mutations().Sets), newState.CommittedSize())
 			cli.Logf("Mutations per state processed: old = %v, new = %v", float64(oldMutationsProcessed)/float64(blocksProcessed), float64(newMutationsProcessed)/float64(blocksProcessed))

@@ -33,6 +33,10 @@ func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n co
 	}
 }
 
+func (s *StateWriter) UnsafeSetCoinBalance(agentID isc.AgentID, chainID isc.ChainID, coinType coin.Type, n coin.Value) {
+	s.setCoinBalance(AccountKey(agentID, chainID), coinType, n)
+}
+
 func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID coin.Type, chainID isc.ChainID) coin.Value {
 	return s.getCoinBalance(AccountKey(agentID, chainID), coinID)
 }

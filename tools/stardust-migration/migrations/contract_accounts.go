@@ -98,7 +98,11 @@ func migrateBaseTokenBalances(
 		oldBalance := old_accounts.GetBaseTokensBalanceFullDecimals(v, oldState, acc.OldAgentID, oldChainID)
 
 		// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
-		w.CreditToAccountFullDecimals(acc.NewAgentID, convertBaseTokens(oldBalance), newChainID)
+		//w.CreditToAccountFullDecimals(acc.NewAgentID, convertBaseTokens(oldBalance), newChainID)
+
+		newBalance := convertBaseTokens(oldBalance)
+		w.UnsafeSetBaseTokensFullDecimals(acc.NewAgentID, newChainID, newBalance)
+		// TODO: migrate L2TotalsAccount
 	}
 
 	cli.DebugLogf("Migrated %v base token balances\n", len(migratedAccs))
@@ -118,7 +122,10 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 			newBalance := OldNativeTokenBalanceToNewCoinValue(oldNativeToken.Amount)
 
 			// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
-			w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, newChainID)
+			//w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, newChainID)
+
+			w.UnsafeSetCoinBalance(acc.NewAgentID, newChainID, newCoinType, newBalance)
+			// TODO: migrate L2TotalsAccount
 		}
 
 		count += len(oldNativeTokes)
