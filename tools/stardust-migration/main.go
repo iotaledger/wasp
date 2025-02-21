@@ -116,7 +116,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 
 	lastPrintTime := time.Now()
 	blocksProcessed := 0
-	oldMutationsProcessed, newMutationsProcessed := 0, 0
+	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
 
 	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
@@ -166,8 +166,10 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 
 		//Ugly stats code
 		blocksProcessed++
-		oldMutationsProcessed += len(oldMuts.Sets) + len(oldMuts.Dels)
-		newMutationsProcessed += len(newMuts.Sets) + len(newMuts.Dels)
+		oldSetsProcessed += len(oldMuts.Sets)
+		oldDelsProcessed += len(oldMuts.Dels)
+		newSetsProcessed += len(newMuts.Sets)
+		newDelsProcessed += len(newMuts.Dels)
 		rootMutsProcessed += rootMuts
 		accountMutsProcessed += accountsMuts
 		blocklogMutsProcessed += blocklogMuts
@@ -178,15 +180,18 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 			cli.Logf("Blocks index: %v", blockIndex)
 			cli.Logf("Blocks processed: %v", blocksProcessed)
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
-			cli.Logf("Mutations per state processed: old = %v, new = %v", float64(oldMutationsProcessed)/float64(blocksProcessed), float64(newMutationsProcessed)/float64(blocksProcessed))
-			cli.Logf("New mutations per block by contracts:\n\tRoot: %.2v\n\tAccounts: %.2v\n\tBlocklog: %.2v\n\tGovernance: %.2v\n\tEVM: %.2v",
+			cli.Logf("Mutations per state processed (sets/dels): old = %.1f/%.1f, new = %.1f/%.1f",
+				float64(oldSetsProcessed)/float64(blocksProcessed), float64(oldDelsProcessed)/float64(blocksProcessed),
+				float64(newSetsProcessed)/float64(blocksProcessed), float64(newDelsProcessed)/float64(blocksProcessed),
+			)
+			cli.Logf("New mutations per block by contracts:\n\tRoot: %.1f\n\tAccounts: %.1f\n\tBlocklog: %.1f\n\tGovernance: %.1f\n\tEVM: %.1f",
 				float64(rootMutsProcessed)/float64(blocksProcessed), float64(accountMutsProcessed)/float64(blocksProcessed),
 				float64(blocklogMutsProcessed)/float64(blocksProcessed), float64(govMutsProcessed)/float64(blocksProcessed),
 				float64(evmMutsProcessed)/float64(blocksProcessed),
 			)
 
 			blocksProcessed = 0
-			oldMutationsProcessed, newMutationsProcessed = 0, 0
+			oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed = 0, 0, 0, 0
 			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0
 		})
 	})
