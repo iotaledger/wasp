@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -197,7 +199,7 @@ func TestBlocklog_Pruning(t *testing.T) {
 
 	ch, _ := env.NewChainExt(nil, 0, "chain1", 0, 10)
 	for i := 1; i <= 20; i++ {
-		ch.DepositBaseTokensToL2(1000, nil)
+		ch.DepositBaseTokensToL2(1000, iscmoveclienttest.GenSignerWithFundByCounter(t).(*cryptolib.KeyPair))
 	}
 	// at this point blocks 0..10 have been pruned, and blocks 11..20 are available
 	require.EqualValues(t, 20, ch.LatestBlock().StateIndex())

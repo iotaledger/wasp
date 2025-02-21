@@ -28,7 +28,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
@@ -66,7 +68,7 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 		PrintStackTrace: true,
 		Log:             log,
 	})
-	chainOwner, _ := s.NewKeyPairWithFunds()
+	chainOwner, _ := iscmoveclienttest.GenSignerWithFundByCounter(t.(*testing.T)).(*cryptolib.KeyPair)
 	chain, _ := s.NewChainExt(chainOwner, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	accounts := jsonrpc.NewAccountManager(nil)

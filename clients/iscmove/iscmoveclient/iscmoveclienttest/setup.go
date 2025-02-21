@@ -28,6 +28,15 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 	return NewSignerWithFunds(t, seed[:], index)
 }
 
+var genSignerCounter = 0
+
+func GenSignerWithFundByCounter(t *testing.T) cryptolib.Signer {
+	defer func() {
+		genSignerCounter += 1
+	}()
+	return NewRandomSignerWithFunds(t, genSignerCounter)
+}
+
 func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {
 	if l1starter.IsLocalConfigured() {
 		panic("Right now no WS support")

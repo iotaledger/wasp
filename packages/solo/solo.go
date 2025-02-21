@@ -708,7 +708,7 @@ func (env *Solo) L1MintCoin(
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,
 	typeTag iotago.Identifier,
-	treasuryCapObjectID *iotago.ObjectID,
+	treasuryCapObjectID *iotago.ObjectRef,
 	mintAmount uint64,
 ) (coinRef *iotago.ObjectRef) {
 	return iotaclienttest.MintCoins(

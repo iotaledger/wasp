@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -90,10 +90,10 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 func TestProperCoinUse(t *testing.T) {
 	l1 := l1starter.Instance().L1Client()
 	client := iscmoveclienttest.NewHTTPClient()
-	chainOwnerSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
+	chainOwnerSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
 	anchor := startNewChain(t, client, chainOwnerSigner)
 
-	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
+	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
 
 	// Ensure we only have one actual gas coin. Merge all coins into one - if needed.
 	ensureSingleCoin(t, cryptolibSigner, l1)
@@ -117,11 +117,17 @@ func TestProperCoinUse(t *testing.T) {
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	anchorSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
+	anchorSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
 	anchor := startNewChain(t, client, anchorSigner)
 
-	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
-	ensureSingleCoin(t, cryptolibSigner, l1starter.Instance().L1Client())
+	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	var testCoinRef []*iotago.ObjectRef
+	for i := 0; i < 25+26; i++ {
+		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+		time.Sleep(3 * time.Second)
+		testCoinRef = append(testCoinRef, coinRef)
+	}
+
 	t.Run("success", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
@@ -154,11 +160,10 @@ func TestCreateAndSendRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := 0; i < 25; i++ {
-			coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 			getCoinRef, err := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
-					ObjectID: coinRef.ObjectID,
+					ObjectID: testCoinRef[i].ObjectID,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 				},
 			)
@@ -169,7 +174,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, err)
-
+			ref := getCoinRef.Data.Ref()
 			_, err = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
@@ -183,7 +188,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 						ptb,
 						l1starter.ISCPackageID(),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
 						iotajsonrpc.CoinValue(100),
 						testCointype,
 					)
@@ -221,11 +226,10 @@ func TestCreateAndSendRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := 0; i < 26; i++ {
-			coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 			getCoinRef, err := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
-					ObjectID: coinRef.ObjectID,
+					ObjectID: testCoinRef[i+25].ObjectID,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 				},
 			)
@@ -236,7 +240,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, err)
-
+			ref := getCoinRef.Data.Ref()
 			_, err = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
@@ -250,7 +254,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 						ptb,
 						l1starter.ISCPackageID(),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
 						iotajsonrpc.CoinValue(100),
 						testCointype,
 					)
@@ -284,7 +288,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -314,7 +318,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 
 func TestGetRequestFromObjectID(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 

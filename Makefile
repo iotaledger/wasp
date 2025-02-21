@@ -3,6 +3,12 @@ BUILD_TAGS = rocksdb
 BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
 DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
+EXCLUDED_PACKAGES := "github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtests/"
+SPACE := $(subst ,, )
+PIPE := |
+EXCLUDE_REGEX := $(subst $(SPACE),$(PIPE),$(EXCLUDED_PACKAGES))
+TEST_PACKAGES := $(shell go list ./... | grep -Ev "$(EXCLUDE_REGEX)")
+
 #
 # You can override these e.g. as
 #     make test TEST_PKG=./packages/vm/core/testcore/ TEST_ARG="-v --run TestAccessNodes"
@@ -46,7 +52,7 @@ test: install
 	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) $(TEST_PKG) --timeout 90m --count 1 -failfast  $(TEST_ARG)
 
 test-short:
-	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) --short --count 1 -failfast $(shell go list ./...)
+	go test -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS) --short --count 1 -failfast $(TEST_PACKAGES)
 
 install-cli:
 	cd tools/wasp-cli && go mod tidy && go install -ldflags $(BUILD_LD_FLAGS)

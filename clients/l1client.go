@@ -147,7 +147,7 @@ type L1Client interface {
 		signer iotasigner.Signer,
 		packageID *iotago.PackageID,
 		tokenName string,
-		treasuryCap *iotago.ObjectID,
+		treasuryCap *iotago.ObjectRef,
 		mintAmount uint64,
 		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
