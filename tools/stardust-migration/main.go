@@ -112,7 +112,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 	oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
 	oldStateTriePrevRoot := oldStateTrie.Root()
 
-	newState := NewInMemoryKVStore(true, true, true)
+	newState := NewInMemoryKVStore(true)
 
 	lastPrintTime := time.Now()
 	blocksProcessed := 0
@@ -133,22 +133,27 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 
 		oldStateMutsOnly := old_buffered.NewBufferedKVStoreForMutations(NoopKVStoreReader[old_kv.Key]{}, oldMuts)
 
+		newState.StartMarking()
+
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.MutationsCount()
 
 		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
 		accountsMuts := newState.MutationsCount() - rootMuts
 
-		migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID)
-		blocklogMuts := newState.MutationsCount() - accountsMuts - rootMuts
-
 		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
-		governanceMuts := newState.MutationsCount() - blocklogMuts - accountsMuts - rootMuts
+		governanceMuts := newState.MutationsCount() - rootMuts - accountsMuts
+
+		newState.StopMarking()
+		newState.DeleteMarkedIfNotSet()
+
+		migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID)
+		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
 
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
-		evmMuts := newState.MutationsCount() - governanceMuts - blocklogMuts - accountsMuts - rootMuts
+		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
 
-		newMuts := newState.Commit()
+		newMuts := newState.Commit(true)
 
 		// TODO: time??
 		var nextStateDraft state.StateDraft
