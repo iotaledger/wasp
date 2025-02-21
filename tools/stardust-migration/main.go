@@ -131,19 +131,21 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		lo.Must(old_trie.Prune(oldStateStore, oldStateTriePrevRoot))
 		oldStateTriePrevRoot = oldStateTrieRoot
 
+		oldStateMutsOnly := old_buffered.NewBufferedKVStoreForMutations(NoopKVStoreReader[old_kv.Key]{}, oldMuts)
+
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.MutationsCount()
 
 		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
 		accountsMuts := newState.MutationsCount() - rootMuts
 
-		//migrations.MigrateBlocklogContract(oldState, newState)
+		migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID)
 		blocklogMuts := newState.MutationsCount() - accountsMuts - rootMuts
 
 		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
 		governanceMuts := newState.MutationsCount() - blocklogMuts - accountsMuts - rootMuts
 
-		migrations.MigrateEVMContract(oldState, newState)
+		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.MutationsCount() - governanceMuts - blocklogMuts - accountsMuts - rootMuts
 
 		newMuts := newState.Commit()
