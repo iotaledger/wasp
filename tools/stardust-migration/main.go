@@ -106,11 +106,13 @@ func main() {
 func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	var prevL1Commitment *state.L1Commitment
 
-	lastPrintTime := time.Now()
 	oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
-	//oldState := old_trie.NewTrieUpdatable(oldState)
+	// oldStateStore := old_trietest.NewInMemoryKVStore()
+	// oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
+	// oldState := &old_state.TrieKVAdapter{oldStateTrie}
 	newState := NewInMemoryKVStore(true)
 
+	lastPrintTime := time.Now()
 	blocksProcessed := 0
 	oldMutationsProcessed, newMutationsProcessed := 0, 0
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
@@ -144,7 +146,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 			// TODO: NewStateDraft, which most likely needs SaveNextBlockInfo for Commit
 			nextStateDraft = lo.Must(destStore.NewEmptyStateDraft(prevL1Commitment))
 		}
-		newMuts.ApplyTo(newState)
+		newMuts.ApplyTo(nextStateDraft)
 
 		// TODO: SaveNextBlockInfo?
 		newBlock := destStore.Commit(nextStateDraft)

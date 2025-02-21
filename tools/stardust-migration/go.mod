@@ -12,7 +12,7 @@ require (
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v0.0.0-00010101000000-000000000000
-	github.com/nnikolash/wasp-types-exported v0.0.0-20250212175259-3b47d0703846
+	github.com/nnikolash/wasp-types-exported v0.0.0-20250221122617-d7e3e979a2be
 	github.com/samber/lo v1.46.0
 )
 
