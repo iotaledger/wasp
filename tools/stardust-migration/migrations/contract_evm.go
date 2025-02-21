@@ -20,7 +20,7 @@ func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVS
 	oldContractState := old_evm.ContractPartitionR(oldChainState)
 	newContractState := evm.ContractPartition(newChainState)
 
-	migrateEVMEmulator(oldContractState, newContractState)
+	//migrateEVMEmulator(oldContractState, newContractState)
 
 	oldMagicState := old_evm.ISCMagicSubrealmR(oldContractState)
 	newMagicState := evm.ISCMagicSubrealm(newContractState)

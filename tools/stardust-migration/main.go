@@ -21,6 +21,7 @@ import (
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
+	old_trietest "github.com/nnikolash/wasp-types-exported/packages/trie/test"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
@@ -106,10 +107,13 @@ func main() {
 func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	var prevL1Commitment *state.L1Commitment
 
-	oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
-	// oldStateStore := old_trietest.NewInMemoryKVStore()
-	// oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
-	// oldState := &old_state.TrieKVAdapter{oldStateTrie}
+	_oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
+	_ = _oldState
+
+	oldStateStore := old_trietest.NewInMemoryKVStore()
+	oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
+	oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
+
 	newState := NewInMemoryKVStore(true)
 
 	lastPrintTime := time.Now()
@@ -119,7 +123,13 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 
 	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
 		oldMuts := block.Mutations()
-		oldMuts.ApplyTo(oldState)
+		for k, v := range oldMuts.Sets {
+			oldStateTrie.Update([]byte(k), v)
+		}
+		for k := range oldMuts.Dels {
+			oldStateTrie.Delete([]byte(k))
+		}
+		oldStateTrie.Commit(oldStateStore)
 
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.MutationsCount()
@@ -165,7 +175,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		periodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
 			cli.Logf("Blocks processed: %v", blocksProcessed)
-			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState.Mutations().Sets), newState.CommittedSize())
+			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
 			cli.Logf("Mutations per state processed: old = %v, new = %v", float64(oldMutationsProcessed)/float64(blocksProcessed), float64(newMutationsProcessed)/float64(blocksProcessed))
 			cli.Logf("New mutations per block by contracts:\n\tRoot: %.2v\n\tAccounts: %.2v\n\tBlocklog: %.2v\n\tGovernance: %.2v\n\tEVM: %.2v",
 				float64(rootMutsProcessed)/float64(blocksProcessed), float64(accountMutsProcessed)/float64(blocksProcessed),
