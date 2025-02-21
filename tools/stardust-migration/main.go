@@ -48,8 +48,9 @@ import (
 // TODO: New state draft might be huge, but it is stored in memory - might be an issue.
 
 func main() {
+	// For pprof profilings
 	go func() {
-		lo.Must0(http.ListenAndServe("localhost:6161", nil))
+		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
 	if len(os.Args) < 4 {
@@ -69,13 +70,12 @@ func main() {
 
 	srcKVS := db.Connect(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
-	srcState := lo.Must(srcStore.LatestState())
 
 	if newChainIDStr == "dummy" {
 		// just for easier testing
 		newChainIDStr = "0x00000000000000000000000000000000000000000000000000000000000000ff"
 	}
-	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
+	oldChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(srcStore.LatestState())).AliasID)
 	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
@@ -88,18 +88,15 @@ func main() {
 
 	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
-	destStateDraft := destStore.NewOriginStateDraft()
 
 	migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
 
 	// v := migrations.MigrateRootContract(srcState, destStateDraft)
 	// migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
-	// migrations.MigrateBlocklogContract(srcState, destStateDraft)
+	// migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID)
 	// // migrations.MigrateGovernanceContract(srcState, destStateDraft)
 	// migrations.MigrateEVMContract(srcState, destStateDraft)
 
-	newBlock := destStore.Commit(destStateDraft)
-	destStore.SetLatest(newBlock.TrieRoot())
 	destKVS.Flush()
 }
 

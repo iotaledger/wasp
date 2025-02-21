@@ -42,6 +42,19 @@ type ImpersonatedOffLedgerRequestData struct {
 	address *cryptolib.Address
 }
 
+func NewOffLedgerRequestsRaw(allowance *Assets, chainID ChainID, msg Message, gasBudget uint64, nonce uint64, signature *cryptolib.Signature) OffLedgerRequestData {
+	return OffLedgerRequestData{
+		OffLedgerRequestDataEssence: OffLedgerRequestDataEssence{
+			allowance: allowance,
+			chainID:   chainID,
+			msg:       msg,
+			gasBudget: gasBudget,
+			nonce:     nonce,
+		},
+		signature: signature,
+	}
+}
+
 func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) ImpersonatedOffLedgerRequest {
 	var copyReq OffLedgerRequestData
 	copyReq.OffLedgerRequestDataEssence = *request

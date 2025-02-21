@@ -8,11 +8,13 @@ replace (
 )
 
 require (
+	github.com/dgravesa/go-parallel v0.6.0
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v0.0.0-00010101000000-000000000000
-	github.com/nnikolash/wasp-types-exported v0.0.0-20250221122617-d7e3e979a2be
+	github.com/nnikolash/wasp-types-exported v0.0.0-20250221154442-602aaac5782b
+	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/samber/lo v1.46.0
 )
 

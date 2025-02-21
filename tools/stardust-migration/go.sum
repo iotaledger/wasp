@@ -89,6 +89,8 @@ github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0/go.mod h1:v57UDF4pDQJcEfFUCRop3
 github.com/dgraph-io/badger v1.5.4/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
 github.com/dgraph-io/ristretto v0.1.1 h1:6CWw5tJNgpegArSHpNHJKldNeq03FQCwYvfMVWajOK8=
 github.com/dgraph-io/ristretto v0.1.1/go.mod h1:S1GPSBCYCIhmVNfcth17y2zZtQT6wzkzgwUve0VDWWA=
+github.com/dgravesa/go-parallel v0.6.0 h1:3KU5uzHn92Upq9jPVQ+ILLechgUKigCo72TScC7U3qE=
+github.com/dgravesa/go-parallel v0.6.0/go.mod h1:JoWGhU5NYLSu+pg6VW0GK1P4K+WmoRNAhebyKGGtclA=
 github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e h1:kXrIYQccdty+/6teoePZ5ZzF8yu+EivWFhs5HvFlVR8=
 github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e/go.mod h1:XOXaSpwU7uEii1eX5P3U3Me/TInU6t/JljfWLex+FIw=
 github.com/dgryski/go-farm v0.0.0-20190323231341-8198c7b169ec/go.mod h1:SqUrOPUnsFjfmXRMNPybcSiG0BgUW2AuFH8PAnS2iTw=
@@ -263,8 +265,8 @@ github.com/mr-tron/base58 v1.2.0/go.mod h1:BinMc/sQntlIE1frQmRFPUoPA1Zkr8VRgBdjW
 github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32/go.mod h1:9wM+0iRr9ahx58uYLpLIr5fm8diHn0JbqRycJi6w0Ms=
 github.com/ncw/directio v1.0.5 h1:JSUBhdjEvVaJvOoyPAbcW0fnd0tvRXD76wEfZ1KcQz4=
 github.com/ncw/directio v1.0.5/go.mod h1:rX/pKEYkOXBGOggmcyJeJGloCkleSvphPx2eV3t6ROk=
-github.com/nnikolash/wasp-types-exported v0.0.0-20250221122617-d7e3e979a2be h1:mjOUNvPcEqUiAnRaybcpwF8ERi+GDcDdQIfe6Bk09lE=
-github.com/nnikolash/wasp-types-exported v0.0.0-20250221122617-d7e3e979a2be/go.mod h1:ibV0BMtIvpb4+tr2jLPanyabII4jeMVOgCWUYIx7TgE=
+github.com/nnikolash/wasp-types-exported v0.0.0-20250221154442-602aaac5782b h1:/LXOKbey1kttoh2M6Q7RoCUE/qTVm6NDni+YpAGRgcQ=
+github.com/nnikolash/wasp-types-exported v0.0.0-20250221154442-602aaac5782b/go.mod h1:ibV0BMtIvpb4+tr2jLPanyabII4jeMVOgCWUYIx7TgE=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
@@ -289,6 +291,8 @@ github.com/opencontainers/image-spec v1.1.0 h1:8SG7/vwALn54lVB/0yZ/MMwhFrPYtpEHQ
 github.com/opencontainers/image-spec v1.1.0/go.mod h1:W4s4sFTMaBeK1BQLXbG4AdM2szdn85PY75RI83NrTrM=
 github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c h1:Gcce/r5tSQeprxswXXOwQ/RBU1bjQWVd9dB7QKoPXBE=
 github.com/pasztorpisti/qs v0.0.0-20171216220353-8d6c33ee906c/go.mod h1:1iCZ0433JJMecYqCa+TdWA9Pax8MGl4ByuNDZ7eSnQY=
+github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 h1:onHthvaw9LFnH4t2DcNVpwGmV9E1BkGknEliJkfwQj0=
+github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58/go.mod h1:DXv8WO4yhMYhSNPKjeNKa5WY9YCIEBRbNzFFPJbWO6Y=
 github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6Wq+LM=
 github.com/pelletier/go-toml/v2 v2.2.2/go.mod h1:1t835xjRzz80PqgE6HHgN2JOsmgYu/h4qDAS4n929Rs=
 github.com/petermattis/goid v0.0.0-20180202154549-b0b1615b78e5/go.mod h1:jvVRKCrJTQWu0XVbaOlby/2lO20uSCHEMzzplHXte1o=

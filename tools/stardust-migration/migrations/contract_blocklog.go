@@ -8,12 +8,11 @@ import (
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -134,28 +133,7 @@ func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStor
 	})
 }
 
-func migrateSingleRequest(req old_isc.Request) isc.Request {
-	switch req.(type) {
-	case old_isc.OnLedgerRequest:
-		break
-
-	case old_isc.OffLedgerRequest:
-		break
-
-	case old_isc.UnsignedOffLedgerRequest:
-		break
-
-	case old_isc.ImpersonatedOffLedgerRequest:
-		break
-
-	default:
-		panic(fmt.Errorf("migrateSingleRequest: invalid request type: %T", req))
-	}
-
-	return nil
-}
-
-func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt) blocklog.RequestReceipt {
+func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_isc.ChainID, newChainID isc.ChainID) blocklog.RequestReceipt {
 	var burnLog *gas.BurnLog
 
 	if receipt.GasBurnLog != nil {
@@ -187,7 +165,7 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt) blocklog.Request
 	}
 
 	return blocklog.RequestReceipt{
-		Request:       migrateSingleRequest(receipt.Request),
+		Request:       MigrateSingleRequest(receipt.Request, oldChainID, newChainID),
 		Error:         receiptError,
 		GasBudget:     receipt.GasBudget,
 		GasBurned:     receipt.GasBurned,
@@ -198,48 +176,29 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt) blocklog.Request
 	}
 }
 
-type lutCollection struct {
-	k []byte
-	v []byte
-}
-
-func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore) {
+func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
-	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
+	newRequests := collections.NewMap(newState, blocklog.PrefixRequestReceipts)
 
 	cli.DebugLogf("Migrating request receipts (%d)\n", oldRequests.Len())
 
-	_ = collections.NewMap(newState, blocklog.PrefixRequestReceipts)
-
 	progress := NewProgressPrinter(500)
-
-	oldLUT := make([]old_blocklog.RequestLookupKeyList, 0)
-	oldLookup.Iterate(func(elemKey []byte, value []byte) bool {
-		oldLookupKeys, err := old_blocklog.RequestLookupKeyListFromBytes(value)
+	oldRequests.Iterate(func(elemKey []byte, value []byte) bool {
+		// TODO: Validate if this is fine. BlockIndex and ReqIndex is 0 here, as we don't persist these values in the db
+		// So in my understanding, using 0 here is fine. If not, we need to iterate the whole request lut again and combine the tables.
+		// I added a solution in commit: 96504e6165ed4056a3e8a50281215f3d7eb7c015, for now I go without.
+		oldReceipt, err := old_blocklog.RequestReceiptFromBytes(value, 0, 0)
 		if err != nil {
-			panic(fmt.Errorf("requestReceipts migration error: %v", err))
+			panic(fmt.Errorf("requestReceipt migration error: %v", err))
 		}
 
-		oldLUT = append(oldLUT, oldLookupKeys)
+		newReceipt := migrateSingleReceipt(oldReceipt, oldChainID, newChainID)
+		newRequests.SetAt(elemKey, newReceipt.Bytes())
 
 		progress.Print()
 
 		return true
 	})
-
-	progress = NewProgressPrinter(500)
-
-	for _, l := range oldLUT {
-		for _, k := range l {
-			oldReceipt, err := old_blocklog.RequestReceiptFromBytes(oldRequests.GetAt(k.Bytes()), k.BlockIndex(), k.RequestIndex())
-			if err != nil {
-				panic(fmt.Errorf("requestReceipt migration error: %v", err))
-			}
-
-			migrateSingleReceipt(oldReceipt)
-			progress.Print()
-		}
-	}
 }
 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
@@ -254,16 +213,16 @@ func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
 	cli.DebugLogf("Listing Unprocessable Requests completed (found %v records)\n", count)
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	cli.DebugLog("Migrating blocklog contract\n")
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
-	printWarningsForUnprocessableRequests(oldContractState)
+	//printWarningsForUnprocessableRequests(oldContractState)
 	//migrateBlockRegistry(oldContractState, newContractState)
 	//migrateRequestLookupIndex(oldContractState, newContractState)
-	migrateRequestReceipts(oldContractState, newContractState)
+	migrateRequestReceipts(oldContractState, newContractState, oldChainID, newChainID)
 
 	cli.DebugLog("Migrated blocklog contract\n")
 }

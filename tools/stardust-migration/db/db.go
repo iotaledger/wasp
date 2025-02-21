@@ -7,10 +7,11 @@ import (
 	old_kvstore "github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	old_database "github.com/nnikolash/wasp-types-exported/packages/database"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 )
 
 func Create(dbDir string) kvstore.KVStore {
@@ -37,10 +38,13 @@ func Connect(dbDir string) old_kvstore.KVStore {
 
 	rocksDatabase := lo.Must(rocksdb.OpenDBReadOnly(dbDir,
 		rocksdb.IncreaseParallelism(runtime.NumCPU()-1),
+		rocksdb.ReadFillCache(true),
+		rocksdb.WriteDisableWAL(true),
+		rocksdb.BlockCacheSize(40*1024*1024),
 		rocksdb.Custom([]string{
 			"periodic_compaction_seconds=43200",
 			"level_compaction_dynamic_level_bytes=true",
-			"keep_log_file_num=2",
+			"keep_log_file_num=0",
 			"max_log_file_size=50000000", // 50MB per log file
 		}),
 	))

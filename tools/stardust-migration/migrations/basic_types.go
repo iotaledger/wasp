@@ -1,12 +1,15 @@
 package migrations
 
 import (
+	"bytes"
 	"fmt"
 	"math/big"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -21,9 +24,30 @@ func OldHnameToNewHname(oldHname old_isc.Hname) isc.Hname {
 	return isc.Hname(oldHname)
 }
 
+func OldAgentIDToCryptoLibAddress(oldAgentID old_isc.AgentID) *cryptolib.Address {
+	if oldAgentID == nil {
+		return nil
+	}
+
+	switch oldAgentID.Kind() {
+	case old_isc.AgentIDKindAddress:
+		oldAddr := oldAgentID.(*old_isc.AddressAgentID).Address()
+		return lo.Must(cryptolib.NewAddressFromHexString(oldAddr.String()))
+	default:
+		panic("OldAgentIDToCryptoLibAddress: Unsupported address type!")
+	}
+}
+
+func OldIotaGoAddressToCryptoLibAddress(address old_iotago.Address) *cryptolib.Address {
+	return lo.Must(cryptolib.NewAddressFromHexString(address.String()))
+}
+
 func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.AgentID {
 	switch oldAgentID.Kind() {
 	case old_isc.AgentIDKindAddress:
+		// TODO: I think we need to remove the first byte from the byte array
+		// https://docs.iota.org/developer/stardust/addresses#bech32-to-hex-conversion
+		// There you can see Bech32->Bytes->Remove first byte-> == new address
 		oldAddr := oldAgentID.(*old_isc.AddressAgentID).Address()
 		newAdd := iotago.MustAddressFromHex(oldAddr.String())
 		return isc.NewAddressAgentID(cryptolib.NewAddressFromIota(newAdd))
@@ -31,8 +55,9 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 	case old_isc.AgentIDKindContract:
 		oldAgentID := oldAgentID.(*old_isc.ContractAgentID)
 		oldAgentChainID := oldAgentID.ChainID()
-		if !oldAgentChainID.Equals(oldChainID) {
-			panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
+
+		if !bytes.Equal(oldChainID.Bytes(), oldAgentChainID.Bytes()) {
+			panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID.ChainID().AsAddress().Bech32(old_iotago.PrefixMainnet)))
 		}
 		hname := OldHnameToNewHname(oldAgentID.Hname())
 		return isc.NewContractAgentID(newChainID, hname)
@@ -118,6 +143,7 @@ func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
 
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	//panic("TODO: Not implemented")
+
 	return coin.BaseTokenType
 }
 
