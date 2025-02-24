@@ -36,6 +36,9 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *isc.StateAnchor {
 	counts := map[hashing.HashValue]int{}
 	values := map[hashing.HashValue]*isc.StateAnchor{}
 	for _, bp := range bps {
+		if bp.baseAliasOutput == nil {
+			continue
+		}
 		h := bp.baseAliasOutput.Hash()
 		counts[h]++
 		if _, ok := values[h]; !ok {
@@ -74,7 +77,7 @@ func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*is
 	// Count number of nodes proposing a request.
 	maxLen := 0
 	for _, bp := range bps {
-		if !bp.baseAliasOutput.Equals(ao) {
+		if bp.baseAliasOutput == nil || !bp.baseAliasOutput.Equals(ao) {
 			continue
 		}
 		for _, reqRef := range bp.requestRefs {
@@ -151,6 +154,9 @@ func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
 	ps := make([]*parameters.L1Params, 0, proposalCount)
 	for _, bp := range bps {
+		if bp.l1params == nil {
+			continue
+		}
 		ps = append(ps, bp.l1params)
 	}
 
