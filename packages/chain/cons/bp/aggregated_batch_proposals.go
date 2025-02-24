@@ -36,19 +36,22 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	nilCount := 0
 	for nid := range inputs {
 		if len(inputs[nid]) == 0 {
-			nilCount++
-		} else {
-			batchProposal, err := bcs.Unmarshal[*BatchProposal](inputs[nid])
-			if err != nil {
-				log.Warnf("cannot decode BatchProposal from %v: %v", nid, err)
-				continue
-			}
-			if int(batchProposal.nodeIndex) >= len(nodeIDs) || nodeIDs[batchProposal.nodeIndex] != nid {
-				log.Warnf("invalid nodeIndex=%v in batchProposal from %v", batchProposal.nodeIndex, nid)
-				continue
-			}
-			bps[nid] = batchProposal
+			log.Warnf("cannot decode empty BatchProposal from %v", nid)
+			continue
 		}
+		batchProposal, err := bcs.Unmarshal[*BatchProposal](inputs[nid])
+		if err != nil {
+			log.Warnf("cannot decode BatchProposal from %v: %v", nid, err)
+			continue
+		}
+		if batchProposal.baseAliasOutput == nil {
+			nilCount++
+		}
+		if int(batchProposal.nodeIndex) >= len(nodeIDs) || nodeIDs[batchProposal.nodeIndex] != nid {
+			log.Warnf("invalid nodeIndex=%v in batchProposal from %v", batchProposal.nodeIndex, nid)
+			continue
+		}
+		bps[nid] = batchProposal
 	}
 	//
 	// Store the aggregated values.

@@ -36,6 +36,7 @@ type syncACSImpl struct {
 	TimeData                time.Time
 	gasCoins                []*coin.CoinWithRef
 	l1params                *parameters.L1Params
+	l1InfoReceived          bool
 
 	inputsReady   bool
 	inputsReadyCB func(
@@ -107,12 +108,12 @@ func (sub *syncACSImpl) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 }
 
 func (sub *syncACSImpl) L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
-	if gasCoins != nil {
-		sub.gasCoins = gasCoins
+	if sub.l1InfoReceived {
+		return nil
 	}
-	if l1params != nil {
-		sub.l1params = l1params
-	}
+	sub.gasCoins = gasCoins
+	sub.l1params = l1params
+	sub.l1InfoReceived = true
 	return sub.tryCompleteInput()
 }
 
@@ -120,7 +121,7 @@ func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
 	if sub.inputsReady || !sub.baseStateAnchorReceived {
 		return nil
 	}
-	if sub.baseStateAnchor != nil && (sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.l1params == nil) {
+	if sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || !sub.l1InfoReceived {
 		return nil
 	}
 	sub.inputsReady = true
@@ -167,11 +168,8 @@ func (sub *syncACSImpl) String() string {
 		if sub.TimeData.IsZero() {
 			wait = append(wait, "TimeData")
 		}
-		if sub.gasCoins == nil {
-			wait = append(wait, "GasCoins")
-		}
-		if sub.l1params == nil {
-			wait = append(wait, "L1Params")
+		if !sub.l1InfoReceived {
+			wait = append(wait, "L1Info")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
 	}
