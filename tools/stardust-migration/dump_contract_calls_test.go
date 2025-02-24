@@ -47,7 +47,7 @@ func countCalls(oldChainState old_kv.KVStoreReader) {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	oldRequests := old_collections.NewMapReadOnly(oldContractState, old_blocklog.PrefixRequestReceipts)
 
-	oldRequests.IterateSorted(func(elemKey []byte, value []byte) bool {
+	oldRequests.Iterate(func(elemKey []byte, value []byte) bool {
 		// TODO: Validate if this is fine. BlockIndex and ReqIndex is 0 here, as we don't persist these values in the db
 		// So in my understanding, using 0 here is fine. If not, we need to iterate the whole request lut again and combine the tables.
 		// I added a solution in commit: 96504e6165ed4056a3e8a50281215f3d7eb7c015, for now I go without.

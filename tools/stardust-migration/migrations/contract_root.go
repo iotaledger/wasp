@@ -2,7 +2,6 @@ package migrations
 
 import (
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
@@ -14,7 +13,7 @@ import (
 )
 
 // returns old schema version
-func MigrateRootContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft) old_isc.SchemaVersion {
+func MigrateRootContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) old_isc.SchemaVersion {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_root.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, root.Contract.Hname())
 

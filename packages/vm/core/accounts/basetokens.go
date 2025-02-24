@@ -41,6 +41,10 @@ func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, wei *big.Int)
 	s.setBaseTokens(accountKey, baseTokens, remainderWei)
 }
 
+func (s *StateWriter) UnsafeSetBaseTokensFullDecimals(account isc.AgentID, chainID isc.ChainID, wei *big.Int) {
+	s.setBaseTokensFullDecimals(AccountKey(account, chainID), wei)
+}
+
 func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value, chainID isc.ChainID) {
 	b := isc.NewCoinBalances().AddBaseTokens(adjustment)
 	switch {

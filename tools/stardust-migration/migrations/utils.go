@@ -311,7 +311,7 @@ func p[OldK, OldV, NewK, NewV any](f KVMigrationFunc[OldK, OldV, NewK, NewV]) KV
 	return func(oldKey OldK, oldVal OldV) (NewK, NewV) {
 		callCount++
 		if callCount%100 == 0 {
-			cli.Printf("\rProcessed: %v         ", callCount)
+			cli.DebugLogf("\rProcessed: %v         ", callCount)
 		}
 
 		return f(oldKey, oldVal)
@@ -337,7 +337,7 @@ type ProgressPrinter struct {
 func (p *ProgressPrinter) Print() {
 	p.Count++
 	if p.Count%p.period == 0 {
-		cli.Printf("\rProcessed: %v         ", p.Count)
+		cli.DebugLogf("\rProcessed: %v         ", p.Count)
 	}
 }
 

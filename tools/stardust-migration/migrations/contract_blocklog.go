@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
 
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
@@ -26,7 +25,7 @@ import (
 )
 
 func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.Log("Migrating block registry")
+	cli.DebugLog("Migrating block registry")
 	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(oldBlocks.Len())
@@ -74,7 +73,7 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		break
 	}
 
-	cli.Logf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
+	cli.DebugLogf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
 	progress := NewProgressPrinter(500)
 
 	for i := uint32(lastUnprunedBlock); i < oldBlocks.Len(); i++ {
@@ -105,11 +104,11 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		progress.Print()
 	}
 
-	cli.Logf("\nblockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
+	cli.DebugLogf("\nblockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
 }
 
 func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.Log("Migrating request lookup index")
+	cli.DebugLog("Migrating request lookup index")
 
 	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
 	newLookup := collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
@@ -181,8 +180,10 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, 
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
 	newRequests := collections.NewMap(newState, blocklog.PrefixRequestReceipts)
 
+	cli.DebugLogf("Migrating request receipts (%d)\n", oldRequests.Len())
+
 	progress := NewProgressPrinter(500)
-	oldRequests.IterateSorted(func(elemKey []byte, value []byte) bool {
+	oldRequests.Iterate(func(elemKey []byte, value []byte) bool {
 		// TODO: Validate if this is fine. BlockIndex and ReqIndex is 0 here, as we don't persist these values in the db
 		// So in my understanding, using 0 here is fine. If not, we need to iterate the whole request lut again and combine the tables.
 		// I added a solution in commit: 96504e6165ed4056a3e8a50281215f3d7eb7c015, for now I go without.
@@ -203,16 +204,18 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
 	// No need to migrate. Just print a warning if there are any
 
-	cli.Logf("Listing Unprocessable Requests...\n")
+	cli.DebugLogf("Listing Unprocessable Requests...\n")
 
 	count := IterateByPrefix(oldState, old_blocklog.PrefixUnprocessableRequests, func(k isc.RequestID, v []byte) {
-		cli.Logf("Warning: unprocessable request found %v", k.String())
+		cli.DebugLogf("Warning: unprocessable request found %v", k.String())
 	})
 
-	cli.Logf("Listing Unprocessable Requests completed (found %v records)\n", count)
+	cli.DebugLogf("Listing Unprocessable Requests completed (found %v records)\n", count)
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState state.StateDraft, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+	cli.DebugLog("Migrating blocklog contract\n")
+
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
@@ -220,4 +223,6 @@ func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState s
 	//migrateBlockRegistry(oldContractState, newContractState)
 	//migrateRequestLookupIndex(oldContractState, newContractState)
 	migrateRequestReceipts(oldContractState, newContractState, oldChainID, newChainID)
+
+	cli.DebugLog("Migrated blocklog contract\n")
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,10 +16,12 @@ import (
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
+	old_trietest "github.com/nnikolash/wasp-types-exported/packages/trie/test"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
@@ -67,13 +70,12 @@ func main() {
 
 	srcKVS := db.Connect(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
-	srcState := lo.Must(srcStore.LatestState())
 
 	if newChainIDStr == "dummy" {
 		// just for easier testing
 		newChainIDStr = "0x00000000000000000000000000000000000000000000000000000000000000ff"
 	}
-	oldChainID := old_isc.ChainID(GetAnchorOutput(srcState).AliasID)
+	oldChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(srcStore.LatestState())).AliasID)
 	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
@@ -86,9 +88,12 @@ func main() {
 
 	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
-	destStateDraft := destStore.NewOriginStateDraft()
 
-	//migrateAllBlocks(srcStore, destStore)
+	//migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
+
+	cli.DebugLoggingEnabled = true
+	srcState := lo.Must(srcStore.LatestState())
+	destStateDraft := destStore.NewOriginStateDraft()
 
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
 	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
@@ -102,9 +107,104 @@ func main() {
 }
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
-func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore) {
-	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+	var prevL1Commitment *state.L1Commitment
 
+	_oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
+	_ = _oldState
+
+	oldStateStore := old_trietest.NewInMemoryKVStore()
+	oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
+	oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
+	oldStateTriePrevRoot := oldStateTrie.Root()
+
+	newState := NewInMemoryKVStore(true)
+
+	lastPrintTime := time.Now()
+	blocksProcessed := 0
+	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
+	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
+
+	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+		oldMuts := block.Mutations()
+		for k, v := range oldMuts.Sets {
+			oldStateTrie.Update([]byte(k), v)
+		}
+		for k := range oldMuts.Dels {
+			oldStateTrie.Delete([]byte(k))
+		}
+		oldStateTrieRoot, _ := oldStateTrie.Commit(oldStateStore)
+		lo.Must(old_trie.Prune(oldStateStore, oldStateTriePrevRoot))
+		oldStateTriePrevRoot = oldStateTrieRoot
+
+		oldStateMutsOnly := old_buffered.NewBufferedKVStoreForMutations(NoopKVStoreReader[old_kv.Key]{}, oldMuts)
+
+		newState.StartMarking()
+
+		v := migrations.MigrateRootContract(oldState, newState)
+		rootMuts := newState.MutationsCount()
+
+		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
+		accountsMuts := newState.MutationsCount() - rootMuts
+
+		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
+		governanceMuts := newState.MutationsCount() - rootMuts - accountsMuts
+
+		newState.StopMarking()
+		newState.DeleteMarkedIfNotSet()
+
+		migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID)
+		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
+
+		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
+		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
+
+		newMuts := newState.Commit(true)
+
+		// TODO: time??
+		var nextStateDraft state.StateDraft
+		if prevL1Commitment == nil {
+			nextStateDraft = destStore.NewOriginStateDraft()
+		} else {
+			// TODO: NewStateDraft, which most likely needs SaveNextBlockInfo for Commit
+			nextStateDraft = lo.Must(destStore.NewEmptyStateDraft(prevL1Commitment))
+		}
+		newMuts.ApplyTo(nextStateDraft)
+
+		// TODO: SaveNextBlockInfo?
+		newBlock := destStore.Commit(nextStateDraft)
+		prevL1Commitment = newBlock.L1Commitment()
+
+		//Ugly stats code
+		blocksProcessed++
+		oldSetsProcessed += len(oldMuts.Sets)
+		oldDelsProcessed += len(oldMuts.Dels)
+		newSetsProcessed += len(newMuts.Sets)
+		newDelsProcessed += len(newMuts.Dels)
+		rootMutsProcessed += rootMuts
+		accountMutsProcessed += accountsMuts
+		blocklogMutsProcessed += blocklogMuts
+		govMutsProcessed += governanceMuts
+		evmMutsProcessed += evmMuts
+
+		periodicAction(3*time.Second, &lastPrintTime, func() {
+			cli.Logf("Blocks index: %v", blockIndex)
+			cli.Logf("Blocks processed: %v", blocksProcessed)
+			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
+			cli.Logf("Mutations per state processed (sets/dels): old = %.1f/%.1f, new = %.1f/%.1f",
+				float64(oldSetsProcessed)/float64(blocksProcessed), float64(oldDelsProcessed)/float64(blocksProcessed),
+				float64(newSetsProcessed)/float64(blocksProcessed), float64(newDelsProcessed)/float64(blocksProcessed),
+			)
+			cli.Logf("New mutations per block by contracts:\n\tRoot: %.1f\n\tAccounts: %.1f\n\tBlocklog: %.1f\n\tGovernance: %.1f\n\tEVM: %.1f",
+				float64(rootMutsProcessed)/float64(blocksProcessed), float64(accountMutsProcessed)/float64(blocksProcessed),
+				float64(blocklogMutsProcessed)/float64(blocksProcessed), float64(govMutsProcessed)/float64(blocksProcessed),
+				float64(evmMutsProcessed)/float64(blocksProcessed),
+			)
+
+			blocksProcessed = 0
+			oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed = 0, 0, 0, 0
+			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0
+		})
 	})
 }
 
@@ -160,17 +260,6 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 	}
 }
 
-func measureTime(f func()) time.Duration {
-	start := time.Now()
-	f()
-	return time.Since(start)
-}
-
-func measureTimeAndPrint(descr string, f func()) {
-	d := measureTime(f)
-	cli.Logf("%v: %v\n", descr, d)
-}
-
 func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	latestBlockIndex := lo.Must(s.LatestBlockIndex())
 	measureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
@@ -179,13 +268,6 @@ func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	measureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
-}
-
-func periodicAction(period time.Duration, lastActionTime *time.Time, action func()) {
-	if time.Since(*lastActionTime) >= period {
-		action()
-		*lastActionTime = time.Now()
-	}
 }
 
 func newProgressPrinter(totalBlocksCount uint32) (printProgress func(getBlockIndex func() uint32)) {

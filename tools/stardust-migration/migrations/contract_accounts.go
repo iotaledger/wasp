@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
@@ -30,11 +29,11 @@ type migratedAccount struct {
 func MigrateAccountsContract(
 	v old_isc.SchemaVersion,
 	oldChainState old_kv.KVStoreReader,
-	newChainState state.StateDraft,
+	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Log("Migrating accounts contract...\n")
+	cli.DebugLog("Migrating accounts contract...\n")
 	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
 	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
 
@@ -52,11 +51,11 @@ func MigrateAccountsContract(
 	// PrefixMintIDMap ignored
 	migrateNonce(oldState, newState, oldChainID, newChainID)
 
-	cli.Log("Migrated accounts contract\n")
+	cli.DebugLog("Migrated accounts contract\n")
 }
 
 func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChID old_isc.ChainID, newChID isc.ChainID, migratedAccs *map[old_kv.Key]migratedAccount) {
-	cli.Logf("Migrating accounts list...\n")
+	cli.DebugLogf("Migrating accounts list...\n")
 
 	migrateAccountAndSaveNewAgentID := p(func(oldAccountKey old_kv.Key, v bool) (kv.Key, bool) {
 		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChID))
@@ -76,11 +75,11 @@ func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, old
 		migrateAccountAndSaveNewAgentID,
 	)
 
-	cli.Logf("Migrated list of %v accounts\n", count)
+	cli.DebugLogf("Migrated list of %v accounts\n", count)
 }
 
 func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
-	panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
+	//panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
 	return oldBalanceFullDecimals
 }
 
@@ -92,21 +91,25 @@ func migrateBaseTokenBalances(
 	newChainID isc.ChainID,
 	migratedAccs map[old_kv.Key]migratedAccount,
 ) {
-	cli.Logf("Migrating base token balances...\n")
+	cli.DebugLogf("Migrating base token balances...\n")
 
 	w := accounts.NewStateWriter(newSchema, newState)
 	for _, acc := range migratedAccs {
 		oldBalance := old_accounts.GetBaseTokensBalanceFullDecimals(v, oldState, acc.OldAgentID, oldChainID)
 
 		// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
-		w.CreditToAccountFullDecimals(acc.NewAgentID, convertBaseTokens(oldBalance), newChainID)
+		//w.CreditToAccountFullDecimals(acc.NewAgentID, convertBaseTokens(oldBalance), newChainID)
+
+		newBalance := convertBaseTokens(oldBalance)
+		w.UnsafeSetBaseTokensFullDecimals(acc.NewAgentID, newChainID, newBalance)
+		// TODO: migrate L2TotalsAccount
 	}
 
-	cli.Logf("Migrated %v base token balances\n", len(migratedAccs))
+	cli.DebugLogf("Migrated %v base token balances\n", len(migratedAccs))
 }
 
 func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migratedAccounts map[old_kv.Key]migratedAccount) {
-	cli.Logf("Migrating native token balances...\n")
+	cli.DebugLogf("Migrating native token balances...\n")
 
 	var count int
 
@@ -119,17 +122,20 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 			newBalance := OldNativeTokenBalanceToNewCoinValue(oldNativeToken.Amount)
 
 			// NOTE: L2TotalsAccount is also credited here, so it does not need to be migrated, only compared.
-			w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, newChainID)
+			//w.CreditToAccount(acc.NewAgentID, isc.CoinBalances{newCoinType: newBalance}, newChainID)
+
+			w.UnsafeSetCoinBalance(acc.NewAgentID, newChainID, newCoinType, newBalance)
+			// TODO: migrate L2TotalsAccount
 		}
 
 		count += len(oldNativeTokes)
 	}
 
-	cli.Logf("Migrated %v native token balances\n", count)
+	cli.DebugLogf("Migrated %v native token balances\n", count)
 }
 
 func migrateFoundriesOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.Logf("Migrating list of foundry outputs...\n")
+	cli.DebugLogf("Migrating list of foundry outputs...\n")
 
 	// old: KeyFoundryOutputRecords stores a map of <foundrySN> => foundryOutputRec
 	// new: foundries not supported, just backup the map
@@ -140,7 +146,7 @@ func migrateFoundriesOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore)
 		old_accounts.KeyFoundryOutputRecords,
 	)
 
-	cli.Logf("Migrated %v foundry outputs\n", count)
+	cli.DebugLogf("Migrated %v foundry outputs\n", count)
 }
 
 func migrateFoundriesPerAccount(
@@ -149,7 +155,7 @@ func migrateFoundriesPerAccount(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Logf("Migrating foundries of accounts...\n")
+	cli.DebugLogf("Migrating foundries of accounts...\n")
 
 	// old: PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	// new: foundries not supported, just backup the maps
@@ -164,11 +170,11 @@ func migrateFoundriesPerAccount(
 		newChainID,
 	)
 
-	cli.Logf("Migrated %v foundries of accounts\n", count)
+	cli.DebugLogf("Migrated %v foundries of accounts\n", count)
 }
 
 func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.Logf("Migrating native token outputs...\n")
+	cli.DebugLogf("Migrating native token outputs...\n")
 
 	migrateEntry := func(ntID old_iotago.NativeTokenID, rec old_accounts.NativeTokenOutputRec) (coin.Type, isc.IotaCoinInfo) {
 		coinType := OldNativeTokenIDtoNewCoinType(ntID)
@@ -180,7 +186,7 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 	// new: keyCoinInfo ("RC") stores a map of <CoinType> => isc.IotaCoinInfo
 	count := MigrateMapByName(oldState, newState, old_accounts.KeyNativeTokenOutputMap, "RC", p(migrateEntry))
 
-	cli.Logf("Migrated %v native token outputs\n", count)
+	cli.DebugLogf("Migrated %v native token outputs\n", count)
 }
 
 func migrateNFTs(
@@ -189,7 +195,7 @@ func migrateNFTs(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Logf("Migrating NFTs...\n")
+	cli.DebugLogf("Migrating NFTs...\n")
 
 	oldNFTOutputs := old_accounts.NftOutputMapR(oldState)
 	w := accounts.NewStateWriter(newSchema, newState)
@@ -205,7 +211,7 @@ func migrateNFTs(
 		return true
 	})
 
-	cli.Logf("Migrated %v NFTs\n", count)
+	cli.DebugLogf("Migrated %v NFTs\n", count)
 }
 
 func migrateNonce(
@@ -214,7 +220,7 @@ func migrateNonce(
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.Logf("Migrating nonce...\n")
+	cli.DebugLogf("Migrating nonce...\n")
 
 	count := MigrateMapByName(
 		oldState,
@@ -226,5 +232,5 @@ func migrateNonce(
 		},
 	)
 
-	cli.Logf("Migrated %d nonces\n", count)
+	cli.DebugLogf("Migrated %d nonces\n", count)
 }

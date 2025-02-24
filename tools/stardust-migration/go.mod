@@ -5,7 +5,6 @@ go 1.22
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.14.5-wasp1
 	github.com/iotaledger/wasp => ../..
-	github.com/nnikolash/wasp-types-exported => ../../../wasp-types-exported
 )
 
 require (
@@ -14,7 +13,7 @@ require (
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v0.0.0-00010101000000-000000000000
-	github.com/nnikolash/wasp-types-exported v0.0.0-20250213150121-964e3f68c674
+	github.com/nnikolash/wasp-types-exported v0.0.0-20250221154442-602aaac5782b
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/samber/lo v1.46.0
 )
