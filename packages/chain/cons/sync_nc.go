@@ -19,10 +19,11 @@ type SyncNC interface {
 }
 
 type syncNCImpl struct {
-	haveInputAnchor *isc.StateAnchor
-	haveState       bool
-	haveRequests    bool
-	inputCB         func(anchor *isc.StateAnchor) gpa.OutMessages
+	inputAnchor         *isc.StateAnchor
+	inputAnchorReceived bool
+	stateReceived       bool
+	requestsReceived    bool
+	inputCB             func(anchor *isc.StateAnchor) gpa.OutMessages
 
 	gasCoins []*coin.CoinWithRef
 	l1params *parameters.L1Params
@@ -44,13 +45,13 @@ func (sync *syncNCImpl) String() string {
 		str += "/WAIT[NC to respond]"
 	} else {
 		wait := []string{}
-		if sync.haveInputAnchor == nil {
+		if !sync.inputAnchorReceived {
 			wait = append(wait, "InputAnchor")
 		}
-		if !sync.haveState {
+		if !sync.stateReceived {
 			wait = append(wait, "StateProposal")
 		}
-		if !sync.haveRequests {
+		if !sync.requestsReceived {
 			wait = append(wait, "RequestProposals")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
@@ -59,36 +60,37 @@ func (sync *syncNCImpl) String() string {
 }
 
 func (sync *syncNCImpl) HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages {
-	if sync.haveInputAnchor != nil || anchor == nil {
+	if sync.inputAnchorReceived {
 		return nil
 	}
-	sync.haveInputAnchor = anchor
+	sync.inputAnchor = anchor // can be nil.
+	sync.inputAnchorReceived = true
 	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) HaveState() gpa.OutMessages {
-	if sync.haveState {
+	if sync.stateReceived {
 		return nil
 	}
-	sync.haveState = true
+	sync.stateReceived = true
 	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) HaveRequests() gpa.OutMessages {
-	if sync.haveRequests {
+	if sync.requestsReceived {
 		return nil
 	}
-	sync.haveRequests = true
+	sync.requestsReceived = true
 	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) tryCompleteInputs() gpa.OutMessages {
-	if sync.haveInputAnchor == nil || !sync.haveState || !sync.haveRequests || sync.inputCB == nil {
+	if !sync.inputAnchorReceived || !sync.stateReceived || !sync.requestsReceived || sync.inputCB == nil {
 		return nil
 	}
 	cb := sync.inputCB
 	sync.inputCB = nil
-	return cb(sync.haveInputAnchor)
+	return cb(sync.inputAnchor)
 }
 
 func (sync *syncNCImpl) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {

@@ -251,8 +251,6 @@ func (cgr *ConsGr) Time(t time.Time) {
 	cgr.inputTimeCh <- t
 }
 
-var lastLogStr = ""
-
 func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 	defer util.ExecuteIfNotNil(cgr.netDisconnect)
 	defer func() {
@@ -331,6 +329,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
 
 		case t, ok := <-cgr.nodeConnL1InfoRespCh:
+			cgr.log.Debugf("ConsensusL1InfoProposal received, respCh=%v, response=%v", cgr.nodeConnL1InfoRespCh, t)
 			if !ok {
 				cgr.nodeConnL1InfoRespCh = nil
 				continue
@@ -364,14 +363,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
-
-			// TODO: Improve Consensus logging. Without that check, we spam the logs heavily with the same message.
-			lgStr := fmt.Sprintf("Consensus Instance: %v\n", cgr.consInst.StatusString())
-			if lastLogStr != lgStr {
-				lastLogStr = lgStr
-				cgr.log.Debug(lastLogStr)
-			}
-
+			cgr.log.Debug("Consensus Instance: %v", cgr.consInst.StatusString())
 		case <-ctxClose:
 			cgr.log.Debugf("Closing ConsGr because context closed.")
 			return
@@ -431,6 +423,7 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	}
 	if output.NeedNodeConnL1Info != nil && !cgr.nodeConnL1InfoAsked {
 		cgr.nodeConnL1InfoRespCh = cgr.nodeConn.ConsensusL1InfoProposal(cgr.ctx, output.NeedNodeConnL1Info)
+		cgr.log.Debugf("ConsensusL1InfoProposal asked, respCh=%v", cgr.nodeConnL1InfoRespCh)
 		cgr.nodeConnL1InfoAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
