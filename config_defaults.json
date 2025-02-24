@@ -24,6 +24,7 @@
     "disableEvents": true
   },
   "l1": {
+    "httpURL": "http://localhost:9000",
     "websocketURL": "ws://localhost:9000",
     "packageID": "",
     "maxConnectionAttempts": 30,

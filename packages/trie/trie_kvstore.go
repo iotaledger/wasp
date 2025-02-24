@@ -279,9 +279,11 @@ func (tr *TrieReader) iterateNodes(depth int, commitment Hash, path []byte, fun 
 
 	action := fun(path, n, depth)
 	if action == IterateContinue {
-		n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
+		if !n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
 			return tr.iterateNodes(depth+1, childCommitment, concat(path, n.PathExtension, []byte{childIndex}), fun)
-		})
+		}) {
+			return false
+		}
 	}
 	return action != IterateStop
 }

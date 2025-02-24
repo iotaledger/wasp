@@ -37,7 +37,7 @@ type ChainNodeConn interface {
 		recvAnchor AnchorHandler,
 		onChainConnect func(),
 		onChainDisconnect func(),
-	)
+	) error
 	// PublishTX posts the PTB asynchronously and calls the callback when it is
 	// confirmed or an error is detected, or the ctx is canceled.
 	PublishTX(
