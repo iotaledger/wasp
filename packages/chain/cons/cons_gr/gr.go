@@ -251,8 +251,6 @@ func (cgr *ConsGr) Time(t time.Time) {
 	cgr.inputTimeCh <- t
 }
 
-var lastLogStr = ""
-
 func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 	defer util.ExecuteIfNotNil(cgr.netDisconnect)
 	defer func() {
@@ -365,14 +363,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
-
-			// TODO: Improve Consensus logging. Without that check, we spam the logs heavily with the same message.
-			lgStr := fmt.Sprintf("Consensus Instance: %v\n", cgr.consInst.StatusString())
-			if lastLogStr != lgStr {
-				lastLogStr = lgStr
-				cgr.log.Debug(lastLogStr)
-			}
-
+			cgr.log.Debug("Consensus Instance: %v", cgr.consInst.StatusString())
 		case <-ctxClose:
 			cgr.log.Debugf("Closing ConsGr because context closed.")
 			return
