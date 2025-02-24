@@ -331,6 +331,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
 
 		case t, ok := <-cgr.nodeConnL1InfoRespCh:
+			cgr.log.Debugf("ConsensusL1InfoProposal received, respCh=%v, response=%v", cgr.nodeConnL1InfoRespCh, t)
 			if !ok {
 				cgr.nodeConnL1InfoRespCh = nil
 				continue
@@ -431,6 +432,7 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	}
 	if output.NeedNodeConnL1Info != nil && !cgr.nodeConnL1InfoAsked {
 		cgr.nodeConnL1InfoRespCh = cgr.nodeConn.ConsensusL1InfoProposal(cgr.ctx, output.NeedNodeConnL1Info)
+		cgr.log.Debugf("ConsensusL1InfoProposal asked, respCh=%v", cgr.nodeConnL1InfoRespCh)
 		cgr.nodeConnL1InfoAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
