@@ -91,6 +91,7 @@ func main() {
 
 	//migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
 
+	cli.DebugLoggingEnabled = true
 	srcState := lo.Must(srcStore.LatestState())
 	destStateDraft := destStore.NewOriginStateDraft()
 
@@ -100,6 +101,8 @@ func main() {
 	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
 	migrations.MigrateEVMContract(srcState, destStateDraft)
 
+	newBlock := destStore.Commit(destStateDraft)
+	destStore.SetLatest(newBlock.TrieRoot())
 	destKVS.Flush()
 }
 

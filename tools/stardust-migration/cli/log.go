@@ -20,11 +20,22 @@ func Log(v ...interface{}) {
 	})
 }
 
+var DebugLoggingEnabled = false
+
 func DebugLogf(format string, s ...interface{}) {
+	if DebugLoggingEnabled {
+		Logf(format, s...)
+	}
 }
 
 func DebugLogln(v ...interface{}) {
+	if DebugLoggingEnabled {
+		Logln(v...)
+	}
 }
 
 func DebugLog(v ...interface{}) {
+	if DebugLoggingEnabled {
+		Log(v...)
+	}
 }
