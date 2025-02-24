@@ -15,7 +15,7 @@ import (
 )
 
 func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
-	cli.DebugLog("Migrating evm contract...\n")
+	cli.DebugLog("Migrating evm contract...")
 
 	oldContractState := old_evm.ContractPartitionR(oldChainState)
 	newContractState := evm.ContractPartition(newChainState)
@@ -29,11 +29,11 @@ func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVS
 	migrateISCMagicAllowance(oldMagicState, newMagicState)
 	migrateISCMagicERC20ExternalNativeTokens(oldMagicState, newMagicState)
 
-	cli.DebugLog("Migrated evm contract\n")
+	cli.DebugLog("Migrated evm contract")
 }
 
 func migrateEVMEmulator(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
-	cli.DebugLog("Migrating evm/emulator...\n")
+	cli.DebugLog("Migrating evm/emulator...")
 
 	oldEmulatorState := old_evm.EmulatorStateSubrealmR(oldContractState)
 	newEmulatorState := evm.EmulatorStateSubrealm(newContractState)
@@ -47,30 +47,30 @@ func migrateEVMEmulator(oldContractState old_kv.KVStoreReader, newContractState 
 		return true
 	})
 
-	cli.DebugLog("Migrated %v keys for evm/emulator\n", progress.Count)
+	cli.DebugLogf("Migrated %v keys for evm/emulator", progress.Count)
 }
 
 func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
-	cli.DebugLog("Migrating iscmagic/privileged...\n")
+	cli.DebugLog("Migrating iscmagic/privileged...")
 
 	count := 0
 
 	// Simply copy all bytes
-	oldMagicState.Iterate(old_evmimpl.PrefixPrivileged, func(k old_kv.Key, v []byte) bool {
+	oldMagicState.IterateSorted(old_evmimpl.PrefixPrivileged, func(k old_kv.Key, v []byte) bool {
 		newMagicState.Set(kv.Key(k), v)
 		count++
 		return true
 	})
 
-	cli.DebugLog("Migrated %v keys for iscmagic/privileged\n", count)
+	cli.DebugLogf("Migrated %v keys for iscmagic/privileged", count)
 }
 
 func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
-	cli.DebugLog("Migrating iscmagic/allowance...\n")
+	cli.DebugLog("Migrating iscmagic/allowance...")
 
 	progress := NewProgressPrinter()
 
-	oldMagicState.Iterate(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
+	oldMagicState.IterateSorted(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
 		k = MustRemovePrefix(k, old_evmimpl.PrefixAllowance)
 		if len(k) != 2*common.AddressLength {
 			log.Panicf("unexpected key length: %v", len(k))
@@ -78,34 +78,39 @@ func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState 
 
 		oldFromBytes := []byte(k[:common.AddressLength])
 		oldToBytes := []byte(k[common.AddressLength:])
-		oldAllowance := old_isc.MustAssetsFromBytes(v)
 
 		from := common.BytesToAddress(oldFromBytes)
 		to := common.BytesToAddress(oldToBytes)
-		newAllowance := OldAssetsToNewAssets(oldAllowance)
 
-		newMagicState.Set(evmimpl.KeyAllowance(from, to), newAllowance.Bytes())
+		if v == nil {
+			newMagicState.Del(kv.Key(k))
+		} else {
+			oldAllowance := old_isc.MustAssetsFromBytes(v)
+			newAllowance := OldAssetsToNewAssets(oldAllowance)
+
+			newMagicState.Set(evmimpl.KeyAllowance(from, to), newAllowance.Bytes())
+		}
 
 		progress.Print()
 		return true
 	})
 
-	cli.DebugLog("Migrated %v keys for iscmagic/allowance\n", progress.Count)
+	cli.DebugLogf("Migrated %v keys for iscmagic/allowance", progress.Count)
 }
 
 func migrateISCMagicERC20ExternalNativeTokens(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
-	cli.DebugLog("Migrating iscmagic/erc20_external_native_tokens...\n")
+	cli.DebugLog("Migrating iscmagic/erc20_external_native_tokens...")
 
 	count := 0
 
 	// Simply copying all bytes, because for now not sure what to do with it, plus according to the information about keys usage
 	// this feature seems not even being used.
 	// TODO: revisit this before doing actual migration.
-	oldMagicState.Iterate(old_evmimpl.PrefixERC20ExternalNativeTokens, func(k old_kv.Key, v []byte) bool {
+	oldMagicState.IterateSorted(old_evmimpl.PrefixERC20ExternalNativeTokens, func(k old_kv.Key, v []byte) bool {
 		newMagicState.Set(kv.Key(k), v)
 		count++
 		return true
 	})
 
-	cli.DebugLog("Migrated %v keys for iscmagic/erc20_external_native_tokens\n", count)
+	cli.DebugLogf("Migrated %v keys for iscmagic/erc20_external_native_tokens", count)
 }

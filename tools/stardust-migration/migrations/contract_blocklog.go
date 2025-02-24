@@ -73,13 +73,13 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		break
 	}
 
-	cli.DebugLogf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.\n", lastUnprunedBlock, oldBlocks.Len())
+	cli.DebugLogf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.", lastUnprunedBlock, oldBlocks.Len())
 	progress := NewProgressPrinter(500)
 
 	for i := uint32(lastUnprunedBlock); i < oldBlocks.Len(); i++ {
 		oldData := oldBlocks.GetAt(i)
 		if len(oldData) == 0 {
-			panic(fmt.Errorf("blockRegistry migration error: %d has empty data!\n", i))
+			panic(fmt.Errorf("blockRegistry migration error: %d has empty data", i))
 		}
 
 		oldBlockInfo, err := old_blocklog.BlockInfoFromBytes(oldData)
@@ -104,7 +104,7 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		progress.Print()
 	}
 
-	cli.DebugLogf("\nblockRegistry: oldState Len: %d, newState Len: %d\n", oldBlocks.Len(), newBlocks.Len())
+	cli.DebugLogf("\nblockRegistry: oldState Len: %d, newState Len: %d", oldBlocks.Len(), newBlocks.Len())
 }
 
 func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
@@ -114,20 +114,25 @@ func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStor
 	newLookup := collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
 
 	progress := NewProgressPrinter(500)
-	oldLookup.IterateKeys(func(elemKey []byte) bool {
-		oldIndex := oldLookup.GetAt(elemKey)
-		oldLookupKeys, err := old_blocklog.RequestLookupKeyListFromBytes(oldIndex)
-		if err != nil {
-			panic(fmt.Errorf("requestLookupIndex migration error: %v", err))
+	oldLookup.Iterate(func(elemKey, oldIndex []byte) bool {
+		// TODO: should the key be also migrated (re-encoded)?
+		if oldIndex == nil {
+			newLookup.DelAt(elemKey)
+		} else {
+			oldLookupKeys, err := old_blocklog.RequestLookupKeyListFromBytes(oldIndex)
+			if err != nil {
+				panic(fmt.Errorf("requestLookupIndex migration error: %v", err))
+			}
+
+			newLookupKeys := blocklog.RequestLookupKeyList{}
+			for _, l := range oldLookupKeys {
+				newLookupKeys = append(newLookupKeys, blocklog.NewRequestLookupKey(l.BlockIndex(), l.RequestIndex()))
+			}
+
+			// TODO: Check if we can take over the original key, I assume so. But double check it
+			newLookup.SetAt(elemKey, newLookupKeys.Bytes())
 		}
 
-		newLookupKeys := blocklog.RequestLookupKeyList{}
-		for _, l := range oldLookupKeys {
-			newLookupKeys = append(newLookupKeys, blocklog.NewRequestLookupKey(l.BlockIndex(), l.RequestIndex()))
-		}
-
-		// TODO: Check if we can take over the original key, I assume so. But double check it
-		newLookup.SetAt(elemKey, newLookupKeys.Bytes())
 		progress.Print()
 		return true
 	})
@@ -180,20 +185,25 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, 
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
 	newRequests := collections.NewMap(newState, blocklog.PrefixRequestReceipts)
 
-	cli.DebugLogf("Migrating request receipts (%d)\n", oldRequests.Len())
+	cli.DebugLogf("Migrating request receipts (%d)", oldRequests.Len())
 
 	progress := NewProgressPrinter(500)
 	oldRequests.Iterate(func(elemKey []byte, value []byte) bool {
-		// TODO: Validate if this is fine. BlockIndex and ReqIndex is 0 here, as we don't persist these values in the db
-		// So in my understanding, using 0 here is fine. If not, we need to iterate the whole request lut again and combine the tables.
-		// I added a solution in commit: 96504e6165ed4056a3e8a50281215f3d7eb7c015, for now I go without.
-		oldReceipt, err := old_blocklog.RequestReceiptFromBytes(value, 0, 0)
-		if err != nil {
-			panic(fmt.Errorf("requestReceipt migration error: %v", err))
-		}
+		// TODO: should the key be also migrated (re-encoded)?
+		if value == nil {
+			newRequests.DelAt(elemKey)
+		} else {
+			// TODO: Validate if this is fine. BlockIndex and ReqIndex is 0 here, as we don't persist these values in the db
+			// So in my understanding, using 0 here is fine. If not, we need to iterate the whole request lut again and combine the tables.
+			// I added a solution in commit: 96504e6165ed4056a3e8a50281215f3d7eb7c015, for now I go without.
+			oldReceipt, err := old_blocklog.RequestReceiptFromBytes(value, 0, 0)
+			if err != nil {
+				panic(fmt.Errorf("requestReceipt migration error: %v", err))
+			}
 
-		newReceipt := migrateSingleReceipt(oldReceipt, oldChainID, newChainID)
-		newRequests.SetAt(elemKey, newReceipt.Bytes())
+			newReceipt := migrateSingleReceipt(oldReceipt, oldChainID, newChainID)
+			newRequests.SetAt(elemKey, newReceipt.Bytes())
+		}
 
 		progress.Print()
 
@@ -204,17 +214,19 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
 	// No need to migrate. Just print a warning if there are any
 
-	cli.DebugLogf("Listing Unprocessable Requests...\n")
+	cli.DebugLogf("Listing Unprocessable Requests...")
 
 	count := IterateByPrefix(oldState, old_blocklog.PrefixUnprocessableRequests, func(k isc.RequestID, v []byte) {
-		cli.DebugLogf("Warning: unprocessable request found %v", k.String())
+		if v != nil {
+			cli.DebugLogf("Warning: unprocessable request found %v", k.String())
+		}
 	})
 
-	cli.DebugLogf("Listing Unprocessable Requests completed (found %v records)\n", count)
+	cli.DebugLogf("Listing Unprocessable Requests completed (found %v records)", count)
 }
 
 func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
-	cli.DebugLog("Migrating blocklog contract\n")
+	cli.DebugLog("Migrating blocklog contract")
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
@@ -224,5 +236,5 @@ func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState k
 	//migrateRequestLookupIndex(oldContractState, newContractState)
 	migrateRequestReceipts(oldContractState, newContractState, oldChainID, newChainID)
 
-	cli.DebugLog("Migrated blocklog contract\n")
+	cli.DebugLog("Migrated blocklog contract")
 }

@@ -102,6 +102,11 @@ func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) *buffered.Mutation
 }
 
 func (b *InMemoryKVStore) Set(key kv.Key, value []byte) {
+	if value == nil {
+		b.Del(key)
+		return
+	}
+
 	if b.marking {
 		b.uncommitedMarked[key] = struct{}{}
 	}

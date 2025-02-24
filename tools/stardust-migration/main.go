@@ -89,8 +89,20 @@ func main() {
 	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 
-	//migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
+	// TODO: Maybe this will be useful to have an a CLI arg - for testing purposes.
+	const migrateOnlyLatestState = false
 
+	if migrateOnlyLatestState {
+		migrateLatestState(srcStore, destStore, oldChainID, newChainID)
+	} else {
+		// TODO: Would be nice to have CLI arg to specify block from which to start - for testing purposes.
+		migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
+	}
+
+	destKVS.Flush()
+}
+
+func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
 	cli.DebugLoggingEnabled = true
 	srcState := lo.Must(srcStore.LatestState())
 	destStateDraft := destStore.NewOriginStateDraft()
@@ -103,7 +115,6 @@ func main() {
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
-	destKVS.Flush()
 }
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
