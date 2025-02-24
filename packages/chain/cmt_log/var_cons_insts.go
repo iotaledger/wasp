@@ -84,7 +84,6 @@ func (vci *varConsInstsImpl) ConsTimeout(li LogIndex, cb onLIInc) gpa.OutMessage
 
 // If we see consensus proposals from F+1 nodes at seenLI...
 func (vci *varConsInstsImpl) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages {
-	vci.maxLI = MaxLogIndex(vci.maxLI, seenLI)
 	msgs := gpa.NoMessages()
 	msgs.AddAll(vci.trySet(seenLI.Prev(), nil, cb))
 	if !vci.haveConsOut {
