@@ -89,13 +89,16 @@ func main() {
 	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 
-	migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
+	//migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
 
-	// v := migrations.MigrateRootContract(srcState, destStateDraft)
-	// migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
-	// migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID)
-	// // migrations.MigrateGovernanceContract(srcState, destStateDraft)
-	// migrations.MigrateEVMContract(srcState, destStateDraft)
+	srcState := lo.Must(srcStore.LatestState())
+	destStateDraft := destStore.NewOriginStateDraft()
+
+	v := migrations.MigrateRootContract(srcState, destStateDraft)
+	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
+	migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID)
+	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
+	migrations.MigrateEVMContract(srcState, destStateDraft)
 
 	destKVS.Flush()
 }
