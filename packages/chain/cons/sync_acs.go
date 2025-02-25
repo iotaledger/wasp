@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acs"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type SyncACS interface {
@@ -19,7 +20,7 @@ type SyncACS interface {
 	MempoolRequestsReceived(requestRefs []*isc.RequestRef) gpa.OutMessages
 	DSSIndexProposalReceived(dssIndexProposal []int) gpa.OutMessages
 	TimeDataReceived(timeData time.Time) gpa.OutMessages
-	GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
+	L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 	ACSOutputReceived(output gpa.Output) gpa.OutMessages
 	String() string
 }
@@ -34,7 +35,8 @@ type syncACSImpl struct {
 	DSSIndexProposal        []int
 	TimeData                time.Time
 	gasCoins                []*coin.CoinWithRef
-	gasPrice                uint64
+	l1params                *parameters.L1Params
+	l1InfoReceived          bool
 
 	inputsReady   bool
 	inputsReadyCB func(
@@ -43,7 +45,7 @@ type syncACSImpl struct {
 		dssIndexProposal []int,
 		timeData time.Time,
 		gasCoins []*coin.CoinWithRef,
-		gasPrice uint64,
+		l1params *parameters.L1Params,
 	) gpa.OutMessages
 
 	outputReady   bool
@@ -60,7 +62,7 @@ func NewSyncACS(
 		dssIndexProposal []int,
 		timeData time.Time,
 		gasCoins []*coin.CoinWithRef,
-		gasPrice uint64,
+		l1params *parameters.L1Params,
 	) gpa.OutMessages,
 	outputReadyCB func(output map[gpa.NodeID][]byte) gpa.OutMessages,
 	terminatedCB func(),
@@ -105,13 +107,13 @@ func (sub *syncACSImpl) TimeDataReceived(timeData time.Time) gpa.OutMessages {
 	return nil
 }
 
-func (sub *syncACSImpl) GasInfoReceived(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
-	if gasCoins != nil {
-		sub.gasCoins = gasCoins
+func (sub *syncACSImpl) L1InfoReceived(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+	if sub.l1InfoReceived {
+		return nil
 	}
-	if gasPrice != 0 {
-		sub.gasPrice = gasPrice
-	}
+	sub.gasCoins = gasCoins
+	sub.l1params = l1params
+	sub.l1InfoReceived = true
 	return sub.tryCompleteInput()
 }
 
@@ -119,11 +121,11 @@ func (sub *syncACSImpl) tryCompleteInput() gpa.OutMessages {
 	if sub.inputsReady || !sub.baseStateAnchorReceived {
 		return nil
 	}
-	if sub.baseStateAnchor != nil && (sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || sub.gasCoins == nil || sub.gasPrice == 0) {
+	if sub.RequestRefs == nil || sub.DSSIndexProposal == nil || sub.TimeData.IsZero() || !sub.l1InfoReceived {
 		return nil
 	}
 	sub.inputsReady = true
-	return sub.inputsReadyCB(sub.baseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.gasPrice)
+	return sub.inputsReadyCB(sub.baseStateAnchor, sub.RequestRefs, sub.DSSIndexProposal, sub.TimeData, sub.gasCoins, sub.l1params)
 }
 
 func (sub *syncACSImpl) ACSOutputReceived(output gpa.Output) gpa.OutMessages {
@@ -166,11 +168,8 @@ func (sub *syncACSImpl) String() string {
 		if sub.TimeData.IsZero() {
 			wait = append(wait, "TimeData")
 		}
-		if sub.gasCoins == nil {
-			wait = append(wait, "GasCoins")
-		}
-		if sub.gasPrice == 0 {
-			wait = append(wait, "GasPrice")
+		if !sub.l1InfoReceived {
+			wait = append(wait, "L1Info")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
 	}

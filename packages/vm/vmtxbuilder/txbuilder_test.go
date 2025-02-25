@@ -413,6 +413,13 @@ func TestRotateAndBuildTx(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), getObjRes.Data.Owner.AddressOwner)
+
+	gasCoinGetObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		ObjectID: selectedGasCoin.ObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+	})
+	require.NoError(t, err)
+	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), gasCoinGetObjRes.Data.Owner.AddressOwner)
 }
 
 func createIscmoveReq(

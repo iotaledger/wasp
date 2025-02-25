@@ -157,7 +157,10 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
+	err := parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
+	if err != nil {
+		panic(err)
+	}
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
@@ -452,10 +455,6 @@ func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 		Value: coin.Value(moveGasCoin.Balance),
 		Ref:   &gasCoinRef,
 	}
-}
-
-func (ch *Chain) LatestL1Parameters() *parameters.L1Params {
-	return parameters.L1()
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {

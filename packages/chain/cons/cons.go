@@ -77,7 +77,7 @@ type Output struct {
 	NeedStateMgrStateProposal *isc.StateAnchor  // Query for a proposal for Virtual State (it will go to the batch proposal).
 	NeedStateMgrDecidedState  *isc.StateAnchor  // Query for a decided Virtual State to be used by VM.
 	NeedStateMgrSaveBlock     state.StateDraft  // Ask StateMgr to save the produced block.
-	NeedNodeConnGasInfo       *isc.StateAnchor  // Ask NodeConn for the GasInfo related to this anchor.
+	NeedNodeConnL1Info        *isc.StateAnchor  // Ask NodeConn for the L1Info related to this anchor.
 	NeedVMResult              *vm.VMTask        // VM Result is needed for this (agreed) batch.
 	//
 	// Following is the final result.
@@ -293,8 +293,8 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 		return c.subSM.BlockSaved(input.block)
 	case *inputTimeData:
 		return c.subACS.TimeDataReceived(input.timeData)
-	case *inputGasInfo:
-		return c.subNC.HaveGasInfo(input.gasCoins, input.gasPrice)
+	case *inputL1Info:
+		return c.subNC.HaveL1Info(input.gasCoins, input.l1params)
 	case *inputVMResult:
 		return c.subVM.VMResultReceived(input.task)
 	}
@@ -424,13 +424,18 @@ func (c *consImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMessage
 // NC
 
 func (c *consImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
-	c.output.NeedNodeConnGasInfo = anchor
+	if anchor == nil {
+		c.log.Debugf("ACS got ⊥ as input, no L1 info can be fetched.")
+		return c.subACS.L1InfoReceived([]*coin.CoinWithRef{}, nil)
+	}
+	c.output.NeedNodeConnL1Info = anchor
 	return nil
 }
 
-func (c *consImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
-	c.output.NeedNodeConnGasInfo = nil
-	return c.subACS.GasInfoReceived(gasCoins, gasPrice)
+func (c *consImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+	c.log.Debugf("L1 info received, gasCoins=%v, l1Params=%v", gasCoins, l1params)
+	c.output.NeedNodeConnL1Info = nil
+	return c.subACS.L1InfoReceived(gasCoins, l1params)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -473,30 +478,24 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 // ACS
 
 func (c *consImpl) uponACSInputsReceived(
-	baseAliasOutput *isc.StateAnchor,
+	baseAliasOutput *isc.StateAnchor, // Can be nil.
 	requestRefs []*isc.RequestRef,
 	dssIndexProposal []int,
 	timeData time.Time,
-	gasCoins []*coin.CoinWithRef,
-	gasPrice uint64,
+	gasCoins []*coin.CoinWithRef, // Can be nil.
+	l1params *parameters.L1Params, // Can be nil.
 ) gpa.OutMessages {
-	var batchProposalBytes []byte
-	if baseAliasOutput == nil {
-		batchProposalBytes = []byte{}
-	} else {
-		batchProposal := bp.NewBatchProposal(
-			*c.dkShare.GetIndex(),
-			baseAliasOutput,
-			util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
-			timeData,
-			c.validatorAgentID,
-			requestRefs,
-			gasCoins,
-			gasPrice,
-		)
-		batchProposalBytes = batchProposal.Bytes()
-	}
-	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposalBytes)
+	batchProposal := bp.NewBatchProposal(
+		*c.dkShare.GetIndex(),
+		baseAliasOutput, // Will be NIL in the case of ⊥ proposal.
+		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+		timeData,
+		c.validatorAgentID,
+		requestRefs, // Will be [] in the case of ⊥ proposal.
+		gasCoins,    // Will be NIL in the case of ⊥ proposal.
+		l1params,    // Will be NIL in the case of ⊥ proposal.
+	)
+	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to the ACS: %w", err))
 	}
@@ -623,7 +622,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 
 func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
 	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
-	var gasPrice uint64 = aggregatedProposals.AggregatedGasPrice()
+	var l1params *parameters.L1Params = aggregatedProposals.AggregatedL1Params()
+	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
 	var gasBudget uint64 = pt.EstimateGasBudget(gasPrice)
 	var gasPaymentCoinRef []*coin.CoinWithRef = aggregatedProposals.AggregatedGasCoins()
 	gasPayment := make([]*iotago.ObjectRef, len(gasPaymentCoinRef))

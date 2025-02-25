@@ -29,5 +29,8 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initRefreshL1ParamsCmd())
 
 	client := iotaclient.NewHTTP(config.L1APIAddress(), iotaclient.WaitForEffectsDisabled)
-	parameters.InitL1(*client, log.HiveLogger())
+	err := parameters.InitL1(*client, log.HiveLogger())
+	if err != nil {
+		panic(err)
+	}
 }

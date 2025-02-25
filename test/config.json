@@ -10,7 +10,7 @@
     }
   },
   "logger": {
-    "level": "info",
+    "level": "debug",
     "disableCaller": true,
     "disableStacktrace": false,
     "stacktraceLevel": "panic",
@@ -19,7 +19,7 @@
       "timeEncoder": "rfc3339"
     },
     "outputPaths": [
-      "stdout"
+      "/waspdb/log"
     ],
     "disableEvents": true
   },
@@ -29,7 +29,6 @@
     "targetNetworkName": ""
   },
   "l1": {
-    "httpURL": "https://api.iota-rebased-alphanet.iota.cafe",
     "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe",
     "packageID": "0x7b2fd27e09ad438c914fe2199cc78c174da92208384ac4341f61d2a15a588463",
     "maxConnectionAttempts": 30,
@@ -38,31 +37,31 @@
   "db": {
     "engine": "rocksdb",
     "chainState": {
-      "path": "waspdb/chains/data"
+      "path": "/waspdb/chains/data"
     },
     "debugSkipHealthCheck": true
   },
   "p2p": {
     "identity": {
       "privateKey": "",
-      "filePath": "waspdb/identity/identity.key"
+      "filePath": "/waspdb/identity/identity.key"
     },
     "db": {
-      "path": "waspdb/p2pstore"
+      "path": "/waspdb/p2pstore"
     }
   },
   "registries": {
     "chains": {
-      "filePath": "waspdb/chains/chain_registry.json"
+      "filePath": "/waspdb/chains/chain_registry.json"
     },
     "dkShares": {
-      "path": "waspdb/dkshares"
+      "path": "/waspdb/dkshares"
     },
     "trustedPeers": {
-      "filePath": "waspdb/trusted_peers.json"
+      "filePath": "/waspdb/trusted_peers.json"
     },
     "consensusState": {
-      "path": "waspdb/chains/consensus"
+      "path": "/waspdb/chains/consensus"
     }
   },
   "peering": {
@@ -80,7 +79,7 @@
   },
   "wal": {
     "enabled": true,
-    "path": "waspdb/wal"
+    "path": "/waspdb/wal"
   },
   "profiling": {
     "enabled": false,
