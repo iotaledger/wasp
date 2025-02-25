@@ -25,7 +25,7 @@ type StartNewChainRequest struct {
 	GasBudget         uint64
 }
 
-func (c *Client) TryGetObject(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
+func (c *Client) GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
 	obj, err := c.Client.GetObject(ctx, req)
 
 	counter := 0
@@ -138,7 +138,7 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.TryGetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObjectWithRetry(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
