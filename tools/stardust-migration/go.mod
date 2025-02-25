@@ -10,7 +10,9 @@ replace (
 require (
 	github.com/dgravesa/go-parallel v0.6.0
 	github.com/ethereum/go-ethereum v1.14.12
+	github.com/iotaledger/hive.go/ds v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240319170702-c7591bb5f9f2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v0.0.0-00010101000000-000000000000
 	github.com/nnikolash/wasp-types-exported v0.0.0-20250221154442-602aaac5782b
@@ -69,12 +71,10 @@ require (
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
 	github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2 // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/lo v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/logger v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/runtime v0.0.0-20240319170702-c7591bb5f9f2 // indirect
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20231106113411-94ac829adbb2 // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
@@ -106,7 +106,7 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/tyler-smith/go-bip39 v1.1.0 // indirect
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98 // indirect
-	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/kyber/v3 v3.1.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

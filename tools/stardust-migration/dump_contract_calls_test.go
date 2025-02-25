@@ -2,13 +2,16 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"runtime"
+	"runtime/debug"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/dgravesa/go-parallel/parallel"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
@@ -19,8 +22,8 @@ import (
 	"github.com/pbnjay/memory"
 	"github.com/samber/lo"
 
-	new_isc "github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
@@ -28,6 +31,7 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
@@ -127,12 +131,28 @@ func printMemUsage() {
 	fmt.Printf("Memory usage: %.2fMB (Allocated) %.2fMB (System)\n", allocatedMB, systemMB)
 }
 
+func createNewDestStore(store *stateaccess.CityMap) (indexedstore.IndexedStore, *stateaccess.CityMap) {
+	newKVStore := stateaccess.NewCityMapWithData(store.Clone())
+
+	runtime.GC()
+	debug.FreeOSMemory()
+
+	newStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(newKVStore))
+
+	return newStore, newKVStore
+}
+
 func TestMigrateBlocklog(t *testing.T) {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	srcDbPath := "/home/luke/dev/wasp_stardust_mainnet/chains/data/iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5"
 	indexFilePath := "/home/luke/dev/wasp_stardust_mainnet/trie_db.bcs"
 	srcStore, trieRoots := initSetup(srcDbPath, indexFilePath)
 
-	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	destKVDB := stateaccess.NewCityMap()
+	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVDB))
 
 	// Coming from packages/origin/origin.go InitChain()
 	originStateDraft := destStore.NewOriginStateDraft()
@@ -144,6 +164,8 @@ func TestMigrateBlocklog(t *testing.T) {
 
 	now := time.Now()
 
+	oldChainID := lo.Must(old_isc.ChainIDFromString("tgl1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm25gu3sa"))
+	newChainID := isctest.RandomChainID()
 	for i := 0; i < len(trieRoots); i++ {
 		destStateDraft := lo.Must(destStore.NewStateDraft(time.Now(), block.L1Commitment()))
 
@@ -154,17 +176,15 @@ func TestMigrateBlocklog(t *testing.T) {
 			panic(err)
 		}
 
+		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, oldChainID, newChainID, block.L1Commitment())
+
 		// Handle deletions
 		// Here its easy, because the key remains the same for both databases
 		// For the whole migration we probably should create some OldToNewKey function handler to solve the differences.
 		// I think most of all keys are just 1:1 mappings.
 		for del, _ := range srcBlock.Mutations().Dels {
-			if destStateDraft.Has(kv.Key(del[:])) {
-				destStateDraft.Del(kv.Key(del[:]))
-			}
+			destStateDraft.Del(kv.Key(del[:]))
 		}
-
-		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, old_isc.EmptyChainID(), new_isc.EmptyChainID())
 
 		block = destStore.Commit(destStateDraft)
 		destStore.SetLatest(block.TrieRoot())
@@ -182,6 +202,20 @@ func TestMigrateBlocklog(t *testing.T) {
 			fmt.Printf("Free memory: %d, total memory: %d\n", freeMemory, totalMemory)
 		}
 
+		if i > 0 && i%10000 == 0 {
+			fmt.Printf("\n\n\nCreating new dest store (flushing memory) at index: %d\n\n", i)
+			newdestStore, newdestKVDB := createNewDestStore(destKVDB)
+			destKVDB.Clear()
+			destKVDB.Close()
+			destKVDB = nil
+			destStore = nil
+
+			destStore = newdestStore
+			destKVDB = newdestKVDB
+
+			fmt.Printf("\n\n\nDone: %d\n\n", i)
+			printMemUsage()
+		}
 	}
 
 	fmt.Printf("Time start: %s, time now: %s\nDONE!", now.String(), time.Now().String())

@@ -2,7 +2,10 @@ package migrations
 
 import (
 	"fmt"
+	"reflect"
+	"unsafe"
 
+	"github.com/ethereum/go-ethereum/core/types"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	"github.com/samber/lo"
 
@@ -14,7 +17,7 @@ import (
 
 func migrateOnLedgerContractIdentity(request old_isc.OnLedgerRequest) isc.ContractIdentity {
 	var oldContractIdentity old_isc.ContractIdentity
-	var newContractIdentity isc.ContractIdentity = isc.EmptyContractIdentity()
+	newContractIdentity := isc.EmptyContractIdentity()
 
 	var onLedgerRequestData old_isc.OnLedgerRequestData
 
@@ -38,7 +41,7 @@ func migrateOnLedgerContractIdentity(request old_isc.OnLedgerRequest) isc.Contra
 	return newContractIdentity
 }
 
-func migrateOnLedgerRequest(request old_isc.OnLedgerRequest /*, oldChainID old_isc.ChainID, newChainID isc.ChainID*/) isc.Request {
+func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {
 	requestRef := iotago.ObjectRef{
 		ObjectID: (*iotago.ObjectID)(request.ID().Bytes()),
 		Version:  0,
@@ -59,42 +62,59 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest /*, oldChainID old_i
 
 	requestMetadata := &isc.RequestMetadata{
 		SenderContract: migrateOnLedgerContractIdentity(request),
-		Message: isc.Message{
-			Target: isc.CallTarget{
-				Contract:   OldHnameToNewHname(request.CallTarget().Contract),
-				EntryPoint: OldHnameToNewHname(request.CallTarget().EntryPoint),
-			},
-			//Params: request.Params(),
-		},
-		Allowance: OldAssetsToNewAssets(request.Allowance()),
-		GasBudget: gasBudget,
+		Message:        migrateContractCall(oldChainID, newChainID, request.CallTarget().Contract, request.CallTarget().EntryPoint, request.Params()),
+		Allowance:      OldAssetsToNewAssets(request.Allowance()),
+		GasBudget:      gasBudget,
 	}
 
 	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, fakeAssetsBag, requestMetadata)
 }
 
 func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {
-	message := isc.Message{
-		Target: isc.CallTarget{
-			Contract:   OldHnameToNewHname(req.CallTarget().Contract),
-			EntryPoint: OldHnameToNewHname(req.CallTarget().EntryPoint),
-		},
-		//Params: request.Params(),
+	if evmCallMsg := req.EVMCallMsg(); evmCallMsg != nil {
+		// read unexported tx field of evmOffLedgerTxRequest struct
+		var tx *types.Transaction
+		{
+			reqTxField := reflect.ValueOf(req).Elem().Field(1)
+			reqTxField = reflect.NewAt(reqTxField.Type(), unsafe.Pointer(reqTxField.UnsafeAddr())).Elem()
+			txValue := reflect.ValueOf(&tx).Elem()
+			txValue.Set(reqTxField)
+		}
+
+		return lo.Must(isc.NewEVMOffLedgerTxRequest(newChainID, tx))
+	} else {
+		message := migrateContractCall(oldChainID, newChainID, req.CallTarget().Contract, req.CallTarget().EntryPoint, req.Params())
+		nonce := req.Nonce()
+		gasbudget, _ := req.GasBudget()
+		allowance := OldAssetsToNewAssets(req.Allowance())
+
+		// read unexported signature of OffLedgerRequestData struct
+		var sig struct {
+			publicKey *cryptolib.PublicKey
+			signature []byte
+		}
+		{
+			reqSigField := reflect.ValueOf(req).Elem().Field(8)
+			reqSigField = reflect.NewAt(reqSigField.Type(), unsafe.Pointer(reqSigField.UnsafeAddr())).Elem()
+			sigValue := reflect.ValueOf(&sig).Elem()
+			sigValue.Set(reqSigField)
+		}
+		newRequest := isc.NewOffLedgerRequestsRaw(
+			allowance,
+			newChainID,
+			message,
+			gasbudget,
+			nonce,
+			cryptolib.NewSignature(sig.publicKey, sig.signature),
+		)
+		return &newRequest
 	}
-	nonce := req.Nonce()
-	gasbudget, _ := req.GasBudget()
-	allowance := OldAssetsToNewAssets(req.Allowance())
-
-	// TODO: Implement old_isc.Request -> Signature()
-	newRequest := isc.NewOffLedgerRequestsRaw(allowance, newChainID, message, gasbudget, nonce, &cryptolib.Signature{})
-
-	return &newRequest
 }
 
 func MigrateSingleRequest(req old_isc.Request, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {
 	switch req.(type) {
 	case old_isc.OnLedgerRequest:
-		return migrateOnLedgerRequest(req.(old_isc.OnLedgerRequest))
+		return migrateOnLedgerRequest(req.(old_isc.OnLedgerRequest), oldChainID, newChainID)
 
 	case old_isc.OffLedgerRequest:
 		return migrateOffLedgerRequest(req.(old_isc.OffLedgerRequest), oldChainID, newChainID)

@@ -30,7 +30,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
@@ -109,8 +108,8 @@ func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexe
 
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
 	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
-	migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID)
-	// migrations.MigrateGovernanceContract(srcState, destStateDraft)
+	migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID, destStateDraft.BaseL1Commitment())
+	migrations.MigrateGovernanceContract(srcState, destStateDraft, oldChainID, newChainID)
 	migrations.MigrateEVMContract(srcState, destStateDraft)
 
 	newBlock := destStore.Commit(destStateDraft)
@@ -164,12 +163,11 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		newState.StopMarking()
 		newState.DeleteMarkedIfNotSet()
 
-		migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, prevL1Commitment)
 		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
 
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
-
 		newMuts := newState.Commit(true)
 
 		// TODO: time??
@@ -177,13 +175,12 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		if prevL1Commitment == nil {
 			nextStateDraft = destStore.NewOriginStateDraft()
 		} else {
-			// TODO: NewStateDraft, which most likely needs SaveNextBlockInfo for Commit
-			nextStateDraft = lo.Must(destStore.NewEmptyStateDraft(prevL1Commitment))
+			nextStateDraft = lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, prevL1Commitment))
 		}
-		newMuts.ApplyTo(nextStateDraft)
 
-		// TODO: SaveNextBlockInfo?
+		newMuts.ApplyTo(nextStateDraft)
 		newBlock := destStore.Commit(nextStateDraft)
+		destStore.SetLatest(newBlock.TrieRoot())
 		prevL1Commitment = newBlock.L1Commitment()
 
 		//Ugly stats code

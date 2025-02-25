@@ -4,14 +4,23 @@ import (
 	"fmt"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_coreutil "github.com/nnikolash/wasp-types-exported/packages/isc/coreutil"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -24,11 +33,11 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
-func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.DebugLog("Migrating block registry")
-	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
+func migrateBlockRegistry(blockIndex uint32, previousL1Commitment *state.L1Commitment, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
-	newBlocks.SetSize(oldBlocks.Len())
+	newBlocks.SetSize(blockIndex + 1)
+
+	oldBlock := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry).GetAt(blockIndex)
 
 	// TODO: Find a good solution for the PreviousAnchor that we don't have. Can it just be zero'd?
 	// TODO: Find proper default values for the L1Params
@@ -47,7 +56,6 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 			CoinType:        coin.BaseTokenType,
 			TotalSupply:     isc.BaseTokenCoinInfo.TotalSupply.Uint64(),
 		},
-		MaxPayloadSize: MAX_PAYLOAD_SIZE,
 		Protocol: &parameters.Protocol{
 			Epoch:                 iotajsonrpc.NewBigInt(0),
 			ProtocolVersion:       iotajsonrpc.NewBigInt(0),
@@ -59,57 +67,63 @@ func migrateBlockRegistry(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 		},
 	}
 
-	lastUnprunedBlock := -1
-
-	// Due to pruning, we have an array length of > 4 million, but only 10-20k entries with block data.
-	// This will search backwards to find the oldest block to prune, so we don't have to iterate 4 million empty items.
-	for i := oldBlocks.Len() - 1; i > 0; i-- {
-		oldData := oldBlocks.GetAt(i)
-		if len(oldData) > 0 {
-			lastUnprunedBlock = int(i)
-			continue
-		}
-
-		break
+	oldBlockInfo, err := old_blocklog.BlockInfoFromBytes(oldBlock)
+	if err != nil {
+		panic(fmt.Errorf("blockRegistry migration error: %v", err))
 	}
 
-	cli.DebugLogf("blockRegistry: Found first unpruned block at index: %d from %d blocks in total.", lastUnprunedBlock, oldBlocks.Len())
-	progress := NewProgressPrinter(500)
-
-	for i := uint32(lastUnprunedBlock); i < oldBlocks.Len(); i++ {
-		oldData := oldBlocks.GetAt(i)
-		if len(oldData) == 0 {
-			panic(fmt.Errorf("blockRegistry migration error: %d has empty data", i))
-		}
-
-		oldBlockInfo, err := old_blocklog.BlockInfoFromBytes(oldData)
-		if err != nil {
-			panic(fmt.Errorf("blockRegistry migration error: %v", err))
-		}
-
-		newBlockInfo := blocklog.BlockInfo{
-			GasFeeCharged:         coin.Value(oldBlockInfo.GasFeeCharged),
-			GasBurned:             oldBlockInfo.GasBurned,
-			BlockIndex:            oldBlockInfo.BlockIndex(),
-			NumOffLedgerRequests:  oldBlockInfo.NumOffLedgerRequests,
-			NumSuccessfulRequests: oldBlockInfo.NumSuccessfulRequests,
-			SchemaVersion:         oldBlockInfo.SchemaVersion,
-			Timestamp:             oldBlockInfo.Timestamp,
-			TotalRequests:         oldBlockInfo.TotalRequests,
-			PreviousAnchor:        nil,
-			L1Params:              defaultL1Params,
-		}
-
-		newBlocks.SetAt(i, newBlockInfo.Bytes())
-		progress.Print()
+	if previousL1Commitment == nil {
+		previousL1Commitment = &state.L1Commitment{}
 	}
 
-	cli.DebugLogf("\nblockRegistry: oldState Len: %d, newState Len: %d", oldBlocks.Len(), newBlocks.Len())
+	metadata := transaction.StateMetadata{
+		SchemaVersion:   isc.SchemaVersion(oldBlockInfo.SchemaVersion),
+		L1Commitment:    previousL1Commitment,   // TODO: It's very important that we properly handle the L1Commitment here as it will be used for tracing
+		GasCoinObjectID: &iotago.ObjectID{},     // This can probably be zero'd, maybe we pass the real chains GasCoin here otherwise?
+		GasFeePolicy:    gas.DefaultFeePolicy(), // TODO: We probably need to grab this from the governance contract
+		InitParams:      nil,                    // TODO: This will be fun to figure out
+		InitDeposit:     0,                      // TODO: And this too, we probably need to pass this value upon deployment
+		PublicURL:       "",
+	}
+
+	// The following two structs will need some love regarding IDs, but we probably can fake most of them
+	migrationStateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		Object: &iscmove.Anchor{
+			Assets: iscmove.Referent[iscmove.AssetsBag]{ID: iotago.ObjectID{}, Value: &iscmove.AssetsBag{
+				ID:   iotago.ObjectID{},
+				Size: 0,
+			}},
+			ID:            iotago.ObjectID{},
+			StateIndex:    blockIndex,
+			StateMetadata: metadata.Bytes(),
+		},
+		ObjectRef: iotago.ObjectRef{
+			ObjectID: &iotago.ObjectID{},
+			Digest:   iotago.DigestFromBytes([]byte("MIGRATED")),
+			Version:  0,
+		},
+		Owner: &iotago.Address{},
+	}, iotago.PackageID{})
+
+	newBlockInfo := blocklog.BlockInfo{
+		GasFeeCharged:         coin.Value(oldBlockInfo.GasFeeCharged),
+		GasBurned:             oldBlockInfo.GasBurned,
+		BlockIndex:            oldBlockInfo.BlockIndex(),
+		NumOffLedgerRequests:  oldBlockInfo.NumOffLedgerRequests,
+		NumSuccessfulRequests: oldBlockInfo.NumSuccessfulRequests,
+		SchemaVersion:         oldBlockInfo.SchemaVersion,
+		Timestamp:             oldBlockInfo.Timestamp,
+		TotalRequests:         oldBlockInfo.TotalRequests,
+		PreviousAnchor:        &migrationStateAnchor,
+		L1Params:              defaultL1Params,
+	}
+
+	newBlocks.SetAt(blockIndex, newBlockInfo.Bytes())
+
+	return newBlockInfo
 }
 
 func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	cli.DebugLog("Migrating request lookup index")
-
 	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
 	newLookup := collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
 
@@ -225,16 +239,26 @@ func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
 	cli.DebugLogf("Listing Unprocessable Requests completed (found %v records)", count)
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
-	cli.DebugLog("Migrating blocklog contract")
+func migrateGlobalVars(oldState old_kv.KVStoreReader, newState kv.KVStore) uint32 {
+	oldTimeBytes := oldState.Get(old_kv.Key(old_coreutil.StatePrefixTimestamp))
+	oldTime := lo.Must(old_codec.DecodeTime(oldTimeBytes))
+	newState.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(oldTime))
 
+	oldBlockIndex := old_codec.MustDecodeUint32(oldState.Get(old_kv.Key(old_coreutil.StatePrefixBlockIndex)))
+	newState.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(oldBlockIndex))
+
+	return oldBlockIndex
+}
+
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, previousL1Commitment *state.L1Commitment) blocklog.BlockInfo {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
 	//printWarningsForUnprocessableRequests(oldContractState)
-	//migrateBlockRegistry(oldContractState, newContractState)
-	//migrateRequestLookupIndex(oldContractState, newContractState)
+	blockIndex := migrateGlobalVars(oldChainState, newChainState)
+	blockInfo := migrateBlockRegistry(blockIndex, previousL1Commitment, oldContractState, newContractState)
+	migrateRequestLookupIndex(oldContractState, newContractState)
 	migrateRequestReceipts(oldContractState, newContractState, oldChainID, newChainID)
 
-	cli.DebugLog("Migrated blocklog contract")
+	return blockInfo
 }
