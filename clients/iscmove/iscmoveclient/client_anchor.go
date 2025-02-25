@@ -44,7 +44,6 @@ func (c *Client) TryGetObject(ctx context.Context, req iotaclient.GetObjectReque
 
 		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
 
-		fmt.Print("Retry getting object")
 		obj, err = c.Client.GetObject(ctx, req)
 		counter++
 	}
