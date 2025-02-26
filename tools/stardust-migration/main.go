@@ -275,6 +275,7 @@ func migrateAllStates(c *cmd.Context) error {
 		s.Iterate("", func(k old_kv.Key, v []byte) bool {
 			oldStateTrie.Update([]byte(k), v)
 			count++
+			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
 			return true
 		})
 
@@ -299,7 +300,13 @@ func migrateAllStates(c *cmd.Context) error {
 		oldStateTrieRoot, _ := oldStateTrie.Commit(oldStateStore)
 		lo.Must(old_trie.Prune(oldStateStore, oldStateTriePrevRoot))
 		oldStateTriePrevRoot = oldStateTrieRoot
-		oldStateMutsOnly := dictKvFromMuts(oldMuts)
+
+		var oldStateMutsOnly old_kv.KVStoreReader
+		if blockIndex == startBlockIndex {
+			oldStateMutsOnly = oldState
+		} else {
+			oldStateMutsOnly = dictKvFromMuts(oldMuts)
+		}
 
 		newState.StartMarking()
 
@@ -376,7 +383,7 @@ func migrateAllStates(c *cmd.Context) error {
 // Index file is created using stardust-block-indexer tool.
 func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
 	totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
-	printProgress := newProgressPrinter(totalBlocksCount - startIndex)
+	printProgress := newBlocksProgressPrinter(totalBlocksCount - startIndex)
 
 	const indexFilePath = "index.bin"
 	cli.Logf("Trying to read index from %v", indexFilePath)
@@ -433,7 +440,7 @@ func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
 }
 
-func newProgressPrinter(totalBlocksCount uint32) (printProgress func(getBlockIndex func() uint32)) {
+func newBlocksProgressPrinter(totalBlocksCount uint32) (printProgress func(getBlockIndex func() uint32)) {
 	blocksLeft := totalBlocksCount
 
 	var estimateRunTime time.Duration
