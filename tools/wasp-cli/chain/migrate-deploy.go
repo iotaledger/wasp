@@ -6,7 +6,9 @@ package chain
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -17,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -132,7 +135,118 @@ func dryRunL1MigrationTransactionAndValidate(ctx context.Context, packageID iota
 	log.Printf("[Check] The configured package id matches the one in the PTB.")
 }
 
-func initMigrateDeployCmd() *cobra.Command {
+func executeAssetsBagMigration(ctx context.Context, packageID iotago.PackageID, kp wallets.Wallet, l1Client clients.L1Client, gasCoin *iotago.ObjectRef) (*iotago.ObjectRef, error) {
+	const debug = true
+
+	if debug {
+		return l1Client.L2().CreateAndFillAssetsBagWithBaseTokens(ctx, &iscmoveclient.CreateAndFillAssetsBagWithBaseTokens{
+			PackageID:   packageID,
+			Signer:      kp,
+			GasPayments: []*iotago.ObjectRef{gasCoin},
+			Amount:      500_000_0,
+			GasBudget:   iotaclient.DefaultGasBudget,
+			GasPrice:    iotaclient.DefaultGasPrice,
+		})
+	}
+
+	return nil, nil
+}
+
+type PrepareConfiguration struct {
+	StateControllerAddress *cryptolib.Address
+	StateMetadata          *transaction.StateMetadata
+	Anchor                 *iscmove.AnchorWithRef
+}
+
+/*
+*
+The prepare function is responsible for
+* running the L1 migration
+* creating the initial empty Anchor object
+* initialize the chain state
+* return a configuration object to the L2 migration tool
+*/
+func migrationPrepare(ctx context.Context, node string, packageID iotago.PackageID, kp wallets.Wallet, l1Client clients.L1Client, peers []string, quorum int) {
+	cwd, err := os.Getwd()
+	log.Check(err)
+
+	//dryRunL1MigrationTransactionAndValidate(ctx, packageID, kp, l1Client)
+	stateControllerAddress := doDKG(ctx, node, peers, quorum)
+
+	getFirstCoin := func() *iotago.ObjectRef {
+		coinType := iotajsonrpc.IotaCoinType.String()
+		coins := lo.Must(l1Client.GetCoins(ctx, iotaclient.GetCoinsRequest{
+			CoinType: &coinType,
+			Owner:    kp.Address().AsIotaAddress(),
+		}))
+		return coins.Data[0].Ref()
+	}
+
+	fmt.Println("Execute Asset migration")
+	assetsBagRef, err := executeAssetsBagMigration(ctx, packageID, kp, l1Client, getFirstCoin()) // The returned assetsbag ref from the executed transaction.
+	log.Check(err)
+
+	// Just used to make sure that the migration request has solidified
+	_, _ = l1Client.GetObjectWithRetry(ctx, iotaclient.GetObjectRequest{
+		ObjectID: assetsBagRef.ObjectID,
+	})
+
+	fmt.Println("Creating Anchor")
+	anchor, err := l1Client.L2().CreateAnchorWithAssetsBagRef(ctx, &iscmoveclient.CreateAnchorWithAssetsBagRefRequest{
+		PackageID:         packageID,
+		AssetsBagRef:      assetsBagRef,
+		GasPayments:       []*iotago.ObjectRef{getFirstCoin()},
+		ChainOwnerAddress: kp.Address(),
+		Signer:            kp,
+		GasPrice:          iotaclient.DefaultGasPrice,
+		GasBudget:         iotaclient.DefaultGasBudget,
+	})
+	log.Check(err)
+
+	fmt.Println("Creating GasCoin")
+	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+	log.Check(err)
+
+	fmt.Println("Initialize Chain State")
+	// Here we collect the migrated state
+	stateMetadata := initializeMigrateChainState(stateControllerAddress, gasCoin, anchor)
+
+	prepareConfiguration := &PrepareConfiguration{
+		StateControllerAddress: stateControllerAddress,
+		StateMetadata:          stateMetadata,
+		Anchor:                 anchor,
+	}
+
+	fmt.Println("Preparation finished:")
+	serializeConfig := lo.Must(json.MarshalIndent(prepareConfiguration, "", "  "))
+	fmt.Println(string(serializeConfig))
+	log.Check(os.WriteFile("migration_preparation.json", serializeConfig, 0644))
+
+	fmt.Printf("The 'migration_preperation.json' file has been written to your current cwd (%s)", cwd)
+}
+
+func migrationRun(ctx context.Context, node string, chainName string, packageID iotago.PackageID, kp wallets.Wallet, l1Client clients.L1Client) {
+	configBytes := lo.Must(os.ReadFile("migration_run.json"))
+	var prepareConfig PrepareConfiguration
+	log.Check(json.Unmarshal(configBytes, &prepareConfig))
+
+	success, err := l1Client.L2().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
+		AnchorRef:     &prepareConfig.Anchor.ObjectRef,
+		StateMetadata: prepareConfig.StateMetadata.Bytes(),
+		PackageID:     packageID,
+		Signer:        kp,
+	})
+
+	if !success || err != nil {
+		panic("omg")
+	}
+
+	chainID := isc.ChainIDFromObjectID(*prepareConfig.Anchor.ObjectID)
+	config.AddChain(chainName, chainID.String())
+	activateChain(ctx, node, chainName, chainID)
+}
+
+func initMigrateDeployPrepareCmd() *cobra.Command {
 	var (
 		node             string
 		peers            []string
@@ -144,9 +258,9 @@ func initMigrateDeployCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "migrate-chain --chain=<name>",
+		Use:   "migrate-chain --chain=<name> 1) prepare, 2) run",
 		Short: "Migrates a Stardust chain to Rebased",
-		Args:  cobra.NoArgs,
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chainName = defaultChainFallback(chainName)
@@ -159,11 +273,7 @@ func initMigrateDeployCmd() *cobra.Command {
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
-
 			packageID := config.GetPackageID()
-			dryRunL1MigrationTransactionAndValidate(ctx, packageID, kp, l1Client)
-
-			stateControllerAddress := doDKG(ctx, node, peers, quorum)
 
 			/**
 			Stardust -> Rebased migration
@@ -180,41 +290,16 @@ func initMigrateDeployCmd() *cobra.Command {
 			10) Proceed like a normal deployment (Activate chain on all nodes)
 			*/
 
-			/*
-				Important considerations for the warning implementation:
-
-				The PackageID must match the one used in the L1 migration script.
-				The GovernorAddress in the script must match the signer using this tool
-
-			*/
-
-			var assetsBagRef *iotago.ObjectRef // The returned assetsbag ref from the executed transaction.
-
-			anchor, err := l1Client.L2().CreateAnchorWithAssetsBagRef(ctx, &iscmoveclient.CreateAnchorWithAssetsBagRefRequest{
-				PackageID:    packageID,
-				AssetsBagRef: assetsBagRef,
-			})
-
-			fmt.Println(anchor.ObjectID) // <-- ChainID
-
-			gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
-			log.Check(err)
-
-			// Here we collect the migrated state
-			stateMetadata := initializeMigrateChainState(stateControllerAddress, gasCoin, anchor)
-
-			success, err := l1Client.L2().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
-				AnchorRef:     &anchor.ObjectRef,
-				StateMetadata: stateMetadata.Bytes(),
-			})
-
-			if !success || err != nil {
-				panic("omg")
+			if args[0] == "prepare" {
+				migrationPrepare(ctx, node, packageID, kp, l1Client, peers, quorum)
+				return
 			}
 
-			chainID := isc.ChainIDFromObjectID(*anchor.ObjectID)
-			config.AddChain(chainName, chainID.String())
-			activateChain(ctx, node, chainName, chainID)
+			if args[0] == "run" {
+				migrationRun(ctx, node, chainName, packageID, kp, l1Client)
+				return
+			}
+
 		},
 	}
 

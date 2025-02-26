@@ -9,7 +9,47 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 )
+
+type CreateAndFillAssetsBagWithBaseTokens struct {
+	Signer           cryptolib.Signer
+	PackageID        iotago.PackageID
+	Amount           uint64
+	OnchainGasBudget uint64
+	GasPayments      []*iotago.ObjectRef
+	GasPrice         uint64
+	GasBudget        uint64
+}
+
+func (c *Client) CreateAndFillAssetsBagWithBaseTokens(ctx context.Context, req *CreateAndFillAssetsBagWithBaseTokens) (*iotago.ObjectRef, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	PTBAssetsBagNew(ptb, req.PackageID, req.Signer.Address())
+	assetsBag := ptb.LastCommandResultArg()
+	PTBAssetsBagPlaceCoinWithAmount(ptb, req.PackageID, assetsBag, iotago.GetArgumentGasCoin(), iotajsonrpc.CoinValue(req.Amount), iotajsonrpc.IotaCoinType)
+
+	ptb.Command(
+		iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{assetsBag},
+				Address: ptb.MustForceSeparatePure(req.Signer.Address()),
+			},
+		},
+	)
+	res, err := c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return res.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+}
 
 func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,

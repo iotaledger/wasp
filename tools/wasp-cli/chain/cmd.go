@@ -47,5 +47,5 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initRegisterERC20NativeTokenOnRemoteChainCmd())
 	// chainCmd.AddCommand(initCreateNativeTokenCmd())
 	chainCmd.AddCommand(initMetadataCmd())
-	chainCmd.AddCommand(initMigrateDeployCmd())
+	chainCmd.AddCommand(initMigrateDeployPrepareCmd())
 }

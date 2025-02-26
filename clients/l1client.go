@@ -175,6 +175,7 @@ type L1Client interface {
 	GetCheckpoints(ctx context.Context, req iotaclient.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error)
 	GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.IotaEvent, error)
 	GetLatestCheckpointSequenceNumber(ctx context.Context) (string, error)
+	GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error)
 	GetObject(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error)
 	GetProtocolConfig(
 		ctx context.Context,

@@ -2,7 +2,9 @@ package iotaclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -44,6 +46,35 @@ func (c *Client) GetLatestCheckpointSequenceNumber(ctx context.Context) (string,
 type GetObjectRequest struct {
 	ObjectID *iotago.ObjectID
 	Options  *iotajsonrpc.IotaObjectDataOptions // optional
+}
+
+func (c *Client) GetObjectWithRetry(ctx context.Context, req GetObjectRequest) (
+	*iotajsonrpc.IotaObjectResponse,
+	error,
+) {
+	obj, err := c.GetObject(ctx, req)
+
+	counter := 0
+	for {
+		if counter >= c.WaitUntilEffectsVisible.Attempts {
+			return nil, errors.New("could not get object in time")
+		}
+
+		if obj != nil && obj.Error == nil {
+			return obj, err
+		}
+
+		if obj != nil && obj.Error.Data.NotExists == nil {
+			return obj, err
+		}
+
+		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
+
+		obj, err = c.GetObject(ctx, req)
+		counter++
+	}
+
+	return nil, errors.New("could not get object in time")
 }
 
 func (c *Client) GetObject(ctx context.Context, req GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
