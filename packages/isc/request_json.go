@@ -6,16 +6,16 @@ import (
 )
 
 type RequestJSON struct {
-	Allowance     AssetsJSON     `json:"allowance" swagger:"required"`
-	CallTarget    CallTargetJSON `json:"callTarget" swagger:"required"`
-	Assets        AssetsJSON     `json:"assets" swagger:"required"`
-	GasBudget     string         `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
-	IsEVM         bool           `json:"isEVM" swagger:"required"`
-	IsOffLedger   bool           `json:"isOffLedger" swagger:"required"`
-	Params        CallArguments  `json:"params" swagger:"required"`
-	RequestID     string         `json:"requestId" swagger:"required"`
-	SenderAccount string         `json:"senderAccount" swagger:"required"`
-	TargetAddress string         `json:"targetAddress" swagger:"required"`
+	Allowance     AssetsJSON        `json:"allowance" swagger:"required"`
+	CallTarget    CallTargetJSON    `json:"callTarget" swagger:"required"`
+	Assets        AssetsJSON        `json:"assets" swagger:"required"`
+	GasBudget     string            `json:"gasBudget,string" swagger:"required,desc(The gas budget (uint64 as string))"`
+	IsEVM         bool              `json:"isEVM" swagger:"required"`
+	IsOffLedger   bool              `json:"isOffLedger" swagger:"required"`
+	Params        CallArgumentsJSON `json:"params" swagger:"required"`
+	RequestID     string            `json:"requestId" swagger:"required"`
+	SenderAccount string            `json:"senderAccount" swagger:"required"`
+	TargetAddress string            `json:"targetAddress" swagger:"required"`
 }
 
 func RequestToJSONObject(request Request) RequestJSON {
@@ -29,7 +29,7 @@ func RequestToJSONObject(request Request) RequestJSON {
 		GasBudget:     strconv.FormatUint(gasBudget, 10),
 		IsEVM:         isEVM,
 		IsOffLedger:   request.IsOffLedger(),
-		Params:        msg.Params,
+		Params:        msg.Params.ToCallArgumentsJSON(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
 		TargetAddress: request.TargetAddress().String(),
