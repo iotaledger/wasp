@@ -84,14 +84,15 @@ func (n *NodeData) String() string {
 		n.Commitment, n.PathExtension, t)
 }
 
-func (n *NodeData) iterateChildren(f func(byte, Hash) bool) {
+func (n *NodeData) iterateChildren(f func(byte, Hash) bool) bool {
 	for i, v := range n.Children {
 		if v != nil {
 			if !f(byte(i), *v) {
-				return
+				return false
 			}
 		}
 	}
+	return true
 }
 
 // update computes update to the node data and its commitment.

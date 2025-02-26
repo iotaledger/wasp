@@ -424,11 +424,16 @@ func (c *consImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMessage
 // NC
 
 func (c *consImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
+	if anchor == nil {
+		c.log.Debugf("ACS got ⊥ as input, no L1 info can be fetched.")
+		return c.subACS.L1InfoReceived([]*coin.CoinWithRef{}, nil)
+	}
 	c.output.NeedNodeConnL1Info = anchor
 	return nil
 }
 
 func (c *consImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
+	c.log.Debugf("L1 info received, gasCoins=%v, l1Params=%v", gasCoins, l1params)
 	c.output.NeedNodeConnL1Info = nil
 	return c.subACS.L1InfoReceived(gasCoins, l1params)
 }
@@ -473,30 +478,24 @@ func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
 // ACS
 
 func (c *consImpl) uponACSInputsReceived(
-	baseAliasOutput *isc.StateAnchor,
+	baseAliasOutput *isc.StateAnchor, // Can be nil.
 	requestRefs []*isc.RequestRef,
 	dssIndexProposal []int,
 	timeData time.Time,
-	gasCoins []*coin.CoinWithRef,
-	l1params *parameters.L1Params,
+	gasCoins []*coin.CoinWithRef, // Can be nil.
+	l1params *parameters.L1Params, // Can be nil.
 ) gpa.OutMessages {
-	var batchProposalBytes []byte
-	if baseAliasOutput == nil {
-		batchProposalBytes = []byte{}
-	} else {
-		batchProposal := bp.NewBatchProposal(
-			*c.dkShare.GetIndex(),
-			baseAliasOutput,
-			util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
-			timeData,
-			c.validatorAgentID,
-			requestRefs,
-			gasCoins,
-			l1params,
-		)
-		batchProposalBytes = batchProposal.Bytes()
-	}
-	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposalBytes)
+	batchProposal := bp.NewBatchProposal(
+		*c.dkShare.GetIndex(),
+		baseAliasOutput, // Will be NIL in the case of ⊥ proposal.
+		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+		timeData,
+		c.validatorAgentID,
+		requestRefs, // Will be [] in the case of ⊥ proposal.
+		gasCoins,    // Will be NIL in the case of ⊥ proposal.
+		l1params,    // Will be NIL in the case of ⊥ proposal.
+	)
+	subACS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeACS, 0, batchProposal.Bytes())
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to the ACS: %w", err))
 	}
