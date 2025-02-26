@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -152,12 +153,6 @@ func executeAssetsBagMigration(ctx context.Context, packageID iotago.PackageID, 
 	return nil, nil
 }
 
-type PrepareConfiguration struct {
-	StateControllerAddress *cryptolib.Address
-	StateMetadata          *transaction.StateMetadata
-	Anchor                 *iscmove.AnchorWithRef
-}
-
 /*
 *
 The prepare function is responsible for
@@ -171,7 +166,7 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	log.Check(err)
 
 	//dryRunL1MigrationTransactionAndValidate(ctx, packageID, kp, l1Client)
-	stateControllerAddress := doDKG(ctx, node, peers, quorum)
+	dkgCommitteeAddress := doDKG(ctx, node, peers, quorum)
 
 	getFirstCoin := func() *iotago.ObjectRef {
 		coinType := iotajsonrpc.IotaCoinType.String()
@@ -204,17 +199,18 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	log.Check(err)
 
 	fmt.Println("Creating GasCoin")
-	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, dkgCommitteeAddress.AsIotaAddress())
 	log.Check(err)
 
 	fmt.Println("Initialize Chain State")
 	// Here we collect the migrated state
-	stateMetadata := initializeMigrateChainState(stateControllerAddress, gasCoin, anchor)
+	stateMetadata := initializeMigrateChainState(dkgCommitteeAddress, gasCoin, anchor)
 
-	prepareConfiguration := &PrepareConfiguration{
-		StateControllerAddress: stateControllerAddress,
-		StateMetadata:          stateMetadata,
-		Anchor:                 anchor,
+	prepareConfiguration := &migration.PrepareConfiguration{
+		DKGCommitteeAddress: dkgCommitteeAddress,
+		StateMetadata:       stateMetadata,
+		Anchor:              anchor,
+		ChainOwner:          kp.Address(),
 	}
 
 	fmt.Println("Preparation finished:")
@@ -227,7 +223,7 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 
 func migrationRun(ctx context.Context, node string, chainName string, packageID iotago.PackageID, kp wallets.Wallet, l1Client clients.L1Client) {
 	configBytes := lo.Must(os.ReadFile("migration_run.json"))
-	var prepareConfig PrepareConfiguration
+	var prepareConfig migration.PrepareConfiguration
 	log.Check(json.Unmarshal(configBytes, &prepareConfig))
 
 	success, err := l1Client.L2().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{

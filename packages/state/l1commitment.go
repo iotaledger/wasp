@@ -1,6 +1,7 @@
 package state
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/trie"
@@ -46,4 +47,10 @@ func (s *L1Commitment) Bytes() []byte {
 
 func (s *L1Commitment) String() string {
 	return fmt.Sprintf("<%s;%s>", s.TrieRoot(), s.BlockHash())
+}
+
+func (s *L1Commitment) IsZero() bool {
+	return !bytes.ContainsFunc(s.Bytes(), func(r rune) bool {
+		return r >= 1
+	})
 }

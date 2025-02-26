@@ -28,6 +28,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
@@ -176,7 +177,9 @@ func TestMigrateBlocklog(t *testing.T) {
 			panic(err)
 		}
 
-		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, oldChainID, newChainID, block.L1Commitment())
+		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, oldChainID, newChainID, &transaction.StateMetadata{
+			L1Commitment: block.L1Commitment(),
+		})
 
 		// Handle deletions
 		// Here its easy, because the key remains the same for both databases

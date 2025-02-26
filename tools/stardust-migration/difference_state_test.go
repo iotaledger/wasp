@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess"
@@ -39,7 +40,7 @@ func TestDifferences(t *testing.T) {
 	})
 
 	destStateDraft := destStore.NewOriginStateDraft()
-	migrations.MigrateBlocklogContract(oldState, destStateDraft, old_isc.ChainID{}, isc.ChainID{}, &state.L1Commitment{})
+	migrations.MigrateBlocklogContract(oldState, destStateDraft, old_isc.ChainID{}, isc.ChainID{}, &transaction.StateMetadata{})
 	newContractState := newstate.GetContactState(destStateDraft, blocklog.Contract.Hname())
 
 	fmt.Println("NEW STATE")

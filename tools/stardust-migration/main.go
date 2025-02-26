@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
@@ -27,9 +29,18 @@ import (
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	isc_migration "github.com/iotaledger/wasp/packages/migration"
+	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
@@ -46,6 +57,67 @@ import (
 // TODO: Need to migrate ALL trie roots to support tracing.
 // TODO: New state draft might be huge, but it is stored in memory - might be an issue.
 
+func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
+	// The wasp-cli migration will have two stages, in which it will write a configuration file once. This needs to be loaded here.
+	// For testing, this is not of much relevance but for the real deployment we need real values.
+	// So for now return a more or less random configuration
+
+	const debug = true
+	if debug {
+		// This comes from the default InitChain init params.
+		defaultInitParams := lo.Must(hexutil.Decode("0x01d967e9c7295b0e8b46babff1e6ee4cde1ed6048543dd1a318abe02e8554d7abb32041027000000"))
+		initParams := lo.Must(bcs.Unmarshal[origin.InitParams](defaultInitParams))
+
+		committeeAddress := lo.Must(cryptolib.AddressFromHex("0xd967e9c7295b0e8b46babff1e6ee4cde1ed6048543dd1a318abe02e8554d7abb"))
+		chainOwnerAddress := lo.Must(cryptolib.AddressFromHex("0x55d7503847b5484b318e113f98905e4a1b4da50931f96d5b93223e4bae710175"))
+
+		gasCoinObjectID := lo.Must(iotago.ObjectIDFromHex("0xaa0524040a7de6264bbebc35b97c7b2dc3c95c84cc2bda305a468768d2b6f083"))
+		chainID := lo.Must(iotago.ObjectIDFromHex("0x596419b57e8544732ae783c41148e3fee9a44ca5d2ee2d66b1ef06d2fc85a7b4"))
+		assetsBagID := lo.Must(iotago.ObjectIDFromHex("0x72fee47e0124cda9074a362e4971ebe85d6f5ab94342734c6093c0dfda02a659"))
+		assetsBagContainerID := lo.Must(iotago.ObjectIDFromHex("0xb88d428cd2792f70ff1ec61028af92caa0fec127f6bef6523924e822299295cd"))
+
+		stateMetadata := transaction.NewStateMetadata(allmigrations.SchemaVersionIotaRebased, &state.L1Commitment{}, gasCoinObjectID, gas.DefaultFeePolicy(), initParams.Encode(), 500_000_0, "")
+
+		return &isc_migration.PrepareConfiguration{
+			ChainOwner:          chainOwnerAddress,
+			DKGCommitteeAddress: committeeAddress,
+			StateMetadata:       stateMetadata,
+			Anchor: &iscmove.AnchorWithRef{
+				Object: &iscmove.Anchor{
+					ID:            *chainID,
+					StateMetadata: make([]byte, 0),
+					StateIndex:    0,
+					Assets: iscmove.Referent[iscmove.AssetsBag]{
+						ID: *assetsBagID,
+						Value: &iscmove.AssetsBag{
+							ID:   *assetsBagContainerID,
+							Size: 1,
+						},
+					},
+				},
+				Owner: committeeAddress.AsIotaAddress(),
+				ObjectRef: iotago.ObjectRef{
+					ObjectID: chainID,
+					Version:  4700,
+					Digest:   iotago.MustNewDigest("7U8tX9ZWpt7V3SC1TTxhTUDniKYmj9yJMe9pDJK2yr9e"),
+				},
+			},
+		}
+	}
+
+	configBytes, err := os.ReadFile("migration_preparation.json")
+	if err != nil {
+		panic(fmt.Errorf("error reading migration_preparation.json: %v", err))
+	}
+
+	var prepareConfig isc_migration.PrepareConfiguration
+	if err := json.Unmarshal(configBytes, &prepareConfig); err != nil {
+		panic(fmt.Errorf("error parsing migration_preparation.json: %v", err))
+	}
+
+	return &prepareConfig
+}
+
 func main() {
 	// For pprof profilings
 	go func() {
@@ -58,7 +130,6 @@ func main() {
 
 	srcChainDBDir := os.Args[1]
 	destChainDBDir := os.Args[2]
-	newChainIDStr := os.Args[3]
 
 	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
 	destChainDBDir = lo.Must(filepath.Abs(destChainDBDir))
@@ -70,12 +141,10 @@ func main() {
 	srcKVS := db.Connect(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 
-	if newChainIDStr == "dummy" {
-		// just for easier testing
-		newChainIDStr = "0x00000000000000000000000000000000000000000000000000000000000000ff"
-	}
+	migrationConfig := readMigrationConfiguration()
+
 	oldChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(srcStore.LatestState())).AliasID)
-	newChainID := lo.Must(isc.ChainIDFromString(newChainIDStr))
+	newChainID := isc.ChainIDFromObjectID(*migrationConfig.Anchor.ObjectID)
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
@@ -92,23 +161,25 @@ func main() {
 	const migrateOnlyLatestState = false
 
 	if migrateOnlyLatestState {
-		migrateLatestState(srcStore, destStore, oldChainID, newChainID)
+		migrateLatestState(srcStore, destStore, oldChainID, newChainID, migrationConfig)
 	} else {
 		// TODO: Would be nice to have CLI arg to specify block from which to start - for testing purposes.
-		migrateAllBlocks(srcStore, destStore, oldChainID, newChainID)
+		migrateAllBlocks(srcStore, destStore, oldChainID, newChainID, migrationConfig)
 	}
 
 	destKVS.Flush()
 }
 
-func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migrationConfig *isc_migration.PrepareConfiguration) {
 	cli.DebugLoggingEnabled = true
 	srcState := lo.Must(srcStore.LatestState())
 	destStateDraft := destStore.NewOriginStateDraft()
 
+	migrationConfig.StateMetadata.L1Commitment = destStateDraft.BaseL1Commitment()
+
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
 	migrations.MigrateAccountsContract(v, srcState, destStateDraft, oldChainID, newChainID)
-	migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID, destStateDraft.BaseL1Commitment())
+	migrations.MigrateBlocklogContract(srcState, destStateDraft, oldChainID, newChainID, migrationConfig.StateMetadata)
 	migrations.MigrateGovernanceContract(srcState, destStateDraft, oldChainID, newChainID)
 	migrations.MigrateEVMContract(srcState, destStateDraft)
 
@@ -117,9 +188,7 @@ func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexe
 }
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
-func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
-	var prevL1Commitment *state.L1Commitment
-
+func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migrationConfig *isc_migration.PrepareConfiguration) {
 	_oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
 	_ = _oldState
 
@@ -163,25 +232,25 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		newState.StopMarking()
 		newState.DeleteMarkedIfNotSet()
 
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, prevL1Commitment)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, migrationConfig.StateMetadata)
 		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
 
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
 		newMuts := newState.Commit(true)
 
-		// TODO: time??
 		var nextStateDraft state.StateDraft
-		if prevL1Commitment == nil {
+
+		if migrationConfig.StateMetadata.L1Commitment == nil || migrationConfig.StateMetadata.L1Commitment.IsZero() {
 			nextStateDraft = destStore.NewOriginStateDraft()
 		} else {
-			nextStateDraft = lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, prevL1Commitment))
+			nextStateDraft = lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, migrationConfig.StateMetadata.L1Commitment))
 		}
 
 		newMuts.ApplyTo(nextStateDraft)
 		newBlock := destStore.Commit(nextStateDraft)
 		destStore.SetLatest(newBlock.TrieRoot())
-		prevL1Commitment = newBlock.L1Commitment()
+		migrationConfig.StateMetadata.L1Commitment = newBlock.L1Commitment()
 
 		//Ugly stats code
 		blocksProcessed++
