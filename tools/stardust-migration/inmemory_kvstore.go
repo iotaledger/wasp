@@ -54,12 +54,23 @@ func (b *InMemoryKVStore) StopMarking() {
 	b.marking = false
 }
 
-// DeleteIfNotSet deletes entries if they where not set since the last commit
+// DeleteIfNotSet deletes marked entries if they where not set since the last commit
 func (b *InMemoryKVStore) DeleteMarkedIfNotSet() {
 	uncommittedSets := b.uncommitted.Mutations().Sets
+
 	for key := range b.committedMarked {
-		_, ok := uncommittedSets[key]
-		if !ok {
+		if _, isSet := uncommittedSets[key]; !isSet {
+			b.uncommitted.Del(key)
+		}
+	}
+}
+
+// DeleteIfNotSet deletes entries if they where not set since the last commit
+func (b *InMemoryKVStore) DeleteIfNotSet() {
+	uncommittedSets := b.uncommitted.Mutations().Sets
+
+	for key := range b.committed.Mutations().Sets {
+		if _, isSet := uncommittedSets[key]; !isSet {
 			b.uncommitted.Del(key)
 		}
 	}

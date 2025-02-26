@@ -15,20 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
-	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
-	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
-	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
-	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
-	old_trietest "github.com/nnikolash/wasp-types-exported/packages/trie/test"
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
+	cmd "github.com/urfave/cli/v2"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	old_iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -46,6 +37,16 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
+	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
+	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
+	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
+	old_trietest "github.com/nnikolash/wasp-types-exported/packages/trie/test"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 )
 
 // NOTE: Every record type should be explicitly included in migration
@@ -124,12 +125,65 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	if len(os.Args) < 4 {
-		log.Fatalf("usage: %s <src-chain-db-dir> <dest-chain-db-dir> <new-chain-id>", os.Args[0])
+	app := &cmd.App{
+		Name: "Stardust migration tool",
+		Commands: []*cmd.Command{
+			{
+				Name: "migrate",
+				Subcommands: []*cmd.Command{
+					{
+						Name:      "single-state",
+						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
+						Flags: []cmd.Flag{
+							&cmd.Uint64Flag{
+								Name:    "index",
+								Aliases: []string{"i"},
+								Usage:   "Specify block index to migrate. If not specified, latest state will be migrated.",
+							},
+							&cmd.StringFlag{
+								Name:    "new-chain-id",
+								Aliases: []string{"c"},
+								Usage:   "Override new chain ID. Hex format.",
+							},
+						},
+						Action: migrateSingleState,
+					},
+					{
+						Name:      "all-states",
+						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
+						Flags: []cmd.Flag{
+							&cmd.Uint64Flag{
+								Name:    "from-index",
+								Aliases: []string{"i"},
+								Usage:   "Specify block index to start from. If not specified, all blocks will be migrated starting from block 0.",
+							},
+							&cmd.StringFlag{
+								Name:    "new-chain-id",
+								Aliases: []string{"c"},
+								Usage:   "Override new chain ID. Hex format.",
+							},
+						},
+						Action: migrateAllStates,
+					},
+				},
+			},
+		},
 	}
 
-	srcChainDBDir := os.Args[1]
-	destChainDBDir := os.Args[2]
+	lo.Must0(app.Run(os.Args))
+}
+
+func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string) (
+	_ old_indexedstore.IndexedStore,
+	_ indexedstore.IndexedStore,
+	oldChID old_isc.ChainID,
+	newChID isc.ChainID,
+	_ *isc_migration.PrepareConfiguration,
+	flush func(),
+) {
+	if srcChainDBDir == "" || destChainDBDir == "" {
+		log.Fatalf("source and destination chain database directories must be specified")
+	}
 
 	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
 	destChainDBDir = lo.Must(filepath.Abs(destChainDBDir))
@@ -141,10 +195,7 @@ func main() {
 	srcKVS := db.Connect(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 
-	migrationConfig := readMigrationConfiguration()
-
 	oldChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(srcStore.LatestState())).AliasID)
-	newChainID := isc.ChainIDFromObjectID(*migrationConfig.Anchor.ObjectID)
 
 	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
 
@@ -157,24 +208,36 @@ func main() {
 	destKVS := db.Create(destChainDBDir)
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 
-	// TODO: Maybe this will be useful to have an a CLI arg - for testing purposes.
-	const migrateOnlyLatestState = false
-
-	if migrateOnlyLatestState {
-		migrateLatestState(srcStore, destStore, oldChainID, newChainID, migrationConfig)
+	migrationConfig := readMigrationConfiguration()
+	var newChainID isc.ChainID
+	if overrideNewChainID != "" {
+		newChainID = isc.ChainIDFromObjectID(*iotago.MustObjectIDFromHex(overrideNewChainID))
 	} else {
-		// TODO: Would be nice to have CLI arg to specify block from which to start - for testing purposes.
-		migrateAllBlocks(srcStore, destStore, oldChainID, newChainID, migrationConfig)
+		newChainID = isc.ChainIDFromObjectID(*migrationConfig.Anchor.ObjectID)
 	}
 
-	destKVS.Flush()
+	return srcStore, destStore, oldChainID, newChainID, migrationConfig, func() { destKVS.Flush() }
 }
 
-func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migrationConfig *isc_migration.PrepareConfiguration) {
-	cli.DebugLoggingEnabled = true
-	srcState := lo.Must(srcStore.LatestState())
+func migrateSingleState(c *cmd.Context) error {
+	srcChainDBDir := c.Args().Get(0)
+	destChainDBDir := c.Args().Get(1)
+	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
+	overrideNewChainID := c.String("new-chain-id")
+
+	srcStore, destStore, oldChainID, newChainID, migrationConfig, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID)
+	defer flush()
+
+	var srcState old_kv.KVStoreReader
+	if blockIndexSpecified {
+		srcState = lo.Must(srcStore.StateByIndex(uint32(blockIndex)))
+	} else {
+		srcState = lo.Must(srcStore.LatestState())
+	}
+
 	destStateDraft := destStore.NewOriginStateDraft()
 
+	cli.DebugLoggingEnabled = true
 	migrationConfig.StateMetadata.L1Commitment = destStateDraft.BaseL1Commitment()
 
 	v := migrations.MigrateRootContract(srcState, destStateDraft)
@@ -185,17 +248,38 @@ func migrateLatestState(srcStore old_indexedstore.IndexedStore, destStore indexe
 
 	newBlock := destStore.Commit(destStateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
+
+	return nil
 }
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
-func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, migrationConfig *isc_migration.PrepareConfiguration) {
-	_oldState := old_buffered.NewBufferedKVStore(NoopKVStoreReader[old_kv.Key]{})
-	_ = _oldState
+func migrateAllStates(c *cmd.Context) error {
+	srcChainDBDir := c.Args().Get(0)
+	destChainDBDir := c.Args().Get(1)
+	startBlockIndex := uint32(c.Uint64("from-index"))
+	overrideNewChainID := c.String("new-chain-id")
+
+	srcStore, destStore, oldChainID, newChainID, migrationConfig, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID)
+	defer flush()
 
 	oldStateStore := old_trietest.NewInMemoryKVStore()
 	oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
 	oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
 	oldStateTriePrevRoot := oldStateTrie.Root()
+
+	if startBlockIndex != 0 {
+		cli.Logf("Loading state at block index %v", startBlockIndex-1)
+		count := 0
+
+		s := lo.Must(srcStore.StateByIndex(startBlockIndex - 1))
+		s.Iterate("", func(k old_kv.Key, v []byte) bool {
+			oldStateTrie.Update([]byte(k), v)
+			count++
+			return true
+		})
+
+		cli.Logf("Loaded %v entries into initial state", count)
+	}
 
 	newState := NewInMemoryKVStore(true)
 
@@ -204,7 +288,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
 
-	forEachBlock(srcStore, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+	forEachBlock(srcStore, startBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
 		oldMuts := block.Mutations()
 		for k, v := range oldMuts.Sets {
 			oldStateTrie.Update([]byte(k), v)
@@ -215,8 +299,7 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 		oldStateTrieRoot, _ := oldStateTrie.Commit(oldStateStore)
 		lo.Must(old_trie.Prune(oldStateStore, oldStateTriePrevRoot))
 		oldStateTriePrevRoot = oldStateTrieRoot
-
-		oldStateMutsOnly := old_buffered.NewBufferedKVStoreForMutations(NoopKVStoreReader[old_kv.Key]{}, oldMuts)
+		oldStateMutsOnly := dictKvFromMuts(oldMuts)
 
 		newState.StartMarking()
 
@@ -237,10 +320,10 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
+
 		newMuts := newState.Commit(true)
 
 		var nextStateDraft state.StateDraft
-
 		if migrationConfig.StateMetadata.L1Commitment == nil || migrationConfig.StateMetadata.L1Commitment.IsZero() {
 			nextStateDraft = destStore.NewOriginStateDraft()
 		} else {
@@ -283,15 +366,17 @@ func migrateAllBlocks(srcStore old_indexedstore.IndexedStore, destStore indexeds
 			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0
 		})
 	})
+
+	return nil
 }
 
 // forEachBlock iterates over all blocks.
 // It uses index file index.bin if it is present, otherwise it uses indexing on-the-fly with blockindex.BlockIndexer.
 // If index file does not have enough entries, it retrieves the rest of the blocks without indexing.
 // Index file is created using stardust-block-indexer tool.
-func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
+func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
 	totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
-	printProgress := newProgressPrinter(totalBlocksCount)
+	printProgress := newProgressPrinter(totalBlocksCount - startIndex)
 
 	const indexFilePath = "index.bin"
 	cli.Logf("Trying to read index from %v", indexFilePath)
@@ -306,7 +391,9 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 				len(blockTrieRoots), totalBlocksCount, totalBlocksCount-uint32(len(blockTrieRoots)))
 		}
 
-		for i, trieRoot := range blockTrieRoots {
+		i := startIndex
+		for ; i < uint32(len(blockTrieRoots)); i++ {
+			trieRoot := blockTrieRoots[i]
 			printProgress(func() uint32 { return uint32(i) })
 			block := lo.Must(srcStore.BlockByTrieRoot(trieRoot))
 			f(uint32(i), trieRoot, block)
@@ -314,7 +401,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 
 		cli.Logf("Retrieving next blocks without indexing...")
 
-		for i := uint32(len(blockTrieRoots)); i < totalBlocksCount; i++ {
+		for ; i < totalBlocksCount; i++ {
 			printProgress(func() uint32 { return uint32(i) })
 			block := lo.Must(srcStore.BlockByIndex(i))
 			f(uint32(i), block.TrieRoot(), block)
@@ -329,9 +416,8 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, f func(blockIndex uint
 	indexer := blockindex.LoadOrCreate(srcStore)
 	printIndexerStats(indexer, srcStore)
 
-	for i := uint32(0); i < totalBlocksCount; i++ {
+	for i := startIndex; i < totalBlocksCount; i++ {
 		printProgress(func() uint32 { return i })
-
 		block, trieRoot := indexer.BlockByIndex(i)
 		f(i, trieRoot, block)
 	}
@@ -391,4 +477,17 @@ func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
 	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
 
 	return blockInfo.PreviousAliasOutput.GetAliasOutput()
+}
+
+// Returns KVStoreReader, which will iterate by both Sets and Dels of mutations. For Dels, value will be nil.
+func dictKvFromMuts(muts *old_buffered.Mutations) old_kv.KVStoreReader {
+	d := old_kvdict.New()
+	for k, v := range muts.Sets {
+		d[k] = v
+	}
+	for k := range muts.Dels {
+		d[k] = nil
+	}
+
+	return d
 }
