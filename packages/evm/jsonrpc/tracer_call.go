@@ -274,13 +274,15 @@ func (t *callTracer) OnLog(log *types.Log) {
 // error arising from the encoding or forceful termination (via `Stop`).
 func (t *callTracer) GetResult() (json.RawMessage, error) {
 	r := lo.Map(t.txTraces, func(tr *callTxTracer, _ int) TxTraceResult {
-		if len(tr.frames) != 1 {
-			panic("expected exactly 1 top-level call")
-		}
-		return TxTraceResult{
+		ret := TxTraceResult{
 			TxHash: tr.txHash,
-			Result: lo.Must(json.Marshal(tr.frames[0])),
 		}
+		if len(tr.frames) != 1 {
+			ret.Error = "expected exactly one top-level call; tx may be invalid"
+		} else {
+			ret.Result = lo.Must(json.Marshal(tr.frames[0]))
+		}
+		return ret
 	})
 	return json.Marshal(r)
 }

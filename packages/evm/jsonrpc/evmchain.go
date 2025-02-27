@@ -722,7 +722,11 @@ func (e *EVMChain) traceTransaction(
 	if len(txResults) <= int(txIndex) {
 		return nil, errors.New("tx trace not found in tracer result")
 	}
-	return txResults[int(txIndex)].Result, nil
+	txTrace := txResults[int(txIndex)]
+	if txTrace.Error != "" {
+		return nil, errors.New(txTrace.Error)
+	}
+	return txTrace.Result, nil
 }
 
 func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
