@@ -47,8 +47,8 @@ func TestOrigin(t *testing.T) {
 
 func TestCreateOrigin(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	sentSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
-	stateSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	sentSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
+	stateSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(sentSigner.Address())).Encode()
 

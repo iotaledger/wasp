@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -90,10 +91,10 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 func TestProperCoinUse(t *testing.T) {
 	l1 := l1starter.Instance().L1Client()
 	client := iscmoveclienttest.NewHTTPClient()
-	chainOwnerSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	chainOwnerSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	anchor := startNewChain(t, client, chainOwnerSigner)
 
-	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 
 	// Ensure we only have one actual gas coin. Merge all coins into one - if needed.
 	ensureSingleCoin(t, cryptolibSigner, l1)
@@ -117,10 +118,10 @@ func TestProperCoinUse(t *testing.T) {
 
 func TestCreateAndSendRequest(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	anchorSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	anchorSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 0)
 	anchor := startNewChain(t, client, anchorSigner)
 
-	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	var testCoinRef []*iotago.ObjectRef
 	for i := 0; i < 25+26; i++ {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -288,7 +289,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 
@@ -318,7 +319,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 
 func TestGetRequestFromObjectID(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	anchor := startNewChain(t, client, cryptolibSigner)
 

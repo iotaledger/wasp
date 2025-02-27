@@ -239,27 +239,38 @@ func (c *Client) MintToken(
 		}}})
 	pt := ptb.Finish()
 
-	return c.SignAndExecuteRetryableTx(ctx, signer, pt, DefaultGasBudget, DefaultGasPrice, options)
+	return c.SignAndExecuteTxWithRetry(ctx, signer, pt, nil, DefaultGasBudget, DefaultGasPrice, options)
 }
 
-// FindCoinsForGasPayment may return outdated ObjectRef which would cause
-// the execution of tx failed.
+// The assigned gasPayments, or the gasPayments got by FindCoinsForGasPayment may be outdated ObjectRef
+// which would cause the execution of tx failed.
 // This func can retry a few time
-func (c *Client) SignAndExecuteRetryableTx(
+func (c *Client) SignAndExecuteTxWithRetry(
 	ctx context.Context,
 	signer iotasigner.Signer,
 	pt iotago.ProgrammableTransaction,
+	gasCoin *iotago.ObjectRef,
 	gasBudget uint64,
 	gasPrice uint64,
 	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	var txnResponse *iotajsonrpc.IotaTransactionBlockResponse
+	var gasPayments []*iotago.ObjectRef
 	for i := 0; i < c.WaitUntilEffectsVisible.Attempts; i++ {
-		gasPayments, err := c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasPrice, gasBudget)
-		if err != nil {
-			return nil, fmt.Errorf("failed to find gas payment: %w", err)
+		if gasCoin == nil {
+			gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasPrice, gasBudget)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find gas payment: %w", err)
+			}
+		} else {
+			gasCoin, err = c.UpdateObjectRef(ctx, gasCoin)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update gas payment: %w", err)
+			}
+			gasPayments = []*iotago.ObjectRef{gasCoin}
 		}
+
 		tx := iotago.NewProgrammable(
 			signer.Address(),
 			pt,

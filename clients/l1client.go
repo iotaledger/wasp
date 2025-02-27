@@ -214,6 +214,15 @@ type L1Client interface {
 		sourceCoins []*iotago.ObjectRef,
 		gasBudget uint64,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	SignAndExecuteTxWithRetry(
+		ctx context.Context,
+		signer iotasigner.Signer,
+		pt iotago.ProgrammableTransaction,
+		gasCoin *iotago.ObjectRef,
+		gasBudget uint64,
+		gasPrice uint64,
+		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 }
 
 var _ L1Client = &l1Client{}

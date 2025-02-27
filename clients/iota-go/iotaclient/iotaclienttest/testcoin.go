@@ -36,10 +36,11 @@ func DeployCoinPackage(
 	}})
 	pt := ptb.Finish()
 
-	txnResponse, err := client.SignAndExecuteRetryableTx(
+	txnResponse, err := client.SignAndExecuteTxWithRetry(
 		context.Background(),
 		signer,
 		pt,
+		nil,
 		iotaclient.DefaultGasBudget*2,
 		iotaclient.DefaultGasPrice,
 		&iotajsonrpc.IotaTransactionBlockResponseOptions{

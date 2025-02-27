@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -21,8 +22,8 @@ func TestRequestsFeed(t *testing.T) {
 	t.Skip()
 	client := iscmoveclienttest.NewHTTPClient()
 
-	iscOwner := iscmoveclienttest.GenSignerWithFundByCounter(t)
-	chainOwner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	iscOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	chainOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 
 	anchor := startNewChain(t, client, chainOwner)
 

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
@@ -21,7 +22,7 @@ import (
 
 func TestStartNewChain(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	signer := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	signer := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: signer.Address().AsIotaAddress()})
 	require.NoError(t, err)
@@ -47,8 +48,8 @@ func TestStartNewChain(t *testing.T) {
 
 func TestReceiveRequestAndTransition(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
-	cryptolibSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
-	chainSigner := iscmoveclienttest.GenSignerWithFundByCounter(t)
+	cryptolibSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
+	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	const topUpAmount = 123
 	anchor := startNewChain(t, client, chainSigner)
 
