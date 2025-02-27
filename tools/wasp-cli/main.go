@@ -41,9 +41,7 @@ func initRootCmd(waspVersion string) *cobra.Command {
 
 			client := iotaclient.NewHTTP(config.L1APIAddress(), iotaclient.WaitForEffectsDisabled)
 			err := parameters.InitL1(*client, log.HiveLogger())
-			if err != nil {
-				panic(err)
-			}
+			log.Check(err)
 
 			whitelistedCommands := map[string]struct{}{
 				"init":            {},
