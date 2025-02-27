@@ -179,6 +179,9 @@ func (t *callTracer) OnEnter(depth int, typ byte, from common.Address, to common
 	}
 
 	toCopy := to
+	if value == nil {
+		value = new(big.Int)
+	}
 	call := CallFrame{
 		Type:  NewOpCodeJSON(vm.OpCode(typ)),
 		From:  from,
