@@ -57,19 +57,20 @@ func (c *Client) CreateAnchorWithAssetsBagRef(ctx context.Context, req *CreateAn
 }
 
 type UpdateAnchorStateMetadataRequest struct {
-	Signer            cryptolib.Signer
-	ChainOwnerAddress *cryptolib.Address
-	PackageID         iotago.PackageID
-	AnchorRef         *iotago.ObjectRef
-	StateMetadata     []byte
-	GasPayments       []*iotago.ObjectRef
-	GasPrice          uint64
-	GasBudget         uint64
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorRef     *iotago.ObjectRef
+	StateMetadata []byte
+	StateIndex    uint32
+	GasPayments   []*iotago.ObjectRef
+	GasPrice      uint64
+	GasBudget     uint64
 }
 
 func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAnchorStateMetadataRequest) (bool, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = PTBUpdateAnchorStateMetadata(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}), req.StateMetadata)
+
+	ptb = PTBUpdateAnchorStateMetadata(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}), req.StateMetadata, req.StateIndex)
 	res, err := c.SignAndExecutePTB(
 		ctx,
 		req.Signer,

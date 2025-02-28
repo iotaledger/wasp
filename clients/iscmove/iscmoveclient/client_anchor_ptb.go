@@ -39,7 +39,7 @@ func PTBCreateAnchorWithAssetsBagRef(
 	return ptb
 }
 
-func PTBUpdateAnchorStateMetadata(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, anchorRef iotago.Argument, stateMetadata []byte) *iotago.ProgrammableTransactionBuilder {
+func PTBUpdateAnchorStateMetadata(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, anchorRef iotago.Argument, stateMetadata []byte, stateIndex uint32) *iotago.ProgrammableTransactionBuilder {
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
@@ -50,6 +50,7 @@ func PTBUpdateAnchorStateMetadata(ptb *iotago.ProgrammableTransactionBuilder, pa
 				Arguments: []iotago.Argument{
 					anchorRef,
 					ptb.MustPure(stateMetadata),
+					ptb.MustPure(stateIndex),
 				},
 			},
 		},

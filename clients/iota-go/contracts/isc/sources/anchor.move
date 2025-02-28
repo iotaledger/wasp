@@ -57,8 +57,9 @@ module isc::anchor {
         }
     }
 
-    public fun update_anchor_state_metadata(self:&mut Anchor, state_metadata: vector<u8>) {
-        self.state_metadata = state_metadata
+    public fun update_anchor_state_metadata(self:&mut Anchor, state_metadata: vector<u8>, state_index: u32) {
+        self.state_metadata = state_metadata;
+        self.state_index = state_index;
     }
 
 

@@ -1,7 +1,7 @@
 package migration
 
 import (
-	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/transaction"
 )
@@ -11,6 +11,13 @@ import (
 type PrepareConfiguration struct {
 	DKGCommitteeAddress *cryptolib.Address
 	ChainOwner          *cryptolib.Address
-	StateMetadata       *transaction.StateMetadata
-	Anchor              *iscmove.AnchorWithRef
+	AssetsBagID         *iotago.ObjectID
+	GasCoinID           *iotago.ObjectID
+	AnchorID            *iotago.ObjectID
+}
+
+type MigrationResult struct {
+	StateMetadata    *transaction.StateMetadata
+	StateMetadataHex string
+	StateIndex       uint32
 }
