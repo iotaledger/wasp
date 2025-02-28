@@ -610,6 +610,49 @@ func TestRPCTraceTx(t *testing.T) {
 	})
 }
 
+func TestRPCTraceFailedTx(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creatorL2Balance := env.Balance(creatorAddress)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	tx := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    creatorL2Balance,
+			Gas:      100000000000000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))),
+		})
+
+	_, err = env.SendTransactionAndWait(tx)
+	require.ErrorContains(t, err, "insufficient funds for gas * price + value")
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 0, bi.NumSuccessfulRequests)
+
+	t.Run("callTracer", func(t *testing.T) {
+		_, err := env.traceTransactionWithCallTracer(tx.Hash())
+		require.ErrorContains(t, err, "expected exactly one top-level call")
+	})
+
+	t.Run("prestate", func(t *testing.T) {
+		accountMap, err := env.traceTransactionWithPrestate(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, accountMap)
+
+		diff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, diff.Pre)
+		require.Empty(t, diff.Post)
+	})
+}
+
 // Transfer calls produce "fake" Transactions to simulate EVM behavior.
 // They are not real in the sense of being persisted to the blockchain, therefore requires additional checks.
 func TestRPCTraceEVMDeposit(t *testing.T) {
