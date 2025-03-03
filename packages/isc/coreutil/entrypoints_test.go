@@ -243,7 +243,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 }
 
 func TestEntryPointMutFunc12(t *testing.T) {
-	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
 		return u * 2, u * 3
 	})
