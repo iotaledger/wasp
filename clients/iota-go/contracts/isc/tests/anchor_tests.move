@@ -26,9 +26,14 @@ module isc::anchor_tests {
         request::Self,
     };
 
+    use std::fixed_point32;
+    use std::type_name;
+    use iota::vec_map;
+    use std::debug;
+
+
     // One Time Witness for coins used in the tests.
     public struct TEST_A has drop {}
-    public struct TEST_B has drop {}
 
     // Demonstration on how to receive a Request inside one PTB.
     #[test]
@@ -41,11 +46,21 @@ module isc::anchor_tests {
         let mut ctx = tx_context::dummy();
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
         let mut iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
         let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
+
+        let mut royalties = vec_map::empty();
+        royalties.insert(sender, fixed_point32::create_from_rational(1, 2));
+
+        let mut attributes = vec_map::empty();
+        attributes.insert(string::utf8(b"attribute"), string::utf8(b"value"));
+
+        let mut non_standard_fields = vec_map::empty();
+        non_standard_fields.insert(string::utf8(b"field"), string::utf8(b"value"));
+
         let test_b_nft = nft::create_for_testing(
             option::some(sender),
             option::some(b"metadata"),
@@ -57,14 +72,15 @@ module isc::anchor_tests {
                 url::new_unsafe(ascii::string(b"www.best-nft.com/nft.png")),
                 string::utf8(b"nft"),
                 option::some(string::utf8(b"collection")),
-                table::new<address,FixedPoint32>(&mut ctx),
+                royalties,
                 option::some(string::utf8(b"issuer")),
                 option::some(string::utf8(b"description")),
-                vec_set::empty<String>(),
-                table::new<String,String>(&mut ctx),
+                attributes,
+                non_standard_fields,
             ),
             &mut ctx,
         );
+
         let nft_id = object::id(&test_b_nft);
 
         // ClientPTB.2 create allowance
@@ -92,6 +108,7 @@ module isc::anchor_tests {
             option::some(vector::empty()), 
             &mut ctx,
         );*/ // Commented because cannot be executed received in this test
+        // Instead create a test request
         let req = request::create_for_testing(
             req_assets,
             42, // contract hname
@@ -122,7 +139,7 @@ module isc::anchor_tests {
         
         // ServerPTB.3.1: extract the iota balance.
         let extracted_iota_balance = req_extracted_assets.take_all_coin_balance<IOTA>();
-        assert!(extracted_iota_balance.value() == 3);
+        assert!(extracted_iota_balance.value() == 10000);
         // ServerPTB.3.2: place it to the anchor assets bag.
         anchor_assets.place_coin_balance(extracted_iota_balance);
 
