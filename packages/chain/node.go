@@ -874,19 +874,6 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 
 	consensusInstance, _ := consensusInstances.Get(logIndex)
 
-	// collect all active consensusIDs
-	activeConsensusInstances := []consGR.ConsensusID{}
-	cni.consensusInsts.ForEach(func(cAddr cryptolib.AddressKey, consMap *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
-		consMap.ForEach(func(li cmt_log.LogIndex, _ *consensusInst) bool {
-			activeConsensusInstances = append(activeConsensusInstances, consGR.NewConsensusID(cryptolib.NewAddressFromKey(cAddr), &li))
-			return true
-		})
-		return true
-	})
-	// update the mempool with the list of active consensus instances
-	cni.mempool.ConsensusInstancesUpdated(activeConsensusInstances)
-	// ----
-
 	return consensusInstance
 }
 
