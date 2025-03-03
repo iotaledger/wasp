@@ -4,16 +4,13 @@
 module isc::anchor_tests {
 
     use std::{
-        fixed_point32::{FixedPoint32},
-        string::{Self, String},
+        string::{Self},
         ascii::Self,
     };
     use iota::{
-        table::Self,
         coin::Self,
         iota::IOTA,
         url::Self,
-        vec_set::Self,
     };
 
     use stardust::{
@@ -27,9 +24,7 @@ module isc::anchor_tests {
     };
 
     use std::fixed_point32;
-    use std::type_name;
     use iota::vec_map;
-    use std::debug;
 
 
     // One Time Witness for coins used in the tests.
@@ -49,7 +44,7 @@ module isc::anchor_tests {
         let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
-        let mut iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
+        let iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
         let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
 
         let mut royalties = vec_map::empty();
