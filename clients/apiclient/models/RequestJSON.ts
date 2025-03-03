@@ -24,12 +24,14 @@ export class RequestJSON {
     'gasBudget': string;
     'isEVM': boolean;
     'isOffLedger': boolean;
-    'params': Array<Array<number>>;
+    'params': Array<string>;
     'requestId': string;
     'senderAccount': string;
     'targetAddress': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -71,8 +73,8 @@ export class RequestJSON {
         {
             "name": "params",
             "baseName": "params",
-            "type": "Array<Array<number>>",
-            "format": "int32"
+            "type": "Array<string>",
+            "format": "string"
         },
         {
             "name": "requestId",
@@ -100,4 +102,3 @@ export class RequestJSON {
     public constructor() {
     }
 }
-

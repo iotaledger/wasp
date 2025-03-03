@@ -13,10 +13,12 @@
 import { HttpFile } from '../http/http';
 
 export class LoginResponse {
-    'error': string;
+    'error'?: string;
     'jwt': string;
 
     static readonly discriminator: string | undefined = undefined;
+
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
@@ -39,4 +41,3 @@ export class LoginResponse {
     public constructor() {
     }
 }
-

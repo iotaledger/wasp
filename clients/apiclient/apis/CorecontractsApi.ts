@@ -1,7 +1,7 @@
 // TODO: better import syntax?
 import {BaseAPIRequestFactory, RequiredError, COLLECTION_FORMATS} from './baseapi';
 import {Configuration} from '../configuration';
-import {RequestContext, HttpMethod, ResponseContext, HttpFile} from '../http/http';
+import {RequestContext, HttpMethod, ResponseContext, HttpFile, HttpInfo} from '../http/http';
 import {ObjectSerializer} from '../models/ObjectSerializer';
 import {ApiException} from './exception';
 import {canConsumeForm, isCodeInRange} from '../util';
@@ -989,7 +989,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
      * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
@@ -1077,14 +1077,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetAccountBalance
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetAccountBalance(response: ResponseContext): Promise<AssetsResponse > {
+     public async accountsGetAccountBalanceWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AssetsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: AssetsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AssetsResponse", ""
             ) as AssetsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1100,7 +1100,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AssetsResponse", ""
             ) as AssetsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1113,14 +1113,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetAccountFoundries
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetAccountFoundries(response: ResponseContext): Promise<AccountFoundriesResponse > {
+     public async accountsGetAccountFoundriesWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AccountFoundriesResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: AccountFoundriesResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AccountFoundriesResponse", ""
             ) as AccountFoundriesResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1136,7 +1136,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AccountFoundriesResponse", ""
             ) as AccountFoundriesResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1149,14 +1149,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetAccountNFTIDs
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetAccountNFTIDs(response: ResponseContext): Promise<AccountNFTsResponse > {
+     public async accountsGetAccountNFTIDsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AccountNFTsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: AccountNFTsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AccountNFTsResponse", ""
             ) as AccountNFTsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1172,7 +1172,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AccountNFTsResponse", ""
             ) as AccountNFTsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1185,14 +1185,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetAccountNonce
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetAccountNonce(response: ResponseContext): Promise<AccountNonceResponse > {
+     public async accountsGetAccountNonceWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AccountNonceResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: AccountNonceResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AccountNonceResponse", ""
             ) as AccountNonceResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1208,7 +1208,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AccountNonceResponse", ""
             ) as AccountNonceResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1221,14 +1221,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetFoundryOutput
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetFoundryOutput(response: ResponseContext): Promise<FoundryOutputResponse > {
+     public async accountsGetFoundryOutputWithHttpInfo(response: ResponseContext): Promise<HttpInfo<FoundryOutputResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: FoundryOutputResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "FoundryOutputResponse", ""
             ) as FoundryOutputResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1244,7 +1244,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "FoundryOutputResponse", ""
             ) as FoundryOutputResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1257,7 +1257,7 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetNFTData
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetNFTData(response: ResponseContext): Promise< void> {
+     public async accountsGetNFTDataWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1269,7 +1269,7 @@ export class CorecontractsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1282,14 +1282,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetNativeTokenIDRegistry
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetNativeTokenIDRegistry(response: ResponseContext): Promise<NativeTokenIDRegistryResponse > {
+     public async accountsGetNativeTokenIDRegistryWithHttpInfo(response: ResponseContext): Promise<HttpInfo<NativeTokenIDRegistryResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: NativeTokenIDRegistryResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "NativeTokenIDRegistryResponse", ""
             ) as NativeTokenIDRegistryResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1305,7 +1305,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "NativeTokenIDRegistryResponse", ""
             ) as NativeTokenIDRegistryResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1318,14 +1318,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to accountsGetTotalAssets
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetTotalAssets(response: ResponseContext): Promise<AssetsResponse > {
+     public async accountsGetTotalAssetsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AssetsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: AssetsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AssetsResponse", ""
             ) as AssetsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1341,7 +1341,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "AssetsResponse", ""
             ) as AssetsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1354,14 +1354,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetBlockInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetBlockInfo(response: ResponseContext): Promise<BlockInfoResponse > {
+     public async blocklogGetBlockInfoWithHttpInfo(response: ResponseContext): Promise<HttpInfo<BlockInfoResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: BlockInfoResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "BlockInfoResponse", ""
             ) as BlockInfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1377,7 +1377,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "BlockInfoResponse", ""
             ) as BlockInfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1390,14 +1390,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetControlAddresses
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetControlAddresses(response: ResponseContext): Promise<ControlAddressesResponse > {
+     public async blocklogGetControlAddressesWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ControlAddressesResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: ControlAddressesResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ControlAddressesResponse", ""
             ) as ControlAddressesResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1413,7 +1413,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ControlAddressesResponse", ""
             ) as ControlAddressesResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1426,14 +1426,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetEventsOfBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetEventsOfBlock(response: ResponseContext): Promise<EventsResponse > {
+     public async blocklogGetEventsOfBlockWithHttpInfo(response: ResponseContext): Promise<HttpInfo<EventsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: EventsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "EventsResponse", ""
             ) as EventsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1449,7 +1449,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "EventsResponse", ""
             ) as EventsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1462,14 +1462,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetEventsOfLatestBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetEventsOfLatestBlock(response: ResponseContext): Promise<EventsResponse > {
+     public async blocklogGetEventsOfLatestBlockWithHttpInfo(response: ResponseContext): Promise<HttpInfo<EventsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: EventsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "EventsResponse", ""
             ) as EventsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1485,7 +1485,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "EventsResponse", ""
             ) as EventsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1498,14 +1498,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetEventsOfRequest
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetEventsOfRequest(response: ResponseContext): Promise<EventsResponse > {
+     public async blocklogGetEventsOfRequestWithHttpInfo(response: ResponseContext): Promise<HttpInfo<EventsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: EventsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "EventsResponse", ""
             ) as EventsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1521,7 +1521,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "EventsResponse", ""
             ) as EventsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1534,14 +1534,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetLatestBlockInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetLatestBlockInfo(response: ResponseContext): Promise<BlockInfoResponse > {
+     public async blocklogGetLatestBlockInfoWithHttpInfo(response: ResponseContext): Promise<HttpInfo<BlockInfoResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: BlockInfoResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "BlockInfoResponse", ""
             ) as BlockInfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1557,7 +1557,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "BlockInfoResponse", ""
             ) as BlockInfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1570,14 +1570,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestIDsForBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestIDsForBlock(response: ResponseContext): Promise<RequestIDsResponse > {
+     public async blocklogGetRequestIDsForBlockWithHttpInfo(response: ResponseContext): Promise<HttpInfo<RequestIDsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: RequestIDsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "RequestIDsResponse", ""
             ) as RequestIDsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1593,7 +1593,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "RequestIDsResponse", ""
             ) as RequestIDsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1606,14 +1606,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestIDsForLatestBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestIDsForLatestBlock(response: ResponseContext): Promise<RequestIDsResponse > {
+     public async blocklogGetRequestIDsForLatestBlockWithHttpInfo(response: ResponseContext): Promise<HttpInfo<RequestIDsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: RequestIDsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "RequestIDsResponse", ""
             ) as RequestIDsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1629,7 +1629,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "RequestIDsResponse", ""
             ) as RequestIDsResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1642,14 +1642,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestIsProcessed
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestIsProcessed(response: ResponseContext): Promise<RequestProcessedResponse > {
+     public async blocklogGetRequestIsProcessedWithHttpInfo(response: ResponseContext): Promise<HttpInfo<RequestProcessedResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: RequestProcessedResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "RequestProcessedResponse", ""
             ) as RequestProcessedResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1665,7 +1665,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "RequestProcessedResponse", ""
             ) as RequestProcessedResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1678,14 +1678,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestReceipt
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestReceipt(response: ResponseContext): Promise<ReceiptResponse > {
+     public async blocklogGetRequestReceiptWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ReceiptResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: ReceiptResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ReceiptResponse", ""
             ) as ReceiptResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1701,7 +1701,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ReceiptResponse", ""
             ) as ReceiptResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1714,14 +1714,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestReceiptsOfBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestReceiptsOfBlock(response: ResponseContext): Promise<Array<ReceiptResponse> > {
+     public async blocklogGetRequestReceiptsOfBlockWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Array<ReceiptResponse> >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: Array<ReceiptResponse> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<ReceiptResponse>", ""
             ) as Array<ReceiptResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1737,7 +1737,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<ReceiptResponse>", ""
             ) as Array<ReceiptResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1750,14 +1750,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to blocklogGetRequestReceiptsOfLatestBlock
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async blocklogGetRequestReceiptsOfLatestBlock(response: ResponseContext): Promise<Array<ReceiptResponse> > {
+     public async blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Array<ReceiptResponse> >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: Array<ReceiptResponse> = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<ReceiptResponse>", ""
             ) as Array<ReceiptResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1773,7 +1773,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "Array<ReceiptResponse>", ""
             ) as Array<ReceiptResponse>;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1786,14 +1786,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to errorsGetErrorMessageFormat
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async errorsGetErrorMessageFormat(response: ResponseContext): Promise<ErrorMessageFormatResponse > {
+     public async errorsGetErrorMessageFormatWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ErrorMessageFormatResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: ErrorMessageFormatResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ErrorMessageFormatResponse", ""
             ) as ErrorMessageFormatResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1809,7 +1809,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "ErrorMessageFormatResponse", ""
             ) as ErrorMessageFormatResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1822,14 +1822,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to governanceGetAllowedStateControllerAddresses
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async governanceGetAllowedStateControllerAddresses(response: ResponseContext): Promise<GovAllowedStateControllerAddressesResponse > {
+     public async governanceGetAllowedStateControllerAddressesWithHttpInfo(response: ResponseContext): Promise<HttpInfo<GovAllowedStateControllerAddressesResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: GovAllowedStateControllerAddressesResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "GovAllowedStateControllerAddressesResponse", ""
             ) as GovAllowedStateControllerAddressesResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1845,7 +1845,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "GovAllowedStateControllerAddressesResponse", ""
             ) as GovAllowedStateControllerAddressesResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1858,14 +1858,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to governanceGetChainInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async governanceGetChainInfo(response: ResponseContext): Promise<GovChainInfoResponse > {
+     public async governanceGetChainInfoWithHttpInfo(response: ResponseContext): Promise<HttpInfo<GovChainInfoResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: GovChainInfoResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "GovChainInfoResponse", ""
             ) as GovChainInfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1881,7 +1881,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "GovChainInfoResponse", ""
             ) as GovChainInfoResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
@@ -1894,14 +1894,14 @@ export class CorecontractsApiResponseProcessor {
      * @params response Response returned by the server for a request to governanceGetChainOwner
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async governanceGetChainOwner(response: ResponseContext): Promise<GovChainOwnerResponse > {
+     public async governanceGetChainOwnerWithHttpInfo(response: ResponseContext): Promise<HttpInfo<GovChainOwnerResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
             const body: GovChainOwnerResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "GovChainOwnerResponse", ""
             ) as GovChainOwnerResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
             const body: ValidationError = ObjectSerializer.deserialize(
@@ -1917,7 +1917,7 @@ export class CorecontractsApiResponseProcessor {
                 ObjectSerializer.parse(await response.body.text(), contentType),
                 "GovChainOwnerResponse", ""
             ) as GovChainOwnerResponse;
-            return body;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);

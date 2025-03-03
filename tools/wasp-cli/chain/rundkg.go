@@ -45,8 +45,8 @@ func initRunDKGCmd() *cobra.Command {
 }
 
 func doDKG(ctx context.Context, node string, peers []string, quorum int) *cryptolib.Address {
-	client := cliclients.WaspClient(node)
-	nodeInfo, _, err := client.NodeApi.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
+	client := cliclients.WaspClientWithVersionCheck(ctx, node)
+	nodeInfo, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute() //nolint:bodyclose // false positive
 	log.Check(err)
 
 	// Consider own node as a committee, if peers are not specified.
@@ -59,7 +59,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 	thisNodeFound := false
 	{
 		var trustedPeers []apiclient.PeeringNodeIdentityResponse
-		trustedPeers, _, err = client.NodeApi.GetTrustedPeers(ctx).Execute() //nolint:bodyclose // false positive
+		trustedPeers, _, err = client.NodeAPI.GetTrustedPeers(ctx).Execute() //nolint:bodyclose // false positive
 		log.Check(err)
 
 		for _, peer := range peers {
@@ -96,7 +96,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 		log.Fatal("quorum needs to be at least (2/3)+1 of committee size")
 	}
 
-	stateControllerAddr, err := apilib.RunDKG(client, committeePubKeys, uint16(quorum))
+	stateControllerAddr, err := apilib.RunDKG(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
 	log.Check(err)
 
 	committeeMembersStr := ""

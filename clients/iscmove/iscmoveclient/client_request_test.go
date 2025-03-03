@@ -17,13 +17,14 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
 	coinType := iotajsonrpc.IotaCoinType.String()
-	coinObjects, err := client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
+	coinObjects, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})
@@ -50,15 +51,12 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 		},
 	)
 
-	referenceGasPrice, err := client.GetReferenceGasPrice(context.TODO())
-	require.NoError(t, err)
-
 	txData := iotago.NewProgrammable(
 		cryptolibSigner.Address().AsIotaAddress(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{primaryCoin.Ref()},
 		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
+		parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)
@@ -75,14 +73,14 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 			},
 		})
 	require.NoError(t, err)
-	fmt.Println(result)
+	t.Logf("SignAndExecuteTransaction, result: %+v", result)
 
-	coinObjects, err = client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
+	coinObjects, err = client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    cryptolibSigner.Address().AsIotaAddress(),
 	})
 	require.NoError(t, err)
-	fmt.Println(coinObjects)
+	t.Logf("SignAndExecuteTransaction, contObjects: %+v", coinObjects)
 
 	if len(coinObjects.Data) != 1 {
 		t.Fatalf("Failed to merge all coins into one")
@@ -124,29 +122,164 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	ensureSingleCoin(t, cryptolibSigner, l1starter.Instance().L1Client())
+	t.Run("success", func(t *testing.T) {
+		txnResponse, err := newAssetsBag(client, cryptolibSigner)
+		require.NoError(t, err)
+		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+		require.NoError(t, err)
 
-	txnResponse, err := newAssetsBag(client, cryptolibSigner)
-	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
-	require.NoError(t, err)
+		createAndSendRequestRes, err := client.CreateAndSendRequest(
+			context.Background(),
+			&iscmoveclient.CreateAndSendRequestRequest{
+				Signer:        cryptolibSigner,
+				PackageID:     l1starter.ISCPackageID(),
+				AnchorAddress: anchor.ObjectID,
+				AssetsBagRef:  assetsBagRef,
+				Message:       iscmovetest.RandomMessage(),
+				Allowance:     iscmove.NewAssets(100),
+				GasPrice:      iotaclient.DefaultGasPrice,
+				GasBudget:     iotaclient.DefaultGasBudget,
+			},
+		)
+		require.NoError(t, err)
 
-	createAndSendRequestRes, err := client.CreateAndSendRequest(
-		context.Background(),
-		&iscmoveclient.CreateAndSendRequestRequest{
-			Signer:        cryptolibSigner,
-			PackageID:     l1starter.ISCPackageID(),
-			AnchorAddress: anchor.ObjectID,
-			AssetsBagRef:  assetsBagRef,
-			Message:       iscmovetest.RandomMessage(),
-			Allowance:     iscmove.NewAssets(100),
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
-		},
-	)
-	require.NoError(t, err)
+		_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		require.NoError(t, err)
+	})
 
-	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
-	require.NoError(t, err)
+	t.Run("max size AssetsBag", func(t *testing.T) {
+		txnResponse, err := newAssetsBag(client, cryptolibSigner)
+		require.NoError(t, err)
+		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+		require.NoError(t, err)
+
+		for i := 0; i < 25; i++ {
+			coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+			getCoinRef, err := client.GetObject(
+				context.Background(),
+				iotaclient.GetObjectRequest{
+					ObjectID: coinRef.ObjectID,
+					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
+				},
+			)
+			require.NoError(t, err)
+
+			coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+			require.NoError(t, err)
+
+			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			require.NoError(t, err)
+
+			_, err = PTBTestWrapper(
+				&PTBTestWrapperRequest{
+					Client:    client,
+					Signer:    cryptolibSigner,
+					PackageID: l1starter.ISCPackageID(),
+					GasPrice:  iotaclient.DefaultGasPrice,
+					GasBudget: iotaclient.DefaultGasBudget,
+				},
+				func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder {
+					return iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
+						ptb,
+						l1starter.ISCPackageID(),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+						iotajsonrpc.CoinValue(100),
+						testCointype,
+					)
+				},
+			)
+			require.NoError(t, err)
+
+			assetsBagRef, err = client.UpdateObjectRef(context.Background(), assetsBagRef)
+			require.NoError(t, err)
+		}
+
+		createAndSendRequestRes, err := client.CreateAndSendRequest(
+			context.Background(),
+			&iscmoveclient.CreateAndSendRequestRequest{
+				Signer:        cryptolibSigner,
+				PackageID:     l1starter.ISCPackageID(),
+				AnchorAddress: anchor.ObjectID,
+				AssetsBagRef:  assetsBagRef,
+				Message:       iscmovetest.RandomMessage(),
+				Allowance:     iscmove.NewAssets(100),
+				GasPrice:      iotaclient.DefaultGasPrice,
+				GasBudget:     iotaclient.DefaultGasBudget,
+			},
+		)
+		require.NoError(t, err)
+
+		_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		require.NoError(t, err)
+	})
+
+	t.Run("oversized AssetsBag", func(t *testing.T) {
+		txnResponse, err := newAssetsBag(client, cryptolibSigner)
+		require.NoError(t, err)
+		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+		require.NoError(t, err)
+
+		for i := 0; i < 26; i++ {
+			coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+			getCoinRef, err := client.GetObject(
+				context.Background(),
+				iotaclient.GetObjectRequest{
+					ObjectID: coinRef.ObjectID,
+					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
+				},
+			)
+			require.NoError(t, err)
+
+			coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
+			require.NoError(t, err)
+
+			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			require.NoError(t, err)
+
+			_, err = PTBTestWrapper(
+				&PTBTestWrapperRequest{
+					Client:    client,
+					Signer:    cryptolibSigner,
+					PackageID: l1starter.ISCPackageID(),
+					GasPrice:  iotaclient.DefaultGasPrice,
+					GasBudget: iotaclient.DefaultGasBudget,
+				},
+				func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder {
+					return iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
+						ptb,
+						l1starter.ISCPackageID(),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+						iotajsonrpc.CoinValue(100),
+						testCointype,
+					)
+				},
+			)
+			require.NoError(t, err)
+
+			assetsBagRef, err = client.UpdateObjectRef(context.Background(), assetsBagRef)
+			require.NoError(t, err)
+		}
+
+		_, err = client.CreateAndSendRequest(
+			context.Background(),
+			&iscmoveclient.CreateAndSendRequestRequest{
+				Signer:        cryptolibSigner,
+				PackageID:     l1starter.ISCPackageID(),
+				AnchorAddress: anchor.ObjectID,
+				AssetsBagRef:  assetsBagRef,
+				Message:       iscmovetest.RandomMessage(),
+				Allowance:     iscmove.NewAssets(100),
+				GasPrice:      iotaclient.DefaultGasPrice,
+				GasBudget:     iotaclient.DefaultGasBudget,
+			},
+		)
+		require.Error(t, err)
+		fmt.Println(err)
+		require.Contains(t, err.Error(), `failed to execute the transaction:`)
+		require.Contains(t, err.Error(), `create_and_send_request`)
+	})
 }
 
 func TestCreateAndSendRequestWithAssets(t *testing.T) {

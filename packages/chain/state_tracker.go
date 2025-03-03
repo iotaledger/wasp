@@ -71,6 +71,10 @@ func NewStateTracker(
 }
 
 func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.StateAnchor, strict bool) {
+	if ao == nil {
+		// We don't have the latest AO while we are still synching.
+		return
+	}
 	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
 	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
 		return

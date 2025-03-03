@@ -19,12 +19,12 @@ func TestQuorumCounter(t *testing.T) {
 	li7 := cmt_log.LogIndex(7)
 	li8 := cmt_log.LogIndex(8)
 
-	qc := cmt_log.NewQuorumCounter(cmt_log.MsgNextLogIndexCauseRecover, nodeIDs, log)
+	qc := cmt_log.NewQuorumCounter(cmt_log.MsgNextLogIndexCauseStarted, nodeIDs, log)
 
 	require.Equal(t, lin, qc.EnoughVotes(f+1))
 
 	makeVote := func(from gpa.NodeID, li cmt_log.LogIndex) *cmt_log.MsgNextLogIndex {
-		vote := cmt_log.NewMsgNextLogIndex(nodeIDs[0], li, cmt_log.MsgNextLogIndexCauseRecover, false)
+		vote := cmt_log.NewMsgNextLogIndex(nodeIDs[0], li, cmt_log.MsgNextLogIndexCauseStarted, false)
 		vote.SetSender(from)
 		return vote
 	}

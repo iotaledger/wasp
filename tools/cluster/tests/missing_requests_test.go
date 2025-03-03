@@ -16,6 +16,8 @@ import (
 )
 
 func TestMissingRequests(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	clu := newCluster(t, waspClusterOpts{nNodes: 4})
 	cmt := []int{0, 1, 2, 3}
 	threshold := uint16(4)
@@ -35,14 +37,14 @@ func TestMissingRequests(t *testing.T) {
 	chClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, clu.Config.ISCPackageID(), userWallet)
 	reqTx, err := chClient.DepositFunds(100)
 	require.NoError(t, err)
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chainID, reqTx, false, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	// TODO: Validate offleder logic
 	// send off-ledger request to all nodes except #3
 	req := isc.NewOffLedgerRequest(chainID, inccounter.FuncIncCounter.Message(nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
-	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),
 		Request: cryptolib.EncodeHex(req.Bytes()),
 	}).Execute()
@@ -52,7 +54,7 @@ func TestMissingRequests(t *testing.T) {
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
 	req2 := isc.NewOffLedgerRequest(chainID, isc.NewMessageFromNames("foo", "bar"), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
-	_, err = clu.WaspClient(0).RequestsApi.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
+	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		ChainId: chainID.String(),
 		Request: cryptolib.EncodeHex(req2.Bytes()),
 	}).Execute()

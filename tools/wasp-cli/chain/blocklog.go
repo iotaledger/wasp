@@ -31,17 +31,19 @@ func initBlockCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			bi := fetchBlockInfo(args, node, chain)
+			bi := fetchBlockInfo(ctx, client, args, chain)
 			log.Printf("Block index: %d\n", bi.BlockIndex)
 			log.Printf("Timestamp: %s\n", bi.Timestamp.UTC().Format(time.RFC3339))
 			log.Printf("Total requests: %d\n", bi.TotalRequests)
 			log.Printf("Successful requests: %d\n", bi.NumSuccessfulRequests)
 			log.Printf("Off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 			log.Printf("\n")
-			logRequestsInBlock(bi.BlockIndex, node, chain)
+			logRequestsInBlock(ctx, client, bi.BlockIndex, chain)
 			log.Printf("\n")
-			logEventsInBlock(bi.BlockIndex, node, chain)
+			logEventsInBlock(ctx, client, bi.BlockIndex, chain)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -49,13 +51,11 @@ func initBlockCmd() *cobra.Command {
 	return cmd
 }
 
-func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoResponse {
-	client := cliclients.WaspClient(node)
-
+func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []string, chain string) *apiclient.BlockInfoResponse {
 	if len(args) == 0 {
 		blockInfo, _, err := client.
-			CorecontractsApi.
-			BlocklogGetLatestBlockInfo(context.Background(), config.GetChain(chain).String()).
+			CorecontractsAPI.
+			BlocklogGetLatestBlockInfo(ctx, config.GetChain(chain).String()).
 			Execute() //nolint:bodyclose // false positive
 
 		log.Check(err)
@@ -67,8 +67,8 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 	log.Check(err)
 
 	blockInfo, _, err := client.
-		CorecontractsApi.
-		BlocklogGetBlockInfo(context.Background(), config.GetChain(chain).String(), uint32(index)).
+		CorecontractsAPI.
+		BlocklogGetBlockInfo(ctx, config.GetChain(chain).String(), uint32(index)).
 		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
 
@@ -76,10 +76,9 @@ func fetchBlockInfo(args []string, node, chain string) *apiclient.BlockInfoRespo
 	return blockInfo
 }
 
-func logRequestsInBlock(index uint32, node, chain string) {
-	client := cliclients.WaspClient(node)
-	receipts, _, err := client.CorecontractsApi.
-		BlocklogGetRequestReceiptsOfBlock(context.Background(), config.GetChain(chain).String(), index).
+func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32, chain string) {
+	receipts, _, err := client.CorecontractsAPI.
+		BlocklogGetRequestReceiptsOfBlock(ctx, config.GetChain(chain).String(), index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
 
@@ -91,10 +90,9 @@ func logRequestsInBlock(index uint32, node, chain string) {
 	}
 }
 
-func logEventsInBlock(index uint32, node, chain string) {
-	client := cliclients.WaspClient(node)
-	events, _, err := client.CorecontractsApi.
-		BlocklogGetEventsOfBlock(context.Background(), config.GetChain(chain).String(), index).
+func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32, chain string) {
+	events, _, err := client.CorecontractsAPI.
+		BlocklogGetEventsOfBlock(ctx, config.GetChain(chain).String(), index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
 
@@ -136,13 +134,14 @@ func initRequestCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			client := cliclients.WaspClient(node)
 			reqID := reqIDFromString(args[0])
 
 			// TODO add optional block param?
-			receipt, _, err := client.ChainsApi.
-				GetReceipt(context.Background(), chainID.String(), reqID.String()).
+			receipt, _, err := client.ChainsAPI.
+				GetReceipt(ctx, chainID.String(), reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
@@ -151,7 +150,7 @@ func initRequestCmd() *cobra.Command {
 			util.LogReceipt(*receipt)
 
 			log.Printf("\n")
-			logEventsInRequest(reqID, node, chain)
+			logEventsInRequest(ctx, client, reqID, chain)
 			log.Printf("\n")
 		},
 	}
@@ -160,10 +159,9 @@ func initRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func logEventsInRequest(reqID isc.RequestID, node, chain string) {
-	client := cliclients.WaspClient(node)
-	events, _, err := client.CorecontractsApi.
-		BlocklogGetEventsOfRequest(context.Background(), config.GetChain(chain).String(), reqID.String()).
+func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID, chain string) {
+	events, _, err := client.CorecontractsAPI.
+		BlocklogGetEventsOfRequest(ctx, config.GetChain(chain).String(), reqID.String()).
 		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)

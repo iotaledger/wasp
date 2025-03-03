@@ -10,7 +10,10 @@ import (
 
 func RandomSigner() iotasigner.Signer {
 	b := make([]byte, 32)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
 	return iotasigner.NewSigner(b, iotasigner.KeySchemeFlagIotaEd25519)
 }
 

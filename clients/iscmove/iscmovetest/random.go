@@ -36,6 +36,7 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		&iotago.ObjectID{},
 		gas.DefaultFeePolicy(),
 		initParams,
+		0,
 		"http://url",
 	).Bytes()
 	stateIndex := uint32(rand.Int31())
@@ -54,8 +55,11 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		}
 	}
 	return iscmove.Anchor{
-		ID:            id,
-		Assets:        assets,
+		ID: id,
+		Assets: iscmove.Referent[iscmove.AssetsBag]{
+			ID:    *iotatest.RandomAddress(),
+			Value: &assets,
+		},
 		StateMetadata: stateMetadata,
 		StateIndex:    stateIndex,
 	}

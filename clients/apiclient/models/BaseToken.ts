@@ -10,10 +10,11 @@
  * Do not edit the class manually.
  */
 
+import { Type } from '../models/Type';
 import { HttpFile } from '../http/http';
 
 export class BaseToken {
-    'coinType'?: string;
+    'coinType': Type;
     /**
     * The token decimals
     */
@@ -31,6 +32,10 @@ export class BaseToken {
     */
     'tickerSymbol': string;
     /**
+    * The total supply of BaseToken
+    */
+    'totalSupply': number;
+    /**
     * The token unit
     */
     'unit': string;
@@ -41,12 +46,14 @@ export class BaseToken {
 
     static readonly discriminator: string | undefined = undefined;
 
+    static readonly mapping: {[index: string]: string} | undefined = undefined;
+
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
             "name": "coinType",
             "baseName": "coinType",
-            "type": "string",
-            "format": "string"
+            "type": "Type",
+            "format": ""
         },
         {
             "name": "decimals",
@@ -73,6 +80,12 @@ export class BaseToken {
             "format": "string"
         },
         {
+            "name": "totalSupply",
+            "baseName": "totalSupply",
+            "type": "number",
+            "format": "int64"
+        },
+        {
             "name": "unit",
             "baseName": "unit",
             "type": "string",
@@ -92,4 +105,3 @@ export class BaseToken {
     public constructor() {
     }
 }
-

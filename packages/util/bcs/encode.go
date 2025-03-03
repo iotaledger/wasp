@@ -82,138 +82,151 @@ func (e *Encoder) Err() error {
 }
 
 func (e *Encoder) MustEncode(val any) {
-	if err := e.Encode(val); err != nil {
-		panic(err)
+	e.Encode(val)
+	if e.w.Err != nil {
+		panic(e.w.Err)
 	}
 }
 
-func (e *Encoder) Encode(val any) error {
+// If error occurs, it will be stored inside of encoder and can be checked using enc.Err().
+// After error further calls to Encode() will just do nothing.
+// So no need to check error every time.
+// Example:
+//
+//	enc.Encode(&v1)
+//	enc.Encode(&v2)
+//	enc.Encode(&v3)
+//
+//	if err := enc.Err(); err != nil {
+//	    return err
+//	}
+//
+// If Encode() is called inside of MarshalBCS() method, you can even skip checking enc.Err(),
+// because decoder itself will do it for you anyway.
+// Example:
+//
+//	func (p *MyStruct) MarshalBCS(e *bcs.Encoder) error {
+//	    e.Encode(&p.Field1)
+//	    e.Encode(&p.Field2)
+//	    return nil
+//	}
+func (e *Encoder) Encode(val any) {
+	if e.w.Err != nil {
+		return
+	}
+
 	if val == nil {
-		return e.handleErrorf("cannot encode a nil value")
+		_ = e.handleErrorf("cannot encode a nil value")
+		return
 	}
 
 	defer e.typeInfoCache.Save()
 
 	if err := e.encodeValue(reflect.ValueOf(val), nil, nil); err != nil {
-		return fmt.Errorf("encoding %T: %w", val, err)
+		_ = e.handleErrorf("encoding %T: %w", val, err)
+		return
 	}
-
-	return nil
 }
 
-func (e *Encoder) EncodeOptional(val any) error {
+func (e *Encoder) EncodeOptional(val any) {
+	if e.w.Err != nil {
+		return
+	}
+
 	v := reflect.ValueOf(val)
 
 	switch v.Kind() {
 	case reflect.Ptr, reflect.Interface, reflect.Map:
 	default:
-		return e.handleErrorf("optional value must be a pointer, interface or map, got %v", v.Type())
+		_ = e.handleErrorf("optional value must be a pointer, interface or map, got %v", v.Type())
+		return
 	}
 
 	if v.IsNil() {
 		e.w.WriteByte(0)
-		return e.w.Err
+		return
 	}
 
 	e.w.WriteByte(1)
-
-	return e.Encode(val)
+	e.Encode(val)
 }
 
-func (e *Encoder) WriteOptionalFlag(hasValue bool) error {
+func (e *Encoder) WriteOptionalFlag(hasValue bool) {
 	if hasValue {
 		e.w.WriteByte(1)
 	} else {
 		e.w.WriteByte(0)
 	}
-
-	return e.w.Err
 }
 
 // Enum index is an index of variant in enum type.
-func (e *Encoder) WriteEnumIdx(variantIdx int) error {
+func (e *Encoder) WriteEnumIdx(variantIdx int) {
 	e.w.WriteSize32(variantIdx)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteLen(len int) error {
-	e.w.WriteSize32(len)
-	return e.w.Err
+func (e *Encoder) WriteLen(length int) {
+	e.w.WriteSize32(length)
 }
 
 // ULEB - unsigned little-endian base-128 - variable-length integer value.
-func (e *Encoder) WriteCompactUint(v uint64) error {
+func (e *Encoder) WriteCompactUint(v uint64) {
 	e.w.WriteAmount64(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteBool(v bool) error {
+func (e *Encoder) WriteBool(v bool) {
 	e.w.WriteBool(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteByte(v byte) error {
+//nolint:govet
+func (e *Encoder) WriteByte(v byte) {
 	e.w.WriteByte(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt8(v int8) error {
+func (e *Encoder) WriteInt8(v int8) {
 	e.w.WriteInt8(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt16(v int16) error {
+func (e *Encoder) WriteInt16(v int16) {
 	e.w.WriteInt16(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt32(v int32) error {
+func (e *Encoder) WriteInt32(v int32) {
 	e.w.WriteInt32(v)
-
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt64(v int64) error {
+func (e *Encoder) WriteInt64(v int64) {
 	e.w.WriteInt64(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteInt(v int) error {
+func (e *Encoder) WriteInt(v int) {
 	e.w.WriteInt64(int64(v))
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint8(v uint8) error {
+func (e *Encoder) WriteUint8(v uint8) {
 	e.w.WriteUint8(v)
-
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint16(v uint16) error {
+func (e *Encoder) WriteUint16(v uint16) {
 	e.w.WriteUint16(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint32(v uint32) error {
+func (e *Encoder) WriteUint32(v uint32) {
 	e.w.WriteUint32(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint64(v uint64) error {
+func (e *Encoder) WriteUint64(v uint64) {
 	e.w.WriteUint64(v)
-	return e.w.Err
 }
 
-func (e *Encoder) WriteUint(v uint) error {
+func (e *Encoder) WriteUint(v uint) {
 	e.w.WriteUint64(uint64(v))
-	return e.w.Err
 }
 
-func (e *Encoder) WriteString(v string) error {
+func (e *Encoder) WriteString(v string) {
 	e.w.WriteString(v)
-	return e.w.Err
 }
 
+// For support of io.Writer interface
 func (e *Encoder) Write(b []byte) (n int, err error) {
 	e.w.WriteFromFunc(func(w io.Writer) (int, error) {
 		n, err = w.Write(b)
@@ -223,10 +236,7 @@ func (e *Encoder) Write(b []byte) (n int, err error) {
 	return n, e.w.Err
 }
 
-// func (e *Encoder) Writer() *rwutil.Writer {
-// 	return &e.w
-// }
-
+//nolint:gocyclo,funlen
 func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, tInfo *typeInfo) error {
 	if tInfo == nil {
 		// Hint about type customization could have been provided by caller when encoding collections.
@@ -243,18 +253,18 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	v, err := e.getEncodedValue(v, tInfo.RefLevelsCount)
 	if err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
 
 	if tInfo.CustomEncoder != nil {
-		if err := tInfo.CustomEncoder(e, v); err != nil {
+		if err := tInfo.CustomEncoder(e, v); err != nil { //nolint:govet
 			if e.w.Err == nil {
 				e.w.Err = err
 			}
-			return fmt.Errorf("%v: custom encoder: %w", v.Type(), err)
+			return e.handleErrorf("%v: custom encoder: %w", v.Type(), err)
 		}
 		if e.w.Err != nil {
-			return fmt.Errorf("%v: custom encoder: %w", v.Type(), e.w.Err)
+			return e.handleErrorf("%v: custom encoder: %w", v.Type(), e.w.Err)
 		}
 
 		return nil
@@ -273,15 +283,15 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 		e.w.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if typeOptions.IsCompactInt {
-			e.WriteCompactUint(uint64(v.Int()))
+			e.WriteCompactUint(uint64(v.Int())) //nolint:gosec
 		} else {
-			err = e.encodeInt(v, typeOptions.UnderlayingType)
+			err = e.encodeInt(v, typeOptions.UnderlyingType)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if typeOptions.IsCompactInt {
 			e.WriteCompactUint(v.Uint())
 		} else {
-			err = e.encodeUint(v, typeOptions.UnderlayingType)
+			err = e.encodeUint(v, typeOptions.UnderlyingType)
 		}
 	case reflect.String:
 		e.w.WriteString(v.String())
@@ -316,10 +326,10 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	}
 
 	if err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
 	if e.w.Err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), e.w.Err)
+		return e.handleErrorf("%v: %w", v.Type(), e.w.Err)
 	}
 
 	return nil
@@ -387,7 +397,7 @@ func (e *Encoder) getEncodedTypeInfo(t reflect.Type) (typeInfo, error) {
 		var err error
 		res.FieldOptions, res.FieldHasTag, err = FieldOptionsFromStruct(t, e.cfg.TagName)
 		if err != nil {
-			return typeInfo{}, fmt.Errorf("parsing struct fields options: %v: %w", t, err)
+			return typeInfo{}, e.handleErrorf("parsing struct fields options: %v: %w", t, err)
 		}
 	}
 
@@ -446,7 +456,7 @@ func (e *Encoder) checkTypeCustomizations(t reflect.Type) typeCustomization {
 	switch {
 	case kind == reflect.Interface:
 		return typeCustomization{}
-	case kind == reflect.Struct && t.Implements(enumT):
+	case kind == reflect.Struct && t.Implements(structEnumT):
 		return typeCustomization{IsStructEnum: true}
 	case t.Implements(bcsTypeT):
 		return typeCustomization{HasTypeOptions: true}
@@ -492,11 +502,11 @@ func (e *Encoder) encodeInt(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Int8:
-		e.w.WriteInt8(int8(v.Int()))
+		e.w.WriteInt8(int8(v.Int())) //nolint:gosec
 	case reflect.Int16:
-		e.w.WriteInt16(int16(v.Int()))
+		e.w.WriteInt16(int16(v.Int())) //nolint:gosec
 	case reflect.Int32:
-		e.w.WriteInt32(int32(v.Int()))
+		e.w.WriteInt32(int32(v.Int())) //nolint:gosec
 	case reflect.Int64, reflect.Int:
 		e.w.WriteInt64(v.Int())
 	default:
@@ -515,11 +525,11 @@ func (e *Encoder) encodeUint(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Uint8:
-		e.w.WriteUint8(uint8(v.Uint()))
+		e.w.WriteUint8(uint8(v.Uint())) //nolint:gosec
 	case reflect.Uint16:
-		e.w.WriteUint16(uint16(v.Uint()))
+		e.w.WriteUint16(uint16(v.Uint())) //nolint:gosec
 	case reflect.Uint32:
-		e.w.WriteUint32(uint32(v.Uint()))
+		e.w.WriteUint32(uint32(v.Uint())) //nolint:gosec
 	case reflect.Uint64, reflect.Uint:
 		e.w.WriteUint64(v.Uint())
 	default:
@@ -583,7 +593,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 
 	tInfo, err := e.getEncodedTypeInfo(elemType)
 	if err != nil {
-		return fmt.Errorf("element: %w", err)
+		return e.handleErrorf("element: %w", err)
 	}
 
 	if !tInfo.HasCustomizations() {
@@ -603,13 +613,13 @@ func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 				return e.encodeValue(v.Index(i), &typeOpts.ArrayElement.TypeOptions, &tInfo)
 			})
 			if err != nil {
-				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
+				return e.handleErrorf("[%v]: %v: %w", i, elemType, err)
 			}
 		}
 	} else {
 		for i := 0; i < v.Len(); i++ {
 			if err := e.encodeValue(v.Index(i), &typeOpts.ArrayElement.TypeOptions, &tInfo); err != nil {
-				return fmt.Errorf("[%v]: %v: %w", i, elemType, err)
+				return e.handleErrorf("[%v]: %v: %w", i, elemType, err)
 			}
 		}
 	}
@@ -634,12 +644,12 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 	t := v.Type()
 	keyTypeInfo, err := e.getEncodedTypeInfo(t.Key())
 	if err != nil {
-		return fmt.Errorf("key: %w", err)
+		return e.handleErrorf("key: %w", err)
 	}
 
 	valTypeInfo, err := e.getEncodedTypeInfo(t.Elem())
 	if err != nil {
-		return fmt.Errorf("value: %w", err)
+		return e.handleErrorf("value: %w", err)
 	}
 
 	entries := make([]*lo.Tuple2[[]byte, reflect.Value], 0, v.Len())
@@ -650,7 +660,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 			return e.encodeValue(elem.Key(), typeOpts.MapKey, &keyTypeInfo)
 		})
 		if err != nil {
-			return fmt.Errorf("key: %w", err)
+			return e.handleErrorf("key: %w", err)
 		}
 
 		entry := lo.T2[[]byte, reflect.Value](encodedKey, elem.Value())
@@ -665,7 +675,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 		e.w.WriteN(entries[i].A)
 
 		if err := e.encodeValue(entries[i].B, typeOpts.MapValue, &valTypeInfo); err != nil {
-			return fmt.Errorf("value: %w", err)
+			return e.handleErrorf("value: %w", err)
 		}
 	}
 
@@ -711,12 +721,12 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 
 		fieldKind := fieldVal.Kind()
 
-		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map {
+		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map || fieldKind == reflect.Slice {
 			// The field is nullable
 
 			isNil := fieldVal.IsNil()
 
-			if isNil && !fieldOpts.Optional && fieldKind != reflect.Interface {
+			if isNil && !fieldOpts.Optional && fieldKind != reflect.Interface && fieldKind != reflect.Slice {
 				return e.handleErrorf("%v: non-optional nil value", fieldType.Name)
 			}
 
@@ -774,7 +784,7 @@ func (e *Encoder) getStructEnumVariantIdx(v reflect.Value) (enumVariantIdx EnumV
 			}
 
 			if enumVariantIdx != -1 {
-				prevSetField := v.Type().Field(int(enumVariantIdx))
+				prevSetField := v.Type().Field(enumVariantIdx)
 				currentField := v.Type().Field(i)
 				return -1, e.handleErrorf("multiple options are set in enum struct %v: %v and %v", v.Type(), prevSetField.Name, currentField.Name)
 			}
@@ -851,9 +861,8 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value, enumVariants map[i
 	if enumVariantIdx == -1 {
 		if isNil {
 			return -1, e.handleErrorf("bcs.None is not registered as part of enum type %v - cannot encode nil interface enum value", v.Type())
-		} else {
-			return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, v.Type())
 		}
+		return -1, e.handleErrorf("variant %v is not registered as part of enum type %v", valT, v.Type())
 	}
 
 	return enumVariantIdx, nil
@@ -867,7 +876,7 @@ func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
 	}
 
 	if err := e.encodeValue(v, nil, nil); err != nil {
-		return fmt.Errorf("%v: %w", v.Type(), err)
+		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
 
 	return nil
@@ -884,7 +893,7 @@ func (e *Encoder) encodeAsByteArray(enc func() error) error {
 	e.w.WriteN(encodedVal)
 
 	if e.w.Err != nil {
-		return fmt.Errorf("bytearr: %w", e.w.Err)
+		return e.handleErrorf("bytearr: %w", e.w.Err)
 	}
 
 	return nil
@@ -909,24 +918,24 @@ func (e *Encoder) handleErrorf(format string, args ...interface{}) error {
 	return e.w.Err
 }
 
+// Pointer is forced here for two reasons:
+//   - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
+//   - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
+//
+// But because of that encoding a value, which is stored in variable of type "any" would be very inconvenient.
+// So to make it more user-friendly, this function treats "*any" as "any".
 func MarshalStream[V any](v *V, dest io.Writer) error {
-	// Forcing pointer here for two reasons:
-	//  - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
-	//  - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
+	e := NewEncoder(dest)
 
 	switch v := interface{}(v).(type) {
 	case *interface{}:
 		// Exception for pointer to "any" just for convenience.
-		if err := NewEncoder(dest).Encode(*v); err != nil {
-			return err
-		}
+		e.Encode(*v)
 	default:
-		if err := NewEncoder(dest).Encode(v); err != nil {
-			return err
-		}
+		e.Encode(v)
 	}
 
-	return nil
+	return e.w.Err
 }
 
 func MustMarshalStream[V any](v *V, dest io.Writer) {

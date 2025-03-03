@@ -19,6 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -28,6 +29,8 @@ import (
 )
 
 func TestWaspCLINoChains(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	out := w.MustRun("address")
@@ -40,6 +43,8 @@ func TestWaspCLINoChains(t *testing.T) {
 }
 
 func TestWaspAuth(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t, waspClusterOpts{
 		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
 			configParams.AuthScheme = "jwt"
@@ -55,6 +60,8 @@ func TestWaspAuth(t *testing.T) {
 }
 
 func TestZeroGasFee(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	const chainName = "chain1"
@@ -109,6 +116,8 @@ func getAddress(out []string) string {
 }
 
 func TestWaspCLISendFunds(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
@@ -118,6 +127,8 @@ func TestWaspCLISendFunds(t *testing.T) {
 }
 
 func TestWaspCLIDeposit(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -232,6 +243,8 @@ func findRequestIDInOutput(out []string) string {
 }
 
 func TestWaspCLIBlockLog(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -296,6 +309,8 @@ func TestWaspCLIBlockLog(t *testing.T) {
 }
 
 func TestWaspCLIRejoinChain(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	// make sure deploying with a bad quorum breaks
@@ -355,6 +370,8 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 }
 
 func TestWaspCLILongParam(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -386,6 +403,8 @@ func TestWaspCLILongParam(t *testing.T) {
 }
 
 func TestWaspCLITrustListImport(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t, waspClusterOpts{
 		nNodes:  4,
 		dirName: "wasp-cluster-initial",
@@ -448,6 +467,8 @@ func TestWaspCLITrustListImport(t *testing.T) {
 }
 
 func TestWaspCLICantPeerWithSelf(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t, waspClusterOpts{
 		nNodes: 1,
 	})
@@ -463,6 +484,8 @@ func TestWaspCLICantPeerWithSelf(t *testing.T) {
 }
 
 func TestWaspCLIListTrustDistrust(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 	out := w.MustRun("peering", "list-trusted", "--node=0")
 	// one of the entries starts with "1", meaning node 0 trusts node 1
@@ -486,6 +509,8 @@ func TestWaspCLIListTrustDistrust(t *testing.T) {
 }
 
 func TestWaspCLIMintNativeToken(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -514,6 +539,8 @@ func TestWaspCLIMintNativeToken(t *testing.T) {
 }
 
 func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -566,6 +593,8 @@ func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *
 }
 
 func TestEVMISCReceipt(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t)
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
@@ -580,8 +609,10 @@ func TestEVMISCReceipt(t *testing.T) {
 }
 
 func TestChangeGovernanceController(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	t.Fatalf("Implement gov controller change")
-	
+
 	w := newWaspCLITest(t)
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")

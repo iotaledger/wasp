@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"slices"
 )
 
 func (l *HWLedger) sendChunks(
@@ -49,7 +50,7 @@ func (l *HWLedger) sendChunks(
 
 	// Prepare final parameter buffer
 	startBuf := []byte{byte(START)}
-	finalBuf := append(startBuf, bytes.Join(parameterList, []byte{})...)
+	finalBuf := slices.Concat(startBuf, bytes.Join(parameterList, []byte{}))
 
 	// Call handleBlocksProtocol
 	return l.handleBlocksProtocol(cla, ins, p1, p2, finalBuf, data)

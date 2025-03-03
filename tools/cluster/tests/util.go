@@ -59,7 +59,7 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, coinType coin.Type, no
 		idx = nodeIndex[0]
 	}
 
-	balance, _, err := e.Chain.Cluster.WaspClient(idx).CorecontractsApi.
+	balance, _, err := e.Chain.Cluster.WaspClient(idx).CorecontractsAPI.
 		AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
 		Execute()
 	require.NoError(e.t, err)
@@ -76,7 +76,7 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, coinType coin.Type, 
 }
 
 func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
-	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsApi.
+	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsAPI.
 		AccountsGetAccountNFTIDs(context.Background(), e.Chain.ChainID.String(), agentID.String()).
 		Execute()
 	require.NoError(e.t, err)
@@ -93,7 +93,7 @@ func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
 }
 
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
-	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsApi.
+	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.
 		GetChainInfo(context.Background(), e.Chain.ChainID.String()).
 		Execute()
 	require.NoError(e.t, err)

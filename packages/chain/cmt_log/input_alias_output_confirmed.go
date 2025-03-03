@@ -10,16 +10,16 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type inputAliasOutputConfirmed struct {
-	aliasOutput *isc.StateAnchor
+type inputAnchorConfirmed struct {
+	anchor *isc.StateAnchor
 }
 
-func NewInputAliasOutputConfirmed(aliasOutput *isc.StateAnchor) gpa.Input {
-	return &inputAliasOutputConfirmed{
-		aliasOutput: aliasOutput,
+func NewInputAnchorConfirmed(anchor *isc.StateAnchor) gpa.Input {
+	return &inputAnchorConfirmed{
+		anchor: anchor,
 	}
 }
 
-func (inp *inputAliasOutputConfirmed) String() string {
-	return fmt.Sprintf("{cmtLog.inputAliasOutputConfirmed, %v}", inp.aliasOutput)
+func (inp *inputAnchorConfirmed) String() string {
+	return fmt.Sprintf("{cmtLog.inputAnchorConfirmed, %v}", inp.anchor)
 }

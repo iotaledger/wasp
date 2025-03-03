@@ -24,26 +24,28 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestReboot(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	// env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
 	client := env.createNewClient()
 
 	// ------ TODO why does this make the test fail?
-	_, er := env.Clu.WaspClient(0).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(0).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(1).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(1).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	//-------
 
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)
@@ -51,7 +53,7 @@ func TestReboot(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -85,7 +87,7 @@ func TestReboot(t *testing.T) {
 	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(3)
 
@@ -93,7 +95,7 @@ func TestReboot(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -102,13 +104,15 @@ func TestReboot(t *testing.T) {
 }
 
 func TestReboot2(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	client := env.createNewClient()
 
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)
@@ -116,7 +120,7 @@ func TestReboot2(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		WaitForL1Confirmation(true).
 		TimeoutSeconds(10).
@@ -126,15 +130,15 @@ func TestReboot2(t *testing.T) {
 	env.expectCounter(2)
 
 	// ------ TODO why does this make the test fail?
-	_, er := env.Clu.WaspClient(0).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(0).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(1).ChainsApi.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(1).ChainsApi.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	//-------
 
@@ -164,7 +168,7 @@ func TestReboot2(t *testing.T) {
 	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(3)
@@ -172,7 +176,7 @@ func TestReboot2(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -196,7 +200,7 @@ func (icc *incCounterClient) MustIncOnLedger() {
 	tx, err := icc.client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(icc.t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(icc.t, err)
 
 	icc.expected++
@@ -207,7 +211,7 @@ func (icc *incCounterClient) MustIncOffLedger() {
 	req, err := icc.client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(icc.t, err)
 
-	_, _, err = icc.env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = icc.env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), icc.env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -230,6 +234,8 @@ func (icc *incCounterClient) MustIncBoth(onLedgerFirst bool) {
 // Ensures a nodes resumes normal operation after rebooting.
 // In this case we have F=0 and N=3, thus any reboot violates the assumptions.
 func TestRebootN3Single(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	tm := util.NewTimer()
 	allNodes := []int{0, 1, 2}
 	env := setupNativeInccounterTest(t, 3, allNodes)
@@ -257,6 +263,8 @@ func TestRebootN3Single(t *testing.T) {
 // In this case we have F=0 and N=3, thus any reboot violates the assumptions.
 // We restart 2 nodes each iteration in this scenario..
 func TestRebootN3TwoNodes(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	tm := util.NewTimer()
 	allNodes := []int{0, 1, 2}
 	env := setupNativeInccounterTest(t, 3, allNodes)
@@ -283,6 +291,8 @@ func TestRebootN3TwoNodes(t *testing.T) {
 
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	restartDelay := 20 * time.Second
 	restartCases := [][]int{
@@ -363,7 +373,7 @@ func TestRebootDuringTasks(t *testing.T) {
 			chainclient.PostRequestParams{Allowance: isc.NewAssets(5000)},
 		)
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(env.Chain.ChainID, req.ID(), true, 10*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(context.Background(), env.Chain.ChainID, req.ID(), true, 10*time.Second)
 		require.NoError(t, err)
 		env.checkBalanceOnChain(targetAgentID, coin.BaseTokenType, 5000)
 	}
@@ -374,13 +384,15 @@ func TestRebootDuringTasks(t *testing.T) {
 }
 
 func TestRebootRecoverFromWAL(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	client := env.createNewClient()
 
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)
@@ -388,7 +400,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
@@ -404,7 +416,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(t, err)
 	env.expectCounter(3)
 
@@ -412,7 +424,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsApi.
+	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()

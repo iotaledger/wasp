@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	iotago "github.com/iotaledger/iota.go/v3"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
@@ -19,6 +20,8 @@ import (
 )
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	const clusterSize = 10
 	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 
@@ -65,7 +68,7 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 		inccounter.FuncIncCounter.Message(nil),
 	)
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 
 	ret, err := apiextensions.CallView(
@@ -92,7 +95,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 		},
 	)
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, offledgerReq.ID(), false, 5*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, offledgerReq.ID(), false, 5*time.Second)
 	require.Error(t, err) // wont' be processed
 
 	// send off-ledger requests with the correct nonce
@@ -104,7 +107,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 			},
 		)
 		require.NoError(t, err2)
-		_, err2 = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(e.Chain.ChainID, req.ID(), false, 10*time.Second)
+		_, err2 = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 10*time.Second)
 		require.NoError(t, err2)
 	}
 
@@ -133,7 +136,7 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 	})
 	require.NoError(e.t, err)
 
-	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(e.t, err)
 
 	gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)

@@ -19,8 +19,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
-// TODO DeployChain on peering domain, not on committee
-
 type CreateChainParams struct {
 	Layer1Client         clients.L1Client
 	CommitteeAPIHosts    []string
@@ -73,7 +71,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 			StateMetadata:     par.StateMetadata.Bytes(),
 			GasPayments:       gasPayments,
 			GasPrice:          referenceGasPrice.Uint64(),
-			GasBudget:         iotaclient.DefaultGasBudget,
+			GasBudget:         iotaclient.DefaultGasBudget * 10,
 		},
 	)
 	if err != nil {

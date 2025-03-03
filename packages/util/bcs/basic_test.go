@@ -33,9 +33,7 @@ func (w *BasicWithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	}
 
 	var s string
-	if err := d.Decode(&s); err != nil {
-		return err
-	}
+	d.Decode(&s)
 
 	*w = BasicWithCustomCodec(s)
 
@@ -88,9 +86,7 @@ func (w *BasicWithCustomPtrCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	}
 
 	var s string
-	if err := d.Decode(&s); err != nil {
-		return err
-	}
+	d.Decode(&s)
 
 	*w = BasicWithCustomPtrCodec(s)
 
@@ -100,7 +96,7 @@ func (w *BasicWithCustomPtrCodec) UnmarshalBCS(d *bcs.Decoder) error {
 type BasicWithInit string
 
 func (w *BasicWithInit) BCSInit() error {
-	*w = *w + "!"
+	*w += "!"
 	return nil
 }
 
@@ -123,9 +119,7 @@ func (w *BasicWithCustomAndInit) UnmarshalBCS(d *bcs.Decoder) error {
 	}
 
 	var s string
-	if err := d.Decode(&s); err != nil {
-		return err
-	}
+	d.Decode(&s)
 
 	*w = BasicWithCustomAndInit(s)
 
@@ -133,7 +127,7 @@ func (w *BasicWithCustomAndInit) UnmarshalBCS(d *bcs.Decoder) error {
 }
 
 func (w *BasicWithCustomAndInit) BCSInit() error {
-	*w = *w + "!"
+	*w += "!"
 	return nil
 }
 
@@ -217,32 +211,34 @@ func TestBasicInit(t *testing.T) {
 	require.Equal(t, vCustomAndInit+"!", vCustomAndInitDec)
 }
 
-func TestBasicCodedErr(t *testing.T) {
+func TestBasicCodecErr(t *testing.T) {
 	_, err := bcs.Marshal((*int)(nil))
 	require.Error(t, err)
 	_, err = bcs.Unmarshal[int](nil)
 	require.Error(t, err)
 
-	err = bcs.NewDecoder(bytes.NewReader(nil)).Decode((*int)(nil))
-	require.Error(t, err)
+	d := bcs.NewDecoder(bytes.NewReader(nil))
+	d.Decode((*int)(nil))
+	require.Error(t, d.Err())
 
 	var v int
-	err = bcs.NewDecoder(bytes.NewReader(nil)).Decode(&v)
-	require.Error(t, err)
+	d = bcs.NewDecoder(bytes.NewReader(nil))
+	d.Decode(&v)
+	require.Error(t, d.Err())
 }
 
 func TestMultiPtrCodec(t *testing.T) {
 	var vI int16 = 4660
-	var pVI *int16 = &vI
-	var ppVI **int16 = &pVI
+	pVI := &vI
+	ppVI := &pVI
 	bcs.TestCodecAndBytesVsRef(t, ppVI, []byte{0x34, 0x12})
 
 	pVI = nil
 	bcs.TestEncodeErr(t, ppVI)
 
-	var vM map[int16]bool = map[int16]bool{1: true, 2: false, 3: true}
-	var pVM *map[int16]bool = &vM
-	var ppVM **map[int16]bool = &pVM
+	vM := map[int16]bool{1: true, 2: false, 3: true}
+	pVM := &vM
+	ppVM := &pVM
 	bcs.TestCodecAndBytes(t, ppVM, []byte{0x3, 0x1, 0x0, 0x1, 0x2, 0x0, 0x0, 0x3, 0x0, 0x1})
 
 	type testStruct struct {
@@ -438,7 +434,9 @@ func (s *StructWithManualCodec) MarshalBCS(e *bcs.Encoder) error {
 	e.WriteString(s.F)
 
 	// Just to mark that this is a manual codec.
-	return e.Encode(byte(1))
+	e.Encode(byte(1))
+
+	return nil
 }
 
 func (s *StructWithManualCodec) UnmarshalBCS(d *bcs.Decoder) error {
@@ -502,19 +500,19 @@ func TestHighLevelCodecFuncs(t *testing.T) {
 func TestMarshalInterfaceEnumByDefault(t *testing.T) {
 	e := bcs.NewEncoderWithOpts(&bytes.Buffer{}, bcs.EncoderConfig{InterfaceIsEnumByDefault: true})
 	var v any = "hello"
-	err := e.Encode(&v)
-	require.Error(t, err)
+	e.Encode(&v)
+	require.Error(t, e.Err())
 
 	var buf bytes.Buffer
 	e = bcs.NewEncoderWithOpts(&buf, bcs.EncoderConfig{InterfaceIsEnumByDefault: true})
-	err = e.Encode(v)
-	require.NoError(t, err)
+	e.Encode(v)
+	require.NoError(t, e.Err())
 	vEnc := buf.Bytes()
 
 	d := bcs.NewDecoderWithOpts(bytes.NewReader(vEnc), bcs.DecoderConfig{InterfaceIsEnumByDefault: true})
 	var vDec any
-	err = d.Decode(&vDec)
-	require.Error(t, err)
+	d.Decode(&vDec)
+	require.Error(t, d.Err())
 }
 
 func TestBytesCoders(t *testing.T) {

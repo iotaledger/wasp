@@ -6,12 +6,11 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
-
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -41,6 +40,35 @@ func newVmContext(
 		stateDraft: stateDraft,
 		txbuilder:  txbuilder,
 	}
+}
+
+func (vmctx *vmContext) calculateTopUpFee() coin.Value {
+	targetValue := governance.NewStateReaderFromChainState(vmctx.stateDraft).GetGasCoinTargetValue()
+	gasCoinBalance := vmctx.task.GasCoin.Value
+
+	topUp := coin.Value(0)
+	if gasCoinBalance < targetValue {
+		topUp = targetValue - gasCoinBalance
+	}
+
+	bal := vmctx.commonAccountBalance()
+	if bal < topUp {
+		vmctx.task.Log.Warnf(
+			"not enough tokens in common account for topping up gas coin (has %d, want %d)",
+			bal,
+			topUp,
+		)
+		topUp = bal
+	}
+
+	vmctx.task.Log.Debugf(
+		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
+		gasCoinBalance,
+		targetValue,
+		bal,
+		topUp,
+	)
+	return topUp
 }
 
 // runTask runs batch of requests on VM
@@ -83,6 +111,11 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
+	topUpFee := vmctx.calculateTopUpFee()
+	if topUpFee > 0 {
+		vmctx.deductTopUpFeeFromCommonAccount(topUpFee)
+	}
+
 	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.extractBlock(
 		numProcessed, numSuccess, numOffLedger,
 	)
@@ -90,21 +123,18 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	vmctx.task.Log.Debugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, l1Commitment, timestamp, rotationAddr)
 
-	// FIXME we may not need to store this when Rotate the address
 	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment, task.GasCoin)
 	vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
 	if rotationAddr != nil {
 		// rotation happens
 		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
-		// FIXME maybe we need to amend the following debugging message
 		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
-	// FIXME this may cause a deadlock when the packed the requests are too huge and exceeded the top up fee
-	topUpFee := uint64(0)
-	if isc.TopUpFeeMin > task.GasCoin.Value {
-		topUpFee = isc.TopUpFeeMin - task.GasCoin.Value.Uint64()
-	}
-	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(taskResult.StateMetadata, topUpFee)
+
+	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
+		taskResult.StateMetadata,
+		uint64(topUpFee),
+	)
 	return taskResult
 }
 

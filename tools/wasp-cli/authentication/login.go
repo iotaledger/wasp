@@ -3,6 +3,7 @@ package authentication
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"syscall"
 
@@ -20,6 +21,24 @@ var (
 	username string
 	password string
 )
+
+func initSetTokenCmd() *cobra.Command {
+	var node string
+	cmd := &cobra.Command{
+		Use:   "set-token",
+		Short: "Manually sets a token for a given node",
+		Args:  cobra.ExactArgs(1),
+		Run: func(cmd *cobra.Command, args []string) {
+			node = waspcmd.DefaultWaspNodeFallback(node)
+
+			config.SetToken(node, args[0])
+
+			fmt.Printf("Set token for %s", node)
+		},
+	}
+	waspcmd.WithWaspNodeFlag(cmd, &node)
+	return cmd
+}
 
 func initLoginCmd() *cobra.Command {
 	var node string
@@ -52,7 +71,8 @@ func initLoginCmd() *cobra.Command {
 				return
 			}
 
-			token, _, err := cliclients.WaspClient(node).AuthApi.
+			ctx := context.Background()
+			token, _, err := cliclients.WaspClientWithVersionCheck(ctx, node).AuthAPI.
 				Authenticate(context.Background()).
 				LoginRequest(apiclient.LoginRequest{
 					Username: username,

@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the StateTransaction type satisfies the MappedNullable interface at compile time
@@ -24,6 +26,8 @@ type StateTransaction struct {
 	// The transaction ID
 	TxId string `json:"txId"`
 }
+
+type _StateTransaction StateTransaction
 
 // NewStateTransaction instantiates a new StateTransaction object
 // This constructor will assign default values to properties that have it defined,
@@ -105,6 +109,44 @@ func (o StateTransaction) ToMap() (map[string]interface{}, error) {
 	toSerialize["stateIndex"] = o.StateIndex
 	toSerialize["txId"] = o.TxId
 	return toSerialize, nil
+}
+
+func (o *StateTransaction) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"stateIndex",
+		"txId",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varStateTransaction := _StateTransaction{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varStateTransaction)
+
+	if err != nil {
+		return err
+	}
+
+	*o = StateTransaction(varStateTransaction)
+
+	return err
 }
 
 type NullableStateTransaction struct {

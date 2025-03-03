@@ -37,12 +37,12 @@ func (h *hiveLogHandler) Handle(ctx context.Context, r slog.Record) error {
 
 // WithAttrs implements slog.Handler.
 func (h *hiveLogHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	// TODO: unimplemented in hive logger?
+	// unimplemented in hive logger
 	return h
 }
 
 // WithGroup implements slog.Handler.
 func (h *hiveLogHandler) WithGroup(name string) slog.Handler {
-	// TODO: unimplemented in hive logger?
+	// unimplemented in hive logger
 	return h
 }

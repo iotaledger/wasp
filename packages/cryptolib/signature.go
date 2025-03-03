@@ -3,7 +3,6 @@ package cryptolib
 import (
 	"crypto/ed25519"
 	"crypto/sha512"
-	"io"
 
 	// We need to use this package to have access to low-level edwards25519 operations.
 	//
@@ -16,7 +15,7 @@ import (
 	"filippo.io/edwards25519"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const SignatureSize = ed25519.SignatureSize
@@ -24,18 +23,13 @@ const SignatureSize = ed25519.SignatureSize
 // Signature defines an Ed25519 signature.
 type Signature struct {
 	// The signature schema (0 == ED25519)
-	signatureScheme byte
+	signatureScheme byte `bcs:"export"`
 
 	// The public key used to verify the given signature.
-	publicKey *PublicKey
+	publicKey *PublicKey `bcs:"optional,export"`
 	// The signature.
-	signature [SignatureSize]byte
+	signature [SignatureSize]byte `bcs:"export"`
 }
-
-var (
-	_ rwutil.IoReader = &Signature{}
-	_ rwutil.IoWriter = &Signature{}
-)
 
 func NewEmptySignature() *Signature {
 	return &Signature{}
@@ -53,7 +47,6 @@ func NewSignature(publicKey *PublicKey, signature []byte) *Signature {
 	return &result
 }
 
-// TODO: is it really needed?
 func (s *Signature) GetPublicKey() *PublicKey {
 	return s.publicKey
 }
@@ -109,26 +102,8 @@ func (s *Signature) Validate(message []byte) bool {
 	return p.Equal(edwards25519.NewIdentityPoint()) == 1 // p == 0
 }
 
-func (s *Signature) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-	s.signatureScheme = rr.ReadByte()
-	s.publicKey = NewEmptyPublicKey()
-	rr.Read(s.publicKey)
-	signature := rr.ReadBytes()
-	copy(s.signature[:], signature)
-	return rr.Err
-}
-
-func (s *Signature) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteByte(s.signatureScheme)
-	ww.Write(s.publicKey)
-	ww.WriteBytes(s.signature[:])
-	return ww.Err
-}
-
 func (s *Signature) Bytes() []byte {
-	return rwutil.WriteToBytes(s)
+	return bcs.MustMarshal(s)
 }
 
 func (s *Signature) AsIotaSignature() *iotasigner.Signature {

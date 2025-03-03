@@ -23,10 +23,10 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 		return c.handleViewCallError(err)
 	}
 
+	nt := assets.NativeTokens()
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: assets.BaseTokens().String(),
-		// TODO: fix this when native tokens reimplemented
-		// NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+		BaseTokens:   assets.BaseTokens().String(),
+		NativeTokens: nt.JSON(),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -48,10 +48,10 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 		return c.handleViewCallError(err)
 	}
 
+	nt := assets.NativeTokens()
 	assetsResponse := &models.AssetsResponse{
-		BaseTokens: assets.BaseTokens().String(),
-		// TODO: fix this when native tokens reimplemented
-		// NativeTokens: isc.NativeTokensToJSONObject(assets.NativeTokens),
+		BaseTokens:   assets.BaseTokens().String(),
+		NativeTokens: nt.JSON(),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)

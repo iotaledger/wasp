@@ -71,8 +71,6 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
-	// FIXME allow assets but not only coin balance
-
 	txb.ptb = iscmoveclient.PTBTakeAndTransferCoinBalance(
 		txb.ptb,
 		txb.iscPackage,
@@ -132,6 +130,14 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
 					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+				},
+				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+			},
+		})
+		ptb.Command(iotago.Command{
+			TransferObjects: &iotago.ProgrammableTransferObjects{
+				Objects: []iotago.Argument{
+					iotago.GetArgumentGasCoin(),
 				},
 				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},

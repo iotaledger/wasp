@@ -7,12 +7,13 @@ type Option[T any] struct {
 
 func (p *Option[T]) MarshalBCS(e *Encoder) error {
 	e.WriteOptionalFlag(!p.None)
-
 	if p.None {
 		return nil
 	}
 
-	return e.Encode(&p.Some)
+	e.Encode(&p.Some)
+
+	return nil
 }
 
 func (p *Option[T]) UnmarshalBCS(d *Decoder) error {
@@ -21,5 +22,7 @@ func (p *Option[T]) UnmarshalBCS(d *Decoder) error {
 		return nil
 	}
 
-	return d.Decode(&p.Some)
+	d.Decode(&p.Some)
+
+	return nil
 }

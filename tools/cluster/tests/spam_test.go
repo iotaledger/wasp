@@ -3,11 +3,12 @@ package tests
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"math/big"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -95,13 +96,13 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	for i := 0; i < numRequests; i++ {
 		tx := <-txCh
-		_, err := env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(env.Chain.ChainID, &tx, false, 30*time.Second)
+		_, err := env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, &tx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 30*time.Second)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
@@ -150,7 +151,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 				}
 				reqSentTime := time.Now()
 				// wait for the request to be processed
-				_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(env.Chain.ChainID, req.ID(), false, 1*time.Minute)
+				_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 1*time.Minute)
 				if err != nil {
 					reqErrorChan <- err
 					return
@@ -186,7 +187,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsApi.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, err)
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
@@ -236,7 +237,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 
 	// await txs confirmed
 	for _, tx := range transactions {
-		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
+		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
 		require.NoError(t, err2)
 	}
 

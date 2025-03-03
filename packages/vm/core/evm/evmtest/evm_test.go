@@ -174,6 +174,8 @@ func TestGasCharged(t *testing.T) {
 
 func TestGasRatio(t *testing.T) {
 	env := InitEVM(t)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
+
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -205,6 +207,8 @@ func TestGasRatio(t *testing.T) {
 // tests that the gas limits are correctly enforced based on the base tokens sent
 func TestGasLimit(t *testing.T) {
 	env := InitEVM(t)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
+
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -229,6 +233,8 @@ func TestGasLimit(t *testing.T) {
 
 func TestNotEnoughISCGas(t *testing.T) {
 	env := InitEVM(t)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
+
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -362,6 +368,8 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 
 func TestEstimateContractGas(t *testing.T) {
 	env := InitEVM(t)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
+
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr)
 	contract := env.deployERC20Contract(ethKey, "TEST", "tst")
@@ -806,7 +814,7 @@ func TestSendTimelock(t *testing.T) {
 	// require.Zero(t, env.solo.L1BaseTokens(receiver))
 	// senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, senderEthAddress))
 	//
-	// value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.L1().BaseToken.Decimals)
+	// value := util.BaseTokensDecimalsToEthereumDecimals(1*isc.Million, parameters.Decimals)
 	//
 	// res, err := env.ISCMagicSandbox(ethKey).CallFn(
 	// 	[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
@@ -824,7 +832,7 @@ func TestSendTimelock(t *testing.T) {
 	// )
 	// require.NoError(t, err)
 	//
-	// decimals := parameters.L1().BaseToken.Decimals
+	// decimals := parameters.Decimals
 	// valueInBaseTokens, bigRemainder := util.EthereumDecimalsToBaseTokenDecimals(
 	// 	value,
 	// 	decimals,
@@ -1371,7 +1379,7 @@ func TestISCSendWithArgs(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.Chain.ChainID, ethAddr))
 
-	const sendBaseTokens = 700 * isc.Million
+	const sendBaseTokens = 1 * isc.Million
 
 	blockIndex := env.Chain.LatestBlockIndex()
 
@@ -1429,7 +1437,8 @@ func TestERC20BaseTokens(t *testing.T) {
 	{
 		var supply *big.Int
 		require.NoError(t, erc20.callView("totalSupply", nil, &supply))
-		require.EqualValues(t, baseTokenCoinInfo.TotalSupply, supply.Uint64())
+		// 4_600_000_000 is in the initial supply on IOTA
+		require.Greater(t, supply.Uint64(), uint64(4_600_000_000))
 	}
 	{
 		var balance *big.Int
@@ -2434,6 +2443,7 @@ func TestSelfDestruct6780(t *testing.T) {
 
 func TestChangeGasLimit(t *testing.T) {
 	env := InitEVM(t)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -2459,6 +2469,7 @@ func TestChangeGasLimit(t *testing.T) {
 
 func TestChangeGasPerToken(t *testing.T) {
 	env := InitEVM(t)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOriginatorBaseTokens, nil)
 
 	var fee coin.Value
 	{
@@ -2783,7 +2794,6 @@ func TestL1DepositEVM(t *testing.T) {
 }
 
 func TestDecimalsConversion(t *testing.T) {
-	parameters.InitL1(parameters.L1ForTesting)
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)

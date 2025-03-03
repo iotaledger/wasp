@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	iotago "github.com/iotaledger/iota.go/v3"
 
@@ -91,7 +92,7 @@ func (s *contractSandbox) RegisterError(messageFormat string) *isc.VMErrorTempla
 	return s.reqctx.registerError(messageFormat)
 }
 
-func (s *contractSandbox) EVMTracer() *isc.EVMTracer {
+func (s *contractSandbox) EVMTracer() *tracers.Tracer {
 	return s.reqctx.vm.task.EVMTracer
 }
 

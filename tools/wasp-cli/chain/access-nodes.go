@@ -31,23 +31,24 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			action := args[0]
 			node = waspcmd.DefaultWaspNodeFallback(node)
 
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			var executeActionFunc func(peer string)
 
 			switch action {
 			case "add":
 				executeActionFunc = func(peer string) {
-					_, err := client.ChainsApi.
-						AddAccessNode(context.Background(), chainID.String(), peer).
+					_, err := client.ChainsAPI.
+						AddAccessNode(ctx, chainID.String(), peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					log.Printf("added %s as an access node\n", peer)
 				}
 			case "remove":
 				executeActionFunc = func(peer string) {
-					_, err := client.ChainsApi.
-						RemoveAccessNode(context.Background(), chainID.String(), peer).
+					_, err := client.ChainsAPI.
+						RemoveAccessNode(ctx, chainID.String(), peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					log.Printf("removed %s as an access node\n", peer)

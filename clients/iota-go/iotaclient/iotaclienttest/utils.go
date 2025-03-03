@@ -10,7 +10,7 @@ import (
 )
 
 func GetValidatorAddress(ctx context.Context) (iotago.Address, error) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	apy, err := client.GetValidatorsApy(ctx)
 	if err != nil {
 		return iotago.Address{}, err
@@ -25,7 +25,7 @@ func GetValidatorAddress(ctx context.Context) (iotago.Address, error) {
 }
 
 func GetValidatorAddressWithCoins(ctx context.Context) (iotago.Address, error) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	apy, err := client.GetValidatorsApy(ctx)
 	if err != nil {
 		return iotago.Address{}, err

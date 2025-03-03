@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -31,23 +30,6 @@ type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
 	baseToken  *parameters.BaseToken
-}
-
-// Returns the anchor, which was used to form state of given index.
-func (b *WaspEVMBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	state, err := b.chain.LatestState(chain.ConfirmedState)
-	if err != nil {
-		return nil, fmt.Errorf("retrieving latest state: %w", err)
-	}
-
-	blocklogState := blocklog.NewStateReader(blocklog.Contract.StateSubrealmR(state))
-
-	block, found := blocklogState.GetBlockInfo(stateIndex)
-	if !found {
-		return nil, fmt.Errorf("block %d not found", stateIndex)
-	}
-
-	return block.PreviousAnchor, nil
 }
 
 var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
@@ -94,14 +76,10 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
-	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, err
-	}
+func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error) {
 	return chainutil.EVMCall(
 		anchor,
-		gasCoin,
+		l1Params,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
@@ -109,14 +87,10 @@ func (b *WaspEVMBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallM
 	)
 }
 
-func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
-	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return 0, err
-	}
+func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) (uint64, error) {
 	return chainutil.EVMEstimateGas(
 		anchor,
-		gasCoin,
+		l1Params,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
@@ -124,28 +98,21 @@ func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereu
 	)
 }
 
-func (b *WaspEVMBackend) EVMTraceTransaction(
+func (b *WaspEVMBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
+	l1Params *parameters.L1Params,
 ) error {
-	gasCoin, err := b.chain.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return err
-	}
-	return chainutil.EVMTraceTransaction(
+	return chainutil.EVMTrace(
 		anchor,
-		gasCoin,
+		l1Params,
 		b.chain.Store(),
 		b.chain.Processors(),
 		b.chain.Log(),
 		blockTime,
 		iscRequestsInBlock,
-		txIndex,
-		blockNumber,
 		tracer,
 	)
 }

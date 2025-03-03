@@ -29,15 +29,16 @@ func initInfoCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 
 			chainID := config.GetChain(chain)
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			chainInfo, _, err := client.ChainsApi.
-				GetChainInfo(context.Background(), chainID.String()).
+			chainInfo, _, err := client.ChainsAPI.
+				GetChainInfo(ctx, chainID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
-			committeeInfo, _, err := client.ChainsApi.
-				GetCommitteeInfo(context.Background(), chainID.String()).
+			committeeInfo, _, err := client.ChainsAPI.
+				GetCommitteeInfo(ctx, chainID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
@@ -79,7 +80,7 @@ func initInfoCmd() *cobra.Command {
 				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
 				log.Printf("\n")
 
-				contracts, _, err := client.ChainsApi.GetContracts(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+				contracts, _, err := client.ChainsAPI.GetContracts(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 

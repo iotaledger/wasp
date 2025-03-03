@@ -11,18 +11,18 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-type inputAliasOutputConfirmed struct {
+type inputAnchorConfirmed struct {
 	stateController *cryptolib.Address
 	anchor          *isc.StateAnchor
 }
 
-func NewInputAliasOutputConfirmed(stateController *cryptolib.Address, anchor *isc.StateAnchor) gpa.Input {
-	return &inputAliasOutputConfirmed{
+func NewInputAnchorConfirmed(stateController *cryptolib.Address, anchor *isc.StateAnchor) gpa.Input {
+	return &inputAnchorConfirmed{
 		stateController: stateController,
 		anchor:          anchor,
 	}
 }
 
-func (inp *inputAliasOutputConfirmed) String() string {
-	return fmt.Sprintf("{chainMgr.inputAliasOutputConfirmed, %v}", inp.anchor.GetObjectID().ShortString())
+func (inp *inputAnchorConfirmed) String() string {
+	return fmt.Sprintf("{chainMgr.inputAnchorConfirmed, %v}", inp.anchor.GetObjectID().ShortString())
 }

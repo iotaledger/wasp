@@ -1,7 +1,7 @@
 package bls
 
 import (
-	"github.com/mr-tron/base58"
+	"github.com/btcsuite/btcutil/base58"
 
 	"github.com/iotaledger/hive.go/ierrors"
 	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
@@ -28,9 +28,9 @@ func SignatureFromBytes(bytes []byte) (signature Signature, consumedBytes int, e
 
 // SignatureFromBase58EncodedString creates a Signature from a base58 encoded string.
 func SignatureFromBase58EncodedString(base58EncodedString string) (signature Signature, err error) {
-	bytes, err := base58.Decode(base58EncodedString)
-	if err != nil {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded Signature: %w", err)
+	bytes := base58.Decode(base58EncodedString)
+	if len(bytes) == 0 {
+		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded Signature: %s", base58EncodedString)
 
 		return
 	}
@@ -106,9 +106,9 @@ func SignatureWithPublicKeyFromBytes(bytes []byte) (signatureWithPublicKey Signa
 
 // SignatureWithPublicKeyFromBase58EncodedString creates a SignatureWithPublicKey from a base58 encoded string.
 func SignatureWithPublicKeyFromBase58EncodedString(base58EncodedString string) (signatureWithPublicKey SignatureWithPublicKey, err error) {
-	bytes, err := base58.Decode(base58EncodedString)
-	if err != nil {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded SignatureWithPublicKey: %w", err)
+	bytes := base58.Decode(base58EncodedString)
+	if len(bytes) == 0 {
+		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded SignatureWithPublicKey: %s", base58EncodedString)
 
 		return
 	}

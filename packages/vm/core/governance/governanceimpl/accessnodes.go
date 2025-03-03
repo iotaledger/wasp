@@ -64,7 +64,7 @@ func addCandidateNode(
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
 	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
-		state.AccessNodesMap().SetAt(ani.NodePubKey.Bytes(), codec.Encode[bool](true))
+		state.AccessNodesMap().SetAt(ani.NodePubKey.Bytes(), codec.Encode(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
 }
@@ -87,7 +87,7 @@ func revokeAccessNode(
 }
 
 // Can only be invoked by the chain owner.
-func changeAccessNodes(ctx isc.Sandbox, reqs []lo.Tuple2[*cryptolib.PublicKey, governance.ChangeAccessNodeAction]) {
+func changeAccessNodes(ctx isc.Sandbox, reqs governance.ChangeAccessNodeActions) {
 	ctx.RequireCallerIsChainOwner()
 
 	state := governance.NewStateWriterFromSandbox(ctx)
@@ -102,7 +102,7 @@ func changeAccessNodes(ctx isc.Sandbox, reqs []lo.Tuple2[*cryptolib.PublicKey, g
 			accessNodes.DelAt(pubKey.Bytes())
 		case governance.ChangeAccessNodeActionAccept:
 			// TODO should the list of candidates be checked? we are just adding any pubkey
-			accessNodes.SetAt(pubKey.Bytes(), codec.Encode[bool](true))
+			accessNodes.SetAt(pubKey.Bytes(), codec.Encode(true))
 			// TODO should the node be removed from the list of candidates? // accessNodeCandidates.DelAt(pubKey)
 		case governance.ChangeAccessNodeActionDrop:
 			accessNodes.DelAt(pubKey.Bytes())

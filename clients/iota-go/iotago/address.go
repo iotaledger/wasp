@@ -68,7 +68,11 @@ func (a Address) ToHex() string {
 }
 
 func (a Address) ShortString() string {
-	return "0x" + strings.TrimLeft(hex.EncodeToString(a[:]), "0")
+	shortenAddr := strings.TrimLeft(hex.EncodeToString(a[:]), "0")
+	if len(shortenAddr) == 0 {
+		shortenAddr = "0"
+	}
+	return "0x" + shortenAddr
 }
 
 func (a Address) MarshalJSON() ([]byte, error) {
@@ -91,7 +95,6 @@ func (a *Address) UnmarshalJSON(data []byte) error {
 	return err
 }
 
-// FIXME may need to be pointer
 func (a Address) MarshalBCS() ([]byte, error) {
 	return a[:], nil
 }

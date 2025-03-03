@@ -6,7 +6,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -86,18 +85,14 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
 
-	impRequest := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestData)).
+	impRequest := isc.NewImpersonatedOffLedgerRequest(&req.(*isc.OffLedgerRequestData).OffLedgerRequestDataEssence).
 		WithSenderAddress(requestFrom)
 
 	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {
 		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
 	}
 
-	gasCoin, err := ch.LatestGasCoin(chain.ActiveOrCommittedState)
-	if err != nil {
-		return apierrors.InvalidPropertyError("no gas coin", err)
-	}
-	rec, err := common.EstimateGas(ch, gasCoin, impRequest)
+	rec, err := common.EstimateGas(ch, impRequest)
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
 	}

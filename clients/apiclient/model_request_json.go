@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the RequestJSON type satisfies the MappedNullable interface at compile time
@@ -26,17 +28,19 @@ type RequestJSON struct {
 	GasBudget string `json:"gasBudget"`
 	IsEVM bool `json:"isEVM"`
 	IsOffLedger bool `json:"isOffLedger"`
-	Params [][]int32 `json:"params"`
+	Params []string `json:"params"`
 	RequestId string `json:"requestId"`
 	SenderAccount string `json:"senderAccount"`
 	TargetAddress string `json:"targetAddress"`
 }
 
+type _RequestJSON RequestJSON
+
 // NewRequestJSON instantiates a new RequestJSON object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params [][]int32, requestId string, senderAccount string, targetAddress string) *RequestJSON {
+func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params []string, requestId string, senderAccount string, targetAddress string) *RequestJSON {
 	this := RequestJSON{}
 	this.Allowance = allowance
 	this.Assets = assets
@@ -204,9 +208,9 @@ func (o *RequestJSON) SetIsOffLedger(v bool) {
 }
 
 // GetParams returns the Params field value
-func (o *RequestJSON) GetParams() [][]int32 {
+func (o *RequestJSON) GetParams() []string {
 	if o == nil {
-		var ret [][]int32
+		var ret []string
 		return ret
 	}
 
@@ -215,7 +219,7 @@ func (o *RequestJSON) GetParams() [][]int32 {
 
 // GetParamsOk returns a tuple with the Params field value
 // and a boolean to check if the value has been set.
-func (o *RequestJSON) GetParamsOk() ([][]int32, bool) {
+func (o *RequestJSON) GetParamsOk() ([]string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -223,7 +227,7 @@ func (o *RequestJSON) GetParamsOk() ([][]int32, bool) {
 }
 
 // SetParams sets field value
-func (o *RequestJSON) SetParams(v [][]int32) {
+func (o *RequestJSON) SetParams(v []string) {
 	o.Params = v
 }
 
@@ -320,6 +324,52 @@ func (o RequestJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize["senderAccount"] = o.SenderAccount
 	toSerialize["targetAddress"] = o.TargetAddress
 	return toSerialize, nil
+}
+
+func (o *RequestJSON) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"allowance",
+		"assets",
+		"callTarget",
+		"gasBudget",
+		"isEVM",
+		"isOffLedger",
+		"params",
+		"requestId",
+		"senderAccount",
+		"targetAddress",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varRequestJSON := _RequestJSON{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varRequestJSON)
+
+	if err != nil {
+		return err
+	}
+
+	*o = RequestJSON(varRequestJSON)
+
+	return err
 }
 
 type NullableRequestJSON struct {

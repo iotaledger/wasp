@@ -15,7 +15,7 @@ import (
 
 // RunDKG runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records
 // into nodes. In case of success, generated address is returned
-func RunDKG(client *apiclient.APIClient, peerPubKeys []string, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
+func RunDKG(ctx context.Context, client *apiclient.APIClient, peerPubKeys []string, threshold uint16, timeout ...time.Duration) (*cryptolib.Address, error) {
 	to := uint32(60 * 1000)
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
@@ -24,7 +24,7 @@ func RunDKG(client *apiclient.APIClient, peerPubKeys []string, threshold uint16,
 		}
 	}
 
-	dkShares, _, err := client.NodeApi.GenerateDKS(context.Background()).DKSharesPostRequest(apiclient.DKSharesPostRequest{
+	dkShares, _, err := client.NodeAPI.GenerateDKS(ctx).DKSharesPostRequest(apiclient.DKSharesPostRequest{
 		Threshold:      uint32(threshold),
 		TimeoutMS:      to,
 		PeerIdentities: peerPubKeys,

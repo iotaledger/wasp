@@ -477,7 +477,7 @@ type accountsDepositTest struct {
 	coinType          coin.Type
 }
 
-func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest {
+func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *accountsDepositTest {
 	ret := &accountsDepositTest{}
 	ret.env = solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 
@@ -486,9 +486,9 @@ func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest 
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
 	ret.userAgentID = isc.NewAddressAgentID(ret.userAddr)
 
-	initBaseTokens := coin.Value(0)
-	if len(initLoad) != 0 {
-		initBaseTokens = initLoad[0]
+	initBaseTokens := coin.Value(isc.GasCoinTargetValue)
+	if len(initCommonAccountBaseTokens) != 0 {
+		initBaseTokens = initCommonAccountBaseTokens[0]
 	}
 	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
@@ -497,8 +497,8 @@ func initDepositTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest 
 }
 
 // initWithdrawTest deploys TestCoin, mints 1M tokens and deposits 100 to user's account
-func initWithdrawTest(t *testing.T, initLoad ...coin.Value) *accountsDepositTest {
-	v := initDepositTest(t, initLoad...)
+func initWithdrawTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *accountsDepositTest {
+	v := initDepositTest(t, initCommonAccountBaseTokens...)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	coinPackageID, treasuryCap := v.ch.Env.L1DeployCoinPackage(v.user)
 	v.coinType = coin.MustTypeFromString(fmt.Sprintf(
@@ -533,14 +533,14 @@ func (v *accountsDepositTest) printBalances(prefix string) {
 	v.env.T.Logf("%s: common account L2: %s", prefix, v.ch.L2CommonAccountAssets())
 }
 
-func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
+func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 	t.Run("withdraw with empty", func(t *testing.T) {
-		v := initWithdrawTest(t, isc.TopUpFeeMin)
+		v := initWithdrawTest(t)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
 		testmisc.RequireErrorToBe(t, err, "not enough allowance")
 	})
 	t.Run("withdraw almost all", func(t *testing.T) {
-		v := initWithdrawTest(t, isc.TopUpFeeMin)
+		v := initWithdrawTest(t)
 		toWithdraw := v.ch.L2Assets(v.userAgentID)
 		t.Logf("assets to withdraw: %s", toWithdraw.String())
 		// withdraw all tokens to L1
@@ -553,7 +553,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -567,7 +567,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy success 1", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
@@ -604,7 +604,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("unwrap use case", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -625,7 +625,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("unwrap use case 2", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -644,7 +644,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 	})
 	t.Run("mint withdraw destroy fail", func(t *testing.T) {
 		t.Skip("TODO")
-		v := initWithdrawTest(t, 2*isc.Million)
+		v := initWithdrawTest(t)
 		allSenderAssets := v.ch.L2Assets(v.userAgentID)
 		v.req.AddAllowance(allSenderAssets)
 		_, err := v.ch.PostRequestSync(v.req, v.user)
@@ -669,7 +669,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 	t.Run("accounting and pruning", func(t *testing.T) {
 		// mint 100 tokens from chain 1 and withdraw those to L1
-		v := initWithdrawTest(t, isc.TopUpFeeMin)
+		v := initWithdrawTest(t)
 
 		// create a new chain (ch2) with active state pruning set to keep only 1 block
 		blockKeepAmount := int32(1)
@@ -681,7 +681,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 		// make the chain produce 2 blocks (prune the previous block with the initial deposit info)
 		for i := 0; i < 2; i++ {
-			_, err = ch2.PostRequestSync(solo.NewCallParamsEx("contract", "func"), nil)
+			_, err = ch2.PostRequestSync(solo.NewCallParamsEx("contract", "func"), v.user)
 			require.Error(t, err)                      // dummy request, so an error is expected
 			require.NotNil(t, ch2.LastReceipt().Error) // but it produced a receipt, thus make the state progress
 		}
@@ -694,7 +694,7 @@ func TestAccounts_WithdrawDepositNativeTokens(t *testing.T) {
 
 func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
-	v := initWithdrawTest(t, isc.TopUpFeeMin)
+	v := initWithdrawTest(t)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens()
 	initialOwnerAccountBaseTokens := v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens()
 
@@ -732,13 +732,8 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
+	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.OriginatorPrivateKey)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
-
-	// deposit base tokens for the chain owner (needed for L1 storage deposit to mint tokens)
-	err := v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, accounts.CommonAccount(), v.chainOwner)
-	require.NoError(t, err)
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, 1*isc.Million, v.userAgentID, v.user)
-	require.NoError(t, err)
 
 	v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(100))
 	v.ch.AssertL2TotalCoins(v.coinType, coin.Value(100))
@@ -750,7 +745,7 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// deposit 1 base token to "create account" for user2 // TODO maybe remove if account creation is not needed
 	v.ch.AssertL2BaseTokens(user2AgentID, 0)
 	const baseTokensToSend = 3 * isc.Million
-	err = v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
+	err := v.ch.SendFromL1ToL2AccountBaseTokens(BaseTokensDepositFee, baseTokensToSend, user2AgentID, user2)
 	rec := v.ch.LastReceipt()
 	require.NoError(t, err)
 	v.env.T.Logf("gas fee charged: %d", rec.GasFeeCharged)
@@ -918,7 +913,7 @@ func TestAccounts_DepositRandomContractMinFee(t *testing.T) {
 	receipt := ch.LastReceipt()
 	require.Error(t, receipt.Error)
 
-	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1ForTesting.BaseToken.Decimals), receipt.GasFeeCharged)
+	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1Default.BaseToken.Decimals), receipt.GasFeeCharged)
 	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2BaseTokens(agentID))
 }
 
@@ -946,7 +941,7 @@ func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vm.ErrNotEnoughFundsForAllowance)
 		receipt := ch.LastReceipt()
-		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1ForTesting.BaseToken.Decimals), receipt.GasFeeCharged)
+		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1Default.BaseToken.Decimals), receipt.GasFeeCharged)
 	}
 }
 

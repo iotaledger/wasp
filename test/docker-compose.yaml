@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  isc1:
+    image: isc
+    user: root
+    container_name: isc1
+    networks:
+      isc_network:
+        ipv4_address: 172.20.0.1
+    volumes:
+      - ./config.json:/config.json:ro
+      - ./waspdb1:/waspdb
+    ports:
+      - "9091:9090/tcp"
+      - "6061:6060/tcp"
+      - "4001:4000/udp"
+      - "4001:4000/tcp"
+    command: /app/wasp -c /config.json
+    restart: unless-stopped
+
+  isc2:
+    image: isc
+    user: root
+    container_name: isc2
+    networks:
+      isc_network:
+        ipv4_address: 172.20.0.2
+    volumes:
+      - ./config.json:/config.json:ro
+      - ./waspdb2:/waspdb
+    ports:
+      - "9092:9090/tcp"
+      - "6062:6060/tcp"
+      - "4002:4000/udp"
+      - "4002:4000/tcp"
+    command: /app/wasp -c /config.json
+    restart: unless-stopped
+
+  isc3:
+    image: isc
+    user: root
+    container_name: isc3
+    networks:
+      isc_network:
+        ipv4_address: 172.20.0.3
+    volumes:
+      - ./config.json:/config.json:ro
+      - ./waspdb3:/waspdb
+    ports:
+      - "9093:9090/tcp"
+      - "6063:6060/tcp"
+      - "4003:4000/udp"
+      - "4003:4000/tcp"
+    command: /app/wasp -c /config.json
+    restart: unless-stopped
+
+  isc4:
+    image: isc
+    user: root
+    container_name: isc4
+    networks:
+      isc_network:
+        ipv4_address: 172.20.0.4
+    volumes:
+      - ./config.json:/config.json:ro
+      - ./waspdb4:/waspdb
+    ports:
+      - "9094:9090/tcp"
+      - "6064:6060/tcp"
+      - "4004:4000/udp"
+      - "4004:4000/tcp"
+    command: /app/wasp -c /config.json
+    restart: unless-stopped
+
+networks:
+  isc_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.254
+
+# volumes:
+#   waspdb1:
+#     name: waspdb1
+#   waspdb2:
+#     name: waspdb2
+#   waspdb3:
+#     name: waspdb3
+#   waspdb4:
+#     name: waspdb4
+
+  # waspdb1:
+  #   name: waspdb1
+  #   driver: local-persist
+  #   driver_opts:
+  #     mountpoint: ./waspdb1
+  # waspdb2:
+  #   name: waspdb2
+  #   driver: local-persist
+  #   driver_opts:
+  #     mountpoint: ./waspdb2
+  # waspdb3:
+  #   name: waspdb3
+  #   driver: local-persist
+  #   driver_opts:
+  #     mountpoint: ./waspdb3
+  # waspdb4:
+  #   name: waspdb4
+  #   driver: local-persist
+  #   driver_opts:
+  #     mountpoint: ./waspdb4

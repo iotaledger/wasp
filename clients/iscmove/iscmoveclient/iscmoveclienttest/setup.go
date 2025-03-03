@@ -16,9 +16,9 @@ import (
 )
 
 func NewSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.Signer {
-	seed[0] = seed[0] + byte(index)
+	seed[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient.RequestFundsFromFaucet(context.TODO(), kp.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
 	require.NoError(t, err)
 	return kp
 }
@@ -29,20 +29,23 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 }
 
 func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {
-	panic("Right now no WS support")
-	wsClient, err := iscmoveclient.NewWebsocketClient(
+	if l1starter.IsLocalConfigured() {
+		panic("Right now no WS support")
+	}
+
+	return iscmoveclient.NewWebsocketClient(
 		ctx,
 		iotaconn.AlphanetWebsocketEndpointURL,
 		l1starter.Instance().FaucetURL(),
+		l1starter.WaitUntilEffectsVisible,
 		log,
 	)
-
-	return wsClient, err
 }
 
 func NewHTTPClient() *iscmoveclient.Client {
 	return iscmoveclient.NewHTTPClient(
 		l1starter.Instance().APIURL(),
 		l1starter.Instance().FaucetURL(),
+		l1starter.WaitUntilEffectsVisible,
 	)
 }

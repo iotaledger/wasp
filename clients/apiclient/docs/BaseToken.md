@@ -4,11 +4,12 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**CoinType** | Pointer to **string** |  | [optional] 
+**CoinType** | [**Type**](Type.md) |  | 
 **Decimals** | **int32** | The token decimals | 
 **Name** | **string** | The base token name | 
 **Subunit** | **string** | The token subunit | 
 **TickerSymbol** | **string** | The ticker symbol | 
+**TotalSupply** | **int64** | The total supply of BaseToken | 
 **Unit** | **string** | The token unit | 
 **UseMetricPrefix** | **bool** | Whether or not the token uses a metric prefix | 
 
@@ -16,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewBaseToken
 
-`func NewBaseToken(decimals int32, name string, subunit string, tickerSymbol string, unit string, useMetricPrefix bool, ) *BaseToken`
+`func NewBaseToken(coinType Type, decimals int32, name string, subunit string, tickerSymbol string, totalSupply int64, unit string, useMetricPrefix bool, ) *BaseToken`
 
 NewBaseToken instantiates a new BaseToken object
 This constructor will assign default values to properties that have it defined,
@@ -33,28 +34,23 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetCoinType
 
-`func (o *BaseToken) GetCoinType() string`
+`func (o *BaseToken) GetCoinType() Type`
 
 GetCoinType returns the CoinType field if non-nil, zero value otherwise.
 
 ### GetCoinTypeOk
 
-`func (o *BaseToken) GetCoinTypeOk() (*string, bool)`
+`func (o *BaseToken) GetCoinTypeOk() (*Type, bool)`
 
 GetCoinTypeOk returns a tuple with the CoinType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCoinType
 
-`func (o *BaseToken) SetCoinType(v string)`
+`func (o *BaseToken) SetCoinType(v Type)`
 
 SetCoinType sets CoinType field to given value.
 
-### HasCoinType
-
-`func (o *BaseToken) HasCoinType() bool`
-
-HasCoinType returns a boolean if a field has been set.
 
 ### GetDecimals
 
@@ -134,6 +130,26 @@ and a boolean to check if the value has been set.
 `func (o *BaseToken) SetTickerSymbol(v string)`
 
 SetTickerSymbol sets TickerSymbol field to given value.
+
+
+### GetTotalSupply
+
+`func (o *BaseToken) GetTotalSupply() int64`
+
+GetTotalSupply returns the TotalSupply field if non-nil, zero value otherwise.
+
+### GetTotalSupplyOk
+
+`func (o *BaseToken) GetTotalSupplyOk() (*int64, bool)`
+
+GetTotalSupplyOk returns a tuple with the TotalSupply field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetTotalSupply
+
+`func (o *BaseToken) SetTotalSupply(v int64)`
+
+SetTotalSupply sets TotalSupply field to given value.
 
 
 ### GetUnit

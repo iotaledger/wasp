@@ -1,7 +1,7 @@
 package bls
 
 import (
-	"github.com/mr-tron/base58"
+	"github.com/btcsuite/btcutil/base58"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 
@@ -27,9 +27,9 @@ func PrivateKeyFromBytes(bytes []byte) (privateKey PrivateKey, consumedBytes int
 
 // PrivateKeyFromBase58EncodedString creates a PrivateKey from a base58 encoded string.
 func PrivateKeyFromBase58EncodedString(base58String string) (privateKey PrivateKey, err error) {
-	bytes, err := base58.Decode(base58String)
-	if err != nil {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded PrivateKey: %w", err)
+	bytes := base58.Decode(base58String)
+	if len(bytes) == 0 {
+		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded PrivateKey: %s", base58String)
 
 		return
 	}

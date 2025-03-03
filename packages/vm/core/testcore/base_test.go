@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -36,16 +37,13 @@ func TestInitLoad(t *testing.T) {
 		cassets.BaseTokens())
 	require.EqualValues(t, 1, len(cassets.Coins))
 
-	t.Logf("common base tokens: %d", ch.L2CommonAccountBaseTokens())
-	require.True(t, cassets.BaseTokens() >= governance.DefaultMinBaseTokensOnCommonAccount)
-
 	testdbhash.VerifyDBHash(env, t.Name())
 }
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
 	env := solo.New(t)
-	ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ch.CheckChain()
 
@@ -56,6 +54,94 @@ func TestLedgerBaseConsistency(t *testing.T) {
 	require.Equal(t, l2Total1+1*isc.Million, l2Total2)
 
 	ch.CheckChain()
+}
+
+// TestLedgerBaseConsistencyWithRequiredTopUpFee deploys a chain and checks the consistency of L1 and L2 ledgers after topping up fees
+func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
+
+	const initialCommonAccountBalance = isc.GasCoinTargetValue / 2
+
+	ch, _ := env.NewChainExt(nil, initialCommonAccountBalance, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ch.CheckChain()
+
+	// common account has initialCommonAccountBalance
+	require.EqualValues(t,
+		initialCommonAccountBalance,
+		ch.L2BaseTokens(accounts.CommonAccount()),
+	)
+	// chain owner's account is empty
+	require.Zero(t, ch.L2BaseTokens(ch.OriginatorAgentID))
+
+	// total owned by the chain is initialCommonAccountBalance
+	require.EqualValues(t,
+		coin.Value(initialCommonAccountBalance),
+		ch.L2TotalBaseTokens(),
+	)
+
+	gasCoinValueBefore := coin.Value(ch.GetLatestGasCoin().Value)
+
+	const depositedByUser = isc.GasCoinTargetValue * 4
+	someUserWallet, someUserAddr := env.NewKeyPairWithFunds()
+	// user deposits some tokens
+	_, _, vmRes, ptbRes, err := ch.PostRequestSyncTx(
+		solo.NewCallParams(accounts.FuncDeposit.Message()).
+			AddBaseTokens(depositedByUser).
+			WithGasBudget(math.MaxUint64),
+		someUserWallet,
+	)
+	t.Logf("PTB gas fee: %d", ptbRes.Effects.Data.GasFee())
+	require.NoError(t, err)
+	ch.CheckChain()
+
+	gasCoinValueAfter := coin.Value(ch.GetLatestGasCoin().Value)
+	t.Logf("gasCoinValueBefore: %d, gasCoinValueAfter: %d", gasCoinValueBefore, gasCoinValueAfter)
+
+	// the common account is topped up to isc.GasCoinTargetValue,
+	// taking from the L2 gas fee
+	addedToCommonAccount := min(
+		isc.GasCoinTargetValue-initialCommonAccountBalance,
+		vmRes.Receipt.GasFeeCharged,
+	)
+	// the gas coin is topped up to GasCoinTargetValue, taking from the
+	// common account
+	deductedForGasCoin := min(
+		initialCommonAccountBalance+addedToCommonAccount,
+		isc.GasCoinTargetValue-gasCoinValueBefore,
+	)
+	require.EqualValues(t,
+		initialCommonAccountBalance+addedToCommonAccount-deductedForGasCoin,
+		ch.L2BaseTokens(accounts.CommonAccount()),
+	)
+
+	// the total deposited tokens in the chain
+	totalDeposited := coin.Value(initialCommonAccountBalance + depositedByUser)
+	// the tokens that remain in L2
+	totalL2Tokens := totalDeposited - deductedForGasCoin
+	require.EqualValues(t, coin.Value(totalL2Tokens), ch.L2TotalBaseTokens())
+
+	// the user pays for the L2 gas fee
+	require.EqualValues(t,
+		depositedByUser-vmRes.Receipt.GasFeeCharged,
+		ch.L2BaseTokens(isc.NewAddressAgentID(someUserAddr)),
+	)
+
+	// the gas coin is topped up to GasCoinTargetValue, and then it is used
+	// to pay for L1 gas fee
+	require.EqualValues(t,
+		gasCoinValueBefore+deductedForGasCoin-coin.Value(ptbRes.Effects.Data.GasFee()),
+		gasCoinValueAfter,
+	)
+
+	// the collected fees go to the payout (chain owner by default), minus the
+	// amount used to top up the common account
+	require.EqualValues(t,
+		vmRes.Receipt.GasFeeCharged-addedToCommonAccount,
+		ch.L2BaseTokens(ch.OriginatorAgentID),
+	)
 }
 
 // TestNoTargetPostOnLedger test what happens when sending requests to non-existent contract or entry point
@@ -92,8 +178,11 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 		},
 	} {
 		t.Run(test.Name, func(t *testing.T) {
-			env := solo.New(t)
-			ch, _ := env.NewChainExt(nil, isc.TopUpFeeMin, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+			env := solo.New(t, &solo.InitOptions{
+				Debug:           true,
+				PrintStackTrace: true,
+			})
+			ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
 			if !test.SenderIsOriginator {
@@ -101,15 +190,16 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			}
 			senderAgentID := isc.NewAddressAgentID(senderAddr)
 
+			gasCoinL1Before := coin.Value(ch.GetLatestGasCoin().Value)
 			l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
 			senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
 			senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
 			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
 			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
-			require.EqualValues(t, isc.TopUpFeeMin, commonAccountBaseTokensBefore)
+			require.EqualValues(t, 0, commonAccountBaseTokensBefore)
 
-			_, l1Res, _, anchorTransitionPTBRes, err := ch.PostRequestSyncTx(
+			_, l1Res, _, _, err := ch.PostRequestSyncTx(
 				test.Req.
 					WithAssets(isc.NewAssets(1*isc.Million)).
 					WithGasBudget(100_000),
@@ -118,33 +208,41 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 			require.Contains(t, err.Error(), test.ExpectedError)
 
+			gasCoinL1After := coin.Value(ch.GetLatestGasCoin().Value)
+			t.Logf("gasCoinL1Before: %d, gasCoinL1After: %d", gasCoinL1Before, gasCoinL1After)
 			l2TotalBaseTokensAfter := ch.L2TotalBaseTokens()
+			t.Logf("l2TotalBaseTokensBefore: %d, l2TotalBaseTokensAfter: %d", l2TotalBaseTokensBefore, l2TotalBaseTokensAfter)
 			senderL1BaseTokensAfter := env.L1BaseTokens(senderAddr)
+			t.Logf("senderL1BaseTokensBefore: %d, senderL1BaseTokensAfter: %d", senderL1BaseTokensBefore, senderL1BaseTokensAfter)
 			senderL2BaseTokensAfter := ch.L2BaseTokens(senderAgentID)
+			t.Logf("senderL2BaseTokensBefore: %d, senderL2BaseTokensAfter: %d", senderL2BaseTokensBefore, senderL2BaseTokensAfter)
 			commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
+			t.Logf("commonAccountBaseTokensBefore: %d, commonAccountBaseTokensAfter: %d", commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
 			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OriginatorAgentID)
+			t.Logf("originatorL2BaseTokensBefore: %d, originatorL2BaseTokensAfter: %d", originatorL2BaseTokensBefore, originatorL2BaseTokensAfter)
 			l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
 			l2GasFee := ch.LastReceipt().GasFeeCharged
-			l1AnchorTransitionGasFee := coin.Value(anchorTransitionPTBRes.Effects.Data.GasFee())
+			t.Logf("l1GasFee: %d, l2GasFee: %d", l1GasFee, l2GasFee)
 
 			require.NotZero(ch.Env.T, l2GasFee)
-			// total L2 assets is increased by 1mil
-			require.Equal(t, l2TotalBaseTokensBefore+1*isc.Million, l2TotalBaseTokensAfter)
-			// common account is left untouched
-			require.Equal(t, commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
+			// the common account is topped up to isc.GasCoinTargetValue,
+			// taking from the L2 gas fee
+			addedToCommonAccount := min(l2GasFee, isc.GasCoinTargetValue-commonAccountBaseTokensBefore)
+			// the gas coin is topped up to GasCoinTargetValue, taking from the
+			// common account
+			deductedForGasCoin := min(commonAccountBaseTokensBefore+addedToCommonAccount, isc.GasCoinTargetValue-gasCoinL1Before)
+			// total L2 assets is increased by 1 mil minus the amount deducted
+			// to top up the gas coin
+			require.Equal(t, l2TotalBaseTokensBefore+1*isc.Million-deductedForGasCoin, l2TotalBaseTokensAfter)
+			require.Equal(t, commonAccountBaseTokensBefore+addedToCommonAccount-deductedForGasCoin, commonAccountBaseTokensAfter)
 			if test.SenderIsOriginator {
-				// sender deposited 1mil to L2 and spent L1 gas fee for the request and also
-				// the gas fee for the anchor transition
-				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee-l1AnchorTransitionGasFee, senderL1BaseTokensAfter)
-				// sender got 1mil (l2GasFee goes to originator which is the sender)
-				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million, senderL2BaseTokensAfter)
+				// sender got 1mil (rest of l2GasFee goes to originator which is the sender)
+				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million-addedToCommonAccount, senderL2BaseTokensAfter)
 			} else {
-				// sender deposited 1mil to L2 and spent L1 gas fees
-				require.Equal(t, senderL1BaseTokensBefore-1*isc.Million-l1GasFee, senderL1BaseTokensAfter)
 				// sender got 1mil minus l2GasFee
 				require.Equal(t, senderL2BaseTokensBefore+1*isc.Million-l2GasFee, senderL2BaseTokensAfter)
 				// l2GasFee goes to payoutAgentID (originator by default)
-				require.Equal(t, originatorL2BaseTokensBefore+l2GasFee, originatorL2BaseTokensAfter)
+				require.Equal(t, originatorL2BaseTokensBefore+l2GasFee-addedToCommonAccount, originatorL2BaseTokensAfter)
 			}
 		})
 	}

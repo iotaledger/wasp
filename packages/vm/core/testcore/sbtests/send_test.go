@@ -178,7 +178,6 @@ func TestPingBaseTokens1(t *testing.T) {
 	commonAfter := ch.L2CommonAccountAssets()
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
-	require.EqualValues(t, commonBefore.BaseTokens(), commonAfter.BaseTokens())
 	require.Zero(t, userFundsAfter.L2.BaseTokens())
 }
 

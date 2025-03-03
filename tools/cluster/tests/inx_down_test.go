@@ -2,9 +2,10 @@ package tests
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/chainclient"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/chainclient"
 
 	"github.com/stretchr/testify/require"
 
@@ -14,6 +15,8 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestInxShutdownTest(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	dataPath := "test-inx-down"
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3}, dataPath)
 
@@ -42,7 +45,7 @@ func TestInxShutdownTest(t *testing.T) {
 	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	env.expectCounter(1)

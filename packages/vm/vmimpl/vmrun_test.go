@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -18,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -86,9 +86,12 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		ID:            *iotatest.RandomAddress(),
 		StateMetadata: stateMetadataBytes,
 		StateIndex:    0,
-		Assets: iscmove.AssetsBag{
-			ID:   *iotatest.RandomAddress(),
-			Size: 1,
+		Assets: iscmove.Referent[iscmove.AssetsBag]{
+			ID: *iotatest.RandomAddress(),
+			Value: &iscmove.AssetsBag{
+				ID:   *iotatest.RandomAddress(),
+				Size: 1,
+			},
 		},
 	}
 
@@ -164,6 +167,7 @@ func transitionAnchor(
 		stateMetadata.GasCoinObjectID,
 		chainInfo.GasFeePolicy,
 		stateMetadata.InitParams,
+		stateMetadata.InitDeposit,
 		chainInfo.PublicURL,
 	)
 
@@ -183,17 +187,17 @@ func runRequestsAndTransitionAnchor(
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
-			Value: isc.GasCoinMaxValue,
+			Value: isc.GasCoinTargetValue,
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},
+		L1Params:             parameters.L1Default,
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            time.Time{},
 		Entropy:              [32]byte{},
 		ValidatorFeeTarget:   nil,
 		EstimateGasMode:      false,
-		EVMTracer:            nil,
 		EnableGasBurnLogging: false,
 		Migrations:           allmigrations.DefaultScheme,
 		Log:                  testlogger.NewLogger(t),

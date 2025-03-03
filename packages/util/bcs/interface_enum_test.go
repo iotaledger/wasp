@@ -86,7 +86,7 @@ type structWithField[FieldType any] struct {
 	A FieldType
 }
 
-func StructWithField[FieldType any](v FieldType) structWithField[FieldType] {
+func declareStructWithField[FieldType any](v FieldType) structWithField[FieldType] {
 	return structWithField[FieldType]{A: v}
 }
 
@@ -108,19 +108,19 @@ func TestBasicInterfaceEnumCodec(t *testing.T) {
 	vS := "foo"
 	refEnumEnc := ref_bcs.MustMarshal(RefEnum1{B: &vS})
 	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytes(t, StructWithField(InfEnum1(vS)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, declareStructWithField(InfEnum1(vS)), refEnumEnc)
 
 	vI := int32(42)
 	refEnumEnc = ref_bcs.MustMarshal(RefEnum2{B: &vI})
 	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytes(t, StructWithField(InfEnum2(vI)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, declareStructWithField(InfEnum2(vI)), refEnumEnc)
 
 	var e InfEnumWithMethods = EnumVariant1{A: 42}
-	bcs.TestCodecAndBytes(t, StructWithField(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, declareStructWithField(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 	bcs.TestCodecAndBytes(t, &e, []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})
 
 	e = EnumVariant2{A: "bar"}
-	bcs.TestCodecAndBytes(t, StructWithField(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
+	bcs.TestCodecAndBytes(t, declareStructWithField(e), []byte{0x1, 0x3, 0x62, 0x61, 0x72})
 	bcs.TestCodecAndBytes(t, &e, []byte{0x1, 0x3, 0x62, 0x61, 0x72})
 
 	bcs.TestEncodeErr(t, InfEnum1(int8(42)))

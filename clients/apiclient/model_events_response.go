@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the EventsResponse type satisfies the MappedNullable interface at compile time
@@ -21,6 +23,8 @@ var _ MappedNullable = &EventsResponse{}
 type EventsResponse struct {
 	Events []EventJSON `json:"events"`
 }
+
+type _EventsResponse EventsResponse
 
 // NewEventsResponse instantiates a new EventsResponse object
 // This constructor will assign default values to properties that have it defined,
@@ -76,6 +80,43 @@ func (o EventsResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["events"] = o.Events
 	return toSerialize, nil
+}
+
+func (o *EventsResponse) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"events",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varEventsResponse := _EventsResponse{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varEventsResponse)
+
+	if err != nil {
+		return err
+	}
+
+	*o = EventsResponse(varEventsResponse)
+
+	return err
 }
 
 type NullableEventsResponse struct {

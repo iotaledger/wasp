@@ -10,7 +10,6 @@ import (
 	"math"
 	"math/big"
 	"path"
-	"slices"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -19,7 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/labstack/gommon/log"
 	"github.com/samber/lo"
 
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
@@ -27,13 +25,13 @@ import (
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpcindex"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -52,7 +50,7 @@ type EVMChain struct {
 	chainID  uint16 // cache
 	newBlock *event.Event1[*NewBlockEvent]
 	log      *logger.Logger
-	index    *jsonrpcindex.Index // only indexes blocks that will be pruned from the active state
+	index    *Index // only indexes blocks that will be pruned from the active state
 }
 
 type NewBlockEvent struct {
@@ -77,7 +75,11 @@ func NewEVMChain(
 		backend:  backend,
 		newBlock: event.New1[*NewBlockEvent](),
 		log:      log,
-		index:    jsonrpcindex.New(blockchainDB, backend.ISCStateByTrieRoot, indexDbEngine, path.Join(indexDbPath, backend.ISCChainID().String())),
+		index: NewIndex(
+			backend.ISCStateByTrieRoot,
+			indexDbEngine,
+			path.Join(indexDbPath, backend.ISCChainID().String()),
+		),
 	}
 
 	blocksFromPublisher := pipe.NewInfinitePipe[*publisher.BlockWithTrieRoot]()
@@ -92,9 +94,13 @@ func NewEVMChain(
 	// publish blocks on a separate goroutine so that we don't block the publisher
 	go func() {
 		for ev := range blocksFromPublisher.Out() {
-			e.publishNewBlock(ev.BlockInfo.BlockIndex, ev.TrieRoot)
+			blockIndex := ev.BlockInfo.BlockIndex
+			e.publishNewBlock(blockIndex, ev.TrieRoot)
 			if isArchiveNode {
-				e.index.IndexBlock(ev.TrieRoot)
+				err := e.index.IndexBlock(ev.TrieRoot)
+				if err != nil {
+					log.Errorf("EVMChain.index.IndexBlock() (index %d): %v", blockIndex, err)
+				}
 			}
 		}
 	}()
@@ -105,14 +111,14 @@ func NewEVMChain(
 func (e *EVMChain) publishNewBlock(blockIndex uint32, trieRoot trie.Hash) {
 	state, err := e.backend.ISCStateByTrieRoot(trieRoot)
 	if err != nil {
-		log.Errorf("EVMChain.publishNewBlock(blockIndex=%v): ISCStateByTrieRoot returned error: %v", blockIndex, err)
+		e.log.Errorf("EVMChain.publishNewBlock(blockIndex=%v): ISCStateByTrieRoot returned error: %v", blockIndex, err)
 		return
 	}
 	blockNumber := evmBlockNumberByISCBlockIndex(blockIndex)
 	db := blockchainDB(state)
 	block := db.GetBlockByNumber(blockNumber)
 	if block == nil {
-		log.Errorf("EVMChain.publishNewBlock(blockIndex=%v) GetBlockByNumber: block not found", blockIndex)
+		e.log.Errorf("EVMChain.publishNewBlock(blockIndex=%v) GetBlockByNumber: block not found", blockIndex)
 		return
 	}
 	var logs []*types.Log
@@ -249,20 +255,52 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 	return e.iscStateFromEVMBlockNumber(block.Number())
 }
 
+// Returns the anchor corresponding to the given block (i.e. such that
+// anchor.StateIndex == blockNumber; running the VM from this anchor will
+// produce block n+1).
+//
+// [anchor n-1] -> VM -> [state n] -> [anchor n] -> VM -> [state n+1] -> [anchor n+1] ...
 func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.StateAnchor, error) {
-	if blockNumberOrHash == nil {
-		return e.backend.ISCLatestAnchor()
+	latest, err := e.backend.ISCLatestAnchor()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
 	}
+	if blockNumberOrHash == nil {
+		return latest, nil
+	}
+	var stateIndex uint32
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		bn := parseBlockNumber(blockNumber)
 		if bn == nil {
 			return e.backend.ISCLatestAnchor()
 		}
-		return e.backend.ISCAnchor(blockNumberToStateIndex(bn))
+		stateIndex = blockNumberToStateIndex(bn)
+	} else {
+		blockHash, _ := blockNumberOrHash.Hash()
+		block := e.BlockByHash(blockHash)
+		stateIndex = blockNumberToStateIndex(block.Number())
 	}
-	blockHash, _ := blockNumberOrHash.Hash()
-	block := e.BlockByHash(blockHash)
-	return e.backend.ISCAnchor(blockNumberToStateIndex(block.Number()))
+	if stateIndex == latest.GetStateIndex() {
+		return latest, nil
+	}
+	if stateIndex > latest.GetStateIndex() {
+		return nil, fmt.Errorf("block %d not found", stateIndex)
+	}
+	return e.previousAnchor(stateIndex + 1)
+}
+
+// Returns the anchor, which was used to form state of given index.
+func (e *EVMChain) previousAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
+	state, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving latest state: %w", err)
+	}
+	blocklogState := blocklog.NewStateReader(blocklog.Contract.StateSubrealmR(state))
+	block, found := blocklogState.GetBlockInfo(stateIndex)
+	if !found {
+		return nil, fmt.Errorf("block %d not found", stateIndex)
+	}
+	return block.PreviousAnchor, nil
 }
 
 func blockNumberToStateIndex(blockNumber *big.Int) uint32 {
@@ -452,7 +490,11 @@ func (e *EVMChain) CallContract(callMsg ethereum.CallMsg, blockNumberOrHash *rpc
 	if err != nil {
 		return nil, err
 	}
-	return e.backend.EVMCall(anchor, callMsg)
+	blockinfo, err := e.getBlockInfoByAnchor(anchor)
+	if err != nil {
+		return nil, err
+	}
+	return e.backend.EVMCall(anchor, callMsg, blockinfo.L1Params)
 }
 
 func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.BlockNumberOrHash) (uint64, error) {
@@ -460,7 +502,11 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 	if err != nil {
 		return 0, err
 	}
-	return e.backend.EVMEstimateGas(anchor, callMsg)
+	blockinfo, err := e.getBlockInfoByAnchor(anchor)
+	if err != nil {
+		return 0, err
+	}
+	return e.backend.EVMEstimateGas(anchor, callMsg, blockinfo.L1Params)
 }
 
 func (e *EVMChain) GasPrice() *big.Int {
@@ -628,17 +674,6 @@ func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInf
 	return blocklog.NewStateReaderFromChainState(iscState).GetRequestsInBlock(iscState.BlockIndex())
 }
 
-func (e *EVMChain) isFakeTransaction(tx *types.Transaction) bool {
-	sender, err := evmutil.GetSender(tx)
-
-	// the error will fire when the transaction is invalid. This is most of the time a fake evm tx we use for internal calls, therefore it's fine to assume both.
-	if slices.Equal(sender.Bytes(), common.Address{}.Bytes()) || err != nil {
-		return true
-	}
-
-	return false
-}
-
 // traceTransaction allows the tracing of a single EVM transaction.
 // "Fake" transactions that are emitted e.g. for L1 deposits return some mocked trace.
 func (e *EVMChain) traceTransaction(
@@ -654,40 +689,46 @@ func (e *EVMChain) traceTransaction(
 		tracerType = *config.Tracer
 	}
 
-	blockNumber := uint64(blockInfo.BlockIndex)
-
-	tracer, err := newTracer(tracerType, &tracers.Context{
-		BlockHash:   blockHash,
-		BlockNumber: new(big.Int).SetUint64(blockNumber),
-		TxIndex:     int(txIndex),
-		TxHash:      tx.Hash(),
-	}, config.TracerConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	if e.isFakeTransaction(tx) {
-		return tracer.TraceFakeTx(tx)
-	}
-
-	anchor, err := e.backend.ISCAnchor(blockInfo.BlockIndex)
-	if err != nil {
-		return nil, err
-	}
-
-	err = e.backend.EVMTraceTransaction(
-		anchor,
-		blockInfo.Timestamp,
-		requestsInBlock,
-		&txIndex,
-		&blockNumber,
-		tracer.Tracer,
+	tracer, err := newTracer(
+		tracerType,
+		&tracers.Context{
+			BlockHash:   blockHash,
+			BlockNumber: new(big.Int).SetUint64(uint64(blockInfo.BlockIndex)),
+			TxIndex:     int(txIndex),
+			TxHash:      tx.Hash(),
+		},
+		config.TracerConfig,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return tracer.GetResult()
+	err = e.backend.EVMTrace(
+		blockInfo.PreviousAnchor,
+		blockInfo.Timestamp,
+		requestsInBlock,
+		tracer,
+		blockInfo.L1Params,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := tracer.GetResult()
+	if err != nil {
+		return nil, err
+	}
+
+	var txResults []TxTraceResult
+	err = json.Unmarshal(res, &txResults)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(txResults) <= int(txIndex) {
+		return nil, errors.New("tx trace not found in tracer result")
+	}
+	return txResults[int(txIndex)].Result, nil
 }
 
 func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
@@ -696,32 +737,34 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		return nil, err
 	}
 
-	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
+	tracerType := "callTracer"
+	if config.Tracer != nil {
+		tracerType = *config.Tracer
+	}
+
+	tracer, err := newTracer(
+		tracerType,
+		&tracers.Context{
+			BlockHash:   block.Hash(),
+			BlockNumber: new(big.Int).SetUint64(uint64(iscBlock.BlockIndex)),
+		},
+		config.TracerConfig,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]TxTraceResult, 0)
-	for i, tx := range blockTxs {
-		result, err := e.traceTransaction(
-			config,
-			iscBlock,
-			iscRequestsInBlock,
-			tx,
-			uint64(i),
-			block.Hash(),
-		)
-
-		// Transactions which failed tracing will be omitted, so the rest of the block can be returned
-		if err == nil {
-			results = append(results, TxTraceResult{
-				TxHash: tx.Hash(),
-				Result: result,
-			})
-		}
+	err = e.backend.EVMTrace(
+		iscBlock.PreviousAnchor,
+		iscBlock.Timestamp,
+		iscRequestsInBlock,
+		tracer,
+		iscBlock.L1Params,
+	)
+	if err != nil {
+		return nil, err
 	}
-
-	return results, nil
+	return tracer.GetResult()
 }
 
 func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {
@@ -865,6 +908,22 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	}
 
 	return results, nil
+}
+
+func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.BlockInfo, error) {
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+	if err != nil {
+		return nil, err
+	}
+	state, err := e.backend.ISCStateByTrieRoot(stateMetadata.L1Commitment.TrieRoot())
+	if err != nil {
+		return nil, err
+	}
+	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(anchor.GetStateIndex())
+	if !ok {
+		return nil, fmt.Errorf("blockinfo not found")
+	}
+	return blockInfo, nil
 }
 
 var maxUint32 = big.NewInt(math.MaxUint32)

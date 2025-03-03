@@ -2,7 +2,7 @@ package chain
 
 import (
 	"context"
-	"strconv"
+	"fmt"
 	"strings"
 	"time"
 
@@ -17,9 +17,9 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -37,9 +37,10 @@ func initBalanceCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
 			agentID := util.AgentIDFromArgs(args, chainID)
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			balance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
+			balance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(ctx, chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			header := []string{"token", "amount"}
@@ -47,7 +48,7 @@ func initBalanceCmd() *cobra.Command {
 
 			rows[0] = []string{"base", balance.BaseTokens}
 			for k, v := range balance.NativeTokens {
-				rows[k+1] = []string{v.CoinType.GetS(), v.Balance}
+				rows[k+1] = []string{v.CoinType, v.Balance}
 			}
 
 			log.PrintTable(header, rows)
@@ -71,10 +72,11 @@ func initAccountNFTsCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 			chainID := config.GetChain(chain)
 			agentID := util.AgentIDFromArgs(args, chainID)
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			nfts, _, err := client.CorecontractsApi.
-				AccountsGetAccountNFTIDs(context.Background(), chainID.String(), agentID.String()).
+			nfts, _, err := client.CorecontractsAPI.
+				AccountsGetAccountNFTIDs(ctx, chainID.String(), agentID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
@@ -90,9 +92,11 @@ func initAccountNFTsCmd() *cobra.Command {
 }
 
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
+//
+//nolint:unused
 func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
-		apiResult, _, err := client.ChainsApi.CallView(context.Background(), config.GetChain(chain).String()).
+		apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractName: governance.Contract.Name,
 				FunctionName: viewName,
@@ -134,19 +138,24 @@ func initDepositCmd() *cobra.Command {
 			chain = defaultChainFallback(chain)
 
 			chainID := config.GetChain(chain)
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second*1000)
 			defer cancel()
 
-			if strings.Contains(args[0], ":") {
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+
+			util.TryMergeAllCoins(ctx)
+
+			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
+				allowance := isc.NewAssets(tokens.BaseTokens() / 10)
 
-				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-					client := cliclients.WaspClient(node)
+				util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
-							Transfer: tokens,
+							Transfer:  tokens,
+							Allowance: allowance,
 						},
 					)
 				})
@@ -154,35 +163,19 @@ func initDepositCmd() *cobra.Command {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0], chainID)
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
+				allowance := isc.NewAssets(tokens.BaseTokens() - 10000)
 
-				allowance := tokens.Clone()
+				res, err := cliclients.ChainClient(client, chainID).PostRequest(
+					ctx,
+					accounts.FuncTransferAllowanceTo.Message(agentID),
+					chainclient.PostRequestParams{
+						Transfer:  tokens,
+						Allowance: allowance,
+					},
+				)
 
-				{
-					// adjust allowance to leave enough for fee if needed
-					client := cliclients.WaspClient(node)
-					feeNeeded := baseTokensForDepositFee(client, chain)
-					senderAgentID := isc.NewAddressAgentID(wallet.Load().Address())
-					senderOnChainBalance, _, err := client.CorecontractsApi.AccountsGetAccountBalance(context.Background(), chainID.String(), senderAgentID.String()).Execute() //nolint:bodyclose // false positive
-					log.Check(err)
-					senderOnChainBaseTokens, err := strconv.ParseUint(senderOnChainBalance.BaseTokens, 10, 64)
-					log.Check(err)
-
-					if coin.Value(senderOnChainBaseTokens) < feeNeeded {
-						allowance.Spend(isc.NewAssets(feeNeeded - coin.Value(senderOnChainBaseTokens)))
-					}
-				}
-
-				util.WithSCTransaction(config.GetChain(chain), node, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-					client := cliclients.WaspClient(node)
-					return cliclients.ChainClient(client, chainID).PostRequest(
-						ctx,
-						accounts.FuncTransferAllowanceTo.Message(agentID),
-						chainclient.PostRequestParams{
-							Transfer:  tokens,
-							Allowance: allowance,
-						},
-					)
-				})
+				log.Check(err)
+				fmt.Printf("Posted TX: %s\n", res.Digest)
 			}
 		},
 	}

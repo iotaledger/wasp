@@ -1665,7 +1665,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object
@@ -2271,11 +2271,9 @@ components:
     AssetsJSON:
       example:
         coins:
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
         objects:
         - - 5
@@ -2310,11 +2308,9 @@ components:
       example:
         baseTokens: baseTokens
         nativeTokens:
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
       properties:
         baseTokens:
@@ -2360,8 +2356,10 @@ components:
         name: AuthInfoModel
     BaseToken:
       example:
-        coinType: coinType
+        coinType:
+          s: s
         unit: unit
+        totalSupply: 6
         decimals: 0
         name: name
         tickerSymbol: tickerSymbol
@@ -2369,10 +2367,7 @@ components:
         useMetricPrefix: true
       properties:
         coinType:
-          format: string
-          type: string
-          xml:
-            name: CoinType
+          $ref: '#/components/schemas/Type'
         decimals:
           description: The token decimals
           format: int32
@@ -2397,6 +2392,12 @@ components:
           type: string
           xml:
             name: TickerSymbol
+        totalSupply:
+          description: The total supply of BaseToken
+          format: int64
+          type: integer
+          xml:
+            name: TotalSupply
         unit:
           description: The token unit
           format: string
@@ -2410,10 +2411,12 @@ components:
           xml:
             name: UseMetricPrefix
       required:
+      - coinType
       - decimals
       - name
       - subunit
       - tickerSymbol
+      - totalSupply
       - unit
       - useMetricPrefix
       type: object
@@ -2729,8 +2732,7 @@ components:
         name: ChainRecord
     CoinJSON:
       example:
-        coinType:
-          s: s
+        coinType: coinType
         balance: balance
       properties:
         balance:
@@ -2740,7 +2742,10 @@ components:
           xml:
             name: Balance
         coinType:
-          $ref: '#/components/schemas/Type'
+          format: string
+          type: string
+          xml:
+            name: CoinType
       required:
       - balance
       - coinType
@@ -3450,11 +3455,9 @@ components:
         assets:
           baseTokens: baseTokens
           nativeTokens:
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
         foundryId: foundryId
       properties:
@@ -3716,18 +3719,20 @@ components:
         l1Params:
           protocol:
             rentStructure:
-              vByteFactorData: 2
+              vByteFactorData: 7
               vByteCost: 1
-              vByteFactorKey: 7
+              vByteFactorKey: 9
             minPowScore: 1
             tokenSupply: tokenSupply
             networkName: networkName
             belowMaxDepth: 1
-            version: 9
-          maxPayloadSize: 6
+            version: 3
+          maxPayloadSize: 1
           baseToken:
-            coinType: coinType
+            coinType:
+              s: s
             unit: unit
+            totalSupply: 6
             decimals: 0
             name: name
             tickerSymbol: tickerSymbol
@@ -3797,18 +3802,20 @@ components:
       example:
         protocol:
           rentStructure:
-            vByteFactorData: 2
+            vByteFactorData: 7
             vByteCost: 1
-            vByteFactorKey: 7
+            vByteFactorKey: 9
           minPowScore: 1
           tokenSupply: tokenSupply
           networkName: networkName
           belowMaxDepth: 1
-          version: 9
-        maxPayloadSize: 6
+          version: 3
+        maxPayloadSize: 1
         baseToken:
-          coinType: coinType
+          coinType:
+            s: s
           unit: unit
+          totalSupply: 6
           decimals: 0
           name: name
           tickerSymbol: tickerSymbol
@@ -3908,7 +3915,6 @@ components:
           xml:
             name: JWT
       required:
-      - error
       - jwt
       type: object
       xml:
@@ -4378,14 +4384,14 @@ components:
     ProtocolParameters:
       example:
         rentStructure:
-          vByteFactorData: 2
+          vByteFactorData: 7
           vByteCost: 1
-          vByteFactorKey: 7
+          vByteFactorKey: 9
         minPowScore: 1
         tokenSupply: tokenSupply
         networkName: networkName
         belowMaxDepth: 1
-        version: 9
+        version: 3
       properties:
         belowMaxDepth:
           description: The networks max depth
@@ -4540,11 +4546,9 @@ components:
           senderAccount: senderAccount
           assets:
             coins:
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
             objects:
             - - 5
@@ -4560,11 +4564,9 @@ components:
           targetAddress: targetAddress
           allowance:
             coins:
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
             objects:
             - - 5
@@ -4572,10 +4574,8 @@ components:
             - - 5
               - 5
           params:
-          - - 5
-            - 5
-          - - 5
-            - 5
+          - params
+          - params
           isEVM: true
         blockIndex: 1
         rawError:
@@ -4656,9 +4656,9 @@ components:
         name: ReceiptResponse
     RentStructure:
       example:
-        vByteFactorData: 2
+        vByteFactorData: 7
         vByteCost: 1
-        vByteFactorKey: 7
+        vByteFactorKey: 9
       properties:
         vByteCost:
           description: The virtual byte cost
@@ -4710,11 +4710,9 @@ components:
         senderAccount: senderAccount
         assets:
           coins:
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
           objects:
           - - 5
@@ -4730,11 +4728,9 @@ components:
         targetAddress: targetAddress
         allowance:
           coins:
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
           objects:
           - - 5
@@ -4742,10 +4738,8 @@ components:
           - - 5
             - 5
         params:
-        - - 5
-          - 5
-        - - 5
-          - 5
+        - params
+        - params
         isEVM: true
       properties:
         allowance:
@@ -4772,10 +4766,8 @@ components:
             name: IsOffLedger
         params:
           items:
-            items:
-              format: int32
-              type: integer
-            type: array
+            format: string
+            type: string
           type: array
           xml:
             name: Params
@@ -5118,6 +5110,9 @@ components:
       xml:
         name: User
     ValidationError:
+      example:
+        error: error
+        missingPermission: missingPermission
       properties:
         error:
           format: string

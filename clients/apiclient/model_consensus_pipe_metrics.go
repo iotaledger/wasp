@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ConsensusPipeMetrics type satisfies the MappedNullable interface at compile time
@@ -25,6 +27,8 @@ type ConsensusPipeMetrics struct {
 	EventTimerMsgPipeSize int32 `json:"eventTimerMsgPipeSize"`
 	EventVMResultMsgPipeSize int32 `json:"eventVMResultMsgPipeSize"`
 }
+
+type _ConsensusPipeMetrics ConsensusPipeMetrics
 
 // NewConsensusPipeMetrics instantiates a new ConsensusPipeMetrics object
 // This constructor will assign default values to properties that have it defined,
@@ -184,6 +188,47 @@ func (o ConsensusPipeMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize["eventTimerMsgPipeSize"] = o.EventTimerMsgPipeSize
 	toSerialize["eventVMResultMsgPipeSize"] = o.EventVMResultMsgPipeSize
 	return toSerialize, nil
+}
+
+func (o *ConsensusPipeMetrics) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"eventACSMsgPipeSize",
+		"eventPeerLogIndexMsgPipeSize",
+		"eventStateTransitionMsgPipeSize",
+		"eventTimerMsgPipeSize",
+		"eventVMResultMsgPipeSize",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varConsensusPipeMetrics := _ConsensusPipeMetrics{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varConsensusPipeMetrics)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ConsensusPipeMetrics(varConsensusPipeMetrics)
+
+	return err
 }
 
 type NullableConsensusPipeMetrics struct {

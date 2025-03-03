@@ -144,19 +144,19 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
 	from := msg.sender
 	if !msg.response {
-		max := 0
+		maxId := 0
 
 		if recvAcksIn, exists := a.recvAcksIn.Get(msg.sender); exists {
 			for id := range recvAcksIn {
-				if id > max {
-					max = id
+				if id > maxId {
+					maxId = id
 				}
 			}
 		}
 		return NoMessages().Add(&ackHandlerReset{
 			BasicMessage: NewBasicMessage(msg.sender),
 			response:     true,
-			latestID:     max,
+			latestID:     maxId,
 		})
 	}
 	if ini, exists := a.initialized.Get(from); exists && ini {
@@ -352,7 +352,7 @@ func (msg *ackHandlerBatch) MarshalBCS(e *bcs.Encoder) error {
 	e.Encode(msgsBytes)
 	e.Encode(msg.acks)
 
-	return e.Err()
+	return nil
 }
 
 func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
@@ -373,7 +373,7 @@ func (msg *ackHandlerBatch) UnmarshalBCS(d *bcs.Decoder) error {
 
 	msg.acks = bcs.Decode[[]int](d)
 
-	return d.Err()
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

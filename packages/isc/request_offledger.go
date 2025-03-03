@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/minio/blake2b-simd"
 	"github.com/samber/lo"
+	"golang.org/x/crypto/blake2b"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -42,8 +42,9 @@ type ImpersonatedOffLedgerRequestData struct {
 	address *cryptolib.Address
 }
 
-func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestData) ImpersonatedOffLedgerRequest {
-	copyReq := *request
+func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) ImpersonatedOffLedgerRequest {
+	var copyReq OffLedgerRequestData
+	copyReq.OffLedgerRequestDataEssence = *request
 	copyReq.signature = cryptolib.NewEmptySignature()
 
 	return &ImpersonatedOffLedgerRequestData{

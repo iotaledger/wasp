@@ -17,19 +17,19 @@ import (
 )
 
 func TestMintToken(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	signer := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	tokenPackageID, treasuryCap := DeployCoinPackage(
 		t,
-		client,
+		client.IotaClient(),
 		signer,
 		contracts.Testcoin(),
 	)
 	mintAmount := uint64(1000000)
 	_ = MintCoins(
 		t,
-		client,
+		client.IotaClient(),
 		signer,
 		tokenPackageID,
 		contracts.TestcoinModuleName,
@@ -57,7 +57,7 @@ func TestMintToken(t *testing.T) {
 }
 
 func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 
 	options := iotajsonrpc.IotaObjectDataOptions{
 		ShowType:    true,
@@ -65,7 +65,7 @@ func TestBatchGetObjectsOwnedByAddress(t *testing.T) {
 	}
 	coinType := fmt.Sprintf("0x2::coin::Coin<%v>", iotajsonrpc.IotaCoinType)
 	address := iotago.MustAddressFromHex(testcommon.TestAddress)
-	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.TODO(), address, &options, coinType)
+	filterObject, err := api.BatchGetObjectsOwnedByAddress(context.Background(), address, &options, coinType)
 	require.NoError(t, err)
 	t.Log(filterObject)
 }

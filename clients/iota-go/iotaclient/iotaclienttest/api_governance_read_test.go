@@ -6,14 +6,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func TestGetCommitteeInfo(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	epochId := iotajsonrpc.NewBigInt(0)
 	committeeInfo, err := client.GetCommitteeInfo(context.Background(), epochId)
 	require.NoError(t, err)
@@ -23,21 +22,21 @@ func TestGetCommitteeInfo(t *testing.T) {
 }
 
 func TestGetLatestIotaSystemState(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	state, err := client.GetLatestIotaSystemState(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, state)
 }
 
 func TestGetReferenceGasPrice(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	gasPrice, err := client.GetReferenceGasPrice(context.Background())
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, gasPrice.Int64(), int64(1000))
 }
 
 func TestGetStakes(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := client.GetStakes(context.Background(), &address)
@@ -57,7 +56,7 @@ func TestGetStakes(t *testing.T) {
 }
 
 func TestGetStakesByIds(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	address, err := GetValidatorAddress(context.Background())
 	require.NoError(t, err)
 	stakes, err := api.GetStakes(context.Background(), &address)
@@ -83,7 +82,7 @@ func TestGetStakesByIds(t *testing.T) {
 }
 
 func TestGetValidatorsApy(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	apys, err := api.GetValidatorsApy(context.Background())
 	require.NoError(t, err)
 	t.Logf("current epoch %v", apys.Epoch)

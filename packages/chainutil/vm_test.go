@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -20,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -57,9 +57,12 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		ID:            *iotatest.RandomAddress(),
 		StateMetadata: stateMetadataBytes,
 		StateIndex:    0,
-		Assets: iscmove.AssetsBag{
-			ID:   *iotatest.RandomAddress(),
-			Size: 1,
+		Assets: iscmove.Referent[iscmove.AssetsBag]{
+			ID: *iotatest.RandomAddress(),
+			Value: &iscmove.AssetsBag{
+				ID:   *iotatest.RandomAddress(),
+				Size: 1,
+			},
 		},
 	}
 	stateAnchor := isc.NewStateAnchor(
@@ -101,8 +104,7 @@ func TestEVMCall(t *testing.T) {
 
 	logger := testlogger.NewLogger(t)
 
-	// FIXME gas coin may not be able to be nil. This may cause error
-	result, err := chainutil.EVMCall(anchor, nil, store, coreprocessors.NewConfig(), logger, msg)
+	result, err := chainutil.EVMCall(anchor, parameters.L1Default, store, coreprocessors.NewConfig(), logger, msg)
 	if err != nil {
 		t.Fatalf("failed to call EVM: %v", err)
 	}

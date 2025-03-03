@@ -57,7 +57,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	result, err := reqctx.callTheContract()
 	if err == nil {
-		err = vmctx.checkTransactionSize() // TODO is this a concern now?
+		err = vmctx.checkTransactionSize()
 	}
 	if err != nil {
 		// skip the request / rollback tx builder (no need to rollback the state, because the mutations will never be applied)
@@ -101,7 +101,7 @@ func (reqctx *requestContext) consumeRequest() {
 	// Otherwise it all goes to the common sender and panic is logged in the SC call
 	sender := req.SenderAccount()
 	if sender == nil {
-		// TODO more description about what are the no sender scenarios
+		// should not happen, but just in case...
 		// onledger request with no sender, send all assets to the payoutAddress
 		payoutAgentID := reqctx.vm.payoutAgentID()
 		reqctx.creditObjectsToAccount(payoutAgentID, req.Assets().Objects.Sorted())
@@ -172,8 +172,6 @@ func (reqctx *requestContext) prepareGasBudget() {
 
 // callTheContract runs the contract. if an error is returned, the request will be skipped
 func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
-	// TODO: do not mutate vmContext's txbuilder
-
 	// pre execution ---------------------------------------------------------------
 	err := panicutil.CatchPanic(func() {
 		// transfer all attached assets to the sender's account
@@ -426,19 +424,22 @@ func (reqctx *requestContext) chargeGasFee() {
 		)
 	}
 
-	// ensure common account has at least minBalanceInCommonAccount, and transfer the rest of gas fee to payout AgentID
+	// ensure common account has at least GasCoinTargetValue, and transfer the rest of gas fee to payout AgentID
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
-	minBalanceInCommonAccount := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetMinCommonAccountBalance()
+	targetCommonAccountBalance := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetGasCoinTargetValue()
 	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
-	if commonAccountBal < minBalanceInCommonAccount {
-		// pay to common account since the balance of common account is less than minSD
+	reqctx.vm.task.Log.Debugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)
+
+	if commonAccountBal < targetCommonAccountBalance {
+		// pay to common account since the balance of common account is less than min
 		transferToCommonAcc := sendToPayout
 		sendToPayout = 0
-		if commonAccountBal+transferToCommonAcc > minBalanceInCommonAccount {
-			excess := (commonAccountBal + transferToCommonAcc) - minBalanceInCommonAccount
+		if commonAccountBal+transferToCommonAcc > targetCommonAccountBalance {
+			excess := (commonAccountBal + transferToCommonAcc) - targetCommonAccountBalance
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
+		reqctx.vm.task.Log.Debugf("transferring %d to common account", transferToCommonAcc)
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),

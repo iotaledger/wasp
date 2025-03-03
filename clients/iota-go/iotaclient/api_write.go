@@ -2,6 +2,7 @@ package iotaclient
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -56,7 +57,7 @@ func (c *Client) ExecuteTransactionBlock(
 	req ExecuteTransactionBlockRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	resp := iotajsonrpc.IotaTransactionBlockResponse{}
-	return &resp, c.transport.Call(
+	err := c.transport.Call(
 		ctx,
 		&resp,
 		executeTransactionBlock,
@@ -65,4 +66,17 @@ func (c *Client) ExecuteTransactionBlock(
 		req.Options,
 		req.RequestType,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isResponseComplete(&resp, req.Options) {
+		if c.WaitUntilEffectsVisible == nil && req.RequestType == iotajsonrpc.TxnRequestTypeWaitForLocalExecution {
+			return &resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
+		}
+
+		return c.retryGetTransactionBlock(ctx, &resp.Digest, req.Options)
+	}
+
+	return &resp, nil
 }

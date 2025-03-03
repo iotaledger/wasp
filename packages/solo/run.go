@@ -12,10 +12,12 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -55,7 +57,7 @@ func (ch *Chain) RunRequestsSync(reqs []isc.Request) (
 	return ch.runRequestsNolock(reqs)
 }
 
-func (ch *Chain) estimateGas(req isc.Request) (result *vm.RequestResult) {
+func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
@@ -69,11 +71,12 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		Processors:         ch.proc,
 		Anchor:             ch.GetLatestAnchor(),
 		GasCoin:            ch.GetLatestGasCoin(),
+		L1Params:           parameters.L1(),
 		Requests:           reqs,
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
 		Entropy:            hashing.PseudoRandomHash(nil),
-		ValidatorFeeTarget: ch.ValidatorFeeTarget,
+		ValidatorFeeTarget: ch.OriginatorAgentID,
 		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
 		// state baseline is always valid in Solo
 		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
@@ -94,18 +97,14 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 	[]*vm.RequestResult,
 ) {
 	res := ch.runTaskNoLock(reqs, false)
-	gasPayment := ch.Env.selectCoinsForGas(
-		ch.OriginatorAddress,
-		&res.UnsignedTransaction,
-		iotaclient.DefaultGasBudget,
-	)
+	gasPayment := ch.GetLatestGasCoin()
 	if os.Getenv("DEBUG") != "" {
-		res.UnsignedTransaction.Print("-- ")
+		res.UnsignedTransaction.Print("-- runRequestsNolock -- ")
 	}
 	ptbRes := ch.Env.executePTB(
 		res.UnsignedTransaction,
 		ch.OriginatorPrivateKey,
-		gasPayment,
+		[]*iotago.ObjectRef{gasPayment.Ref},
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)

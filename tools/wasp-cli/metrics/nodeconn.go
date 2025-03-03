@@ -25,16 +25,17 @@ func initNodeconnMetricsCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			if chainAlias == "" {
-				msgsMetrics, _, err := client.MetricsApi.GetNodeMessageMetrics(context.Background()).Execute()
+				msgsMetrics, _, err := client.MetricsAPI.GetNodeMessageMetrics(ctx).Execute()
 				log.Check(err)
 				printNodeMessagesMetrics(msgsMetrics)
 			} else {
 				chainID, err := isc.ChainIDFromString(chainAlias)
 				log.Check(err)
-				msgsMetrics, _, err := client.MetricsApi.GetChainMessageMetrics(context.Background(), chainID.String()).Execute()
+				msgsMetrics, _, err := client.MetricsAPI.GetChainMessageMetrics(ctx, chainID.String()).Execute()
 				log.Check(err)
 				printChainMessagesMetrics(msgsMetrics)
 			}

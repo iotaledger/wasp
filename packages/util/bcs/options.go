@@ -13,12 +13,13 @@ type TypeOptions struct {
 	// TODO: Is this needed? It is present in rwutil as Size16/Size32, but it is more of validation.
 	LenSizeInBytes LenBytesCount
 
-	// TODO: Isthis really useful? The engineer can just change type of int to indicate its size.
-	UnderlayingType reflect.Kind
+	// TODO: Is this really useful? The engineer can just change type of int to indicate its size.
+	UnderlyingType reflect.Kind
 
 	IsCompactInt         bool
 	InterfaceIsNotEnum   bool
 	ExportAnonymousField bool
+	NilIfEmpty           bool
 
 	ArrayElement *ArrayElemOptions
 	MapKey       *TypeOptions
@@ -52,14 +53,17 @@ func (o *TypeOptions) Update(other TypeOptions) {
 	if other.LenSizeInBytes != 0 {
 		o.LenSizeInBytes = other.LenSizeInBytes
 	}
-	if other.UnderlayingType != reflect.Invalid {
-		o.UnderlayingType = other.UnderlayingType
+	if other.UnderlyingType != reflect.Invalid {
+		o.UnderlyingType = other.UnderlyingType
 	}
 	if other.IsCompactInt {
 		o.IsCompactInt = true
 	}
 	if other.InterfaceIsNotEnum {
 		o.InterfaceIsNotEnum = true
+	}
+	if other.NilIfEmpty {
+		o.NilIfEmpty = true
 	}
 	if other.ExportAnonymousField {
 		o.ExportAnonymousField = true
@@ -207,7 +211,7 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 			opts.IsCompactInt = true
 		case "type":
 			var err error
-			opts.UnderlayingType, err = UnderlayingTypeFromString(val)
+			opts.UnderlyingType, err = UnderlayingTypeFromString(val)
 			if err != nil {
 				return FieldOptions{}, fmt.Errorf("invalid undelaying type tag: %s", val)
 			}
@@ -217,9 +221,11 @@ func FieldOptionsFromTag(a string) (_ FieldOptions, _ error) {
 				return FieldOptions{}, fmt.Errorf("invalid len_bytes tag: %s", val)
 			}
 
-			opts.LenSizeInBytes = LenBytesCount(bytes)
+			opts.LenSizeInBytes = LenBytesCount(bytes) //nolint:gosec
 		case "optional":
 			opts.Optional = true
+		case "nil_if_empty":
+			opts.NilIfEmpty = true
 		case "bytearr":
 			opts.AsByteArray = true
 		case "not_enum":

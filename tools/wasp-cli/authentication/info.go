@@ -30,9 +30,10 @@ func initInfoCmd() *cobra.Command {
 		Short: "Receive information about the authentication methods",
 		Run: func(cmd *cobra.Command, args []string) {
 			// Auth is currently not inside Swagger, so this is a temporary change
+			ctx := context.Background()
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			client := cliclients.WaspClient(node)
-			authInfo, _, err := client.AuthApi.AuthInfo(context.Background()).Execute()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+			authInfo, _, err := client.AuthAPI.AuthInfo(ctx).Execute()
 
 			log.Check(err)
 

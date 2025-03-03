@@ -21,6 +21,7 @@ require (
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/fardream/go-bcs v0.7.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.1
@@ -41,11 +42,9 @@ require (
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo-jwt/v4 v4.2.0
 	github.com/labstack/echo/v4 v4.12.0
-	github.com/labstack/gommon v0.4.2
 	github.com/libp2p/go-libp2p v0.30.0
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
-	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.13.0
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1
 	github.com/pingcap/go-ycsb v1.0.1
@@ -55,7 +54,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
-	github.com/testcontainers/testcontainers-go v0.34.0
+	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98
 	github.com/yourbasic/graph v0.0.0-20210606180040-8ecfec1c2869
@@ -64,10 +63,10 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/dig v1.18.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.26.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
 	golang.org/x/net v0.28.0
-	golang.org/x/sync v0.8.0
+	golang.org/x/sync v0.10.0
 	golang.org/x/time v0.6.0
 	nhooyr.io/websocket v1.8.11
 	pgregory.net/rapid v1.0.0
@@ -136,7 +135,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20230821062121-407c9e7a662f // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-version v1.6.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
@@ -155,6 +153,7 @@ require (
 	github.com/koron/go-ssdp v0.0.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
+	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/libp2p/go-buffer-pool v0.1.0 // indirect
 	github.com/libp2p/go-cidranger v1.1.0 // indirect
 	github.com/libp2p/go-flow-metrics v0.1.0 // indirect
@@ -184,6 +183,7 @@ require (
 	github.com/moby/sys/user v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
@@ -220,7 +220,7 @@ require (
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect
 	github.com/shirou/gopsutil v3.21.11+incompatible // indirect
-	github.com/shirou/gopsutil/v3 v3.23.12 // indirect
+	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
@@ -236,7 +236,7 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/protobuf v1.0.11 // indirect
@@ -247,8 +247,8 @@ require (
 	go.uber.org/fx v1.20.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.19.0 // indirect
-	golang.org/x/sys v0.24.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/grpc v1.66.0 // indirect

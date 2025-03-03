@@ -50,6 +50,11 @@ func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 	return res
 }
 
+type Referent[T any] struct {
+	ID    iotago.ObjectID
+	Value *T `bcs:"optional"`
+}
+
 // AssetsBag is the BCS equivalent for the move type AssetsBag
 type AssetsBag struct {
 	ID   iotago.ObjectID
@@ -73,7 +78,7 @@ type AssetsBagWithBalances struct {
 
 type Anchor struct {
 	ID            iotago.ObjectID
-	Assets        AssetsBag
+	Assets        Referent[AssetsBag]
 	StateMetadata []byte
 	StateIndex    uint32
 }
@@ -85,13 +90,16 @@ func (a1 Anchor) Equals(a2 *Anchor) bool {
 	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
 		return false
 	}
-	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+	if !bytes.Equal(a1.Assets.Value.ID[:], a2.Assets.Value.ID[:]) {
 		return false
 	}
-	if !bytes.Equal(a1.Assets.ID[:], a2.Assets.ID[:]) {
+	if !a1.Assets.ID.Equals(a2.Assets.ID) {
 		return false
 	}
-	if a1.Assets.Size != a2.Assets.Size {
+	if (a1.Assets.Value == nil) != (a2.Assets.Value == nil) {
+		return false
+	}
+	if a1.Assets.Value != nil && !a1.Assets.Value.Equals(a2.Assets.Value) {
 		return false
 	}
 	if !bytes.Equal(a1.StateMetadata, a2.StateMetadata) {

@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the ContractCallViewRequest type satisfies the MappedNullable interface at compile time
@@ -31,6 +33,8 @@ type ContractCallViewRequest struct {
 	// The function name
 	FunctionName string `json:"functionName"`
 }
+
+type _ContractCallViewRequest ContractCallViewRequest
 
 // NewContractCallViewRequest instantiates a new ContractCallViewRequest object
 // This constructor will assign default values to properties that have it defined,
@@ -80,7 +84,7 @@ func (o *ContractCallViewRequest) SetArguments(v []string) {
 
 // GetBlock returns the Block field value if set, zero value otherwise.
 func (o *ContractCallViewRequest) GetBlock() string {
-	if o == nil || isNil(o.Block) {
+	if o == nil || IsNil(o.Block) {
 		var ret string
 		return ret
 	}
@@ -90,7 +94,7 @@ func (o *ContractCallViewRequest) GetBlock() string {
 // GetBlockOk returns a tuple with the Block field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *ContractCallViewRequest) GetBlockOk() (*string, bool) {
-	if o == nil || isNil(o.Block) {
+	if o == nil || IsNil(o.Block) {
 		return nil, false
 	}
 	return o.Block, true
@@ -98,7 +102,7 @@ func (o *ContractCallViewRequest) GetBlockOk() (*string, bool) {
 
 // HasBlock returns a boolean if a field has been set.
 func (o *ContractCallViewRequest) HasBlock() bool {
-	if o != nil && !isNil(o.Block) {
+	if o != nil && !IsNil(o.Block) {
 		return true
 	}
 
@@ -217,7 +221,7 @@ func (o ContractCallViewRequest) MarshalJSON() ([]byte, error) {
 func (o ContractCallViewRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["arguments"] = o.Arguments
-	if !isNil(o.Block) {
+	if !IsNil(o.Block) {
 		toSerialize["block"] = o.Block
 	}
 	toSerialize["contractHName"] = o.ContractHName
@@ -225,6 +229,47 @@ func (o ContractCallViewRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize["functionHName"] = o.FunctionHName
 	toSerialize["functionName"] = o.FunctionName
 	return toSerialize, nil
+}
+
+func (o *ContractCallViewRequest) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"arguments",
+		"contractHName",
+		"contractName",
+		"functionHName",
+		"functionName",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varContractCallViewRequest := _ContractCallViewRequest{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varContractCallViewRequest)
+
+	if err != nil {
+		return err
+	}
+
+	*o = ContractCallViewRequest(varContractCallViewRequest)
+
+	return err
 }
 
 type NullableContractCallViewRequest struct {

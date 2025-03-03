@@ -7,7 +7,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	"github.com/iotaledger/hive.go/logger"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -19,7 +18,7 @@ import (
 // EVMCall executes an EVM contract call and returns its output, discarding any state changes
 func EVMCall(
 	anchor *isc.StateAnchor,
-	gasCoin *coin.CoinWithRef,
+	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
 	log *logger.Logger,
@@ -44,10 +43,9 @@ func EVMCall(
 	}
 
 	iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
-	// TODO: setting EstimateGasMode = true feels wrong here
 	res, err := runISCRequest(
 		anchor,
-		gasCoin,
+		l1Params,
 		store,
 		processors,
 		log,

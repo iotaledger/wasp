@@ -68,7 +68,7 @@ type ProgrammableTransaction struct {
 }
 
 func (p ProgrammableTransaction) Print(prefix string) {
-	fmt.Printf(prefix + "ProgrammableTransaction:\n")
+	fmt.Print(prefix + "ProgrammableTransaction:\n")
 	for i, input := range p.Inputs {
 		fmt.Printf("%s  input %2d: %s\n", prefix, i, input.String())
 	}
@@ -88,7 +88,7 @@ func (p ProgrammableTransaction) IsInInputObjects(targetID *ObjectID) bool {
 
 func (p ProgrammableTransaction) EstimateGasBudget(gasPrice uint64) uint64 {
 	// TODO: Implement this function!
-	return 10000000 // iotaclient.DefaultGasBudget
+	return 10_000_000 // iotaclient.DefaultGasBudget
 }
 
 type TransferObject struct {

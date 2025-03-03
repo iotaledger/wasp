@@ -14,6 +14,8 @@ import (
 )
 
 func TestRequestFundsFromFaucet_Devnet(t *testing.T) {
+	t.Skip("Disable Faucet request until its stable on L1")
+
 	err := iotaclient.RequestFundsFromFaucet(
 		context.Background(), iotago.MustAddressFromHex(testcommon.TestAddress),
 		iotaconn.DevnetFaucetURL,
@@ -22,6 +24,8 @@ func TestRequestFundsFromFaucet_Devnet(t *testing.T) {
 }
 
 func TestRequestFundsFromFaucet_Testnet(t *testing.T) {
+	t.Skip("Disable Faucet request until its stable on L1")
+
 	err := iotaclient.RequestFundsFromFaucet(
 		context.Background(),
 		iotago.MustAddressFromHex(testcommon.TestAddress),

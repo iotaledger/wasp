@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -30,22 +31,23 @@ func WaspClientForHostName(name string) *apiclient.APIClient {
 	return client
 }
 
-func WaspClient(name string) *apiclient.APIClient {
+func WaspClientWithVersionCheck(ctx context.Context, name string) *apiclient.APIClient {
 	client := WaspClientForHostName(name)
-	assertMatchingNodeVersion(name, client)
+	assertMatchingNodeVersion(ctx, name, client)
 	return client
 }
 
-func assertMatchingNodeVersion(name string, client *apiclient.APIClient) {
+func assertMatchingNodeVersion(ctx context.Context, name string, client *apiclient.APIClient) {
 	if SkipCheckVersions {
 		return
 	}
-	nodeVersion, _, err := client.NodeApi.
-		GetVersion(context.Background()).
+	nodeVersion, _, err := client.NodeAPI.
+		GetVersion(ctx).
 		Execute()
 	log.Check(err)
 	if app.Version != "v"+nodeVersion.Version {
-		log.Fatalf("node [%s] version: %s, does not match wasp-cli version: %s. You can skip this check by re-running with command with --skip-version-check",
+		// IOTA CLI only warns about a version mismatch, we should do the same. There are rarely real differences between the versions which are relevant.
+		log.Printf("node [%s] version: %s, does not match wasp-cli version: %s. You can skip this check by re-running with command with --skip-version-check",
 			name, nodeVersion.Version, app.Version)
 	}
 }
@@ -58,7 +60,7 @@ func L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    config.L1APIAddress(),
 		FaucetURL: config.L1FaucetAddress(),
-	})
+	}, iotaclient.WaitForEffectsEnabled)
 }
 
 func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {

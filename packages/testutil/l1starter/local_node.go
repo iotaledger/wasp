@@ -3,6 +3,7 @@ package l1starter
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
@@ -13,6 +14,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 )
+
+var WaitUntilEffectsVisible = &iotaclient.WaitParams{
+	Attempts:             10,
+	DelayBetweenAttempts: 1 * time.Second,
+}
 
 type LocalIotaNode struct {
 	ctx             context.Context
@@ -36,9 +42,14 @@ func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
 func (in *LocalIotaNode) start(ctx context.Context) {
 	in.ctx = ctx
 
+	imagePlatform := "linux/amd64"
+	if runtime.GOARCH == "arm64" {
+		imagePlatform = "linux/arm64"
+	}
+
 	req := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-tools:v0.7.3-rc",
-		ImagePlatform: "linux/amd64",
+		Image:         "iotaledger/iota-tools:v0.10.0-alpha",
+		ImagePlatform: imagePlatform,
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
 		WaitingFor: wait.ForAll(
 			wait.ForListeningPort("9000/tcp"),
@@ -52,6 +63,10 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 			"--with-faucet",
 			fmt.Sprintf("--faucet-amount=%d", iotaclient.SingleCoinFundsFromFaucetAmount),
 		},
+	}
+
+	if runtime.GOOS == "linux" {
+		req.Tmpfs = map[string]string{"/tmp": ""}
 	}
 
 	now := time.Now()
@@ -98,7 +113,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 func (in *LocalIotaNode) stop() {
 	in.logf("Stopping...")
-	in.container.Terminate(context.Background())
+	in.container.Terminate(context.Background(), testcontainers.StopTimeout(0))
 	instance.Store(nil)
 }
 
@@ -118,7 +133,7 @@ func (in *LocalIotaNode) L1Client() clients.L1Client {
 	return clients.NewL1Client(clients.L1Config{
 		APIURL:    in.APIURL(),
 		FaucetURL: in.FaucetURL(),
-	})
+	}, WaitUntilEffectsVisible)
 }
 
 func (in *LocalIotaNode) IsLocal() bool {

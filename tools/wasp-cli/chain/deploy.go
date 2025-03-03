@@ -6,11 +6,9 @@ package chain
 import (
 	"context"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
@@ -22,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -30,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -37,29 +37,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
-
-func GetAllWaspNodes() []int {
-	ret := []int{}
-	for index := range viper.GetStringMap("wasp") {
-		i, err := strconv.Atoi(index)
-		log.Check(err)
-		ret = append(ret, i)
-	}
-	return ret
-}
-
-func controllerAddrDefaultFallback(addr string) *cryptolib.Address {
-	if addr == "" {
-		return wallet.Load().Address()
-	}
-	govControllerAddr, err := cryptolib.NewAddressFromHexString(addr)
-	log.Check(err)
-	panic("refactor me: what are we doing without network prefixes here?")
-	/*if parameters.Bech32Hrp != parameters.NetworkPrefix(prefix) {
-		log.Fatalf("unexpected prefix. expected: %s, actual: %s", parameters.Bech32Hrp, prefix)
-	}*/
-	return govControllerAddr
-}
 
 func initDeployMoveContractCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -87,16 +64,12 @@ func initDeployMoveContractCmd() *cobra.Command {
 func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, 0, isc.BaseTokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
 	return stateMetadata
 }
 
-func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
-	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinMaxValue, isc.GasCoinMaxValue)
-	if err != nil {
-		return iotago.ObjectID{}, err
-	}
-	referenceGasPrice, err := client.GetReferenceGasPrice(ctx)
+func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
+	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -106,7 +79,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
-				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinMaxValue)},
+				Amounts: []iotago.Argument{txb.MustPure(isc.GasCoinTargetValue)},
 			},
 		},
 	)
@@ -117,8 +90,8 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		wallet.Address().AsIotaAddress(),
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
-		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
+		uint64(isc.GasCoinTargetValue),
+		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)
@@ -127,7 +100,7 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	}
 
 	result, err := client.SignAndExecuteTransaction(
-		context.Background(),
+		ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(wallet),
 			TxDataBytes: txnBytes,
@@ -137,7 +110,6 @@ func createAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 			},
 		},
 	)
-
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}
@@ -179,12 +151,12 @@ func initDeployCmd() *cobra.Command {
 			kp := wallet.Load()
 
 			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
-			//packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
 			stateControllerAddress := doDKG(ctx, node, peers, quorum)
 
-			gasCoin, err := createAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
 			log.Check(err)
 
 			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
@@ -192,8 +164,8 @@ func initDeployCmd() *cobra.Command {
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
 				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
-				N:                 uint16(len(node)),
-				T:                 uint16(quorum),
+				N:                 uint16(len(node)), //nolint:gosec
+				T:                 uint16(quorum),    //nolint:gosec
 				OriginatorKeyPair: kp,
 				Textout:           os.Stdout,
 				PackageID:         packageID,
@@ -205,7 +177,7 @@ func initDeployCmd() *cobra.Command {
 
 			config.AddChain(chainName, chainID.String())
 
-			activateChain(node, chainName, chainID)
+			activateChain(ctx, node, chainName, chainID)
 		},
 	}
 

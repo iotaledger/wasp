@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the CoinJSON type satisfies the MappedNullable interface at compile time
@@ -21,14 +23,16 @@ var _ MappedNullable = &CoinJSON{}
 type CoinJSON struct {
 	// The balance (uint64 as string)
 	Balance string `json:"balance"`
-	CoinType Type `json:"coinType"`
+	CoinType string `json:"coinType"`
 }
+
+type _CoinJSON CoinJSON
 
 // NewCoinJSON instantiates a new CoinJSON object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCoinJSON(balance string, coinType Type) *CoinJSON {
+func NewCoinJSON(balance string, coinType string) *CoinJSON {
 	this := CoinJSON{}
 	this.Balance = balance
 	this.CoinType = coinType
@@ -68,9 +72,9 @@ func (o *CoinJSON) SetBalance(v string) {
 }
 
 // GetCoinType returns the CoinType field value
-func (o *CoinJSON) GetCoinType() Type {
+func (o *CoinJSON) GetCoinType() string {
 	if o == nil {
-		var ret Type
+		var ret string
 		return ret
 	}
 
@@ -79,7 +83,7 @@ func (o *CoinJSON) GetCoinType() Type {
 
 // GetCoinTypeOk returns a tuple with the CoinType field value
 // and a boolean to check if the value has been set.
-func (o *CoinJSON) GetCoinTypeOk() (*Type, bool) {
+func (o *CoinJSON) GetCoinTypeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -87,7 +91,7 @@ func (o *CoinJSON) GetCoinTypeOk() (*Type, bool) {
 }
 
 // SetCoinType sets field value
-func (o *CoinJSON) SetCoinType(v Type) {
+func (o *CoinJSON) SetCoinType(v string) {
 	o.CoinType = v
 }
 
@@ -104,6 +108,44 @@ func (o CoinJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize["balance"] = o.Balance
 	toSerialize["coinType"] = o.CoinType
 	return toSerialize, nil
+}
+
+func (o *CoinJSON) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"balance",
+		"coinType",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varCoinJSON := _CoinJSON{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varCoinJSON)
+
+	if err != nil {
+		return err
+	}
+
+	*o = CoinJSON(varCoinJSON)
+
+	return err
 }
 
 type NullableCoinJSON struct {

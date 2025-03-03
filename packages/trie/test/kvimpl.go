@@ -140,11 +140,11 @@ func NewPseudoRandStreamIterator(p ...PseudoRandStreamParams) *PseudoRandStreamI
 }
 
 func (r *PseudoRandStreamIterator) Iterate(fun func(k []byte, v []byte) bool) error {
-	max := r.par.NumKVPairs
-	if max <= 0 {
-		max = math.MaxInt
+	maxNumKVPairs := r.par.NumKVPairs
+	if maxNumKVPairs <= 0 {
+		maxNumKVPairs = math.MaxInt
 	}
-	for r.count < max {
+	for r.count < maxNumKVPairs {
 		k := make([]byte, r.rnd.Intn(r.par.MaxKey-1)+1)
 		r.rnd.Read(k)
 		v := make([]byte, r.rnd.Intn(r.par.MaxValue-1)+1)

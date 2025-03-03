@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -14,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
- 
+
 /*
 Used to distinguish between an empty flag value or an unset flag.
 
@@ -90,8 +91,10 @@ func initMetadataCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chainAliasName = defaultChainFallback(chainAliasName)
 			chainID := config.GetChain(chainAliasName)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			updateMetadata(node, chainAliasName, chainID, withOffLedger, useCliURL, metadataArgs)
+			updateMetadata(ctx, client, node, chainAliasName, chainID, withOffLedger, useCliURL, metadataArgs)
 		},
 	}
 
@@ -143,10 +146,8 @@ func validateAndPushURL(target *string, urlValue nilableString) {
 	*target = urlValue.String()
 }
 
-func updateMetadata(node string, chainAliasName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
-	client := cliclients.WaspClient(node)
-
-	chainInfo, _, err := client.CorecontractsApi.GovernanceGetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+func updateMetadata(ctx context.Context, client *apiclient.APIClient, node string, chainAliasName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
+	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		log.Fatal("Chain not found")
 	}
@@ -155,8 +156,8 @@ func updateMetadata(node string, chainAliasName string, chainID isc.ChainID, wit
 
 	if useCliURL {
 		apiURL := config.WaspAPIURL(node)
-		chainPath, err := url.JoinPath(apiURL, "/v1/chains/", chainID.String())
-		log.Check(err)
+		chainPath, err2 := url.JoinPath(apiURL, "/v1/chains/", chainID.String())
+		log.Check(err2)
 
 		publicURL = chainPath
 	} else {
@@ -179,12 +180,5 @@ func updateMetadata(node string, chainAliasName string, chainID isc.ChainID, wit
 		Website:         chainInfo.Metadata.Website,
 	}
 
-	postRequest(
-		node,
-		chainAliasName,
-		governance.FuncSetMetadata.Message(&publicURL, &chainMetadata),
-		chainclient.PostRequestParams{},
-		withOffLedger,
-		true,
-	)
+	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{}, withOffLedger, true)
 }

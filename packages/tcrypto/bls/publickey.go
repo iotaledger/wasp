@@ -1,7 +1,7 @@
 package bls
 
 import (
-	"github.com/mr-tron/base58"
+	"github.com/btcsuite/btcutil/base58"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 
@@ -27,9 +27,9 @@ func PublicKeyFromBytes(bytes []byte) (publicKey PublicKey, consumedBytes int, e
 
 // PublicKeyFromBase58EncodedString creates a PublicKey from a base58 encoded string.
 func PublicKeyFromBase58EncodedString(base58String string) (publicKey PublicKey, err error) {
-	bytes, err := base58.Decode(base58String)
-	if err != nil {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded PublicKey: %w", err)
+	bytes := base58.Decode(base58String)
+	if len(bytes) == 0 {
+		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded PublicKey: %s", base58String)
 
 		return
 	}

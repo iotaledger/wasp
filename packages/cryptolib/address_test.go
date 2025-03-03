@@ -33,7 +33,7 @@ func testIOTAPublicKeyToAddress(t *testing.T, publicKeyBase64, targetAddress str
 	publicKeyWithType, err := base64.StdEncoding.DecodeString(publicKeyBase64)
 	require.NoError(t, err)
 	require.Equal(t, byte(0), publicKeyWithType[0])
-	publicKey, err := PublicKeyFromBytes(publicKeyWithType[1:])
+	publicKey, err := PublicKeyFromBytes(publicKeyWithType)
 	require.NoError(t, err)
 	require.Equal(t, targetAddress, EncodeHex(publicKey.AsAddress().Bytes()))
 }

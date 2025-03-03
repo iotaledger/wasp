@@ -198,7 +198,22 @@ type L1Client interface {
 	RequestFunds(ctx context.Context, address cryptolib.Address) error
 	Health(ctx context.Context) error
 	L2() L2Client
+	IotaClient() *iotaclient.Client
 	DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error)
+	FindCoinsForGasPayment(
+		ctx context.Context,
+		owner *iotago.Address,
+		pt iotago.ProgrammableTransaction,
+		gasPrice uint64,
+		gasBudget uint64,
+	) ([]*iotago.ObjectRef, error)
+	MergeCoinsAndExecute(
+		ctx context.Context,
+		owner iotasigner.Signer,
+		destinationCoin *iotago.ObjectRef,
+		sourceCoins []*iotago.ObjectRef,
+		gasBudget uint64,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 }
 
 var _ L1Client = &l1Client{}
@@ -224,13 +239,17 @@ func (c *l1Client) Health(ctx context.Context) error {
 
 func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Signer) (iotago.PackageID, error) {
 	iscBytecode := contracts.ISC()
-	txnBytes := lo.Must(c.Publish(ctx, iotaclient.PublishRequest{
+	txnBytes, err := c.Publish(ctx, iotaclient.PublishRequest{
 		Sender:          signer.Address(),
 		CompiledModules: iscBytecode.Modules,
 		Dependencies:    iscBytecode.Dependencies,
 		GasBudget:       iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget * 10),
-	}))
-	txnResponse := lo.Must(c.SignAndExecuteTransaction(
+	})
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
+	txnResponse, err := c.SignAndExecuteTransaction(
 		ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes.TxBytes,
@@ -240,7 +259,11 @@ func (c *l1Client) DeployISCContracts(ctx context.Context, signer iotasigner.Sig
 				ShowObjectChanges: true,
 			},
 		},
-	))
+	)
+	if err != nil {
+		return iotago.PackageID{}, err
+	}
+
 	if !txnResponse.Effects.Data.IsSuccess() {
 		return iotago.PackageID{}, errors.New("publish ISC contracts failed")
 	}
@@ -252,16 +275,20 @@ func (c *l1Client) L2() L2Client {
 	return iscmoveclient.NewClient(c.Client, c.Config.FaucetURL)
 }
 
-func NewL1Client(l1Config L1Config) L1Client {
+func (c *l1Client) IotaClient() *iotaclient.Client {
+	return c.Client
+}
+
+func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {
 	return &l1Client{
-		iotaclient.NewHTTP(l1Config.APIURL),
+		iotaclient.NewHTTP(l1Config.APIURL, waitUntilEffectsVisible),
 		l1Config,
 	}
 }
 
-func NewLocalnetClient() L1Client {
+func NewLocalnetClient(waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {
 	return NewL1Client(L1Config{
 		APIURL:    iotaconn.LocalnetEndpointURL,
 		FaucetURL: iotaconn.LocalnetFaucetURL,
-	})
+	}, waitUntilEffectsVisible)
 }

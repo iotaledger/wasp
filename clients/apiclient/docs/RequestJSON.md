@@ -10,7 +10,7 @@ Name | Type | Description | Notes
 **GasBudget** | **string** | The gas budget (uint64 as string) | 
 **IsEVM** | **bool** |  | 
 **IsOffLedger** | **bool** |  | 
-**Params** | **[][]int32** |  | 
+**Params** | **[]string** |  | 
 **RequestId** | **string** |  | 
 **SenderAccount** | **string** |  | 
 **TargetAddress** | **string** |  | 
@@ -19,7 +19,7 @@ Name | Type | Description | Notes
 
 ### NewRequestJSON
 
-`func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params [][]int32, requestId string, senderAccount string, targetAddress string, ) *RequestJSON`
+`func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params []string, requestId string, senderAccount string, targetAddress string, ) *RequestJSON`
 
 NewRequestJSON instantiates a new RequestJSON object
 This constructor will assign default values to properties that have it defined,
@@ -156,20 +156,20 @@ SetIsOffLedger sets IsOffLedger field to given value.
 
 ### GetParams
 
-`func (o *RequestJSON) GetParams() [][]int32`
+`func (o *RequestJSON) GetParams() []string`
 
 GetParams returns the Params field if non-nil, zero value otherwise.
 
 ### GetParamsOk
 
-`func (o *RequestJSON) GetParamsOk() (*[][]int32, bool)`
+`func (o *RequestJSON) GetParamsOk() (*[]string, bool)`
 
 GetParamsOk returns a tuple with the Params field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetParams
 
-`func (o *RequestJSON) SetParams(v [][]int32)`
+`func (o *RequestJSON) SetParams(v []string)`
 
 SetParams sets Params field to given value.
 

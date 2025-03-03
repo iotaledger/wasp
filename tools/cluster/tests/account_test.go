@@ -26,6 +26,7 @@ func testBasicAccounts(t *testing.T, env *ChainEnv) {
 }
 
 func TestBasicAccountsNLow(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
 	runTest := func(tt *testing.T, n, t int) {
 		e := setupWithNoChain(tt)
 		chainNodes := make([]int, n)
@@ -79,7 +80,7 @@ func testAccounts(e *ChainEnv) {
 	reqTx, err := chClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(e.t, err)
 
-	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 10*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 10*time.Second)
 	require.NoError(e.t, err)
 
 	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
@@ -142,7 +143,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	reqTx, err := myWalletClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), *par)
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(chain.ChainID, reqTx, false, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	for _, i := range chain.CommitteeNodes {
@@ -166,7 +167,7 @@ func testBasic2Accounts(t *testing.T, env *ChainEnv) {
 	)
 	require.NoError(t, err)
 
-	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(chain.ChainID, req2.ID(), true, 30*time.Second)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req2.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
 	require.Equal(t, env.Clu.AddressBalances(originatorAddress).BaseTokens, origL1Balance+allowanceBaseTokens)

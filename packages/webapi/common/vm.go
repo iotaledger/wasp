@@ -7,10 +7,10 @@ import (
 
 	chainpkg "github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -75,13 +75,32 @@ func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.
 	return chainutil.CallView(ch.ID(), chainState, ch.Processors(), ch.Log(), msg)
 }
 
-func EstimateGas(ch chainpkg.Chain, gasCoin *coin.CoinWithRef, req isc.Request) (*isc.Receipt, error) {
+func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
 	anchor, err := ch.LatestAnchor(chainpkg.ActiveOrCommittedState)
 	if err != nil {
 		return nil, fmt.Errorf("error getting latest anchor: %w", err)
 	}
-
-	rec, err := chainutil.SimulateRequest(anchor, gasCoin, ch.Store(), ch.Processors(), ch.Log(), req, true)
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+	if err != nil {
+		return nil, err
+	}
+	state, err := ch.Store().StateByTrieRoot(stateMetadata.L1Commitment.TrieRoot())
+	if err != nil {
+		return nil, err
+	}
+	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(anchor.GetStateIndex())
+	if !ok {
+		return nil, fmt.Errorf("blockinfo not found")
+	}
+	rec, err := chainutil.SimulateRequest(
+		anchor,
+		blockInfo.L1Params,
+		ch.Store(),
+		ch.Processors(),
+		ch.Log(),
+		req,
+		true,
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,8 @@ package apiclient
 
 import (
 	"encoding/json"
+	"bytes"
+	"fmt"
 )
 
 // checks if the BaseToken type satisfies the MappedNullable interface at compile time
@@ -19,7 +21,7 @@ var _ MappedNullable = &BaseToken{}
 
 // BaseToken struct for BaseToken
 type BaseToken struct {
-	CoinType *string `json:"coinType,omitempty"`
+	CoinType Type `json:"coinType"`
 	// The token decimals
 	Decimals int32 `json:"decimals"`
 	// The base token name
@@ -28,22 +30,28 @@ type BaseToken struct {
 	Subunit string `json:"subunit"`
 	// The ticker symbol
 	TickerSymbol string `json:"tickerSymbol"`
+	// The total supply of BaseToken
+	TotalSupply int64 `json:"totalSupply"`
 	// The token unit
 	Unit string `json:"unit"`
 	// Whether or not the token uses a metric prefix
 	UseMetricPrefix bool `json:"useMetricPrefix"`
 }
 
+type _BaseToken BaseToken
+
 // NewBaseToken instantiates a new BaseToken object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBaseToken(decimals int32, name string, subunit string, tickerSymbol string, unit string, useMetricPrefix bool) *BaseToken {
+func NewBaseToken(coinType Type, decimals int32, name string, subunit string, tickerSymbol string, totalSupply int64, unit string, useMetricPrefix bool) *BaseToken {
 	this := BaseToken{}
+	this.CoinType = coinType
 	this.Decimals = decimals
 	this.Name = name
 	this.Subunit = subunit
 	this.TickerSymbol = tickerSymbol
+	this.TotalSupply = totalSupply
 	this.Unit = unit
 	this.UseMetricPrefix = useMetricPrefix
 	return &this
@@ -57,36 +65,28 @@ func NewBaseTokenWithDefaults() *BaseToken {
 	return &this
 }
 
-// GetCoinType returns the CoinType field value if set, zero value otherwise.
-func (o *BaseToken) GetCoinType() string {
-	if o == nil || isNil(o.CoinType) {
-		var ret string
+// GetCoinType returns the CoinType field value
+func (o *BaseToken) GetCoinType() Type {
+	if o == nil {
+		var ret Type
 		return ret
 	}
-	return *o.CoinType
+
+	return o.CoinType
 }
 
-// GetCoinTypeOk returns a tuple with the CoinType field value if set, nil otherwise
+// GetCoinTypeOk returns a tuple with the CoinType field value
 // and a boolean to check if the value has been set.
-func (o *BaseToken) GetCoinTypeOk() (*string, bool) {
-	if o == nil || isNil(o.CoinType) {
+func (o *BaseToken) GetCoinTypeOk() (*Type, bool) {
+	if o == nil {
 		return nil, false
 	}
-	return o.CoinType, true
+	return &o.CoinType, true
 }
 
-// HasCoinType returns a boolean if a field has been set.
-func (o *BaseToken) HasCoinType() bool {
-	if o != nil && !isNil(o.CoinType) {
-		return true
-	}
-
-	return false
-}
-
-// SetCoinType gets a reference to the given string and assigns it to the CoinType field.
-func (o *BaseToken) SetCoinType(v string) {
-	o.CoinType = &v
+// SetCoinType sets field value
+func (o *BaseToken) SetCoinType(v Type) {
+	o.CoinType = v
 }
 
 // GetDecimals returns the Decimals field value
@@ -185,6 +185,30 @@ func (o *BaseToken) SetTickerSymbol(v string) {
 	o.TickerSymbol = v
 }
 
+// GetTotalSupply returns the TotalSupply field value
+func (o *BaseToken) GetTotalSupply() int64 {
+	if o == nil {
+		var ret int64
+		return ret
+	}
+
+	return o.TotalSupply
+}
+
+// GetTotalSupplyOk returns a tuple with the TotalSupply field value
+// and a boolean to check if the value has been set.
+func (o *BaseToken) GetTotalSupplyOk() (*int64, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.TotalSupply, true
+}
+
+// SetTotalSupply sets field value
+func (o *BaseToken) SetTotalSupply(v int64) {
+	o.TotalSupply = v
+}
+
 // GetUnit returns the Unit field value
 func (o *BaseToken) GetUnit() string {
 	if o == nil {
@@ -243,16 +267,59 @@ func (o BaseToken) MarshalJSON() ([]byte, error) {
 
 func (o BaseToken) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !isNil(o.CoinType) {
-		toSerialize["coinType"] = o.CoinType
-	}
+	toSerialize["coinType"] = o.CoinType
 	toSerialize["decimals"] = o.Decimals
 	toSerialize["name"] = o.Name
 	toSerialize["subunit"] = o.Subunit
 	toSerialize["tickerSymbol"] = o.TickerSymbol
+	toSerialize["totalSupply"] = o.TotalSupply
 	toSerialize["unit"] = o.Unit
 	toSerialize["useMetricPrefix"] = o.UseMetricPrefix
 	return toSerialize, nil
+}
+
+func (o *BaseToken) UnmarshalJSON(data []byte) (err error) {
+	// This validates that all required properties are included in the JSON object
+	// by unmarshalling the object into a generic map with string keys and checking
+	// that every required field exists as a key in the generic map.
+	requiredProperties := []string{
+		"coinType",
+		"decimals",
+		"name",
+		"subunit",
+		"tickerSymbol",
+		"totalSupply",
+		"unit",
+		"useMetricPrefix",
+	}
+
+	allProperties := make(map[string]interface{})
+
+	err = json.Unmarshal(data, &allProperties)
+
+	if err != nil {
+		return err;
+	}
+
+	for _, requiredProperty := range(requiredProperties) {
+		if _, exists := allProperties[requiredProperty]; !exists {
+			return fmt.Errorf("no value given for required property %v", requiredProperty)
+		}
+	}
+
+	varBaseToken := _BaseToken{}
+
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	err = decoder.Decode(&varBaseToken)
+
+	if err != nil {
+		return err
+	}
+
+	*o = BaseToken(varBaseToken)
+
+	return err
 }
 
 type NullableBaseToken struct {

@@ -24,18 +24,19 @@ func initConsensusMetricsCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			client := cliclients.WaspClient(node)
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			chainAddress, err := cryptolib.NewAddressFromHexString(chainAlias)
 			log.Check(err)
 
 			chainID := isc.ChainIDFromAddress(chainAddress)
-			workflowStatus, _, err := client.MetricsApi.
-				GetChainWorkflowMetrics(context.Background(), chainID.String()).
+			workflowStatus, _, err := client.MetricsAPI.
+				GetChainWorkflowMetrics(ctx, chainID.String()).
 				Execute()
 			log.Check(err)
 
-			pipeMetrics, _, err := client.MetricsApi.
-				GetChainPipeMetrics(context.Background(), chainID.String()).
+			pipeMetrics, _, err := client.MetricsAPI.
+				GetChainPipeMetrics(ctx, chainID.String()).
 				Execute()
 			log.Check(err)
 

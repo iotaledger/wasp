@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -37,19 +38,15 @@ func TestRequestsFeed(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 
-	wsClient, err := iscmoveclienttest.NewWebSocketClient(
+	chainFeed, err := iscmoveclient.NewChainFeed(
 		ctx,
-		log,
-	)
-	require.NoError(t, err)
-
-	chainFeed := iscmoveclient.NewChainFeed(
-		ctx,
-		wsClient,
 		l1starter.ISCPackageID(),
 		*anchor.ObjectID,
 		log,
+		iotaconn.AlphanetWebsocketEndpointURL,
+		iotaconn.AlphanetEndpointURL,
 	)
+	require.NoError(t, err)
 	defer func() {
 		cancel()
 		chainFeed.WaitUntilStopped()
@@ -80,7 +77,11 @@ func TestRequestsFeed(t *testing.T) {
 	req := <-newRequests
 	require.Equal(t, *requestRef.ObjectID, req.Object.ID)
 
-	updatedAnchor, ownedReqs, err := chainFeed.FetchCurrentState(ctx)
+	ownedReqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	updatedAnchor, err := chainFeed.FetchCurrentState(ctx, 1000, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
+		require.NoError(t, err)
+		ownedReqs = append(ownedReqs, i)
+	})
 	require.NoError(t, err)
 
 	require.Equal(t, anchor.Version, updatedAnchor.Version)

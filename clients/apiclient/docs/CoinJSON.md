@@ -5,13 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Balance** | **string** | The balance (uint64 as string) | 
-**CoinType** | [**Type**](Type.md) |  | 
+**CoinType** | **string** |  | 
 
 ## Methods
 
 ### NewCoinJSON
 
-`func NewCoinJSON(balance string, coinType Type, ) *CoinJSON`
+`func NewCoinJSON(balance string, coinType string, ) *CoinJSON`
 
 NewCoinJSON instantiates a new CoinJSON object
 This constructor will assign default values to properties that have it defined,
@@ -48,20 +48,20 @@ SetBalance sets Balance field to given value.
 
 ### GetCoinType
 
-`func (o *CoinJSON) GetCoinType() Type`
+`func (o *CoinJSON) GetCoinType() string`
 
 GetCoinType returns the CoinType field if non-nil, zero value otherwise.
 
 ### GetCoinTypeOk
 
-`func (o *CoinJSON) GetCoinTypeOk() (*Type, bool)`
+`func (o *CoinJSON) GetCoinTypeOk() (*string, bool)`
 
 GetCoinTypeOk returns a tuple with the CoinType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCoinType
 
-`func (o *CoinJSON) SetCoinType(v Type)`
+`func (o *CoinJSON) SetCoinType(v string)`
 
 SetCoinType sets CoinType field to given value.
 

@@ -78,17 +78,16 @@ const (
 	ChangeAccessNodeActionLast
 )
 
-func RemoveAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
-	action := ChangeAccessNodeActionRemove
-	return lo.T2(pubKey, &action)
+type ChangeAccessNodeActions = []lo.Tuple2[*cryptolib.PublicKey, ChangeAccessNodeAction]
+
+func RemoveAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, ChangeAccessNodeAction] {
+	return lo.T2(pubKey, ChangeAccessNodeActionRemove)
 }
 
-func AcceptAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
-	action := ChangeAccessNodeActionAccept
-	return lo.T2(pubKey, &action)
+func AcceptAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, ChangeAccessNodeAction] {
+	return lo.T2(pubKey, ChangeAccessNodeActionAccept)
 }
 
-func DropAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, *ChangeAccessNodeAction] {
-	action := ChangeAccessNodeActionDrop
-	return lo.T2(pubKey, &action)
+func DropAccessNodeAction(pubKey *cryptolib.PublicKey) lo.Tuple2[*cryptolib.PublicKey, ChangeAccessNodeAction] {
+	return lo.T2(pubKey, ChangeAccessNodeActionDrop)
 }

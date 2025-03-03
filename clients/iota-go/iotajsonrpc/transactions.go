@@ -105,6 +105,10 @@ func (t IotaTransactionBlockEffects) IsSuccess() bool {
 	return t.V1.Status.Status == ExecutionStatusSuccess
 }
 
+func (t IotaTransactionBlockEffects) IsFailed() bool {
+	return t.V1.Status.Status == ExecutionStatusFailure
+}
+
 const (
 	IotaTransactionBlockKindIotaChangeEpoch             = "ChangeEpoch"
 	IotaTransactionBlockKindIotaConsensusCommitPrologue = "ConsensusCommitPrologue"
@@ -310,7 +314,7 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objec
 	error,
 ) {
 	if r.ObjectChanges == nil {
-		return nil, fmt.Errorf("no ObjectChanges")
+		return nil, errors.New("expected ObjectChanges != nil")
 	}
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
@@ -334,13 +338,42 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objec
 	return nil, fmt.Errorf("not found")
 }
 
+func (r *IotaTransactionBlockResponse) GetMutatedObjectInfo(module string, objectName string) (
+	*iotago.ObjectRef,
+	error,
+) {
+	if r.ObjectChanges == nil {
+		return nil, errors.New("expected ObjectChanges != nil")
+	}
+	for _, change := range r.ObjectChanges {
+		if change.Data.Mutated != nil {
+			// some possible examples
+			// * 0x2::coin::TreasuryCap<0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::testcoin::TESTCOIN>
+			// * 0x14c12b454ac6996024342312769e00bb98c70ad2f3546a40f62516c83aa0f0d4::anchor::Anchor
+			resource, err := iotago.NewResourceType(change.Data.Mutated.ObjectType)
+			if err != nil {
+				return nil, fmt.Errorf("invalid resource string: %w", err)
+			}
+			if resource.Contains(nil, module, objectName) {
+				ref := iotago.ObjectRef{
+					ObjectID: &change.Data.Mutated.ObjectID,
+					Version:  change.Data.Mutated.Version.Uint64(),
+					Digest:   &change.Data.Mutated.Digest,
+				}
+				return &ref, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("not found")
+}
+
 // requires `ShowObjectChanges: true`
 func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
-		return nil, errors.New("no ObjectChanges")
+		return nil, errors.New("expected ObjectChanges != nil")
 	}
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
@@ -354,6 +387,35 @@ func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType st
 						ObjectID: &change.Data.Created.ObjectID,
 						Version:  change.Data.Created.Version.Uint64(),
 						Digest:   &change.Data.Created.Digest,
+					}
+					return &ref, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("not found")
+}
+
+// requires `ShowObjectChanges: true`
+func (r *IotaTransactionBlockResponse) GetMutatedCoin(module string, coinType string) (
+	*iotago.ObjectRef,
+	error,
+) {
+	if r.ObjectChanges == nil {
+		return nil, errors.New("expected ObjectChanges != nil")
+	}
+	for _, change := range r.ObjectChanges {
+		if change.Data.Mutated != nil {
+			resource, err := iotago.NewResourceType(change.Data.Mutated.ObjectType)
+			if err != nil {
+				return nil, fmt.Errorf("invalid resource string: %w", err)
+			}
+			if resource.Module == "coin" && resource.SubType1 != nil {
+				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
+					ref := iotago.ObjectRef{
+						ObjectID: &change.Data.Mutated.ObjectID,
+						Version:  change.Data.Mutated.Version.Uint64(),
+						Digest:   &change.Data.Mutated.Digest,
 					}
 					return &ref, nil
 				}

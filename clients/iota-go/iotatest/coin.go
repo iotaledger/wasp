@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -37,9 +38,6 @@ func EnsureCoinSplitWithBalance(
 	)
 	require.NoError(t, err)
 
-	referenceGasPrice, err := client.GetReferenceGasPrice(context.TODO())
-	require.NoError(t, err)
-
 	txb := iotago.NewProgrammableTransactionBuilder()
 
 	splitCmd := txb.Command(
@@ -57,7 +55,7 @@ func EnsureCoinSplitWithBalance(
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
 		iotaclient.DefaultGasBudget,
-		referenceGasPrice.Uint64(),
+		parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)

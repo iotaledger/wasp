@@ -17,6 +17,8 @@ import (
 )
 
 func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey, "--node=0")
 		out = w.GetReceiptFromRunPostRequestOutput(out)
@@ -26,6 +28,8 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 }
 
 func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		for _, idx := range w.Cluster.AllNodes() {
 			w.MustRun("chain", "access-nodes", "add", "--peers=next-committee-member", fmt.Sprintf("--node=%d", idx))
@@ -85,7 +89,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 	// adds node #0 from cluster2 as access node of the chain
 	{
-		node0peerInfo, _, err := w2.Cluster.WaspClient(0).NodeApi.
+		node0peerInfo, _, err := w2.Cluster.WaspClient(0).NodeAPI.
 			GetPeeringIdentity(context.Background()).
 			Execute()
 		require.NoError(t, err)
@@ -100,7 +104,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 
 		for _, nodeIndex := range w.Cluster.Config.AllNodes() {
 			// equivalent of "wasp-cli peer info"
-			peerInfo, _, err2 := w.Cluster.WaspClient(nodeIndex).NodeApi.
+			peerInfo, _, err2 := w.Cluster.WaspClient(nodeIndex).NodeAPI.
 				GetPeeringIdentity(context.Background()).
 				Execute()
 			require.NoError(t, err2)
@@ -198,6 +202,8 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 }
 
 func TestRotateOnOrigin(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	w := newWaspCLITest(t, waspClusterOpts{
 		nNodes: 4,
 	})

@@ -25,10 +25,8 @@ type BlockInfoResponse struct {
 }
 
 func MapBlockInfoResponse(info *blocklog.BlockInfo) *BlockInfoResponse {
-	blockindex := uint32(0)
-
 	return &BlockInfoResponse{
-		BlockIndex:            blockindex,
+		BlockIndex:            info.BlockIndex,
 		Timestamp:             info.Timestamp,
 		TotalRequests:         info.TotalRequests,
 		NumSuccessfulRequests: info.NumSuccessfulRequests,

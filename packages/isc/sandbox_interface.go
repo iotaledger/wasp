@@ -127,7 +127,7 @@ type Sandbox interface {
 
 	// EVMTracer returns a non-nil tracer if an EVM tx is being traced
 	// (e.g. with the debug_traceTransaction JSONRPC method).
-	EVMTracer() *EVMTracer
+	EVMTracer() *tracers.Tracer
 
 	// TakeStateSnapshot takes a snapshot of the state. This is useful to implement the try/catch
 	// behavior in Solidity, where the state is reverted after a low level call fails.
@@ -153,6 +153,28 @@ type Privileged interface {
 }
 
 type CallArguments [][]byte
+
+type CallArgumentsJSON []string
+
+func (c CallArgumentsJSON) ToCallArguments() (CallArguments, error) {
+	callArguments := make(CallArguments, len(c))
+	var err error
+	for i, v := range c {
+		callArguments[i], err = hexutil.Decode(v)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return callArguments, nil
+}
+
+func (c CallArguments) ToCallArgumentsJSON() CallArgumentsJSON {
+	callArgumentsJSON := make(CallArgumentsJSON, len(c))
+	for i, v := range c {
+		callArgumentsJSON[i] = hexutil.Encode(v)
+	}
+	return callArgumentsJSON
+}
 
 func NewCallArguments(args ...[]byte) CallArguments {
 	callArguments := make(CallArguments, len(args))
@@ -280,7 +302,7 @@ func OptionalArgAt[T any](results CallResults, index int, def T) (T, error) {
 }
 
 func MustOptionalArgAt[T any](results CallResults, index int, def T) T {
-	return lo.Must(OptionalResAt[T](results, index, def))
+	return lo.Must(OptionalResAt(results, index, def))
 }
 
 type CallResults = CallArguments
@@ -309,6 +331,7 @@ type Message struct {
 func NewMessage(contract Hname, ep Hname, params ...CallArguments) Message {
 	msg := Message{
 		Target: CallTarget{Contract: contract, EntryPoint: ep},
+		Params: CallArguments{},
 	}
 	if len(params) > 0 {
 		msg.Params = params[0]
@@ -380,31 +403,17 @@ func NewStateAnchor(
 }
 
 func (s *StateAnchor) MarshalBCS(e *bcs.Encoder) error {
-	err := e.Encode(s.anchor)
-	if err != nil {
-		return err
-	}
-
-	err = e.Encode(s.iscPackage)
-	if err != nil {
-		return err
-	}
+	e.Encode(s.anchor)
+	e.Encode(s.iscPackage)
 
 	return nil
 }
 
 func (s *StateAnchor) UnmarshalBCS(d *bcs.Decoder) error {
 	s.anchor = nil
-	err := d.Decode(&s.anchor)
-	if err != nil {
-		return err
-	}
-
+	d.Decode(&s.anchor)
 	s.iscPackage = iotago.Address{}
-	err = d.Decode(&s.iscPackage)
-	if err != nil {
-		return err
-	}
+	d.Decode(&s.iscPackage)
 
 	return nil
 }
@@ -438,7 +447,7 @@ func (s StateAnchor) GetStateIndex() uint32 {
 }
 
 func (s StateAnchor) GetAssetsBag() *iscmove.AssetsBag {
-	return &s.anchor.Object.Assets
+	return s.anchor.Object.Assets.Value
 }
 
 func (s StateAnchor) ChainID() ChainID {
@@ -455,6 +464,10 @@ func (s StateAnchor) Equals(input *StateAnchor) bool {
 	}
 
 	return iscmove.AnchorWithRefEquals(*s.anchor, *input.Anchor())
+}
+
+func (s StateAnchor) String() string {
+	return fmt.Sprintf("{StateAnchor, %v}", s.anchor)
 }
 
 type SendOptions struct {
@@ -498,10 +511,4 @@ type BLS interface {
 	ValidSignature(data []byte, pubKey []byte, signature []byte) bool
 	AddressFromPublicKey(pubKey []byte) (iotago.Address, error)
 	AggregateBLSSignatures(pubKeysBin [][]byte, sigsBin [][]byte) ([]byte, []byte, error)
-}
-
-type EVMTracer struct {
-	Tracer      *tracers.Tracer
-	TxIndex     *uint64
-	BlockNumber *uint64
 }

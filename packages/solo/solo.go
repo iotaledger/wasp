@@ -32,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -81,9 +82,6 @@ type chainData struct {
 	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
 	// It is a default key pair in many of Solo calls which require private key.
 	OriginatorPrivateKey *cryptolib.KeyPair
-
-	// ValidatorFeeTarget is the agent ID to which all fees are accrued. By default, it is equal to OriginatorAgentID
-	ValidatorFeeTarget isc.AgentID
 
 	db kvstore.KVStore
 
@@ -157,6 +155,11 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 			IotaFaucetURL: l1starter.Instance().FaucetURL(),
 			ISCPackageID:  l1starter.Instance().ISCPackageID(),
 		}
+	}
+
+	err := parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
+	if err != nil {
+		panic(err)
 	}
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -242,11 +245,10 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultCommonAccountBaseTokens   = 50 * isc.Million
 	DefaultChainOriginatorBaseTokens = 50 * isc.Million
 )
 
-// NewChain deploys new default chain instance.
+// NewChain deploys a new default chain instance.
 func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
@@ -263,16 +265,12 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 
 func (env *Solo) deployChain(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
+	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (chainData, *isc.StateAnchor) {
 	env.logger.Debugf("deploying new chain '%s'", name)
-
-	if initBaseTokens == 0 {
-		initBaseTokens = DefaultCommonAccountBaseTokens
-	}
 
 	if chainOriginator == nil {
 		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -288,7 +286,6 @@ func (env *Solo) deployChain(
 	)
 
 	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-	originatorAgentID := isc.NewAddressAgentID(originatorAddr)
 
 	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
 
@@ -296,24 +293,24 @@ func (env *Solo) deployChain(
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(
-		chainOriginator,
-		initBaseTokens,
-	)
+	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue)
 
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
 		*gasCoinRef.ObjectID,
-		initBaseTokens,
+		initCommonAccountBaseTokens,
 		baseTokenCoinInfo,
 	)
 
-	initCoinRef := env.makeBaseTokenCoin(
-		chainOriginator,
-		initBaseTokens,
-	)
+	var initCoin *iotago.ObjectRef
+	if initCommonAccountBaseTokens > 0 {
+		initCoin = env.makeBaseTokenCoin(
+			chainOriginator,
+			initCommonAccountBaseTokens,
+		)
+	}
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
@@ -322,7 +319,7 @@ func (env *Solo) deployChain(
 			ChainOwnerAddress: chainOriginator.Address(),
 			PackageID:         env.ISCPackageID(),
 			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       initCoinRef,
+			InitCoinRef:       initCoin,
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
 		},
@@ -342,7 +339,6 @@ func (env *Solo) deployChain(
 		Name:                 name,
 		ChainID:              chainID,
 		OriginatorPrivateKey: chainOriginator,
-		ValidatorFeeTarget:   originatorAgentID,
 		db:                   db,
 		migrationScheme:      allmigrations.DefaultScheme,
 	}, nil
@@ -364,12 +360,18 @@ func (env *Solo) deployChain(
 // Upon return, the chain is fully functional to process requests
 func (env *Solo) NewChainExt(
 	chainOriginator *cryptolib.KeyPair,
-	initBaseTokens coin.Value,
+	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (*Chain, *isc.StateAnchor) {
-	chData, anchorRef := env.deployChain(chainOriginator, initBaseTokens, name, evmChainID, blockKeepAmount)
+	chData, anchorRef := env.deployChain(
+		chainOriginator,
+		initCommonAccountBaseTokens,
+		name,
+		evmChainID,
+		blockKeepAmount,
+	)
 
 	env.chainsMutex.Lock()
 	defer env.chainsMutex.Unlock()
@@ -402,19 +404,18 @@ func (env *Solo) IotaFaucetURL() string {
 	return env.l1Config.IotaFaucetURL
 }
 
-func (ch *Chain) GetAnchor(stateIndex uint32) *isc.StateAnchor {
-	bi, err := ch.GetBlockInfo(stateIndex)
-	require.NoError(ch.Env.T, err)
-
+func (ch *Chain) GetAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
 	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
 		ch.Env.ctx,
 		ch.ChainID.AsAddress().AsIotaAddress(),
 		uint64(bi.PreviousAnchor.Anchor().Version),
 	)
-	require.NoError(ch.Env.T, err)
+	if err != nil {
+		return nil, err
+	}
 
 	stateAnchor := isc.NewStateAnchor(anchor, ch.Env.ISCPackageID())
-	return &stateAnchor
+	return &stateAnchor, nil
 }
 
 func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
@@ -465,14 +466,12 @@ func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 
 // collateBatch selects requests to be processed in a batch
 func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
-	reqs, err := ch.Env.ISCMoveClient().GetRequests(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress())
-	require.NoError(ch.Env.T, err)
-	slices.SortFunc(reqs, func(a, b *iscmove.RefWithObject[iscmove.Request]) int {
-		return bytes.Compare(a.ObjectID[:], b.ObjectID[:])
+	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	err := ch.Env.ISCMoveClient().GetRequestsSorted(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress(), maxRequestsInBlock, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
+		require.NoError(ch.Env.T, err)
+		reqs = append(reqs, i)
 	})
-	if len(reqs) > maxRequestsInBlock {
-		reqs = reqs[:maxRequestsInBlock]
-	}
+	require.NoError(ch.Env.T, err)
 	return lo.Map(reqs, func(req *iscmove.RefWithObject[iscmove.Request], _ int) isc.Request {
 		r, err := isc.OnLedgerFromRequest(req, ch.ChainID.AsAddress())
 		require.NoError(ch.Env.T, err)

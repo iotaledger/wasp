@@ -21,8 +21,9 @@ func initInfoCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			client := cliclients.WaspClient(node)
-			info, _, err := client.NodeApi.GetPeeringIdentity(context.Background()).Execute()
+			ctx := context.Background()
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+			info, _, err := client.NodeAPI.GetPeeringIdentity(ctx).Execute()
 			log.Check(err)
 
 			model := &InfoModel{PubKey: info.PublicKey, PeeringURL: info.PeeringURL}

@@ -8,6 +8,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -16,13 +17,13 @@ import (
 )
 
 func TestGetChainIdentifier(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	_, err := client.GetChainIdentifier(context.Background())
 	require.NoError(t, err)
 }
 
 func TestGetCheckpoint(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sn := iotajsonrpc.NewBigInt(3)
 	checkpoint, err := client.GetCheckpoint(context.Background(), sn)
 	require.NoError(t, err)
@@ -48,7 +49,7 @@ func TestGetCheckpoint(t *testing.T) {
 }
 
 func TestGetCheckpoints(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	cursor := iotajsonrpc.NewBigInt(999)
 	limit := uint64(2)
 	checkpointPage, err := client.GetCheckpoints(
@@ -100,7 +101,7 @@ func TestGetCheckpoints(t *testing.T) {
 func TestGetEvents(t *testing.T) {
 	t.Skip("TODO: refactor when we have some events")
 
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	digest, err := iotago.NewDigest("3vVi8XZgNpzQ34PFgwJTQqWtPMU84njcBX1EUxUHhyDk")
 	require.NoError(t, err)
 	events, err := client.GetEvents(context.Background(), digest)
@@ -158,7 +159,7 @@ func TestGetEvents(t *testing.T) {
 }
 
 func TestGetLatestCheckpointSequenceNumber(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sequenceNumber, err := client.GetLatestCheckpointSequenceNumber(context.Background())
 	require.NoError(t, err)
 	num, err := strconv.Atoi(sequenceNumber)
@@ -171,9 +172,9 @@ func TestGetObject(t *testing.T) {
 		ctx   context.Context
 		objID *iotago.ObjectID
 	}
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	coins, err := api.GetCoins(
-		context.TODO(), iotaclient.GetCoinsRequest{
+		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
 			Limit: 1,
 		},
@@ -182,7 +183,7 @@ func TestGetObject(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		api     *iotaclient.Client
+		api     clients.L1Client
 		args    args
 		want    int
 		wantErr bool
@@ -191,7 +192,7 @@ func TestGetObject(t *testing.T) {
 			name: "test for devnet",
 			api:  api,
 			args: args{
-				ctx:   context.TODO(),
+				ctx:   context.Background(),
 				objID: coins.Data[0].CoinObjectID,
 			},
 			want:    3,
@@ -226,7 +227,7 @@ func TestGetObject(t *testing.T) {
 }
 
 func TestGetProtocolConfig(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	version := iotajsonrpc.NewBigInt(1)
 	protocolConfig, err := api.GetProtocolConfig(context.Background(), version)
 	require.NoError(t, err)
@@ -234,7 +235,7 @@ func TestGetProtocolConfig(t *testing.T) {
 }
 
 func TestGetTotalTransactionBlocks(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	res, err := api.GetTotalTransactionBlocks(context.Background())
 	require.NoError(t, err)
 	t.Log(res)
@@ -242,7 +243,7 @@ func TestGetTotalTransactionBlocks(t *testing.T) {
 
 func TestGetTransactionBlock(t *testing.T) {
 	t.Skip("TODO: fix it when the chain is stable. Currently addresses are not stable")
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	digest, err := iotago.NewDigest("FGpDhznVR2RpUZG7qB5ZEtME3dH3VL81rz2wFRCuoAv9")
 	require.NoError(t, err)
 	resp, err := client.GetTransactionBlock(
@@ -266,9 +267,9 @@ func TestGetTransactionBlock(t *testing.T) {
 }
 
 func TestMultiGetObjects(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	coins, err := api.GetCoins(
-		context.TODO(), iotaclient.GetCoinsRequest{
+		context.Background(), iotaclient.GetCoinsRequest{
 			Owner: iotago.MustAddressFromHex(testcommon.TestAddress),
 			Limit: 1,
 		},
@@ -301,7 +302,7 @@ func TestMultiGetObjects(t *testing.T) {
 }
 
 func TestMultiGetTransactionBlocks(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 
 	resp, err := client.MultiGetTransactionBlocks(
 		context.Background(),
@@ -322,7 +323,7 @@ func TestMultiGetTransactionBlocks(t *testing.T) {
 }
 
 func TestTryGetPastObject(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	// there is no software-level guarantee/SLA that objects with past versions can be retrieved by this API
 	resp, err := api.TryGetPastObject(
 		context.Background(), iotaclient.TryGetPastObjectRequest{
@@ -339,7 +340,7 @@ func TestTryGetPastObject(t *testing.T) {
 }
 
 func TestTryMultiGetPastObjects(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	req := []*iotajsonrpc.IotaGetPastObjectRequest{
 		{
 			ObjectId: iotago.MustObjectIDFromHex("0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f"),

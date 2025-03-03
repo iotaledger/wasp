@@ -15,7 +15,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -27,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -39,6 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
@@ -98,13 +99,13 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), te.anchor, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, te.anchor, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
@@ -116,7 +117,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	t.Log("Sending off-ledger request")
 	chosenMempool := rand.Intn(len(te.mempools))
 	require.Nil(t, te.mempools[chosenMempool].ReceiveOffLedgerRequest(offLedgerReq))
@@ -166,7 +167,7 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		1,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	offLedgerRef2 := isc.RequestRefFromRequest(offLedgerReq2)
 	for i := range te.mempools {
 		te.mempools[i].ReceiveOffLedgerRequest(offLedgerReq2)
@@ -201,13 +202,13 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, te.anchor, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
@@ -221,7 +222,7 @@ func TestMempoolsNonceGaps(t *testing.T) {
 			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 			nonce,
 			gas.LimitsDefault.MaxGasPerRequest,
-		).Sign(te.governor)
+		).Sign(te.chainOwner)
 	}
 	offLedgerReqs := []isc.Request{
 		createReqWithNonce(0),
@@ -322,6 +323,34 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// nonce 10 was never proposed
 }
 
+func TestMempoolChainOwner(t *testing.T) {
+	te := newEnv(t, 1, 0, true)
+	defer te.close()
+
+	t.Log("ServerNodesUpdated")
+	tangleTime := time.Now()
+	for _, node := range te.mempools {
+		node.ServerNodesUpdated(te.peerPubKeys, te.peerPubKeys)
+		node.TangleTimeUpdated(tangleTime)
+	}
+	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
+	// deposit some funds so off-ledger requests can go through
+	t.Log("TrackNewChainHead")
+	for i, node := range te.mempools {
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, te.anchor, []state.Block{}, []state.Block{})
+	}
+	for i := range te.mempools {
+		<-awaitTrackHeadChannels[i]
+	}
+	require.Equal(t, te.chainOwner.Address().String(), te.anchor.Owner().String(), "chainOwner and anchor owner are not the same")
+
+	governanceState := governance.NewStateReaderFromChainState(te.stateForAnchor(0, te.anchor))
+	chainOwner := governanceState.GetChainOwnerID()
+	chainOwnerAddress, success := isc.AddressFromAgentID(chainOwner)
+	require.True(t, success, "unable to get address from chain owner agentID")
+	require.Equal(t, te.chainOwner.Address().String(), chainOwnerAddress.String(), "chain owner incorrect")
+}
+
 func TestMempoolOverrideNonce(t *testing.T) {
 	// 1 node setup
 	// send nonce 0
@@ -339,13 +368,13 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	// deposit some funds so off-ledger requests can go through
 	t.Log("TrackNewChainHead")
 	for i, node := range te.mempools {
-		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, []state.Block{}, []state.Block{})
+		awaitTrackHeadChannels[i] = node.TrackNewChainHead(te.stateForAnchor(i, te.anchor), nil, nil, []state.Block{}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
 	}
 
-	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq.(isc.OnLedgerRequest))
@@ -357,7 +386,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	time.Sleep(400 * time.Millisecond) // give some time for the requests to reach the pool
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(initialReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
@@ -367,7 +396,7 @@ func TestMempoolOverrideNonce(t *testing.T) {
 		isc.NewMessage(isc.Hn("baz"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 
 	require.NoError(t, te.mempools[0].ReceiveOffLedgerRequest(overwritingReq))
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
@@ -408,9 +437,9 @@ func TestTTL(t *testing.T) {
 	mp.TangleTimeUpdated(start)
 
 	// deposit some funds so off-ledger requests can go through
-	<-mp.TrackNewChainHead(te.stateForAnchor(0, te.anchor), nil, []state.Block{}, []state.Block{})
+	<-mp.TrackNewChainHead(te.stateForAnchor(0, te.anchor), nil, nil, []state.Block{}, []state.Block{})
 
-	onLedgerReq1, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq1, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	for _, node := range te.mempools {
 		node.ReceiveOnLedgerRequest(onLedgerReq1.(isc.OnLedgerRequest))
@@ -423,7 +452,7 @@ func TestTTL(t *testing.T) {
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
-	).Sign(te.governor)
+	).Sign(te.chainOwner)
 	t.Log("Sending off-ledger request")
 	require.Nil(t, mp.ReceiveOffLedgerRequest(offLedgerReq))
 
@@ -432,7 +461,7 @@ func TestTTL(t *testing.T) {
 	time.Sleep(201 * time.Millisecond)
 
 	// we need to add some request because ConsensusProposalAsync will not return an empty list.
-	onLedgerReq2, err := te.tcl.MakeTxAccountsDeposit(te.governor)
+	onLedgerReq2, err := te.tcl.MakeTxAccountsDeposit(te.chainOwner)
 	require.NoError(t, err)
 	mp.ReceiveOnLedgerRequest(onLedgerReq2.(isc.OnLedgerRequest))
 
@@ -451,7 +480,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 		Processors: coreprocessors.NewConfigWithTestContracts(),
 		Anchor:     anchor,
 		GasCoin: &coin.CoinWithRef{
-			Value: isc.GasCoinMaxValue,
+			Value: isc.GasCoinTargetValue,
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},
@@ -460,6 +489,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 		Timestamp:            tangleTime,
 		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
+		L1Params:             parameters.L1Default,
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
 		Log:                  te.log.Named("VM"),
@@ -491,7 +521,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 	// sync mempools with new state
 	awaitTrackHeadChannels := make([]<-chan bool, len(te.mempools))
 	for i := range te.mempools {
-		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, anchor, []state.Block{block}, []state.Block{})
+		awaitTrackHeadChannels[i] = te.mempools[i].TrackNewChainHead(chainState, nil, anchor, []state.Block{block}, []state.Block{})
 	}
 	for i := range te.mempools {
 		<-awaitTrackHeadChannels[i]
@@ -507,7 +537,7 @@ type testEnv struct {
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
 	log              *logger.Logger
-	governor         *cryptolib.KeyPair
+	chainOwner       *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
@@ -527,9 +557,9 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.log = testlogger.NewLogger(t)
 
 	// Create ledger accounts. Requesting funds twice to get two coin objects (so we don't need to split one later)
-	te.governor = cryptolib.NewKeyPair()
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
-	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.governor.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
+	te.chainOwner = cryptolib.NewKeyPair()
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
+	require.NoError(t, iotaclient.RequestFundsFromFaucet(context.Background(), te.chainOwner.Address().AsIotaAddress(), l1starter.Instance().FaucetURL()))
 
 	// Create a fake network and keys for the tests.
 	te.peeringURLs, te.peerIdentities = testpeers.SetupKeys(uint16(n))
@@ -555,17 +585,18 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	l1client := l1starter.Instance().L1Client()
 
 	objs, err := l1client.GetAllCoins(context.Background(), iotaclient.GetAllCoinsRequest{
-		Owner: te.governor.Address().AsIotaAddress(),
+		Owner: te.chainOwner.Address().AsIotaAddress(),
 	})
+	require.NoError(t, err)
 
 	fmt.Println(objs)
 
-	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.governor))
+	iscPackage, err := l1client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(te.chainOwner))
 	require.NoError(t, err)
 
-	te.tcl = testchain.NewTestChainLedger(t, te.governor, &iscPackage, l1client)
+	te.tcl = testchain.NewTestChainLedger(t, te.chainOwner, &iscPackage, l1client)
 	var originDepositVal coin.Value
-	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin(te.cmtAddress)
+	te.anchor, originDepositVal = te.tcl.MakeTxChainOrigin()
 
 	// Initialize the nodes.
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))

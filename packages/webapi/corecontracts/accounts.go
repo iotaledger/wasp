@@ -22,7 +22,7 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewTotalAssets.DecodeOutput(ret)
+	return accounts.ViewBalance.DecodeOutput(ret)
 }
 
 func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]iotago.Address, error) {

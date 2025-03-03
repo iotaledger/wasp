@@ -31,7 +31,7 @@ func TestTxBuilderBasic(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
-	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
+	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
 	anchor, err := client.L2().StartNewChain(
@@ -94,7 +94,7 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	recipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
-	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
+	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainSigner.Address().AsIotaAddress()})
@@ -198,7 +198,7 @@ func TestTxBuilderSendCrossChainRequest(t *testing.T) {
 	t.Skip("we may not need to support Cross Chain Request now")
 	// client := newLocalnetClient()
 	// signer := newSignerWithFunds(t, testSeed, 0)
-	// iscPackage1, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(signer))
+	// iscPackage1, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(signer))
 	// require.NoError(t, err)
 
 	// anchor1, err := client.L2().StartNewChain(
@@ -348,7 +348,7 @@ func TestRotateAndBuildTx(t *testing.T) {
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
-	iscPackage, err := client.DeployISCContracts(context.TODO(), cryptolib.SignerToIotaSigner(chainSigner))
+	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
 
 	anchor, err := client.L2().StartNewChain(
@@ -413,6 +413,13 @@ func TestRotateAndBuildTx(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), getObjRes.Data.Owner.AddressOwner)
+
+	gasCoinGetObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		ObjectID: selectedGasCoin.ObjectID,
+		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowOwner: true},
+	})
+	require.NoError(t, err)
+	require.Equal(t, rotateRecipientSigner.Address().AsIotaAddress(), gasCoinGetObjRes.Data.Owner.AddressOwner)
 }
 
 func createIscmoveReq(

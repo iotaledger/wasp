@@ -59,9 +59,9 @@ const (
 	getCheckpoints                    IotaMethod = "iota_getCheckpoints"
 	getEvents                         IotaMethod = "iota_getEvents"
 	getLatestCheckpointSequenceNumber IotaMethod = "iota_getLatestCheckpointSequenceNumber"
-	getLoadedChildObjects             IotaMethod = "iota_getLoadedChildObjects" // TODO
+	getLoadedChildObjects             IotaMethod = "iota_getLoadedChildObjects"
 	getObject                         IotaMethod = "iota_getObject"
-	getProtocolConfig                 IotaMethod = "iota_getProtocolConfig" // TODO
+	getProtocolConfig                 IotaMethod = "iota_getProtocolConfig"
 	getTotalTransactionBlocks         IotaMethod = "iota_getTotalTransactionBlocks"
 	getTransactionBlock               IotaMethod = "iota_getTransactionBlock"
 	multiGetObjects                   IotaMethod = "iota_multiGetObjects"

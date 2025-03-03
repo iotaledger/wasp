@@ -24,7 +24,7 @@ type Request interface {
 }
 
 func init() {
-	bcs.RegisterEnumType4[Request, *OnLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest]()
+	bcs.RegisterEnumType5[Request, *OnLedgerRequestData, *OffLedgerRequestData, *evmOffLedgerTxRequest, *evmOffLedgerCallRequest, *ImpersonatedOffLedgerRequestData]()
 }
 
 func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
@@ -48,7 +48,7 @@ type Calldata interface {
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
 	SenderAccount() AgentID
-	TargetAddress() *cryptolib.Address // TODO implement properly. Target depends on time assumptions and UTXO type
+	TargetAddress() *cryptolib.Address
 	EVMCallMsg() *ethereum.CallMsg
 }
 

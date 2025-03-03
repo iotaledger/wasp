@@ -2,7 +2,9 @@ package iscmoveclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -11,29 +13,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
-
-func (c *Client) FindCoinsForGasPayment(
-	ctx context.Context,
-	owner *iotago.Address,
-	pt iotago.ProgrammableTransaction,
-	gasPrice uint64,
-	gasBudget uint64,
-) ([]*iotago.ObjectRef, error) {
-	coinType := iotajsonrpc.IotaCoinType.String()
-	coinPage, err := c.GetCoins(ctx, iotaclient.GetCoinsRequest{
-		CoinType: &coinType,
-		Owner:    owner,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
-	}
-	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
-		coinPage.Data,
-		gasBudget,
-		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
-	)
-	return gasPayments.CoinRefs(), err
-}
 
 type StartNewChainRequest struct {
 	Signer            cryptolib.Signer
@@ -44,6 +23,32 @@ type StartNewChainRequest struct {
 	GasPayments       []*iotago.ObjectRef
 	GasPrice          uint64
 	GasBudget         uint64
+}
+
+func (c *Client) GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
+	obj, err := c.Client.GetObject(ctx, req)
+
+	counter := 0
+	for {
+		if counter >= c.WaitUntilEffectsVisible.Attempts {
+			return nil, errors.New("could not get object in time")
+		}
+
+		if obj != nil && obj.Error == nil {
+			return obj, err
+		}
+
+		if obj != nil && obj.Error.Data.NotExists == nil {
+			return obj, err
+		}
+
+		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
+
+		obj, err = c.Client.GetObject(ctx, req)
+		counter++
+	}
+
+	return nil, errors.New("could not get object in time")
 }
 
 func (c *Client) StartNewChain(
@@ -133,7 +138,7 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObjectWithRetry(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})

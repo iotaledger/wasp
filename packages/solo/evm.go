@@ -53,10 +53,10 @@ func (b *jsonRPCSoloBackend) EVMSendTransaction(tx *types.Transaction) error {
 	return err
 }
 
-func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) ([]byte, error) {
+func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) ([]byte, error) {
 	return chainutil.EVMCall(
 		anchor,
-		b.Chain.GetLatestGasCoin(),
+		l1Params,
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
@@ -64,10 +64,10 @@ func (b *jsonRPCSoloBackend) EVMCall(anchor *isc.StateAnchor, callMsg ethereum.C
 	)
 }
 
-func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg) (uint64, error) {
+func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereum.CallMsg, l1Params *parameters.L1Params) (uint64, error) {
 	return chainutil.EVMEstimateGas(
 		anchor,
-		b.Chain.GetLatestGasCoin(),
+		l1Params,
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
@@ -75,24 +75,21 @@ func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg eth
 	)
 }
 
-func (b *jsonRPCSoloBackend) EVMTraceTransaction(
+func (b *jsonRPCSoloBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
+	l1Params *parameters.L1Params,
 ) error {
-	return chainutil.EVMTraceTransaction(
+	return chainutil.EVMTrace(
 		anchor,
-		b.Chain.GetLatestGasCoin(),
+		l1Params,
 		b.Chain.store,
 		b.Chain.proc,
 		b.Chain.log,
 		blockTime,
 		iscRequestsInBlock,
-		txIndex,
-		blockNumber,
 		tracer,
 	)
 }
@@ -103,11 +100,6 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 
 func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
 	anchor := b.Chain.GetLatestAnchor()
-	return anchor, nil
-}
-
-func (b *jsonRPCSoloBackend) ISCAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	anchor := b.Chain.GetAnchor(stateIndex)
 	return anchor, nil
 }
 
@@ -147,7 +139,7 @@ func (b *jsonRPCSoloBackend) TakeSnapshot() (int, error) {
 
 func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	return jsonrpc.NewEVMChain(
-		newJSONRPCSoloBackend(ch, parameters.Token),
+		newJSONRPCSoloBackend(ch, parameters.BaseTokenDefault),
 		ch.Env.publisher,
 		true,
 		hivedb.EngineMapDB,

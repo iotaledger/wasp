@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -111,10 +112,6 @@ func (c *Client) postSingleRequest(
 	for coinType, coinBalance := range params.Allowance.Coins {
 		allowances.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinBalance.Uint64()))
 	}
-	referenceGasPrice, err := c.L1Client.GetReferenceGasPrice(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(
 		ctx,
 		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
@@ -124,8 +121,8 @@ func (c *Client) postSingleRequest(
 			Assets:           assets,
 			Message:          msg,
 			Allowance:        allowances,
-			OnchainGasBudget: params.gasBudget,
-			GasPrice:         referenceGasPrice.Uint64(),
+			OnchainGasBudget: params.GasBudget(),
+			GasPrice:         parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
 			GasBudget:        iotaclient.DefaultGasBudget,
 		},
 	)
@@ -134,7 +131,7 @@ func (c *Client) postSingleRequest(
 func (c *Client) ISCNonce(ctx context.Context) (uint64, error) {
 	var agentID isc.AgentID = isc.NewAddressAgentID(c.KeyPair.Address())
 
-	result, _, err := c.WaspClient.ChainsApi.CallView(ctx, c.ChainID.String()).
+	result, _, err := c.WaspClient.ChainsAPI.CallView(ctx, c.ChainID.String()).
 		ContractCallViewRequest(apiextensions.CallViewReq(accounts.ViewGetAccountNonce.Message(&agentID))).
 		Execute()
 	if err != nil {
@@ -178,7 +175,7 @@ func (c *Client) PostOffLedgerRequest(
 		ChainId: c.ChainID.String(),
 		Request: request,
 	}
-	_, err := c.WaspClient.RequestsApi.
+	_, err := c.WaspClient.RequestsAPI.
 		OffLedger(ctx).
 		OffLedgerRequest(offLedgerRequest).
 		Execute()

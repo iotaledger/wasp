@@ -51,14 +51,14 @@ func addAllowedStateControllerAddress(ctx isc.Sandbox, addr *cryptolib.Address) 
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	amap := state.AllowedStateControllerAddressesMap()
-	amap.SetAt(codec.Encode[*cryptolib.Address](addr), []byte{0x01})
+	amap.SetAt(codec.Encode(addr), []byte{0x01})
 }
 
 func removeAllowedStateControllerAddress(ctx isc.Sandbox, addr *cryptolib.Address) {
 	ctx.RequireCallerIsChainOwner()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	amap := state.AllowedStateControllerAddressesMap()
-	amap.DelAt(codec.Encode[*cryptolib.Address](addr))
+	amap.DelAt(codec.Encode(addr))
 }
 
 func getAllowedStateControllerAddresses(ctx isc.SandboxView) []*cryptolib.Address {

@@ -31,6 +31,7 @@ type syncSMImpl struct {
 	//
 	// Query for a proposal.
 	proposedBaseAliasOutput         *isc.StateAnchor
+	proposedBaseAliasOutputReceived bool
 	stateProposalQueryInputsReadyCB func(baseAliasOutput *isc.StateAnchor) gpa.OutMessages
 	stateProposalReceived           bool
 	stateProposalReceivedCB         func(proposedAliasOutput *isc.StateAnchor) gpa.OutMessages
@@ -68,10 +69,11 @@ func NewSyncSM(
 }
 
 func (sub *syncSMImpl) ProposedBaseAliasOutputReceived(baseAliasOutput *isc.StateAnchor) gpa.OutMessages {
-	if sub.proposedBaseAliasOutput != nil {
+	if sub.proposedBaseAliasOutputReceived {
 		return nil
 	}
 	sub.proposedBaseAliasOutput = baseAliasOutput
+	sub.proposedBaseAliasOutputReceived = true
 	return sub.stateProposalQueryInputsReadyCB(sub.proposedBaseAliasOutput)
 }
 
@@ -126,15 +128,15 @@ func (sub *syncSMImpl) String() string {
 	}
 	if sub.stateProposalReceived {
 		str += "/proposal=OK"
-	} else if sub.proposedBaseAliasOutput == nil {
-		str += "/proposal=WAIT[params: baseAliasOutput]"
+	} else if !sub.proposedBaseAliasOutputReceived {
+		str += "/proposal=WAIT[BaseAliasOutput]"
 	} else {
 		str += "/proposal=WAIT[RespFromStateMgr]"
 	}
 	if sub.decidedStateReceived {
 		str += "/state=OK"
 	} else if sub.decidedBaseAliasOutput == nil {
-		str += "/state=WAIT[acs decision]"
+		str += "/state=WAIT[AcsDecision]"
 	} else {
 		str += "/state=WAIT[RespFromStateMgr]"
 	}

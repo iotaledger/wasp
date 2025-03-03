@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
@@ -41,6 +42,88 @@ type SignAndExecuteTransactionRequest struct {
 	Options     *iotajsonrpc.IotaTransactionBlockResponseOptions // optional
 }
 
+func isResponseComplete(
+	res *iotajsonrpc.IotaTransactionBlockResponse,
+	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+) bool {
+	// In Rebased, it can happen that Effects are available before ObjectChanges are.
+	// This function checks if ShowEffects/ShowObjectChanges are enabled, and validates the state of the response.
+
+	// If object changes were requested, we need both object changes and effects (if effects were also requested)
+	if options.ShowObjectChanges {
+		if res.ObjectChanges == nil {
+			return false
+		}
+		// Need to check effects too if they were requested
+		if options.ShowEffects && res.Effects == nil {
+			return false
+		}
+		return true
+	}
+
+	// If only effects were requested, we just need to wait for effects
+	if options.ShowEffects {
+		return res.Effects != nil
+	}
+
+	// If neither effects nor object changes were requested, response is complete
+	return true
+}
+
+func (c *Client) retryGetTransactionBlock(
+	ctx context.Context,
+	digest *iotago.TransactionDigest,
+	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	if c.WaitUntilEffectsVisible == nil {
+		return nil, fmt.Errorf("waitUntilEffectsVisible is nil, retry is disabled")
+	}
+
+	for attempt := 0; attempt <= c.WaitUntilEffectsVisible.Attempts; attempt++ {
+		res, err := c.GetTransactionBlock(
+			ctx, GetTransactionBlockRequest{
+				Digest:  digest,
+				Options: options,
+			},
+		)
+
+		// Return immediately on context cancellation
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
+		// On last attempt, return whatever error we got
+		if attempt == c.WaitUntilEffectsVisible.Attempts {
+			if err != nil {
+				return nil, fmt.Errorf(
+					"retryGetTransactionBlock failed after %d attempts: %v",
+					c.WaitUntilEffectsVisible.Attempts,
+					err,
+				)
+			}
+			// If it's the last attempt and we have a response but it's incomplete,
+			// return it anyway
+			return res, nil
+		}
+
+		// If we got an error or incomplete response, wait and retry
+		if err != nil || !isResponseComplete(res, options) {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(c.WaitUntilEffectsVisible.DelayBetweenAttempts):
+				continue
+			}
+		}
+
+		// We have a complete response, return it
+		return res, nil
+	}
+
+	// This should never be reached due to the returns in the loop
+	return nil, fmt.Errorf("unexpected error in retry logic")
+}
+
 func (c *Client) SignAndExecuteTransaction(
 	ctx context.Context,
 	req *SignAndExecuteTransactionRequest,
@@ -62,10 +145,16 @@ func (c *Client) SignAndExecuteTransaction(
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute transaction: %w", err)
 	}
-	if req.Options.ShowEffects && !resp.Effects.Data.IsSuccess() {
-		return resp, fmt.Errorf("failed to execute transaction: %v", resp.Effects.Data.V1.Status)
+
+	if !isResponseComplete(resp, req.Options) {
+		if c.WaitUntilEffectsVisible == nil {
+			return resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
+		}
+		
+		resp, err = c.retryGetTransactionBlock(ctx, &resp.Digest, req.Options)
 	}
-	return resp, nil
+
+	return resp, err
 }
 
 func (c *Client) PublishContract(
@@ -158,6 +247,81 @@ func (c *Client) MintToken(
 			TxDataBytes: txnBytes.TxBytes,
 			Signer:      signer,
 			Options:     options,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't execute the transaction: %w", err)
+	}
+
+	return txnResponse, nil
+}
+
+func (c *Client) FindCoinsForGasPayment(
+	ctx context.Context,
+	owner *iotago.Address,
+	pt iotago.ProgrammableTransaction,
+	gasPrice uint64,
+	gasBudget uint64,
+) ([]*iotago.ObjectRef, error) {
+	coinType := iotajsonrpc.IotaCoinType.String()
+	coinPage, err := c.GetCoins(
+		ctx, GetCoinsRequest{
+			CoinType: &coinType,
+			Owner:    owner,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch coins for gas payment: %w", err)
+	}
+	gasPayments, err := iotajsonrpc.PickupCoinsWithFilter(
+		coinPage.Data,
+		gasBudget,
+		func(c *iotajsonrpc.Coin) bool { return !pt.IsInInputObjects(c.CoinObjectID) },
+	)
+	return gasPayments.CoinRefs(), err
+}
+
+func (c *Client) MergeCoinsAndExecute(
+	ctx context.Context,
+	owner iotasigner.Signer,
+	destinationCoin *iotago.ObjectRef,
+	sourceCoins []*iotago.ObjectRef,
+	gasBudget uint64,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	var argCoins []iotago.Argument
+	for _, sourceCoin := range sourceCoins {
+		argCoins = append(argCoins, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: sourceCoin}))
+	}
+	ptb.Command(
+		iotago.Command{
+			MergeCoins: &iotago.ProgrammableMergeCoins{
+				Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: destinationCoin}),
+				Sources:     argCoins,
+			},
+		},
+	)
+	pt := ptb.Finish()
+	gasPayments, err := c.FindCoinsForGasPayment(ctx, owner.Address(), pt, DefaultGasPrice, DefaultGasBudget)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find gas payment: %w", err)
+	}
+	tx := iotago.NewProgrammable(
+		owner.Address(),
+		pt,
+		gasPayments,
+		DefaultGasBudget,
+		DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	}
+	txnResponse, err := c.SignAndExecuteTransaction(
+		ctx, &SignAndExecuteTransactionRequest{
+			TxDataBytes: txBytes,
+			Signer:      owner,
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
 		},
 	)
 	if err != nil {

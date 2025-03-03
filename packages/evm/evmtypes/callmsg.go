@@ -16,18 +16,16 @@ func init() {
 		e.WriteCompactUint(msg.Gas)
 		e.EncodeOptional(msg.Value)
 		e.Encode(msg.Data)
-
-		return e.Err()
+		return nil
 	})
 
 	bcs.AddCustomDecoder(func(d *bcs.Decoder, msg *ethereum.CallMsg) error {
 		d.Decode(&msg.From)
-		d.DecodeOptional(&msg.To)
+		_ = d.DecodeOptional(&msg.To)
 		msg.Gas = d.ReadCompactUint()
-		d.DecodeOptional(&msg.Value)
+		_ = d.DecodeOptional(&msg.Value)
 		d.Decode(&msg.Data)
-
-		return d.Err()
+		return nil
 	})
 }
 

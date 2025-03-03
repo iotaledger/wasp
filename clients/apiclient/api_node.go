@@ -13,19 +13,19 @@ package apiclient
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
 
-// NodeApiService NodeApi service
-type NodeApiService service
+// NodeAPIService NodeAPI service
+type NodeAPIService service
 
 type ApiDistrustPeerRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 	peer string
 }
 
@@ -40,7 +40,7 @@ DistrustPeer Distrust a peering node
  @param peer Name or PubKey (hex) of the trusted peer
  @return ApiDistrustPeerRequest
 */
-func (a *NodeApiService) DistrustPeer(ctx context.Context, peer string) ApiDistrustPeerRequest {
+func (a *NodeAPIService) DistrustPeer(ctx context.Context, peer string) ApiDistrustPeerRequest {
 	return ApiDistrustPeerRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -49,14 +49,14 @@ func (a *NodeApiService) DistrustPeer(ctx context.Context, peer string) ApiDistr
 }
 
 // Execute executes the request
-func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Response, error) {
+func (a *NodeAPIService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodDelete
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.DistrustPeer")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.DistrustPeer")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -109,9 +109,9 @@ func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Re
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -140,7 +140,7 @@ func (a *NodeApiService) DistrustPeerExecute(r ApiDistrustPeerRequest) (*http.Re
 
 type ApiGenerateDKSRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 	dKSharesPostRequest *DKSharesPostRequest
 }
 
@@ -160,7 +160,7 @@ GenerateDKS Generate a new distributed key
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGenerateDKSRequest
 */
-func (a *NodeApiService) GenerateDKS(ctx context.Context) ApiGenerateDKSRequest {
+func (a *NodeAPIService) GenerateDKS(ctx context.Context) ApiGenerateDKSRequest {
 	return ApiGenerateDKSRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -169,7 +169,7 @@ func (a *NodeApiService) GenerateDKS(ctx context.Context) ApiGenerateDKSRequest 
 
 // Execute executes the request
 //  @return DKSharesInfo
-func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesInfo, *http.Response, error) {
+func (a *NodeAPIService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesInfo, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
@@ -177,7 +177,7 @@ func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesI
 		localVarReturnValue  *DKSharesInfo
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GenerateDKS")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GenerateDKS")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -234,9 +234,9 @@ func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesI
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -273,7 +273,7 @@ func (a *NodeApiService) GenerateDKSExecute(r ApiGenerateDKSRequest) (*DKSharesI
 
 type ApiGetAllPeersRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiGetAllPeersRequest) Execute() ([]PeeringNodeStatusResponse, *http.Response, error) {
@@ -286,7 +286,7 @@ GetAllPeers Get basic information about all configured peers
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetAllPeersRequest
 */
-func (a *NodeApiService) GetAllPeers(ctx context.Context) ApiGetAllPeersRequest {
+func (a *NodeAPIService) GetAllPeers(ctx context.Context) ApiGetAllPeersRequest {
 	return ApiGetAllPeersRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -295,7 +295,7 @@ func (a *NodeApiService) GetAllPeers(ctx context.Context) ApiGetAllPeersRequest 
 
 // Execute executes the request
 //  @return []PeeringNodeStatusResponse
-func (a *NodeApiService) GetAllPeersExecute(r ApiGetAllPeersRequest) ([]PeeringNodeStatusResponse, *http.Response, error) {
+func (a *NodeAPIService) GetAllPeersExecute(r ApiGetAllPeersRequest) ([]PeeringNodeStatusResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -303,7 +303,7 @@ func (a *NodeApiService) GetAllPeersExecute(r ApiGetAllPeersRequest) ([]PeeringN
 		localVarReturnValue  []PeeringNodeStatusResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetAllPeers")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetAllPeers")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -355,9 +355,9 @@ func (a *NodeApiService) GetAllPeersExecute(r ApiGetAllPeersRequest) ([]PeeringN
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -394,7 +394,7 @@ func (a *NodeApiService) GetAllPeersExecute(r ApiGetAllPeersRequest) ([]PeeringN
 
 type ApiGetConfigurationRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiGetConfigurationRequest) Execute() (map[string]string, *http.Response, error) {
@@ -407,7 +407,7 @@ GetConfiguration Return the Wasp configuration
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetConfigurationRequest
 */
-func (a *NodeApiService) GetConfiguration(ctx context.Context) ApiGetConfigurationRequest {
+func (a *NodeAPIService) GetConfiguration(ctx context.Context) ApiGetConfigurationRequest {
 	return ApiGetConfigurationRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -416,7 +416,7 @@ func (a *NodeApiService) GetConfiguration(ctx context.Context) ApiGetConfigurati
 
 // Execute executes the request
 //  @return map[string]string
-func (a *NodeApiService) GetConfigurationExecute(r ApiGetConfigurationRequest) (map[string]string, *http.Response, error) {
+func (a *NodeAPIService) GetConfigurationExecute(r ApiGetConfigurationRequest) (map[string]string, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -424,7 +424,7 @@ func (a *NodeApiService) GetConfigurationExecute(r ApiGetConfigurationRequest) (
 		localVarReturnValue  map[string]string
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetConfiguration")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetConfiguration")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -476,9 +476,9 @@ func (a *NodeApiService) GetConfigurationExecute(r ApiGetConfigurationRequest) (
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -515,7 +515,7 @@ func (a *NodeApiService) GetConfigurationExecute(r ApiGetConfigurationRequest) (
 
 type ApiGetDKSInfoRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 	sharedAddress string
 }
 
@@ -530,7 +530,7 @@ GetDKSInfo Get information about the shared address DKS configuration
  @param sharedAddress SharedAddress (Hex Address)
  @return ApiGetDKSInfoRequest
 */
-func (a *NodeApiService) GetDKSInfo(ctx context.Context, sharedAddress string) ApiGetDKSInfoRequest {
+func (a *NodeAPIService) GetDKSInfo(ctx context.Context, sharedAddress string) ApiGetDKSInfoRequest {
 	return ApiGetDKSInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -540,7 +540,7 @@ func (a *NodeApiService) GetDKSInfo(ctx context.Context, sharedAddress string) A
 
 // Execute executes the request
 //  @return DKSharesInfo
-func (a *NodeApiService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInfo, *http.Response, error) {
+func (a *NodeAPIService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInfo, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -548,7 +548,7 @@ func (a *NodeApiService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInf
 		localVarReturnValue  *DKSharesInfo
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetDKSInfo")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetDKSInfo")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -601,9 +601,9 @@ func (a *NodeApiService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInf
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -641,7 +641,7 @@ func (a *NodeApiService) GetDKSInfoExecute(r ApiGetDKSInfoRequest) (*DKSharesInf
 
 type ApiGetInfoRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiGetInfoRequest) Execute() (*InfoResponse, *http.Response, error) {
@@ -654,7 +654,7 @@ GetInfo Returns private information about this node.
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetInfoRequest
 */
-func (a *NodeApiService) GetInfo(ctx context.Context) ApiGetInfoRequest {
+func (a *NodeAPIService) GetInfo(ctx context.Context) ApiGetInfoRequest {
 	return ApiGetInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -663,7 +663,7 @@ func (a *NodeApiService) GetInfo(ctx context.Context) ApiGetInfoRequest {
 
 // Execute executes the request
 //  @return InfoResponse
-func (a *NodeApiService) GetInfoExecute(r ApiGetInfoRequest) (*InfoResponse, *http.Response, error) {
+func (a *NodeAPIService) GetInfoExecute(r ApiGetInfoRequest) (*InfoResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -671,7 +671,7 @@ func (a *NodeApiService) GetInfoExecute(r ApiGetInfoRequest) (*InfoResponse, *ht
 		localVarReturnValue  *InfoResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetInfo")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetInfo")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -723,9 +723,9 @@ func (a *NodeApiService) GetInfoExecute(r ApiGetInfoRequest) (*InfoResponse, *ht
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -762,7 +762,7 @@ func (a *NodeApiService) GetInfoExecute(r ApiGetInfoRequest) (*InfoResponse, *ht
 
 type ApiGetPeeringIdentityRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiGetPeeringIdentityRequest) Execute() (*PeeringNodeIdentityResponse, *http.Response, error) {
@@ -775,7 +775,7 @@ GetPeeringIdentity Get basic peer info of the current node
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetPeeringIdentityRequest
 */
-func (a *NodeApiService) GetPeeringIdentity(ctx context.Context) ApiGetPeeringIdentityRequest {
+func (a *NodeAPIService) GetPeeringIdentity(ctx context.Context) ApiGetPeeringIdentityRequest {
 	return ApiGetPeeringIdentityRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -784,7 +784,7 @@ func (a *NodeApiService) GetPeeringIdentity(ctx context.Context) ApiGetPeeringId
 
 // Execute executes the request
 //  @return PeeringNodeIdentityResponse
-func (a *NodeApiService) GetPeeringIdentityExecute(r ApiGetPeeringIdentityRequest) (*PeeringNodeIdentityResponse, *http.Response, error) {
+func (a *NodeAPIService) GetPeeringIdentityExecute(r ApiGetPeeringIdentityRequest) (*PeeringNodeIdentityResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -792,7 +792,7 @@ func (a *NodeApiService) GetPeeringIdentityExecute(r ApiGetPeeringIdentityReques
 		localVarReturnValue  *PeeringNodeIdentityResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetPeeringIdentity")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetPeeringIdentity")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -844,9 +844,9 @@ func (a *NodeApiService) GetPeeringIdentityExecute(r ApiGetPeeringIdentityReques
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -883,7 +883,7 @@ func (a *NodeApiService) GetPeeringIdentityExecute(r ApiGetPeeringIdentityReques
 
 type ApiGetTrustedPeersRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiGetTrustedPeersRequest) Execute() ([]PeeringNodeIdentityResponse, *http.Response, error) {
@@ -896,7 +896,7 @@ GetTrustedPeers Get trusted peers
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetTrustedPeersRequest
 */
-func (a *NodeApiService) GetTrustedPeers(ctx context.Context) ApiGetTrustedPeersRequest {
+func (a *NodeAPIService) GetTrustedPeers(ctx context.Context) ApiGetTrustedPeersRequest {
 	return ApiGetTrustedPeersRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -905,7 +905,7 @@ func (a *NodeApiService) GetTrustedPeers(ctx context.Context) ApiGetTrustedPeers
 
 // Execute executes the request
 //  @return []PeeringNodeIdentityResponse
-func (a *NodeApiService) GetTrustedPeersExecute(r ApiGetTrustedPeersRequest) ([]PeeringNodeIdentityResponse, *http.Response, error) {
+func (a *NodeAPIService) GetTrustedPeersExecute(r ApiGetTrustedPeersRequest) ([]PeeringNodeIdentityResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -913,7 +913,7 @@ func (a *NodeApiService) GetTrustedPeersExecute(r ApiGetTrustedPeersRequest) ([]
 		localVarReturnValue  []PeeringNodeIdentityResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetTrustedPeers")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetTrustedPeers")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -965,9 +965,9 @@ func (a *NodeApiService) GetTrustedPeersExecute(r ApiGetTrustedPeersRequest) ([]
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1004,7 +1004,7 @@ func (a *NodeApiService) GetTrustedPeersExecute(r ApiGetTrustedPeersRequest) ([]
 
 type ApiGetVersionRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiGetVersionRequest) Execute() (*VersionResponse, *http.Response, error) {
@@ -1017,7 +1017,7 @@ GetVersion Returns the node version.
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiGetVersionRequest
 */
-func (a *NodeApiService) GetVersion(ctx context.Context) ApiGetVersionRequest {
+func (a *NodeAPIService) GetVersion(ctx context.Context) ApiGetVersionRequest {
 	return ApiGetVersionRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1026,7 +1026,7 @@ func (a *NodeApiService) GetVersion(ctx context.Context) ApiGetVersionRequest {
 
 // Execute executes the request
 //  @return VersionResponse
-func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResponse, *http.Response, error) {
+func (a *NodeAPIService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1034,7 +1034,7 @@ func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResp
 		localVarReturnValue  *VersionResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.GetVersion")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.GetVersion")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1072,9 +1072,9 @@ func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResp
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1101,7 +1101,7 @@ func (a *NodeApiService) GetVersionExecute(r ApiGetVersionRequest) (*VersionResp
 
 type ApiOwnerCertificateRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiOwnerCertificateRequest) Execute() (*NodeOwnerCertificateResponse, *http.Response, error) {
@@ -1114,7 +1114,7 @@ OwnerCertificate Gets the node owner
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiOwnerCertificateRequest
 */
-func (a *NodeApiService) OwnerCertificate(ctx context.Context) ApiOwnerCertificateRequest {
+func (a *NodeAPIService) OwnerCertificate(ctx context.Context) ApiOwnerCertificateRequest {
 	return ApiOwnerCertificateRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1123,7 +1123,7 @@ func (a *NodeApiService) OwnerCertificate(ctx context.Context) ApiOwnerCertifica
 
 // Execute executes the request
 //  @return NodeOwnerCertificateResponse
-func (a *NodeApiService) OwnerCertificateExecute(r ApiOwnerCertificateRequest) (*NodeOwnerCertificateResponse, *http.Response, error) {
+func (a *NodeAPIService) OwnerCertificateExecute(r ApiOwnerCertificateRequest) (*NodeOwnerCertificateResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
@@ -1131,7 +1131,7 @@ func (a *NodeApiService) OwnerCertificateExecute(r ApiOwnerCertificateRequest) (
 		localVarReturnValue  *NodeOwnerCertificateResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.OwnerCertificate")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.OwnerCertificate")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1183,9 +1183,9 @@ func (a *NodeApiService) OwnerCertificateExecute(r ApiOwnerCertificateRequest) (
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarReturnValue, localVarHTTPResponse, err
 	}
@@ -1222,7 +1222,7 @@ func (a *NodeApiService) OwnerCertificateExecute(r ApiOwnerCertificateRequest) (
 
 type ApiShutdownNodeRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 }
 
 func (r ApiShutdownNodeRequest) Execute() (*http.Response, error) {
@@ -1235,7 +1235,7 @@ ShutdownNode Shut down the node
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiShutdownNodeRequest
 */
-func (a *NodeApiService) ShutdownNode(ctx context.Context) ApiShutdownNodeRequest {
+func (a *NodeAPIService) ShutdownNode(ctx context.Context) ApiShutdownNodeRequest {
 	return ApiShutdownNodeRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1243,14 +1243,14 @@ func (a *NodeApiService) ShutdownNode(ctx context.Context) ApiShutdownNodeReques
 }
 
 // Execute executes the request
-func (a *NodeApiService) ShutdownNodeExecute(r ApiShutdownNodeRequest) (*http.Response, error) {
+func (a *NodeAPIService) ShutdownNodeExecute(r ApiShutdownNodeRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.ShutdownNode")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.ShutdownNode")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1302,9 +1302,9 @@ func (a *NodeApiService) ShutdownNodeExecute(r ApiShutdownNodeRequest) (*http.Re
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}
@@ -1332,7 +1332,7 @@ func (a *NodeApiService) ShutdownNodeExecute(r ApiShutdownNodeRequest) (*http.Re
 
 type ApiTrustPeerRequest struct {
 	ctx context.Context
-	ApiService *NodeApiService
+	ApiService *NodeAPIService
 	peeringTrustRequest *PeeringTrustRequest
 }
 
@@ -1352,7 +1352,7 @@ TrustPeer Trust a peering node
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
  @return ApiTrustPeerRequest
 */
-func (a *NodeApiService) TrustPeer(ctx context.Context) ApiTrustPeerRequest {
+func (a *NodeAPIService) TrustPeer(ctx context.Context) ApiTrustPeerRequest {
 	return ApiTrustPeerRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1360,14 +1360,14 @@ func (a *NodeApiService) TrustPeer(ctx context.Context) ApiTrustPeerRequest {
 }
 
 // Execute executes the request
-func (a *NodeApiService) TrustPeerExecute(r ApiTrustPeerRequest) (*http.Response, error) {
+func (a *NodeAPIService) TrustPeerExecute(r ApiTrustPeerRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeApiService.TrustPeer")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "NodeAPIService.TrustPeer")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
@@ -1424,9 +1424,9 @@ func (a *NodeApiService) TrustPeerExecute(r ApiTrustPeerRequest) (*http.Response
 		return localVarHTTPResponse, err
 	}
 
-	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
 	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
 	if err != nil {
 		return localVarHTTPResponse, err
 	}

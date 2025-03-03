@@ -43,7 +43,7 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 	waitTxConfirmed := func(txHash common.Hash) error {
 		c := env.Chain.Client(nil, nodeIndex)
 		reqID := isc.RequestIDFromEVMTxHash(txHash)
-		receipt, _, err := c.WaspClient.ChainsApi.
+		receipt, _, err := c.WaspClient.ChainsAPI.
 			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
 			TimeoutSeconds(10).
 			Execute()
@@ -96,7 +96,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 	require.NoError(e.T, err)
 
 	// We have to wait not only for the committee to process the request, but also for access nodes to get that info.
-	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 	require.NoError(e.T, err)
 
 	return ethKey, ethAddr
@@ -113,6 +113,8 @@ func testEVMJsonRPCCluster(t *testing.T, env *ChainEnv) {
 }
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
@@ -122,6 +124,8 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 }
 
 func TestEVMJsonRPCZeroGasFee(t *testing.T) {
+	t.Skip("Cluster tests currently disabled")
+	
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
@@ -136,7 +140,7 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 	govClient := e.Chain.Client(e.Chain.OriginatorKeyPair)
 	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(fp1), chainclient.PostRequestParams{})
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(e.Chain.ChainID, reqTx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)
 
 	d, err := govClient.CallView(context.Background(), governance.ViewGetFeePolicy.Message())

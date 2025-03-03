@@ -5,11 +5,11 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
 func MakeSignerWithFunds(index int, faucetURL string) iotasigner.Signer {
-	return MakeSignerWithFundsFromSeed(testcommon.TestSeed, index, faucetURL)
+	return MakeSignerWithFundsFromSeed(testkey.NewTestSeedBytes(), index, faucetURL)
 }
 
 func MakeSignerWithFundsFromSeed(seed []byte, index int, faucetURL string) iotasigner.Signer {

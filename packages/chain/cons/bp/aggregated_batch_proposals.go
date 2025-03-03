@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -25,18 +26,26 @@ type AggregatedBatchProposals struct {
 	decidedRequestRefs     []*isc.RequestRef
 	aggregatedTime         time.Time
 	aggregatedGasCoins     []*coin.CoinWithRef
-	aggregatedGasPrice     uint64
+	aggregatedL1Params     *parameters.L1Params
 }
 
 func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
 	bps := batchProposalSet{}
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
+	nilCount := 0
 	for nid := range inputs {
+		if len(inputs[nid]) == 0 {
+			log.Warnf("cannot decode empty BatchProposal from %v", nid)
+			continue
+		}
 		batchProposal, err := bcs.Unmarshal[*BatchProposal](inputs[nid])
 		if err != nil {
 			log.Warnf("cannot decode BatchProposal from %v: %v", nid, err)
 			continue
+		}
+		if batchProposal.baseAliasOutput == nil {
+			nilCount++
 		}
 		if int(batchProposal.nodeIndex) >= len(nodeIDs) || nodeIDs[batchProposal.nodeIndex] != nid {
 			log.Warnf("invalid nodeIndex=%v in batchProposal from %v", batchProposal.nodeIndex, nid)
@@ -46,14 +55,18 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	}
 	//
 	// Store the aggregated values.
+	if nilCount > f {
+		log.Debugf("Can't aggregate batch proposal: have >= f+1 nil proposals.")
+		return &AggregatedBatchProposals{shouldBeSkipped: true}
+	}
 	if len(bps) == 0 {
-		log.Debugf("Cant' aggregate batch proposal: have 0 batch proposals.")
+		log.Debugf("Can't aggregate batch proposal: have 0 batch proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	aggregatedTime := bps.aggregatedTime(f)
 	decidedBaseAliasOutput := bps.decidedBaseAliasOutput(f)
 	aggregatedGasCoins := bps.aggregatedGasCoins(f)
-	aggregatedGasPrice := bps.aggregatedGasPrice(f)
+	aggregatedL1Params := bps.aggregatedL1Params(f)
 	abp := &AggregatedBatchProposals{
 		batchProposalSet:       bps,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
@@ -61,16 +74,16 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
 		aggregatedTime:         aggregatedTime,
 		aggregatedGasCoins:     aggregatedGasCoins,
-		aggregatedGasPrice:     aggregatedGasPrice,
+		aggregatedL1Params:     aggregatedL1Params,
 	}
 	if abp.decidedBaseAliasOutput == nil ||
 		len(abp.decidedRequestRefs) == 0 ||
 		abp.aggregatedTime.IsZero() ||
 		len(abp.aggregatedGasCoins) == 0 ||
-		abp.aggregatedGasPrice == 0 {
+		abp.aggregatedL1Params == nil {
 		log.Debugf(
-			"Cant' aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, aggregatedTime=%v",
-			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), abp.aggregatedTime,
+			"Can't aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, |aggregatedGasCoins|=%v, |aggregatedL1Params|=%v , aggregatedTime=%v",
+			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), len(abp.aggregatedGasCoins), abp.aggregatedL1Params, abp.aggregatedTime,
 		)
 		abp.shouldBeSkipped = true
 	}
@@ -182,9 +195,9 @@ func (abp *AggregatedBatchProposals) AggregatedGasCoins() []*coin.CoinWithRef {
 	return abp.aggregatedGasCoins
 }
 
-func (abp *AggregatedBatchProposals) AggregatedGasPrice() uint64 {
+func (abp *AggregatedBatchProposals) AggregatedL1Params() *parameters.L1Params {
 	if abp.shouldBeSkipped {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
-	return abp.aggregatedGasPrice
+	return abp.aggregatedL1Params
 }

@@ -16,9 +16,10 @@ func TestTypeTagEncoding(t *testing.T) {
 
 	typeTagStruct := iotago.TypeTag{
 		Struct: &iotago.StructTag{
-			Address: iotago.MustObjectIDFromHex("0x2eeb551107032ae860d76661f3f4573dd0f8c701116137e6525dcd95d4f8e58"),
-			Module:  "testcoin",
-			Name:    "TESTCOIN",
+			Address:    iotago.MustObjectIDFromHex("0x2eeb551107032ae860d76661f3f4573dd0f8c701116137e6525dcd95d4f8e58"),
+			Module:     "testcoin",
+			Name:       "TESTCOIN",
+			TypeParams: []iotago.TypeTag{},
 		},
 	}
 	bcs.TestCodec(t, &typeTagStruct)

@@ -17,7 +17,7 @@ import (
 )
 
 func TestDevInspectTransactionBlock(t *testing.T) {
-	client := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
 	limit := uint(3)
@@ -55,7 +55,7 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 }
 
 func TestDryRunTransaction(t *testing.T) {
-	api := iotaclient.NewHTTP(l1starter.Instance().APIURL())
+	api := l1starter.Instance().L1Client()
 	signer := iotago.MustAddressFromHex(testcommon.TestAddress)
 	coins, err := api.GetCoins(
 		context.Background(), iotaclient.GetCoinsRequest{

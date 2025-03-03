@@ -12,8 +12,10 @@ import (
 	appLogger "github.com/iotaledger/hive.go/app/logger"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/web/websockethub"
+
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publisher.ISCEventType) (*Service, *websockethub.Hub, *solo.Chain) {
@@ -50,6 +52,10 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 }
 
 func TestWebsocketEvents(t *testing.T) {
+	if l1starter.IsLocalConfigured() {
+		t.Skip("Skipping WebSocket test, as the local node does not support WebSockets")
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	ws, _, chain := InitWebsocket(ctx, t, []publisher.ISCEventType{publisher.ISCEventKindNewBlock})
 

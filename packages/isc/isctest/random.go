@@ -67,7 +67,7 @@ func UpdateStateAnchor(anchor *isc.StateAnchor, stateMetadata ...[]byte) *isc.St
 		ObjectRef: *anchor.GetObjectRef(),
 		Object: &iscmove.Anchor{
 			ID:         *anchor.Anchor().ObjectID,
-			Assets:     *anchor.GetAssetsBag(),
+			Assets:     anchor.Anchor().Object.Assets,
 			StateIndex: anchor.GetStateIndex() + 1,
 		},
 	}
@@ -80,6 +80,7 @@ func UpdateStateAnchor(anchor *isc.StateAnchor, stateMetadata ...[]byte) *isc.St
 			&iotago.ObjectID{},
 			gas.DefaultFeePolicy(),
 			isc.NewCallArguments([]byte{1, 2, 3}),
+			0,
 			"http://url",
 		).Bytes()
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
@@ -26,6 +27,7 @@ func (s *StateWriter) SetInitialState() {
 		SchemaVersion:         BlockInfoLatestSchemaVersion,
 		BlockIndex:            0,
 		Timestamp:             time.Time{},
+		L1Params:              parameters.L1Default, // TODO we should use the real L1Params at the moment
 		TotalRequests:         1,
 		NumSuccessfulRequests: 1,
 		NumOffLedgerRequests:  0,

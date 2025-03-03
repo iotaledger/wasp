@@ -11,7 +11,9 @@ API version: 0
 package apiclient
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -76,38 +78,38 @@ func (v *NullableBool) UnmarshalJSON(src []byte) error {
 	return json.Unmarshal(src, &v.value)
 }
 
-type nullableIntUnused struct {
+type NullableInt struct {
 	value *int
 	isSet bool
 }
 
-func (v nullableIntUnused) Get() *int {
+func (v NullableInt) Get() *int {
 	return v.value
 }
 
-func (v *nullableIntUnused) Set(val *int) {
+func (v *NullableInt) Set(val *int) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v nullableIntUnused) IsSet() bool {
+func (v NullableInt) IsSet() bool {
 	return v.isSet
 }
 
-func (v *nullableIntUnused) Unset() {
+func (v *NullableInt) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewnullableIntUnused(val *int) *nullableIntUnused {
-	return &nullableIntUnused{value: val, isSet: true}
+func NewNullableInt(val *int) *NullableInt {
+	return &NullableInt{value: val, isSet: true}
 }
 
-func (v nullableIntUnused) MarshalJSON() ([]byte, error) {
+func (v NullableInt) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *nullableIntUnused) UnmarshalJSON(src []byte) error {
+func (v *NullableInt) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
@@ -320,7 +322,7 @@ func NewNullableTime(val *time.Time) *NullableTime {
 }
 
 func (v NullableTime) MarshalJSON() ([]byte, error) {
-	return v.value.MarshalJSON()
+	return json.Marshal(v.value)
 }
 
 func (v *NullableTime) UnmarshalJSON(src []byte) error {
@@ -328,8 +330,8 @@ func (v *NullableTime) UnmarshalJSON(src []byte) error {
 	return json.Unmarshal(src, &v.value)
 }
 
-// isNil checks if an input is nil
-func isNil(i interface{}) bool {
+// IsNil checks if an input is nil
+func IsNil(i interface{}) bool {
 	if i == nil {
 		return true
 	}
@@ -344,4 +346,16 @@ func isNil(i interface{}) bool {
 
 type MappedNullable interface {
 	ToMap() (map[string]interface{}, error)
+}
+
+// A wrapper for strict JSON decoding
+func newStrictDecoder(data []byte) *json.Decoder {
+	dec := json.NewDecoder(bytes.NewBuffer(data))
+	dec.DisallowUnknownFields()
+	return dec
+}
+
+// Prevent trying to import "fmt"
+func reportError(format string, a ...interface{}) error {
+	return fmt.Errorf(format, a...)
 }

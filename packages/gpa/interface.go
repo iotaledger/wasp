@@ -146,7 +146,7 @@ func UnmarshalMessage(data []byte, mapper Mapper, fallback ...Fallback) (Message
 	allocator := mapper[msgType]
 	if allocator != nil {
 		msg := allocator()
-		err := bcs.NewDecoder(r).Decode(msg)
+		_, err := bcs.UnmarshalStreamInto(r, &msg)
 
 		return msg, err
 	}

@@ -14,8 +14,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
@@ -23,30 +21,6 @@ type CoinBalances map[coin.Type]coin.Value
 
 func NewCoinBalances() CoinBalances {
 	return make(CoinBalances)
-}
-
-func (c CoinBalances) ToDict() dict.Dict {
-	ret := dict.New()
-	for coinType, amount := range c {
-		ret.Set(kv.Key(coinType.Bytes()), amount.Bytes())
-	}
-	return ret
-}
-
-func CoinBalancesFromDict(d dict.Dict) (CoinBalances, error) {
-	ret := NewCoinBalances()
-	for key, val := range d {
-		coinType, err := coin.TypeFromBytes([]byte(key))
-		if err != nil {
-			return nil, fmt.Errorf("CoinBalancesFromDict: %w", err)
-		}
-		coinValue, err := coin.ValueFromBytes(val)
-		if err != nil {
-			return nil, fmt.Errorf("CoinBalancesFromDict: %w", err)
-		}
-		ret.Add(coinType, coinValue)
-	}
-	return ret, nil
 }
 
 func (c CoinBalances) IterateSorted(f func(coin.Type, coin.Value) bool) {
@@ -107,20 +81,36 @@ func (c CoinBalances) BaseTokens() coin.Value {
 	return c[coin.BaseTokenType]
 }
 
+func (c CoinBalances) NativeTokens() CoinBalances {
+	ret := CoinBalances{}
+
+	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
+		// Exclude BaseTokens
+		if BaseTokenCoinInfo.CoinType.MatchesStringType(t.String()) {
+			return false
+		}
+
+		ret[t] = v
+		return true
+	})
+
+	return ret
+}
+
 func (c CoinBalances) IsEmpty() bool {
 	return len(c) == 0
 }
 
 type CoinJSON struct {
-	CoinType coin.Type `json:"coinType" swagger:"required"`
-	Balance  string    `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
+	CoinType coin.TypeJSON `json:"coinType" swagger:"required"`
+	Balance  string        `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
 }
 
 func (c *CoinBalances) JSON() []CoinJSON {
 	var coins []CoinJSON
 	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		coins = append(coins, CoinJSON{
-			CoinType: t,
+			CoinType: t.ToTypeJSON(),
 			Balance:  v.String(),
 		})
 		return true
@@ -138,7 +128,7 @@ func (c *CoinBalances) UnmarshalJSON(b []byte) error {
 	*c = NewCoinBalances()
 	for _, cc := range coins {
 		value := lo.Must(coin.ValueFromString(cc.Balance))
-		c.Add(cc.CoinType, value)
+		c.Add(cc.CoinType.ToType(), value)
 	}
 	return nil
 }
@@ -273,7 +263,11 @@ func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (
 func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
 	ret := NewEmptyAssets()
 	for k, v := range assets.Coins {
-		ret.Coins.Add(coin.MustTypeFromString(k.String()), coin.Value(v))
+		coinType, err := coin.TypeFromString(k.String())
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse string to coin.Type: %w", err)
+		}
+		ret.Coins.Add(coinType, coin.Value(v))
 	}
 	return ret, nil
 }

@@ -50,15 +50,23 @@ func newNCChain(
 	chainID isc.ChainID,
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
-) *ncChain {
+	wsURL string,
+	httpURL string,
+) (*ncChain, error) {
 	anchorAddress := chainID.AsAddress().AsIotaAddress()
-	feed := iscmoveclient.NewChainFeed(
+
+	feed, err := iscmoveclient.NewChainFeed(
 		ctx,
-		nodeConn.wsClient,
 		nodeConn.iscPackageID,
 		*anchorAddress,
 		nodeConn.Logger(),
+		wsURL,
+		httpURL,
 	)
+	if err != nil {
+		return nil, err
+	}
+
 	ncc := &ncChain{
 		WrappedLogger:  logger.NewWrappedLogger(nodeConn.Logger()),
 		nodeConn:       nodeConn,
@@ -72,7 +80,7 @@ func newNCChain(
 	ncc.shutdownWaitGroup.Add(1)
 	go ncc.postTxLoop(ctx)
 
-	return ncc
+	return ncc, nil
 }
 
 func (ncc *ncChain) WaitUntilStopped() {
@@ -82,26 +90,45 @@ func (ncc *ncChain) WaitUntilStopped() {
 func (ncc *ncChain) postTxLoop(ctx context.Context) {
 	defer ncc.shutdownWaitGroup.Done()
 
-	postTx := func(task publishTxTask) error {
+	postTx := func(task publishTxTask) (*isc.StateAnchor, error) {
 		txBytes, err := bcs.Marshal(task.tx.Data)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		res, err := ncc.nodeConn.wsClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
+		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects: true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
+				ShowEffects:        true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
+
+		ncc.LogDebug("POSTING TX")
+		ncc.LogDebugf("%v %v\n", res, err)
+
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if !res.Effects.Data.IsSuccess() {
-			return fmt.Errorf("error executing tx: %s", res.Effects.Data.V1.Status.Error)
+			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
 		}
-		return nil
+
+		anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+		if err != nil {
+			return nil, err
+		}
+
+		anchor, err := ncc.nodeConn.httpClient.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		if err != nil {
+			return nil, err
+		}
+
+		stateAnchor := isc.NewStateAnchor(anchor, ncc.nodeConn.iscPackageID)
+
+		return &stateAnchor, nil
 	}
 
 	for {
@@ -109,28 +136,36 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case task := <-ncc.publishTxQueue:
-			err := postTx(task)
-			task.cb(task.tx, err)
+			stateAnchor, err := postTx(task)
+			task.cb(task.tx, stateAnchor, err)
 		}
 	}
 }
 
 func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	ncc.LogInfof("Synchronizing chain state for %s...", ncc.chainID)
-	moveAnchor, reqs, err := ncc.feed.FetchCurrentState(ctx)
+
+	moveAnchor, err := ncc.feed.FetchCurrentState(ctx, ncc.nodeConn.maxNumberOfRequests, func(err error, req *iscmove.RefWithObject[iscmove.Request]) {
+		if err != nil {
+			return
+		}
+
+		// The owner will always be the Anchor, so instead of pulling the Anchor and using its ID
+		// the owner address will be used.
+		onLedgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(req.Owner))
+		if err != nil {
+			return
+		}
+
+		ncc.LogDebugf("Sending %s to request handler", req.ObjectID)
+		ncc.requestHandler(onLedgerReq)
+	})
 	if err != nil {
 		return err
 	}
+
 	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
 	ncc.anchorHandler(&anchor)
-
-	for _, req := range reqs {
-		onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(moveAnchor.ObjectID))
-		if err != nil {
-			return err
-		}
-		ncc.requestHandler(onledgerReq)
-	}
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil

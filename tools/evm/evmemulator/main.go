@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -62,10 +61,6 @@ func (*soloContext) Logf(format string, args ...any) {
 
 func (*soloContext) Name() string {
 	return "evmemulator"
-}
-
-func init() {
-	parameters.InitL1(parameters.L1ForTesting)
 }
 
 var listenAddress string = ":8545"
