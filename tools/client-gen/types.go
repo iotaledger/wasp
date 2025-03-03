@@ -18,7 +18,8 @@ type CoreContractFunction struct {
 type CompiledField struct {
 	Name       string
 	ArgIndex   int
-	Type       reflect.Type
+	Type       reflect.Type `json:"-"`
+	TypeName   string
 	IsOptional bool
 }
 

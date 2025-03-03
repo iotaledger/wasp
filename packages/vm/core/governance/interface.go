@@ -40,13 +40,13 @@ var (
 		coreutil.Field[isc.AgentID]("payoutAgentID"),
 	)
 	FuncSetGasCoinTargetValue = coreutil.NewEP1(Contract, "setGasCoinTargetValue",
-		coreutil.Field[coin.Value](),
+		coreutil.Field[coin.Value]("targetValue"),
 	)
 	ViewGetPayoutAgentID = coreutil.NewViewEP01(Contract, "getPayoutAgentID",
 		coreutil.Field[isc.AgentID]("payoutAgentID"),
 	)
 	ViewGetGasCoinTargetValue = coreutil.NewViewEP01(Contract, "getGasCoinTargetValue",
-		coreutil.Field[coin.Value](),
+		coreutil.Field[coin.Value]("targetValue"),
 	)
 	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
 		coreutil.Field[isc.AgentID]("chainOwnerAgentID"),
@@ -91,7 +91,7 @@ var (
 		coreutil.Field[[]byte]("certificate"),                 // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
-		coreutil.Field[ChangeAccessNodeActions](),
+		coreutil.Field[ChangeAccessNodeActions]("accessNodes"),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
 		coreutil.Field[[]*AccessNodeInfo]("accessNodeInfo"),

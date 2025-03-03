@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"reflect"
@@ -8,6 +9,9 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/util/bcs"
@@ -18,7 +22,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
-	"github.com/stretchr/testify/require"
 )
 
 func getName(p reflect.Type) string {
@@ -79,6 +82,7 @@ func extractFields(fields []coreutil.FieldArg) []CompiledField {
 			Name:       input.Name(),
 			IsOptional: isOptional(fieldType),
 			Type:       inputType,
+			TypeName:   getName(inputType),
 		}
 	}
 
@@ -111,6 +115,78 @@ func TestB(t *testing.T) {
 	gen.GenerateFunction(constructCoreContractFunction(&blocklog.ViewGetEventsForRequest))
 
 	t.Log(gen.GetOutput())
+}
+
+func TestDumpJson(t *testing.T) {
+	gen := NewTypeGenerator()
+
+	contractFuncs := []CoreContractFunction{
+		constructCoreContractFunction(&accounts.FuncDeposit),
+		constructCoreContractFunction(&accounts.FuncTransferAccountToChain),
+		constructCoreContractFunction(&accounts.FuncTransferAllowanceTo),
+		constructCoreContractFunction(&accounts.FuncWithdraw),
+		constructCoreContractFunction(&accounts.ViewAccountObjects),
+		constructCoreContractFunction(&accounts.ViewAccountObjectsInCollection),
+		constructCoreContractFunction(&accounts.ViewBalance),
+		constructCoreContractFunction(&accounts.ViewBalanceBaseToken),
+		constructCoreContractFunction(&accounts.ViewBalanceBaseTokenEVM),
+		constructCoreContractFunction(&accounts.ViewBalanceCoin),
+		constructCoreContractFunction(&accounts.ViewGetAccountNonce),
+		constructCoreContractFunction(&accounts.ViewObjectBCS),
+		constructCoreContractFunction(&accounts.ViewTotalAssets),
+		constructCoreContractFunction(&blocklog.ViewGetBlockInfo),
+		constructCoreContractFunction(&blocklog.ViewGetRequestIDsForBlock),
+		constructCoreContractFunction(&blocklog.ViewGetRequestReceipt),
+		constructCoreContractFunction(&blocklog.ViewGetRequestReceiptsForBlock),
+		constructCoreContractFunction(&blocklog.ViewIsRequestProcessed),
+		constructCoreContractFunction(&blocklog.ViewGetEventsForRequest),
+		constructCoreContractFunction(&blocklog.ViewGetEventsForBlock),
+		constructCoreContractFunction(&errors.FuncRegisterError),
+		constructCoreContractFunction(&errors.ViewGetErrorMessageFormat),
+		constructCoreContractFunction(&evm.FuncSendTransaction),
+		constructCoreContractFunction(&evm.FuncCallContract),
+		constructCoreContractFunction(&evm.FuncRegisterERC20Coin),
+		constructCoreContractFunction(&evm.FuncRegisterERC721NFTCollection),
+		constructCoreContractFunction(&evm.FuncNewL1Deposit),
+		constructCoreContractFunction(&evm.ViewGetChainID),
+		constructCoreContractFunction(&governance.FuncRotateStateController),
+		constructCoreContractFunction(&governance.FuncAddAllowedStateControllerAddress),
+		constructCoreContractFunction(&governance.FuncRemoveAllowedStateControllerAddress),
+		constructCoreContractFunction(&governance.ViewGetAllowedStateControllerAddresses),
+		constructCoreContractFunction(&governance.FuncClaimChainOwnership),
+		constructCoreContractFunction(&governance.FuncDelegateChainOwnership),
+		constructCoreContractFunction(&governance.FuncSetPayoutAgentID),
+		constructCoreContractFunction(&governance.ViewGetPayoutAgentID),
+		constructCoreContractFunction(&governance.ViewGetChainOwner),
+		constructCoreContractFunction(&governance.FuncSetFeePolicy),
+		constructCoreContractFunction(&governance.FuncSetGasLimits),
+		constructCoreContractFunction(&governance.ViewGetFeePolicy),
+		constructCoreContractFunction(&governance.ViewGetGasLimits),
+		constructCoreContractFunction(&governance.FuncSetEVMGasRatio),
+		constructCoreContractFunction(&governance.ViewGetEVMGasRatio),
+		constructCoreContractFunction(&governance.ViewGetChainInfo),
+		constructCoreContractFunction(&governance.FuncAddCandidateNode),
+		constructCoreContractFunction(&governance.FuncRevokeAccessNode),
+		constructCoreContractFunction(&governance.FuncChangeAccessNodes),
+		constructCoreContractFunction(&governance.ViewGetChainNodes),
+		constructCoreContractFunction(&governance.FuncStartMaintenance),
+		constructCoreContractFunction(&governance.FuncStopMaintenance),
+		constructCoreContractFunction(&governance.ViewGetMaintenanceStatus),
+		constructCoreContractFunction(&governance.FuncSetMetadata),
+		constructCoreContractFunction(&governance.ViewGetMetadata),
+		constructCoreContractFunction(&root.ViewFindContract),
+		constructCoreContractFunction(&root.ViewGetContractRecords),
+	}
+
+	for _, c := range contractFuncs {
+		gen.GenerateFunction(c)
+	}
+
+	types := contractFuncs
+
+	s := lo.Must(json.MarshalIndent(types, "", "  "))
+
+	fmt.Print(string(s))
 }
 
 func TestA(t *testing.T) {
@@ -152,9 +228,9 @@ func TestA(t *testing.T) {
 		constructCoreContractFunction(&governance.FuncClaimChainOwnership),
 		constructCoreContractFunction(&governance.FuncDelegateChainOwnership),
 		constructCoreContractFunction(&governance.FuncSetPayoutAgentID),
-		constructCoreContractFunction(&governance.FuncSetMinCommonAccountBalance),
 		constructCoreContractFunction(&governance.ViewGetPayoutAgentID),
-		constructCoreContractFunction(&governance.ViewGetMinCommonAccountBalance),
+		constructCoreContractFunction(&governance.ViewGetGasCoinTargetValue),
+		constructCoreContractFunction(&governance.FuncSetGasCoinTargetValue),
 		constructCoreContractFunction(&governance.ViewGetChainOwner),
 		constructCoreContractFunction(&governance.FuncSetFeePolicy),
 		constructCoreContractFunction(&governance.FuncSetGasLimits),
