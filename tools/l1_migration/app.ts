@@ -42,7 +42,7 @@ async function main() {
   }
 
   const aliasObject = aliasObjects[0];
-  const aliasOutputConsumeTX = await executeMigration(client, ISC_PACKAGE_ID, aliasObject.data?.objectId!);
+  const aliasOutputConsumeTX = await executeMigration(client, ISC_PACKAGE_ID, GOVERNOR_ADDRESS, aliasObject.data?.objectId!);
 
   aliasOutputConsumeTX.setSender(GOVERNOR_ADDRESS);
   console.log("Unsigned Tx:");
@@ -55,11 +55,11 @@ async function main() {
 
   const dryRun = await client.dryRunTransactionBlock({
     transactionBlock: unsignedTX,
+
   });
   
   console.log(dryRun);
-
-  return;
+return;
   const result = await client.signAndExecuteTransaction({
     transaction: aliasOutputConsumeTX,
     signer: keypair,

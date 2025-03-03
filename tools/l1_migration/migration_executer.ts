@@ -1,14 +1,14 @@
 import { IotaClient } from '@iota/iota-sdk/client';
 import { Transaction } from '@iota/iota-sdk/transactions';
 import { ISCMove } from './isc';
-import { gasTypeTag } from './consts';
+import { gasTypeTag, nftObjectTypeTag } from './consts';
 import { NftMigration } from './nft_migration';
 import { AliasMigration } from './alias_migration';
 import { CoinMigration } from './coin_migration';
 import { BasicMigration } from './basic_migration';
 import { BagMigration } from './bag_migration';
 
-export async function executeMigration(client: IotaClient, iscPackageId: string, aliasId: string) {
+export async function executeMigration(client: IotaClient, iscPackageId: string, governorAddress: string, aliasId: string) {
   const aliasOutputId = await AliasMigration.getAliasOutputId(client, aliasId);
 
   if (!aliasOutputId) {
@@ -36,18 +36,19 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
   BagMigration.destroyEmpty(tx, nativeTokensBag);
 
   for (let nft of assets.nfts) {
+    console.log(nft);
     const nftOutputArg = tx.object(nft.objectId);
 
     const nftOutput = NftMigration.unlockNft(tx, alias, nftOutputArg);
     const [nftBaseTokens, nftNativeTokenBag, nftAsset] = NftMigration.extractAssetsFromNft(tx, nftOutput);
     const nftBaseCoin = CoinMigration.fromBalance(tx, nftBaseTokens);
 
-    ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, gasTypeTag, nftBaseCoin);
-    ISCMove.addObjectToAssetsBag(iscPackageId, tx, assetsBag, nftAsset);
-
     BagMigration.destroyEmpty(tx, nftNativeTokenBag);
-  }
 
+    ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, gasTypeTag, nftBaseCoin);
+    ISCMove.addObjectToAssetsBag(iscPackageId, tx, assetsBag, nftObjectTypeTag, nftAsset);
+  }
+  
   for (let basic of assets.basics) {
     const basicArg = tx.object(basic.objectId);
     const [baseTokens, nativeTokensBag] = BasicMigration.extractAssetsFromBasicOutput(tx, basicArg);
@@ -69,7 +70,7 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
     BagMigration.destroyEmpty(tx, nativeTokensBag);
   }
 
-  tx.setGasBudget(50000000000);
+  tx.transferObjects([assetsBag, alias], governorAddress);
 
   return tx;
 }

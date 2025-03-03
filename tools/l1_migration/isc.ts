@@ -22,10 +22,10 @@ export namespace ISCMove {
     return ret;
   }
 
-  export function addObjectToAssetsBag(packageId: string, tx: Transaction, assetsBagId: TransactionResult, object: any) {
+  export function addObjectToAssetsBag(packageId: string, tx: Transaction, assetsBagId: TransactionResult, assetType: string, object: any) {
     const ret = tx.moveCall({
       target: `${packageId}::assets_bag::place_asset`,
-      typeArguments: [],
+      typeArguments: [assetType],
       arguments: [assetsBagId, object],
     });
 
