@@ -28,7 +28,7 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
   let tx = new Transaction();
 
   let assetsBag = ISCMove.newAssetBag(iscPackageId, tx);
-  
+
   const [baseTokens, nativeTokensBag, alias] = AliasMigration.extractAssetsFromAlias(tx, aliasId);
   const aliasBaseCoin = CoinMigration.fromBalance(tx, baseTokens);
 
@@ -60,11 +60,13 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
     for (const nativeToken of nativeTokens!) {
       const typeArguments = `0x${nativeToken}`;
 
-      const [extractedNativeTokenBag, balance] = BasicMigration.utilitiesExtractBag(tx, typeArguments, nativeTokensBag);
+      const [bag, balance] = BasicMigration.utilitiesExtractBag(tx, typeArguments, nativeTokensBag);
 
       ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, typeArguments, balance);
-      BagMigration.destroyEmpty(tx, extractedNativeTokenBag);
+      BagMigration.destroyEmpty(tx, bag);
     }
+
+    BagMigration.destroyEmpty(tx, nativeTokensBag);
   }
 
   tx.setGasBudget(50000000000);
