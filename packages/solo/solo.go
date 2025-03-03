@@ -408,7 +408,7 @@ func (ch *Chain) GetAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
 	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
 		ch.Env.ctx,
 		ch.ChainID.AsAddress().AsIotaAddress(),
-		uint64(bi.PreviousAnchor.Anchor().Version),
+		uint64(stateIndex),
 	)
 	if err != nil {
 		return nil, err
