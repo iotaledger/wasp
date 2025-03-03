@@ -110,7 +110,6 @@ type Mempool interface {
 	// These nodes should be used to disseminate the off-ledger requests.
 	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
-	ConsensusInstancesUpdated(activeConsensusInstances []consGR.ConsensusID)
 
 	GetContents() io.Reader
 }
@@ -144,7 +143,6 @@ type mempoolImpl struct {
 	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
-	consensusInstancesUpdatedPipe  pipe.Pipe[*reqConsensusInstancesUpdated]
 	consensusInstances             []consGR.ConsensusID
 	waitReq                        WaitReq
 	waitChainHead                  []*reqConsensusProposal
@@ -158,7 +156,6 @@ type mempoolImpl struct {
 	netPeeringID                   peering.PeeringID
 	netPeerPubs                    map[gpa.NodeID]*cryptolib.PublicKey
 	net                            peering.NetworkProvider
-	activeConsensusInstances       []consGR.ConsensusID
 	settings                       Settings
 	broadcastInterval              time.Duration // how often requests should be rebroadcasted
 	log                            *logger.Logger
@@ -182,10 +179,6 @@ type reqServerNodesUpdated struct {
 type reqAccessNodesUpdated struct {
 	committeePubKeys  []*cryptolib.PublicKey
 	accessNodePubKeys []*cryptolib.PublicKey
-}
-
-type reqConsensusInstancesUpdated struct {
-	activeConsensusInstances []consGR.ConsensusID
 }
 
 type reqConsensusProposal struct {
@@ -253,8 +246,6 @@ func New(
 		netPeeringID:                   netPeeringID,
 		netPeerPubs:                    map[gpa.NodeID]*cryptolib.PublicKey{},
 		net:                            net,
-		consensusInstancesUpdatedPipe:  pipe.NewInfinitePipe[*reqConsensusInstancesUpdated](),
-		activeConsensusInstances:       []consGR.ConsensusID{},
 		settings:                       settings,
 		broadcastInterval:              broadcastInterval,
 		log:                            log,
@@ -330,12 +321,6 @@ func (mpi *mempoolImpl) AccessNodesUpdated(committeePubKeys, accessNodePubKeys [
 	}
 }
 
-func (mpi *mempoolImpl) ConsensusInstancesUpdated(activeConsensusInstances []consGR.ConsensusID) {
-	mpi.consensusInstancesUpdatedPipe.In() <- &reqConsensusInstancesUpdated{
-		activeConsensusInstances: activeConsensusInstances,
-	}
-}
-
 func (mpi *mempoolImpl) ConsensusProposalAsync(ctx context.Context, anchor *isc.StateAnchor, consensusID consGR.ConsensusID) <-chan []*isc.RequestRef {
 	res := make(chan []*isc.RequestRef, 1)
 	req := &reqConsensusProposal{
@@ -367,14 +352,13 @@ func (mpi *mempoolImpl) writeContentAndClose(pw *io.PipeWriter) {
 
 func (mpi *mempoolImpl) GetContents() io.Reader {
 	pr, pw := io.Pipe()
-	go mpi.writeContentAndClose(pw)
+	go mpi.writeContentAndClose(pw) // TODO: This makes unprotected concurrent access to the MP state.
 	return pr
 }
 
 func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) { //nolint:gocyclo
 	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
-	consensusInstancesUpdatedPipeOutCh := mpi.consensusInstancesUpdatedPipe.Out()
 	reqConsensusProposalPipeOutCh := mpi.reqConsensusProposalPipe.Out()
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
 	reqReceiveOnLedgerRequestPipeOutCh := mpi.reqReceiveOnLedgerRequestPipe.Out()
@@ -437,11 +421,6 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 				break
 			}
 			mpi.handleTrackNewChainHead(recv)
-		case recv, ok := <-consensusInstancesUpdatedPipeOutCh:
-			if !ok {
-				break
-			}
-			mpi.activeConsensusInstances = recv.activeConsensusInstances
 		case recv, ok := <-netRecvPipeOutCh:
 			if !ok {
 				netRecvPipeOutCh = nil
