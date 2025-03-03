@@ -48,7 +48,7 @@ func initBalanceCmd() *cobra.Command {
 
 			rows[0] = []string{"base", balance.BaseTokens}
 			for k, v := range balance.NativeTokens {
-				rows[k+1] = []string{v.CoinType.GetS(), v.Balance}
+				rows[k+1] = []string{v.CoinType, v.Balance}
 			}
 
 			log.PrintTable(header, rows)

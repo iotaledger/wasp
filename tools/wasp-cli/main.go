@@ -9,7 +9,9 @@ import (
 	goversion "github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/components/app"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -36,6 +38,10 @@ func initRootCmd(waspVersion string) *cobra.Command {
 	NOTE: this is alpha software, only suitable for testing purposes.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			config.Read()
+
+			client := iotaclient.NewHTTP(config.L1APIAddress(), iotaclient.WaitForEffectsDisabled)
+			err := parameters.InitL1(*client, log.HiveLogger())
+			log.Check(err)
 
 			whitelistedCommands := map[string]struct{}{
 				"init":            {},

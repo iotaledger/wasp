@@ -48,7 +48,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-tools:v0.9.0-alpha",
+		Image:         "iotaledger/iota-tools:v0.10.0-alpha",
 		ImagePlatform: imagePlatform,
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
 		WaitingFor: wait.ForAll(
