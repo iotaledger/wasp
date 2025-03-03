@@ -10,7 +10,6 @@
  * Do not edit the class manually.
  */
 
-import { Type } from '../models/Type';
 import { HttpFile } from '../http/http';
 
 export class CoinJSON {
@@ -18,7 +17,7 @@ export class CoinJSON {
     * The balance (uint64 as string)
     */
     'balance': string;
-    'coinType': Type;
+    'coinType': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -34,8 +33,8 @@ export class CoinJSON {
         {
             "name": "coinType",
             "baseName": "coinType",
-            "type": "Type",
-            "format": ""
+            "type": "string",
+            "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
