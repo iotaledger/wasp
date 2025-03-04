@@ -2,7 +2,13 @@ package coreutil
 
 import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"reflect"
 )
+
+type FieldArg interface {
+	Name() string
+	Type() reflect.Type
+}
 
 // Optional returns an optional value (type *T) from a variadic parameter
 // (...T) which can be of length 0 or 1.
@@ -25,10 +31,14 @@ func FromOptional[T any](opt *T, def T) T {
 type CallArgsCodec[T any] interface {
 	Encode(T) []byte
 	Decode([]byte) (T, error)
+	Name() string
+	Type() reflect.Type
 }
 
 // RawCallArgsCodec is a CallArgsCodec that performs no conversion
-type RawCallArgsCodec struct{}
+type RawCallArgsCodec struct {
+	name string
+}
 
 func (RawCallArgsCodec) Decode(d []byte) ([]byte, error) {
 	return d, nil
@@ -39,7 +49,9 @@ func (RawCallArgsCodec) Encode(d []byte) []byte {
 }
 
 // field is a CallArgsCodec that converts a single value of T
-type field[T any] struct{}
+type field[T any] struct {
+	name string
+}
 
 var _ CallArgsCodec[any] = (*field[any])(nil)
 
@@ -51,8 +63,25 @@ func (f field[T]) Decode(d []byte) (T, error) {
 	return codec.Decode[T](d)
 }
 
-func Field[T any]() field[T] {
-	return field[T]{}
+func (f field[T]) Name() string {
+	return f.name
+}
+
+func (f field[T]) Type() reflect.Type {
+	var t T
+
+	r := reflect.TypeOf(t)
+	if r == nil {
+		r = reflect.TypeOf(&t).Elem()
+	}
+
+	return r
+}
+
+func Field[T any](name string) field[T] {
+	return field[T]{
+		name: name,
+	}
 }
 
 // OptionalCodec is a Codec that converts to/from an optional value of type T.
@@ -65,11 +94,30 @@ func (c optionalField[T]) Encode(v *T) []byte {
 	return codec.EncodeOptional(v)
 }
 
-// FieldWithCodecOptional returns a Field that accepts an optional value
-func FieldOptional[T any]() optionalField[T] {
-	return optionalField[T]{}
+func (c optionalField[T]) Name() string {
+	return c.name
 }
 
-type optionalField[T any] struct{}
+func (c optionalField[T]) Type() reflect.Type {
+	var t T
+
+	r := reflect.TypeOf(t)
+	if r == nil {
+		r = reflect.TypeOf(&t).Elem()
+	}
+
+	return r
+}
+
+// FieldWithCodecOptional returns a Field that accepts an optional value
+func FieldOptional[T any](name string) optionalField[T] {
+	return optionalField[T]{
+		name: name,
+	}
+}
+
+type optionalField[T any] struct {
+	name string
+}
 
 var _ CallArgsCodec[*any] = (*optionalField[any])(nil)

@@ -66,6 +66,7 @@ export * from '../models/RentStructure';
 export * from '../models/RequestIDsResponse';
 export * from '../models/RequestJSON';
 export * from '../models/RequestProcessedResponse';
+export * from '../models/RotateChainRequest';
 export * from '../models/StateResponse';
 export * from '../models/StateTransaction';
 export * from '../models/Transaction';
@@ -150,6 +151,7 @@ import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
+import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
 import { Transaction } from '../models/Transaction';
@@ -250,6 +252,7 @@ let typeMap: {[index: string]: any} = {
     "RequestIDsResponse": RequestIDsResponse,
     "RequestJSON": RequestJSON,
     "RequestProcessedResponse": RequestProcessedResponse,
+    "RotateChainRequest": RotateChainRequest,
     "StateResponse": StateResponse,
     "StateTransaction": StateTransaction,
     "Transaction": Transaction,

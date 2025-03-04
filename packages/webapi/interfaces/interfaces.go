@@ -10,6 +10,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -42,6 +43,7 @@ type ChainService interface {
 	GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (uint16, error)
 	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
 	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
+	RotateTo(ctx context.Context, chainID isc.ChainID, rotateToAddress *iotago.Address) error
 }
 
 type EVMService interface {

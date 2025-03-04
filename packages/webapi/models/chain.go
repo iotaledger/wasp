@@ -138,3 +138,7 @@ type ChainRecord struct {
 	IsActive    bool     `json:"isActive" swagger:"required"`
 	AccessNodes []string `json:"accessNodes" swagger:"required"`
 }
+
+type RotateChainRequest struct {
+	RotateToAddress *string `json:"rotateToAddress" swagger:"desc(The address of the new committee or empty to cancel attempt to rotate)"`
+}

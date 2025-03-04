@@ -12,12 +12,12 @@ var Contract = coreutil.NewContract(coreutil.CoreContractRoot)
 var (
 	// Views
 	ViewFindContract = coreutil.NewViewEP12(Contract, "findContract",
-		coreutil.Field[isc.Hname](),
-		coreutil.Field[bool](),
-		coreutil.FieldOptional[*ContractRecord](),
+		coreutil.Field[isc.Hname]("contractHName"),
+		coreutil.Field[bool]("exists"),
+		coreutil.FieldOptional[*ContractRecord]("contractRecord"),
 	)
 	ViewGetContractRecords = coreutil.NewViewEP01(Contract, "getContractRecords",
-		coreutil.Field[[]lo.Tuple2[*isc.Hname, *ContractRecord]](),
+		coreutil.Field[[]lo.Tuple2[*isc.Hname, *ContractRecord]]("contractRecords"),
 	)
 )
 
