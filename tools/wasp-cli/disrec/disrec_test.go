@@ -36,7 +36,7 @@ func TestCreateTX(t *testing.T) {
 
 	// It really is the Committee Address (Not the Anchor Object ID aka ChainID as this transaction will be signed by the committee)
 	// This specific address is the product of the committee keys in `test_committee_keys`.
-	CommitteeAddress := lo.Must(cryptolib.AddressFromHex("0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894"))
+	committeeAddress := lo.Must(cryptolib.AddressFromHex("0x4c7fb31a460907210c3b7cbaa50cf9faa23f60cbfbe5f26efd27809265458894"))
 
 	client := cliclients.L1Client()
 	kp := cryptolib.NewKeyPair()
@@ -45,10 +45,10 @@ func TestCreateTX(t *testing.T) {
 	packageID := lo.Must(client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(kp)))
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb = iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, packageID, CommitteeAddress)
+	ptb = iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, packageID, committeeAddress)
 
 	t.Log("Creating new coin and transfer it to the Committee address")
-	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, CommitteeAddress.AsIotaAddress()))
+	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, committeeAddress.AsIotaAddress()))
 
 	gasCoin := lo.Must(client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: &newGasCoinAddress,
@@ -56,7 +56,7 @@ func TestCreateTX(t *testing.T) {
 
 	t.Logf("Gas coin ref: %v\n", gasCoin)
 
-	tx := iotago.NewProgrammable(CommitteeAddress.AsIotaAddress(), ptb.Finish(), []*iotago.ObjectRef{&gasCoin}, 9999999, 1000)
+	tx := iotago.NewProgrammable(committeeAddress.AsIotaAddress(), ptb.Finish(), []*iotago.ObjectRef{&gasCoin}, 9999999, 1000)
 	txnBytes := lo.Must(bcs.Marshal(&tx))
 
 	t.Logf("Test Transaction hex:\n%s\n", hexutil.Encode(txnBytes))
