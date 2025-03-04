@@ -164,8 +164,6 @@ func initDeployCmd() *cobra.Command {
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
 				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
-				N:                 uint16(len(node)), //nolint:gosec
-				T:                 uint16(quorum),    //nolint:gosec
 				OriginatorKeyPair: kp,
 				Textout:           os.Stdout,
 				PackageID:         packageID,
