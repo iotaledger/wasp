@@ -40,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
 type Cons interface {
@@ -103,9 +104,10 @@ func (r *Result) String() string {
 type consImpl struct {
 	chainID          isc.ChainID
 	chainStore       state.Store
-	edSuite          suites.Suite // For signatures.
-	blsSuite         suites.Suite // For randomness only.
-	dkShare          tcrypto.DKShare
+	edSuite          suites.Suite    // For signatures.
+	blsSuite         suites.Suite    // For randomness only.
+	dkShare          tcrypto.DKShare // The current committee's keys.
+	rotateTo         *iotago.Address // If non-nil and differs from the dkShare, then rotation is suggested.
 	processorCache   *processors.Config
 	nodeIDs          []gpa.NodeID
 	me               gpa.NodeID
@@ -144,6 +146,7 @@ func New( //nolint:funlen
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,
 	dkShare tcrypto.DKShare,
+	rotateTo *iotago.Address,
 	processorCache *processors.Config,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
@@ -185,6 +188,7 @@ func New( //nolint:funlen
 		edSuite:          edSuite,
 		blsSuite:         blsSuite,
 		dkShare:          dkShare,
+		rotateTo:         rotateTo,
 		processorCache:   processorCache,
 		nodeIDs:          nodeIDs,
 		me:               me,
@@ -281,6 +285,11 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subDSS.InitialInputReceived())
+	case *inputRotateTo:
+		// We can update the rotation address while consensus is running.
+		// New value will be used, if decision has not been made yet.
+		c.rotateTo = input.address
+		return nil
 	case *inputMempoolProposal:
 		return c.subMP.ProposalReceived(input.requestRefs)
 	case *inputMempoolRequests:
@@ -485,10 +494,16 @@ func (c *consImpl) uponACSInputsReceived(
 	gasCoins []*coin.CoinWithRef, // Can be nil.
 	l1params *parameters.L1Params, // Can be nil.
 ) gpa.OutMessages {
+	rotateTo := c.rotateTo
+	if rotateTo != nil && rotateTo.Equals(*c.dkShare.GetAddress().AsIotaAddress()) {
+		// Do not propose to rotate to the existing committee.
+		rotateTo = nil
+	}
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput, // Will be NIL in the case of ⊥ proposal.
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+		rotateTo,
 		timeData,
 		c.validatorAgentID,
 		requestRefs, // Will be [] in the case of ⊥ proposal.
@@ -518,6 +533,20 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 	baoID := bao.GetObjectID()
 	reqs := aggr.DecidedRequestRefs()
 	c.log.Debugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
+	if aggr.DecidedRotateTo() != nil {
+		c.log.Debugf("Will rotate to %v", aggr.DecidedRotateTo().ToHex())
+		rotationPTB := vmtxbuilder.NewAnchorTransactionBuilder(bao.ISCPackage(), bao, c.dkShare.GetAddress())
+		rotationPTB.RotationTransaction(aggr.DecidedRotateTo())
+		rotationPTX := rotationPTB.BuildTransactionEssence(bao.GetStateMetadata(), 0)
+		rotationTXD := c.makeTransactionData(&rotationPTX, aggr)
+		rotationTXB := c.makeTransactionBytes(rotationTXD)
+		return gpa.NoMessages().
+			AddAll(c.subTX.UnsignedTXReceived(rotationTXD)).
+			AddAll(c.subTX.BlockSaved(nil)).
+			AddAll(c.subTX.AnchorDecided(bao)).
+			AddAll(c.subDSS.MessageToSignReceived(rotationTXB)).
+			AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
+	}
 	return gpa.NoMessages().
 		AddAll(c.subMP.RequestsNeeded(reqs)).
 		AddAll(c.subSM.DecidedVirtualStateNeeded(bao)).
@@ -604,17 +633,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
 	txData := c.makeTransactionData(&unsignedTX, aggregatedProposals)
-	txnBytes, err := bcs.Marshal(txData)
-	if err != nil {
-		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
-	}
-	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
-	txnBytesHash := blake2b.Sum256(txnBytes)
-	txnBytes = txnBytesHash[:]
+	txBytes := c.makeTransactionBytes(txData)
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
 		AddAll(c.subTX.UnsignedTXReceived(txData)).
-		AddAll(c.subDSS.MessageToSignReceived(txnBytes))
+		AddAll(c.subDSS.MessageToSignReceived(txBytes))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -633,6 +656,16 @@ func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggre
 
 	tx := iotago.NewProgrammable(sender, *pt, gasPayment, gasBudget, gasPrice)
 	return &tx
+}
+
+func (c *consImpl) makeTransactionBytes(txData *iotago.TransactionData) []byte {
+	txnBytes, err := bcs.Marshal(txData)
+	if err != nil {
+		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
+	}
+	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
+	txnBytesHash := blake2b.Sum256(txnBytes)
+	return txnBytesHash[:]
 }
 
 // Everything is ready for the output TX, produce it.

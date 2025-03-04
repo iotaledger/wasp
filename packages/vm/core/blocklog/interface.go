@@ -4,6 +4,7 @@ package blocklog
 
 import (
 	"bytes"
+	"reflect"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -15,35 +16,35 @@ var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)
 var (
 	// Views
 	ViewGetBlockInfo = coreutil.NewViewEP12(Contract, "getBlockInfo",
-		coreutil.FieldOptional[uint32](),
-		coreutil.Field[uint32](),
-		coreutil.Field[*BlockInfo](),
+		coreutil.FieldOptional[uint32]("blockIndex"),
+		coreutil.Field[uint32]("blockIndex"),
+		coreutil.Field[*BlockInfo]("blockInfo"),
 	)
 	ViewGetRequestIDsForBlock = coreutil.NewViewEP12(Contract, "getRequestIDsForBlock",
-		coreutil.FieldOptional[uint32](),
-		coreutil.Field[uint32](),
-		coreutil.Field[[]isc.RequestID](),
+		coreutil.FieldOptional[uint32]("blockIndex"),
+		coreutil.Field[uint32]("blockIndex"),
+		coreutil.Field[[]isc.RequestID]("requestIDsInBlock"),
 	)
 	ViewGetRequestReceipt = coreutil.NewViewEP11(Contract, "getRequestReceipt",
-		coreutil.Field[isc.RequestID](),
+		coreutil.Field[isc.RequestID]("requestID"),
 		OutputRequestReceipt{},
 	)
 	ViewGetRequestReceiptsForBlock = coreutil.NewViewEP11(Contract, "getRequestReceiptsForBlock",
-		coreutil.FieldOptional[uint32](),
+		coreutil.FieldOptional[uint32]("blockIndex"),
 		OutputRequestReceipts{},
 	)
 	ViewIsRequestProcessed = coreutil.NewViewEP11(Contract, "isRequestProcessed",
-		coreutil.Field[isc.RequestID](),
-		coreutil.Field[bool](),
+		coreutil.Field[isc.RequestID]("requestID"),
+		coreutil.Field[bool]("isProcessed"),
 	)
 	ViewGetEventsForRequest = coreutil.NewViewEP11(Contract, "getEventsForRequest",
-		coreutil.Field[isc.RequestID](),
-		coreutil.Field[[]*isc.Event](),
+		coreutil.Field[isc.RequestID]("requestID"),
+		coreutil.Field[[]*isc.Event]("events"),
 	)
 	ViewGetEventsForBlock = coreutil.NewViewEP12(Contract, "getEventsForBlock",
-		coreutil.FieldOptional[uint32](),
-		coreutil.Field[uint32](),
-		coreutil.Field[[]*isc.Event](),
+		coreutil.FieldOptional[uint32]("blockIndex"),
+		coreutil.Field[uint32]("blockIndex"),
+		coreutil.Field[[]*isc.Event]("events"),
 	)
 )
 
@@ -70,6 +71,14 @@ const (
 )
 
 type OutputRequestReceipt struct{}
+
+func (OutputRequestReceipt) Name() string {
+	return "requestReceipt"
+}
+
+func (OutputRequestReceipt) Type() reflect.Type {
+	return reflect.TypeOf(OutputRequestReceipt{})
+}
 
 func (OutputRequestReceipt) Encode(rec *RequestReceipt) []byte {
 	if rec == nil {
@@ -115,6 +124,14 @@ type RequestReceiptsResponse struct {
 }
 
 type OutputRequestReceipts struct{}
+
+func (OutputRequestReceipts) Name() string {
+	return "requestReceipts"
+}
+
+func (OutputRequestReceipts) Type() reflect.Type {
+	return reflect.TypeOf(RequestReceiptsResponse{})
+}
 
 func (OutputRequestReceipts) Encode(res *RequestReceiptsResponse) []byte {
 	return bcs.MustMarshal(res)

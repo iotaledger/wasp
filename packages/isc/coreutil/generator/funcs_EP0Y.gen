@@ -81,4 +81,17 @@ func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{r
 
     return e.DecodeOutput(res)
 }
+
+func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Inputs() []FieldArg {
+	return make([]FieldArg, 0)
+}
+
+func (e EP0{{.Outputs}}[S{{range $i := until .Outputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Outputs() []FieldArg {
+	outputs := make([]FieldArg, 0)
+
+	{{range $i := until .Outputs}}
+        outputs = append(outputs, e.Output{{add $i 1}})     {{end}}
+
+	return outputs
+}
 {{end}}

@@ -4,8 +4,9 @@
 module isc::anchor {
     use iota::{
         borrow::{Self, Referent, Borrow},
-        coin::Coin,
+        coin::{Coin},
         iota::IOTA,
+        balance::Balance,
     };
     use isc::{
         request::{Self, Request},
@@ -41,7 +42,7 @@ module isc::anchor {
         Anchor{
             id: object::new(ctx),
             assets: borrow::new(assets_bag, ctx),
-            state_metadata,
+            state_metadata: state_metadata,
             state_index: 0,
         }
     }
@@ -57,7 +58,7 @@ module isc::anchor {
         }
     }
 
-    public fun update_anchor_state_metadata(self:&mut Anchor, state_metadata: vector<u8>, state_index: u32) {
+    public fun update_anchor_state_for_migration(self:&mut Anchor, state_metadata: vector<u8>, state_index: u32) {
         self.state_metadata = state_metadata;
         self.state_index = state_index;
     }
@@ -106,11 +107,41 @@ module isc::anchor {
         self.state_index = self.state_index + 1;
     }
 
+    // === Migration helpers === 
+    // The intention of these functions is to support the migration process and they simply wrap the AssetsBag place* functions. 
+    public fun place_coin_for_migration<T>(self: &mut Anchor, coin: Coin<T>) {
+        let (mut assets, b) = borrow::borrow(&mut self.assets);
+        assets.place_coin<T>(coin);
+        borrow::put_back(&mut self.assets, assets, b)
+    }
+
+    public fun place_coin_balance_for_migration<T>(self: &mut Anchor, balance: Balance<T>) {
+        let (mut assets, b) = borrow::borrow(&mut self.assets);
+        assets.place_coin_balance(balance);
+        borrow::put_back(&mut self.assets, assets, b)
+    }
+
+    public fun place_asset_for_migration<T: key + store>(self: &mut Anchor, asset: T) {
+        let (mut assets, b) = borrow::borrow(&mut self.assets);
+        assets.place_asset(asset);
+        borrow::put_back(&mut self.assets, assets, b)
+    }
+
     // === Test Functions ===
 
     #[test_only]
     /// test only function to create a receipt
     public fun create_receipt_for_testing(request_id: ID): Receipt {
         Receipt { request_id }
+    }
+
+    #[test_only]
+    public fun get_state_metadata(self: &Anchor): vector<u8> {
+        self.state_metadata
+    }
+
+    #[test_only]
+    public fun get_state_index(self: &Anchor): u32 {
+        self.state_index
     }
 }

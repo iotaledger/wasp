@@ -16,6 +16,14 @@ func (e EP0[S]) WithHandler(f func(ctx S)) *EntryPointHandler[S] {
 	})
 }
 
+func (e EP0[S]) Inputs() []FieldArg {
+	return make([]FieldArg, 0)
+}
+
+func (e EP0[S]) Outputs() []FieldArg {
+	return make([]FieldArg, 0)
+}
+
 func NewEP0(contract *ContractInfo, name string) EP0[isc.Sandbox] {
 	return EP0[isc.Sandbox]{EntryPointInfo: contract.Func(name)}
 }

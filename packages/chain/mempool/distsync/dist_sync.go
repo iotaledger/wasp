@@ -256,9 +256,11 @@ func (dsi *distSyncImpl) handleMsgShareRequest(msg *msgShareRequest) gpa.OutMess
 		dsi.missingReqsMetric(dsi.needed.Size())
 	}
 	//
-	// Propagate the message, if it was new to us.
+	// Propagate the message, if it was new to us, and was received from outside of the committee.
+	// The "outside of the committee" condition is used here to decrease echo-factor of the synchronization.
+	// Each fair committee will send the request to all the committee nodes, thus we can avoid repeating it.
 	// Follow the logic as if the message is received via the API.
-	if added {
+	if added && !lo.Contains(dsi.committeeNodes, msg.Sender()) {
 		msgs.AddAll(dsi.propagateRequest(msg.request))
 	}
 	//
