@@ -98,6 +98,10 @@ func (s *StateReader) AllAccountsAsDict() dict.Dict {
 	return ret
 }
 
+func (s *StateReader) IterateAllAccounts(f func(accKey []byte) bool) {
+	s.allAccountsMapR().IterateKeys(f)
+}
+
 // touchAccount ensures the account is in the list of all accounts
 func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
 	s.allAccountsMap().SetAt([]byte(AccountKey(agentID, chainID)), codec.Encode(true))
