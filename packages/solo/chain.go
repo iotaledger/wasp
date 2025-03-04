@@ -19,6 +19,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -377,4 +378,15 @@ func (ch *Chain) Nonce(agentID isc.AgentID) uint64 {
 
 func (ch *Chain) LatestBlockIndex() uint32 {
 	return ch.GetLatestBlockInfo().BlockIndex
+}
+
+// SaveDB saves a RocksDB database with the contents of the chain DB
+func (ch *Chain) SaveDB(path string) {
+	db := lo.Must(database.NewDatabase("rocksdb", path, true, false, database.CacheSizeDefault))
+	store := db.KVStore()
+	lo.Must0(ch.db.Iterate(nil, func(k []byte, v []byte) bool {
+		lo.Must0(store.Set(k, v))
+		return true
+	}))
+	lo.Must0(store.Flush())
 }
