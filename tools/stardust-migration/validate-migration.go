@@ -35,6 +35,8 @@ const (
 )
 
 func validateMigration(c *cmd.Context) error {
+	cli.DebugLoggingEnabled = true
+
 	srcChainDBDir := c.Args().Get(0)
 	destChainDBDir := c.Args().Get(1)
 
@@ -82,7 +84,6 @@ func validateMigration(c *cmd.Context) error {
 		},
 	})
 
-	cli.DebugLoggingEnabled = true
 	validateStatesEqual(oldLatestState, newLatestState, oldChainID, newChainID)
 
 	return nil
