@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/samber/lo"
@@ -128,7 +129,7 @@ func newStateContentToStr(chainState state.State, chainID isc.ChainID) string {
 func oldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
 	accsStr := oldAccountsListToStr(contractState, chainID)
 	accsLines := strings.Split(accsStr, "\n")
-	cli.DebugLogf("Old accounts preview:\n%v\n...", lo.Slice(accsLines, 0, 10))
+	cli.DebugLogf("Old accounts preview:\n%v\n...", strings.Join(lo.Slice(accsLines, 0, 10), "\n"))
 
 	return accsStr
 }
@@ -136,7 +137,7 @@ func oldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID
 func newAccountsContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID) string {
 	accsStr := newAccountsListToStr(contractState, chainID)
 	accsLines := strings.Split(accsStr, "\n")
-	cli.DebugLogf("New accounts preview:\n%v\n...", lo.Slice(accsLines, 0, 10))
+	cli.DebugLogf("New accounts preview:\n%v\n...", strings.Join(lo.Slice(accsLines, 0, 10), "\n"))
 
 	return accsStr
 }
@@ -146,27 +147,40 @@ func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.Ch
 	accs := old_accounts.AllAccountsMapR(contractState)
 
 	cli.DebugLogf("Found %v accounts\n", accs.Len())
-	var accsStr strings.Builder
-	accsStr.WriteString(fmt.Sprintf("Found %v accounts:\n", accs.Len()))
-
 	cli.DebugLogf("Reading accounts...\n")
 	printProgress, clearProgress := cli.NewProgressPrinter("accounts", accs.Len())
 	defer clearProgress()
 
+	var accsStr strings.Builder
 	accs.Iterate(func(accKey []byte, accValue []byte) bool {
 		accID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))
 		accsStr.WriteString("\t")
-		accsStr.WriteString(accID.String())
+		accsStr.WriteString(oldAgentIDToStr(accID))
 		accsStr.WriteString("\n")
 		printProgress()
 		return true
 	})
 
 	cli.DebugLogf("Replacing chain ID with constant placeholder...\n")
-	res := accsStr.String()
+	res := fmt.Sprintf("Found %v accounts:\n%v", accs.Len(), sortLines(accsStr.String()))
 	res = strings.Replace(res, chainID.String(), "<chain-id>", -1)
 
 	return res
+}
+
+func oldAgentIDToStr(agentID old_isc.AgentID) string {
+	switch agentID := agentID.(type) {
+	case *old_isc.AddressAgentID:
+		return fmt.Sprintf("AddressAgentID(%v)", agentID.Address().String())
+	case *old_isc.ContractAgentID:
+		return fmt.Sprintf("ContractAgentID(%v, %v)", agentID.ChainID().String(), agentID.Hname())
+	case *old_isc.EthereumAddressAgentID:
+		return fmt.Sprintf("EthereumAddressAgentID(%v, %v)", agentID.ChainID().String(), agentID.EthAddress().String())
+	case *old_isc.NilAgentID:
+		panic(fmt.Sprintf("Found agent ID with kind = AgentIDIsNil: %v", agentID))
+	default:
+		panic(fmt.Sprintf("Unknown agent ID kind: %v/%T = %v", agentID.Kind(), agentID, agentID))
+	}
 }
 
 func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) string {
@@ -174,25 +188,44 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) s
 	accs := accounts.NewStateReader(newSchema, contractState).AllAccountsAsDict()
 
 	cli.DebugLogf("Found %v accounts\n", len(accs))
-	var accsStr strings.Builder
-	accsStr.WriteString(fmt.Sprintf("Found %v accounts:\n", len(accs)))
-
 	cli.DebugLogf("Reading accounts...\n")
 	printProgress, clearProgress := cli.NewProgressPrinter("accounts", uint32(len(accs)))
 	defer clearProgress()
 
+	var accsStr strings.Builder
 	accs.IterateSorted("", func(accKey kv.Key, accValue []byte) bool {
 		accID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey), chainID))
 		accsStr.WriteString("\t")
-		accsStr.WriteString(accID.String())
+		accsStr.WriteString(newAgentIDToStr(accID))
 		accsStr.WriteString("\n")
 		printProgress()
 		return true
 	})
 
 	cli.DebugLogf("Replacing chain ID with constant placeholder...\n")
-	res := accsStr.String()
+	res := fmt.Sprintf("Found %v accounts:\n%v", len(accs), sortLines(accsStr.String()))
 	res = strings.Replace(res, chainID.String(), "<chain-id>", -1)
 
 	return res
+}
+
+func newAgentIDToStr(agentID isc.AgentID) string {
+	switch agentID := agentID.(type) {
+	case *isc.AddressAgentID:
+		return fmt.Sprintf("AddressAgentID(%v)", agentID.Address().String())
+	case *isc.ContractAgentID:
+		return fmt.Sprintf("ContractAgentID(%v, %v)", agentID.ChainID().String(), agentID.Hname())
+	case *isc.EthereumAddressAgentID:
+		return fmt.Sprintf("EthereumAddressAgentID(%v, %v)", agentID.ChainID().String(), agentID.EthAddress().String())
+	case *isc.NilAgentID:
+		panic(fmt.Sprintf("Found agent ID with kind = AgentIDIsNil: %v", agentID))
+	default:
+		panic(fmt.Sprintf("Unknown agent ID kind: %v/%T = %v", agentID.Kind(), agentID, agentID))
+	}
+}
+
+func sortLines(s string) string {
+	lines := strings.Split(s, "\n")
+	sort.Strings(lines)
+	return strings.Join(lines, "\n")
 }
