@@ -81,7 +81,7 @@ func PrintCalledContracts() {
 }
 
 func initSetup(srcChainDBDir string, indexFilePath string) (old_indexedstore.IndexedStore, []old_trie.Hash) {
-	srcKVS := db.Connect(srcChainDBDir)
+	srcKVS := db.ConnectOld(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 
 	migrations.BuildContractNameFuncs()

@@ -3,15 +3,15 @@ package db
 import (
 	"runtime"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	old_kvstore "github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
-	old_database "github.com/nnikolash/wasp-types-exported/packages/database"
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
+	old_database "github.com/nnikolash/wasp-types-exported/packages/database"
 )
 
 func Create(dbDir string) kvstore.KVStore {
@@ -33,10 +33,8 @@ func Create(dbDir string) kvstore.KVStore {
 	return kvs
 }
 
-func Connect(dbDir string) old_kvstore.KVStore {
-	cli.Logf("Connecting to DB in %v\n", dbDir)
-
-	rocksDatabase := lo.Must(rocksdb.OpenDBReadOnly(dbDir,
+func openDBConnection(dbDir string) *rocksdb.RocksDB {
+	return lo.Must(rocksdb.OpenDBReadOnly(dbDir,
 		rocksdb.IncreaseParallelism(runtime.NumCPU()-1),
 		rocksdb.ReadFillCache(true),
 		rocksdb.WriteDisableWAL(true),
@@ -48,10 +46,34 @@ func Connect(dbDir string) old_kvstore.KVStore {
 			"max_log_file_size=50000000", // 50MB per log file
 		}),
 	))
+}
+
+func ConnectOld(dbDir string) old_kvstore.KVStore {
+	cli.Logf("Connecting to DB in %v\n", dbDir)
+
+	conn := openDBConnection(dbDir)
 
 	db := old_database.New(
 		dbDir,
-		rocksdb.New(rocksDatabase),
+		rocksdb.New(conn),
+		hivedb.EngineRocksDB,
+		true,
+		func() bool { panic("should not be called") },
+	)
+
+	kvs := db.KVStore()
+
+	return kvs
+}
+
+func ConnectNew(dbDir string) kvstore.KVStore {
+	cli.Logf("Connecting to DB in %v\n", dbDir)
+
+	conn := openDBConnection(dbDir)
+
+	db := database.New(
+		dbDir,
+		rocksdb.New(conn),
 		hivedb.EngineRocksDB,
 		true,
 		func() bool { panic("should not be called") },

@@ -32,18 +32,24 @@ import (
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	isc_migration "github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
 
@@ -152,6 +158,16 @@ func main() {
 					},
 				},
 			},
+			{
+				Name: "validate",
+				Subcommands: []*cmd.Command{
+					{
+						Name:      "migration",
+						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
+						Action:    validateMigration,
+					},
+				},
+			},
 		},
 	}
 
@@ -178,7 +194,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string) (
 		log.Fatalf("destination database cannot reside inside source database folder")
 	}
 
-	srcKVS := db.Connect(srcChainDBDir)
+	srcKVS := db.ConnectOld(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 
 	oldChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(srcStore.LatestState())).AliasID)
@@ -203,6 +219,8 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string) (
 }
 
 func migrateSingleState(c *cmd.Context) error {
+	cli.DebugLoggingEnabled = true
+
 	srcChainDBDir := c.Args().Get(0)
 	destChainDBDir := c.Args().Get(1)
 	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
@@ -213,12 +231,12 @@ func migrateSingleState(c *cmd.Context) error {
 
 	var srcState old_kv.KVStoreReader
 	if blockIndexSpecified {
+		cli.DebugLogf("Migrating state #%v\n", blockIndex)
 		srcState = lo.Must(srcStore.StateByIndex(uint32(blockIndex)))
 	} else {
+		cli.DebugLog("Migrating latest state\n")
 		srcState = lo.Must(srcStore.LatestState())
 	}
-
-	cli.DebugLoggingEnabled = true
 
 	stateDraft, err := destStore.NewStateDraft(time.Now(), stateMetadata.L1Commitment)
 	if err != nil {
@@ -372,7 +390,7 @@ func migrateAllStates(c *cmd.Context) error {
 // Index file is created using stardust-block-indexer tool.
 func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
 	totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
-	printProgress := newBlocksProgressPrinter(totalBlocksCount - startIndex)
+	printProgress := cli.NewProgressPrinter("blocks", totalBlocksCount-startIndex)
 
 	const indexFilePath = "index.bin"
 	cli.Logf("Trying to read index from %v", indexFilePath)
@@ -390,7 +408,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f f
 		i := startIndex
 		for ; i < uint32(len(blockTrieRoots)); i++ {
 			trieRoot := blockTrieRoots[i]
-			printProgress(func() uint32 { return uint32(i) })
+			printProgress()
 			block := lo.Must(srcStore.BlockByTrieRoot(trieRoot))
 			f(uint32(i), trieRoot, block)
 
@@ -399,7 +417,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f f
 		cli.Logf("Retrieving next blocks without indexing...")
 
 		for ; i < totalBlocksCount; i++ {
-			printProgress(func() uint32 { return uint32(i) })
+			printProgress()
 			block := lo.Must(srcStore.BlockByIndex(i))
 			f(uint32(i), block.TrieRoot(), block)
 		}
@@ -414,7 +432,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f f
 	printIndexerStats(indexer, srcStore)
 
 	for i := startIndex; i < totalBlocksCount; i++ {
-		printProgress(func() uint32 { return i })
+		printProgress()
 		block, trieRoot := indexer.BlockByIndex(i)
 		f(i, trieRoot, block)
 	}
@@ -428,36 +446,6 @@ func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	measureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
 	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
-}
-
-func newBlocksProgressPrinter(totalBlocksCount uint32) (printProgress func(getBlockIndex func() uint32)) {
-	blocksLeft := totalBlocksCount
-
-	var estimateRunTime time.Duration
-	var avgSpeed int
-	var currentSpeed int
-	prevBlocksLeft := blocksLeft
-	startTime := time.Now()
-	lastEstimateUpdateTime := time.Now()
-
-	return func(getBlockIndex func() uint32) {
-		blocksLeft--
-
-		const period = time.Second
-		periodicAction(period, &lastEstimateUpdateTime, func() {
-			totalBlocksProcessed := totalBlocksCount - blocksLeft
-			relProgress := float64(totalBlocksProcessed) / float64(totalBlocksCount)
-			estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
-			avgSpeed = int(float64(totalBlocksProcessed) / time.Since(startTime).Seconds())
-
-			recentBlocksProcessed := prevBlocksLeft - blocksLeft
-			currentSpeed = int(float64(recentBlocksProcessed) / period.Seconds())
-			prevBlocksLeft = blocksLeft
-		})
-
-		fmt.Printf("\rBlocks left: %v. Speed: %v blocks/sec. Avg speed: %v blocks/sec. Estimate time left: %v",
-			blocksLeft, currentSpeed, avgSpeed, estimateRunTime)
-	}
 }
 
 func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
@@ -474,6 +462,20 @@ func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
 	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
 
 	return blockInfo.PreviousAliasOutput.GetAliasOutput()
+}
+
+func GetAnchorObject(chainState kv.KVStoreReader) *iscmove.Anchor {
+	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
+
+	registry := collections.NewArrayReadOnly(contractState, blocklog.PrefixBlockRegistry)
+	if registry.Len() == 0 {
+		panic("Block registry is empty")
+	}
+
+	blockInfoBytes := registry.GetAt(registry.Len() - 1)
+	blockInfo := bcs.MustUnmarshal[blocklog.BlockInfo](blockInfoBytes)
+
+	return blockInfo.PreviousAnchor.Anchor().Object
 }
 
 // Returns KVStoreReader, which will iterate by both Sets and Dels of mutations. For Dels, value will be nil.
