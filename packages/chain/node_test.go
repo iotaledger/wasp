@@ -135,12 +135,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				Function: uint32(mmm.Target.EntryPoint),
 				Args:     mmm.Params,
 			},
-			// inccounter.FuncIncCounter.Message(nil),
-			// &iscmove.Message{
-			// 	Contract: uint32(inccounter.Contract.Hname()),
-			// 	Function: uint32(inccounter.FuncIncCounter.Hname()),
-			// 	Args:     inccounter.FuncIncCounter.Message(nil).Params.Clone(),
-			// },
 			Allowance:        allowance,
 			OnchainGasBudget: 100000,
 			GasPrice:         iotaclient.DefaultGasPrice,
@@ -151,8 +145,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		require.NoError(t, err)
 		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 		require.NoError(t, err)
-		//		onLedgerReq, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(te.anchor.GetObjectID()))
-		//		require.NoError(t, err)
 
 		incRequests[i] = *reqWithObj
 	}
