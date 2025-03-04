@@ -390,7 +390,8 @@ func migrateAllStates(c *cmd.Context) error {
 // Index file is created using stardust-block-indexer tool.
 func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
 	totalBlocksCount := lo.Must(srcStore.LatestBlockIndex()) + 1
-	printProgress := cli.NewProgressPrinter("blocks", totalBlocksCount-startIndex)
+	printProgress, clearProgress := cli.NewProgressPrinter("blocks", totalBlocksCount-startIndex)
+	defer clearProgress()
 
 	const indexFilePath = "index.bin"
 	cli.Logf("Trying to read index from %v", indexFilePath)

@@ -113,32 +113,45 @@ func validateStatesEqual(oldState old_state.State, newState state.State, oldChai
 	cli.DebugLogf("States are equal\n")
 }
 
-func oldStateContentToStr(state old_state.State, chainID old_isc.ChainID) string {
-	accsStr := oldAccountsListToStr(state, chainID)
+func oldStateContentToStr(chainState old_state.State, chainID old_isc.ChainID) string {
+	accountsContractStr := oldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
+
+	return accountsContractStr
+}
+
+func newStateContentToStr(chainState state.State, chainID isc.ChainID) string {
+	accountsContractStr := newAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
+
+	return accountsContractStr
+}
+
+func oldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+	accsStr := oldAccountsListToStr(contractState, chainID)
 	accsLines := strings.Split(accsStr, "\n")
 	cli.DebugLogf("Old accounts preview:\n%v\n...", lo.Slice(accsLines, 0, 10))
 
 	return accsStr
 }
 
-func newStateContentToStr(state state.State, chainID isc.ChainID) string {
-	accsStr := newAccountsListToStr(state, chainID)
+func newAccountsContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID) string {
+	accsStr := newAccountsListToStr(contractState, chainID)
 	accsLines := strings.Split(accsStr, "\n")
 	cli.DebugLogf("New accounts preview:\n%v\n...", lo.Slice(accsLines, 0, 10))
 
 	return accsStr
 }
 
-func oldAccountsListToStr(state old_state.State, chainID old_isc.ChainID) string {
+func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
 	cli.DebugLogf("Reading old accounts list...\n")
-	accs := old_accounts.AllAccountsMapR(oldstate.GetContactStateReader(state, old_accounts.Contract.Hname()))
+	accs := old_accounts.AllAccountsMapR(contractState)
 
 	cli.DebugLogf("Found %v accounts\n", accs.Len())
 	var accsStr strings.Builder
 	accsStr.WriteString(fmt.Sprintf("Found %v accounts:\n", accs.Len()))
 
 	cli.DebugLogf("Reading accounts...\n")
-	printProgress := cli.NewProgressPrinter("accounts", accs.Len())
+	printProgress, clearProgress := cli.NewProgressPrinter("accounts", accs.Len())
+	defer clearProgress()
 
 	accs.Iterate(func(accKey []byte, accValue []byte) bool {
 		accID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))
@@ -156,16 +169,17 @@ func oldAccountsListToStr(state old_state.State, chainID old_isc.ChainID) string
 	return res
 }
 
-func newAccountsListToStr(state state.State, chainID isc.ChainID) string {
+func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) string {
 	cli.DebugLogf("Reading new accounts list...\n")
-	accs := accounts.NewStateReader(newSchema, newstate.GetContactStateReader(state, accounts.Contract.Hname())).AllAccountsAsDict()
+	accs := accounts.NewStateReader(newSchema, contractState).AllAccountsAsDict()
 
 	cli.DebugLogf("Found %v accounts\n", len(accs))
 	var accsStr strings.Builder
 	accsStr.WriteString(fmt.Sprintf("Found %v accounts:\n", len(accs)))
 
 	cli.DebugLogf("Reading accounts...\n")
-	printProgress := cli.NewProgressPrinter("accounts", uint32(len(accs)))
+	printProgress, clearProgress := cli.NewProgressPrinter("accounts", uint32(len(accs)))
+	defer clearProgress()
 
 	accs.IterateSorted("", func(accKey kv.Key, accValue []byte) bool {
 		accID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey), chainID))
