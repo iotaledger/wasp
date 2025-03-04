@@ -150,7 +150,7 @@ func (c *Client) SignAndExecuteTransaction(
 		if c.WaitUntilEffectsVisible == nil {
 			return resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
 		}
-		
+
 		resp, err = c.retryGetTransactionBlock(ctx, &resp.Digest, req.Options)
 	}
 
@@ -222,38 +222,81 @@ func (c *Client) MintToken(
 	signer iotasigner.Signer,
 	packageID *iotago.PackageID,
 	tokenName string,
-	treasuryCap *iotago.ObjectID,
+	treasuryCap *iotago.ObjectRef,
 	mintAmount uint64,
 	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	txnBytes, err := c.MoveCall(
-		ctx,
-		MoveCallRequest{
-			Signer:    signer.Address(),
-			PackageID: packageID,
-			Module:    tokenName,
-			Function:  "mint",
-			TypeArgs:  []string{},
-			Arguments: []any{treasuryCap.String(), fmt.Sprintf("%d", mintAmount), signer.Address().String()},
-			GasBudget: iotajsonrpc.NewBigInt(DefaultGasBudget),
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to call mint() move call: %w", err)
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb.Command(iotago.Command{MoveCall: &iotago.ProgrammableMoveCall{
+		Package:       packageID,
+		Module:        tokenName,
+		Function:      "mint",
+		TypeArguments: []iotago.TypeTag{},
+		Arguments: []iotago.Argument{
+			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
+			ptb.MustForceSeparatePure(mintAmount),
+			ptb.MustForceSeparatePure(signer.Address()),
+		}}})
+	pt := ptb.Finish()
+
+	return c.SignAndExecuteTxWithRetry(ctx, signer, pt, nil, DefaultGasBudget, DefaultGasPrice, options)
+}
+
+// The assigned gasPayments, or the gasPayments got by FindCoinsForGasPayment may be outdated ObjectRef
+// which would cause the execution of tx failed.
+// This func can retry a few time
+func (c *Client) SignAndExecuteTxWithRetry(
+	ctx context.Context,
+	signer iotasigner.Signer,
+	pt iotago.ProgrammableTransaction,
+	gasCoin *iotago.ObjectRef,
+	gasBudget uint64,
+	gasPrice uint64,
+	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	var err error
+	var txnResponse *iotajsonrpc.IotaTransactionBlockResponse
+	var gasPayments []*iotago.ObjectRef
+	for i := 0; i < c.WaitUntilEffectsVisible.Attempts; i++ {
+		if gasCoin == nil {
+			gasPayments, err = c.FindCoinsForGasPayment(ctx, signer.Address(), pt, gasPrice, gasBudget)
+			if err != nil {
+				return nil, fmt.Errorf("failed to find gas payment: %w", err)
+			}
+		} else {
+			gasCoin, err = c.UpdateObjectRef(ctx, gasCoin)
+			if err != nil {
+				return nil, fmt.Errorf("failed to update gas payment: %w", err)
+			}
+			gasPayments = []*iotago.ObjectRef{gasCoin}
+		}
+
+		tx := iotago.NewProgrammable(
+			signer.Address(),
+			pt,
+			gasPayments,
+			gasBudget,
+			gasPrice,
+		)
+		txnBytes, err := bcs.Marshal(&tx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal tx: %w", err)
+		}
+
+		txnResponse, err = c.SignAndExecuteTransaction(
+			ctx, &SignAndExecuteTransactionRequest{
+				TxDataBytes: txnBytes,
+				Signer:      signer,
+				Options:     options,
+			},
+		)
+		if err == nil {
+			return txnResponse, nil
+		}
+		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
 	}
 
-	txnResponse, err := c.SignAndExecuteTransaction(
-		ctx, &SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes.TxBytes,
-			Signer:      signer,
-			Options:     options,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("can't execute the transaction: %w", err)
-	}
-
-	return txnResponse, nil
+	return nil, fmt.Errorf("can't execute the transaction in time: %w", err)
 }
 
 func (c *Client) FindCoinsForGasPayment(
