@@ -181,30 +181,52 @@ Run in different shells.
 ```
 
 
-# On the problems.
+# Rotation
 
-
-## CmtLog fix on boot.
-
-Fixed. Re-propose NIL until at least 1 consensus terminates.
-
-
-## Query for L1 params.
-
-Maybe will be resolved with replacement of WS to HTTP?
-
+```bash
+wasp-cli chain list --node=wasp1
+wasp-cli chain info --chain=chain1 --node=wasp1
+# Chain ID: 0xad8cdc361e53abd681f9c6272197d4dac1ef6dee0becdcca4bcd4db34a700824
+# EVM Chain ID: 1074
+# Active: true
+# State address: 0x94e510ee673b689a90e5ebf91be971d7867eaa2cfbd4fff01d314c37d7e7057f
+#
+# Committee nodes: 4
+# ------                                                              ----------       -----  ---------  ------  ---------
+# PubKey                                                              PeeringURL       Alive  Committee  Access  AccessAPI
+# ------                                                              ----------       -----  ---------  ------  ---------
+# 0x4e084179431dbee94cfd8be35124527280bd52b619247a4c68dc1bcdb5b67bda  0.0.0.0:4000     true   true       false
+# 0x63ad49c3d5a0c66d8beedabffb2ac67aa78d6565420a558f0c520e85ae8ac254  172.20.0.2:4000  false  true       false
+# 0x3b1ba3b3476c404dcab8dc71cfa58ab0f3acda8e25fb78fe97d2681d12e41078  172.20.0.3:4000  false  true       false
+# 0x64d7daa288af64a84961b9b350a3e500bd37487aff1ff06c4f654a86e7307f88  172.20.0.4:4000  false  true       false
+# ...
 ```
-ACS/WAIT[GasCoins,L1Params]
+
+Create the new committee:
+
+```bash
+wasp-cli chain rundkg --node wasp1 --peers me,wasp2,wasp3,wasp4
+# DKG successful
+# Address: 0x919e37c9623b02253629b45d9ca5d6d12b6f0cf927ffa414422f4912d60249bd
+# * committee size = 4
+# * quorum = 3
+# * members: 0x4e084179431dbee94cfd8be35124527280bd52b619247a4c68dc1bcdb5b67bda (me)
+# 0x63ad49c3d5a0c66d8beedabffb2ac67aa78d6565420a558f0c520e85ae8ac254 (wasp2)
+# 0x3b1ba3b3476c404dcab8dc71cfa58ab0f3acda8e25fb78fe97d2681d12e41078 (wasp3)
+# 0x64d7daa288af64a84961b9b350a3e500bd37487aff1ff06c4f654a86e7307f88 (wasp4)
 ```
 
+```bash
+wasp-cli chain rotate 0x919e37c9623b02253629b45d9ca5d6d12b6f0cf927ffa414422f4912d60249bd --node=wasp1 --chain=chain1
+wasp-cli chain rotate 0x919e37c9623b02253629b45d9ca5d6d12b6f0cf927ffa414422f4912d60249bd --node=wasp2 --chain=chain1
+wasp-cli chain rotate 0x919e37c9623b02253629b45d9ca5d6d12b6f0cf927ffa414422f4912d60249bd --node=wasp3 --chain=chain1
+wasp-cli chain rotate 0x919e37c9623b02253629b45d9ca5d6d12b6f0cf927ffa414422f4912d60249bd --node=wasp4 --chain=chain1
+```
 
+NOTE: Then post at least 1 request to the chain.
+It is required to trigger the consensus, if no ongoing traffic exist.
+And eventually check, if the committee has changed:
 
-## Empty proposals break ADKG
-
-TODO: Provide ADKG proposal in any way.
-
-```golang
-if len(input.proposals) < n.n-n.f {
-  panic(fmt.Errorf("len(msg.proposals) < n.n - n.f, len=%v, n=%v, f=%v", len(input.proposals), n.n, n.f))
-}
+```bash
+wasp-cli chain info --chain=chain1 --node=wasp1
 ```

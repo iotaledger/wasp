@@ -543,6 +543,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		return gpa.NoMessages().
 			AddAll(c.subTX.UnsignedTXReceived(rotationTXD)).
 			AddAll(c.subTX.BlockSaved(nil)).
+			AddAll(c.subTX.AnchorDecided(bao)).
 			AddAll(c.subDSS.MessageToSignReceived(rotationTXB)).
 			AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
 	}
