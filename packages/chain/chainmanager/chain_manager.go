@@ -336,7 +336,7 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 			cmi.committeeUpdatedCB(nil)
 			cmi.latestActiveCmt = nil
 		}
-		cmi.needConsensus = nil
+		cmi.needConsensus.Clear()
 		if vsaUpdated && vsaTip != nil {
 			cmi.log.Debugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
 			cmi.trackActiveStateCB(vsaTip)

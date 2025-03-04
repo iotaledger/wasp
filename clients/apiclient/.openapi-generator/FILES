@@ -86,6 +86,7 @@ docs/RequestIDsResponse.md
 docs/RequestJSON.md
 docs/RequestProcessedResponse.md
 docs/RequestsAPI.md
+docs/RotateChainRequest.md
 docs/StateResponse.md
 docs/StateTransaction.md
 docs/Transaction.md
@@ -172,6 +173,7 @@ model_rent_structure.go
 model_request_ids_response.go
 model_request_json.go
 model_request_processed_response.go
+model_rotate_chain_request.go
 model_state_response.go
 model_state_transaction.go
 model_transaction.go

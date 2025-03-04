@@ -37,7 +37,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initDeactivateCmd())
 	chainCmd.AddCommand(initRunDKGCmd())
 	chainCmd.AddCommand(initRotateCmd())
-	chainCmd.AddCommand(initRotateWithDKGCmd())
 	chainCmd.AddCommand(initChangeGovControllerCmd())
 	chainCmd.AddCommand(initChangeAccessNodesCmd())
 	chainCmd.AddCommand(initDisableFeePolicyCmd())

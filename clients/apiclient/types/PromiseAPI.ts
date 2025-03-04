@@ -69,6 +69,7 @@ import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
+import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
 import { Transaction } from '../models/Transaction';
@@ -438,6 +439,26 @@ export class PromiseChainsApi {
      */
     public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<void> {
         const result = this.api.removeAccessNode(chainID, peer, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Rotate a chain
+     * @param chainID ChainID (Hex Address)
+     * @param [rotateRequest] RotateRequest
+     */
+    public rotateChainWithHttpInfo(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.rotateChainWithHttpInfo(chainID, rotateRequest, _options);
+        return result.toPromise();
+    }
+
+    /**
+     * Rotate a chain
+     * @param chainID ChainID (Hex Address)
+     * @param [rotateRequest] RotateRequest
+     */
+    public rotateChain(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<void> {
+        const result = this.api.rotateChain(chainID, rotateRequest, _options);
         return result.toPromise();
     }
 
