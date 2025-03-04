@@ -1511,6 +1511,40 @@ paths:
       summary: Wait until the given request has been processed by the node
       tags:
       - chains
+  /v1/chains/{chainID}/rotate:
+    post:
+      operationId: rotateChain
+      parameters:
+      - description: ChainID (Hex Address)
+        in: path
+        name: chainID
+        required: true
+        schema:
+          format: string
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RotateChainRequest'
+        description: RotateRequest
+        required: false
+      responses:
+        "200":
+          content: {}
+          description: Chain rotation was requested
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Rotate a chain
+      tags:
+      - chains
+      x-codegen-request-body-name: RotateRequest
   /v1/chains/{chainID}/state/{stateKey}:
     get:
       operationId: getStateValue
@@ -4829,6 +4863,20 @@ components:
       type: object
       xml:
         name: RequestProcessedResponse
+    RotateChainRequest:
+      example:
+        rotateToAddress: rotateToAddress
+      properties:
+        rotateToAddress:
+          description: The address of the new committee or empty to cancel attempt
+            to rotate
+          format: string
+          type: string
+          xml:
+            name: RotateToAddress
+      type: object
+      xml:
+        name: RotateChainRequest
     StateResponse:
       example:
         state: state

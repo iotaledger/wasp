@@ -70,6 +70,7 @@ import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
+import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
 import { Transaction } from '../models/Transaction';
@@ -663,6 +664,39 @@ export class ObservableChainsApi {
      */
     public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Observable<void> {
         return this.removeAccessNodeWithHttpInfo(chainID, peer, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    }
+
+    /**
+     * Rotate a chain
+     * @param chainID ChainID (Hex Address)
+     * @param [rotateRequest] RotateRequest
+     */
+    public rotateChainWithHttpInfo(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.rotateChain(chainID, rotateRequest, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (const middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (const middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.rotateChainWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Rotate a chain
+     * @param chainID ChainID (Hex Address)
+     * @param [rotateRequest] RotateRequest
+     */
+    public rotateChain(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<void> {
+        return this.rotateChainWithHttpInfo(chainID, rotateRequest, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
