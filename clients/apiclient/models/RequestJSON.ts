@@ -24,7 +24,7 @@ export class RequestJSON {
     'gasBudget': string;
     'isEVM': boolean;
     'isOffLedger': boolean;
-    'params': Array<Array<number>>;
+    'params': Array<string>;
     'requestId': string;
     'senderAccount': string;
     'targetAddress': string;
@@ -73,8 +73,8 @@ export class RequestJSON {
         {
             "name": "params",
             "baseName": "params",
-            "type": "Array<Array<number>>",
-            "format": "int32"
+            "type": "Array<string>",
+            "format": "string"
         },
         {
             "name": "requestId",

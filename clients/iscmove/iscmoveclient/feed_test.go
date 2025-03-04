@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -37,19 +38,15 @@ func TestRequestsFeed(t *testing.T) {
 
 	log := testlogger.NewLogger(t)
 
-	wsClient, err := iscmoveclienttest.NewWebSocketClient(
+	chainFeed, err := iscmoveclient.NewChainFeed(
 		ctx,
-		log,
-	)
-	require.NoError(t, err)
-
-	chainFeed := iscmoveclient.NewChainFeed(
-		ctx,
-		wsClient,
 		l1starter.ISCPackageID(),
 		*anchor.ObjectID,
 		log,
+		iotaconn.AlphanetWebsocketEndpointURL,
+		iotaconn.AlphanetEndpointURL,
 	)
+	require.NoError(t, err)
 	defer func() {
 		cancel()
 		chainFeed.WaitUntilStopped()

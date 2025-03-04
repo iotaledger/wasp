@@ -22,29 +22,29 @@ var (
 	// evmOffLedgerTxRequest in order to process an Ethereum tx (e.g.
 	// eth_sendRawTransaction).
 	FuncSendTransaction = coreutil.NewEP1(Contract, evmnames.FuncSendTransaction,
-		coreutil.Field[*types.Transaction](),
+		coreutil.Field[*types.Transaction]("transaction"),
 	)
 
 	// FuncCallContract is the entry point called by an evmOffLedgerCallRequest
 	// in order to process a view call or gas estimation (e.g. eth_call, eth_estimateGas).
 	FuncCallContract = coreutil.NewEP11(Contract, evmnames.FuncCallContract,
-		coreutil.Field[ethereum.CallMsg](),
-		coreutil.Field[[]byte](),
+		coreutil.Field[ethereum.CallMsg]("callMessage"),
+		coreutil.Field[[]byte]("functionResult"),
 	)
 
 	FuncRegisterERC20Coin = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC20Coin,
-		coreutil.Field[coin.Type](),
+		coreutil.Field[coin.Type]("coinType"),
 	)
 	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,
-		coreutil.Field[iotago.ObjectID](),
+		coreutil.Field[iotago.ObjectID]("collectionID"),
 	)
 	FuncNewL1Deposit = coreutil.NewEP3(Contract, evmnames.FuncNewL1Deposit,
-		coreutil.Field[isc.AgentID](),
-		coreutil.Field[common.Address](),
-		coreutil.Field[*isc.Assets](),
+		coreutil.Field[isc.AgentID]("l1DepositOriginatorAgentID"),
+		coreutil.Field[common.Address]("targetAddress"),
+		coreutil.Field[*isc.Assets]("assets"),
 	)
 	ViewGetChainID = coreutil.NewViewEP01(Contract, evmnames.ViewGetChainID,
-		coreutil.Field[uint16](),
+		coreutil.Field[uint16]("chainID"),
 	)
 )
 

@@ -9,20 +9,21 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BatchProposal struct {
-	nodeIndex               uint16              `bcs:"export"`          // Just for a double-check.
-	baseAliasOutput         *isc.StateAnchor    `bcs:"export"`          // Proposed Base AliasOutput to use.
-	dssIndexProposal        util.BitVector      `bcs:"export"`          // DSS Index proposal.
-	rotateTo                *iotago.Address     `bcs:"export,optional"` // Suggestion to rotate the committee, optional.
-	timeData                time.Time           `bcs:"export"`          // Our view of time.
-	validatorFeeDestination isc.AgentID         `bcs:"export"`          // Proposed destination for fees.
-	requestRefs             []*isc.RequestRef   `bcs:"export"`          // Requests we propose to include into the execution.
-	gasCoins                []*coin.CoinWithRef `bcs:"export"`          // Coins to use for gas payment.
-	gasPrice                uint64              `bcs:"export"`          // The gas price to use.
+	nodeIndex               uint16               `bcs:"export"`          // Just for a double-check.
+	baseAliasOutput         *isc.StateAnchor     `bcs:"export,optional"` // Proposed Base AliasOutput to use.
+	dssIndexProposal        util.BitVector       `bcs:"export"`          // DSS Index proposal.
+	rotateTo                *iotago.Address      `bcs:"export,optional"` // Suggestion to rotate the committee, optional.
+	timeData                time.Time            `bcs:"export"`          // Our view of time.
+	validatorFeeDestination isc.AgentID          `bcs:"export"`          // Proposed destination for fees.
+	requestRefs             []*isc.RequestRef    `bcs:"export"`          // Requests we propose to include into the execution.
+	gasCoins                []*coin.CoinWithRef  `bcs:"export,optional"` // Coins to use for gas payment.
+	l1params                *parameters.L1Params `bcs:"export,optional"` // The L1Params for current state
 }
 
 func NewBatchProposal(
@@ -34,7 +35,7 @@ func NewBatchProposal(
 	validatorFeeDestination isc.AgentID,
 	requestRefs []*isc.RequestRef,
 	gasCoins []*coin.CoinWithRef,
-	gasPrice uint64,
+	l1params *parameters.L1Params,
 ) *BatchProposal {
 	return &BatchProposal{
 		nodeIndex:               nodeIndex,
@@ -45,10 +46,16 @@ func NewBatchProposal(
 		validatorFeeDestination: validatorFeeDestination,
 		requestRefs:             requestRefs,
 		gasCoins:                gasCoins,
-		gasPrice:                gasPrice,
+		l1params:                l1params,
 	}
 }
 
 func (b *BatchProposal) Bytes() []byte {
 	return bcs.MustMarshal(b)
+}
+
+// If a proposal is ⊥, it will not contain request refs nor base AO.
+// Other fields are required to help other participants to sign a TX, if such is produced from other node's inputs.
+func (b *BatchProposal) IsVoid() bool {
+	return b.baseAliasOutput == nil
 }

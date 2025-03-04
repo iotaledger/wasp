@@ -1,6 +1,7 @@
 package coin
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
@@ -65,6 +66,17 @@ type Type struct { // struct to enforce using the constructor functions
 	s string
 }
 
+// TypeJSON is the representation of a Iota coin type that is used in the JSON API (bacause coin.Type does not work properly with our swagger)
+type TypeJSON string
+
+func (t TypeJSON) ToType() Type {
+	return Type{s: string(t)}
+}
+
+func (t Type) ToTypeJSON() TypeJSON {
+	return TypeJSON(t.s)
+}
+
 func TypeFromString(s string) (Type, error) {
 	rt, err := iotago.NewResourceType(s)
 	if err != nil {
@@ -79,6 +91,14 @@ func MustTypeFromString(s string) Type {
 		panic(err)
 	}
 	return t
+}
+
+func (t *Type) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.s)
+}
+
+func (t *Type) UnmarshalJSON(b []byte) error {
+	return json.Unmarshal(b, &t.s)
 }
 
 func (t *Type) MarshalBCS(e *bcs.Encoder) error {
@@ -157,6 +177,14 @@ type CoinWithRef struct {
 	Type  Type
 	Value Value
 	Ref   *iotago.ObjectRef
+}
+
+func (c CoinWithRef) String() string {
+	b, err := json.MarshalIndent(&c, "", "\t")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }
 
 func (c CoinWithRef) Bytes() []byte {

@@ -17,6 +17,8 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/samber/lo"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal
@@ -35,6 +37,9 @@ func (bps batchProposalSet) decidedBaseAliasOutput(f int) *isc.StateAnchor {
 	counts := map[hashing.HashValue]int{}
 	values := map[hashing.HashValue]*isc.StateAnchor{}
 	for _, bp := range bps {
+		if bp.baseAliasOutput == nil {
+			continue
+		}
 		h := bp.baseAliasOutput.Hash()
 		counts[h]++
 		if _, ok := values[h]; !ok {
@@ -73,7 +78,7 @@ func (bps batchProposalSet) decidedRequestRefs(f int, ao *isc.StateAnchor) []*is
 	// Count number of nodes proposing a request.
 	maxLen := 0
 	for _, bp := range bps {
-		if !bp.baseAliasOutput.Equals(ao) {
+		if bp.baseAliasOutput == nil || !bp.baseAliasOutput.Equals(ao) {
 			continue
 		}
 		for _, reqRef := range bp.requestRefs {
@@ -162,22 +167,51 @@ func (bps batchProposalSet) selectedFeeDestination(aggregatedTime time.Time, ran
 	return bp.validatorFeeDestination
 }
 
-// Use the same aggregation logic as for the timestamp:
-// Take highest value proposed by at least F+1 nodes.
-func (bps batchProposalSet) aggregatedGasPrice(f int) uint64 {
-	proposals := make([]uint64, 0, len(bps))
-	for _, bp := range bps {
-		proposals = append(proposals, bp.gasPrice)
-	}
-	sort.Slice(proposals, func(i, j int) bool {
-		return proposals[i] < proposals[j]
-	})
+type l1paramsCounter struct {
+	counter  int
+	l1params *parameters.L1Params
+}
 
+// Take the L1Params which is shared more than f+1 nodes
+func (bps batchProposalSet) aggregatedL1Params(f int) *parameters.L1Params {
 	proposalCount := len(bps) // |acsProposals| >= N-F by ACS logic.
-	if proposalCount <= f {
-		return 0 // Zero time marks a failure.
+	ps := make([]*parameters.L1Params, 0, proposalCount)
+	for _, bp := range bps {
+		if bp.l1params == nil {
+			continue
+		}
+		ps = append(ps, bp.l1params)
 	}
-	return proposals[proposalCount-f-1] // Max(|acsProposals|-F Lowest) ~= 66 percentile.
+
+	// count the amount of each L1Params
+	protocolMap := make(map[string]l1paramsCounter)
+	var l1paramsCounterMax l1paramsCounter
+	for _, l1params := range ps {
+		elt, ok := protocolMap[l1params.Hash().Hex()]
+		if ok {
+			elt.counter += 1
+			protocolMap[l1params.Hash().Hex()] = elt
+		} else {
+			elt = l1paramsCounter{
+				counter:  1,
+				l1params: l1params,
+			}
+			protocolMap[l1params.Hash().Hex()] = elt
+		}
+		if elt.counter > l1paramsCounterMax.counter {
+			l1paramsCounterMax.counter = elt.counter
+			l1paramsCounterMax.l1params = elt.l1params
+		}
+	}
+
+	matchingCount := lo.CountBy(lo.Values(protocolMap), func(elt l1paramsCounter) bool {
+		return elt.counter > f
+	})
+	if matchingCount != 1 {
+		return nil
+	}
+
+	return l1paramsCounterMax.l1params
 }
 
 // Here we return coins that are proposed by at least F+1 peers.

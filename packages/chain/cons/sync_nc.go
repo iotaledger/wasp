@@ -7,30 +7,32 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 type SyncNC interface {
 	HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages
 	HaveState() gpa.OutMessages
 	HaveRequests() gpa.OutMessages
-	HaveGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
+	HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 	String() string
 }
 
 type syncNCImpl struct {
-	haveInputAnchor *isc.StateAnchor
-	haveState       bool
-	haveRequests    bool
-	inputCB         func(anchor *isc.StateAnchor) gpa.OutMessages
+	inputAnchor         *isc.StateAnchor
+	inputAnchorReceived bool
+	stateReceived       bool
+	requestsReceived    bool
+	inputCB             func(anchor *isc.StateAnchor) gpa.OutMessages
 
 	gasCoins []*coin.CoinWithRef
-	gasPrice uint64
-	outputCB func(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages
+	l1params *parameters.L1Params
+	outputCB func(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages
 }
 
 func NewSyncNC(
 	inputCB func(anchor *isc.StateAnchor) gpa.OutMessages,
-	outputCB func(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages,
+	outputCB func(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages,
 ) SyncNC {
 	return &syncNCImpl{inputCB: inputCB, outputCB: outputCB}
 }
@@ -43,13 +45,13 @@ func (sync *syncNCImpl) String() string {
 		str += "/WAIT[NC to respond]"
 	} else {
 		wait := []string{}
-		if sync.haveInputAnchor == nil {
+		if !sync.inputAnchorReceived {
 			wait = append(wait, "InputAnchor")
 		}
-		if !sync.haveState {
+		if !sync.stateReceived {
 			wait = append(wait, "StateProposal")
 		}
-		if !sync.haveRequests {
+		if !sync.requestsReceived {
 			wait = append(wait, "RequestProposals")
 		}
 		str += fmt.Sprintf("/WAIT[%v]", strings.Join(wait, ","))
@@ -58,53 +60,54 @@ func (sync *syncNCImpl) String() string {
 }
 
 func (sync *syncNCImpl) HaveInputAnchor(anchor *isc.StateAnchor) gpa.OutMessages {
-	if sync.haveInputAnchor != nil || anchor == nil {
+	if sync.inputAnchorReceived {
 		return nil
 	}
-	sync.haveInputAnchor = anchor
+	sync.inputAnchor = anchor // can be nil.
+	sync.inputAnchorReceived = true
 	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) HaveState() gpa.OutMessages {
-	if sync.haveState {
+	if sync.stateReceived {
 		return nil
 	}
-	sync.haveState = true
+	sync.stateReceived = true
 	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) HaveRequests() gpa.OutMessages {
-	if sync.haveRequests {
+	if sync.requestsReceived {
 		return nil
 	}
-	sync.haveRequests = true
+	sync.requestsReceived = true
 	return sync.tryCompleteInputs()
 }
 
 func (sync *syncNCImpl) tryCompleteInputs() gpa.OutMessages {
-	if sync.haveInputAnchor == nil || !sync.haveState || !sync.haveRequests || sync.inputCB == nil {
+	if !sync.inputAnchorReceived || !sync.stateReceived || !sync.requestsReceived || sync.inputCB == nil {
 		return nil
 	}
 	cb := sync.inputCB
 	sync.inputCB = nil
-	return cb(sync.haveInputAnchor)
+	return cb(sync.inputAnchor)
 }
 
-func (sync *syncNCImpl) HaveGasInfo(gasCoins []*coin.CoinWithRef, gasPrice uint64) gpa.OutMessages {
+func (sync *syncNCImpl) HaveL1Info(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
 	if sync.gasCoins == nil && gasCoins != nil {
 		sync.gasCoins = gasCoins
 	}
-	if sync.gasPrice == 0 && gasPrice != 0 {
-		sync.gasPrice = gasPrice
+	if sync.l1params == nil && l1params != nil {
+		sync.l1params = l1params
 	}
 	return sync.tryCompleteOutput()
 }
 
 func (sync *syncNCImpl) tryCompleteOutput() gpa.OutMessages {
-	if sync.outputCB == nil || sync.gasCoins == nil || sync.gasPrice == 0 {
+	if sync.outputCB == nil || sync.gasCoins == nil || sync.l1params == nil {
 		return nil
 	}
 	cb := sync.outputCB
 	sync.outputCB = nil
-	return cb(sync.gasCoins, sync.gasPrice)
+	return cb(sync.gasCoins, sync.l1params)
 }

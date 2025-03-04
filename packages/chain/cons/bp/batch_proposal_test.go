@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/bcs"
 )
@@ -44,7 +45,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 			Value: coin.Value(100),
 			Ref:   iotatest.RandomObjectRef(),
 		}},
-		10,
+		parameters.L1Default,
 	)
 
 	bpEncoded := lo.Must1(bcs.Marshal(batchProposal))
@@ -57,5 +58,5 @@ func TestBatchProposal1Serialization(t *testing.T) {
 	require.Equal(t, batchProposal.validatorFeeDestination, bpDecoded.validatorFeeDestination)
 	require.Equal(t, batchProposal.requestRefs, bpDecoded.requestRefs)
 	require.Equal(t, batchProposal.gasCoins, bpDecoded.gasCoins)
-	require.Equal(t, batchProposal.gasPrice, bpDecoded.gasPrice)
+	require.Equal(t, batchProposal.l1params, bpDecoded.l1params)
 }

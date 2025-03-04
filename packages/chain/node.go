@@ -465,7 +465,10 @@ func New(
 		cni.chainMetrics.NodeConn.L1AnchorReceived()
 		recvAnchorPipeInCh <- *anchor
 	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	if err != nil {
+		return nil, err
+	}
 	//
 	// Run the main thread.
 
@@ -882,7 +885,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr,
-				cni.nodeConn, // TODO: Pass the NodeConn here.
+				cni.nodeConn,
 				cni.net,
 				cni.rotateTo,
 				cni.validatorAgentID,
@@ -904,19 +907,6 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	}
 
 	consensusInstance, _ := consensusInstances.Get(logIndex)
-
-	// collect all active consensusIDs
-	activeConsensusInstances := []consGR.ConsensusID{}
-	cni.consensusInsts.ForEach(func(cAddr cryptolib.AddressKey, consMap *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
-		consMap.ForEach(func(li cmt_log.LogIndex, _ *consensusInst) bool {
-			activeConsensusInstances = append(activeConsensusInstances, consGR.NewConsensusID(cryptolib.NewAddressFromKey(cAddr), &li))
-			return true
-		})
-		return true
-	})
-	// update the mempool with the list of active consensus instances
-	cni.mempool.ConsensusInstancesUpdated(activeConsensusInstances)
-	// ----
 
 	return consensusInstance
 }

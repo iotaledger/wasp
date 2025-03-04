@@ -1699,7 +1699,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object
@@ -2305,11 +2305,9 @@ components:
     AssetsJSON:
       example:
         coins:
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
         objects:
         - - 5
@@ -2344,11 +2342,9 @@ components:
       example:
         baseTokens: baseTokens
         nativeTokens:
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
-        - coinType:
-            s: s
+        - coinType: coinType
           balance: balance
       properties:
         baseTokens:
@@ -2770,8 +2766,7 @@ components:
         name: ChainRecord
     CoinJSON:
       example:
-        coinType:
-          s: s
+        coinType: coinType
         balance: balance
       properties:
         balance:
@@ -2781,7 +2776,10 @@ components:
           xml:
             name: Balance
         coinType:
-          $ref: '#/components/schemas/Type'
+          format: string
+          type: string
+          xml:
+            name: CoinType
       required:
       - balance
       - coinType
@@ -3491,11 +3489,9 @@ components:
         assets:
           baseTokens: baseTokens
           nativeTokens:
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
         foundryId: foundryId
       properties:
@@ -4584,11 +4580,9 @@ components:
           senderAccount: senderAccount
           assets:
             coins:
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
             objects:
             - - 5
@@ -4604,11 +4598,9 @@ components:
           targetAddress: targetAddress
           allowance:
             coins:
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
-            - coinType:
-                s: s
+            - coinType: coinType
               balance: balance
             objects:
             - - 5
@@ -4616,10 +4608,8 @@ components:
             - - 5
               - 5
           params:
-          - - 5
-            - 5
-          - - 5
-            - 5
+          - params
+          - params
           isEVM: true
         blockIndex: 1
         rawError:
@@ -4754,11 +4744,9 @@ components:
         senderAccount: senderAccount
         assets:
           coins:
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
           objects:
           - - 5
@@ -4774,11 +4762,9 @@ components:
         targetAddress: targetAddress
         allowance:
           coins:
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
-          - coinType:
-              s: s
+          - coinType: coinType
             balance: balance
           objects:
           - - 5
@@ -4786,10 +4772,8 @@ components:
           - - 5
             - 5
         params:
-        - - 5
-          - 5
-        - - 5
-          - 5
+        - params
+        - params
         isEVM: true
       properties:
         allowance:
@@ -4816,10 +4800,8 @@ components:
             name: IsOffLedger
         params:
           items:
-            items:
-              format: int32
-              type: integer
-            type: array
+            format: string
+            type: string
           type: array
           xml:
             name: Params

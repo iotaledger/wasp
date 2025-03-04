@@ -193,7 +193,7 @@ func (m MockSandBox) AllowanceAvailable() *isc.Assets {
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 func TestEntryPointViewFunc(t *testing.T) {
-	testViewFunc := coreutil.NewViewEP11(Contract, "", coreutil.Field[isc.AgentID](), coreutil.Field[isc.AgentID]())
+	testViewFunc := coreutil.NewViewEP11(Contract, "", coreutil.Field[isc.AgentID](""), coreutil.Field[isc.AgentID](""))
 	testViewFuncHandler := testViewFunc.WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
 		return id
 	})
@@ -218,7 +218,7 @@ func TestEntryPointViewFunc(t *testing.T) {
 }
 
 func TestEntryPointMutFunc11(t *testing.T) {
-	testMutFunc := coreutil.NewEP11(Contract, "", coreutil.Field[uint32](), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP11(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) uint32 {
 		return u * 2
 	})
@@ -243,7 +243,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 }
 
 func TestEntryPointMutFunc12(t *testing.T) {
-	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](), coreutil.Field[uint32](), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
 		return u * 2, u * 3
 	})

@@ -102,15 +102,15 @@ func (c CoinBalances) IsEmpty() bool {
 }
 
 type CoinJSON struct {
-	CoinType coin.Type `json:"coinType" swagger:"required"`
-	Balance  string    `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
+	CoinType coin.TypeJSON `json:"coinType" swagger:"required"`
+	Balance  string        `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
 }
 
 func (c *CoinBalances) JSON() []CoinJSON {
 	var coins []CoinJSON
 	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		coins = append(coins, CoinJSON{
-			CoinType: t,
+			CoinType: t.ToTypeJSON(),
 			Balance:  v.String(),
 		})
 		return true
@@ -128,7 +128,7 @@ func (c *CoinBalances) UnmarshalJSON(b []byte) error {
 	*c = NewCoinBalances()
 	for _, cc := range coins {
 		value := lo.Must(coin.ValueFromString(cc.Balance))
-		c.Add(cc.CoinType, value)
+		c.Add(cc.CoinType.ToType(), value)
 	}
 	return nil
 }
