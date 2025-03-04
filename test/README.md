@@ -13,10 +13,32 @@ docker container prune
 docker compose up
 ```
 
+# Add nodes and login
+
+If nodes were not added to the wasp-cli yet
+
+```bash
+wasp-cli wasp add wasp1 http://localhost:9091
+wasp-cli wasp add wasp2 http://localhost:9092
+wasp-cli wasp add wasp3 http://localhost:9093
+wasp-cli wasp add wasp4 http://localhost:9094
+```
+
+Then login to each of the nodes:
+
+```bash
+wasp-cli login --node wasp1 # wasp:wasp
+wasp-cli login --node wasp2
+wasp-cli login --node wasp3
+wasp-cli login --node wasp4
+```
+
 
 # Peering...
 
-```
+Get the node pub keys:
+
+```bash
 karolis@karolis-2020:~/temp/isc-20250212/committee$ wasp-cli --node=wasp1 peering list-trusted
 ----  ------                                                              ----------    -------
 Name  PubKey                                                              PeeringURL    Trusted
@@ -38,24 +60,14 @@ Name  PubKey                                                              Peerin
 ----  ------                                                              ----------    -------
 me    0x624a84ab6d22daee77658291b75ad0077a95be15d05b27664ad76b7624e3d4f4  0.0.0.0:4000  true
 
-------------
-1 0x6621a1a10bfccc77f3eb9a386fa1c15e5c56350baf9cef94a3adf2ce2667ec7d
-2 0xb43c7cf7c0fc6111273eb607ef2af26bc2a140e28d9b90b8d389bc806b3071e2
-3 0xc7ec30be24e24960370349b6efb95e04fc81193a116a523fe2594f9ea236073e
-4 0x624a84ab6d22daee77658291b75ad0077a95be15d05b27664ad76b7624e3d4f4
+# ------------
+# 1 0x6621a1a10bfccc77f3eb9a386fa1c15e5c56350baf9cef94a3adf2ce2667ec7d
+# 2 0xb43c7cf7c0fc6111273eb607ef2af26bc2a140e28d9b90b8d389bc806b3071e2
+# 3 0xc7ec30be24e24960370349b6efb95e04fc81193a116a523fe2594f9ea236073e
+# 4 0x624a84ab6d22daee77658291b75ad0077a95be15d05b27664ad76b7624e3d4f4
 ```
 
 ```bash
-wasp-cli wasp add wasp1 http://localhost:9091
-wasp-cli wasp add wasp2 http://localhost:9092
-wasp-cli wasp add wasp3 http://localhost:9093
-wasp-cli wasp add wasp4 http://localhost:9094
-
-wasp-cli login --node wasp1 # wasp:wasp
-wasp-cli login --node wasp2
-wasp-cli login --node wasp3
-wasp-cli login --node wasp4
-
 wasp-cli --node=wasp2 peering trust wasp1 0x6621a1a10bfccc77f3eb9a386fa1c15e5c56350baf9cef94a3adf2ce2667ec7d 172.20.0.1:4000
 wasp-cli --node=wasp3 peering trust wasp1 0x6621a1a10bfccc77f3eb9a386fa1c15e5c56350baf9cef94a3adf2ce2667ec7d 172.20.0.1:4000
 wasp-cli --node=wasp4 peering trust wasp1 0x6621a1a10bfccc77f3eb9a386fa1c15e5c56350baf9cef94a3adf2ce2667ec7d 172.20.0.1:4000
