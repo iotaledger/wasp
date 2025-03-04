@@ -161,4 +161,59 @@ module isc::anchor_tests {
 
         transfer::public_transfer(anchor, chain_owner); // not needed in the PTB
     }
+
+    #[test]
+    fun test_anchor_state_update() {
+        let chain_owner = @0xA;
+        let mut ctx = tx_context::dummy();
+
+        let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
+
+        let metadata = vector[1,2,3];
+        anchor.update_anchor_state_for_migration(metadata, 1);
+
+        assert!(anchor.get_state_index() == 1);
+        assert!(anchor.get_state_metadata() == metadata);
+
+        transfer::public_transfer(anchor, chain_owner); 
+    }
+
+    #[test]
+    fun test_migration_asset_placement() {
+        let initial_iota_in_request = 10000;
+        let initial_testA_in_request = 100;
+        let chain_owner = @0xA;
+        let sender = @0xB;
+        let mut ctx = tx_context::dummy();
+
+        let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
+
+        // Mint some tokens for the request.
+        let iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
+        let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
+
+        // Place tokens into the anchors AssetsBag using the migration place functions.
+        anchor.place_coin_for_migration(iota);
+        anchor.place_coin_for_migration(test_a_coin);
+
+        // Take back the assets out of the AssetsBag
+        let (mut assets,b) = anchor.borrow_assets();
+        let iota_coin = assets.take_coin_balance<IOTA>(initial_iota_in_request);
+        let test_coin = assets.take_coin_balance<TEST_A>(initial_testA_in_request);
+
+        // Make sure that the balance remained the same
+        assert!(iota_coin.value() == initial_iota_in_request);
+        assert!(test_coin.value() == initial_testA_in_request);
+        assert!(assets.get_size() == 0);
+        
+        anchor.return_assets_from_borrow(assets, b);
+
+        // Clean up
+        transfer::public_transfer(anchor, chain_owner); 
+        
+        let mut temp_assets_bag = assets_bag::new(&mut ctx);
+        temp_assets_bag.place_coin_balance(test_coin);
+        temp_assets_bag.place_coin_balance(iota_coin);
+        transfer::public_transfer(temp_assets_bag, chain_owner); // not needed in the PTB
+    }
 }
