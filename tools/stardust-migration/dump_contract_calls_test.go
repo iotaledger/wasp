@@ -30,10 +30,10 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
-	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 )
 
 var calledContracts sync.Map
