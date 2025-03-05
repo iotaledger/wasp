@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 )
 
 func MigrateErrorsContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
@@ -24,7 +25,7 @@ func migrateErrorTemplates(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 
 	oldState.Iterate(old_kv.Key(old_errors.PrefixErrorTemplateMap), func(oldKey old_kv.Key, oldVal []byte) bool {
 		// When we iterate by prefix, we find both map itself and its elements.
-		oldContractIDBytes, oldErrorIDBytes := SplitMapKey(oldKey, old_errors.PrefixErrorTemplateMap)
+		oldContractIDBytes, oldErrorIDBytes := utils.SplitMapKey(oldKey, old_errors.PrefixErrorTemplateMap)
 		if oldErrorIDBytes == "" {
 			// Not a map element
 			return true

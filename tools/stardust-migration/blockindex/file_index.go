@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 	"github.com/samber/lo"
 )

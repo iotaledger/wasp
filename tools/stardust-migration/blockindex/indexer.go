@@ -8,7 +8,7 @@ import (
 	"slices"
 	"time"
 
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/samber/lo"
 
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"

@@ -7,7 +7,8 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
@@ -71,7 +72,7 @@ func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState 
 	progress := NewProgressPrinter()
 
 	oldMagicState.IterateSorted(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
-		k = MustRemovePrefix(k, old_evmimpl.PrefixAllowance)
+		k = utils.MustRemovePrefix(k, old_evmimpl.PrefixAllowance)
 		if len(k) != 2*common.AddressLength {
 			log.Panicf("unexpected key length: %v", len(k))
 		}

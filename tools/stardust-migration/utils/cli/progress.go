@@ -6,28 +6,49 @@ import (
 )
 
 func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgress func(), done func()) {
-	countLeft := totalCount
+	const period = time.Second
+	startTime := time.Now()
+	lastEstimateUpdateTime := startTime
 	entityPluralNameCapitalized := strings.Title(entityPluralName)
-
-	var estimateRunTime time.Duration
 	var avgSpeed int
 	var currentSpeed int
+
+	if totalCount == 0 {
+		totalProcessed := 0
+		recentlyProcessed := 0
+
+		return func() {
+				totalProcessed++
+				recentlyProcessed++
+
+				periodicAction(period, &lastEstimateUpdateTime, func() {
+					avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
+					currentSpeed = int(float64(recentlyProcessed) / period.Seconds())
+					recentlyProcessed = 0
+				})
+
+				UpdateStatusBarf("%v processed: %v. Speed: %v %v/sec. Avg speed: %v %v/sec.",
+					entityPluralNameCapitalized, totalProcessed, currentSpeed, entityPluralName, avgSpeed, entityPluralName)
+			}, func() {
+				UpdateStatusBarf("")
+			}
+	}
+
+	var estimateRunTime time.Duration
+	countLeft := totalCount
 	prevCountLeft := countLeft
-	startTime := time.Now()
-	lastEstimateUpdateTime := time.Now()
 
 	return func() {
 			countLeft--
 
-			const period = time.Second
 			periodicAction(period, &lastEstimateUpdateTime, func() {
 				totalProcessed := totalCount - countLeft
 				relProgress := float64(totalProcessed) / float64(totalCount)
 				estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
 				avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
 
-				recentProcessed := prevCountLeft - countLeft
-				currentSpeed = int(float64(recentProcessed) / period.Seconds())
+				recentlyProcessed := prevCountLeft - countLeft
+				currentSpeed = int(float64(recentlyProcessed) / period.Seconds())
 				prevCountLeft = countLeft
 			})
 

@@ -29,9 +29,9 @@ const (
 	// Covered in: TestFoundries
 	KeyAllAccounts = "a"
 
-	// prefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
+	// PrefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
 	// Covered in: TestFoundries
-	prefixAccountCoinBalances = "C"
+	PrefixAccountCoinBalances = "C"
 
 	// prefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
 	prefixAccountWeiRemainder = "w"

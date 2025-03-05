@@ -46,11 +46,12 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
-	"github.com/iotaledger/wasp/tools/stardust-migration/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 )
 
 // NOTE: Every record type should be explicitly included in migration
@@ -361,7 +362,7 @@ func migrateAllStates(c *cmd.Context) error {
 		// Yes it writes the result every block, deal with it. :D
 		writeMigrationResult(stateMetadata, newBlock.StateIndex())
 
-		periodicAction(3*time.Second, &lastPrintTime, func() {
+		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
 			cli.Logf("Blocks processed: %v", blocksProcessed)
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
@@ -441,12 +442,12 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex uint32, f f
 
 func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
 	latestBlockIndex := lo.Must(s.LatestBlockIndex())
-	measureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
-	measureTimeAndPrint("Time for retrieving block 100", func() { indexer.BlockByIndex(100) })
-	measureTimeAndPrint("Time for retrieving block 10000", func() { indexer.BlockByIndex(10000) })
-	measureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
-	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
-	measureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 100", func() { indexer.BlockByIndex(100) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 10000", func() { indexer.BlockByIndex(10000) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
+	utils.MeasureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
+	utils.MeasureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
 }
 
 func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {

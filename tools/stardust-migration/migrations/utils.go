@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
 // DEPRECATED:
@@ -259,36 +259,6 @@ type ArrayMigrationFunc[OldValue, NewValue any] func(index uint32, oldVal OldVal
 // This is a migration function for a single high-level variable migration.
 // Value is automatically deserialized/serialized if it is not of type []byte.
 type VariableMigrationFunc[OldValue, NewValue any] func(oldVal OldValue) NewValue
-
-// Split map key into map name and element key
-func SplitMapKey(storeKey old_kv.Key, prefixToRemove ...string) (mapName, elemKey old_kv.Key) {
-	if len(prefixToRemove) > 0 {
-		storeKey = MustRemovePrefix(storeKey, prefixToRemove[0])
-	}
-
-	const elemSep = "."
-	pos := strings.Index(string(storeKey), elemSep)
-
-	sepFound := pos >= 0
-	sepIsNotLastChar := pos < len(storeKey)-1
-	isMapElement := sepFound && sepIsNotLastChar
-
-	if isMapElement {
-		return storeKey[:pos], storeKey[pos+1:]
-	}
-
-	// Not a map element - maybe map itself or just something else
-	return storeKey, ""
-}
-
-func MustRemovePrefix[T ~string](v T, prefix string) T {
-	r, found := strings.CutPrefix(string(v), prefix)
-	if !found {
-		panic(fmt.Sprintf("Prefix '%v' not found: %v", prefix, v))
-	}
-
-	return T(r)
-}
 
 func DecodeKey[Value any](k old_kv.Key, prefixToRemove string, decodeFunc func([]byte) (Value, error)) Value {
 	valueBytes, hadPrefix := strings.CutPrefix(string(k), prefixToRemove)

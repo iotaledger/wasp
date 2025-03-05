@@ -10,7 +10,7 @@ import (
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/tools/stardust-migration/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	old_database "github.com/nnikolash/wasp-types-exported/packages/database"
 )
 

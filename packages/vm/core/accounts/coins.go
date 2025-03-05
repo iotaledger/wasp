@@ -9,7 +9,7 @@ import (
 )
 
 func AccountCoinBalancesKey(accountKey kv.Key) string {
-	return prefixAccountCoinBalances + string(accountKey)
+	return PrefixAccountCoinBalances + string(accountKey)
 }
 
 func (s *StateReader) accountCoinBalancesMapR(accountKey kv.Key) *collections.ImmutableMap {
