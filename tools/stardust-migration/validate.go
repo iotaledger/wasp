@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 
 	"github.com/samber/lo"
 
@@ -84,6 +85,12 @@ func validateStatesEqual(oldState old_state.State, newState state.State, oldChai
 	cli.DebugLogf("Validating states equality...\n")
 	oldStateContentStr := oldStateContentToStr(oldState, oldChainID)
 	newStateContentStr := newStateContentToStr(newState, newChainID)
+
+	cli.DebugLogf("Replacing old chain ID with constant placeholer for comparison...")
+	oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
+
+	cli.DebugLogf("Replacing new chain ID with constant placeholer for comparison...")
+	newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
 
 	oldStateFilePath := os.TempDir() + "/stardust-migration-old-state.txt"
 	newStateFilePath := os.TempDir() + "/stardust-migration-new-state.txt"

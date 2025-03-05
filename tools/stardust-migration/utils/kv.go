@@ -3,8 +3,6 @@ package utils
 import (
 	"fmt"
 	"strings"
-
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 )
 
 func MustRemovePrefix[T ~string | ~[]byte](v T, prefix string) T {
@@ -17,7 +15,7 @@ func MustRemovePrefix[T ~string | ~[]byte](v T, prefix string) T {
 }
 
 // Split map key into map name and element key
-func SplitMapKey(storeKey old_kv.Key, prefixToRemove ...string) (mapName, elemKey old_kv.Key) {
+func SplitMapKey[T ~string | ~[]byte](storeKey T, prefixToRemove ...string) (mapName, elemKey T) {
 	if len(prefixToRemove) > 0 {
 		storeKey = MustRemovePrefix(storeKey, prefixToRemove[0])
 	}
@@ -34,5 +32,5 @@ func SplitMapKey(storeKey old_kv.Key, prefixToRemove ...string) (mapName, elemKe
 	}
 
 	// Not a map element - maybe map itself or just something else
-	return storeKey, ""
+	return storeKey, T("")
 }

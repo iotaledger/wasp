@@ -10,3 +10,22 @@ func SortLines(s string) string {
 	sort.Strings(lines)
 	return strings.Join(lines, "\n")
 }
+
+func MultilinePreview(text string) string {
+	// TODO: This action might take huge amount of time for big texts. Maybe just dont do it.
+	return MultilinePreviewWithOpts(text, 5, 4, "\t...")
+}
+
+func MultilinePreviewWithOpts(text string, linesAtStart, linesAtEnd int, sep string) string {
+	lines := strings.Split(text, "\n")
+	if len(lines) <= (linesAtStart + linesAtEnd) {
+		return text
+	}
+
+	startLines := lines[:linesAtStart]
+	endLines := lines[len(lines)-linesAtEnd:]
+
+	startLines = append(startLines, sep)
+
+	return strings.Join(append(startLines, endLines...), "\n")
+}
