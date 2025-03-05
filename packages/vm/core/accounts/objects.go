@@ -11,11 +11,11 @@ import (
 )
 
 func objectsMapKey(agentID isc.AgentID) string {
-	return prefixObjects + string(agentID.Bytes())
+	return PrefixObjects + string(agentID.Bytes())
 }
 
 func objectsByCollectionMapKey(agentID isc.AgentID, collectionKey kv.Key) string {
-	return prefixObjectsByCollection + string(agentID.Bytes()) + string(collectionKey)
+	return PrefixObjectsByCollection + string(agentID.Bytes()) + string(collectionKey)
 }
 
 func (s *StateReader) accountToObjectsMapR(agentID isc.AgentID) *collections.ImmutableMap {
@@ -27,11 +27,11 @@ func (s *StateWriter) accountToObjectsMap(agentID isc.AgentID) *collections.Map 
 }
 
 func (s *StateWriter) objectToOwnerMap() *collections.Map {
-	return collections.NewMap(s.state, keyObjectOwner)
+	return collections.NewMap(s.state, KeyObjectOwner)
 }
 
 func (s *StateReader) objectToOwnerMapR() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, keyObjectOwner)
+	return collections.NewMapReadOnly(s.state, KeyObjectOwner)
 }
 
 func (s *StateReader) objectsByCollectionMapR(agentID isc.AgentID, collectionKey kv.Key) *collections.ImmutableMap {

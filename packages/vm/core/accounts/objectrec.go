@@ -24,5 +24,5 @@ var emptyObjectID = iotago.ObjectID{}
 
 func (rec *ObjectRecord) CollectionKey() kv.Key {
 	// TODO: parse NFT data and determine the NFT's collection
-	return noCollection
+	return NoCollection
 }

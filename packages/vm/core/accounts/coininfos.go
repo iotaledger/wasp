@@ -9,11 +9,11 @@ import (
 )
 
 func (s *StateWriter) coinInfosMap() *collections.Map {
-	return collections.NewMap(s.state, keyCoinInfo)
+	return collections.NewMap(s.state, KeyCoinInfo)
 }
 
 func (s *StateReader) coinInfosMapR() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, keyCoinInfo)
+	return collections.NewMapReadOnly(s.state, KeyCoinInfo)
 }
 
 func (s *StateWriter) SaveCoinInfo(rec *isc.IotaCoinInfo) {

@@ -24,7 +24,7 @@ var (
 	ErrImmutableMetadataInvalid = coreerrors.Register("IRC27 metadata is invalid: '%s'")
 )
 
-const (
+var (
 	// KeyAllAccounts stores a map of <agentID> => true
 	// Covered in: TestFoundries
 	KeyAllAccounts = "a"
@@ -33,40 +33,40 @@ const (
 	// Covered in: TestFoundries
 	PrefixAccountCoinBalances = "C"
 
-	// prefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
-	prefixAccountWeiRemainder = "w"
+	// PrefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
+	PrefixAccountWeiRemainder kv.Key = "w"
 
 	// L2TotalsAccount is the special <accountID> storing the total coin balances
 	// controlled by the chain
 	// Covered in: TestFoundries
-	L2TotalsAccount = "*"
+	L2TotalsAccount kv.Key = "*"
 
-	// prefixObjects | <agentID> stores a map of <ObjectID> => true
+	// PrefixObjects | <agentID> stores a map of <ObjectID> => true
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixObjects = "o"
-	// prefixObjectsByCollection | <agentID> | <collectionID> stores a map of <ObjectID> => true
+	PrefixObjects = "o"
+	// PrefixObjectsByCollection | <agentID> | <collectionID> stores a map of <ObjectID> => true
 	// Covered in: TestNFTMint
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixObjectsByCollection = "c"
+	PrefixObjectsByCollection = "c"
 
-	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
+	// NoCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	// Covered in: TestNFTMint
-	noCollection = "-"
+	NoCollection kv.Key = "-"
 
 	// KeyNonce stores a map of <agentID> => nonce (uint64)
 	// Covered in: TestNFTMint
-	KeyNonce = "m"
+	KeyNonce kv.Key = "m"
 
-	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
+	// KeyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
-	keyCoinInfo = "RC"
-	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
+	KeyCoinInfo = "RC"
+	// KeyObjectRecords stores a map of <ObjectID> => ObjectRecord
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyObjectRecords = "RO"
+	KeyObjectRecords = "RO"
 
-	// keyObjectOwner stores a map of <ObjectID> => isc.AgentID
+	// KeyObjectOwner stores a map of <ObjectID> => isc.AgentID
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyObjectOwner = "W"
+	KeyObjectOwner = "W"
 )
 
 func AccountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {

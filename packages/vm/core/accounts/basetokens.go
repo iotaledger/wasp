@@ -69,7 +69,7 @@ func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.Agent
 }
 
 func AccountWeiRemainderKey(accountKey kv.Key) kv.Key {
-	return prefixAccountWeiRemainder + accountKey
+	return PrefixAccountWeiRemainder + accountKey
 }
 
 func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {

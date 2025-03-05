@@ -226,7 +226,7 @@ func migrateNonce(
 		oldState,
 		newState,
 		old_accounts.KeyNonce,
-		accounts.KeyNonce,
+		string(accounts.KeyNonce),
 		func(a old_isc.AgentID, nonce uint64) (isc.AgentID, uint64) {
 			return OldAgentIDtoNewAgentID(a, oldChainID, newChainID), nonce
 		},
