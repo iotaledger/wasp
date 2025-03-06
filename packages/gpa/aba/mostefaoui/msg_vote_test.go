@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgVoteCodec(t *testing.T) {

@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strconv"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Hname is calculated as the first 4 bytes of the BLAKE2b hash of a string,

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 // UnmarshalBCS is a shortcut for bcs.Unmarshal that also verifies

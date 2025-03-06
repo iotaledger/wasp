@@ -91,11 +91,11 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (

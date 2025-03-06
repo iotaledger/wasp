@@ -5,9 +5,9 @@ import (
 
 	"github.com/iotaledger/hive.go/objectstorage/typeutils"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type OnLedgerRequest struct {
