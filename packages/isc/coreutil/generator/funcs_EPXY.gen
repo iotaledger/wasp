@@ -93,6 +93,7 @@ func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{
 
     return e.DecodeOutput(res)
 }
+
 {{else}}
 func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, R{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Call(
     {{range $i := until .Inputs}}p{{add $i 1}} T{{add $i 1}}{{if not (last $i $.Inputs)}}, {{end}}{{end}},
@@ -110,5 +111,26 @@ func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{
     return nil
 }
 
+
+
 {{end}}
+
+func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, R{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Inputs() []FieldArg {
+	inputs := make([]FieldArg, 0)
+
+	{{range $i := until .Inputs}}
+        inputs = append(inputs, e.Input{{add $i 1}})     {{end}}
+
+	return inputs
+}
+
+func (e EP{{.Inputs}}{{.Outputs}}[S{{range $i := until .Inputs}}, T{{add $i 1}}{{end}}{{range $i := until .Outputs}}, R{{add $i 1}}{{end}}{{range $i := until .Inputs}}, I{{add $i 1}}{{end}}{{range $i := until .Outputs}}, O{{add $i 1}}{{end}}]) Outputs() []FieldArg {
+	outputs := make([]FieldArg, 0)
+
+	{{range $i := until .Outputs}}
+        outputs = append(outputs, e.Output{{add $i 1}})     {{end}}
+
+	return outputs
+}
 {{end}}
+

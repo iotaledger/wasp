@@ -26,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
@@ -146,6 +147,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
 			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
+			nil,
 			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
@@ -376,13 +378,13 @@ func (tsm *testStateMgr) tryRespond(hash hashing.HashValue) {
 	}
 }
 
-type testNodeConnGasInfo struct {
+type testNodeConnL1Info struct {
 	gasCoins []*coin.CoinWithRef
-	gasPrice uint64
+	l1params *parameters.L1Params
 }
 
-func (tgi *testNodeConnGasInfo) GetGasCoins() []*coin.CoinWithRef { return tgi.gasCoins }
-func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
+func (tgi *testNodeConnL1Info) GetGasCoins() []*coin.CoinWithRef  { return tgi.gasCoins }
+func (tgi *testNodeConnL1Info) GetL1Params() *parameters.L1Params { return tgi.l1params }
 
 type testNodeConn struct {
 	gasCoin *coin.CoinWithRef
@@ -394,11 +396,11 @@ func newTestNodeConn(gasCoin *coin.CoinWithRef) *testNodeConn {
 	return &testNodeConn{gasCoin: gasCoin}
 }
 
-func (t *testNodeConn) ConsensusGasPriceProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnGasInfo {
-	ch := make(chan consGR.NodeConnGasInfo, 1)
-	ch <- &testNodeConnGasInfo{
+func (t *testNodeConn) ConsensusL1InfoProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan consGR.NodeConnL1Info {
+	ch := make(chan consGR.NodeConnL1Info, 1)
+	ch <- &testNodeConnL1Info{
 		gasCoins: []*coin.CoinWithRef{t.gasCoin},
-		gasPrice: 123,
+		l1params: parameters.L1Default,
 	}
 	close(ch)
 	return ch

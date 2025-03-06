@@ -19,6 +19,7 @@ Method | HTTP request | Description
 [**GetReceipt**](ChainsAPI.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
 [**GetStateValue**](ChainsAPI.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsAPI.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
+[**RotateChain**](ChainsAPI.md#RotateChain) | **Post** /v1/chains/{chainID}/rotate | Rotate a chain
 [**SetChainRecord**](ChainsAPI.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
 [**V1ChainsChainIDEvmPost**](ChainsAPI.md#V1ChainsChainIDEvmPost) | **Post** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
 [**V1ChainsChainIDEvmWsGet**](ChainsAPI.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
@@ -1046,6 +1047,74 @@ Name | Type | Description  | Notes
 ### HTTP request headers
 
 - **Content-Type**: Not defined
+- **Accept**: application/json
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## RotateChain
+
+> RotateChain(ctx, chainID).RotateRequest(rotateRequest).Execute()
+
+Rotate a chain
+
+### Example
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
+)
+
+func main() {
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	rotateRequest := *openapiclient.NewRotateChainRequest() // RotateChainRequest | RotateRequest (optional)
+
+	configuration := openapiclient.NewConfiguration()
+	apiClient := openapiclient.NewAPIClient(configuration)
+	r, err := apiClient.ChainsAPI.RotateChain(context.Background(), chainID).RotateRequest(rotateRequest).Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.RotateChain``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+}
+```
+
+### Path Parameters
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
+**chainID** | **string** | ChainID (Hex Address) | 
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiRotateChainRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+
+ **rotateRequest** | [**RotateChainRequest**](RotateChainRequest.md) | RotateRequest | 
+
+### Return type
+
+ (empty response body)
+
+### Authorization
+
+[Authorization](../README.md#Authorization)
+
+### HTTP request headers
+
+- **Content-Type**: application/json
 - **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)

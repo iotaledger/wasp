@@ -147,7 +147,7 @@ type L1Client interface {
 		signer iotasigner.Signer,
 		packageID *iotago.PackageID,
 		tokenName string,
-		treasuryCap *iotago.ObjectID,
+		treasuryCap *iotago.ObjectRef,
 		mintAmount uint64,
 		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
@@ -213,6 +213,15 @@ type L1Client interface {
 		destinationCoin *iotago.ObjectRef,
 		sourceCoins []*iotago.ObjectRef,
 		gasBudget uint64,
+	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+	SignAndExecuteTxWithRetry(
+		ctx context.Context,
+		signer iotasigner.Signer,
+		pt iotago.ProgrammableTransaction,
+		gasCoin *iotago.ObjectRef,
+		gasBudget uint64,
+		gasPrice uint64,
+		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
 }
 

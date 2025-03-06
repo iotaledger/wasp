@@ -22,6 +22,10 @@ type WaitParams struct {
 }
 
 var WaitForEffectsDisabled *WaitParams = nil
+var WaitForEffectsEnabled *WaitParams = &WaitParams{
+	Attempts:             5,
+	DelayBetweenAttempts: 2 * time.Second,
+}
 
 type transport interface {
 	Call(ctx context.Context, v any, method iotaconn.JsonRPCMethod, args ...any) error

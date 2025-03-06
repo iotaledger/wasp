@@ -292,8 +292,6 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		apilib.CreateChainParams{
 			Layer1Client:      clu.L1Client(),
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
-			N:                 uint16(len(committeeNodes)),
-			T:                 quorum,
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",

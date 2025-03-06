@@ -276,13 +276,17 @@ func PTBReceiveRequestsAndTransition(
 		},
 	})
 	// top up gas coin
-	ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
-		ptb,
-		packageID,
-		argAnchorAssets,
-		topUpAmount,
-		iotajsonrpc.IotaCoinType,
-	)
+
+	if topUpAmount > 0 {
+		ptb = PTBAssetsBagTakeCoinBalanceMergeTo(
+			ptb,
+			packageID,
+			argAnchorAssets,
+			topUpAmount,
+			iotajsonrpc.IotaCoinType,
+		)
+	}
+
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{

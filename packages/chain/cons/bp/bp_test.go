@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 
 	"github.com/iotaledger/wasp/packages/util"
@@ -28,7 +29,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	//
 	// Produce an anchor.
 	chainID := isc.ChainIDFromObjectID(*iotatest.RandomObjectRef().ObjectID)
-	ao0 := isctest.RandomStateAnchor()
+	anchor0 := isctest.RandomStateAnchor()
 
 	// Create some requests.
 	senderKP := cryptolib.NewKeyPair()
@@ -44,8 +45,9 @@ func TestOffLedgerOrdering(t *testing.T) {
 	// Construct the batch proposal, and aggregate it.
 	bp0 := bp.NewBatchProposal(
 		0,
-		&ao0,
+		&anchor0,
 		util.NewFixedSizeBitVector(1).SetBits([]int{0}),
+		nil,
 		time.Now(),
 		isctest.NewRandomAgentID(),
 		isc.RequestRefsFromRequests(rs),
@@ -54,7 +56,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 			Value: coin.Value(100),
 			Ref:   iotatest.RandomObjectRef(),
 		}},
-		154,
+		parameters.L1Default,
 	)
 	bp0.Bytes()
 	abpInputs := map[gpa.NodeID][]byte{

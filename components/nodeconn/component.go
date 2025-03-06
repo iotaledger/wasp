@@ -10,7 +10,9 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/components/chains"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/nodeconn"
@@ -46,12 +48,14 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps nodeConnectionDeps) chain.NodeConnection {
-		address := lo.Must(iotago.AddressFromHex(ParamsWS.PackageID))
+		address := lo.Must(iotago.AddressFromHex(ParamsL1.PackageID))
 
 		nodeConnection, err := nodeconn.New(
 			Component.Daemon().ContextStopped(),
 			*address,
-			ParamsWS.WebsocketURL,
+			chains.ParamsChains.MempoolMaxOnledgerInPool,
+			ParamsL1.WebsocketURL,
+			ParamsL1.HttpURL,
 			Component.Logger().Named("nc"),
 			deps.ShutdownHandler,
 		)

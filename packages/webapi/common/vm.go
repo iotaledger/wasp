@@ -99,6 +99,7 @@ func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
 		ch.Processors(),
 		ch.Log(),
 		req,
+		true,
 	)
 	if err != nil {
 		return nil, err

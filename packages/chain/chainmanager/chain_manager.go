@@ -77,6 +77,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -107,7 +108,7 @@ func (o *Output) LatestActiveAnchorObject() *isc.StateAnchor {
 	return o.cmi.latestConfirmedAO
 }
 func (o *Output) LatestConfirmedAliasOutput() *isc.StateAnchor { return o.cmi.latestConfirmedAO }
-func (o *Output) NeedPublishTX() *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] {
+func (o *Output) NeedPublishTX() *NeedPublishTXMap {
 	return o.cmi.needPublishTX
 }
 
@@ -131,6 +132,10 @@ func (o *Output) String() string {
 const NeedConsensusKeySize = cryptolib.AddressSize + 4
 
 type NeedConsensusKey [NeedConsensusKeySize]byte
+
+func (nck NeedConsensusKey) String() string {
+	return hexutil.Encode(nck[:])
+}
 
 type NeedConsensusMap = shrinkingmap.ShrinkingMap[NeedConsensusKey, *NeedConsensus]
 
@@ -158,6 +163,8 @@ func (nc *NeedConsensus) String() string {
 		nc.BaseStateAnchor,
 	)
 }
+
+type NeedPublishTXMap = shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX]
 
 type NeedPublishTX struct {
 	CommitteeAddr cryptolib.Address
@@ -187,20 +194,21 @@ type cmtLogInst struct {
 }
 
 type chainMgrImpl struct {
-	chainID                    isc.ChainID                                                   // This instance is responsible for this chain.
-	chainStore                 state.Store                                                   // Store of the chain state.
-	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                          // All the committee log instances for this chain.
-	consensusStateRegistry     cmt_log.ConsensusStateRegistry                                // Persistent store for log indexes.
-	latestActiveCmt            *cryptolib.Address                                            // The latest active committee.
-	latestConfirmedAO          *isc.StateAnchor                                              // The latest confirmed AO (follows Active AO).
-	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey)       // All the nodes authorized for being access nodes (for the ActiveAO).
-	trackActiveStateCB         func(ao *isc.StateAnchor)                                     // We will call this to set new AO for the active state.
-	savePreliminaryBlockCB     func(block state.Block)                                       // We will call this, when a preliminary block matching the tx signatures is received.
-	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                                 // Will be called, when a committee changes.
-	needConsensus              *NeedConsensusMap                                             // Query for a consensus.
-	needConsensusCB            func(upd *NeedConsensusMap)                                   //
-	needPublishTX              *shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublishTX] // Query to post TXes.
-	dkShareRegistryProvider    registry.DKShareRegistryProvider                              // Source for DKShares.
+	chainID                    isc.ChainID                                             // This instance is responsible for this chain.
+	chainStore                 state.Store                                             // Store of the chain state.
+	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                    // All the committee log instances for this chain.
+	consensusStateRegistry     cmt_log.ConsensusStateRegistry                          // Persistent store for log indexes.
+	latestActiveCmt            *cryptolib.Address                                      // The latest active committee.
+	latestConfirmedAO          *isc.StateAnchor                                        // The latest confirmed AO (follows Active AO).
+	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) // All the nodes authorized for being access nodes (for the ActiveAO).
+	trackActiveStateCB         func(ao *isc.StateAnchor)                               // We will call this to set new AO for the active state.
+	savePreliminaryBlockCB     func(block state.Block)                                 // We will call this, when a preliminary block matching the tx signatures is received.
+	committeeUpdatedCB         func(dkShare tcrypto.DKShare)                           // Will be called, when a committee changes.
+	needConsensus              *NeedConsensusMap                                       // Query for a consensus.
+	needConsensusCB            func(upd *NeedConsensusMap)                             // A callback.
+	needPublishTX              *NeedPublishTXMap                                       // Query to post TXes.
+	needPublishCB              func(upd *NeedPublishTXMap)                             // A callback.
+	dkShareRegistryProvider    registry.DKShareRegistryProvider                        // Source for DKShares.
 	varAccessNodeState         VarAccessNodeState
 	output                     *Output
 	asGPA                      gpa.GPA
@@ -226,6 +234,7 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	needConsensusCB func(upd *NeedConsensusMap),
+	needPublishCB func(upd *NeedPublishTXMap),
 	activeNodesCB func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey),
 	trackActiveStateCB func(ao *isc.StateAnchor),
 	savePreliminaryBlockCB func(block state.Block),
@@ -248,6 +257,7 @@ func New(
 		needConsensus:              shrinkingmap.New[NeedConsensusKey, *NeedConsensus](),
 		needConsensusCB:            needConsensusCB,
 		needPublishTX:              shrinkingmap.New[hashing.HashValue, *NeedPublishTX](),
+		needPublishCB:              needPublishCB,
 		dkShareRegistryProvider:    dkShareRegistryProvider,
 		varAccessNodeState:         NewVarAccessNodeState(chainID, log.Named("VAS")),
 		me:                         me,
@@ -281,8 +291,6 @@ func (cmi *chainMgrImpl) Input(input gpa.Input) gpa.OutMessages {
 		return cmi.handleInputConsensusOutputSkip(input)
 	case *inputConsensusTimeout:
 		return cmi.handleInputConsensusTimeout(input)
-	case *inputMilestoneReceived:
-		return cmi.handleInputMilestoneReceived()
 	case *inputCanPropose:
 		return cmi.handleInputCanPropose()
 	}
@@ -328,7 +336,7 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 			cmi.committeeUpdatedCB(nil)
 			cmi.latestActiveCmt = nil
 		}
-		cmi.needConsensus = nil
+		cmi.needConsensus.Clear()
 		if vsaUpdated && vsaTip != nil {
 			cmi.log.Debugf("⊢ going to track %v as an access node on confirmed block.", vsaTip)
 			cmi.trackActiveStateCB(vsaTip)
@@ -358,7 +366,10 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPublishResult) gpa.OutMessages {
 	cmi.log.Debugf("handleInputChainTxPublishResult: %+v", input)
 	// >     Clear the TX from the NeedPublishTX variable.
-	cmi.needPublishTX.Delete(input.txHash)
+	if cmi.needPublishTX.Has(input.txHash) {
+		cmi.needPublishTX.Delete(input.txHash)
+		cmi.needPublishCB(cmi.needPublishTX)
+	}
 	if input.confirmed {
 		// >     If result.confirmed = false THEN ... ELSE
 		// >         NOP // AO has to be received as Confirmed AO. // TODO: Not true, anymore.
@@ -413,6 +424,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 				Tx:            input.consensusResult.Transaction,
 				BaseAnchorRef: baseAnchorRef,
 			})
+			cmi.needPublishCB(cmi.needPublishTX)
 		}
 	}
 	//
@@ -440,15 +452,6 @@ func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeou
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
 		return cl.Input(cmt_log.NewInputConsensusTimeout(input.logIndex))
 	})
-}
-
-func (cmi *chainMgrImpl) handleInputMilestoneReceived() gpa.OutMessages {
-	cmi.log.Debugf("handleInputMilestoneReceived")
-	// TODO: This event is not needed anymore.
-	// return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
-	// 	return cl.Input(cmt_log.NewInputMilestoneReceived())
-	// })
-	return nil
 }
 
 func (cmi *chainMgrImpl) handleInputCanPropose() gpa.OutMessages {

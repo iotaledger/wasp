@@ -105,6 +105,10 @@ func (t IotaTransactionBlockEffects) IsSuccess() bool {
 	return t.V1.Status.Status == ExecutionStatusSuccess
 }
 
+func (t IotaTransactionBlockEffects) IsFailed() bool {
+	return t.V1.Status.Status == ExecutionStatusFailure
+}
+
 const (
 	IotaTransactionBlockKindIotaChangeEpoch             = "ChangeEpoch"
 	IotaTransactionBlockKindIotaConsensusCommitPrologue = "ConsensusCommitPrologue"

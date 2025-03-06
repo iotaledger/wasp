@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -79,7 +80,6 @@ func testConsBasic(t *testing.T, n, f int) {
 		Symbol:      "IOTA",
 		Description: "Foo",
 		IconURL:     "Foo",
-		TotalSupply: 3126000000000000000,
 	}
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
@@ -101,7 +101,6 @@ func testConsBasic(t *testing.T, n, f int) {
 		Value: coin.Value(100),
 		Ref:   iotatest.RandomObjectRef(),
 	}
-	gasPrice := uint64(123)
 
 	//
 	// Construct the chain on L1.
@@ -167,7 +166,19 @@ func testConsBasic(t *testing.T, n, f int) {
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, &tokenCoinInfo)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
+		nodes[nid] = cons.New(
+			chainID,
+			chainStates[nid],
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil, // rotateTo
+			procConfig,
+			consInstID,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -191,7 +202,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputMempoolProposal(reqRefs))
 		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
 		tc.WithInput(nid, cons.NewInputTimeData(now))
-		tc.WithInput(nid, cons.NewInputGasInfo([]*coin.CoinWithRef{&gasCoin}, gasPrice))
+		tc.WithInput(nid, cons.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameters.L1Default))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)

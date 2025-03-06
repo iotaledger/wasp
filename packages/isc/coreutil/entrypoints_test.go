@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -75,7 +76,7 @@ func (m MockSandBox) RequestIndex() uint16 {
 	panic("implement me")
 }
 
-func (m MockSandBox) EVMTracer() *isc.EVMTracer {
+func (m MockSandBox) EVMTracer() *tracers.Tracer {
 	panic("implement me")
 }
 
@@ -192,7 +193,7 @@ func (m MockSandBox) AllowanceAvailable() *isc.Assets {
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 func TestEntryPointViewFunc(t *testing.T) {
-	testViewFunc := coreutil.NewViewEP11(Contract, "", coreutil.Field[isc.AgentID](), coreutil.Field[isc.AgentID]())
+	testViewFunc := coreutil.NewViewEP11(Contract, "", coreutil.Field[isc.AgentID](""), coreutil.Field[isc.AgentID](""))
 	testViewFuncHandler := testViewFunc.WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
 		return id
 	})
@@ -217,7 +218,7 @@ func TestEntryPointViewFunc(t *testing.T) {
 }
 
 func TestEntryPointMutFunc11(t *testing.T) {
-	testMutFunc := coreutil.NewEP11(Contract, "", coreutil.Field[uint32](), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP11(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) uint32 {
 		return u * 2
 	})
@@ -225,7 +226,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 	testNumber := uint32(1024)
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.Encode[uint32](testNumber)),
+			codec.Encode(testNumber)),
 	}
 
 	result := testMutFuncHandler.Call(mock)
@@ -242,7 +243,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 }
 
 func TestEntryPointMutFunc12(t *testing.T) {
-	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](), coreutil.Field[uint32](), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
 		return u * 2, u * 3
 	})
@@ -250,7 +251,7 @@ func TestEntryPointMutFunc12(t *testing.T) {
 	testNumber := uint32(1024)
 	mock := MockSandBox{
 		MockParams: isc.NewCallArguments(
-			codec.Encode[uint32](testNumber)),
+			codec.Encode(testNumber)),
 	}
 
 	result := testMutFuncHandler.Call(mock)

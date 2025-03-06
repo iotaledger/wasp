@@ -48,7 +48,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	}
 
 	req := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-tools:v0.9.0-alpha",
+		Image:         "iotaledger/iota-tools:v0.10.0-alpha",
 		ImagePlatform: imagePlatform,
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
 		WaitingFor: wait.ForAll(
@@ -63,6 +63,10 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 			"--with-faucet",
 			fmt.Sprintf("--faucet-amount=%d", iotaclient.SingleCoinFundsFromFaucetAmount),
 		},
+	}
+
+	if runtime.GOOS == "linux" {
+		req.Tmpfs = map[string]string{"/tmp": ""}
 	}
 
 	now := time.Now()

@@ -4,16 +4,13 @@
 module isc::anchor_tests {
 
     use std::{
-        fixed_point32::{FixedPoint32},
-        string::{Self, String},
+        string::{Self},
         ascii::Self,
     };
     use iota::{
-        table::Self,
         coin::Self,
         iota::IOTA,
         url::Self,
-        vec_set::Self,
     };
 
     use stardust::{
@@ -26,9 +23,12 @@ module isc::anchor_tests {
         request::Self,
     };
 
+    use std::fixed_point32;
+    use iota::vec_map;
+
+
     // One Time Witness for coins used in the tests.
     public struct TEST_A has drop {}
-    public struct TEST_B has drop {}
 
     // Demonstration on how to receive a Request inside one PTB.
     #[test]
@@ -41,11 +41,21 @@ module isc::anchor_tests {
         let mut ctx = tx_context::dummy();
 
         // Create an Anchor.
-        let mut anchor = anchor::start_new_chain(vector::empty(), &mut ctx);
+        let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
 
         // ClientPTB.1 Mint some tokens for the request.
-        let mut iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
+        let iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
         let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
+
+        let mut royalties = vec_map::empty();
+        royalties.insert(sender, fixed_point32::create_from_rational(1, 2));
+
+        let mut attributes = vec_map::empty();
+        attributes.insert(string::utf8(b"attribute"), string::utf8(b"value"));
+
+        let mut non_standard_fields = vec_map::empty();
+        non_standard_fields.insert(string::utf8(b"field"), string::utf8(b"value"));
+
         let test_b_nft = nft::create_for_testing(
             option::some(sender),
             option::some(b"metadata"),
@@ -57,14 +67,15 @@ module isc::anchor_tests {
                 url::new_unsafe(ascii::string(b"www.best-nft.com/nft.png")),
                 string::utf8(b"nft"),
                 option::some(string::utf8(b"collection")),
-                table::new<address,FixedPoint32>(&mut ctx),
+                royalties,
                 option::some(string::utf8(b"issuer")),
                 option::some(string::utf8(b"description")),
-                vec_set::empty<String>(),
-                table::new<String,String>(&mut ctx),
+                attributes,
+                non_standard_fields,
             ),
             &mut ctx,
         );
+
         let nft_id = object::id(&test_b_nft);
 
         // ClientPTB.2 create allowance
@@ -92,6 +103,7 @@ module isc::anchor_tests {
             option::some(vector::empty()), 
             &mut ctx,
         );*/ // Commented because cannot be executed received in this test
+        // Instead create a test request
         let req = request::create_for_testing(
             req_assets,
             42, // contract hname
@@ -122,7 +134,7 @@ module isc::anchor_tests {
         
         // ServerPTB.3.1: extract the iota balance.
         let extracted_iota_balance = req_extracted_assets.take_all_coin_balance<IOTA>();
-        assert!(extracted_iota_balance.value() == 3);
+        assert!(extracted_iota_balance.value() == 10000);
         // ServerPTB.3.2: place it to the anchor assets bag.
         anchor_assets.place_coin_balance(extracted_iota_balance);
 
@@ -148,5 +160,60 @@ module isc::anchor_tests {
         // !!! END !!!
 
         transfer::public_transfer(anchor, chain_owner); // not needed in the PTB
+    }
+
+    #[test]
+    fun test_anchor_state_update() {
+        let chain_owner = @0xA;
+        let mut ctx = tx_context::dummy();
+
+        let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
+
+        let metadata = vector[1,2,3];
+        anchor.update_anchor_state_for_migration(metadata, 1);
+
+        assert!(anchor.get_state_index() == 1);
+        assert!(anchor.get_state_metadata() == metadata);
+
+        transfer::public_transfer(anchor, chain_owner); 
+    }
+
+    #[test]
+    fun test_migration_asset_placement() {
+        let initial_iota_in_request = 10000;
+        let initial_testA_in_request = 100;
+        let chain_owner = @0xA;
+        let sender = @0xB;
+        let mut ctx = tx_context::dummy();
+
+        let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);
+
+        // Mint some tokens for the request.
+        let iota = coin::mint_for_testing<IOTA>(initial_iota_in_request, &mut ctx);
+        let test_a_coin = coin::mint_for_testing<TEST_A>(initial_testA_in_request, &mut ctx);
+
+        // Place tokens into the anchors AssetsBag using the migration place functions.
+        anchor.place_coin_for_migration(iota);
+        anchor.place_coin_for_migration(test_a_coin);
+
+        // Take back the assets out of the AssetsBag
+        let (mut assets,b) = anchor.borrow_assets();
+        let iota_coin = assets.take_coin_balance<IOTA>(initial_iota_in_request);
+        let test_coin = assets.take_coin_balance<TEST_A>(initial_testA_in_request);
+
+        // Make sure that the balance remained the same
+        assert!(iota_coin.value() == initial_iota_in_request);
+        assert!(test_coin.value() == initial_testA_in_request);
+        assert!(assets.get_size() == 0);
+        
+        anchor.return_assets_from_borrow(assets, b);
+
+        // Clean up
+        transfer::public_transfer(anchor, chain_owner); 
+        
+        let mut temp_assets_bag = assets_bag::new(&mut ctx);
+        temp_assets_bag.place_coin_balance(test_coin);
+        temp_assets_bag.place_coin_balance(iota_coin);
+        transfer::public_transfer(temp_assets_bag, chain_owner); // not needed in the PTB
     }
 }

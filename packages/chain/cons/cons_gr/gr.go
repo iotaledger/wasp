@@ -15,6 +15,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
@@ -24,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -77,16 +79,16 @@ type StateMgr interface {
 	) <-chan state.Block
 }
 
-type NodeConnGasInfo interface {
+type NodeConnL1Info interface {
 	GetGasCoins() []*coin.CoinWithRef
-	GetGasPrice() uint64
+	GetL1Params() *parameters.L1Params
 }
 
 type NodeConn interface {
-	ConsensusGasPriceProposal(
+	ConsensusL1InfoProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,
-	) <-chan NodeConnGasInfo
+	) <-chan NodeConnL1Info
 }
 
 type VM interface {
@@ -116,6 +118,7 @@ type ConsGr struct {
 	consInst                    gpa.AckHandler
 	inputCh                     chan *input
 	inputReceived               *atomic.Bool
+	inputRotateToCh             chan *iotago.Address
 	inputTimeCh                 chan time.Time
 	outputCB                    func(*Output) // For sending output to the user.
 	outputReady                 bool          // Set to true, if we provided output already.
@@ -136,8 +139,8 @@ type ConsGr struct {
 	stateMgrSaveBlockRespCh     <-chan state.Block
 	stateMgrSaveBlockAsked      bool
 	nodeConn                    NodeConn
-	nodeConnGasInfoRespCh       <-chan NodeConnGasInfo
-	nodeConnGasInfoAsked        bool
+	nodeConnL1InfoRespCh        <-chan NodeConnL1Info
+	nodeConnL1InfoAsked         bool
 	vm                          VM
 	vmRespCh                    <-chan *vm.VMTaskResult
 	vmAsked                     bool
@@ -164,6 +167,7 @@ func New(
 	stateMgr StateMgr,
 	nodeConn NodeConn,
 	net peering.NetworkProvider,
+	rotateTo *iotago.Address,
 	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
@@ -184,6 +188,7 @@ func New(
 		consInst:          nil, // Set bellow.
 		inputCh:           make(chan *input, 1),
 		inputReceived:     atomic.NewBool(false),
+		inputRotateToCh:   make(chan *iotago.Address, 1),
 		inputTimeCh:       make(chan time.Time, 1),
 		recoveryTimeout:   recoveryTimeout,
 		redeliveryPeriod:  redeliveryPeriod,
@@ -210,6 +215,7 @@ func New(
 		me,
 		myNodeIdentity.GetPrivateKey(),
 		dkShare,
+		rotateTo,
 		procCache,
 		netPeeringID[:],
 		gpa.NodeIDFromPublicKey,
@@ -243,6 +249,10 @@ func (cgr *ConsGr) Input(baseAliasOutput *isc.StateAnchor, outputCB func(*Output
 	}
 	cgr.inputCh <- inp
 	close(cgr.inputCh)
+}
+
+func (cgr *ConsGr) RotateTo(address *iotago.Address) {
+	cgr.inputRotateToCh <- address
 }
 
 func (cgr *ConsGr) Time(t time.Time) {
@@ -284,6 +294,14 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			cgr.outputCB = inp.outputCB
 			cgr.recoverCB = inp.recoverCB
 			cgr.handleConsInput(cons.NewInputProposal(inp.baseAliasOutput))
+
+		case a, ok := <-cgr.inputRotateToCh:
+			if !ok {
+				cgr.inputRotateToCh = nil
+				continue
+			}
+			cgr.handleConsInput(cons.NewInputRotateTo(a))
+
 		case t, ok := <-cgr.inputTimeCh:
 			if !ok {
 				cgr.inputTimeCh = nil
@@ -326,12 +344,13 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			}
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
 
-		case t, ok := <-cgr.nodeConnGasInfoRespCh:
+		case t, ok := <-cgr.nodeConnL1InfoRespCh:
+			cgr.log.Debugf("ConsensusL1InfoProposal received, respCh=%v, response=%v", cgr.nodeConnL1InfoRespCh, t)
 			if !ok {
-				cgr.nodeConnGasInfoRespCh = nil
+				cgr.nodeConnL1InfoRespCh = nil
 				continue
 			}
-			cgr.handleConsInput(cons.NewInputGasInfo(t.GetGasCoins(), t.GetGasPrice()))
+			cgr.handleConsInput(cons.NewInputL1Info(t.GetGasCoins(), t.GetL1Params()))
 
 		case resp, ok := <-cgr.vmRespCh:
 			if !ok {
@@ -360,7 +379,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
-			cgr.log.Debugf("Consensus Instance: %v", cgr.consInst.StatusString())
+			cgr.log.Debug("Consensus Instance: %v", cgr.consInst.StatusString())
 		case <-ctxClose:
 			cgr.log.Debugf("Closing ConsGr because context closed.")
 			return
@@ -418,9 +437,10 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 		cgr.stateMgrSaveBlockRespCh = cgr.stateMgr.ConsensusProducedBlock(cgr.ctx, output.NeedStateMgrSaveBlock)
 		cgr.stateMgrSaveBlockAsked = true
 	}
-	if output.NeedNodeConnGasInfo != nil && !cgr.nodeConnGasInfoAsked {
-		cgr.nodeConnGasInfoRespCh = cgr.nodeConn.ConsensusGasPriceProposal(cgr.ctx, output.NeedNodeConnGasInfo)
-		cgr.nodeConnGasInfoAsked = true
+	if output.NeedNodeConnL1Info != nil && !cgr.nodeConnL1InfoAsked {
+		cgr.nodeConnL1InfoRespCh = cgr.nodeConn.ConsensusL1InfoProposal(cgr.ctx, output.NeedNodeConnL1Info)
+		cgr.log.Debugf("ConsensusL1InfoProposal asked, respCh=%v", cgr.nodeConnL1InfoRespCh)
+		cgr.nodeConnL1InfoAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {
 		cgr.vmRespCh = cgr.vm.ConsensusRunTask(cgr.ctx, output.NeedVMResult)

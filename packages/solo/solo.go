@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
+
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -156,7 +157,10 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
+	err := parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
+	if err != nil {
+		panic(err)
+	}
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
@@ -453,10 +457,6 @@ func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 	}
 }
 
-func (ch *Chain) LatestL1Parameters() *parameters.L1Params {
-	return parameters.L1()
-}
-
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 	anchor := ch.GetLatestAnchor()
 	bals, err := ch.Env.ISCMoveClient().GetAssetsBagWithBalances(ch.Env.ctx, &anchor.GetAssetsBag().ID)
@@ -466,14 +466,12 @@ func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
 
 // collateBatch selects requests to be processed in a batch
 func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
-	reqs, err := ch.Env.ISCMoveClient().GetRequests(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress())
-	require.NoError(ch.Env.T, err)
-	slices.SortFunc(reqs, func(a, b *iscmove.RefWithObject[iscmove.Request]) int {
-		return bytes.Compare(a.ObjectID[:], b.ObjectID[:])
+	reqs := make([]*iscmove.RefWithObject[iscmove.Request], 0)
+	err := ch.Env.ISCMoveClient().GetRequestsSorted(ch.Env.ctx, ch.Env.ISCPackageID(), ch.ChainID.AsAddress().AsIotaAddress(), maxRequestsInBlock, func(err error, i *iscmove.RefWithObject[iscmove.Request]) {
+		require.NoError(ch.Env.T, err)
+		reqs = append(reqs, i)
 	})
-	if len(reqs) > maxRequestsInBlock {
-		reqs = reqs[:maxRequestsInBlock]
-	}
+	require.NoError(ch.Env.T, err)
 	return lo.Map(reqs, func(req *iscmove.RefWithObject[iscmove.Request], _ int) isc.Request {
 		r, err := isc.OnLedgerFromRequest(req, ch.ChainID.AsAddress())
 		require.NoError(ch.Env.T, err)
@@ -710,7 +708,7 @@ func (env *Solo) L1MintCoin(
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,
 	typeTag iotago.Identifier,
-	treasuryCapObjectID *iotago.ObjectID,
+	treasuryCapObject *iotago.ObjectRef,
 	mintAmount uint64,
 ) (coinRef *iotago.ObjectRef) {
 	return iotaclienttest.MintCoins(
@@ -720,7 +718,7 @@ func (env *Solo) L1MintCoin(
 		packageID,
 		moduleName,
 		typeTag,
-		treasuryCapObjectID,
+		treasuryCapObject,
 		mintAmount,
 	)
 }

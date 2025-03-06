@@ -75,16 +75,14 @@ func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg eth
 	)
 }
 
-func (b *jsonRPCSoloBackend) EVMTraceTransaction(
+func (b *jsonRPCSoloBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
-	txIndex *uint64,
-	blockNumber *uint64,
 	tracer *tracers.Tracer,
 	l1Params *parameters.L1Params,
 ) error {
-	return chainutil.EVMTraceTransaction(
+	return chainutil.EVMTrace(
 		anchor,
 		l1Params,
 		b.Chain.store,
@@ -92,8 +90,6 @@ func (b *jsonRPCSoloBackend) EVMTraceTransaction(
 		b.Chain.log,
 		blockTime,
 		iscRequestsInBlock,
-		txIndex,
-		blockNumber,
 		tracer,
 	)
 }

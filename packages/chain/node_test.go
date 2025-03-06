@@ -135,12 +135,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				Function: uint32(mmm.Target.EntryPoint),
 				Args:     mmm.Params,
 			},
-			// inccounter.FuncIncCounter.Message(nil),
-			// &iscmove.Message{
-			// 	Contract: uint32(inccounter.Contract.Hname()),
-			// 	Function: uint32(inccounter.FuncIncCounter.Hname()),
-			// 	Args:     inccounter.FuncIncCounter.Message(nil).Params.Clone(),
-			// },
 			Allowance:        allowance,
 			OnchainGasBudget: 100000,
 			GasPrice:         iotaclient.DefaultGasPrice,
@@ -151,8 +145,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		require.NoError(t, err)
 		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 		require.NoError(t, err)
-		//		onLedgerReq, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(te.anchor.GetObjectID()))
-		//		require.NoError(t, err)
 
 		incRequests[i] = *reqWithObj
 	}
@@ -399,7 +391,7 @@ func (tnc *testNodeConn) AttachChain(
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
-) {
+) error {
 	if !tnc.chainID.Empty() {
 		tnc.t.Error("duplicate attach")
 	}
@@ -408,6 +400,7 @@ func (tnc *testNodeConn) AttachChain(
 	tnc.recvAnchor = recvAnchor
 	tnc.recvRequest = recvRequest
 	tnc.attachWG.Done()
+	return nil
 }
 
 func (tnc *testNodeConn) Run(ctx context.Context) error {
@@ -422,11 +415,11 @@ func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 	panic("should be unused in test")
 }
 
-func (tnc *testNodeConn) ConsensusGasPriceProposal(
+func (tnc *testNodeConn) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan cons_gr.NodeConnGasInfo {
-	t := make(chan cons_gr.NodeConnGasInfo)
+) <-chan cons_gr.NodeConnL1Info {
+	t := make(chan cons_gr.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -450,28 +443,28 @@ func (tnc *testNodeConn) ConsensusGasPriceProposal(
 		}
 
 		ref := gasCoin.Data.Ref()
-		var coinInfo cons_gr.NodeConnGasInfo = &testNodeConnGasInfo{
+		var l1Info cons_gr.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(moveBalance.Balance),
 				Ref:   &ref,
 			}},
-			gasPrice: parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
+			l1params: parameters.L1Default,
 		}
 
-		t <- coinInfo
+		t <- l1Info
 	}()
 
 	return t
 }
 
-type testNodeConnGasInfo struct {
+type testNodeConnL1Info struct {
 	gasCoins []*coin.CoinWithRef
-	gasPrice uint64
+	l1params *parameters.L1Params
 }
 
-func (tgi *testNodeConnGasInfo) GetGasCoins() []*coin.CoinWithRef { return tgi.gasCoins }
-func (tgi *testNodeConnGasInfo) GetGasPrice() uint64              { return tgi.gasPrice }
+func (tgi *testNodeConnL1Info) GetGasCoins() []*coin.CoinWithRef  { return tgi.gasCoins }
+func (tgi *testNodeConnL1Info) GetL1Params() *parameters.L1Params { return tgi.l1params }
 
 // RefreshOnLedgerRequests implements chain.NodeConnection.
 func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {

@@ -100,6 +100,12 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 func TestRPCGetBalance(t *testing.T) {
 	env := newSoloTestEnv(t)
 	_, emptyAddress := solo.NewEthereumAccount()
+
+	{
+		_, err := env.Client.BalanceAtHash(context.Background(), emptyAddress, common.Hash{})
+		require.ErrorContains(env.T, err, "not found")
+	}
+
 	require.Zero(t, env.Balance(emptyAddress).Uint64())
 
 	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits single coin object allocated from faucet
@@ -402,23 +408,79 @@ func TestRPCCall(t *testing.T) {
 	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
 	contractABI, err := abi.JSON(strings.NewReader(evmtest.StorageContractABI))
 	require.NoError(t, err)
-	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(42))
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.StorageContractBytecode, uint32(1))
 
-	callArguments, err := contractABI.Pack("retrieve")
-	require.NoError(t, err)
+	callStore := func(n uint32) {
+		receipt := env.mustSendTransactionAndWait(types.MustSignNewTx(
+			creator,
+			types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+			&types.LegacyTx{
+				Nonce:    env.NonceAt(creatorAddress),
+				To:       &contractAddress,
+				Gas:      100_000,
+				GasPrice: big.NewInt(10000000000),
+				Data:     lo.Must(contractABI.Pack("store", n)),
+			},
+		))
+		require.Equal(t, types.ReceiptStatusSuccessful, receipt.Status)
+	}
 
-	ret, err := env.Client.CallContract(context.Background(), ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddress,
-		Data: callArguments,
-		Gas:  100_000,
-	}, nil)
-	require.NoError(t, err)
+	callRetrieve := func(bn *big.Int, expectError string) uint32 {
+		ret, err := env.Client.CallContract(context.Background(), ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddress,
+			Data: lo.Must(contractABI.Pack("retrieve")),
+			Gas:  100_000,
+		}, bn)
+		if expectError != "" {
+			require.ErrorContains(t, err, expectError)
+			return 0
+		}
+		require.NoError(t, err)
+		var v uint32
+		err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
+		require.NoError(t, err)
+		return v
+	}
 
-	var v uint32
-	err = contractABI.UnpackIntoInterface(&v, "retrieve", ret)
-	require.NoError(t, err)
-	require.Equal(t, uint32(42), v)
+	blockNumber := env.soloChain.EVM().BlockNumber().Int64()
+
+	v := callRetrieve(nil, "")
+	require.Equal(t, uint32(1), v)
+
+	v = callRetrieve(big.NewInt(blockNumber), "")
+	require.Equal(t, uint32(1), v)
+
+	_ = callRetrieve(big.NewInt(blockNumber+1), "not found")
+
+	callStore(2)
+
+	v = callRetrieve(nil, "")
+	require.Equal(t, uint32(2), v)
+
+	v = callRetrieve(big.NewInt(blockNumber), "")
+	require.Equal(t, uint32(1), v)
+
+	v = callRetrieve(big.NewInt(blockNumber+1), "")
+	require.Equal(t, uint32(2), v)
+
+	_ = callRetrieve(big.NewInt(blockNumber+2), "not found")
+
+	callStore(3)
+
+	v = callRetrieve(nil, "")
+	require.Equal(t, uint32(3), v)
+
+	v = callRetrieve(big.NewInt(blockNumber), "")
+	require.Equal(t, uint32(1), v)
+
+	v = callRetrieve(big.NewInt(blockNumber+1), "")
+	require.Equal(t, uint32(2), v)
+
+	v = callRetrieve(big.NewInt(blockNumber+2), "")
+	require.Equal(t, uint32(3), v)
+
+	_ = callRetrieve(big.NewInt(blockNumber+3), "not found")
 }
 
 func TestRPCCallNonView(t *testing.T) {
@@ -611,15 +673,58 @@ func TestRPCTraceTx(t *testing.T) {
 
 	t.Run("prestate", func(t *testing.T) {
 		accountMap, err := env.traceTransactionWithPrestate(tx1.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
 		require.NoError(t, err)
 		require.NotEmpty(t, accountMap)
-		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
 
 		diff, err := env.traceTransactionWithPrestateDiff(tx1.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
 		require.NoError(t, err)
 		require.NotEmpty(t, diff.Pre)
 		require.NotEmpty(t, diff.Post)
+	})
+}
+
+func TestRPCTraceFailedTx(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creatorL2Balance := env.Balance(creatorAddress)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	tx := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    creatorL2Balance,
+			Gas:      100000000000000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))),
+		})
+
+	_, err = env.SendTransactionAndWait(tx)
+	require.ErrorContains(t, err, "insufficient funds for gas * price + value")
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 0, bi.NumSuccessfulRequests)
+
+	t.Run("callTracer", func(t *testing.T) {
+		_, err := env.traceTransactionWithCallTracer(tx.Hash())
+		require.ErrorContains(t, err, "expected exactly one top-level call")
+	})
+
+	t.Run("prestate", func(t *testing.T) {
+		accountMap, err := env.traceTransactionWithPrestate(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, accountMap)
+
+		diff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
 		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, diff.Pre)
+		require.Empty(t, diff.Post)
 	})
 }
 

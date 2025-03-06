@@ -6,7 +6,7 @@ import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
 import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
-import { AnchorMetricItem } from '../models/AnchorMetricItem';
+import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
 import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
@@ -38,17 +38,26 @@ import { GovAllowedStateControllerAddressesResponse } from '../models/GovAllowed
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
+import { InOutput } from '../models/InOutput';
+import { InOutputMetricItem } from '../models/InOutputMetricItem';
+import { InStateOutput } from '../models/InStateOutput';
+import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
 import { InfoResponse } from '../models/InfoResponse';
+import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
+import { MilestoneInfo } from '../models/MilestoneInfo';
+import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
+import { Output } from '../models/Output';
+import { OutputID } from '../models/OutputID';
 import { PeeringNodeIdentityResponse } from '../models/PeeringNodeIdentityResponse';
 import { PeeringNodeStatusResponse } from '../models/PeeringNodeStatusResponse';
 import { PeeringTrustRequest } from '../models/PeeringTrustRequest';
@@ -57,13 +66,20 @@ import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
 import { ReceiptResponse } from '../models/ReceiptResponse';
+import { RentStructure } from '../models/RentStructure';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestJSON } from '../models/RequestJSON';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
-import { StateAnchor } from '../models/StateAnchor';
+import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
+import { Transaction } from '../models/Transaction';
+import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
+import { TransactionMetricItem } from '../models/TransactionMetricItem';
+import { TxInclusionStateMsg } from '../models/TxInclusionStateMsg';
+import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
 import { Type } from '../models/Type';
+import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -648,6 +664,39 @@ export class ObservableChainsApi {
      */
     public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Observable<void> {
         return this.removeAccessNodeWithHttpInfo(chainID, peer, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    }
+
+    /**
+     * Rotate a chain
+     * @param chainID ChainID (Hex Address)
+     * @param [rotateRequest] RotateRequest
+     */
+    public rotateChainWithHttpInfo(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.rotateChain(chainID, rotateRequest, _options);
+
+        // build promise chain
+        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
+        for (const middleware of this.configuration.middleware) {
+            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
+        }
+
+        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
+            pipe(mergeMap((response: ResponseContext) => {
+                let middlewarePostObservable = of(response);
+                for (const middleware of this.configuration.middleware) {
+                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
+                }
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.rotateChainWithHttpInfo(rsp)));
+            }));
+    }
+
+    /**
+     * Rotate a chain
+     * @param chainID ChainID (Hex Address)
+     * @param [rotateRequest] RotateRequest
+     */
+    public rotateChain(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<void> {
+        return this.rotateChainWithHttpInfo(chainID, rotateRequest, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**

@@ -85,7 +85,14 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	backend := NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
 
 	srv, err := jsonrpc.NewServer(
-		jsonrpc.NewEVMChain(backend, e.publisher, e.chainsProvider().IsArchiveNode(), hivedb.EngineRocksDB, e.indexDbPath, e.log.Named("EVMChain")),
+		jsonrpc.NewEVMChain(
+			backend,
+			e.publisher,
+			e.chainsProvider().IsArchiveNode(),
+			hivedb.EngineRocksDB,
+			e.indexDbPath,
+			e.log.Named("EVMChain"),
+		),
 		jsonrpc.NewAccountManager(nil),
 		e.metrics.GetChainMetrics(chainID).WebAPI,
 		e.jsonrpcParams,

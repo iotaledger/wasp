@@ -16,6 +16,8 @@ require (
 	github.com/dvsekhvalnov/jose2go v1.7.0
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/hashicorp/go-version v1.7.0
+	github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/logger v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
@@ -98,9 +100,7 @@ require (
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
-	github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2 // indirect
-	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/ds v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/hive.go/lo v0.0.0-20240319170702-c7591bb5f9f2 // indirect
@@ -167,6 +167,7 @@ require (
 	github.com/opencontainers/runtime-spec v1.1.0 // indirect
 	github.com/pangpanglabs/echoswagger/v2 v2.4.1 // indirect
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58 // indirect
+	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.2 // indirect
 	github.com/petermattis/goid v0.0.0-20230904192822-1876fd5063bc // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -202,7 +203,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98 // indirect
-	github.com/yusufpapurcu/wmi v1.2.3 // indirect
+	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
 	go.dedis.ch/fixbuf v1.0.3 // indirect
 	go.dedis.ch/kyber/v3 v3.1.0 // indirect

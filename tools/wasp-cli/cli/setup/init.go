@@ -3,10 +3,7 @@ package setup
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func initRefreshL1ParamsCmd() *cobra.Command {
@@ -27,7 +24,4 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(initCheckVersionsCmd())
 	rootCmd.AddCommand(initConfigSetCmd())
 	rootCmd.AddCommand(initRefreshL1ParamsCmd())
-
-	client := iotaclient.NewHTTP(config.L1APIAddress(), iotaclient.WaitForEffectsDisabled)
-	parameters.InitL1(*client, log.HiveLogger())
 }

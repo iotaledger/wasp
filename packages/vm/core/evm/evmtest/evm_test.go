@@ -1437,7 +1437,8 @@ func TestERC20BaseTokens(t *testing.T) {
 	{
 		var supply *big.Int
 		require.NoError(t, erc20.callView("totalSupply", nil, &supply))
-		require.EqualValues(t, parameters.L1Default.BaseToken.TotalSupply, supply.Uint64())
+		// 4_600_000_000 is in the initial supply on IOTA
+		require.Greater(t, supply.Uint64(), uint64(4_600_000_000))
 	}
 	{
 		var balance *big.Int
@@ -2793,7 +2794,6 @@ func TestL1DepositEVM(t *testing.T) {
 }
 
 func TestDecimalsConversion(t *testing.T) {
-	parameters.InitStaticL1(parameters.L1Default)
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	iscTest := env.deployISCTestContract(ethKey)

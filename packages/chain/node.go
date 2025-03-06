@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -86,6 +87,9 @@ type Chain interface {
 	// consider this node as an access node for this chain. The chain
 	// can query the nodes for blocks, etc. NOTE: servers = access⁻¹
 	ServersUpdated(serverNodes []*cryptolib.PublicKey)
+	// Call this on F+1 correct nodes to perform a rotation of a chain to the
+	// specified (committee) address.
+	RotateTo(address *iotago.Address)
 	// Metrics and the current descriptive state.
 	GetChainMetrics() *metrics.ChainMetrics
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
@@ -130,17 +134,21 @@ type chainNodeImpl struct {
 	recvAnchorPipe      pipe.Pipe[isc.StateAnchor]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
-	consOutputPipe      pipe.Pipe[*consOutput]
-	consRecoverPipe     pipe.Pipe[*consRecover]
-	publishingTXes      *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
-	procCache           *processors.Config                                                // Cache for the SC processors.
-	configUpdatedCh     chan *configUpdate
-	serversUpdatedPipe  pipe.Pipe[*serversUpdate]
-	awaitReceiptActCh   chan *awaitReceiptReq
-	awaitReceiptCnfCh   chan *awaitReceiptReq
-	stateTrackerAct     StateTracker
-	stateTrackerCnf     StateTracker
-	blockWAL            sm_gpa_utils.BlockWAL
+	// TODO: Send wantRotate to all the consInst.
+	// Also, if nil, wait for requests.
+	// If non-nil, wait for some delay, then propose empty set of requests.
+	consOutputPipe     pipe.Pipe[*consOutput]
+	consRecoverPipe    pipe.Pipe[*consRecover]
+	publishingTXes     *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
+	procCache          *processors.Config                                                // Cache for the SC processors.
+	configUpdatedCh    chan *configUpdate
+	serversUpdatedPipe pipe.Pipe[*serversUpdate]
+	rotateToPipe       pipe.Pipe[*iotago.Address]
+	awaitReceiptActCh  chan *awaitReceiptReq
+	awaitReceiptCnfCh  chan *awaitReceiptReq
+	stateTrackerAct    StateTracker
+	stateTrackerCnf    StateTracker
+	blockWAL           sm_gpa_utils.BlockWAL
 	//
 	// Configuration values.
 	consensusDelay   time.Duration
@@ -165,6 +173,7 @@ type chainNodeImpl struct {
 	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
 	gasCoin                *coin.CoinWithRef      // Set only when the corresponding state is retrieved.
 	originDeposit          coin.Value             // Initial deposit of the chain.
+	rotateTo               *iotago.Address        // Non-nil, if the owner of the node want to rotate the chain to the specified address.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -285,6 +294,7 @@ func New(
 		procCache:              processorConfig,
 		configUpdatedCh:        make(chan *configUpdate, 1),
 		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
+		rotateToPipe:           pipe.NewInfinitePipe[*iotago.Address](),
 		awaitReceiptActCh:      make(chan *awaitReceiptReq, 1),
 		awaitReceiptCnfCh:      make(chan *awaitReceiptReq, 1),
 		stateTrackerAct:        nil, // Set bellow.
@@ -341,6 +351,10 @@ func New(
 		func(upd *chainmanager.NeedConsensusMap) {
 			log.Debugf("needConsensusCB called with %v", upd)
 			cni.handleNeedConsensus(ctx, upd)
+		},
+		func(upd *chainmanager.NeedPublishTXMap) {
+			log.Debugf("needPublishCB called with %v", upd)
+			cni.handleNeedPublishTX(ctx, upd)
 		},
 		func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			cni.accessLock.RLock()
@@ -451,7 +465,10 @@ func New(
 		cni.chainMetrics.NodeConn.L1AnchorReceived()
 		recvAnchorPipeInCh <- *anchor
 	}
-	nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	if err != nil {
+		return nil, err
+	}
 	//
 	// Run the main thread.
 
@@ -483,6 +500,10 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	cni.serversUpdatedPipe.In() <- &serversUpdate{serverNodes: serverNodes}
 }
 
+func (cni *chainNodeImpl) RotateTo(address *iotago.Address) {
+	cni.rotateToPipe.In() <- address
+}
+
 //nolint:gocyclo
 func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
 	defer util.ExecuteIfNotNil(cleanupFunc)
@@ -493,6 +514,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	consOutputPipeOutCh := cni.consOutputPipe.Out()
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
+	rotateToPipeOutCh := cni.rotateToPipe.Out()
 	redeliveryPeriodTicker := time.NewTicker(RedeliveryPeriod)
 	consensusDelayTicker := time.NewTicker(cni.consensusDelay)
 	timestampTicker := time.NewTicker(100 * time.Millisecond)
@@ -512,13 +534,13 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				recvTxPublishedPipeOutCh = nil
 				continue
 			}
-			cni.handleTxPublished(ctx, txPublishResult)
+			cni.handleTxPublished(txPublishResult)
 		case aliasOutput, ok := <-recvAnchorPipeOutCh:
 			if !ok {
 				recvAnchorPipeOutCh = nil
 				continue
 			}
-			cni.handleAliasOutput(ctx, aliasOutput)
+			cni.handleAliasOutput(aliasOutput)
 		case timestamp := <-timestampTicker.C:
 			cni.handleMilestoneTimestamp(timestamp)
 		case recv, ok := <-netRecvPipeOutCh:
@@ -526,19 +548,19 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				netRecvPipeOutCh = nil
 				continue
 			}
-			cni.handleNetMessage(ctx, recv)
+			cni.handleNetMessage(recv)
 		case recv, ok := <-consOutputPipeOutCh:
 			if !ok {
 				consOutputPipeOutCh = nil
 				continue
 			}
-			cni.handleConsensusOutput(ctx, recv)
+			cni.handleConsensusOutput(recv)
 		case recv, ok := <-consRecoverPipeOutCh:
 			if !ok {
 				consRecoverPipeOutCh = nil
 				continue
 			}
-			cni.handleConsensusRecover(ctx, recv)
+			cni.handleConsensusRecover(recv)
 		case cfg, ok := <-cni.configUpdatedCh:
 			if !ok {
 				cni.configUpdatedCh = nil
@@ -551,6 +573,12 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				continue
 			}
 			cni.handleServersUpdated(srv.serverNodes)
+		case addr, ok := <-rotateToPipeOutCh:
+			if !ok {
+				serversUpdatedPipeOutCh = nil
+				continue
+			}
+			cni.handleRotateTo(addr)
 		case query, ok := <-cni.awaitReceiptActCh:
 			if !ok {
 				cni.awaitReceiptActCh = nil
@@ -573,10 +601,8 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 			}
 		case <-consensusDelayTicker.C:
 			cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputCanPropose()))
-			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case t := <-redeliveryPeriodTicker.C:
 			cni.sendMessages(cni.chainMgr.Input(cni.chainMgr.MakeTickInput(t)))
-			cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 		case <-ctx.Done():
 			continue
 		}
@@ -655,7 +681,19 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 	cni.updateServerNodes(serverNodes)
 }
 
-func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *txPublished) {
+func (cni *chainNodeImpl) handleRotateTo(address *iotago.Address) {
+	cni.log.Debugf("handleRotateTo: %v", address)
+	cni.rotateTo = address
+	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+		sm.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
+			ci.consensus.RotateTo(address)
+			return true
+		})
+		return true
+	})
+}
+
+func (cni *chainNodeImpl) handleTxPublished(txPubResult *txPublished) {
 	cni.log.Debugf("handleTxPublished, txID=%v", txPubResult.txID)
 	if !cni.publishingTXes.Has(txPubResult.txID) {
 		return
@@ -666,10 +704,9 @@ func (cni *chainNodeImpl) handleTxPublished(ctx context.Context, txPubResult *tx
 		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
 	)
 	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc.StateAnchor) {
+func (cni *chainNodeImpl) handleAliasOutput(aliasOutput isc.StateAnchor) {
 	cni.log.Debugf("handleAliasOutput: %v", aliasOutput)
 	if aliasOutput.GetStateIndex() == 0 {
 		sm, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
@@ -689,18 +726,21 @@ func (cni *chainNodeImpl) handleAliasOutput(ctx context.Context, aliasOutput isc
 
 	cni.stateTrackerCnf.TrackAliasOutput(&aliasOutput, true)
 	cni.stateTrackerAct.TrackAliasOutput(&aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
+
+	cni.accessLock.Lock()
+	cni.latestConfirmedAO = &aliasOutput
+	cni.latestActiveAO = &aliasOutput
+	cni.accessLock.Unlock()
+
 	outMsgs := cni.chainMgr.Input(
 		chainmanager.NewInputAnchorConfirmed(aliasOutput.Owner(), &aliasOutput),
 	)
 	cni.sendMessages(outMsgs)
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
-	cni.log.Debugf("handleMilestoneTimestamp: %v", timestamp)
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
-	cni.sendMessages(cni.chainMgr.Input(chainmanager.NewInputMilestoneReceived()))
 	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
@@ -712,7 +752,7 @@ func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	})
 }
 
-func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.PeerMessageIn) {
+func (cni *chainNodeImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 	msg, err := cni.chainMgr.UnmarshalMessage(recv.MsgData)
 	if err != nil {
 		cni.log.Warnf("cannot parse message: %v", err)
@@ -720,7 +760,6 @@ func (cni *chainNodeImpl) handleNetMessage(ctx context.Context, recv *peering.Pe
 	}
 	msg.SetSender(cni.pubKeyAsNodeID(recv.SenderPubKey))
 	cni.sendMessages(cni.chainMgr.Message(msg))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainmanager.NeedConsensusMap) {
@@ -735,6 +774,7 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		cmtInsts.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
 			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
+				ci.Cancel()
 				cmtInsts.Delete(li)
 			}
 			return true
@@ -746,19 +786,8 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	})
 }
 
-func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntyped gpa.Output) {
-	cni.log.Debugf("handleChainMgrOutput: %v", outputUntyped)
-	if outputUntyped == nil { // TODO: Will never be nil, fix it.
-		// Not sure, if it is OK to terminate them immediately at this point.
-		// This is for the case, if the current node is not in a committee of a chain anymore.
-		cni.cleanupPublishingTXes(nil)
-		return
-	}
-	output := outputUntyped.(*chainmanager.Output)
-	//
-	// Start publishing TX'es, if there not being posted already.
-	outputNeedPostTXes := output.NeedPublishTX()
-	outputNeedPostTXes.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
+func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainmanager.NeedPublishTXMap) {
+	upd.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
 		txToPost := needPublishTx // Have to take a copy to be used in callback.
 		txHash := lo.Must(txToPost.Tx.Hash())
 
@@ -768,8 +797,9 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 			publishStart := time.Now()
 			cni.log.Debugf("XXX: PublishTX %v ..., consumed anchor=%v", txHash, needPublishTx.BaseAnchorRef)
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
-				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v", txHash, newStateAnchor)
+				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v, err=%v", txHash, newStateAnchor, err)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
+
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
 					logIndex:        txToPost.LogIndex,
@@ -777,29 +807,22 @@ func (cni *chainNodeImpl) handleChainMgrOutput(ctx context.Context, outputUntype
 					nextAliasOutput: newStateAnchor,
 					confirmed:       err == nil,
 				}
+
 			}); err != nil {
 				cni.log.Error(err.Error())
 			}
+
 			cni.chainMetrics.NodeConn.TXPublishStarted()
 		}
 
 		return true
 	})
 
-	cni.cleanupPublishingTXes(outputNeedPostTXes)
-	//
-	// Update info for access by other components.
-	cni.accessLock.Lock()
-	cni.latestConfirmedAO = output.LatestConfirmedAliasOutput()
-	cni.latestActiveAO = output.LatestActiveAnchorObject()
-	// if cni.latestActiveAO == nil {	// TODO: Check, how is this handled in the case of rejections.
-	// 	cni.latestActiveState = nil
-	// 	cni.latestActiveStateAO = nil
-	// }
-	cni.accessLock.Unlock()
+	cni.cleanupPublishingTXes(upd)
+
 }
 
-func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOutput) {
+func (cni *chainNodeImpl) handleConsensusOutput(out *consOutput) {
 	cni.log.Debugf("handleConsensusOutput, %v", out)
 	var chainMgrInput gpa.Input
 	switch out.output.Status {
@@ -819,17 +842,15 @@ func (cni *chainNodeImpl) handleConsensusOutput(ctx context.Context, out *consOu
 		panic(fmt.Errorf("unexpected output state from consensus: %+v", out))
 	}
 	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
-func (cni *chainNodeImpl) handleConsensusRecover(ctx context.Context, out *consRecover) {
+func (cni *chainNodeImpl) handleConsensusRecover(out *consRecover) {
 	cni.log.Debugf("handleConsensusRecover: %v", out)
 	chainMgrInput := chainmanager.NewInputConsensusTimeout(
 		out.request.CommitteeAddr,
 		out.request.LogIndex,
 	)
 	cni.sendMessages(cni.chainMgr.Input(chainMgrInput))
-	cni.handleChainMgrOutput(ctx, cni.chainMgr.Output())
 }
 
 func (cni *chainNodeImpl) ensureConsensusInput(ctx context.Context, needConsensus *chainmanager.NeedConsensus) {
@@ -864,8 +885,9 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			cgr := consGR.New(
 				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr,
-				cni.nodeConn, // TODO: Pass the NodeConn here.
+				cni.nodeConn,
 				cni.net,
+				cni.rotateTo,
 				cni.validatorAgentID,
 				cni.recoveryTimeout, RedeliveryPeriod, PrintStatusPeriod,
 				cni.chainMetrics.Consensus,
@@ -885,19 +907,6 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	}
 
 	consensusInstance, _ := consensusInstances.Get(logIndex)
-
-	// collect all active consensusIDs
-	activeConsensusInstances := []consGR.ConsensusID{}
-	cni.consensusInsts.ForEach(func(cAddr cryptolib.AddressKey, consMap *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
-		consMap.ForEach(func(li cmt_log.LogIndex, _ *consensusInst) bool {
-			activeConsensusInstances = append(activeConsensusInstances, consGR.NewConsensusID(cryptolib.NewAddressFromKey(cAddr), &li))
-			return true
-		})
-		return true
-	})
-	// update the mempool with the list of active consensus instances
-	cni.mempool.ConsensusInstancesUpdated(activeConsensusInstances)
-	// ----
 
 	return consensusInstance
 }
