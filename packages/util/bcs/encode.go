@@ -2,6 +2,7 @@ package bcs
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"reflect"
@@ -11,20 +12,78 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/constraints"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
+
+// Pointer is forced here for two reasons:
+//   - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
+//   - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
+//
+// But because of that encoding a value, which is stored in variable of type "any" would be very inconvenient.
+// So to make it more user-friendly, this function treats "*any" as "any".
+func MarshalStream[V any](v *V, dest io.Writer) error {
+	e := NewEncoder(dest)
+
+	switch v := interface{}(v).(type) {
+	case *interface{}:
+		// Exception for pointer to "any" just for convenience.
+		e.Encode(*v)
+	default:
+		e.Encode(v)
+	}
+
+	return e.err
+}
+
+func MustMarshalStream[V any](v *V, dest io.Writer) {
+	if err := MarshalStream(v, dest); err != nil {
+		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
+	}
+}
+
+func Marshal[V any](v *V) ([]byte, error) {
+	var buf bytes.Buffer
+
+	if err := MarshalStream(v, &buf); err != nil {
+		return nil, err
+	}
+
+	return buf.Bytes(), nil
+}
+
+func MustMarshal[V any](v *V) []byte {
+	b, err := Marshal(v)
+	if err != nil {
+		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
+	}
+
+	return b
+}
 
 type Encodable interface {
 	MarshalBCS(e *Encoder) error
 }
 
-var encodableT = reflect.TypeOf((*Encodable)(nil)).Elem()
-
 type Writable interface {
 	Write(w io.Writer) error
 }
 
-var writableT = reflect.TypeOf((*Writable)(nil)).Elem()
+type CustomEncoder func(e *Encoder, v reflect.Value) error
+
+var CustomEncoders = make(map[reflect.Type]CustomEncoder)
+
+func MakeCustomEncoder[V any](f func(e *Encoder, v V) error) func(e *Encoder, v reflect.Value) error {
+	return func(e *Encoder, v reflect.Value) error {
+		return f(e, v.Interface().(V))
+	}
+}
+
+func AddCustomEncoder[V any](f func(e *Encoder, v V) error) {
+	CustomEncoders[reflect.TypeOf((*V)(nil)).Elem()] = MakeCustomEncoder(f)
+}
+
+func RemoveCustomEncoder[V any]() {
+	delete(CustomEncoders, reflect.TypeOf((*V)(nil)).Elem())
+}
 
 type EncoderConfig struct {
 	TagName                  string
@@ -64,27 +123,26 @@ func NewEncoderWithOpts(dest io.Writer, cfg EncoderConfig) *Encoder {
 
 	return &Encoder{
 		cfg:           cfg,
-		w:             rwutil.NewWriter(dest),
+		w:             dest,
 		typeInfoCache: encoderGlobalTypeInfoCache.Get(),
 	}
 }
 
 type Encoder struct {
 	cfg           EncoderConfig
-	w             *rwutil.Writer
+	w             io.Writer
+	err           error
 	typeInfoCache localTypeInfoCache
 }
 
-var encoderGlobalTypeInfoCache = newSharedTypeInfoCache()
-
 func (e *Encoder) Err() error {
-	return e.w.Err
+	return e.err
 }
 
 func (e *Encoder) MustEncode(val any) {
 	e.Encode(val)
-	if e.w.Err != nil {
-		panic(e.w.Err)
+	if e.err != nil {
+		panic(e.err)
 	}
 }
 
@@ -111,7 +169,7 @@ func (e *Encoder) MustEncode(val any) {
 //	    return nil
 //	}
 func (e *Encoder) Encode(val any) {
-	if e.w.Err != nil {
+	if e.err != nil {
 		return
 	}
 
@@ -129,7 +187,7 @@ func (e *Encoder) Encode(val any) {
 }
 
 func (e *Encoder) EncodeOptional(val any) {
-	if e.w.Err != nil {
+	if e.err != nil {
 		return
 	}
 
@@ -143,97 +201,129 @@ func (e *Encoder) EncodeOptional(val any) {
 	}
 
 	if v.IsNil() {
-		e.w.WriteByte(0)
+		e.WriteByte(0)
 		return
 	}
 
-	e.w.WriteByte(1)
+	e.WriteByte(1)
 	e.Encode(val)
+}
+
+func (e *Encoder) WriteBool(v bool) {
+	if v {
+		_, _ = e.Write([]byte{0x01})
+	} else {
+		_, _ = e.Write([]byte{0x00})
+	}
+}
+
+//nolint:govet
+func (e *Encoder) WriteByte(v byte) {
+	_, _ = e.Write([]byte{v})
+}
+
+func (e *Encoder) WriteInt8(v int8) {
+	_, _ = e.Write([]byte{byte(v)})
+}
+
+func (e *Encoder) WriteUint8(v uint8) {
+	_, _ = e.Write([]byte{byte(v)})
+}
+
+func (e *Encoder) WriteInt16(v int16) {
+	e.Write([]byte{byte(v), byte(v >> 8)})
+}
+
+func (e *Encoder) WriteUint16(v uint16) {
+	e.Write([]byte{byte(v), byte(v >> 8)})
+}
+
+func (e *Encoder) WriteInt32(v int32) {
+	e.WriteUint32(uint32(v))
+}
+
+func (e *Encoder) WriteUint32(v uint32) {
+	var b [4]byte
+	binary.LittleEndian.PutUint32(b[:], v)
+	_, _ = e.Write(b[:])
+}
+
+func (e *Encoder) WriteInt64(v int64) {
+	e.WriteUint64(uint64(v))
+}
+
+func (e *Encoder) WriteUint64(v uint64) {
+	var b [8]byte
+	binary.LittleEndian.PutUint64(b[:], v)
+	_, _ = e.Write(b[:])
+}
+
+func (e *Encoder) WriteInt(v int) {
+	e.WriteInt64(int64(v))
+}
+
+func (e *Encoder) WriteUint(v uint) {
+	e.WriteUint64(uint64(v))
+}
+
+func (e *Encoder) WriteString(v string) {
+	e.WriteLen(len(v))
+	_, _ = e.Write([]byte(v))
 }
 
 func (e *Encoder) WriteOptionalFlag(hasValue bool) {
 	if hasValue {
-		e.w.WriteByte(1)
+		e.Write([]byte{1})
 	} else {
-		e.w.WriteByte(0)
+		e.Write([]byte{0})
 	}
 }
 
 // Enum index is an index of variant in enum type.
 func (e *Encoder) WriteEnumIdx(variantIdx int) {
-	e.w.WriteSize32(variantIdx)
+	e.WriteCompactUint64(uint64(variantIdx))
 }
 
 func (e *Encoder) WriteLen(length int) {
-	e.w.WriteSize32(length)
+	e.WriteCompactUint64(uint64(length))
 }
 
-// ULEB - unsigned little-endian base-128 - variable-length integer value.
-func (e *Encoder) WriteCompactUint(v uint64) {
-	e.w.WriteAmount64(v)
-}
-
-func (e *Encoder) WriteBool(v bool) {
-	e.w.WriteBool(v)
-}
-
-//nolint:govet
-func (e *Encoder) WriteByte(v byte) {
-	e.w.WriteByte(v)
-}
-
-func (e *Encoder) WriteInt8(v int8) {
-	e.w.WriteInt8(v)
-}
-
-func (e *Encoder) WriteInt16(v int16) {
-	e.w.WriteInt16(v)
-}
-
-func (e *Encoder) WriteInt32(v int32) {
-	e.w.WriteInt32(v)
-}
-
-func (e *Encoder) WriteInt64(v int64) {
-	e.w.WriteInt64(v)
-}
-
-func (e *Encoder) WriteInt(v int) {
-	e.w.WriteInt64(int64(v))
-}
-
-func (e *Encoder) WriteUint8(v uint8) {
-	e.w.WriteUint8(v)
-}
-
-func (e *Encoder) WriteUint16(v uint16) {
-	e.w.WriteUint16(v)
-}
-
-func (e *Encoder) WriteUint32(v uint32) {
-	e.w.WriteUint32(v)
-}
-
-func (e *Encoder) WriteUint64(v uint64) {
-	e.w.WriteUint64(v)
-}
-
-func (e *Encoder) WriteUint(v uint) {
-	e.w.WriteUint64(uint64(v))
-}
-
-func (e *Encoder) WriteString(v string) {
-	e.w.WriteString(v)
+func (e *Encoder) WriteCompactUint64(v uint64) {
+	// ULEB - unsigned little-endian base-128 - variable-length integer value.
+	// TODO: not effective for negative values - need separate version for them.
+	switch {
+	case v < 0x80:
+		_, _ = e.Write([]byte{byte(v)})
+	case v < 0x4000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte(v >> 7)})
+	case v < 0x20_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte(v >> 14)})
+	case v < 0x1000_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte(v >> 21)})
+	case v < 0x8_0000_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte((v >> 21) | 0x80), byte(v >> 28)})
+	case v < 0x400_0000_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte((v >> 21) | 0x80), byte((v >> 28) | 0x80), byte(v >> 35)})
+	case v < 0x2_0000_0000_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte((v >> 21) | 0x80), byte((v >> 28) | 0x80), byte((v >> 35) | 0x80), byte(v >> 42)})
+	case v < 0x100_0000_0000_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte((v >> 21) | 0x80), byte((v >> 28) | 0x80), byte((v >> 35) | 0x80), byte((v >> 42) | 0x80), byte(v >> 49)})
+	case v < 0x8000_0000_0000_0000:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte((v >> 21) | 0x80), byte((v >> 28) | 0x80), byte((v >> 35) | 0x80), byte((v >> 42) | 0x80), byte((v >> 49) | 0x80), byte(v >> 56)})
+	default:
+		_, _ = e.Write([]byte{byte(v | 0x80), byte((v >> 7) | 0x80), byte((v >> 14) | 0x80), byte((v >> 21) | 0x80), byte((v >> 28) | 0x80), byte((v >> 35) | 0x80), byte((v >> 42) | 0x80), byte((v >> 49) | 0x80), byte((v >> 56) | 0x80), byte(v >> 63)})
+	}
 }
 
 // For support of io.Writer interface
-func (e *Encoder) Write(b []byte) (n int, err error) {
-	e.w.WriteFromFunc(func(w io.Writer) (int, error) {
-		n, err = w.Write(b)
-		return n, err
-	})
+func (e *Encoder) Write(b []byte) (n int, _ error) {
+	if e.err != nil {
+		return 0, e.err
+	}
 
-	return n, e.w.Err
+	n, e.err = e.w.Write(b)
+
+	return n, e.err
 }
 
 //nolint:gocyclo,funlen
@@ -258,13 +348,13 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	if tInfo.CustomEncoder != nil {
 		if err := tInfo.CustomEncoder(e, v); err != nil { //nolint:govet
-			if e.w.Err == nil {
-				e.w.Err = err
+			if e.err == nil {
+				e.err = err
 			}
 			return e.handleErrorf("%v: custom encoder: %w", v.Type(), err)
 		}
-		if e.w.Err != nil {
-			return e.handleErrorf("%v: custom encoder: %w", v.Type(), e.w.Err)
+		if e.err != nil {
+			return e.handleErrorf("%v: custom encoder: %w", v.Type(), e.err)
 		}
 
 		return nil
@@ -280,21 +370,21 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	switch v.Kind() {
 	case reflect.Bool:
-		e.w.WriteBool(v.Bool())
+		e.WriteBool(v.Bool())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if typeOptions.IsCompactInt {
-			e.WriteCompactUint(uint64(v.Int())) //nolint:gosec
+			e.WriteCompactUint64(uint64(v.Int())) //nolint:gosec
 		} else {
 			err = e.encodeInt(v, typeOptions.UnderlyingType)
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if typeOptions.IsCompactInt {
-			e.WriteCompactUint(v.Uint())
+			e.WriteCompactUint64(v.Uint())
 		} else {
 			err = e.encodeUint(v, typeOptions.UnderlyingType)
 		}
 	case reflect.String:
-		e.w.WriteString(v.String())
+		e.WriteString(v.String())
 	case reflect.Slice:
 		if typeOptions.ArrayElement == nil {
 			typeOptions.ArrayElement = &ArrayElemOptions{}
@@ -328,8 +418,8 @@ func (e *Encoder) encodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	if err != nil {
 		return e.handleErrorf("%v: %w", v.Type(), err)
 	}
-	if e.w.Err != nil {
-		return e.handleErrorf("%v: %w", v.Type(), e.w.Err)
+	if e.err != nil {
+		return e.handleErrorf("%v: %w", v.Type(), e.err)
 	}
 
 	return nil
@@ -502,13 +592,13 @@ func (e *Encoder) encodeInt(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Int8:
-		e.w.WriteInt8(int8(v.Int())) //nolint:gosec
+		e.WriteInt8(int8(v.Int())) //nolint:gosec
 	case reflect.Int16:
-		e.w.WriteInt16(int16(v.Int())) //nolint:gosec
+		e.WriteInt16(int16(v.Int())) //nolint:gosec
 	case reflect.Int32:
-		e.w.WriteInt32(int32(v.Int())) //nolint:gosec
+		e.WriteInt32(int32(v.Int())) //nolint:gosec
 	case reflect.Int64, reflect.Int:
-		e.w.WriteInt64(v.Int())
+		e.WriteInt64(v.Int())
 	default:
 		panic(fmt.Sprintf("unexpected int kind: %v", k))
 	}
@@ -525,13 +615,13 @@ func (e *Encoder) encodeUint(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Uint8:
-		e.w.WriteUint8(uint8(v.Uint())) //nolint:gosec
+		e.WriteUint8(uint8(v.Uint())) //nolint:gosec
 	case reflect.Uint16:
-		e.w.WriteUint16(uint16(v.Uint())) //nolint:gosec
+		e.WriteUint16(uint16(v.Uint())) //nolint:gosec
 	case reflect.Uint32:
-		e.w.WriteUint32(uint32(v.Uint())) //nolint:gosec
+		e.WriteUint32(uint32(v.Uint())) //nolint:gosec
 	case reflect.Uint64, reflect.Uint:
-		e.w.WriteUint64(v.Uint())
+		e.WriteUint64(v.Uint())
 	default:
 		panic(fmt.Sprintf("unexpected uint kind: %v", k))
 	}
@@ -542,28 +632,28 @@ func (e *Encoder) encodeUint(v reflect.Value, encodedType reflect.Kind) error {
 func convertEncodeNumber[Value constraints.Numeric](e *Encoder, v Value, encodedType reflect.Kind) error {
 	switch encodedType {
 	case reflect.Int8:
-		return convertEncodeNumber2(e, v, e.w.WriteInt8)
+		return convertEncodeNumber2(e, v, e.WriteInt8)
 	case reflect.Int16:
-		return convertEncodeNumber2(e, v, e.w.WriteInt16)
+		return convertEncodeNumber2(e, v, e.WriteInt16)
 	case reflect.Int32:
-		return convertEncodeNumber2(e, v, e.w.WriteInt32)
+		return convertEncodeNumber2(e, v, e.WriteInt32)
 	case reflect.Int64, reflect.Int:
-		return convertEncodeNumber2(e, v, e.w.WriteInt64)
+		return convertEncodeNumber2(e, v, e.WriteInt64)
 	case reflect.Uint8:
-		return convertEncodeNumber2(e, v, e.w.WriteUint8)
+		return convertEncodeNumber2(e, v, e.WriteUint8)
 	case reflect.Uint16:
-		return convertEncodeNumber2(e, v, e.w.WriteUint16)
+		return convertEncodeNumber2(e, v, e.WriteUint16)
 	case reflect.Uint32:
-		return convertEncodeNumber2(e, v, e.w.WriteUint32)
+		return convertEncodeNumber2(e, v, e.WriteUint32)
 	case reflect.Uint64, reflect.Uint:
-		return convertEncodeNumber2(e, v, e.w.WriteUint64)
+		return convertEncodeNumber2(e, v, e.WriteUint64)
 	default:
 		return e.handleErrorf("invalid underlaying type %v for type %T", encodedType, lo.Empty[Value]())
 	}
 }
 
 // The name has suffix 2 because it is a helper function for convertEncodeNumber to unwrap type To.
-func convertEncodeNumber2[To, From constraints.Numeric, Ret any](e *Encoder, v From, write func(To) Ret) error {
+func convertEncodeNumber2[To, From constraints.Numeric](e *Encoder, v From, write func(To)) error {
 	converted := To(v)
 
 	if From(converted) != v {
@@ -576,14 +666,23 @@ func convertEncodeNumber2[To, From constraints.Numeric, Ret any](e *Encoder, v F
 }
 
 func (e *Encoder) encodeSlice(v reflect.Value, typeOpts TypeOptions) error {
+	length := v.Len()
+
 	switch typeOpts.LenSizeInBytes {
+	case 0:
 	case Len2Bytes:
-		e.w.WriteSize16(v.Len())
-	case Len4Bytes, 0:
-		e.w.WriteSize32(v.Len())
+		if length > 0xFFFF {
+			return e.handleErrorf("slice length %v exceeds 2 bytes", length)
+		}
+	case Len4Bytes:
+		if length > 0xFFFFFFFF {
+			return e.handleErrorf("slice length %v exceeds 4 bytes", length)
+		}
 	default:
 		return e.handleErrorf("invalid collection size type: %v", typeOpts.LenSizeInBytes)
 	}
+
+	e.WriteLen(v.Len())
 
 	return e.encodeArray(v, typeOpts)
 }
@@ -600,7 +699,7 @@ func (e *Encoder) encodeArray(v reflect.Value, typeOpts TypeOptions) error {
 		// The type does not have any customizations. So we can use  some optimizations for encoding of basic types
 		if elemType.Kind() == reflect.Uint8 && (v.Kind() == reflect.Slice || v.CanAddr()) && !typeOpts.ArrayElement.AsByteArray {
 			// Optimization for []byte and [N]byte.
-			e.w.WriteN(v.Bytes())
+			_, _ = e.Write(v.Bytes())
 			return nil
 		}
 
@@ -632,14 +731,23 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 		return e.handleErrorf("attempt to encode non-optional nil-map")
 	}
 
+	length := v.Len()
+
 	switch typeOpts.LenSizeInBytes {
+	case 0:
 	case Len2Bytes:
-		e.w.WriteSize16(v.Len())
-	case Len4Bytes, 0:
-		e.w.WriteSize32(v.Len())
+		if length > 0xFFFF {
+			return e.handleErrorf("map length %v exceeds 2 bytes", length)
+		}
+	case Len4Bytes:
+		if length > 0xFFFFFFFF {
+			return e.handleErrorf("map length %v exceeds 4 bytes", length)
+		}
 	default:
 		return e.handleErrorf("invalid collection size type: %v", typeOpts.LenSizeInBytes)
 	}
+
+	e.WriteLen(v.Len())
 
 	t := v.Type()
 	keyTypeInfo, err := e.getEncodedTypeInfo(t.Key())
@@ -672,7 +780,7 @@ func (e *Encoder) encodeMap(v reflect.Value, typeOpts TypeOptions) error {
 	})
 
 	for i := range entries {
-		e.w.WriteN(entries[i].A)
+		_, _ = e.Write(entries[i].A)
 
 		if err := e.encodeValue(entries[i].B, typeOpts.MapValue, &valTypeInfo); err != nil {
 			return e.handleErrorf("value: %w", err)
@@ -713,7 +821,6 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 			}
 
 			// Accesing unexported field
-			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
 		} else if fieldOpts.ExportAnonymousField {
 			return e.handleErrorf("%v: field %v is already exported, but is marked for export", t.Name(), fieldType.Name)
@@ -731,7 +838,7 @@ func (e *Encoder) encodeStruct(v reflect.Value, tInfo *typeInfo) error {
 			}
 
 			if fieldOpts.Optional {
-				e.w.WriteByte(lo.Ternary[byte](isNil, 0, 1))
+				e.WriteByte(lo.Ternary[byte](isNil, 0, 1))
 
 				if isNil {
 					continue
@@ -869,7 +976,7 @@ func (e *Encoder) getInterfaceEnumVariantIdx(v reflect.Value, enumVariants map[i
 }
 
 func (e *Encoder) encodeEnum(v reflect.Value, variantIdx int) error {
-	e.w.WriteSize32(variantIdx)
+	e.WriteEnumIdx(variantIdx)
 
 	if !v.IsValid() {
 		return nil
@@ -889,11 +996,11 @@ func (e *Encoder) encodeAsByteArray(enc func() error) error {
 		return err
 	}
 
-	e.w.WriteSize32(len(encodedVal))
-	e.w.WriteN(encodedVal)
+	e.WriteLen(len(encodedVal))
+	e.Write(encodedVal)
 
-	if e.w.Err != nil {
-		return e.handleErrorf("bytearr: %w", e.w.Err)
+	if e.err != nil {
+		return e.handleErrorf("bytearr: %w", e.err)
 	}
 
 	return nil
@@ -903,80 +1010,22 @@ func (e *Encoder) getBytes(enc func() error) ([]byte, error) {
 	origStream := e.w
 	defer func() { e.w = origStream }() // for case of panic/error
 
-	e.w = rwutil.NewBytesWriter()
+	buff := bytes.NewBuffer(nil)
+	e.w = buff
 	if err := enc(); err != nil {
 		return nil, err
 	}
 
-	encodedVal := e.w.Bytes()
-
-	return encodedVal, nil
+	return buff.Bytes(), nil
 }
 
 func (e *Encoder) handleErrorf(format string, args ...interface{}) error {
-	e.w.Err = fmt.Errorf(format, args...)
-	return e.w.Err
+	e.err = fmt.Errorf(format, args...)
+	return e.err
 }
 
-// Pointer is forced here for two reasons:
-//   - This allows to avoid copying of value in cases when there is custom encoder exists with pointer receiver
-//   - This allow to detect actual type of interface value. Because otherwise the implementation has no way to detect interface.
-//
-// But because of that encoding a value, which is stored in variable of type "any" would be very inconvenient.
-// So to make it more user-friendly, this function treats "*any" as "any".
-func MarshalStream[V any](v *V, dest io.Writer) error {
-	e := NewEncoder(dest)
-
-	switch v := interface{}(v).(type) {
-	case *interface{}:
-		// Exception for pointer to "any" just for convenience.
-		e.Encode(*v)
-	default:
-		e.Encode(v)
-	}
-
-	return e.w.Err
-}
-
-func MustMarshalStream[V any](v *V, dest io.Writer) {
-	if err := MarshalStream(v, dest); err != nil {
-		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
-	}
-}
-
-func Marshal[V any](v *V) ([]byte, error) {
-	var buf bytes.Buffer
-
-	if err := MarshalStream(v, &buf); err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
-}
-
-func MustMarshal[V any](v *V) []byte {
-	b, err := Marshal(v)
-	if err != nil {
-		panic(fmt.Errorf("failed to marshal object of type %T into BCS: %w", v, err))
-	}
-
-	return b
-}
-
-type CustomEncoder func(e *Encoder, v reflect.Value) error
-
-var CustomEncoders = make(map[reflect.Type]CustomEncoder)
-
-func MakeCustomEncoder[V any](f func(e *Encoder, v V) error) func(e *Encoder, v reflect.Value) error {
-	return func(e *Encoder, v reflect.Value) error {
-		return f(e, v.Interface().(V))
-	}
-}
-
-func AddCustomEncoder[V any](f func(e *Encoder, v V) error) {
-	CustomEncoders[reflect.TypeOf((*V)(nil)).Elem()] = MakeCustomEncoder(f)
-}
-
-func RemoveCustomEncoder[V any]() {
-	delete(CustomEncoders, reflect.TypeOf((*V)(nil)).Elem())
-}
+var (
+	encodableT                 = reflect.TypeOf((*Encodable)(nil)).Elem()
+	writableT                  = reflect.TypeOf((*Writable)(nil)).Elem()
+	encoderGlobalTypeInfoCache = newSharedTypeInfoCache()
+)

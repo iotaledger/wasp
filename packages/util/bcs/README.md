@@ -439,7 +439,7 @@ func (s *TestStruct) UnmarshalBCS(d *bcs.Decoder) error {
 ###### Read/Write methods:
 
 In addition to MarshalBCS/UnmarshalBCS, another pair of methods is supported: **Read()** and **Write()**.
-This is done to ensure compatibility with others libraries (specifically **rwutil**).
+This is done to ensure compatibility with some others libraries.
 
 ```
 type TestStruct struct {
@@ -541,8 +541,6 @@ withoutValue := bcs.MustMarshal(&TestStruct{A: nil}) // []byte{0}
 Mark integer field to be written as **ULEB128** - variable-length integer which enhances space usage but decreases serialization performance. This is the same format used to serialize collection length or enumeration variant index.
 Applicable to: **integers**.
 
-In **rwutil** library this was represented as **WriteSize32**, **WriteGas**, **WriteAmount**.
-
 **WARNING:** BCS specification does not have mentions about ULEB128 being used for anything other than length of collections and enumeration variant indexes. So this logic is a custom extension mostly designed for usage with types, which are not used for interaction with other actors.
 
 ###### "type=T"
@@ -567,10 +565,6 @@ Sets size limitation for length of a collection.
 Applicable to: **slices**, **maps**.
 Possible values of **N**: 2, 4.
 
-In **rwutil** library this was implemented by choosing between **WriteSize16** and **WriteSize32**.
-
-**NOTE:** This feature was migrated from **rwutil**, but has arguable value. It might be removed.
-
 ###### "nil_if_empty"
 
 Deserialize empty slice into `nil` instead of `[]ElemType{}`.
@@ -584,9 +578,6 @@ Marks value to be written as slice of bytes.
 Appicable to: **any type**.
 
 The only difference this flag introduces is that value is prepended by the count of its bytes. This might be useful to be able to skip value without knowing its actual structure.
-
-**NOTE:** This feature was migrated from **rwutil**-based implementation, where construct `ww.WriteBytes(rwutil.WriteToBytes(...))` had place.
-But it is not determined if there was an actual reason to use that construct, so this feature might be removed if found redundant.
 
 ```
 type TestStruct struct {

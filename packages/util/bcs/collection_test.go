@@ -1,7 +1,6 @@
 package bcs_test
 
 import (
-	"bytes"
 	"math"
 	"testing"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 func TestArrayCodec(t *testing.T) {
@@ -80,11 +78,7 @@ func TestCollectionSizeCodec(t *testing.T) {
 }
 
 func testSizeCodec(t *testing.T, v int, expectedEnc []byte) {
-	var rwutilEncBuff bytes.Buffer
-	r := rwutil.NewWriter(&rwutilEncBuff)
-	r.WriteSizeWithLimit(v, math.MaxUint32)
-	require.NoError(t, r.Err)
-	rwutilEnc := rwutilEncBuff.Bytes()
-
-	require.Equal(t, expectedEnc, rwutilEnc)
+	e := bcs.NewBytesEncoder()
+	e.WriteLen(v)
+	require.Equal(t, expectedEnc, e.Bytes())
 }

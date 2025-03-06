@@ -2,7 +2,6 @@ package bcs_test
 
 import (
 	"fmt"
-	"io"
 	"math"
 	"math/big"
 	"reflect"
@@ -246,34 +245,9 @@ func (w *WithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	return nil
 }
 
-type WithRwUtilCodec struct{}
-
-func (v WithRwUtilCodec) Write(w io.Writer) error {
-	w.Write([]byte{1, 2, 3})
-	return nil
-}
-
-func (v *WithRwUtilCodec) Read(r io.Reader) error {
-	b := make([]byte, 3)
-	if _, err := r.Read(b); err != nil {
-		return err
-	}
-
-	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
-		return fmt.Errorf("invalid value: %v", b)
-	}
-
-	return nil
-}
-
 type WithNestedCustomCodec struct {
 	A int `bcs:"type=i8"`
 	B WithCustomCodec
-}
-
-type WithNestedRwUtilCodec struct {
-	A int `bcs:"type=i8"`
-	B WithRwUtilCodec
 }
 
 type WithNestedCustomPtrCodec struct {
@@ -289,10 +263,8 @@ type WithNestedPtrCustomPtrCodec struct {
 func TestStructCustomCodec(t *testing.T) {
 	bcs.TestCodecAndBytes(t, WithCustomCodec{}, []byte{0x1, 0x2, 0x3})
 	bcs.TestCodecAndBytes(t, &WithCustomCodec{}, []byte{0x1, 0x2, 0x3})
-	bcs.TestCodecAndBytes(t, WithRwUtilCodec{}, []byte{0x1, 0x2, 0x3})
 	bcs.TestCodecAndBytes(t, WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
 	bcs.TestCodecAndBytes(t, &WithNestedCustomCodec{A: 43, B: WithCustomCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
-	bcs.TestCodecAndBytes(t, WithNestedRwUtilCodec{A: 43, B: WithRwUtilCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
 	bcs.TestCodecAndBytes(t, WithNestedCustomPtrCodec{A: 43, B: BasicWithCustomPtrCodec("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})
 	bcs.TestCodecAndBytes(t, &WithNestedCustomPtrCodec{A: 43, B: BasicWithCustomPtrCodec("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})
 	bcs.TestCodecAndBytes(t, WithNestedPtrCustomPtrCodec{A: 43, B: lo.ToPtr[BasicWithCustomPtrCodec]("aa")}, []byte{0x2b, 0x1, 0x2, 0x3, 0x2, 0x61, 0x61})

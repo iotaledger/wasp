@@ -3,7 +3,6 @@ package bcs_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type BasicWithCustomCodec string
@@ -38,33 +36,6 @@ func (w *BasicWithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	*w = BasicWithCustomCodec(s)
 
 	return nil
-}
-
-type BasicWithRwUtilCodec string
-
-func (v BasicWithRwUtilCodec) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN([]byte{1, 2, 3})
-	ww.WriteString(string(v))
-
-	return ww.Err
-}
-
-func (v *BasicWithRwUtilCodec) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-
-	b := make([]byte, 3)
-	rr.ReadN(b)
-
-	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
-		return fmt.Errorf("invalid value: %v", b)
-	}
-
-	s := rr.ReadString()
-
-	*v = BasicWithRwUtilCodec(s)
-
-	return rr.Err
 }
 
 type BasicWithCustomPtrCodec string
@@ -185,7 +156,6 @@ func TestBasicTypesCodec(t *testing.T) {
 
 	bcs.TestCodecAndBytes(t, BasicWithCustomCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 	bcs.TestCodecAndBytes(t, lo.ToPtr[BasicWithCustomPtrCodec]("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
-	bcs.TestCodecAndBytes(t, BasicWithRwUtilCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 
 	// By default, InterfaceIsEnumByDefault is false, so this should work.
 	var infVal any = "hello"
