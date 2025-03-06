@@ -8,20 +8,19 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
-	
+
 	const clusterSize = 10
 	clu := newCluster(t, waspClusterOpts{nNodes: clusterSize})
 
@@ -139,7 +138,7 @@ func newWalletWithFunds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chaincli
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(e.t, err)
 
-	gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	gasFeeCharged, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(e.t, err)
 
 	expectedBaseTokens := baseTokes - coin.Value(gasFeeCharged)
