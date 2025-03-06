@@ -56,10 +56,10 @@ func (c *Client) ExecuteTransactionBlock(
 	ctx context.Context,
 	req ExecuteTransactionBlockRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	resp := iotajsonrpc.IotaTransactionBlockResponse{}
+	resp := &iotajsonrpc.IotaTransactionBlockResponse{}
 	err := c.transport.Call(
 		ctx,
-		&resp,
+		resp,
 		executeTransactionBlock,
 		req.TxDataBytes,
 		req.Signatures,
@@ -70,13 +70,19 @@ func (c *Client) ExecuteTransactionBlock(
 		return nil, err
 	}
 
-	if !isResponseComplete(&resp, req.Options) {
+	if !isResponseComplete(resp, req.Options) {
 		if c.WaitUntilEffectsVisible == nil && req.RequestType == iotajsonrpc.TxnRequestTypeWaitForLocalExecution {
-			return &resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
+			return resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
 		}
 
-		return c.retryGetTransactionBlock(ctx, &resp.Digest, req.Options)
+		resp, err = c.GetTransactionBlock(ctx, GetTransactionBlockRequest{
+			Digest:  &resp.Digest,
+			Options: req.Options,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("GetTransactionBlock failed: %w", err)
+		}
 	}
 
-	return &resp, nil
+	return resp, nil
 }

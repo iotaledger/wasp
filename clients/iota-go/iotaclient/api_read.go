@@ -47,14 +47,23 @@ type GetObjectRequest struct {
 }
 
 func (c *Client) GetObject(ctx context.Context, req GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
-	var resp iotajsonrpc.IotaObjectResponse
-	err := c.transport.Call(ctx, &resp, getObject, req.ObjectID, req.Options)
-	if err != nil {
-		return &resp, err
-	} else if resp.ResponseError() != nil {
-		return &resp, resp.ResponseError()
-	}
-	return &resp, nil
+	return Retry(ctx,
+		func() (*iotajsonrpc.IotaObjectResponse, error) {
+			var resp iotajsonrpc.IotaObjectResponse
+			err := c.transport.Call(ctx, &resp, getObject, req.ObjectID, req.Options)
+			if err != nil {
+				return &resp, err
+			}
+			if resp.ResponseError() != nil {
+				return &resp, resp.ResponseError()
+			}
+			return &resp, nil
+		},
+		func(resp *iotajsonrpc.IotaObjectResponse, err error) bool {
+			return resp != nil && resp.Error != nil && resp.Error.Data.NotExists != nil
+		},
+		c.WaitUntilEffectsVisible,
+	)
 }
 
 func (c *Client) GetProtocolConfig(
@@ -79,8 +88,21 @@ func (c *Client) GetTransactionBlock(
 	ctx context.Context,
 	req GetTransactionBlockRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	resp := iotajsonrpc.IotaTransactionBlockResponse{}
-	return &resp, c.transport.Call(ctx, &resp, getTransactionBlock, req.Digest, req.Options)
+	return Retry(ctx,
+		func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+			var resp iotajsonrpc.IotaTransactionBlockResponse
+			err := c.transport.Call(ctx, &resp, getTransactionBlock, req.Digest, req.Options)
+			if err != nil {
+				return &resp, err
+			}
+
+			return &resp, nil
+		},
+		func(resp *iotajsonrpc.IotaTransactionBlockResponse, err error) bool {
+			return err != nil || !isResponseComplete(resp, req.Options)
+		},
+		c.WaitUntilEffectsVisible,
+	)
 }
 
 type MultiGetObjectsRequest struct {
@@ -128,8 +150,20 @@ func (c *Client) TryGetPastObject(
 	ctx context.Context,
 	req TryGetPastObjectRequest,
 ) (*iotajsonrpc.IotaPastObjectResponse, error) {
-	var resp iotajsonrpc.IotaPastObjectResponse
-	return &resp, c.transport.Call(ctx, &resp, tryGetPastObject, req.ObjectID, req.Version, req.Options)
+	return Retry(ctx,
+		func() (*iotajsonrpc.IotaPastObjectResponse, error) {
+			var resp iotajsonrpc.IotaPastObjectResponse
+			err := c.transport.Call(ctx, &resp, tryGetPastObject, req.ObjectID, req.Version, req.Options)
+			return &resp, err
+		},
+		func(resp *iotajsonrpc.IotaPastObjectResponse, err error) bool {
+			return resp != nil &&
+				(resp.Data.ObjectNotExists != nil ||
+					resp.Data.VersionNotFound != nil ||
+					resp.Data.VersionTooHigh != nil)
+		},
+		c.WaitUntilEffectsVisible,
+	)
 }
 
 type TryMultiGetPastObjectsRequest struct {

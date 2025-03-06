@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
-	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
@@ -70,60 +69,6 @@ func isResponseComplete(
 	return true
 }
 
-func (c *Client) retryGetTransactionBlock(
-	ctx context.Context,
-	digest *iotago.TransactionDigest,
-	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
-) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	if c.WaitUntilEffectsVisible == nil {
-		return nil, fmt.Errorf("waitUntilEffectsVisible is nil, retry is disabled")
-	}
-
-	for attempt := 0; attempt <= c.WaitUntilEffectsVisible.Attempts; attempt++ {
-		res, err := c.GetTransactionBlock(
-			ctx, GetTransactionBlockRequest{
-				Digest:  digest,
-				Options: options,
-			},
-		)
-
-		// Return immediately on context cancellation
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-
-		// On last attempt, return whatever error we got
-		if attempt == c.WaitUntilEffectsVisible.Attempts {
-			if err != nil {
-				return nil, fmt.Errorf(
-					"retryGetTransactionBlock failed after %d attempts: %v",
-					c.WaitUntilEffectsVisible.Attempts,
-					err,
-				)
-			}
-			// If it's the last attempt and we have a response but it's incomplete,
-			// return it anyway
-			return res, nil
-		}
-
-		// If we got an error or incomplete response, wait and retry
-		if err != nil || !isResponseComplete(res, options) {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(c.WaitUntilEffectsVisible.DelayBetweenAttempts):
-				continue
-			}
-		}
-
-		// We have a complete response, return it
-		return res, nil
-	}
-
-	// This should never be reached due to the returns in the loop
-	return nil, fmt.Errorf("unexpected error in retry logic")
-}
-
 func (c *Client) SignAndExecuteTransaction(
 	ctx context.Context,
 	req *SignAndExecuteTransactionRequest,
@@ -150,8 +95,14 @@ func (c *Client) SignAndExecuteTransaction(
 		if c.WaitUntilEffectsVisible == nil {
 			return resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
 		}
-		
-		resp, err = c.retryGetTransactionBlock(ctx, &resp.Digest, req.Options)
+
+		resp, err = c.GetTransactionBlock(ctx, GetTransactionBlockRequest{
+			Digest:  &resp.Digest,
+			Options: req.Options,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("GetTransactionBlock failed: %w", err)
+		}
 	}
 
 	return resp, err
