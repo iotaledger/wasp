@@ -18,10 +18,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -391,7 +390,7 @@ func TestWaspCLILongParam(t *testing.T) {
 		}
 	}()
 
-	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
+	w.CreateL2NativeToken(isc.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),
@@ -548,7 +547,7 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 	w.ActivateChainOnAllNodes("chain1", 0)
 	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
 
-	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
+	w.CreateL2NativeToken(isc.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),

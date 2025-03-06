@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/big"
 
-	iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -18,7 +18,7 @@ func (reqctx *requestContext) mustBeCalledFromContract(contract *coreutil.Contra
 	}
 }
 
-func (reqctx *requestContext) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
+func (reqctx *requestContext) CreateNewFoundry(scheme isc.SimpleTokenScheme, metadata []byte) (uint32, uint64) {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
 	panic("CreateNewFoundry not implemented yet")
 	// return reqctx.vm.txbuilder.CreateNewFoundry(scheme, metadata)
@@ -41,7 +41,7 @@ func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int
 	// return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
 }
 
-func (reqctx *requestContext) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput) {
+func (reqctx *requestContext) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, iotago.ObjectID) {
 	reqctx.mustBeCalledFromContract(accounts.Contract)
 	panic("refactor me: vmtxbuilder.MintNFT")
 	// return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
