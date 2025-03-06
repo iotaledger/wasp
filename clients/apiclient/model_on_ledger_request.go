@@ -23,9 +23,6 @@ var _ MappedNullable = &OnLedgerRequest{}
 type OnLedgerRequest struct {
 	// The request ID
 	Id string `json:"id"`
-	Output Output `json:"output"`
-	// The output ID
-	OutputId string `json:"outputId"`
 	// The raw data of the request (Hex)
 	Raw string `json:"raw"`
 }
@@ -36,11 +33,9 @@ type _OnLedgerRequest OnLedgerRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOnLedgerRequest(id string, output Output, outputId string, raw string) *OnLedgerRequest {
+func NewOnLedgerRequest(id string, raw string) *OnLedgerRequest {
 	this := OnLedgerRequest{}
 	this.Id = id
-	this.Output = output
-	this.OutputId = outputId
 	this.Raw = raw
 	return &this
 }
@@ -75,54 +70,6 @@ func (o *OnLedgerRequest) GetIdOk() (*string, bool) {
 // SetId sets field value
 func (o *OnLedgerRequest) SetId(v string) {
 	o.Id = v
-}
-
-// GetOutput returns the Output field value
-func (o *OnLedgerRequest) GetOutput() Output {
-	if o == nil {
-		var ret Output
-		return ret
-	}
-
-	return o.Output
-}
-
-// GetOutputOk returns a tuple with the Output field value
-// and a boolean to check if the value has been set.
-func (o *OnLedgerRequest) GetOutputOk() (*Output, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Output, true
-}
-
-// SetOutput sets field value
-func (o *OnLedgerRequest) SetOutput(v Output) {
-	o.Output = v
-}
-
-// GetOutputId returns the OutputId field value
-func (o *OnLedgerRequest) GetOutputId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.OutputId
-}
-
-// GetOutputIdOk returns a tuple with the OutputId field value
-// and a boolean to check if the value has been set.
-func (o *OnLedgerRequest) GetOutputIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.OutputId, true
-}
-
-// SetOutputId sets field value
-func (o *OnLedgerRequest) SetOutputId(v string) {
-	o.OutputId = v
 }
 
 // GetRaw returns the Raw field value
@@ -160,8 +107,6 @@ func (o OnLedgerRequest) MarshalJSON() ([]byte, error) {
 func (o OnLedgerRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
-	toSerialize["output"] = o.Output
-	toSerialize["outputId"] = o.OutputId
 	toSerialize["raw"] = o.Raw
 	return toSerialize, nil
 }
@@ -172,8 +117,6 @@ func (o *OnLedgerRequest) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"id",
-		"output",
-		"outputId",
 		"raw",
 	}
 

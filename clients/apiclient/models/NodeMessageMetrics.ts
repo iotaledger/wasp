@@ -10,31 +10,15 @@
  * Do not edit the class manually.
  */
 
-import { AliasOutputMetricItem } from '../models/AliasOutputMetricItem';
-import { InOutputMetricItem } from '../models/InOutputMetricItem';
-import { InStateOutputMetricItem } from '../models/InStateOutputMetricItem';
-import { InterfaceMetricItem } from '../models/InterfaceMetricItem';
-import { MilestoneMetricItem } from '../models/MilestoneMetricItem';
+import { AnchorMetricItem } from '../models/AnchorMetricItem';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
-import { TransactionIDMetricItem } from '../models/TransactionIDMetricItem';
-import { TransactionMetricItem } from '../models/TransactionMetricItem';
-import { TxInclusionStateMsgMetricItem } from '../models/TxInclusionStateMsgMetricItem';
-import { UTXOInputMetricItem } from '../models/UTXOInputMetricItem';
 import { HttpFile } from '../http/http';
 
 export class NodeMessageMetrics {
-    'inAliasOutput': AliasOutputMetricItem;
-    'inMilestone': MilestoneMetricItem;
+    'inAnchor': AnchorMetricItem;
     'inOnLedgerRequest': OnLedgerRequestMetricItem;
-    'inOutput': InOutputMetricItem;
-    'inStateOutput': InStateOutputMetricItem;
-    'inTxInclusionState': TxInclusionStateMsgMetricItem;
-    'outPublishGovernanceTransaction': TransactionMetricItem;
     'outPublisherStateTransaction': PublisherStateTransactionItem;
-    'outPullLatestOutput': InterfaceMetricItem;
-    'outPullOutputByID': UTXOInputMetricItem;
-    'outPullTxInclusionState': TransactionIDMetricItem;
     'registeredChainIDs': Array<string>;
 
     static readonly discriminator: string | undefined = undefined;
@@ -43,15 +27,9 @@ export class NodeMessageMetrics {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "inAliasOutput",
-            "baseName": "inAliasOutput",
-            "type": "AliasOutputMetricItem",
-            "format": ""
-        },
-        {
-            "name": "inMilestone",
-            "baseName": "inMilestone",
-            "type": "MilestoneMetricItem",
+            "name": "inAnchor",
+            "baseName": "inAnchor",
+            "type": "AnchorMetricItem",
             "format": ""
         },
         {
@@ -61,51 +39,9 @@ export class NodeMessageMetrics {
             "format": ""
         },
         {
-            "name": "inOutput",
-            "baseName": "inOutput",
-            "type": "InOutputMetricItem",
-            "format": ""
-        },
-        {
-            "name": "inStateOutput",
-            "baseName": "inStateOutput",
-            "type": "InStateOutputMetricItem",
-            "format": ""
-        },
-        {
-            "name": "inTxInclusionState",
-            "baseName": "inTxInclusionState",
-            "type": "TxInclusionStateMsgMetricItem",
-            "format": ""
-        },
-        {
-            "name": "outPublishGovernanceTransaction",
-            "baseName": "outPublishGovernanceTransaction",
-            "type": "TransactionMetricItem",
-            "format": ""
-        },
-        {
             "name": "outPublisherStateTransaction",
             "baseName": "outPublisherStateTransaction",
             "type": "PublisherStateTransactionItem",
-            "format": ""
-        },
-        {
-            "name": "outPullLatestOutput",
-            "baseName": "outPullLatestOutput",
-            "type": "InterfaceMetricItem",
-            "format": ""
-        },
-        {
-            "name": "outPullOutputByID",
-            "baseName": "outPullOutputByID",
-            "type": "UTXOInputMetricItem",
-            "format": ""
-        },
-        {
-            "name": "outPullTxInclusionState",
-            "baseName": "outPullTxInclusionState",
-            "type": "TransactionIDMetricItem",
             "format": ""
         },
         {
