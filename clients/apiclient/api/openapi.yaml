@@ -2274,16 +2274,17 @@ components:
       type: object
       xml:
         name: AddUserRequest
-    AliasOutputMetricItem:
+    AnchorMetricItem:
       example:
         lastMessage:
-          outputType: 0
+          stateMetadata: stateMetadata
+          stateIndex: 1
           raw: raw
         messages: 1
         timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
         lastMessage:
-          $ref: '#/components/schemas/Output'
+          $ref: '#/components/schemas/StateAnchor'
         messages:
           format: int32
           minimum: 1
@@ -2301,7 +2302,7 @@ components:
       - timestamp
       type: object
       xml:
-        name: AliasOutputMetricItem
+        name: AnchorMetricItem
     AssetsJSON:
       example:
         coins:
@@ -2640,101 +2641,36 @@ components:
         name: ChainInfoResponse
     ChainMessageMetrics:
       example:
-        outPublishGovernanceTransaction:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         outPublisherStateTransaction:
           lastMessage:
             stateIndex: 1
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inTxInclusionState:
-          lastMessage:
-            txId: txId
-            state: state
+            txDigest: txDigest
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
         inOnLedgerRequest:
           lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
             raw: raw
             id: id
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inOutput:
+        inAnchor:
           lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inAliasOutput:
-          lastMessage:
-            outputType: 0
+            stateMetadata: stateMetadata
+            stateIndex: 1
             raw: raw
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inStateOutput:
-          lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullTxInclusionState:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullLatestOutput:
-          lastMessage: lastMessage
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullOutputByID:
-          lastMessage:
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
-        inAliasOutput:
-          $ref: '#/components/schemas/AliasOutputMetricItem'
+        inAnchor:
+          $ref: '#/components/schemas/AnchorMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
-        inOutput:
-          $ref: '#/components/schemas/InOutputMetricItem'
-        inStateOutput:
-          $ref: '#/components/schemas/InStateOutputMetricItem'
-        inTxInclusionState:
-          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
-        outPublishGovernanceTransaction:
-          $ref: '#/components/schemas/TransactionMetricItem'
         outPublisherStateTransaction:
           $ref: '#/components/schemas/PublisherStateTransactionItem'
-        outPullLatestOutput:
-          $ref: '#/components/schemas/InterfaceMetricItem'
-        outPullOutputByID:
-          $ref: '#/components/schemas/UTXOInputMetricItem'
-        outPullTxInclusionState:
-          $ref: '#/components/schemas/TransactionIDMetricItem'
       required:
-      - inAliasOutput
+      - inAnchor
       - inOnLedgerRequest
-      - inOutput
-      - inStateOutput
-      - inTxInclusionState
-      - outPublishGovernanceTransaction
       - outPublisherStateTransaction
-      - outPullLatestOutput
-      - outPullOutputByID
-      - outPullTxInclusionState
       type: object
       xml:
         name: ChainMessageMetrics
@@ -3645,123 +3581,18 @@ components:
       type: object
       xml:
         name: GovPublicChainMetadata
-    InOutput:
-      example:
-        output:
-          outputType: 0
-          raw: raw
-        outputId: outputId
-      properties:
-        output:
-          $ref: '#/components/schemas/Output'
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
-      required:
-      - output
-      - outputId
-      type: object
-      xml:
-        name: InOutput
-    InOutputMetricItem:
-      example:
-        lastMessage:
-          output:
-            outputType: 0
-            raw: raw
-          outputId: outputId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/InOutput'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: InOutputMetricItem
-    InStateOutput:
-      example:
-        output:
-          outputType: 0
-          raw: raw
-        outputId: outputId
-      properties:
-        output:
-          $ref: '#/components/schemas/Output'
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
-      required:
-      - output
-      - outputId
-      type: object
-      xml:
-        name: InStateOutput
-    InStateOutputMetricItem:
-      example:
-        lastMessage:
-          output:
-            outputType: 0
-            raw: raw
-          outputId: outputId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/InStateOutput'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: InStateOutputMetricItem
     InfoResponse:
       example:
         peeringURL: peeringURL
         l1Params:
           protocol:
-            rentStructure:
-              vByteFactorData: 7
-              vByteCost: 1
-              vByteFactorKey: 9
-            minPowScore: 1
-            tokenSupply: tokenSupply
-            networkName: networkName
-            belowMaxDepth: 1
-            version: 3
-          maxPayloadSize: 1
+            protocol_version: 7
+            reference_gas_price: 9
+            iota_total_supply: 2
+            epoch: 1
+            system_state_version: 3
+            epoch_duration_ms: 5
+            epoch_start_timestamp_ms: 5
           baseToken:
             coinType:
               s: s
@@ -3803,48 +3634,16 @@ components:
       type: object
       xml:
         name: InfoResponse
-    InterfaceMetricItem:
-      example:
-        lastMessage: lastMessage
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          format: string
-          type: string
-          xml:
-            name: LastMessage
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: InterfaceMetricItem
     L1Params:
       example:
         protocol:
-          rentStructure:
-            vByteFactorData: 7
-            vByteCost: 1
-            vByteFactorKey: 9
-          minPowScore: 1
-          tokenSupply: tokenSupply
-          networkName: networkName
-          belowMaxDepth: 1
-          version: 3
-        maxPayloadSize: 1
+          protocol_version: 7
+          reference_gas_price: 9
+          iota_total_supply: 2
+          epoch: 1
+          system_state_version: 3
+          epoch_duration_ms: 5
+          epoch_start_timestamp_ms: 5
         baseToken:
           coinType:
             s: s
@@ -3858,17 +3657,10 @@ components:
       properties:
         baseToken:
           $ref: '#/components/schemas/BaseToken'
-        maxPayloadSize:
-          description: The max payload size
-          format: int32
-          type: integer
-          xml:
-            name: MaxPayloadSize
         protocol:
           $ref: '#/components/schemas/ProtocolParameters'
       required:
       - baseToken
-      - maxPayloadSize
       - protocol
       type: object
       xml:
@@ -3953,61 +3745,6 @@ components:
       type: object
       xml:
         name: LoginResponse
-    MilestoneInfo:
-      example:
-        milestoneId: milestoneId
-        index: 0
-        timestamp: 0
-      properties:
-        index:
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: Index
-        milestoneId:
-          format: string
-          type: string
-          xml:
-            name: MilestoneID
-        timestamp:
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: Timestamp
-      type: object
-      xml:
-        name: MilestoneInfo
-    MilestoneMetricItem:
-      example:
-        lastMessage:
-          milestoneId: milestoneId
-          index: 0
-          timestamp: 0
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/MilestoneInfo'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: MilestoneMetricItem
     NativeTokenIDRegistryResponse:
       example:
         nativeTokenRegistryIds:
@@ -4029,102 +3766,35 @@ components:
         name: NativeTokenIDRegistryResponse
     NodeMessageMetrics:
       example:
-        outPublishGovernanceTransaction:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         outPublisherStateTransaction:
           lastMessage:
             stateIndex: 1
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inTxInclusionState:
-          lastMessage:
-            txId: txId
-            state: state
+            txDigest: txDigest
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
         inOnLedgerRequest:
           lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
             raw: raw
             id: id
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inOutput:
+        inAnchor:
           lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inMilestone:
-          lastMessage:
-            milestoneId: milestoneId
-            index: 0
-            timestamp: 0
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inAliasOutput:
-          lastMessage:
-            outputType: 0
+            stateMetadata: stateMetadata
+            stateIndex: 1
             raw: raw
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inStateOutput:
-          lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullTxInclusionState:
-          lastMessage:
-            txId: txId
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
         registeredChainIDs:
         - registeredChainIDs
         - registeredChainIDs
-        outPullLatestOutput:
-          lastMessage: lastMessage
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullOutputByID:
-          lastMessage:
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
-        inAliasOutput:
-          $ref: '#/components/schemas/AliasOutputMetricItem'
-        inMilestone:
-          $ref: '#/components/schemas/MilestoneMetricItem'
+        inAnchor:
+          $ref: '#/components/schemas/AnchorMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
-        inOutput:
-          $ref: '#/components/schemas/InOutputMetricItem'
-        inStateOutput:
-          $ref: '#/components/schemas/InStateOutputMetricItem'
-        inTxInclusionState:
-          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
-        outPublishGovernanceTransaction:
-          $ref: '#/components/schemas/TransactionMetricItem'
         outPublisherStateTransaction:
           $ref: '#/components/schemas/PublisherStateTransactionItem'
-        outPullLatestOutput:
-          $ref: '#/components/schemas/InterfaceMetricItem'
-        outPullOutputByID:
-          $ref: '#/components/schemas/UTXOInputMetricItem'
-        outPullTxInclusionState:
-          $ref: '#/components/schemas/TransactionIDMetricItem'
         registeredChainIDs:
           items:
             format: string
@@ -4134,17 +3804,9 @@ components:
             name: RegisteredChainIDs
             wrapped: true
       required:
-      - inAliasOutput
-      - inMilestone
+      - inAnchor
       - inOnLedgerRequest
-      - inOutput
-      - inStateOutput
-      - inTxInclusionState
-      - outPublishGovernanceTransaction
       - outPublisherStateTransaction
-      - outPullLatestOutput
-      - outPullOutputByID
-      - outPullTxInclusionState
       - registeredChainIDs
       type: object
       xml:
@@ -4190,10 +3852,6 @@ components:
         name: OffLedgerRequest
     OnLedgerRequest:
       example:
-        output:
-          outputType: 0
-          raw: raw
-        outputId: outputId
         raw: raw
         id: id
       properties:
@@ -4203,14 +3861,6 @@ components:
           type: string
           xml:
             name: ID
-        output:
-          $ref: '#/components/schemas/Output'
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
         raw:
           description: The raw data of the request (Hex)
           format: string
@@ -4219,8 +3869,6 @@ components:
             name: Raw
       required:
       - id
-      - output
-      - outputId
       - raw
       type: object
       xml:
@@ -4228,10 +3876,6 @@ components:
     OnLedgerRequestMetricItem:
       example:
         lastMessage:
-          output:
-            outputType: 0
-            raw: raw
-          outputId: outputId
           raw: raw
           id: id
         messages: 1
@@ -4257,44 +3901,6 @@ components:
       type: object
       xml:
         name: OnLedgerRequestMetricItem
-    Output:
-      example:
-        outputType: 0
-        raw: raw
-      properties:
-        outputType:
-          description: The output type
-          format: int32
-          type: integer
-          xml:
-            name: OutputType
-        raw:
-          description: The raw data of the output (Hex)
-          format: string
-          type: string
-          xml:
-            name: Raw
-      required:
-      - outputType
-      - raw
-      type: object
-      xml:
-        name: Output
-    OutputID:
-      example:
-        outputId: outputId
-      properties:
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
-      required:
-      - outputId
-      type: object
-      xml:
-        name: OutputID
     PeeringNodeIdentityResponse:
       example:
         peeringURL: peeringURL
@@ -4417,57 +4023,64 @@ components:
         name: PeeringTrustRequest
     ProtocolParameters:
       example:
-        rentStructure:
-          vByteFactorData: 7
-          vByteCost: 1
-          vByteFactorKey: 9
-        minPowScore: 1
-        tokenSupply: tokenSupply
-        networkName: networkName
-        belowMaxDepth: 1
-        version: 3
+        protocol_version: 7
+        reference_gas_price: 9
+        iota_total_supply: 2
+        epoch: 1
+        system_state_version: 3
+        epoch_duration_ms: 5
+        epoch_start_timestamp_ms: 5
       properties:
-        belowMaxDepth:
-          description: The networks max depth
-          format: int32
-          minimum: 1
+        epoch:
+          description: The protocol's current epoch
+          format: int64
           type: integer
           xml:
-            name: BelowMaxDepth
-        minPowScore:
-          description: The minimal PoW score
-          format: int32
-          minimum: 1
+            name: Epoch
+        epoch_duration_ms:
+          description: The current epoch's duration in ms
+          format: int64
           type: integer
           xml:
-            name: MinPoWScore
-        networkName:
-          description: The network name
-          format: string
-          type: string
-          xml:
-            name: NetworkName
-        rentStructure:
-          $ref: '#/components/schemas/RentStructure'
-        tokenSupply:
-          description: The token supply
-          format: string
-          type: string
-          xml:
-            name: TokenSupply
-        version:
-          description: The protocol version
-          format: int32
+            name: EpochDurationMs
+        epoch_start_timestamp_ms:
+          description: The current epoch's start_timestamp in ms
+          format: int64
           type: integer
           xml:
-            name: Version
+            name: EpochStartTimestampMs
+        iota_total_supply:
+          description: The iota's total_supply
+          format: int64
+          type: integer
+          xml:
+            name: IotaTotalSupply
+        protocol_version:
+          description: The protocol's version
+          format: int64
+          type: integer
+          xml:
+            name: ProtocolVersion
+        reference_gas_price:
+          description: The current reference_gas_price
+          format: int64
+          type: integer
+          xml:
+            name: ReferenceGasPrice
+        system_state_version:
+          description: The protocol's system_state_version
+          format: int64
+          type: integer
+          xml:
+            name: SystemStateVersion
       required:
-      - belowMaxDepth
-      - minPowScore
-      - networkName
-      - rentStructure
-      - tokenSupply
-      - version
+      - epoch
+      - epoch_duration_ms
+      - epoch_start_timestamp_ms
+      - iota_total_supply
+      - protocol_version
+      - reference_gas_price
+      - system_state_version
       type: object
       xml:
         name: ProtocolParameters
@@ -4522,7 +4135,7 @@ components:
       example:
         lastMessage:
           stateIndex: 1
-          txId: txId
+          txDigest: txDigest
         messages: 1
         timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
@@ -4688,38 +4301,6 @@ components:
       type: object
       xml:
         name: ReceiptResponse
-    RentStructure:
-      example:
-        vByteFactorData: 7
-        vByteCost: 1
-        vByteFactorKey: 9
-      properties:
-        vByteCost:
-          description: The virtual byte cost
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: VByteCost
-        vByteFactorData:
-          description: The virtual byte factor for data fields
-          format: int32
-          type: integer
-          xml:
-            name: VBFactorData
-        vByteFactorKey:
-          description: The virtual byte factor for key/lookup generating fields
-          format: int32
-          type: integer
-          xml:
-            name: VBFactorKey
-      required:
-      - vByteCost
-      - vByteFactorData
-      - vByteFactorKey
-      type: object
-      xml:
-        name: RentStructure
     RequestIDsResponse:
       example:
         requestIds:
@@ -4877,6 +4458,38 @@ components:
       type: object
       xml:
         name: RotateChainRequest
+    StateAnchor:
+      example:
+        stateMetadata: stateMetadata
+        stateIndex: 1
+        raw: raw
+      properties:
+        raw:
+          description: The raw data of the anchor (Hex)
+          format: string
+          type: string
+          xml:
+            name: Raw
+        stateIndex:
+          description: The state index
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: StateIndex
+        stateMetadata:
+          description: The state metadata
+          format: string
+          type: string
+          xml:
+            name: StateMetadata
+      required:
+      - raw
+      - stateIndex
+      - stateMetadata
+      type: object
+      xml:
+        name: StateAnchor
     StateResponse:
       example:
         state: state
@@ -4895,7 +4508,7 @@ components:
     StateTransaction:
       example:
         stateIndex: 1
-        txId: txId
+        txDigest: txDigest
       properties:
         stateIndex:
           description: The state index
@@ -4904,138 +4517,18 @@ components:
           type: integer
           xml:
             name: StateIndex
-        txId:
-          description: The transaction ID
+        txDigest:
+          description: The transaction Digest
           format: string
           type: string
           xml:
-            name: TransactionID
+            name: TransactionDigest
       required:
       - stateIndex
-      - txId
+      - txDigest
       type: object
       xml:
         name: StateTransaction
-    Transaction:
-      example:
-        txId: txId
-      properties:
-        txId:
-          description: The transaction ID
-          format: string
-          type: string
-          xml:
-            name: TransactionID
-      required:
-      - txId
-      type: object
-      xml:
-        name: Transaction
-    TransactionIDMetricItem:
-      example:
-        lastMessage:
-          txId: txId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/Transaction'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: TransactionIDMetricItem
-    TransactionMetricItem:
-      example:
-        lastMessage:
-          txId: txId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/Transaction'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: TransactionMetricItem
-    TxInclusionStateMsg:
-      example:
-        txId: txId
-        state: state
-      properties:
-        state:
-          description: The inclusion state
-          format: string
-          type: string
-          xml:
-            name: State
-        txId:
-          description: The transaction ID
-          format: string
-          type: string
-          xml:
-            name: TransactionID
-      required:
-      - state
-      - txId
-      type: object
-      xml:
-        name: TxInclusionStateMsg
-    TxInclusionStateMsgMetricItem:
-      example:
-        lastMessage:
-          txId: txId
-          state: state
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/TxInclusionStateMsg'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: TxInclusionStateMsgMetricItem
     Type:
       example:
         s: s
@@ -5048,33 +4541,6 @@ components:
       type: object
       xml:
         name: Type
-    UTXOInputMetricItem:
-      example:
-        lastMessage:
-          outputId: outputId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/OutputID'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: UTXOInputMetricItem
     UnresolvedVMErrorJSON:
       example:
         code: code
