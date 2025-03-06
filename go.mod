@@ -57,7 +57,6 @@ require (
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/tyler-smith/go-bip39 v1.1.0
 	github.com/wollac/iota-crypto-demo v0.0.0-20221117162917-b10619eccb98
-	github.com/yourbasic/graph v0.0.0-20210606180040-8ecfec1c2869
 	github.com/zondax/hid v0.9.2
 	go.dedis.ch/kyber/v3 v3.1.0
 	go.uber.org/atomic v1.11.0

@@ -7,11 +7,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -75,22 +73,22 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, coinType coin.Type, 
 	require.EqualValues(e.t, expected, actual)
 }
 
-func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
-	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsAPI.
-		AccountsGetAccountNFTIDs(context.Background(), e.Chain.ChainID.String(), agentID.String()).
-		Execute()
-	require.NoError(e.t, err)
+// func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.NFTID {
+// 	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsAPI.
+// 		AccountsGetAccountNFTIDs(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+// 		Execute()
+// 	require.NoError(e.t, err)
 
-	ret := make([]iotago.NFTID, len(nftsResp.NftIds))
-	for i, nftIDStr := range nftsResp.NftIds {
-		nftIDBytes, err := cryptolib.DecodeHex(nftIDStr)
-		require.NoError(e.t, err)
-		ret[i] = iotago.NFTID{}
-		copy(ret[i][:], nftIDBytes)
-	}
+// 	ret := make([]iotago.NFTID, len(nftsResp.NftIds))
+// 	for i, nftIDStr := range nftsResp.NftIds {
+// 		nftIDBytes, err := cryptolib.DecodeHex(nftIDStr)
+// 		require.NoError(e.t, err)
+// 		ret[i] = iotago.NFTID{}
+// 		copy(ret[i][:], nftIDBytes)
+// 	}
 
-	return ret
-}
+// 	return ret
+// }
 
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.

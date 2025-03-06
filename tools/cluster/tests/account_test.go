@@ -3,13 +3,13 @@ package tests
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -83,7 +83,7 @@ func testAccounts(e *ChainEnv) {
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 10*time.Second)
 	require.NoError(e.t, err)
 
-	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	fees, err := strconv.ParseUint(receipts[0].GasFeeCharged, 10, 64)
 	require.NoError(e.t, err)
 
 	e.checkBalanceOnChain(isc.NewAddressAgentID(myAddress), coin.BaseTokenType, transferBaseTokens-coin.Value(fees))

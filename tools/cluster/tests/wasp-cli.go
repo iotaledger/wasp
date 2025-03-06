@@ -16,7 +16,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -180,13 +179,14 @@ func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 	return w.ArgAllNodesExcept(initiatorIndex), fmt.Sprintf("--quorum=%d", quorum)
 }
 
-func (w *WaspCLITest) Address() iotago.Address {
-	out := w.MustRun("address")
-	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
-	_, addr, err := iotago.ParseBech32(s)
-	require.NoError(w.T, err)
-	return addr
-}
+// func (w *WaspCLITest) Address() iotago.Address {
+// panic("TODO")
+// out := w.MustRun("address")
+// s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
+// _, addr, err := iotago.ParseBech32(s)
+// require.NoError(w.T, err)
+// return addr
+// }
 
 // TODO there is a small issue if we try to activate the chain twice (deploy command also activates the chain)
 // if this happens, the node will return an error on `getChainInfo` because there is no state yet.
@@ -218,9 +218,9 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
 }
 
-func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
-	panic("refactor me: support native token creation")
-}
+// func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
+// 	panic("refactor me: support native token creation")
+// }
 
 func (w *WaspCLITest) ChainID(idx int) string {
 	out := w.MustRun("chain", "info", fmt.Sprintf("--node=%d", idx))

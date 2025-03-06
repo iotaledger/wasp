@@ -2,18 +2,13 @@ package tests
 
 import (
 	"context"
-	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -22,44 +17,44 @@ import (
 func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	// estimate on-ledger request, then send the same request, assert the gas used/fees match
 	panic("refactor me: transaction.BasicOutputFromPostData")
-	var output iotago.Output
+	// var output iotago.Output
 
-	outputBytes, err := output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
-	require.NoError(t, err)
+	// outputBytes, err := output.Serialize(serializer.DeSeriModePerformLexicalOrdering, nil)
+	// require.NoError(t, err)
 
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background(),
-		env.Chain.ChainID.String(),
-	).Request(apiclient.EstimateGasRequestOnledger{
-		OutputBytes: cryptolib.EncodeHex(outputBytes),
-	}).Execute()
-	require.NoError(t, err)
-	require.Empty(t, estimatedReceipt.ErrorMessage)
+	// estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background(),
+	// 	env.Chain.ChainID.String(),
+	// ).Request(apiclient.EstimateGasRequestOnledger{
+	// 	OutputBytes: cryptolib.EncodeHex(outputBytes),
+	// }).Execute()
+	// require.NoError(t, err)
+	// require.Empty(t, estimatedReceipt.ErrorMessage)
 
-	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
+	// keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+	// require.NoError(t, err)
 
-	feeCharged, err := strconv.ParseUint(estimatedReceipt.GasFeeCharged, 10, 64)
-	require.NoError(t, err)
+	// feeCharged, err := strconv.ParseUint(estimatedReceipt.GasFeeCharged, 10, 64)
+	// require.NoError(t, err)
 
-	client := env.Chain.Client(keyPair)
-	par := chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(coin.Value(feeCharged)),
-		Allowance: isc.NewAssets(5000),
-	}
-	gasBudget, err := strconv.ParseUint(estimatedReceipt.GasBurned, 10, 64)
-	require.NoError(t, err)
-	par.WithGasBudget(gasBudget)
+	// client := env.Chain.Client(keyPair)
+	// par := chainclient.PostRequestParams{
+	// 	Transfer:  isc.NewAssets(coin.Value(feeCharged)),
+	// 	Allowance: isc.NewAssets(5000),
+	// }
+	// gasBudget, err := strconv.ParseUint(estimatedReceipt.GasBurned, 10, 64)
+	// require.NoError(t, err)
+	// par.WithGasBudget(gasBudget)
 
-	tx, err := client.PostRequest(
-		context.Background(),
-		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
-		par,
-	)
-	require.NoError(t, err)
-	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 10*time.Second)
-	require.NoError(t, err)
-	require.Equal(t, recs[0].GasBurned, estimatedReceipt.GasBurned)
-	require.Equal(t, recs[0].GasFeeCharged, estimatedReceipt.GasFeeCharged)
+	// tx, err := client.PostRequest(
+	// 	context.Background(),
+	// 	accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
+	// 	par,
+	// )
+	// require.NoError(t, err)
+	// recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 10*time.Second)
+	// require.NoError(t, err)
+	// require.Equal(t, recs[0].GasBurned, estimatedReceipt.GasBurned)
+	// require.Equal(t, recs[0].GasFeeCharged, estimatedReceipt.GasFeeCharged)
 }
 
 func testEstimateGasOnLedgerNFT(t *testing.T, env *ChainEnv) {

@@ -2,12 +2,11 @@ package tests
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -51,7 +50,7 @@ func TestDepositWithdraw(t *testing.T) {
 	require.NoError(t, err)
 
 	// chEnv.checkBalanceOnChain(origAgentID, isc.BaseTokenID, 0)
-	gasFees1, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	gasFees1, err := strconv.ParseUint(receipts[0].GasFeeCharged, 10, 64)
 	require.NoError(t, err)
 
 	var onChainBalance coin.Value = depositBaseTokens - coin.Value(gasFees1)
@@ -72,7 +71,7 @@ func TestDepositWithdraw(t *testing.T) {
 	receipt, err := chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
-	gasFees2, err := iotago.DecodeUint64(receipt.GasFeeCharged)
+	gasFees2, err := strconv.ParseUint(receipt.GasFeeCharged, 10, 64)
 	require.NoError(t, err)
 
 	chEnv.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance-baseTokensToWithdraw-coin.Value(gasFees2))

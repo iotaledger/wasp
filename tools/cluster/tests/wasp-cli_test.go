@@ -18,8 +18,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -372,30 +370,30 @@ func TestWaspCLIRejoinChain(t *testing.T) {
 func TestWaspCLILongParam(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
 
-	w := newWaspCLITest(t)
+	// w := newWaspCLITest(t)
 
-	committee, quorum := w.ArgCommitteeConfig(0)
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:1000000", "--node=0")
+	// committee, quorum := w.ArgCommitteeConfig(0)
+	// w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	// w.ActivateChainOnAllNodes("chain1", 0)
+	// w.MustRun("chain", "deposit", "base:1000000", "--node=0")
 
-	veryLongTokenName := strings.Repeat("A", 10_000)
+	// veryLongTokenName := strings.Repeat("A", 10_000)
 
-	errMsg := "slice length is too long"
-	defer func() {
-		if r := recover(); r != nil {
-			errStr := fmt.Sprintf("%s", r)
-			if !strings.Contains(errStr, errMsg) {
-				t.FailNow()
-			}
-		}
-	}()
+	// errMsg := "slice length is too long"
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		errStr := fmt.Sprintf("%s", r)
+	// 		if !strings.Contains(errStr, errMsg) {
+	// 			t.FailNow()
+	// 		}
+	// 	}
+	// }()
 
-	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
-		MaximumSupply: big.NewInt(1000000),
-		MeltedTokens:  big.NewInt(0),
-		MintedTokens:  big.NewInt(0),
-	}, veryLongTokenName, "TST", 8)
+	// w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
+	// 	MaximumSupply: big.NewInt(1000000),
+	// 	MeltedTokens:  big.NewInt(0),
+	// 	MintedTokens:  big.NewInt(0),
+	// }, veryLongTokenName, "TST", 8)
 
 	// The code should not reach here. CreateL2NativeToken should panic as the args are too long.
 	// This is caught by the deferred recover.
@@ -541,41 +539,41 @@ func TestWaspCLIMintNativeToken(t *testing.T) {
 func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
 
-	w := newWaspCLITest(t)
+	// w := newWaspCLITest(t)
 
-	committee, quorum := w.ArgCommitteeConfig(0)
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
+	// committee, quorum := w.ArgCommitteeConfig(0)
+	// w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
+	// w.ActivateChainOnAllNodes("chain1", 0)
+	// w.MustRun("chain", "deposit", "base:100000000", "--node=0")
 
-	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
-		MaximumSupply: big.NewInt(1000000),
-		MeltedTokens:  big.NewInt(0),
-		MintedTokens:  big.NewInt(0),
-	}, "test", "test_symbol", 1)
+	// w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
+	// 	MaximumSupply: big.NewInt(1000000),
+	// 	MeltedTokens:  big.NewInt(0),
+	// 	MintedTokens:  big.NewInt(0),
+	// }, "test", "test_symbol", 1)
 
-	w.MustRun("chain", "deploy", "--chain=chain2", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain2", 0)
-	w.MustRun("chain", "deposit", "base:100000000", "--node=0", "--chain=chain2")
+	// w.MustRun("chain", "deploy", "--chain=chain2", committee, quorum, "--node=0")
+	// w.ActivateChainOnAllNodes("chain2", 0)
+	// w.MustRun("chain", "deposit", "base:100000000", "--node=0", "--chain=chain2")
 
-	out := w.MustRun(
-		"chain", "register-erc20-native-token-on-remote-chain",
-		"-o",
-		"--foundry-sn=1",
-		"--token-name=test",
-		"--ticker-symbol=test_symbol",
-		"--token-decimals=1",
-		"--target=chain2",
-		"--node=0",
-		"--chain=chain1",
-		"--allowance=base:1000000",
-	)
+	// out := w.MustRun(
+	// 	"chain", "register-erc20-native-token-on-remote-chain",
+	// 	"-o",
+	// 	"--foundry-sn=1",
+	// 	"--token-name=test",
+	// 	"--ticker-symbol=test_symbol",
+	// 	"--token-decimals=1",
+	// 	"--target=chain2",
+	// 	"--node=0",
+	// 	"--chain=chain1",
+	// 	"--allowance=base:1000000",
+	// )
 
-	reqID := findRequestIDInOutput(out)
-	require.NotEmpty(t, reqID)
+	// reqID := findRequestIDInOutput(out)
+	// require.NotEmpty(t, reqID)
 
-	out = w.MustRun("chain", "request", reqID, "--node=0", "--chain=chain1")
-	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
+	// out = w.MustRun("chain", "request", reqID, "--node=0", "--chain=chain1")
+	// require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
 }
 
 func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *types.Transaction {
