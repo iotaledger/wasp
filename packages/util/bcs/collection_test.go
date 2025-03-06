@@ -87,8 +87,9 @@ func testSizeCodec(t *testing.T, v int, expectedEnc []byte) {
 	require.NoError(t, r.Err)
 	rwutilEnc := rwutilEncBuff.Bytes()
 
-	refBcsEnc := ref_bcs.ULEB128Encode(v)
-
+	refBcsEnc, err := ref_bcs.ULEB128Encode(v)
+	
+	require.NoError(t, err)
 	require.Equal(t, expectedEnc, rwutilEnc)
 	require.Equal(t, refBcsEnc, rwutilEnc)
 }
