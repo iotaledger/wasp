@@ -62,6 +62,7 @@ func validateMigration(c *cmd.Context) error {
 	// 		Find difference in presence of keys between old and new state
 	// 		Filter out keys by prefix, which are expected to not be present
 	// 		Analyze the result. Ideally we should eventually have no unexpected difference there
+	// 4. Check special accounts and cases: L2Totals, CommonAccount etc.
 	// 	We could also do that not over states, but over mutations in blocks.
 
 	newLatestState := lo.Must(destStore.LatestState())

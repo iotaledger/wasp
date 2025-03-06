@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -15,38 +14,28 @@ import (
 	"github.com/samber/lo"
 	cmd "github.com/urfave/cli/v2"
 
-	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	isc_migration "github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
-	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 	old_trietest "github.com/nnikolash/wasp-types-exported/packages/trie/test"
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 )
 
 func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string) (
@@ -151,39 +140,7 @@ func writeMigrationResult(metadata *transaction.StateMetadata, stateIndex uint32
 	return os.WriteFile("migration_result.json", resultJson, os.ModePerm)
 }
 
-func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
-	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
-
-	registry := old_collections.NewArrayReadOnly(contractState, old_blocklog.PrefixBlockRegistry)
-	if registry.Len() == 0 {
-		panic("Block registry is empty")
-	}
-
-	blockInfoBytes := registry.GetAt(registry.Len() - 1)
-
-	var blockInfo old_blocklog.BlockInfo
-	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
-
-	return blockInfo.PreviousAliasOutput.GetAliasOutput()
-}
-
-func GetAnchorObject(chainState kv.KVStoreReader) *iscmove.Anchor {
-	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
-
-	registry := collections.NewArrayReadOnly(contractState, blocklog.PrefixBlockRegistry)
-	if registry.Len() == 0 {
-		panic("Block registry is empty")
-	}
-
-	blockInfoBytes := registry.GetAt(registry.Len() - 1)
-	blockInfo := bcs.MustUnmarshal[blocklog.BlockInfo](blockInfoBytes)
-
-	return blockInfo.PreviousAnchor.Anchor().Object
-}
-
 func migrateSingleState(c *cmd.Context) error {
-	cli.DebugLoggingEnabled = true
-
 	srcChainDBDir := c.Args().Get(0)
 	destChainDBDir := c.Args().Get(1)
 	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
@@ -194,10 +151,10 @@ func migrateSingleState(c *cmd.Context) error {
 
 	var srcState old_kv.KVStoreReader
 	if blockIndexSpecified {
-		cli.DebugLogf("Migrating state #%v\n", blockIndex)
+		cli.Logf("Migrating state #%v", blockIndex)
 		srcState = lo.Must(srcStore.StateByIndex(uint32(blockIndex)))
 	} else {
-		cli.DebugLog("Migrating latest state\n")
+		cli.Log("Migrating latest state")
 		srcState = lo.Must(srcStore.LatestState())
 	}
 
@@ -205,6 +162,8 @@ func migrateSingleState(c *cmd.Context) error {
 	if err != nil {
 		panic(err)
 	}
+
+	cli.DebugLoggingEnabled = true
 
 	v := migrations.MigrateRootContract(srcState, stateDraft)
 	migrations.MigrateAccountsContract(v, srcState, stateDraft, oldChainID, newChainID)

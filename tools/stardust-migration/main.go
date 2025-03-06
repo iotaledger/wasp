@@ -4,13 +4,25 @@
 package main
 
 import (
+	"bytes"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 
+	old_iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 	cmd "github.com/urfave/cli/v2"
 )
@@ -114,4 +126,34 @@ func processCommonFlags(c *cmd.Context) error {
 	}
 
 	return nil
+}
+
+func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
+	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
+
+	registry := old_collections.NewArrayReadOnly(contractState, old_blocklog.PrefixBlockRegistry)
+	if registry.Len() == 0 {
+		panic("Block registry is empty")
+	}
+
+	blockInfoBytes := registry.GetAt(registry.Len() - 1)
+
+	var blockInfo old_blocklog.BlockInfo
+	lo.Must0(blockInfo.Read(bytes.NewReader(blockInfoBytes)))
+
+	return blockInfo.PreviousAliasOutput.GetAliasOutput()
+}
+
+func GetAnchorObject(chainState kv.KVStoreReader) *iscmove.Anchor {
+	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
+
+	registry := collections.NewArrayReadOnly(contractState, blocklog.PrefixBlockRegistry)
+	if registry.Len() == 0 {
+		panic("Block registry is empty")
+	}
+
+	blockInfoBytes := registry.GetAt(registry.Len() - 1)
+	blockInfo := bcs.MustUnmarshal[blocklog.BlockInfo](blockInfoBytes)
+
+	return blockInfo.PreviousAnchor.Anchor().Object
 }

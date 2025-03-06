@@ -3,8 +3,6 @@ package validation
 import (
 	"fmt"
 	"math/big"
-	"math/rand"
-	"strconv"
 	"strings"
 
 	"github.com/samber/lo"
@@ -113,16 +111,18 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
 	contractState.Iterate(old_accounts.PrefixBaseTokens, func(balanceKey old_kv.Key, v []byte) bool {
 		accKey := utils.MustRemovePrefix(balanceKey, old_accounts.PrefixBaseTokens)
-		if strings.HasPrefix(string(accKey), old_accounts.L2TotalsAccount) {
-			// L2TotalsAccount - ignoring
-			return true
-		}
 
-		accID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))
+		var accStr string
+		if strings.HasPrefix(string(accKey), old_accounts.L2TotalsAccount) {
+			accStr = "L2TotalsAccount"
+		} else {
+			agentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))
+			accStr = oldAgentIDToStr(agentID)
+		}
 		// NOTE: Using other logic from the one used in migration to improve validation quality.
 		balance := old_codec.MustDecodeBigIntAbs(v, big.NewInt(0))
 		balancesStr.WriteString("\t")
-		balancesStr.WriteString(oldAgentIDToStr(accID))
+		balancesStr.WriteString(accStr)
 		balancesStr.WriteString(": ")
 		balancesStr.WriteString(balance.String())
 		balancesStr.WriteString("\n")
@@ -149,41 +149,38 @@ func newBaseTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.Chain
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
 	contractState.Iterate(kv.Key(accounts.PrefixAccountCoinBalances), func(balanceKey kv.Key, v []byte) bool {
 		accKey, coinTypeBytes := utils.SplitMapKey(balanceKey, accounts.PrefixAccountCoinBalances)
+
 		if coinTypeBytes == "" {
 			// not a map entry
 			return true
 		}
 
-		cli.DebugLogf("XXX %v %x", string(balanceKey), balanceKey)
-		accID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey), chainID))
-		coinType, err := coin.TypeFromBytes([]byte(coinTypeBytes))
-		if err != nil {
-			// Temporary lines to find why there is an error
-			balancesStr.WriteString("\t")
-			balancesStr.WriteString(newAgentIDToStr(accID))
-			balancesStr.WriteString(": ERROR" + strconv.Itoa(rand.Int()))
-			balancesStr.WriteString(err.Error())
-			balancesStr.WriteString("\n")
-			printProgress()
-			count++
-
-			return true
-		}
-
+		coinType := lo.Must(coin.TypeFromBytes([]byte(coinTypeBytes)))
 		if coinType != coin.BaseTokenType {
 			// Native token - ignoring
 			return true
 		}
 
-		balance := codec.MustDecode[coin.Value](v)
+		var accStr string
+		if accKey == accounts.L2TotalsAccount {
+			accStr = "L2TotalsAccount"
+		} else {
+			agentID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey), chainID))
+			accStr = newAgentIDToStr(agentID)
+		}
 
-		remeinder := codec.MustDecode[*big.Int](contractState.Get(accounts.AccountWeiRemainderKey(accKey)))
+		balance := codec.MustDecode[coin.Value](v)
 		balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(balance, parameters.Decimals)
-		balanceFullDecimal.Add(balanceFullDecimal, remeinder)
+
+		var remeinder *big.Int
+		if remeinderBytes := contractState.Get(accounts.AccountWeiRemainderKey(accKey)); remeinderBytes != nil {
+			remeinder = codec.MustDecode[*big.Int](contractState.Get(accounts.AccountWeiRemainderKey(accKey)))
+			balanceFullDecimal.Add(balanceFullDecimal, remeinder)
+		}
 
 		// NOTE: Using other logic from the one used in migration to improve validation quality.
 		balancesStr.WriteString("\t")
-		balancesStr.WriteString(newAgentIDToStr(accID))
+		balancesStr.WriteString(accStr)
 		balancesStr.WriteString(": ")
 		balancesStr.WriteString(balanceFullDecimal.String())
 		balancesStr.WriteString("\n")
