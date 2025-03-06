@@ -27,12 +27,12 @@ func (v Value) BigInt() *big.Int {
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
-	e.WriteCompactUint(uint64(*v))
+	e.WriteCompactUint64(uint64(*v))
 	return nil
 }
 
 func (v *Value) UnmarshalBCS(d *bcs.Decoder) error {
-	*v = Value(d.ReadCompactUint())
+	*v = Value(d.ReadCompactUint64())
 	return nil
 }
 

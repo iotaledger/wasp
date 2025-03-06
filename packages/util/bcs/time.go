@@ -11,14 +11,14 @@ func init() {
 			ns = v.UnixNano()
 		}
 
-		e.w.WriteInt64(ns)
-		return e.w.Err
+		e.WriteInt64(ns)
+		return e.err
 	})
 
 	AddCustomDecoder(func(d *Decoder, v *time.Time) error {
-		ns := d.r.ReadInt64()
-		if d.r.Err != nil {
-			return d.r.Err
+		ns := d.ReadInt64()
+		if d.err != nil {
+			return d.err
 		}
 
 		if ns == 0 {

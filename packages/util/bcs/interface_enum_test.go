@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"testing"
 
-	ref_bcs "github.com/fardream/go-bcs/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -106,14 +105,10 @@ func TestBasicInterfaceEnumCodec(t *testing.T) {
 	bcs.RegisterEnumType2[InfEnumWithMethods, EnumVariant1, EnumVariant2]()
 
 	vS := "foo"
-	refEnumEnc := ref_bcs.MustMarshal(RefEnum1{B: &vS})
-	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytes(t, declareStructWithField(InfEnum1(vS)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, declareStructWithField(InfEnum1(vS)), []byte{0x1, 0x3, 0x66, 0x6f, 0x6f})
 
 	vI := int32(42)
-	refEnumEnc = ref_bcs.MustMarshal(RefEnum2{B: &vI})
-	require.NotEmpty(t, refEnumEnc)
-	bcs.TestCodecAndBytes(t, declareStructWithField(InfEnum2(vI)), refEnumEnc)
+	bcs.TestCodecAndBytes(t, declareStructWithField(InfEnum2(vI)), []byte{0x1, 0x2a, 0x0, 0x0, 0x0})
 
 	var e InfEnumWithMethods = EnumVariant1{A: 42}
 	bcs.TestCodecAndBytes(t, declareStructWithField(e), []byte{0x0, 0x2a, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0})

@@ -2,6 +2,7 @@ package bcs
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"reflect"
@@ -10,26 +11,151 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/constraints"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
+
+func UnmarshalStream[T any](r io.Reader) (T, error) {
+	var v T
+	_, err := UnmarshalStreamInto[T](r, &v)
+	return v, err
+}
+
+func MustUnmarshalStream[T any](r io.Reader) T {
+	v, err := UnmarshalStream[T](r)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func Unmarshal[T any](b []byte) (T, error) {
+	var v T
+	_, err := UnmarshalInto(b, &v)
+	return v, err
+}
+
+func MustUnmarshal[T any](b []byte) T {
+	v, err := Unmarshal[T](b)
+	if err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func UnmarshalStreamInto[V any](r io.Reader, v *V) (*V, error) {
+	d := NewDecoder(r)
+	d.Decode(v)
+	if d.err != nil {
+		return nil, d.err
+	}
+
+	return v, nil
+}
+
+func MustUnmarshalStreamInto[V any](r io.Reader, v *V) *V {
+	if _, err := UnmarshalStreamInto(r, v); err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+func UnmarshalInto[V any](b []byte, v *V) (*V, error) {
+	r := bytes.NewReader(b)
+	v, err := UnmarshalStreamInto(r, v)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.Len() > 0 {
+		return nil, fmt.Errorf("excess bytes: %v", r.Len())
+	}
+
+	return v, nil
+}
+
+func MustUnmarshalInto[V any](b []byte, v *V) *V {
+	if _, err := UnmarshalInto(b, v); err != nil {
+		panic(err)
+	}
+
+	return v
+}
+
+// Decode() is a helper function to decode single value from stream.
+// It is convenient to use when you don't yet have a variable to store decoded value.
+
+// If error occurs, it will be stored inside of decoder and can be checked using dec.Err().
+// Further calls to Decode() will just fail with same error and do nothing.
+// So no need to check error every time.
+// Example:
+//
+//	v1 := Decode[int](dec)
+//	v2 := Decode[string](dec)
+//	v3 := Decode[bool](dec)
+//
+//	if dec.Err() != nil {
+//	    return dec.Err()
+//	}
+//
+// If Decode() is called inside of UnmarshalBCS() method, you can even skip checking dec.Err(),
+// because decoder itself will do it for you anyway.
+// Example:
+//
+//	func (p *MyStruct) UnmarshalBCS(d *bcs.Decoder) error {
+//	    p.Field1 = Decode[int](d)
+//	    p.Field2 = Decode[string](d)
+//	    return nil
+//	}
+func Decode[V any](dec *Decoder) V {
+	var v V
+	dec.Decode(&v)
+
+	return v
+}
+
+func MustDecode[V any](dec *Decoder) V {
+	v := Decode[V](dec)
+	if dec.err != nil {
+		panic(fmt.Errorf("failed to decode object of type %T: %w", v, dec.err))
+	}
+
+	return v
+}
 
 type Decodable interface {
 	UnmarshalBCS(e *Decoder) error
 }
 
-var decodableT = reflect.TypeOf((*Decodable)(nil)).Elem()
-
 type Readable interface {
 	Read(r io.Reader) error
 }
-
-var readableT = reflect.TypeOf((*Readable)(nil)).Elem()
 
 type Initializeable interface {
 	BCSInit() error
 }
 
-var initializeableT = reflect.TypeOf((*Initializeable)(nil)).Elem()
+type (
+	CustomDecoder func(e *Decoder, v reflect.Value) error
+	InitFunc      func(v reflect.Value) error
+)
+
+var CustomDecoders = make(map[reflect.Type]CustomDecoder)
+
+func MakeCustomDecoder[V any](f func(e *Decoder, v *V) error) func(e *Decoder, v reflect.Value) error {
+	return func(e *Decoder, v reflect.Value) error {
+		return f(e, v.Interface().(*V))
+	}
+}
+
+func AddCustomDecoder[V any](f func(e *Decoder, v *V) error) {
+	CustomDecoders[reflect.TypeOf((*V)(nil)).Elem()] = MakeCustomDecoder(f)
+}
+
+func RemoveCustomDecoder[V any]() {
+	delete(CustomDecoders, reflect.TypeOf((*V)(nil)).Elem())
+}
 
 type DecoderConfig struct {
 	TagName                  string
@@ -90,27 +216,26 @@ func NewDecoderWithOpts(src io.Reader, cfg DecoderConfig) *Decoder {
 
 	return &Decoder{
 		cfg:           cfg,
-		r:             rwutil.NewReader(src),
+		r:             src,
 		typeInfoCache: decoderGlobalTypeInfoCache.Get(),
 	}
 }
 
 type Decoder struct {
 	cfg           DecoderConfig
-	r             *rwutil.Reader
+	r             io.Reader
+	err           error
 	typeInfoCache localTypeInfoCache
 }
 
-var decoderGlobalTypeInfoCache = newSharedTypeInfoCache()
-
 func (d *Decoder) Err() error {
-	return d.r.Err
+	return d.err
 }
 
 func (d *Decoder) MustDecode(v any) {
 	d.Decode(v)
-	if d.r.Err != nil {
-		panic(d.r.Err)
+	if d.err != nil {
+		panic(d.err)
 	}
 }
 
@@ -137,7 +262,7 @@ func (d *Decoder) MustDecode(v any) {
 //	    return nil
 //	}
 func (d *Decoder) Decode(v any) {
-	if d.r.Err != nil {
+	if d.err != nil {
 		return
 	}
 
@@ -162,7 +287,7 @@ func (d *Decoder) Decode(v any) {
 
 func (d *Decoder) DecodeOptional(v any) bool {
 	hasValue := d.ReadOptionalFlag()
-	if d.r.Err != nil || !hasValue {
+	if d.err != nil || !hasValue {
 		return false
 	}
 
@@ -172,11 +297,11 @@ func (d *Decoder) DecodeOptional(v any) bool {
 }
 
 func (d *Decoder) ReadOptionalFlag() bool {
-	if d.r.Err != nil {
+	if d.err != nil {
 		return false
 	}
 
-	f := d.r.ReadByte()
+	f := d.ReadByte()
 	switch f {
 	case 0:
 		return false
@@ -190,78 +315,152 @@ func (d *Decoder) ReadOptionalFlag() bool {
 
 // Enum index is an index of variant in enum type.
 func (d *Decoder) ReadEnumIdx() int {
-	return d.r.ReadSize32()
+	return int(d.ReadCompactUint64())
 }
 
 func (d *Decoder) ReadLen() int {
-	return d.r.ReadSize32()
+	return int(d.ReadCompactUint64())
 }
 
-// ULEB - unsigned little-endian base-128 - variable-length integer value.
-func (d *Decoder) ReadCompactUint() uint64 {
-	return d.r.ReadAmount64()
+func (d *Decoder) ReadCompactUint64() uint64 {
+	// ULEB - unsigned little-endian base-128 - variable-length integer value.
+
+	b, err := d.readByte()
+	if err != nil {
+		return 0
+	}
+	if b < 0x80 {
+		return uint64(b)
+	}
+	value := uint64(b & 0x7f)
+
+	for shift := 7; shift < 63; shift += 7 {
+		b, err = d.readByte()
+		if err != nil {
+			return 0
+		}
+		if b < 0x80 {
+			return value | (uint64(b) << shift)
+		}
+		value |= uint64(b&0x7f) << shift
+	}
+
+	b, err = d.readByte()
+	if err != nil {
+		return 0
+	}
+
+	// must be the final bit (since we already encoded 63 bits)
+	if b > 0x01 {
+		_ = d.handleErrorf("compact uint64 overflow")
+		return 0
+	}
+
+	return value | (uint64(b) << 63)
+}
+
+func (d *Decoder) readByte() (byte, error) {
+	var b [1]byte
+	_, err := d.Read(b[:])
+	return b[0], err
 }
 
 func (d *Decoder) ReadBool() bool {
-	return d.r.ReadBool()
+	b := d.ReadByte()
+	switch b {
+	case 0:
+		return false
+	case 1:
+		return true
+	default:
+		_ = d.handleErrorf("invalid bool value: %v", b)
+		return false
+	}
 }
 
 //nolint:govet
 func (d *Decoder) ReadByte() byte {
-	return d.r.ReadByte()
+	b, _ := d.readByte()
+	return b
 }
 
 func (d *Decoder) ReadInt8() int8 {
-	return d.r.ReadInt8()
-}
-
-func (d *Decoder) ReadInt16() int16 {
-	return d.r.ReadInt16()
-}
-
-func (d *Decoder) ReadInt32() int32 {
-	return d.r.ReadInt32()
-}
-
-func (d *Decoder) ReadInt64() int64 {
-	return d.r.ReadInt64()
-}
-
-func (d *Decoder) ReadInt() int {
-	return int(d.r.ReadInt64())
+	return int8(d.ReadByte())
 }
 
 func (d *Decoder) ReadUint8() uint8 {
-	return d.r.ReadUint8()
+	return uint8(d.ReadByte())
+}
+
+func (d *Decoder) ReadInt16() int16 {
+	return int16(d.ReadUint16())
 }
 
 func (d *Decoder) ReadUint16() uint16 {
-	return d.r.ReadUint16()
+	var b [2]byte
+	if _, err := d.Read(b[:]); err != nil {
+		return 0
+	}
+
+	return uint16(b[0]) | (uint16(b[1]) << 8)
+}
+
+func (d *Decoder) ReadInt32() int32 {
+	return int32(d.ReadUint32())
 }
 
 func (d *Decoder) ReadUint32() uint32 {
-	return d.r.ReadUint32()
+	var b [4]byte
+	if _, err := d.Read(b[:]); err != nil {
+		return 0
+	}
+
+	return binary.LittleEndian.Uint32(b[:])
+}
+
+func (d *Decoder) ReadInt64() int64 {
+	return int64(d.ReadUint64())
 }
 
 func (d *Decoder) ReadUint64() uint64 {
-	return d.r.ReadUint64()
+	var b [8]byte
+	if _, err := d.Read(b[:]); err != nil {
+		return 0
+	}
+
+	return binary.LittleEndian.Uint64(b[:])
+}
+
+func (d *Decoder) ReadInt() int {
+	return int(d.ReadInt64())
 }
 
 func (d *Decoder) ReadUint() uint {
-	return uint(d.r.ReadUint64())
+	return uint(d.ReadUint64())
 }
 
 func (d *Decoder) ReadString() string {
-	return d.r.ReadString()
+	length := d.ReadLen()
+	if length == 0 {
+		return ""
+	}
+
+	b := make([]byte, length)
+	if _, err := d.Read(b); err != nil {
+		return ""
+	}
+
+	return string(b)
 }
 
-func (d *Decoder) Read(b []byte) (n int, err error) {
-	d.r.ReadFromFunc(func(r io.Reader) (int, error) {
-		n, err = r.Read(b)
-		return n, err
-	})
+func (d *Decoder) Read(b []byte) (n int, _ error) {
+	if d.err != nil {
+		return 0, d.err
+	}
 
-	return n, d.r.Err
+	n, d.err = d.r.Read(b)
+
+	return n, d.err
 }
 
 //nolint:gocyclo,funlen
@@ -282,13 +481,13 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	if tInfo.CustomDecoder != nil {
 		if err := tInfo.CustomDecoder(d, v.Addr()); err != nil {
-			if d.r.Err == nil {
-				d.r.Err = err
+			if d.err == nil {
+				d.err = err
 			}
 			return d.handleErrorf("%v: custom decoder: %w", v.Type(), err)
 		}
-		if d.r.Err != nil {
-			return d.handleErrorf("%v: custom decoder: %w", v.Type(), d.r.Err)
+		if d.err != nil {
+			return d.handleErrorf("%v: custom decoder: %w", v.Type(), d.err)
 		}
 
 		if tInfo.Init != nil {
@@ -312,21 +511,21 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 
 	switch v.Kind() {
 	case reflect.Bool:
-		v.SetBool(d.r.ReadBool())
+		v.SetBool(d.ReadBool())
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		if typeOptions.IsCompactInt {
-			v.SetInt(int64(d.ReadCompactUint())) //nolint:gosec
+			v.SetInt(int64(d.ReadCompactUint64())) //nolint:gosec
 		} else {
 			err = d.decodeInt(v, typeOptions.UnderlyingType)
 		}
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 		if typeOptions.IsCompactInt {
-			v.SetUint(d.ReadCompactUint())
+			v.SetUint(d.ReadCompactUint64())
 		} else {
 			err = d.decodeUint(v, typeOptions.UnderlyingType)
 		}
 	case reflect.String:
-		v.SetString(d.r.ReadString())
+		v.SetString(d.ReadString())
 	case reflect.Slice:
 		if typeOptions.ArrayElement == nil {
 			typeOptions.ArrayElement = &ArrayElemOptions{}
@@ -360,8 +559,8 @@ func (d *Decoder) decodeValue(v reflect.Value, typeOptionsFromTag *TypeOptions, 
 	if err != nil {
 		return d.handleErrorf("%v: %w", v.Type(), err)
 	}
-	if d.r.Err != nil {
-		return d.handleErrorf("%v: %w", v.Type(), d.r.Err)
+	if d.err != nil {
+		return d.handleErrorf("%v: %w", v.Type(), d.err)
 	}
 
 	if tInfo.Init != nil {
@@ -509,13 +708,13 @@ func (d *Decoder) decodeInt(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Int8:
-		v.SetInt(int64(d.r.ReadInt8()))
+		v.SetInt(int64(d.ReadInt8()))
 	case reflect.Int16:
-		v.SetInt(int64(d.r.ReadInt16()))
+		v.SetInt(int64(d.ReadInt16()))
 	case reflect.Int32:
-		v.SetInt(int64(d.r.ReadInt32()))
+		v.SetInt(int64(d.ReadInt32()))
 	case reflect.Int64, reflect.Int:
-		v.SetInt(d.r.ReadInt64())
+		v.SetInt(d.ReadInt64())
 	default:
 		panic(fmt.Sprintf("unexpected int kind: %v", k))
 	}
@@ -532,13 +731,13 @@ func (d *Decoder) decodeUint(v reflect.Value, encodedType reflect.Kind) error {
 
 	switch k {
 	case reflect.Uint8:
-		v.SetUint(uint64(d.r.ReadUint8()))
+		v.SetUint(uint64(d.ReadUint8()))
 	case reflect.Uint16:
-		v.SetUint(uint64(d.r.ReadUint16()))
+		v.SetUint(uint64(d.ReadUint16()))
 	case reflect.Uint32:
-		v.SetUint(uint64(d.r.ReadUint32()))
+		v.SetUint(uint64(d.ReadUint32()))
 	case reflect.Uint64, reflect.Uint:
-		v.SetUint(d.r.ReadUint64())
+		v.SetUint(d.ReadUint64())
 	default:
 		panic(fmt.Sprintf("unexpected uint kind: %v", k))
 	}
@@ -573,21 +772,21 @@ func decodeConvertNumber(d *Decoder, v reflect.Value, encodedType reflect.Kind) 
 func decodeConvertNumber2[RealType constraints.Numeric](d *Decoder, encodedType reflect.Kind, set func(RealType)) error {
 	switch encodedType {
 	case reflect.Int8:
-		return decodeConvertNumber3(d, d.r.ReadInt8, set)
+		return decodeConvertNumber3(d, d.ReadInt8, set)
 	case reflect.Int16:
-		return decodeConvertNumber3(d, d.r.ReadInt16, set)
+		return decodeConvertNumber3(d, d.ReadInt16, set)
 	case reflect.Int32:
-		return decodeConvertNumber3(d, d.r.ReadInt32, set)
+		return decodeConvertNumber3(d, d.ReadInt32, set)
 	case reflect.Int64, reflect.Int:
-		return decodeConvertNumber3(d, d.r.ReadInt64, set)
+		return decodeConvertNumber3(d, d.ReadInt64, set)
 	case reflect.Uint8:
-		return decodeConvertNumber3(d, d.r.ReadUint8, set)
+		return decodeConvertNumber3(d, d.ReadUint8, set)
 	case reflect.Uint16:
-		return decodeConvertNumber3(d, d.r.ReadUint16, set)
+		return decodeConvertNumber3(d, d.ReadUint16, set)
 	case reflect.Uint32:
-		return decodeConvertNumber3(d, d.r.ReadUint32, set)
+		return decodeConvertNumber3(d, d.ReadUint32, set)
 	case reflect.Uint64, reflect.Uint:
-		return decodeConvertNumber3(d, d.r.ReadUint64, set)
+		return decodeConvertNumber3(d, d.ReadUint64, set)
 	default:
 		return d.handleErrorf("invalid underlaying type %v for type %T", encodedType, lo.Empty[RealType]())
 	}
@@ -608,13 +807,18 @@ func decodeConvertNumber3[To, From constraints.Numeric](d *Decoder, read func() 
 }
 
 func (d *Decoder) decodeSlice(v reflect.Value, typeOpts TypeOptions) error {
-	var length int
+	length := d.ReadLen()
 
 	switch typeOpts.LenSizeInBytes {
+	case 0:
 	case Len2Bytes:
-		length = d.r.ReadSize16()
-	case Len4Bytes, 0:
-		length = d.r.ReadSize32()
+		if length > 0xFFFF {
+			return d.handleErrorf("array size exceeds 2 bytes: %v", length)
+		}
+	case Len4Bytes:
+		if length > 0xFFFFFFFF {
+			return d.handleErrorf("array size exceeds 4 bytes: %v", length)
+		}
 	default:
 		return d.handleErrorf("invalid array size type: %v", typeOpts.LenSizeInBytes)
 	}
@@ -646,7 +850,7 @@ func (d *Decoder) decodeArray(v reflect.Value, typeOpts TypeOptions) error {
 		// The type does not have any customizations. So we can use  some optimizations for encoding of basic types
 		if elemType.Kind() == reflect.Uint8 && (v.Kind() == reflect.Slice || v.CanAddr()) && !typeOpts.ArrayElement.AsByteArray {
 			// Optimization for []byte and [N]byte.
-			d.r.ReadN(v.Bytes())
+			_, _ = d.Read(v.Bytes())
 			return nil
 		}
 
@@ -675,13 +879,18 @@ func (d *Decoder) decodeArray(v reflect.Value, typeOpts TypeOptions) error {
 }
 
 func (d *Decoder) decodeMap(v reflect.Value, typeOpts TypeOptions) error {
-	var length int
+	length := d.ReadLen()
 
 	switch typeOpts.LenSizeInBytes {
+	case 0:
 	case Len2Bytes:
-		length = d.r.ReadSize16()
-	case Len4Bytes, 0:
-		length = d.r.ReadSize32()
+		if length > 0xFFFF {
+			return d.handleErrorf("map size exceeds 2 bytes: %v", length)
+		}
+	case Len4Bytes:
+		if length > 0xFFFFFFFF {
+			return d.handleErrorf("map size exceeds 4 bytes: %v", length)
+		}
 	default:
 		return d.handleErrorf("invalid map size type: %v", typeOpts.LenSizeInBytes)
 	}
@@ -741,7 +950,6 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 			}
 
 			// The field is unexported, but it has a tag, so we need to serialize it.
-			// Trick to access unexported fields: https://stackoverflow.com/questions/42664837/how-to-access-unexported-struct-fields/43918797#43918797
 			fieldVal = reflect.NewAt(fieldVal.Type(), unsafe.Pointer(fieldVal.UnsafeAddr())).Elem()
 		} else if fieldOpts.ExportAnonymousField {
 			return d.handleErrorf("%v: field %v is already exported, but is marked for export", t.Name(), fieldType.Name)
@@ -752,8 +960,8 @@ func (d *Decoder) decodeStruct(v reflect.Value, tInfo *typeInfo) error {
 		if fieldKind == reflect.Ptr || fieldKind == reflect.Interface || fieldKind == reflect.Map || fieldKind == reflect.Slice {
 			if fieldOpts.Optional {
 				hasValue := d.ReadOptionalFlag()
-				if d.r.Err != nil {
-					return d.handleErrorf("%v: %w", fieldType.Name, d.r.Err)
+				if d.err != nil {
+					return d.handleErrorf("%v: %w", fieldType.Name, d.err)
 				}
 
 				if !hasValue {
@@ -826,9 +1034,9 @@ func (d *Decoder) decodeInterface(v reflect.Value, couldBeEnum bool) error {
 }
 
 func (d *Decoder) decodeInterfaceEnum(v reflect.Value, variants map[int]reflect.Type) error {
-	variantIdx := d.r.ReadSize32()
-	if d.r.Err != nil {
-		return d.r.Err
+	variantIdx := d.ReadEnumIdx()
+	if d.err != nil {
+		return d.err
 	}
 
 	if variantIdx >= len(variants) {
@@ -852,7 +1060,7 @@ func (d *Decoder) decodeInterfaceEnum(v reflect.Value, variants map[int]reflect.
 }
 
 func (d *Decoder) decodeStructEnum(v reflect.Value) error {
-	variantIdx := d.r.ReadSize32()
+	variantIdx := d.ReadEnumIdx()
 
 	t := v.Type()
 
@@ -869,26 +1077,27 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 	// skip length and continue reading. But that may result in confusing decoding errors in case of corrupted data.
 	// So more reliable way is to separate those bytes and decode from them.
 
-	b := make([]byte, d.r.ReadSize32())
-	d.r.ReadN(b)
+	b := make([]byte, d.ReadLen())
+	d.Read(b)
 
-	if d.r.Err != nil {
-		return d.handleErrorf("bytearr: %w", d.r.Err)
+	if d.err != nil {
+		return d.handleErrorf("bytearr: %w", d.err)
 	}
 
 	origStream := d.r
 	defer func() { d.r = origStream }() // for case of panic/error
 
-	d.r = rwutil.NewBytesReader(b)
+	buff := bytes.NewBuffer(b)
+	d.r = buff
 
 	if err := dec(); err != nil {
 		return err
 	}
-	if d.r.Err != nil {
-		return d.r.Err
+	if d.err != nil {
+		return d.err
 	}
 
-	if avail := d.r.Available(); avail > 0 {
+	if avail := buff.Len(); avail > 0 {
 		return d.handleErrorf("bytearr: excess bytes: %v", avail)
 	}
 
@@ -896,138 +1105,13 @@ func (d *Decoder) decodeAsByteArray(dec func() error) error {
 }
 
 func (d *Decoder) handleErrorf(format string, args ...interface{}) error {
-	d.r.Err = fmt.Errorf(format, args...)
-	return d.r.Err
+	d.err = fmt.Errorf(format, args...)
+	return d.err
 }
 
-// Decode() is a helper function to decode single value from stream.
-// It is convenient to use when you don't yet have a variable to store decoded value.
-
-// If error occurs, it will be stored inside of decoder and can be checked using dec.Err().
-// Further calls to Decode() will just fail with same error and do nothing.
-// So no need to check error every time.
-// Example:
-//
-//	v1 := Decode[int](dec)
-//	v2 := Decode[string](dec)
-//	v3 := Decode[bool](dec)
-//
-//	if dec.Err() != nil {
-//	    return dec.Err()
-//	}
-//
-// If Decode() is called inside of UnmarshalBCS() method, you can even skip checking dec.Err(),
-// because decoder itself will do it for you anyway.
-// Example:
-//
-//	func (p *MyStruct) UnmarshalBCS(d *bcs.Decoder) error {
-//	    p.Field1 = Decode[int](d)
-//	    p.Field2 = Decode[string](d)
-//	    return nil
-//	}
-func Decode[V any](dec *Decoder) V {
-	var v V
-	dec.Decode(&v)
-
-	return v
-}
-
-func MustDecode[V any](dec *Decoder) V {
-	v := Decode[V](dec)
-	if dec.r.Err != nil {
-		panic(fmt.Errorf("failed to decode object of type %T: %w", v, dec.r.Err))
-	}
-
-	return v
-}
-
-func UnmarshalStream[T any](r io.Reader) (T, error) {
-	var v T
-	_, err := UnmarshalStreamInto[T](r, &v)
-	return v, err
-}
-
-func MustUnmarshalStream[T any](r io.Reader) T {
-	v, err := UnmarshalStream[T](r)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
-func Unmarshal[T any](b []byte) (T, error) {
-	var v T
-	_, err := UnmarshalInto(b, &v)
-	return v, err
-}
-
-func MustUnmarshal[T any](b []byte) T {
-	v, err := Unmarshal[T](b)
-	if err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
-func UnmarshalStreamInto[V any](r io.Reader, v *V) (*V, error) {
-	d := NewDecoder(r)
-	d.Decode(v)
-	if d.r.Err != nil {
-		return nil, d.r.Err
-	}
-
-	return v, nil
-}
-
-func MustUnmarshalStreamInto[V any](r io.Reader, v *V) *V {
-	if _, err := UnmarshalStreamInto(r, v); err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
-func UnmarshalInto[V any](b []byte, v *V) (*V, error) {
-	r := bytes.NewReader(b)
-	v, err := UnmarshalStreamInto(r, v)
-	if err != nil {
-		return nil, err
-	}
-
-	if r.Len() > 0 {
-		return nil, fmt.Errorf("excess bytes: %v", r.Len())
-	}
-
-	return v, nil
-}
-
-func MustUnmarshalInto[V any](b []byte, v *V) *V {
-	if _, err := UnmarshalInto(b, v); err != nil {
-		panic(err)
-	}
-
-	return v
-}
-
-type (
-	CustomDecoder func(e *Decoder, v reflect.Value) error
-	InitFunc      func(v reflect.Value) error
+var (
+	decodableT                 = reflect.TypeOf((*Decodable)(nil)).Elem()
+	readableT                  = reflect.TypeOf((*Readable)(nil)).Elem()
+	initializeableT            = reflect.TypeOf((*Initializeable)(nil)).Elem()
+	decoderGlobalTypeInfoCache = newSharedTypeInfoCache()
 )
-
-var CustomDecoders = make(map[reflect.Type]CustomDecoder)
-
-func MakeCustomDecoder[V any](f func(e *Decoder, v *V) error) func(e *Decoder, v reflect.Value) error {
-	return func(e *Decoder, v reflect.Value) error {
-		return f(e, v.Interface().(*V))
-	}
-}
-
-func AddCustomDecoder[V any](f func(e *Decoder, v *V) error) {
-	CustomDecoders[reflect.TypeOf((*V)(nil)).Elem()] = MakeCustomDecoder(f)
-}
-
-func RemoveCustomDecoder[V any]() {
-	delete(CustomDecoders, reflect.TypeOf((*V)(nil)).Elem())
-}

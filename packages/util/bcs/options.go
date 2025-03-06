@@ -10,7 +10,7 @@ import (
 type TypeOptions struct {
 	// IncludeUnexported bool
 
-	// TODO: Is this needed? It is present in rwutil as Size16/Size32, but it is more of validation.
+	// TODO: Is this still needed?
 	LenSizeInBytes LenBytesCount
 
 	// TODO: Is this really useful? The engineer can just change type of int to indicate its size.

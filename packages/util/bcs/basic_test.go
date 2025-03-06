@@ -3,7 +3,6 @@ package bcs_test
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"strings"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type BasicWithCustomCodec string
@@ -38,33 +36,6 @@ func (w *BasicWithCustomCodec) UnmarshalBCS(d *bcs.Decoder) error {
 	*w = BasicWithCustomCodec(s)
 
 	return nil
-}
-
-type BasicWithRwUtilCodec string
-
-func (v BasicWithRwUtilCodec) Write(w io.Writer) error {
-	ww := rwutil.NewWriter(w)
-	ww.WriteN([]byte{1, 2, 3})
-	ww.WriteString(string(v))
-
-	return ww.Err
-}
-
-func (v *BasicWithRwUtilCodec) Read(r io.Reader) error {
-	rr := rwutil.NewReader(r)
-
-	b := make([]byte, 3)
-	rr.ReadN(b)
-
-	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
-		return fmt.Errorf("invalid value: %v", b)
-	}
-
-	s := rr.ReadString()
-
-	*v = BasicWithRwUtilCodec(s)
-
-	return rr.Err
 }
 
 type BasicWithCustomPtrCodec string
@@ -144,48 +115,47 @@ func TestBasicTypesCodec(t *testing.T) {
 	// 64-bit signed    -1311768467750121216	00 11 32 54 87 A9 CB ED
 	// 64-bit unsigned   1311768467750121216	00 EF CD AB 78 56 34 12
 
-	bcs.TestCodecAndBytesVsRef(t, true, []byte{0x01})
-	bcs.TestCodecAndBytesVsRef(t, false, []byte{0x00})
+	bcs.TestCodecAndBytes(t, true, []byte{0x01})
+	bcs.TestCodecAndBytes(t, false, []byte{0x00})
 
-	bcs.TestCodecAndBytesVsRef(t, int8(-1), []byte{0xFF})
-	bcs.TestCodecAndBytesVsRef(t, int8(-128), []byte{0x80})
-	bcs.TestCodecAndBytesVsRef(t, int8(127), []byte{0x7f})
+	bcs.TestCodecAndBytes(t, int8(-1), []byte{0xFF})
+	bcs.TestCodecAndBytes(t, int8(-128), []byte{0x80})
+	bcs.TestCodecAndBytes(t, int8(127), []byte{0x7f})
 
-	bcs.TestCodecAndBytesVsRef(t, uint8(0), []byte{0x00})
-	bcs.TestCodecAndBytesVsRef(t, uint8(1), []byte{0x01})
-	bcs.TestCodecAndBytesVsRef(t, uint8(255), []byte{0xFF})
+	bcs.TestCodecAndBytes(t, uint8(0), []byte{0x00})
+	bcs.TestCodecAndBytes(t, uint8(1), []byte{0x01})
+	bcs.TestCodecAndBytes(t, uint8(255), []byte{0xFF})
 
-	bcs.TestCodecAndBytesVsRef(t, int16(-4660), []byte{0xCC, 0xED})
-	bcs.TestCodecAndBytesVsRef(t, int16(-32768), []byte{0x00, 0x80})
-	bcs.TestCodecAndBytesVsRef(t, int16(32767), []byte{0xFF, 0x7F})
+	bcs.TestCodecAndBytes(t, int16(-4660), []byte{0xCC, 0xED})
+	bcs.TestCodecAndBytes(t, int16(-32768), []byte{0x00, 0x80})
+	bcs.TestCodecAndBytes(t, int16(32767), []byte{0xFF, 0x7F})
 
-	bcs.TestCodecAndBytesVsRef(t, uint16(4660), []byte{0x34, 0x12})
-	bcs.TestCodecAndBytesVsRef(t, uint16(0), []byte{0x00, 0x00})
-	bcs.TestCodecAndBytesVsRef(t, uint16(65535), []byte{0xFF, 0xFF})
+	bcs.TestCodecAndBytes(t, uint16(4660), []byte{0x34, 0x12})
+	bcs.TestCodecAndBytes(t, uint16(0), []byte{0x00, 0x00})
+	bcs.TestCodecAndBytes(t, uint16(65535), []byte{0xFF, 0xFF})
 
-	bcs.TestCodecAndBytesVsRef(t, int32(-305419896), []byte{0x88, 0xA9, 0xCB, 0xED})
-	bcs.TestCodecAndBytesVsRef(t, int32(-2147483648), []byte{0x0, 0x0, 0x0, 0x80})
-	bcs.TestCodecAndBytesVsRef(t, int32(2147483647), []byte{0xFF, 0xFF, 0xFF, 0x7F})
+	bcs.TestCodecAndBytes(t, int32(-305419896), []byte{0x88, 0xA9, 0xCB, 0xED})
+	bcs.TestCodecAndBytes(t, int32(-2147483648), []byte{0x0, 0x0, 0x0, 0x80})
+	bcs.TestCodecAndBytes(t, int32(2147483647), []byte{0xFF, 0xFF, 0xFF, 0x7F})
 
-	bcs.TestCodecAndBytesVsRef(t, uint32(305419896), []byte{0x78, 0x56, 0x34, 0x12})
-	bcs.TestCodecAndBytesVsRef(t, uint32(0), []byte{0x00, 0x00, 0x00, 0x00})
-	bcs.TestCodecAndBytesVsRef(t, uint32(4294967295), []byte{0xFF, 0xFF, 0xFF, 0xFF})
+	bcs.TestCodecAndBytes(t, uint32(305419896), []byte{0x78, 0x56, 0x34, 0x12})
+	bcs.TestCodecAndBytes(t, uint32(0), []byte{0x00, 0x00, 0x00, 0x00})
+	bcs.TestCodecAndBytes(t, uint32(4294967295), []byte{0xFF, 0xFF, 0xFF, 0xFF})
 
-	bcs.TestCodecAndBytesVsRef(t, int64(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
-	bcs.TestCodecAndBytesVsRef(t, int64(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
-	bcs.TestCodecAndBytesVsRef(t, int64(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
+	bcs.TestCodecAndBytes(t, int64(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
+	bcs.TestCodecAndBytes(t, int64(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
+	bcs.TestCodecAndBytes(t, int64(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
 
 	bcs.TestCodecAndBytes(t, int(-1311768467750121216), []byte{0x00, 0x11, 0x32, 0x54, 0x87, 0xA9, 0xCB, 0xED})
 	bcs.TestCodecAndBytes(t, int(-9223372036854775808), []byte{0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x80})
 	bcs.TestCodecAndBytes(t, int(9223372036854775807), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x7F})
 
-	bcs.TestCodecAndBytesVsRef(t, uint64(1311768467750121216), []byte{0x00, 0xEF, 0xCD, 0xAB, 0x78, 0x56, 0x34, 0x12})
-	bcs.TestCodecAndBytesVsRef(t, uint64(0), []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
-	bcs.TestCodecAndBytesVsRef(t, uint64(18446744073709551615), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
+	bcs.TestCodecAndBytes(t, uint64(1311768467750121216), []byte{0x00, 0xEF, 0xCD, 0xAB, 0x78, 0x56, 0x34, 0x12})
+	bcs.TestCodecAndBytes(t, uint64(0), []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00})
+	bcs.TestCodecAndBytes(t, uint64(18446744073709551615), []byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
 
 	bcs.TestCodecAndBytes(t, BasicWithCustomCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 	bcs.TestCodecAndBytes(t, lo.ToPtr[BasicWithCustomPtrCodec]("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
-	bcs.TestCodecAndBytes(t, BasicWithRwUtilCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
 
 	// By default, InterfaceIsEnumByDefault is false, so this should work.
 	var infVal any = "hello"
@@ -231,7 +201,7 @@ func TestMultiPtrCodec(t *testing.T) {
 	var vI int16 = 4660
 	pVI := &vI
 	ppVI := &pVI
-	bcs.TestCodecAndBytesVsRef(t, ppVI, []byte{0x34, 0x12})
+	bcs.TestCodecAndBytes(t, ppVI, []byte{0x34, 0x12})
 
 	pVI = nil
 	bcs.TestEncodeErr(t, ppVI)
@@ -266,13 +236,13 @@ func TestPtrWrapperInInterface(t *testing.T) {
 }
 
 func TestStringCodec(t *testing.T) {
-	bcs.TestCodecAndBytesVsRef(t, "", []byte{0x0})
-	bcs.TestCodecAndBytesVsRef(t, "qwerty", []byte{0x6, 0x71, 0x77, 0x65, 0x72, 0x74, 0x79})
-	bcs.TestCodecAndBytesVsRef(t, "çå∞≠¢õß∂ƒ∫", []byte{24, 0xc3, 0xa7, 0xc3, 0xa5, 0xe2, 0x88, 0x9e, 0xe2, 0x89, 0xa0, 0xc2, 0xa2, 0xc3, 0xb5, 0xc3, 0x9f, 0xe2, 0x88, 0x82, 0xc6, 0x92, 0xe2, 0x88, 0xab})
-	bcs.TestCodecAndBytesVsRef(t, strings.Repeat("a", 127), append([]byte{0x7f}, bytes.Repeat([]byte{0x61}, 127)...))
-	bcs.TestCodecAndBytesVsRef(t, strings.Repeat("a", 128), append([]byte{0x80, 0x1}, bytes.Repeat([]byte{0x61}, 128)...))
-	bcs.TestCodecAndBytesVsRef(t, strings.Repeat("a", 16383), append([]byte{0xff, 0x7f}, bytes.Repeat([]byte{0x61}, 16383)...))
-	bcs.TestCodecAndBytesVsRef(t, strings.Repeat("a", 16384), append([]byte{0x80, 0x80, 0x1}, bytes.Repeat([]byte{0x61}, 16384)...))
+	bcs.TestCodecAndBytes(t, "", []byte{0x0})
+	bcs.TestCodecAndBytes(t, "qwerty", []byte{0x6, 0x71, 0x77, 0x65, 0x72, 0x74, 0x79})
+	bcs.TestCodecAndBytes(t, "çå∞≠¢õß∂ƒ∫", []byte{24, 0xc3, 0xa7, 0xc3, 0xa5, 0xe2, 0x88, 0x9e, 0xe2, 0x89, 0xa0, 0xc2, 0xa2, 0xc3, 0xb5, 0xc3, 0x9f, 0xe2, 0x88, 0x82, 0xc6, 0x92, 0xe2, 0x88, 0xab})
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 127), append([]byte{0x7f}, bytes.Repeat([]byte{0x61}, 127)...))
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 128), append([]byte{0x80, 0x1}, bytes.Repeat([]byte{0x61}, 128)...))
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 16383), append([]byte{0xff, 0x7f}, bytes.Repeat([]byte{0x61}, 16383)...))
+	bcs.TestCodecAndBytes(t, strings.Repeat("a", 16384), append([]byte{0x80, 0x80, 0x1}, bytes.Repeat([]byte{0x61}, 16384)...))
 }
 
 func TestDecodingWithPresetMap(t *testing.T) {

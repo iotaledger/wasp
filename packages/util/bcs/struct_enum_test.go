@@ -18,9 +18,9 @@ type BasicStructEnum struct {
 func (BasicStructEnum) IsBcsEnum() {}
 
 func TestBasicStructEnum(t *testing.T) {
-	bcs.TestCodecAndBytesVsRef(t, BasicStructEnum{A: lo.ToPtr[int32](10)}, []byte{0x0, 0xa, 0x0, 0x0, 0x0})
-	bcs.TestCodecAndBytesVsRef(t, BasicStructEnum{B: lo.ToPtr("aaa")}, []byte{0x1, 0x3, 0x61, 0x61, 0x61})
-	bcs.TestCodecAndBytesVsRef(t, BasicStructEnum{C: lo.ToPtr([]byte{1, 2, 3})}, []byte{0x2, 0x3, 0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytes(t, BasicStructEnum{A: lo.ToPtr[int32](10)}, []byte{0x0, 0xa, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, BasicStructEnum{B: lo.ToPtr("aaa")}, []byte{0x1, 0x3, 0x61, 0x61, 0x61})
+	bcs.TestCodecAndBytes(t, BasicStructEnum{C: lo.ToPtr([]byte{1, 2, 3})}, []byte{0x2, 0x3, 0x1, 0x2, 0x3})
 
 	bcs.TestEncodeErr(t, BasicStructEnum{A: lo.ToPtr[int32](10), B: lo.ToPtr("aaa")})
 	bcs.TestEncodeErr(t, BasicStructEnum{})
@@ -45,8 +45,8 @@ type StructEnumWithEnumVariant struct {
 func (StructEnumWithEnumVariant) IsBcsEnum() {}
 
 func TestStructEnumWithEnumVariant(t *testing.T) {
-	bcs.TestCodecAndBytesVsRef(t, StructEnumWithEnumVariant{B: &BasicStructEnum{A: lo.ToPtr[int32](10)}}, []byte{0x1, 0x0, 0xa, 0x0, 0x0, 0x0})
-	bcs.TestCodecAndBytesVsRef(t, StructEnumWithEnumVariant{B: &BasicStructEnum{C: lo.ToPtr([]byte{1, 2, 3})}}, []byte{0x1, 0x2, 0x3, 0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytes(t, StructEnumWithEnumVariant{B: &BasicStructEnum{A: lo.ToPtr[int32](10)}}, []byte{0x1, 0x0, 0xa, 0x0, 0x0, 0x0})
+	bcs.TestCodecAndBytes(t, StructEnumWithEnumVariant{B: &BasicStructEnum{C: lo.ToPtr([]byte{1, 2, 3})}}, []byte{0x1, 0x2, 0x3, 0x1, 0x2, 0x3})
 }
 
 type StructEnumWithNullableVariants struct {
