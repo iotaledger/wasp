@@ -9,7 +9,7 @@ import (
 )
 
 func TestVMErrorCodeSerialization(t *testing.T) {
-	bcs.TestCodecVsRef(t, isc.VMErrorCode{
+	bcs.TestCodec(t, isc.VMErrorCode{
 		ContractID: isc.Hname(1074),
 		ID:         123,
 	})

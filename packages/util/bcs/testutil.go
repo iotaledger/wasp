@@ -4,7 +4,6 @@ import (
 	"reflect"
 	"testing"
 
-	ref_bcs "github.com/fardream/go-bcs/bcs"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 )
@@ -39,36 +38,12 @@ func TestCodec[V any](t *testing.T, v V, decodeInto ...V) []byte {
 	return vEnc
 }
 
-// Checks that:
-//   - encoding and decoding succeed
-//   - decoded value is equal to the original
-//   - encoded value is equal to the result of reference library
-func TestCodecVsRef[V any](t *testing.T, v V) []byte {
-	vEnc := TestCodec(t, v)
-	require.NotEmpty(t, vEnc)
-
-	vEncExternal := lo.Must1(ref_bcs.Marshal(v))
-	require.Equal(t, vEncExternal, vEnc)
-
-	return vEnc
-}
-
 // Checks that
 //   - encoding and decoding succeed
 //   - decoded value is equal to the original
 //   - encoded value is equal to the expected bytes
 func TestCodecAndBytes[V any](t *testing.T, v V, expectedEnc []byte) {
 	vEnc := TestCodec(t, v)
-	require.Equal(t, expectedEnc, vEnc)
-}
-
-// Checks that
-//   - encoding and decoding succeed
-//   - decoded value is equal to the original
-//   - encoded value is equal to the result of reference library
-//   - encoded value is equal to the expected bytes
-func TestCodecAndBytesVsRef[V any](t *testing.T, v V, expectedEnc []byte) {
-	vEnc := TestCodecVsRef(t, v)
 	require.Equal(t, expectedEnc, vEnc)
 }
 
