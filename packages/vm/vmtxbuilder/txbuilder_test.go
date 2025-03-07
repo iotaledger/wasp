@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -12,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/stretchr/testify/require"
 

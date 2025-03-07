@@ -5,13 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **StateIndex** | **uint32** | The state index | 
-**TxId** | **string** | The transaction ID | 
+**TxDigest** | **string** | The transaction Digest | 
 
 ## Methods
 
 ### NewStateTransaction
 
-`func NewStateTransaction(stateIndex uint32, txId string, ) *StateTransaction`
+`func NewStateTransaction(stateIndex uint32, txDigest string, ) *StateTransaction`
 
 NewStateTransaction instantiates a new StateTransaction object
 This constructor will assign default values to properties that have it defined,
@@ -46,24 +46,24 @@ and a boolean to check if the value has been set.
 SetStateIndex sets StateIndex field to given value.
 
 
-### GetTxId
+### GetTxDigest
 
-`func (o *StateTransaction) GetTxId() string`
+`func (o *StateTransaction) GetTxDigest() string`
 
-GetTxId returns the TxId field if non-nil, zero value otherwise.
+GetTxDigest returns the TxDigest field if non-nil, zero value otherwise.
 
-### GetTxIdOk
+### GetTxDigestOk
 
-`func (o *StateTransaction) GetTxIdOk() (*string, bool)`
+`func (o *StateTransaction) GetTxDigestOk() (*string, bool)`
 
-GetTxIdOk returns a tuple with the TxId field if it's non-nil, zero value otherwise
+GetTxDigestOk returns a tuple with the TxDigest field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetTxId
+### SetTxDigest
 
-`func (o *StateTransaction) SetTxId(v string)`
+`func (o *StateTransaction) SetTxDigest(v string)`
 
-SetTxId sets TxId field to given value.
+SetTxDigest sets TxDigest field to given value.
 
 
 

@@ -7,10 +7,10 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 

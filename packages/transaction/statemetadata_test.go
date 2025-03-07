@@ -5,11 +5,11 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state/statetest"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 

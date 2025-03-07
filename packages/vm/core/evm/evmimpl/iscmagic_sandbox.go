@@ -40,20 +40,20 @@ func (h *magicContractHandler) GetSenderAccount() iscmagic.ISCAgentID {
 
 // handler for ISCSandbox::allow
 func (h *magicContractHandler) Allow(target common.Address, allowance iscmagic.ISCAssets) {
-	addToAllowance(h.ctx, h.caller.Address(), target, allowance.Unwrap())
+	addToAllowance(h.ctx, h.caller, target, allowance.Unwrap())
 }
 
 // handler for ISCSandbox::takeAllowedFunds
 func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance iscmagic.ISCAssets) {
 	assets := allowance.Unwrap()
-	subtractFromAllowance(h.ctx, addr, h.caller.Address(), assets)
+	subtractFromAllowance(h.ctx, addr, h.caller, assets)
 	h.ctx.Privileged().MustMoveBetweenAccounts(
 		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), addr),
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
 		assets,
 	)
 	// emit ERC20 / ERC721 events for native tokens & NFTs
-	for _, log := range makeTransferEvents(h.ctx, addr, h.caller.Address(), assets) {
+	for _, log := range makeTransferEvents(h.ctx, addr, h.caller, assets) {
 		h.evm.StateDB.AddLog(log)
 	}
 }
@@ -64,7 +64,7 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.Decimals)
 
 	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
-	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address())
+	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller)
 
 	// Move the already transferred base tokens from the 0x1074 address back to the callers account.
 	h.ctx.Privileged().MustMoveBetweenAccounts(
@@ -104,11 +104,11 @@ func (h *magicContractHandler) Send(
 	h.moveAssetsToCommonAccount(req.Assets)
 
 	// emit ERC20 / ERC721 events for native tokens & NFTs
-	for _, log := range makeTransferEvents(h.ctx, h.caller.Address(), common.Address{}, req.Assets) {
+	for _, log := range makeTransferEvents(h.ctx, h.caller, common.Address{}, req.Assets) {
 		h.evm.StateDB.AddLog(log)
 	}
 	h.ctx.Privileged().SendOnBehalfOf(
-		isc.ContractIdentityFromEVMAddress(h.caller.Address()),
+		isc.ContractIdentityFromEVMAddress(h.caller),
 		req,
 	)
 }
@@ -127,7 +127,7 @@ var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (
 // account before sending to L1
 func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
 		h.ctx.AccountID(),
 		assets,
 	)

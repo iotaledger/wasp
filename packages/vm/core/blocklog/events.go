@@ -1,8 +1,8 @@
 package blocklog
 
 import (
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const EventLookupKeyLength = 8

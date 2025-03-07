@@ -7,12 +7,12 @@ import (
 	"sync"
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // L1Params describes parameters coming from the L1Params node

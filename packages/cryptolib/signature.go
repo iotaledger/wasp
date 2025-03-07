@@ -14,8 +14,8 @@ import (
 	// an extended version of this package repackaged as an importable module.
 	"filippo.io/edwards25519"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const SignatureSize = ed25519.SignatureSize

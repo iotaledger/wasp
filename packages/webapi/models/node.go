@@ -1,7 +1,6 @@
 package models
 
 import (
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
@@ -9,52 +8,31 @@ type NodeOwnerCertificateResponse struct {
 	Certificate string `json:"certificate" swagger:"desc(Certificate stating the ownership. (Hex)),required"`
 }
 
-// RentStructure defines the parameters of rent cost calculations on objects which take node resources.
-type RentStructure struct {
-	// Defines the rent of a single virtual byte denoted in IOTA tokens.
-	VByteCost uint32 `json:"vByteCost" swagger:"desc(The virtual byte cost),required,min(1)"`
-	// Defines the factor to be used for data only fields.
-	VBFactorData iotago.VByteCostFactor `json:"vByteFactorData" swagger:"desc(The virtual byte factor for data fields),required"`
-	// defines the factor to be used for key/lookup generating fields.
-	VBFactorKey iotago.VByteCostFactor `json:"vByteFactorKey" swagger:"desc(The virtual byte factor for key/lookup generating fields),required"`
-}
-
 type ProtocolParameters struct {
-	// The version of the protocol running.
-	Version byte `json:"version" swagger:"desc(The protocol version),required"`
-	// The human friendly name of the network.
-	NetworkName string `json:"networkName" swagger:"desc(The network name),required"`
-	// The minimum pow score of the network.
-	MinPoWScore uint32 `json:"minPowScore" swagger:"desc(The minimal PoW score),required,min(1)"`
-	// The below max depth parameter of the network.
-	BelowMaxDepth uint8 `json:"belowMaxDepth" swagger:"desc(The networks max depth),required,min(1)"`
-	// The rent structure used by given node/network.
-	RentStructure RentStructure `json:"rentStructure" swagger:"desc(The rent structure of the protocol),required"`
-	// TokenSupply defines the current token supply on the network.
-	TokenSupply string `json:"tokenSupply" swagger:"desc(The token supply),required"`
+	Epoch                 uint64 `json:"epoch" swagger:"desc(The protocol's current epoch),required"`
+	ProtocolVersion       uint64 `json:"protocol_version" swagger:"desc(The protocol's version),required"`
+	SystemStateVersion    uint64 `json:"system_state_version" swagger:"desc(The protocol's system_state_version),required"`
+	IotaTotalSupply       uint64 `json:"iota_total_supply" swagger:"desc(The iota's total_supply),required"`
+	ReferenceGasPrice     uint64 `json:"reference_gas_price" swagger:"desc(The current reference_gas_price),required"`
+	EpochStartTimestampMs uint64 `json:"epoch_start_timestamp_ms" swagger:"desc(The current epoch's start_timestamp in ms),required"`
+	EpochDurationMs       uint64 `json:"epoch_duration_ms" swagger:"desc(The current epoch's duration in ms),required"`
 }
 
 type L1Params struct {
-	MaxPayloadSize int                  `json:"maxPayloadSize" swagger:"desc(The max payload size),required"`
-	Protocol       ProtocolParameters   `json:"protocol" swagger:"desc(The protocol parameters),required"`
-	BaseToken      parameters.BaseToken `json:"baseToken" swagger:"desc(The base token parameters),required"`
+	Protocol  ProtocolParameters   `json:"protocol" swagger:"desc(The protocol parameters),required"`
+	BaseToken parameters.BaseToken `json:"baseToken" swagger:"desc(The base token parameters),required"`
 }
 
 func MapL1Params(l1 *parameters.L1Params) *L1Params {
-	/*params := &L1Params{
-		// There are no limits on how big from a size perspective an essence can be, so it is just derived from 32KB - Message fields without payload = max size of the payload
-		MaxPayloadSize: l1.MaxPayloadSize,
+	params := &L1Params{
 		Protocol: ProtocolParameters{
-			Version:     l1.Protocol.Version,
-			NetworkName: l1.Protocol.NetworkName,
-			Bech32HRP:   l1.Protocol.Bech32HRP,
-			MinPoWScore: l1.Protocol.MinPoWScore,
-			RentStructure: RentStructure{
-				VByteCost:    l1.Protocol.RentStructure.VByteCost,
-				VBFactorData: l1.Protocol.RentStructure.VBFactorData,
-				VBFactorKey:  l1.Protocol.RentStructure.VBFactorKey,
-			},
-			TokenSupply: iotago.EncodeUint64(l1.Protocol.TokenSupply),
+			Epoch:                 l1.Protocol.Epoch.Uint64(),
+			ProtocolVersion:       l1.Protocol.ProtocolVersion.Uint64(),
+			SystemStateVersion:    l1.Protocol.SystemStateVersion.Uint64(),
+			IotaTotalSupply:       l1.Protocol.IotaTotalSupply.Uint64(),
+			ReferenceGasPrice:     l1.Protocol.ReferenceGasPrice.Uint64(),
+			EpochStartTimestampMs: l1.Protocol.EpochStartTimestampMs.Uint64(),
+			EpochDurationMs:       l1.Protocol.EpochDurationMs.Uint64(),
 		},
 		BaseToken: parameters.BaseToken{
 			Name:            l1.BaseToken.Name,
@@ -65,8 +43,7 @@ func MapL1Params(l1 *parameters.L1Params) *L1Params {
 			UseMetricPrefix: l1.BaseToken.UseMetricPrefix,
 		},
 	}
-	*/
-	return nil
+	return params
 }
 
 type VersionResponse struct {

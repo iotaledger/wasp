@@ -1,9 +1,9 @@
 package accounts
 
 import (
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // ObjectRecord represents a L1 generic object owned by the chain (e.g. NFT)

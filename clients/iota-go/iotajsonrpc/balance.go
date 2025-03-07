@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // this type "CoinType" is used only in iota-go and iscmoveclient

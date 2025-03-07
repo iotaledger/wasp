@@ -23,6 +23,7 @@ import (
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/hive.go/runtime/event"
+
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -252,6 +253,9 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 	}
 	blockHash, _ := blockNumberOrHash.Hash()
 	block := e.BlockByHash(blockHash)
+	if block == nil {
+		return nil, fmt.Errorf("block with hash %s not found", blockHash)
+	}
 	return e.iscStateFromEVMBlockNumber(block.Number())
 }
 
@@ -547,6 +551,14 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 //nolint:gocyclo
 func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*types.Log, error) {
 	e.log.Debugf("Logs(q=%v)", query)
+	if query == nil {
+		query = &ethereum.FilterQuery{}
+	}
+
+	if params == nil {
+		params = &LogsLimits{}
+	}
+
 	logs := make([]*types.Log, 0)
 
 	// single block query
@@ -728,7 +740,11 @@ func (e *EVMChain) traceTransaction(
 	if len(txResults) <= int(txIndex) {
 		return nil, errors.New("tx trace not found in tracer result")
 	}
-	return txResults[int(txIndex)].Result, nil
+	txTrace := txResults[int(txIndex)]
+	if txTrace.Error != "" {
+		return nil, errors.New(txTrace.Error)
+	}
+	return txTrace.Result, nil
 }
 
 func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
@@ -817,7 +833,11 @@ func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceC
 
 func (e *EVMChain) getBlockByNumberOrHash(blockNrOrHash rpc.BlockNumberOrHash) (*types.Block, error) {
 	if h, ok := blockNrOrHash.Hash(); ok {
-		return e.BlockByHash(h), nil
+		block := e.BlockByHash(h)
+		if block == nil {
+			return nil, fmt.Errorf("block not found: %v", blockNrOrHash.String())
+		}
+		return block, nil
 	} else if n, ok := blockNrOrHash.Number(); ok {
 		switch n {
 		case rpc.LatestBlockNumber:

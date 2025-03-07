@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"sync"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/hive.go/logger"
 

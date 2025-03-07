@@ -5,17 +5,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-
 	"github.com/stretchr/testify/require"
-
-	iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
@@ -130,7 +128,7 @@ func testPost5Requests(t *testing.T, e *ChainEnv) {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
 		require.NoError(t, err)
 
-		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+		gasFeeCharged, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 		require.NoError(t, err)
 
 		onChainBalance += baseTokesSent - coin.Value(gasFeeCharged)
@@ -165,7 +163,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 		receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx[i], false, 30*time.Second)
 		require.NoError(t, err)
 
-		gasFeeCharged, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+		gasFeeCharged, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 		require.NoError(t, err)
 
 		onChainBalance += baseTokesSent - coin.Value(gasFeeCharged)

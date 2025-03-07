@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 func (tg *TypeGenerator) generateArgsStruct(funcName string, suffix string, args []CompiledField) {

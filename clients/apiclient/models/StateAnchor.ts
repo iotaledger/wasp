@@ -12,11 +12,19 @@
 
 import { HttpFile } from '../http/http';
 
-export class OutputID {
+export class StateAnchor {
     /**
-    * The output ID
+    * The raw data of the anchor (Hex)
     */
-    'outputId': string;
+    'raw': string;
+    /**
+    * The state index
+    */
+    'stateIndex': number;
+    /**
+    * The state metadata
+    */
+    'stateMetadata': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,14 +32,26 @@ export class OutputID {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "outputId",
-            "baseName": "outputId",
+            "name": "raw",
+            "baseName": "raw",
+            "type": "string",
+            "format": "string"
+        },
+        {
+            "name": "stateIndex",
+            "baseName": "stateIndex",
+            "type": "number",
+            "format": "int32"
+        },
+        {
+            "name": "stateMetadata",
+            "baseName": "stateMetadata",
             "type": "string",
             "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
-        return OutputID.attributeTypeMap;
+        return StateAnchor.attributeTypeMap;
     }
 
     public constructor() {

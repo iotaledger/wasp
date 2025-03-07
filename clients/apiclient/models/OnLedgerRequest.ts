@@ -10,7 +10,6 @@
  * Do not edit the class manually.
  */
 
-import { Output } from '../models/Output';
 import { HttpFile } from '../http/http';
 
 export class OnLedgerRequest {
@@ -18,11 +17,6 @@ export class OnLedgerRequest {
     * The request ID
     */
     'id': string;
-    'output': Output;
-    /**
-    * The output ID
-    */
-    'outputId': string;
     /**
     * The raw data of the request (Hex)
     */
@@ -36,18 +30,6 @@ export class OnLedgerRequest {
         {
             "name": "id",
             "baseName": "id",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "output",
-            "baseName": "output",
-            "type": "Output",
-            "format": ""
-        },
-        {
-            "name": "outputId",
-            "baseName": "outputId",
             "type": "string",
             "format": "string"
         },

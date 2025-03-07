@@ -8,8 +8,8 @@ import (
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 

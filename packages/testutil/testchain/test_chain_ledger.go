@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -22,7 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )

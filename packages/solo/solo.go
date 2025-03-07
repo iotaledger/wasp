@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -39,7 +40,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"

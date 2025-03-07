@@ -16,9 +16,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -183,9 +184,9 @@ func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 func (w *WaspCLITest) Address() iotago.Address {
 	out := w.MustRun("address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
-	_, addr, err := iotago.ParseBech32(s)
+	addr, err := iotago.AddressFromHex(s)
 	require.NoError(w.T, err)
-	return addr
+	return *addr
 }
 
 // TODO there is a small issue if we try to activate the chain twice (deploy command also activates the chain)
@@ -218,7 +219,7 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
 }
 
-func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
+func (w *WaspCLITest) CreateL2NativeToken(tokenScheme isc.SimpleTokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
 	panic("refactor me: support native token creation")
 }
 

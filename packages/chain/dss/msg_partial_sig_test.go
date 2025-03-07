@@ -10,9 +10,9 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/dss"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgPartialSigSerialization(t *testing.T) {

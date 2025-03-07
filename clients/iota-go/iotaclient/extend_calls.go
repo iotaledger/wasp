@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func (c *Client) GetCoinObjsForTargetAmount(
@@ -255,6 +255,7 @@ func (c *Client) SignAndExecuteTxWithRetry(
 	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
+	var txnBytes []byte
 	var txnResponse *iotajsonrpc.IotaTransactionBlockResponse
 	var gasPayments []*iotago.ObjectRef
 	for i := 0; i < c.WaitUntilEffectsVisible.Attempts; i++ {
@@ -278,7 +279,7 @@ func (c *Client) SignAndExecuteTxWithRetry(
 			gasBudget,
 			gasPrice,
 		)
-		txnBytes, err := bcs.Marshal(&tx)
+		txnBytes, err = bcs.Marshal(&tx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal tx: %w", err)
 		}
@@ -295,7 +296,6 @@ func (c *Client) SignAndExecuteTxWithRetry(
 		}
 		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
 	}
-
 	return nil, fmt.Errorf("can't execute the transaction in time: %w", err)
 }
 
