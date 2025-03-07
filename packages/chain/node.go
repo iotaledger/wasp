@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/logger"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -86,6 +87,9 @@ type Chain interface {
 	// consider this node as an access node for this chain. The chain
 	// can query the nodes for blocks, etc. NOTE: servers = access⁻¹
 	ServersUpdated(serverNodes []*cryptolib.PublicKey)
+	// Call this on F+1 correct nodes to perform a rotation of a chain to the
+	// specified (committee) address.
+	RotateTo(address *iotago.Address)
 	// Metrics and the current descriptive state.
 	GetChainMetrics() *metrics.ChainMetrics
 	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
@@ -130,17 +134,21 @@ type chainNodeImpl struct {
 	recvAnchorPipe      pipe.Pipe[isc.StateAnchor]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
-	consOutputPipe      pipe.Pipe[*consOutput]
-	consRecoverPipe     pipe.Pipe[*consRecover]
-	publishingTXes      *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
-	procCache           *processors.Config                                                // Cache for the SC processors.
-	configUpdatedCh     chan *configUpdate
-	serversUpdatedPipe  pipe.Pipe[*serversUpdate]
-	awaitReceiptActCh   chan *awaitReceiptReq
-	awaitReceiptCnfCh   chan *awaitReceiptReq
-	stateTrackerAct     StateTracker
-	stateTrackerCnf     StateTracker
-	blockWAL            sm_gpa_utils.BlockWAL
+	// TODO: Send wantRotate to all the consInst.
+	// Also, if nil, wait for requests.
+	// If non-nil, wait for some delay, then propose empty set of requests.
+	consOutputPipe     pipe.Pipe[*consOutput]
+	consRecoverPipe    pipe.Pipe[*consRecover]
+	publishingTXes     *shrinkingmap.ShrinkingMap[hashing.HashValue, context.CancelFunc] // TX'es now being published.
+	procCache          *processors.Config                                                // Cache for the SC processors.
+	configUpdatedCh    chan *configUpdate
+	serversUpdatedPipe pipe.Pipe[*serversUpdate]
+	rotateToPipe       pipe.Pipe[*iotago.Address]
+	awaitReceiptActCh  chan *awaitReceiptReq
+	awaitReceiptCnfCh  chan *awaitReceiptReq
+	stateTrackerAct    StateTracker
+	stateTrackerCnf    StateTracker
+	blockWAL           sm_gpa_utils.BlockWAL
 	//
 	// Configuration values.
 	consensusDelay   time.Duration
@@ -165,6 +173,7 @@ type chainNodeImpl struct {
 	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
 	gasCoin                *coin.CoinWithRef      // Set only when the corresponding state is retrieved.
 	originDeposit          coin.Value             // Initial deposit of the chain.
+	rotateTo               *iotago.Address        // Non-nil, if the owner of the node want to rotate the chain to the specified address.
 	//
 	// Infrastructure.
 	netRecvPipe         pipe.Pipe[*peering.PeerMessageIn]
@@ -285,6 +294,7 @@ func New(
 		procCache:              processorConfig,
 		configUpdatedCh:        make(chan *configUpdate, 1),
 		serversUpdatedPipe:     pipe.NewInfinitePipe[*serversUpdate](),
+		rotateToPipe:           pipe.NewInfinitePipe[*iotago.Address](),
 		awaitReceiptActCh:      make(chan *awaitReceiptReq, 1),
 		awaitReceiptCnfCh:      make(chan *awaitReceiptReq, 1),
 		stateTrackerAct:        nil, // Set bellow.
@@ -490,6 +500,10 @@ func (cni *chainNodeImpl) ServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	cni.serversUpdatedPipe.In() <- &serversUpdate{serverNodes: serverNodes}
 }
 
+func (cni *chainNodeImpl) RotateTo(address *iotago.Address) {
+	cni.rotateToPipe.In() <- address
+}
+
 //nolint:gocyclo
 func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) {
 	defer util.ExecuteIfNotNil(cleanupFunc)
@@ -500,6 +514,7 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 	consOutputPipeOutCh := cni.consOutputPipe.Out()
 	consRecoverPipeOutCh := cni.consRecoverPipe.Out()
 	serversUpdatedPipeOutCh := cni.serversUpdatedPipe.Out()
+	rotateToPipeOutCh := cni.rotateToPipe.Out()
 	redeliveryPeriodTicker := time.NewTicker(RedeliveryPeriod)
 	consensusDelayTicker := time.NewTicker(cni.consensusDelay)
 	timestampTicker := time.NewTicker(100 * time.Millisecond)
@@ -558,6 +573,12 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				continue
 			}
 			cni.handleServersUpdated(srv.serverNodes)
+		case addr, ok := <-rotateToPipeOutCh:
+			if !ok {
+				serversUpdatedPipeOutCh = nil
+				continue
+			}
+			cni.handleRotateTo(addr)
 		case query, ok := <-cni.awaitReceiptActCh:
 			if !ok {
 				cni.awaitReceiptActCh = nil
@@ -658,6 +679,18 @@ func (cni *chainNodeImpl) handleAccessNodesConfigUpdated(accessNodesFromNode []*
 func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKey) {
 	cni.log.Debugf("handleServersUpdated")
 	cni.updateServerNodes(serverNodes)
+}
+
+func (cni *chainNodeImpl) handleRotateTo(address *iotago.Address) {
+	cni.log.Debugf("handleRotateTo: %v", address)
+	cni.rotateTo = address
+	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+		sm.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
+			ci.consensus.RotateTo(address)
+			return true
+		})
+		return true
+	})
 }
 
 func (cni *chainNodeImpl) handleTxPublished(txPubResult *txPublished) {
@@ -854,6 +887,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 				cni.procCache, cni.mempool, cni.stateMgr,
 				cni.nodeConn,
 				cni.net,
+				cni.rotateTo,
 				cni.validatorAgentID,
 				cni.recoveryTimeout, RedeliveryPeriod, PrintStatusPeriod,
 				cni.chainMetrics.Consensus,

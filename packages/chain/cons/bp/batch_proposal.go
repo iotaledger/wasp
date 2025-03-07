@@ -6,17 +6,19 @@ package bp
 import (
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BatchProposal struct {
 	nodeIndex               uint16               `bcs:"export"`          // Just for a double-check.
 	baseAliasOutput         *isc.StateAnchor     `bcs:"export,optional"` // Proposed Base AliasOutput to use.
 	dssIndexProposal        util.BitVector       `bcs:"export"`          // DSS Index proposal.
+	rotateTo                *iotago.Address      `bcs:"export,optional"` // Suggestion to rotate the committee, optional.
 	timeData                time.Time            `bcs:"export"`          // Our view of time.
 	validatorFeeDestination isc.AgentID          `bcs:"export"`          // Proposed destination for fees.
 	requestRefs             []*isc.RequestRef    `bcs:"export"`          // Requests we propose to include into the execution.
@@ -28,6 +30,7 @@ func NewBatchProposal(
 	nodeIndex uint16,
 	baseAliasOutput *isc.StateAnchor,
 	dssIndexProposal util.BitVector,
+	rotateTo *iotago.Address,
 	timeData time.Time,
 	validatorFeeDestination isc.AgentID,
 	requestRefs []*isc.RequestRef,
@@ -38,6 +41,7 @@ func NewBatchProposal(
 		nodeIndex:               nodeIndex,
 		baseAliasOutput:         baseAliasOutput,
 		dssIndexProposal:        dssIndexProposal,
+		rotateTo:                rotateTo,
 		timeData:                timeData,
 		validatorFeeDestination: validatorFeeDestination,
 		requestRefs:             requestRefs,

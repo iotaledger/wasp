@@ -12,6 +12,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -25,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -164,8 +164,6 @@ func initDeployCmd() *cobra.Command {
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
 				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
-				N:                 uint16(len(node)), //nolint:gosec
-				T:                 uint16(quorum),    //nolint:gosec
 				OriginatorKeyPair: kp,
 				Textout:           os.Stdout,
 				PackageID:         packageID,

@@ -91,6 +91,18 @@ type EntryPointInfo[S isc.SandboxBase] struct {
 	isView   bool
 }
 
+func (ep *EntryPointInfo[S]) IsView() bool {
+	return ep.isView
+}
+
+func (ep *EntryPointInfo[S]) ContractInfo() *ContractInfo {
+	return ep.Contract
+}
+
+func (ep *EntryPointInfo[S]) String() string {
+	return ep.Name
+}
+
 func (ep *EntryPointInfo[S]) Hname() isc.Hname {
 	return isc.Hn(ep.Name)
 }

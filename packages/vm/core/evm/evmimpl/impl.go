@@ -133,7 +133,7 @@ func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {
 		receipt.Status = types.ReceiptStatusFailed
 		// remove any events from the receipt
 		receipt.Logs = make([]*types.Log, 0)
-		receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+		receipt.Bloom = types.CreateBloom(receipt)
 	}
 
 	// amend the gas usage (to include any ISC gas burned in sandbox calls)
@@ -327,7 +327,7 @@ func AddDummyTxWithTransferEvents(
 		Logs:   logs,
 		Status: types.ReceiptStatusSuccessful,
 	}
-	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+	receipt.Bloom = types.CreateBloom(receipt)
 
 	callTracerHooks := func() {
 		tracer := ctx.EVMTracer()

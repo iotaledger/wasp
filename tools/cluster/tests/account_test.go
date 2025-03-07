@@ -9,12 +9,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
@@ -83,7 +83,7 @@ func testAccounts(e *ChainEnv) {
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 10*time.Second)
 	require.NoError(e.t, err)
 
-	fees, err := iotago.DecodeUint64(receipts[0].GasFeeCharged)
+	fees, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(e.t, err)
 
 	e.checkBalanceOnChain(isc.NewAddressAgentID(myAddress), coin.BaseTokenType, transferBaseTokens-coin.Value(fees))

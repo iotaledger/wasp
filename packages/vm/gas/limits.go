@@ -3,7 +3,7 @@ package gas
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 type Limits struct {

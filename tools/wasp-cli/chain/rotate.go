@@ -10,123 +10,48 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initRotateCmd() *cobra.Command {
-	var chain string
+	var (
+		node  string
+		chain string
+	)
 	cmd := &cobra.Command{
 		Use:   "rotate <new state controller address>",
-		Short: "Issues a tx that changes the chain state controller",
-		Args:  cobra.ExactArgs(1),
+		Short: "Ask this node to propose rotation address.",
+		Long:  "Empty or missing argument means we cancel attempt to rotate the chain.",
+		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			chain = defaultChainFallback(chain)
-
-			newStateControllerAddr, err := cryptolib.NewAddressFromHexString(args[0])
-			log.Check(err)
-
-			rotateTo(chain, newStateControllerAddr)
-		},
-	}
-	withChainFlag(cmd, &chain)
-	return cmd
-}
-
-func initRotateWithDKGCmd() *cobra.Command {
-	var (
-		node            string
-		peers           []string
-		quorum          int
-		chain           string
-		skipMaintenance bool
-		offLedger       bool
-	)
-
-	cmd := &cobra.Command{
-		Use:   "rotate-with-dkg --peers=<...>",
-		Short: "Runs the DKG on the selected peers, then issues a tx that changes the chain state controller",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			chain = defaultChainFallback(chain)
+			chainID := config.GetChain(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			if !skipMaintenance {
-				setMaintenanceStatus(ctx, client, chain, true, offLedger)
-				defer setMaintenanceStatus(ctx, client, chain, false, offLedger)
+			var rotateToAddress *string
+			if len(args) == 1 && args[0] != "" {
+				rotateToAddress = &args[0]
 			}
 
-			controllerAddr := doDKG(ctx, node, peers, quorum)
-			rotateTo(chain, controllerAddr)
+			_, err := client.ChainsAPI.RotateChain(ctx, chainID.String()).RotateRequest(apiclient.RotateChainRequest{
+				RotateToAddress: rotateToAddress,
+			}).Execute() //nolint:bodyclose // false positive
+			log.Check(err)
+			if rotateToAddress == nil {
+				log.Printf("Will stop proposing chain rotation to another address.\n")
+			} else {
+				log.Printf("Will attempt to rotate to %s\n", *rotateToAddress)
+			}
 		},
 	}
-
 	waspcmd.WithWaspNodeFlag(cmd, &node)
-	waspcmd.WithPeersFlag(cmd, &peers)
 	withChainFlag(cmd, &chain)
-	cmd.Flags().IntVarP(&quorum, "quorum", "", 0, "quorum (default: 3/4s of the number of committee nodes)")
-	cmd.Flags().BoolVar(&skipMaintenance, "skip-maintenance", false, "quorum (default: 3/4s of the number of committee nodes)")
-	cmd.Flags().BoolVarP(&offLedger, "off-ledger", "o", true,
-		"post an off-ledger request",
-	)
-
 	return cmd
-}
-
-func rotateTo(chain string, newStateControllerAddr *cryptolib.Address) {
-	panic("refactor me: l1Client.GetAliasOutput")
-	/*
-		myWallet := wallet.Load()
-		aliasID := config.GetChain(chain).AsObjectID()
-
-		var chainOutputID iotago.OutputID
-		var chainOutput iotago.Output
-		err := errors.New("refactor me: rotateTo")
-		// chainOutputID, chainOutput, err := l1Client.GetAliasOutput(aliasID)
-		log.Check(err)
-
-		tx, err := transaction.NewRotateChainStateControllerTx(
-			aliasID,
-			newStateControllerAddr,
-			chainOutputID,
-			chainOutput,
-			myWallet,
-		)
-		log.Check(err)
-
-		// debug logging
-		if log.DebugFlag {
-			s, err2 := chainOutput.MarshalJSON()
-			log.Check(err2)
-			minSD := parameters.L1().Protocol.RentStructure.MinRent(chainOutput)
-			log.Printf("original chain output: %s, minSD: %d\n", s, minSD)
-
-			rotOut := tx.Essence.Outputs[0]
-			s, err2 = rotOut.MarshalJSON()
-			log.Check(err2)
-			minSD = parameters.L1().Protocol.RentStructure.MinRent(rotOut)
-			log.Printf("new chain output: %s, minSD: %d\n", s, minSD)
-
-			json, err2 := tx.MarshalJSON()
-			log.Check(err2)
-			log.Printf("issuing rotation tx, signed for address: %s", myWallet.Address().String())
-			log.Printf("rotation tx: %s", string(json))
-		}
-
-		panic("refactor me: l1Client.PostTxAndWaitUntilConfirmation")
-
-		log.Check(err)
-
-		txID, err := tx.ID()
-		log.Check(err)
-		fmt.Fprintf(os.Stdout, "Chain rotation transaction issued successfully.\nTXID: %s\n", txID.ToHex())
-
-	*/
 }
 
 func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chain string, status bool, offledger bool) {

@@ -163,7 +163,6 @@ Class | Method | HTTP request | Description
  - [AccountNFTsResponse](docs/AccountNFTsResponse.md)
  - [AccountNonceResponse](docs/AccountNonceResponse.md)
  - [AddUserRequest](docs/AddUserRequest.md)
- - [AliasOutputMetricItem](docs/AliasOutputMetricItem.md)
  - [Assets](docs/Assets.md)
  - [AssetsResponse](docs/AssetsResponse.md)
  - [AuthInfoModel](docs/AuthInfoModel.md)

@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"maps"
+	"math/big"
 	"slices"
 	"strings"
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type CoinBalances map[coin.Type]coin.Value
@@ -400,4 +401,29 @@ func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBa
 		ret.Balances[cointype.ToIotaJSONRPC()] = iotajsonrpc.CoinValue(coinval)
 	}
 	return ret
+}
+
+// JsonTokenScheme is for now a 1:1 copy of the Stardusts version
+type JsonTokenScheme struct {
+	Type          int    `json:"type"`
+	MintedSupply  string `json:"mintedTokens"`
+	MeltedTokens  string `json:"meltedTokens"`
+	MaximumSupply string `json:"maximumSupply"`
+}
+
+type SimpleTokenScheme struct {
+	// The amount of tokens which has been minted.
+	MintedTokens *big.Int
+	// The amount of tokens which has been melted.
+	MeltedTokens *big.Int
+	// The maximum supply of tokens controlled.
+	MaximumSupply *big.Int
+}
+
+func (s *SimpleTokenScheme) Clone() *SimpleTokenScheme {
+	return &SimpleTokenScheme{
+		MintedTokens:  new(big.Int).Set(s.MintedTokens),
+		MeltedTokens:  new(big.Int).Set(s.MeltedTokens),
+		MaximumSupply: new(big.Int).Set(s.MaximumSupply),
+	}
 }

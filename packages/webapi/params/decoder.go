@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -52,26 +51,6 @@ func DecodeAgentID(e echo.Context) (isc.AgentID, error) {
 	}
 
 	return agentID, nil
-}
-
-func DecodeNFTID(e echo.Context) (*iotago.NFTID, error) {
-	nftIDBytes, err := cryptolib.DecodeHex(e.Param(ParamNFTID))
-	if err != nil {
-		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
-	}
-
-	if len(nftIDBytes) != iotago.NFTIDLength {
-		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
-	}
-
-	var nftID iotago.NFTID
-	copy(nftID[:], nftIDBytes)
-
-	if err != nil {
-		return nil, apierrors.InvalidPropertyError(ParamNFTID, err)
-	}
-
-	return &nftID, nil
 }
 
 // DecodeUInt decodes params to Uint64. If a lower Uint is expected it can be casted with uintX(returnValue) but validate the result

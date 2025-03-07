@@ -512,7 +512,7 @@ func initWithdrawTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *
 		coinPackageID,
 		contracts.TestcoinModuleName,
 		contracts.TestcoinTypeTag,
-		treasuryCap.ObjectID,
+		treasuryCap,
 		1*isc.Million,
 	)
 	err := v.ch.DepositAssetsToL2(isc.NewEmptyAssets().AddCoin(v.coinType, 100), v.user)

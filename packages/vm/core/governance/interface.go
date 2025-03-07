@@ -19,100 +19,100 @@ var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
 var (
 	// state controller (entity that owns the state output via AliasAddress)
 	FuncRotateStateController = coreutil.NewEP1(Contract, coreutil.CoreEPRotateStateController,
-		coreutil.Field[*cryptolib.Address](),
+		coreutil.Field[*cryptolib.Address]("newStateControllerAddr"),
 	)
 	FuncAddAllowedStateControllerAddress = coreutil.NewEP1(Contract, "addAllowedStateControllerAddress",
-		coreutil.Field[*cryptolib.Address](),
+		coreutil.Field[*cryptolib.Address]("stateControllerAddress"),
 	)
 	FuncRemoveAllowedStateControllerAddress = coreutil.NewEP1(Contract, "removeAllowedStateControllerAddress",
-		coreutil.Field[*cryptolib.Address](),
+		coreutil.Field[*cryptolib.Address]("stateControllerAddress"),
 	)
 	ViewGetAllowedStateControllerAddresses = coreutil.NewViewEP01(Contract, "getAllowedStateControllerAddresses",
-		coreutil.Field[[]*cryptolib.Address](),
+		coreutil.Field[[]*cryptolib.Address]("stateControllerAddresses"),
 	)
 
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.NewEP0(Contract, "claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.NewEP1(Contract, "delegateChainOwnership",
-		coreutil.Field[isc.AgentID](),
+		coreutil.Field[isc.AgentID]("ownerAgentID"),
 	)
 	FuncSetPayoutAgentID = coreutil.NewEP1(Contract, "setPayoutAgentID",
-		coreutil.Field[isc.AgentID](),
+		coreutil.Field[isc.AgentID]("payoutAgentID"),
 	)
 	FuncSetGasCoinTargetValue = coreutil.NewEP1(Contract, "setGasCoinTargetValue",
-		coreutil.Field[coin.Value](),
+		coreutil.Field[coin.Value]("targetValue"),
 	)
 	ViewGetPayoutAgentID = coreutil.NewViewEP01(Contract, "getPayoutAgentID",
-		coreutil.Field[isc.AgentID](),
+		coreutil.Field[isc.AgentID]("payoutAgentID"),
 	)
 	ViewGetGasCoinTargetValue = coreutil.NewViewEP01(Contract, "getGasCoinTargetValue",
-		coreutil.Field[coin.Value](),
+		coreutil.Field[coin.Value]("targetValue"),
 	)
 	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
-		coreutil.Field[isc.AgentID](),
+		coreutil.Field[isc.AgentID]("chainOwnerAgentID"),
 	)
 
 	// gas
 	FuncSetFeePolicy = coreutil.NewEP1(Contract, "setFeePolicy",
-		coreutil.Field[*gas.FeePolicy](),
+		coreutil.Field[*gas.FeePolicy]("feePolicy"),
 	)
 	FuncSetGasLimits = coreutil.NewEP1(Contract, "setGasLimits",
-		coreutil.Field[*gas.Limits](),
+		coreutil.Field[*gas.Limits]("gasLimits"),
 	)
 	ViewGetFeePolicy = coreutil.NewViewEP01(Contract, "getFeePolicy",
-		coreutil.Field[*gas.FeePolicy](),
+		coreutil.Field[*gas.FeePolicy]("feePolicy"),
 	)
 	ViewGetGasLimits = coreutil.NewViewEP01(Contract, "getGasLimits",
-		coreutil.Field[*gas.Limits](),
+		coreutil.Field[*gas.Limits]("gasLimits"),
 	)
 
 	// evm fees
 	FuncSetEVMGasRatio = coreutil.NewEP1(Contract, "setEVMGasRatio",
-		coreutil.Field[util.Ratio32](),
+		coreutil.Field[util.Ratio32]("evmGasRatio"),
 	)
 	ViewGetEVMGasRatio = coreutil.NewViewEP01(Contract, "getEVMGasRatio",
-		coreutil.Field[util.Ratio32](),
+		coreutil.Field[util.Ratio32]("evmGasRatio"),
 	)
 
 	// chain info
 	ViewGetChainInfo = coreutil.NewViewEP01(Contract, "getChainInfo",
-		coreutil.Field[*isc.ChainInfo](),
+		coreutil.Field[*isc.ChainInfo]("chainInfo"),
 	)
 
 	// access nodes
 	FuncAddCandidateNode = coreutil.NewEP4(Contract, "addCandidateNode",
-		coreutil.Field[*cryptolib.PublicKey](), // NodePubKey
-		coreutil.Field[[]byte](),               // Certificate
-		coreutil.Field[string](),               // AccessAPI
-		coreutil.Field[bool](),                 // ForCommittee
+		coreutil.Field[*cryptolib.PublicKey]("nodePublicKey"), // NodePubKey
+		coreutil.Field[[]byte]("nodeCertificate"),             // Certificate
+		coreutil.Field[string]("nodeAccessAPI"),               // AccessAPI
+		coreutil.Field[bool]("isCommittee"),                   // ForCommittee
 	)
 	FuncRevokeAccessNode = coreutil.NewEP2(Contract, "revokeAccessNode",
-		coreutil.Field[*cryptolib.PublicKey](), // NodePubKey
-		coreutil.Field[[]byte](),               // Certificate
+		coreutil.Field[*cryptolib.PublicKey]("nodePublicKey"), // NodePubKey
+		coreutil.Field[[]byte]("certificate"),                 // Certificate
 	)
 	FuncChangeAccessNodes = coreutil.NewEP1(Contract, "changeAccessNodes",
-		coreutil.Field[ChangeAccessNodeActions](),
+		coreutil.Field[ChangeAccessNodeActions]("accessNodes"),
 	)
 	ViewGetChainNodes = coreutil.NewViewEP02(Contract, "getChainNodes",
-		coreutil.Field[[]*AccessNodeInfo](),
-		coreutil.Field[[]*cryptolib.PublicKey](),
+		coreutil.Field[[]*AccessNodeInfo]("accessNodeInfo"),
+		coreutil.Field[[]*cryptolib.PublicKey]("nodePublicKey"),
 	)
 
 	// maintenance
 	FuncStartMaintenance     = coreutil.NewEP0(Contract, "startMaintenance")
 	FuncStopMaintenance      = coreutil.NewEP0(Contract, "stopMaintenance")
 	ViewGetMaintenanceStatus = coreutil.NewViewEP01(Contract, "getMaintenanceStatus",
-		coreutil.Field[bool](),
+		coreutil.Field[bool]("isMaintenance"),
 	)
 
 	// public chain metadata
 	FuncSetMetadata = coreutil.NewEP2(Contract, "setMetadata",
-		coreutil.FieldOptional[string](),
-		coreutil.FieldOptional[*isc.PublicChainMetadata](),
+		coreutil.FieldOptional[string]("publicURL"),
+		coreutil.FieldOptional[*isc.PublicChainMetadata]("metadata"),
 	)
 	ViewGetMetadata = coreutil.NewViewEP02(Contract, "getMetadata",
-		coreutil.Field[string](),
-		coreutil.Field[*isc.PublicChainMetadata](),
+		coreutil.Field[string]("publicURL"),
+		coreutil.Field[*isc.PublicChainMetadata]("metadata"),
 	)
 )
 

@@ -7,9 +7,9 @@ import (
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/orderedmap"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BuilderArg struct {

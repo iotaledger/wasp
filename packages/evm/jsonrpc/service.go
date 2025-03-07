@@ -108,8 +108,8 @@ func (e *EthService) BlockNumber() (*hexutil.Big, error) {
 	})
 }
 
-func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (map[string]interface{}, error) {
-	return withMetrics(e.metrics, "eth_getBlockByNumber", func() (map[string]interface{}, error) {
+func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (map[string]any, error) {
+	return withMetrics(e.metrics, "eth_getBlockByNumber", func() (map[string]any, error) {
 		block, err := e.evmChain.BlockByNumber(parseBlockNumber(blockNumber))
 		if err != nil {
 			return nil, e.resolveError(err)
@@ -121,8 +121,8 @@ func (e *EthService) GetBlockByNumber(blockNumber rpc.BlockNumber, full bool) (m
 	})
 }
 
-func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]interface{}, error) {
-	return withMetrics(e.metrics, "eth_getBlockByHash", func() (map[string]interface{}, error) {
+func (e *EthService) GetBlockByHash(hash common.Hash, full bool) (map[string]any, error) {
+	return withMetrics(e.metrics, "eth_getBlockByHash", func() (map[string]any, error) {
 		block := e.evmChain.BlockByHash(hash)
 		if block == nil {
 			return nil, nil
@@ -190,8 +190,8 @@ func (e *EthService) GetCode(address common.Address, blockNumberOrHash *rpc.Bloc
 	})
 }
 
-func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]interface{}, error) {
-	return withMetrics(e.metrics, "eth_getTransactionReceipt", func() (map[string]interface{}, error) {
+func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]any, error) {
+	return withMetrics(e.metrics, "eth_getTransactionReceipt", func() (map[string]any, error) {
 		r := e.evmChain.TransactionReceipt(txHash)
 		if r == nil {
 			return nil, nil
@@ -270,11 +270,11 @@ func (e *EthService) GetUncleCountByBlockNumber(blockNumber rpc.BlockNumber) hex
 	return hexutil.Uint(0) // no uncles are ever generated
 }
 
-func (e *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]interface{} {
+func (e *EthService) GetUncleByBlockHashAndIndex(blockHash common.Hash, index hexutil.Uint) map[string]any {
 	return nil // no uncles are ever generated
 }
 
-func (e *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]interface{} {
+func (e *EthService) GetUncleByBlockNumberAndIndex(blockNumberOrTag rpc.BlockNumber, index hexutil.Uint) map[string]any {
 	return nil // no uncles are ever generated
 }
 
@@ -420,6 +420,9 @@ func (e *EthService) NewHeads(ctx context.Context) (*rpc.Subscription, error) {
 }
 
 func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscription, error) {
+	if q == nil {
+		q = &RPCFilterQuery{}
+	}
 	notifier, supported := rpc.NotifierFromContext(ctx)
 	if !supported {
 		return &rpc.Subscription{}, rpc.ErrNotificationsUnsupported
@@ -447,18 +450,18 @@ func (e *EthService) Logs(ctx context.Context, q *RPCFilterQuery) (*rpc.Subscrip
 	return rpcSub, nil
 }
 
-func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[string]interface{}, error) {
-	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]map[string]interface{}, error) {
+func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[string]any, error) {
+	return withMetrics(e.metrics, "eth_getBlockReceipts", func() ([]map[string]any, error) {
 		receipts, txs, err := e.evmChain.GetBlockReceipts(blockNumber)
 		if err != nil {
-			return []map[string]interface{}{}, e.resolveError(err)
+			return []map[string]any{}, e.resolveError(err)
 		}
 
 		if len(receipts) != len(txs) {
 			return nil, fmt.Errorf("receipts length mismatch: %d vs %d", len(receipts), len(txs))
 		}
 
-		result := make([]map[string]interface{}, len(receipts))
+		result := make([]map[string]any, len(receipts))
 		for i, receipt := range receipts {
 			// This is pretty ugly, maybe we should shift to uint64 for internals too.
 			feePolicy, err := e.evmChain.backend.FeePolicy(uint32(receipt.BlockNumber.Uint64()))
@@ -565,26 +568,26 @@ func NewDebugService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *D
 	}
 }
 
-func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
-	return withMetrics(d.metrics, "debug_traceTransaction", func() (interface{}, error) {
+func (d *DebugService) TraceTransaction(txHash common.Hash, config *tracers.TraceConfig) (any, error) {
+	return withMetrics(d.metrics, "debug_traceTransaction", func() (any, error) {
 		return d.evmChain.TraceTransaction(txHash, config)
 	})
 }
 
-func (d *DebugService) TraceBlockByNumber(blockNumber hexutil.Uint64, config *tracers.TraceConfig) (interface{}, error) {
-	return withMetrics(d.metrics, "debug_traceBlockByNumber", func() (interface{}, error) {
+func (d *DebugService) TraceBlockByNumber(blockNumber hexutil.Uint64, config *tracers.TraceConfig) (any, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByNumber", func() (any, error) {
 		return d.evmChain.TraceBlockByNumber(uint64(blockNumber), config)
 	})
 }
 
-func (d *DebugService) TraceBlockByHash(blockHash common.Hash, config *tracers.TraceConfig) (interface{}, error) {
-	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (interface{}, error) {
+func (d *DebugService) TraceBlockByHash(blockHash common.Hash, config *tracers.TraceConfig) (any, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (any, error) {
 		return d.evmChain.TraceBlockByHash(blockHash, config)
 	})
 }
 
-func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (interface{}, error) {
-	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (interface{}, error) {
+func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (any, error) {
+	return withMetrics(d.metrics, "debug_traceBlockByHash", func() (any, error) {
 		return d.evmChain.GetRawBlock(blockNrOrHash)
 	})
 }
@@ -602,8 +605,8 @@ func NewTraceService(evmChain *EVMChain, metrics *metrics.ChainWebAPIMetrics) *T
 }
 
 // Block implements the `trace_block` RPC.
-func (d *TraceService) Block(bn rpc.BlockNumber) (interface{}, error) {
-	return withMetrics(d.metrics, "trace_block", func() (interface{}, error) {
+func (d *TraceService) Block(bn rpc.BlockNumber) (any, error) {
+	return withMetrics(d.metrics, "trace_block", func() (any, error) {
 		return d.evmChain.TraceBlock(bn)
 	})
 }

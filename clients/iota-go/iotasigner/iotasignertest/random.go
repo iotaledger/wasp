@@ -3,9 +3,9 @@ package iotasignertest
 import (
 	"crypto/rand"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func RandomSigner() iotasigner.Signer {

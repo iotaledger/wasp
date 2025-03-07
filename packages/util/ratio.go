@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/serializer/v2"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 // A + B

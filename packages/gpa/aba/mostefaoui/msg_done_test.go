@@ -8,8 +8,8 @@ import (
 	"math/rand"
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgDoneSerialization(t *testing.T) {

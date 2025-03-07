@@ -40,7 +40,7 @@ func buildDeployMintTestcoin(
 		tokenPackageID,
 		contracts.TestcoinModuleName,
 		contracts.TestcoinTypeTag,
-		treasuryCap.ObjectID,
+		treasuryCap,
 		mintAmount,
 	)
 	coinType := lo.Must(iotago.NewResourceType(fmt.Sprintf(

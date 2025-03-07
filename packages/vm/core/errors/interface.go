@@ -9,13 +9,13 @@ var Contract = coreutil.NewContract(coreutil.CoreContractErrors)
 
 var (
 	FuncRegisterError = coreutil.NewEP11(Contract, "registerError",
-		coreutil.Field[string](),
-		coreutil.Field[isc.VMErrorCode](),
+		coreutil.Field[string]("errorMessageFormat"),
+		coreutil.Field[isc.VMErrorCode]("vmErrorCode"),
 	)
 
 	ViewGetErrorMessageFormat = coreutil.NewViewEP11(Contract, "getErrorMessageFormat",
-		coreutil.Field[isc.VMErrorCode](),
-		coreutil.Field[string](),
+		coreutil.Field[isc.VMErrorCode]("vmErrorCode"),
+		coreutil.Field[string]("errorMessageFormat"),
 	)
 )
 

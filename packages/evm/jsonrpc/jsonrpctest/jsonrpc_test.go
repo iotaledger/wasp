@@ -100,6 +100,12 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 func TestRPCGetBalance(t *testing.T) {
 	env := newSoloTestEnv(t)
 	_, emptyAddress := solo.NewEthereumAccount()
+
+	{
+		_, err := env.Client.BalanceAtHash(context.Background(), emptyAddress, common.Hash{})
+		require.ErrorContains(env.T, err, "not found")
+	}
+
 	require.Zero(t, env.Balance(emptyAddress).Uint64())
 
 	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits single coin object allocated from faucet
@@ -676,6 +682,49 @@ func TestRPCTraceTx(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, diff.Pre)
 		require.NotEmpty(t, diff.Post)
+	})
+}
+
+func TestRPCTraceFailedTx(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creatorL2Balance := env.Balance(creatorAddress)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	tx := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    creatorL2Balance,
+			Gas:      100000000000000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))),
+		})
+
+	_, err = env.SendTransactionAndWait(tx)
+	require.ErrorContains(t, err, "insufficient funds for gas * price + value")
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 0, bi.NumSuccessfulRequests)
+
+	t.Run("callTracer", func(t *testing.T) {
+		_, err := env.traceTransactionWithCallTracer(tx.Hash())
+		require.ErrorContains(t, err, "expected exactly one top-level call")
+	})
+
+	t.Run("prestate", func(t *testing.T) {
+		accountMap, err := env.traceTransactionWithPrestate(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, accountMap)
+
+		diff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, diff.Pre)
+		require.Empty(t, diff.Post)
 	})
 }
 

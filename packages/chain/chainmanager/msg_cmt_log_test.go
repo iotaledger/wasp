@@ -4,10 +4,10 @@ import (
 	"math/rand"
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgCmtLogSerialization(t *testing.T) {

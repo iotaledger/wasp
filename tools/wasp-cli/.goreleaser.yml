@@ -151,4 +151,4 @@ release:
   prerelease: auto
   github:
     owner: iotaledger
-    name: isc-private
+    name: isc-rebased

@@ -4,24 +4,16 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**InAliasOutput** | [**AliasOutputMetricItem**](AliasOutputMetricItem.md) |  | 
-**InMilestone** | [**MilestoneMetricItem**](MilestoneMetricItem.md) |  | 
+**InAnchor** | [**AnchorMetricItem**](AnchorMetricItem.md) |  | 
 **InOnLedgerRequest** | [**OnLedgerRequestMetricItem**](OnLedgerRequestMetricItem.md) |  | 
-**InOutput** | [**InOutputMetricItem**](InOutputMetricItem.md) |  | 
-**InStateOutput** | [**InStateOutputMetricItem**](InStateOutputMetricItem.md) |  | 
-**InTxInclusionState** | [**TxInclusionStateMsgMetricItem**](TxInclusionStateMsgMetricItem.md) |  | 
-**OutPublishGovernanceTransaction** | [**TransactionMetricItem**](TransactionMetricItem.md) |  | 
 **OutPublisherStateTransaction** | [**PublisherStateTransactionItem**](PublisherStateTransactionItem.md) |  | 
-**OutPullLatestOutput** | [**InterfaceMetricItem**](InterfaceMetricItem.md) |  | 
-**OutPullOutputByID** | [**UTXOInputMetricItem**](UTXOInputMetricItem.md) |  | 
-**OutPullTxInclusionState** | [**TransactionIDMetricItem**](TransactionIDMetricItem.md) |  | 
 **RegisteredChainIDs** | **[]string** |  | 
 
 ## Methods
 
 ### NewNodeMessageMetrics
 
-`func NewNodeMessageMetrics(inAliasOutput AliasOutputMetricItem, inMilestone MilestoneMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem, registeredChainIDs []string, ) *NodeMessageMetrics`
+`func NewNodeMessageMetrics(inAnchor AnchorMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, registeredChainIDs []string, ) *NodeMessageMetrics`
 
 NewNodeMessageMetrics instantiates a new NodeMessageMetrics object
 This constructor will assign default values to properties that have it defined,
@@ -36,44 +28,24 @@ NewNodeMessageMetricsWithDefaults instantiates a new NodeMessageMetrics object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetInAliasOutput
+### GetInAnchor
 
-`func (o *NodeMessageMetrics) GetInAliasOutput() AliasOutputMetricItem`
+`func (o *NodeMessageMetrics) GetInAnchor() AnchorMetricItem`
 
-GetInAliasOutput returns the InAliasOutput field if non-nil, zero value otherwise.
+GetInAnchor returns the InAnchor field if non-nil, zero value otherwise.
 
-### GetInAliasOutputOk
+### GetInAnchorOk
 
-`func (o *NodeMessageMetrics) GetInAliasOutputOk() (*AliasOutputMetricItem, bool)`
+`func (o *NodeMessageMetrics) GetInAnchorOk() (*AnchorMetricItem, bool)`
 
-GetInAliasOutputOk returns a tuple with the InAliasOutput field if it's non-nil, zero value otherwise
+GetInAnchorOk returns a tuple with the InAnchor field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetInAliasOutput
+### SetInAnchor
 
-`func (o *NodeMessageMetrics) SetInAliasOutput(v AliasOutputMetricItem)`
+`func (o *NodeMessageMetrics) SetInAnchor(v AnchorMetricItem)`
 
-SetInAliasOutput sets InAliasOutput field to given value.
-
-
-### GetInMilestone
-
-`func (o *NodeMessageMetrics) GetInMilestone() MilestoneMetricItem`
-
-GetInMilestone returns the InMilestone field if non-nil, zero value otherwise.
-
-### GetInMilestoneOk
-
-`func (o *NodeMessageMetrics) GetInMilestoneOk() (*MilestoneMetricItem, bool)`
-
-GetInMilestoneOk returns a tuple with the InMilestone field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetInMilestone
-
-`func (o *NodeMessageMetrics) SetInMilestone(v MilestoneMetricItem)`
-
-SetInMilestone sets InMilestone field to given value.
+SetInAnchor sets InAnchor field to given value.
 
 
 ### GetInOnLedgerRequest
@@ -96,86 +68,6 @@ and a boolean to check if the value has been set.
 SetInOnLedgerRequest sets InOnLedgerRequest field to given value.
 
 
-### GetInOutput
-
-`func (o *NodeMessageMetrics) GetInOutput() InOutputMetricItem`
-
-GetInOutput returns the InOutput field if non-nil, zero value otherwise.
-
-### GetInOutputOk
-
-`func (o *NodeMessageMetrics) GetInOutputOk() (*InOutputMetricItem, bool)`
-
-GetInOutputOk returns a tuple with the InOutput field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetInOutput
-
-`func (o *NodeMessageMetrics) SetInOutput(v InOutputMetricItem)`
-
-SetInOutput sets InOutput field to given value.
-
-
-### GetInStateOutput
-
-`func (o *NodeMessageMetrics) GetInStateOutput() InStateOutputMetricItem`
-
-GetInStateOutput returns the InStateOutput field if non-nil, zero value otherwise.
-
-### GetInStateOutputOk
-
-`func (o *NodeMessageMetrics) GetInStateOutputOk() (*InStateOutputMetricItem, bool)`
-
-GetInStateOutputOk returns a tuple with the InStateOutput field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetInStateOutput
-
-`func (o *NodeMessageMetrics) SetInStateOutput(v InStateOutputMetricItem)`
-
-SetInStateOutput sets InStateOutput field to given value.
-
-
-### GetInTxInclusionState
-
-`func (o *NodeMessageMetrics) GetInTxInclusionState() TxInclusionStateMsgMetricItem`
-
-GetInTxInclusionState returns the InTxInclusionState field if non-nil, zero value otherwise.
-
-### GetInTxInclusionStateOk
-
-`func (o *NodeMessageMetrics) GetInTxInclusionStateOk() (*TxInclusionStateMsgMetricItem, bool)`
-
-GetInTxInclusionStateOk returns a tuple with the InTxInclusionState field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetInTxInclusionState
-
-`func (o *NodeMessageMetrics) SetInTxInclusionState(v TxInclusionStateMsgMetricItem)`
-
-SetInTxInclusionState sets InTxInclusionState field to given value.
-
-
-### GetOutPublishGovernanceTransaction
-
-`func (o *NodeMessageMetrics) GetOutPublishGovernanceTransaction() TransactionMetricItem`
-
-GetOutPublishGovernanceTransaction returns the OutPublishGovernanceTransaction field if non-nil, zero value otherwise.
-
-### GetOutPublishGovernanceTransactionOk
-
-`func (o *NodeMessageMetrics) GetOutPublishGovernanceTransactionOk() (*TransactionMetricItem, bool)`
-
-GetOutPublishGovernanceTransactionOk returns a tuple with the OutPublishGovernanceTransaction field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOutPublishGovernanceTransaction
-
-`func (o *NodeMessageMetrics) SetOutPublishGovernanceTransaction(v TransactionMetricItem)`
-
-SetOutPublishGovernanceTransaction sets OutPublishGovernanceTransaction field to given value.
-
-
 ### GetOutPublisherStateTransaction
 
 `func (o *NodeMessageMetrics) GetOutPublisherStateTransaction() PublisherStateTransactionItem`
@@ -194,66 +86,6 @@ and a boolean to check if the value has been set.
 `func (o *NodeMessageMetrics) SetOutPublisherStateTransaction(v PublisherStateTransactionItem)`
 
 SetOutPublisherStateTransaction sets OutPublisherStateTransaction field to given value.
-
-
-### GetOutPullLatestOutput
-
-`func (o *NodeMessageMetrics) GetOutPullLatestOutput() InterfaceMetricItem`
-
-GetOutPullLatestOutput returns the OutPullLatestOutput field if non-nil, zero value otherwise.
-
-### GetOutPullLatestOutputOk
-
-`func (o *NodeMessageMetrics) GetOutPullLatestOutputOk() (*InterfaceMetricItem, bool)`
-
-GetOutPullLatestOutputOk returns a tuple with the OutPullLatestOutput field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOutPullLatestOutput
-
-`func (o *NodeMessageMetrics) SetOutPullLatestOutput(v InterfaceMetricItem)`
-
-SetOutPullLatestOutput sets OutPullLatestOutput field to given value.
-
-
-### GetOutPullOutputByID
-
-`func (o *NodeMessageMetrics) GetOutPullOutputByID() UTXOInputMetricItem`
-
-GetOutPullOutputByID returns the OutPullOutputByID field if non-nil, zero value otherwise.
-
-### GetOutPullOutputByIDOk
-
-`func (o *NodeMessageMetrics) GetOutPullOutputByIDOk() (*UTXOInputMetricItem, bool)`
-
-GetOutPullOutputByIDOk returns a tuple with the OutPullOutputByID field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOutPullOutputByID
-
-`func (o *NodeMessageMetrics) SetOutPullOutputByID(v UTXOInputMetricItem)`
-
-SetOutPullOutputByID sets OutPullOutputByID field to given value.
-
-
-### GetOutPullTxInclusionState
-
-`func (o *NodeMessageMetrics) GetOutPullTxInclusionState() TransactionIDMetricItem`
-
-GetOutPullTxInclusionState returns the OutPullTxInclusionState field if non-nil, zero value otherwise.
-
-### GetOutPullTxInclusionStateOk
-
-`func (o *NodeMessageMetrics) GetOutPullTxInclusionStateOk() (*TransactionIDMetricItem, bool)`
-
-GetOutPullTxInclusionStateOk returns a tuple with the OutPullTxInclusionState field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOutPullTxInclusionState
-
-`func (o *NodeMessageMetrics) SetOutPullTxInclusionState(v TransactionIDMetricItem)`
-
-SetOutPullTxInclusionState sets OutPullTxInclusionState field to given value.
 
 
 ### GetRegisteredChainIDs
