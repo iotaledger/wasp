@@ -3,8 +3,8 @@ package isc
 import (
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 

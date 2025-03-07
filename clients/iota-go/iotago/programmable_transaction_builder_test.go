@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 func TestMain(m *testing.M) {

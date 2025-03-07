@@ -6,7 +6,7 @@ package gpa
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 // MsgWrapper can be used to compose an algorithm out of other abstractions.

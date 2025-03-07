@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sort"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Mutations is a set of mutations: one for each key

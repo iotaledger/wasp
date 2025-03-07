@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -15,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Here we store just an aggregated info.

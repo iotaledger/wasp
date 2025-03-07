@@ -7,7 +7,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 type Codec[T any] interface {

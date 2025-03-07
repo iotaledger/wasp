@@ -10,9 +10,9 @@ import (
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Value is the balance of a given coin

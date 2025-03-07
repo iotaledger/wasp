@@ -24,8 +24,9 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.2
+	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
 	github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2
-	github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2
+	github.com/iotaledger/hive.go/constraints v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/ds v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20240319170702-c7591bb5f9f2
@@ -63,7 +64,6 @@ require (
 	golang.org/x/crypto v0.36.0
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/net v0.37.0
-	golang.org/x/sync v0.12.0
 	golang.org/x/time v0.11.0
 	nhooyr.io/websocket v1.8.17
 	pgregory.net/rapid v1.2.0
@@ -250,6 +250,7 @@ require (
 	go.uber.org/mock v0.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/mod v0.24.0 // indirect
+	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
 	golang.org/x/tools v0.31.0 // indirect

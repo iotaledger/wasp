@@ -3,11 +3,11 @@ package parameters_test
 import (
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/stretchr/testify/require"
 )
 

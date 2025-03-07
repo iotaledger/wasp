@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients"
@@ -46,7 +47,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
