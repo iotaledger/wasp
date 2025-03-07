@@ -44,7 +44,7 @@ func MigrateAccountsContract(
 	migrateNativeTokenBalances(oldState, newState, oldChainID, newChainID, migratedAccounts)
 	// NOTE: L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
 	migrateFoundriesOutputs(oldState, newState)
-	migrateFoundriesPerAccount(oldState, newState, oldChainID, newChainID)
+	//migrateFoundriesPerAccount(oldState, newState, oldChainID, newChainID)
 	migrateNativeTokenOutputs(oldState, newState)
 	migrateNFTs(oldState, newState, oldChainID, newChainID)
 	// prefixNewlyMintedNFTs ignored

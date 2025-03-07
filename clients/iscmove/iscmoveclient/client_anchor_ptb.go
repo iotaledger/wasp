@@ -45,7 +45,7 @@ func PTBUpdateAnchorStateMetadata(ptb *iotago.ProgrammableTransactionBuilder, pa
 			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
-				Function:      "update_anchor_state_metadata",
+				Function:      "update_anchor_state_for_migration",
 				TypeArguments: []iotago.TypeTag{},
 				Arguments: []iotago.Argument{
 					anchorRef,

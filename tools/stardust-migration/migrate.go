@@ -49,6 +49,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dry
 	old_isc.ChainID,
 	isc.ChainID,
 	*isc_migration.PrepareConfiguration,
+	state.Block,
 	*transaction.StateMetadata,
 	func(),
 ) {
@@ -90,15 +91,15 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dry
 	migrationConfig := readMigrationConfiguration()
 	newChainID := isc.ChainIDFromObjectID(*migrationConfig.AnchorID)
 
-	stateMetadata := initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
+	firstBlock, stateMetadata := initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
 
-	return srcStore, destStore, oldChainID, newChainID, migrationConfig, stateMetadata, close
+	return srcStore, destStore, oldChainID, newChainID, migrationConfig, firstBlock, stateMetadata, close
 }
 
-func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
+func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) (state.Block, *transaction.StateMetadata) {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
-	return stateMetadata
+	block, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
+	return block, stateMetadata
 }
 
 func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
@@ -106,7 +107,7 @@ func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
 	// For testing, this is not of much relevance but for the real deployment we need real values.
 	// So for now return a more or less random configuration
 
-	const debug = true
+	const debug = false
 	if debug {
 		// This comes from the default InitChain init params.
 		committeeAddress := lo.Must(cryptolib.AddressFromHex("0x92caa380e78d6c4c5229d0be5c1d55d086a56961b83eaf736d8bd16456e1c6d8"))
@@ -160,7 +161,7 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, oldChainID, newChainID, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	srcStore, destStore, oldChainID, newChainID, _, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
 
 	var srcState old_kv.KVStoreReader
@@ -180,6 +181,7 @@ func migrateSingleState(c *cmd.Context) error {
 	cli.DebugLoggingEnabled = true
 
 	v := migrations.MigrateRootContract(srcState, stateDraft)
+
 	migrations.MigrateAccountsContract(v, srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata)
 	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
@@ -200,7 +202,7 @@ func migrateAllStates(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, oldChainID, newChainID, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	srcStore, destStore, oldChainID, newChainID, _, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
 
 	// // Trie-based state
@@ -228,6 +230,8 @@ func migrateAllStates(c *cmd.Context) error {
 		oldState.RegisterPrefix("", old_evm.Contract.Hname(), old_evm.KeyEmulatorState)
 	}
 
+	cli.Logf("Real from-index: %d", startBlockIndex)
+
 	if startBlockIndex != 0 {
 		cli.Logf("Loading state at block index %v", startBlockIndex-1)
 		count := 0
@@ -251,6 +255,7 @@ func migrateAllStates(c *cmd.Context) error {
 	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
 
+	var newBlock state.Block
 	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
 		oldMuts := block.Mutations()
 		// for k, v := range oldMuts.Sets {
@@ -317,9 +322,10 @@ func migrateAllStates(c *cmd.Context) error {
 		govMutsProcessed += governanceMuts
 		evmMutsProcessed += evmMuts
 
-		//cli.Logf("Block Index: %d\n", newBlock.StateIndex())
-		// Yes it writes the result every block, deal with it. :D
-		//writeMigrationResult(stateMetadata, newBlock.StateIndex())
+		if newBlock.StateIndex()%10000 == 0 {
+			cli.Logf("Block Index: %d\n", newBlock.StateIndex())
+			writeMigrationResult(stateMetadata, newBlock.StateIndex())
+		}
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
@@ -342,6 +348,9 @@ func migrateAllStates(c *cmd.Context) error {
 			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0
 		})
 	})
+
+	cli.Logf("Finished at Index: %d\n", newBlock.StateIndex())
+	writeMigrationResult(stateMetadata, newBlock.StateIndex())
 
 	return nil
 }
@@ -397,6 +406,7 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex u
 		block, trieRoot := indexer.BlockByIndex(i)
 		f(i, trieRoot, block)
 	}
+
 }
 
 func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {

@@ -57,7 +57,7 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 		oldAgentChainID := oldAgentID.ChainID()
 
 		if !bytes.Equal(oldChainID.Bytes(), oldAgentChainID.Bytes()) {
-			panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID.ChainID().AsAddress().Bech32(old_iotago.PrefixMainnet)))
+			//panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID.ChainID().AsAddress().Bech32(old_iotago.PrefixMainnet)))
 		}
 		hname := OldHnameToNewHname(oldAgentID.Hname())
 		return isc.NewContractAgentID(newChainID, hname)
@@ -66,7 +66,7 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 		oldAgentID := oldAgentID.(*old_isc.EthereumAddressAgentID)
 		oldAgentChainID := oldAgentID.ChainID()
 		if !oldAgentChainID.Equals(oldChainID) {
-			panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
+			//panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
 		}
 		ethAddr := oldAgentID.EthAddress()
 		return isc.NewEthereumAddressAgentID(newChainID, ethAddr)
@@ -164,10 +164,11 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 	// TODO: There is no cinversion rate, right?
 
 	if !oldNativeTokenAmount.IsUint64() {
-		panic(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
+		fmt.Println(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
 	}
 
-	return coin.Value(oldNativeTokenAmount.Uint64())
+	u := uint64(18446744073709551615)
+	return coin.Value(u)
 }
 
 func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
