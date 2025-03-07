@@ -1,23 +1,24 @@
 package migrations
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
-	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
+	"github.com/iotaledger/bcs-go"
 	old_cryptolib "github.com/nnikolash/wasp-types-exported/packages/cryptolib"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
 func MigrateGovernanceContract(

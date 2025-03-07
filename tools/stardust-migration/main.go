@@ -10,21 +10,22 @@ import (
 	_ "net/http/pprof"
 	"os"
 
+	bcs "github.com/iotaledger/bcs-go"
 	old_iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
-	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 	cmd "github.com/urfave/cli/v2"
+
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
 // NOTE: Every record type should be explicitly included in migration
