@@ -59,6 +59,11 @@ func main() {
 								Usage:   "Specify block index to migrate. If not specified, latest state will be migrated.",
 							},
 							&cmd.BoolFlag{
+								Name:    "dry-run",
+								Aliases: []string{"d"},
+								Usage:   "Do not write destination database.",
+							},
+							&cmd.BoolFlag{
 								Name:  "hm-prefixes",
 								Usage: "Replace original prefixes in new dabase with human-readable strings.",
 							},
@@ -72,8 +77,18 @@ func main() {
 						Flags: []cmd.Flag{
 							&cmd.Uint64Flag{
 								Name:    "from-index",
-								Aliases: []string{"i"},
+								Aliases: []string{"i", "f", "from-block", "from"},
 								Usage:   "Specify block index to start from. If not specified, all blocks will be migrated starting from block 0.",
+							},
+							&cmd.Uint64Flag{
+								Name:    "to-index",
+								Aliases: []string{"t", "to-block", "to"},
+								Usage:   "Specify block index to migrate last. If not specified, all blocks will be migrated until last.",
+							},
+							&cmd.BoolFlag{
+								Name:    "dry-run",
+								Aliases: []string{"d"},
+								Usage:   "Do not write destination database.",
 							},
 							&cmd.BoolFlag{
 								Name:  "hm-prefixes",

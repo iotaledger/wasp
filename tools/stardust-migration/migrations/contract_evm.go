@@ -57,7 +57,7 @@ func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState
 	count := 0
 
 	// Simply copy all bytes
-	oldMagicState.IterateSorted(old_evmimpl.PrefixPrivileged, func(k old_kv.Key, v []byte) bool {
+	oldMagicState.Iterate(old_evmimpl.PrefixPrivileged, func(k old_kv.Key, v []byte) bool {
 		newMagicState.Set(kv.Key(k), v)
 		count++
 		return true
@@ -71,7 +71,7 @@ func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState 
 
 	progress := NewProgressPrinter()
 
-	oldMagicState.IterateSorted(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
+	oldMagicState.Iterate(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
 		k = utils.MustRemovePrefix(k, old_evmimpl.PrefixAllowance)
 		if len(k) != 2*common.AddressLength {
 			log.Panicf("unexpected key length: %v", len(k))
@@ -107,7 +107,7 @@ func migrateISCMagicERC20ExternalNativeTokens(oldMagicState old_kv.KVStoreReader
 	// Simply copying all bytes, because for now not sure what to do with it, plus according to the information about keys usage
 	// this feature seems not even being used.
 	// TODO: revisit this before doing actual migration.
-	oldMagicState.IterateSorted(old_evmimpl.PrefixERC20ExternalNativeTokens, func(k old_kv.Key, v []byte) bool {
+	oldMagicState.Iterate(old_evmimpl.PrefixERC20ExternalNativeTokens, func(k old_kv.Key, v []byte) bool {
 		newMagicState.Set(kv.Key(k), v)
 		count++
 		return true
