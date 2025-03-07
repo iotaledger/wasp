@@ -34,7 +34,7 @@ func TestMintToken(t *testing.T) {
 		tokenPackageID,
 		contracts.TestcoinModuleName,
 		contracts.TestcoinTypeTag,
-		treasuryCap.ObjectID,
+		treasuryCap,
 		mintAmount,
 	)
 	coinType := fmt.Sprintf(

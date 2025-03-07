@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const (

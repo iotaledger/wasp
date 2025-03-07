@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestUnmarshalBCS(t *testing.T) {

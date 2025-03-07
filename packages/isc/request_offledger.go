@@ -10,9 +10,9 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/crypto/blake2b"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest

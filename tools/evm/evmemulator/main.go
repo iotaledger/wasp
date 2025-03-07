@@ -13,13 +13,9 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -98,13 +94,8 @@ func initSolo() (*soloContext, *solo.Chain) {
 
 	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
-	chainOwner, chainOwnerAddr := env.NewKeyPairWithFunds()
-	chain, _ := env.NewChainExt(chainOwner, 1*isc.Million, "evmemulator", dict.Dict{
-		origin.ParamChainOwner:      isc.NewAddressAgentID(chainOwnerAddr).Bytes(),
-		origin.ParamEVMChainID:      codec.Encode[uint16](1074),
-		origin.ParamBlockKeepAmount: codec.Encode[int32](emulator.BlockKeepAll),
-		origin.ParamWaspVersion:     codec.Encode[string](app.Version),
-	})
+	chainOwner, _ := env.NewKeyPairWithFunds()
+	chain, _ := env.NewChainExt(chainOwner, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll)
 	return ctx, chain
 }
 

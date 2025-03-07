@@ -7,8 +7,8 @@ import (
 	"errors"
 	"strings"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type AgentIDKind byte

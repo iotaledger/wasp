@@ -1,15 +1,46 @@
 package bcs_test
 
 import (
+	"fmt"
 	"io"
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/wasp/packages/util/bcs"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
+
+type BasicWithRwUtilCodec string
+
+func (v BasicWithRwUtilCodec) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN([]byte{1, 2, 3})
+	ww.WriteString(string(v))
+
+	return ww.Err
+}
+
+func (v *BasicWithRwUtilCodec) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+
+	b := make([]byte, 3)
+	rr.ReadN(b)
+
+	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
+		return fmt.Errorf("invalid value: %v", b)
+	}
+
+	s := rr.ReadString()
+
+	*v = BasicWithRwUtilCodec(s)
+
+	return rr.Err
+}
+
+func TestBasicTypesCodec(t *testing.T) {
+	bcs.TestCodecAndBytes(t, BasicWithRwUtilCodec("aaa"), []byte{0x1, 0x2, 0x3, 0x3, 0x61, 0x61, 0x61})
+}
 
 type StructWithRwUtilSupport struct {
 	A int
@@ -91,4 +122,34 @@ func TestCompatibilityWithRwUtil(t *testing.T) {
 	var readFromEnc StructWithRwUtilSupport
 	rwutil.ReadFromBytes(vEnc, &readFromEnc)
 	require.Equal(t, v, readFromEnc)
+}
+
+type WithRwUtilCodec struct{}
+
+func (v WithRwUtilCodec) Write(w io.Writer) error {
+	w.Write([]byte{1, 2, 3})
+	return nil
+}
+
+func (v *WithRwUtilCodec) Read(r io.Reader) error {
+	b := make([]byte, 3)
+	if _, err := r.Read(b); err != nil {
+		return err
+	}
+
+	if b[0] != 1 || b[1] != 2 || b[2] != 3 {
+		return fmt.Errorf("invalid value: %v", b)
+	}
+
+	return nil
+}
+
+type WithNestedRwUtilCodec struct {
+	A int `bcs:"type=i8"`
+	B WithRwUtilCodec
+}
+
+func TestStructCustomCodec(t *testing.T) {
+	bcs.TestCodecAndBytes(t, WithRwUtilCodec{}, []byte{0x1, 0x2, 0x3})
+	bcs.TestCodecAndBytes(t, WithNestedRwUtilCodec{A: 43, B: WithRwUtilCodec{}}, []byte{0x2b, 0x1, 0x2, 0x3})
 }

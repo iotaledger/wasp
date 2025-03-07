@@ -7,7 +7,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 

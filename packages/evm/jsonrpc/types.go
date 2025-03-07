@@ -41,8 +41,8 @@ type RPCTransaction struct {
 }
 
 // RPCMarshalHeader converts the given header to the RPC output .
-func RPCMarshalHeader(head *types.Header) map[string]interface{} {
-	return map[string]interface{}{
+func RPCMarshalHeader(head *types.Header) map[string]any {
+	return map[string]any{
 		"number":           (*hexutil.Big)(head.Number),
 		"hash":             head.Hash(),
 		"parentHash":       head.ParentHash,
@@ -66,22 +66,22 @@ func RPCMarshalHeader(head *types.Header) map[string]interface{} {
 // RPCMarshalBlock converts the given block to the RPC output which depends on fullTx. If inclTx is true transactions are
 // returned. When fullTx is true the returned block contains full transaction details, otherwise it will only contain
 // transaction hashes.
-func RPCMarshalBlock(block *types.Block, inclTx, fullTx bool) (map[string]interface{}, error) {
+func RPCMarshalBlock(block *types.Block, inclTx, fullTx bool) (map[string]any, error) {
 	fields := RPCMarshalHeader(block.Header())
 	fields["size"] = hexutil.Uint64(block.Size())
 	fields["totalDifficulty"] = hexutil.Uint64(0)
 
 	if inclTx {
-		formatTx := func(tx *types.Transaction) (interface{}, error) {
+		formatTx := func(tx *types.Transaction) (any, error) {
 			return tx.Hash(), nil
 		}
 		if fullTx {
-			formatTx = func(tx *types.Transaction) (interface{}, error) {
+			formatTx = func(tx *types.Transaction) (any, error) {
 				return newRPCTransactionFromBlockHash(block, tx.Hash()), nil
 			}
 		}
 		txs := block.Transactions()
-		transactions := make([]interface{}, len(txs))
+		transactions := make([]any, len(txs))
 		var err error
 		for i, tx := range txs {
 			if transactions[i], err = formatTx(tx); err != nil {
@@ -159,14 +159,14 @@ func parseBlockNumber(bn rpc.BlockNumber) *big.Int {
 	return big.NewInt(n)
 }
 
-func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPrice *big.Int) map[string]interface{} {
+func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPrice *big.Int) map[string]any {
 	// fix for an already fixed bug where some old failed receipts contain non-empty logs
 	if r.Status != types.ReceiptStatusSuccessful {
 		r.Logs = []*types.Log{}
-		r.Bloom = types.CreateBloom(types.Receipts{r})
+		r.Bloom = types.CreateBloom(r)
 	}
 
-	result := map[string]interface{}{
+	result := map[string]any{
 		"transactionHash":   r.TxHash,
 		"transactionIndex":  hexutil.Uint64(r.TransactionIndex),
 		"blockHash":         r.BlockHash,
@@ -192,10 +192,10 @@ func RPCMarshalReceipt(r *types.Receipt, tx *types.Transaction, effectiveGasPric
 	return result
 }
 
-func rpcMarshalLogs(r *types.Receipt) []interface{} {
-	ret := make([]interface{}, len(r.Logs))
+func rpcMarshalLogs(r *types.Receipt) []any {
+	ret := make([]any, len(r.Logs))
 	for i, log := range r.Logs {
-		ret[i] = map[string]interface{}{
+		ret[i] = map[string]any{
 			"logIndex":         hexutil.Uint(log.Index),
 			"blockNumber":      hexutil.Uint(log.BlockNumber),
 			"blockHash":        log.BlockHash,
@@ -310,8 +310,8 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 		BlockHash *common.Hash     `json:"blockHash"`
 		FromBlock *rpc.BlockNumber `json:"fromBlock"`
 		ToBlock   *rpc.BlockNumber `json:"toBlock"`
-		Addresses interface{}      `json:"address"`
-		Topics    []interface{}    `json:"topics"`
+		Addresses any              `json:"address"`
+		Topics    []any            `json:"topics"`
 	}
 
 	var raw input
@@ -340,7 +340,7 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 	if raw.Addresses != nil {
 		// raw.Address can contain a single address or an array of addresses
 		switch rawAddr := raw.Addresses.(type) {
-		case []interface{}:
+		case []any:
 			for i, addr := range rawAddr {
 				if strAddr, ok := addr.(string); ok {
 					addr, err := decodeAddress(strAddr)
@@ -380,7 +380,7 @@ func (q *RPCFilterQuery) UnmarshalJSON(data []byte) error {
 				}
 				q.Topics[i] = []common.Hash{top}
 
-			case []interface{}:
+			case []any:
 				// or case e.g. [null, "topic0", "topic1"]
 				for _, rawTopic := range topic {
 					if rawTopic == nil {
@@ -435,7 +435,7 @@ func (e *revertError) ErrorCode() int {
 }
 
 // ErrorData returns the hex encoded revert reason.
-func (e *revertError) ErrorData() interface{} {
+func (e *revertError) ErrorData() any {
 	return e.reason
 }
 

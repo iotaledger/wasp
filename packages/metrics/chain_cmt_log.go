@@ -7,10 +7,10 @@ import (
 )
 
 type ChainCmtLogMetricsProvider struct {
-	logIndexIncReasonConsOut *prometheus.CounterVec
-	logIndexIncReasonRecover *prometheus.CounterVec
-	logIndexIncReasonL1RepAO *prometheus.CounterVec
-	logIndexIncReasonStarted *prometheus.CounterVec
+	logIndexIncReasonConsOut     *prometheus.CounterVec
+	logIndexIncReasonRecover     *prometheus.CounterVec
+	logIndexIncReasonL1RepAnchor *prometheus.CounterVec
+	logIndexIncReasonStarted     *prometheus.CounterVec
 }
 
 func newChainCmtLogMetricsProvider() *ChainCmtLogMetricsProvider {
@@ -27,11 +27,11 @@ func newChainCmtLogMetricsProvider() *ChainCmtLogMetricsProvider {
 			Name:      "log_index_inc_reason_Recover",
 			Help:      "Number if times LogIndex was increased because of recovery procedure.",
 		}, []string{labelNameChain}),
-		logIndexIncReasonL1RepAO: prometheus.NewCounterVec(prometheus.CounterOpts{
+		logIndexIncReasonL1RepAnchor: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
 			Subsystem: "cmt_log",
-			Name:      "log_index_inc_reason_L1RepAO",
-			Help:      "Number if times LogIndex was increased because L1 replaced TIP alias output.",
+			Name:      "log_index_inc_reason_L1RepAnchor",
+			Help:      "Number if times LogIndex was increased because L1 replaced TIP anchor.",
 		}, []string{labelNameChain}),
 		logIndexIncReasonStarted: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
@@ -46,7 +46,7 @@ func (p *ChainCmtLogMetricsProvider) register(reg prometheus.Registerer) {
 	reg.MustRegister(
 		p.logIndexIncReasonConsOut,
 		p.logIndexIncReasonRecover,
-		p.logIndexIncReasonL1RepAO,
+		p.logIndexIncReasonL1RepAnchor,
 		p.logIndexIncReasonStarted,
 	)
 }
@@ -56,23 +56,23 @@ func (p *ChainCmtLogMetricsProvider) createForChain(chainID isc.ChainID) *ChainC
 }
 
 type ChainCmtLogMetrics struct {
-	consOut prometheus.Counter
-	recover prometheus.Counter
-	l1RepAO prometheus.Counter
-	started prometheus.Counter
+	consOut     prometheus.Counter
+	recover     prometheus.Counter
+	l1RepAnchor prometheus.Counter
+	started     prometheus.Counter
 }
 
 func newChainCmtLogMetrics(collectors *ChainCmtLogMetricsProvider, chainID isc.ChainID) *ChainCmtLogMetrics {
 	labels := getChainLabels(chainID)
 	return &ChainCmtLogMetrics{
-		consOut: collectors.logIndexIncReasonConsOut.With(labels),
-		recover: collectors.logIndexIncReasonRecover.With(labels),
-		l1RepAO: collectors.logIndexIncReasonL1RepAO.With(labels),
-		started: collectors.logIndexIncReasonStarted.With(labels),
+		consOut:     collectors.logIndexIncReasonConsOut.With(labels),
+		recover:     collectors.logIndexIncReasonRecover.With(labels),
+		l1RepAnchor: collectors.logIndexIncReasonL1RepAnchor.With(labels),
+		started:     collectors.logIndexIncReasonStarted.With(labels),
 	}
 }
 
-func (m *ChainCmtLogMetrics) NextLogIndexCauseConsOut() { m.consOut.Inc() }
-func (m *ChainCmtLogMetrics) NextLogIndexCauseRecover() { m.recover.Inc() }
-func (m *ChainCmtLogMetrics) NextLogIndexCauseL1RepAO() { m.l1RepAO.Inc() }
-func (m *ChainCmtLogMetrics) NextLogIndexCauseStarted() { m.started.Inc() }
+func (m *ChainCmtLogMetrics) NextLogIndexCauseConsOut()     { m.consOut.Inc() }
+func (m *ChainCmtLogMetrics) NextLogIndexCauseRecover()     { m.recover.Inc() }
+func (m *ChainCmtLogMetrics) NextLogIndexCauseL1RepAnchor() { m.l1RepAnchor.Inc() }
+func (m *ChainCmtLogMetrics) NextLogIndexCauseStarted()     { m.started.Inc() }

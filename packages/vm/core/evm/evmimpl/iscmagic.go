@@ -69,8 +69,8 @@ func newMagicContract(ctx isc.Sandbox) map[common.Address]vm.ISCMagicContract {
 	}
 }
 
-func (c *magicContract) Run(evm *vm.EVM, caller vm.ContractRef, input []byte, value *uint256.Int, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
-	privileged := isCallerPrivileged(c.ctx, caller.Address())
+func (c *magicContract) Run(evm *vm.EVM, caller common.Address, input []byte, value *uint256.Int, gas uint64, readOnly bool) (ret []byte, remainingGas uint64, err error) {
+	privileged := isCallerPrivileged(c.ctx, caller)
 	method, args := parseCall(input, privileged)
 	if readOnly && !method.IsConstant() {
 		return nil, gas, errReadOnlyContext

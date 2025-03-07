@@ -5,11 +5,10 @@ import (
 	"encoding/base64"
 	"testing"
 
-	oldbcs "github.com/fardream/go-bcs/bcs"
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -86,12 +85,9 @@ func TestAddressFromIota(t *testing.T) {
 
 func TestAddressBCSCodec(t *testing.T) {
 	addr := NewRandomAddress()
-	encOld := oldbcs.MustMarshal(addr)
-	encNew := bcs.MustMarshal(&addr)
+	encBCS := bcs.MustMarshal(&addr)
 	encRwutil := rwutil.NewBytesWriter().Write(addr).Bytes()
 
-	require.Equal(t, len(encOld), len(encNew), addr)
-	require.Equal(t, encOld, encNew, addr)
-	require.Equal(t, encNew, encRwutil, addr)
-	require.Equal(t, len(encNew), len(addr), encNew)
+	require.Equal(t, encBCS, encRwutil, addr)
+	require.Equal(t, len(encBCS), len(addr), encBCS)
 }

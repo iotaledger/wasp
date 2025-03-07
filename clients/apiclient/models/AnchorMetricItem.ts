@@ -10,11 +10,11 @@
  * Do not edit the class manually.
  */
 
-import { Transaction } from '../models/Transaction';
+import { StateAnchor } from '../models/StateAnchor';
 import { HttpFile } from '../http/http';
 
-export class TransactionMetricItem {
-    'lastMessage': Transaction;
+export class AnchorMetricItem {
+    'lastMessage': StateAnchor;
     'messages': number;
     'timestamp': Date;
 
@@ -26,7 +26,7 @@ export class TransactionMetricItem {
         {
             "name": "lastMessage",
             "baseName": "lastMessage",
-            "type": "Transaction",
+            "type": "StateAnchor",
             "format": ""
         },
         {
@@ -43,7 +43,7 @@ export class TransactionMetricItem {
         }    ];
 
     static getAttributeTypeMap() {
-        return TransactionMetricItem.attributeTypeMap;
+        return AnchorMetricItem.attributeTypeMap;
     }
 
     public constructor() {

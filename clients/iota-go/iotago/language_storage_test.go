@@ -5,9 +5,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestTypeTagEncoding(t *testing.T) {

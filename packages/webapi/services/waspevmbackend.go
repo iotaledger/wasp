@@ -56,7 +56,7 @@ func (b *WaspEVMBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error) {
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	// Ensure the transaction has more gas than the basic Ethereum tx fee.
-	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true, true)
+	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), nil, tx.To() == nil, true, true, true)
 	if err != nil {
 		return err
 	}

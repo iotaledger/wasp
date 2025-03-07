@@ -23,8 +23,8 @@ var _ MappedNullable = &StateTransaction{}
 type StateTransaction struct {
 	// The state index
 	StateIndex uint32 `json:"stateIndex"`
-	// The transaction ID
-	TxId string `json:"txId"`
+	// The transaction Digest
+	TxDigest string `json:"txDigest"`
 }
 
 type _StateTransaction StateTransaction
@@ -33,10 +33,10 @@ type _StateTransaction StateTransaction
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStateTransaction(stateIndex uint32, txId string) *StateTransaction {
+func NewStateTransaction(stateIndex uint32, txDigest string) *StateTransaction {
 	this := StateTransaction{}
 	this.StateIndex = stateIndex
-	this.TxId = txId
+	this.TxDigest = txDigest
 	return &this
 }
 
@@ -72,28 +72,28 @@ func (o *StateTransaction) SetStateIndex(v uint32) {
 	o.StateIndex = v
 }
 
-// GetTxId returns the TxId field value
-func (o *StateTransaction) GetTxId() string {
+// GetTxDigest returns the TxDigest field value
+func (o *StateTransaction) GetTxDigest() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.TxId
+	return o.TxDigest
 }
 
-// GetTxIdOk returns a tuple with the TxId field value
+// GetTxDigestOk returns a tuple with the TxDigest field value
 // and a boolean to check if the value has been set.
-func (o *StateTransaction) GetTxIdOk() (*string, bool) {
+func (o *StateTransaction) GetTxDigestOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.TxId, true
+	return &o.TxDigest, true
 }
 
-// SetTxId sets field value
-func (o *StateTransaction) SetTxId(v string) {
-	o.TxId = v
+// SetTxDigest sets field value
+func (o *StateTransaction) SetTxDigest(v string) {
+	o.TxDigest = v
 }
 
 func (o StateTransaction) MarshalJSON() ([]byte, error) {
@@ -107,7 +107,7 @@ func (o StateTransaction) MarshalJSON() ([]byte, error) {
 func (o StateTransaction) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["stateIndex"] = o.StateIndex
-	toSerialize["txId"] = o.TxId
+	toSerialize["txDigest"] = o.TxDigest
 	return toSerialize, nil
 }
 
@@ -117,7 +117,7 @@ func (o *StateTransaction) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"stateIndex",
-		"txId",
+		"txDigest",
 	}
 
 	allProperties := make(map[string]interface{})

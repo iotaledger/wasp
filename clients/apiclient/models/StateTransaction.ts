@@ -18,9 +18,9 @@ export class StateTransaction {
     */
     'stateIndex': number;
     /**
-    * The transaction ID
+    * The transaction Digest
     */
-    'txId': string;
+    'txDigest': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -34,8 +34,8 @@ export class StateTransaction {
             "format": "int32"
         },
         {
-            "name": "txId",
-            "baseName": "txId",
+            "name": "txDigest",
+            "baseName": "txDigest",
             "type": "string",
             "format": "string"
         }    ];

@@ -22,49 +22,24 @@ To not create a mapper for each type, the actual service remains using MetricIte
 This can be removed if we change to swag/echo-swagger
 */
 type (
-	AliasOutputMetricItem         MetricItem[*Output]
+	AnchorMetricItem              MetricItem[*StateAnchor]
 	OnLedgerRequestMetricItem     MetricItem[*OnLedgerRequest]
-	InOutputMetricItem            MetricItem[*InOutput]
-	InStateOutputMetricItem       MetricItem[*InStateOutput]
-	TxInclusionStateMsgMetricItem MetricItem[*TxInclusionStateMsg]
-	TransactionMetricItem         MetricItem[*Transaction]
-	TransactionIDMetricItem       MetricItem[*Transaction]
-	UTXOInputMetricItem           MetricItem[*OutputID]
 	InterfaceMetricItem           MetricItem[interface{}]
 	PublisherStateTransactionItem MetricItem[*StateTransaction]
 	RegisteredChainIDItems        []string
-	MilestoneMetricItem           MetricItem[*MilestoneInfo]
 )
 
 type ChainMessageMetrics struct {
-	InStateOutput      InStateOutputMetricItem       `json:"inStateOutput" swagger:"required"`
-	InAliasOutput      AliasOutputMetricItem         `json:"inAliasOutput" swagger:"required"`
-	InOutput           InOutputMetricItem            `json:"inOutput" swagger:"required"`
-	InOnLedgerRequest  OnLedgerRequestMetricItem     `json:"inOnLedgerRequest" swagger:"required"`
-	InTxInclusionState TxInclusionStateMsgMetricItem `json:"inTxInclusionState" swagger:"required"`
-
-	OutPublishStateTransaction      PublisherStateTransactionItem `json:"outPublisherStateTransaction" swagger:"required"`
-	OutPublishGovernanceTransaction TransactionMetricItem         `json:"outPublishGovernanceTransaction" swagger:"required"`
-	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput" swagger:"required"`
-	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState" swagger:"required"`
-	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID" swagger:"required"`
+	InAnchor                   AnchorMetricItem              `json:"inAnchor" swagger:"required"`
+	InOnLedgerRequest          OnLedgerRequestMetricItem     `json:"inOnLedgerRequest" swagger:"required"`
+	OutPublishStateTransaction PublisherStateTransactionItem `json:"outPublisherStateTransaction" swagger:"required"`
 }
 
 type NodeMessageMetrics struct {
-	RegisteredChainIDs RegisteredChainIDItems `json:"registeredChainIDs" swagger:"required"`
-
-	InMilestone        MilestoneMetricItem           `json:"inMilestone" swagger:"required"`
-	InStateOutput      InStateOutputMetricItem       `json:"inStateOutput" swagger:"required"`
-	InAliasOutput      AliasOutputMetricItem         `json:"inAliasOutput" swagger:"required"`
-	InOutput           InOutputMetricItem            `json:"inOutput" swagger:"required"`
-	InOnLedgerRequest  OnLedgerRequestMetricItem     `json:"inOnLedgerRequest" swagger:"required"`
-	InTxInclusionState TxInclusionStateMsgMetricItem `json:"inTxInclusionState" swagger:"required"`
-
-	OutPublishStateTransaction      PublisherStateTransactionItem `json:"outPublisherStateTransaction" swagger:"required"`
-	OutPublishGovernanceTransaction TransactionMetricItem         `json:"outPublishGovernanceTransaction" swagger:"required"`
-	OutPullLatestOutput             InterfaceMetricItem           `json:"outPullLatestOutput" swagger:"required"`
-	OutPullTxInclusionState         TransactionIDMetricItem       `json:"outPullTxInclusionState" swagger:"required"`
-	OutPullOutputByID               UTXOInputMetricItem           `json:"outPullOutputByID" swagger:"required"`
+	RegisteredChainIDs         RegisteredChainIDItems        `json:"registeredChainIDs" swagger:"required"`
+	InAnchor                   AnchorMetricItem              `json:"inAnchor" swagger:"required"`
+	InOnLedgerRequest          OnLedgerRequestMetricItem     `json:"inOnLedgerRequest" swagger:"required"`
+	OutPublishStateTransaction PublisherStateTransactionItem `json:"outPublisherStateTransaction" swagger:"required"`
 }
 
 func MapMetricItem[T any, G any](metrics *dto.MetricItem[G], value T) MetricItem[T] {
@@ -87,36 +62,18 @@ func MapRegisteredChainIDs(registered []isc.ChainID) []string {
 
 func MapChainMessageMetrics(metrics *dto.ChainMessageMetrics) *ChainMessageMetrics {
 	return &ChainMessageMetrics{
-		InStateOutput:      InStateOutputMetricItem(MapMetricItem(metrics.InStateOutput, InStateOutputFromISCInStateOutput(metrics.InStateOutput.LastMessage))),
-		InAliasOutput:      AliasOutputMetricItem(MapMetricItem(metrics.InAliasOutput, OutputFromIotaGoOutput(metrics.InAliasOutput.LastMessage))),
-		InOutput:           InOutputMetricItem(MapMetricItem(metrics.InOutput, InOutputFromISCInOutput(metrics.InOutput.LastMessage))),
-		InOnLedgerRequest:  OnLedgerRequestMetricItem(MapMetricItem(metrics.InOnLedgerRequest, OnLedgerRequestFromISC(metrics.InOnLedgerRequest.LastMessage))),
-		InTxInclusionState: TxInclusionStateMsgMetricItem(MapMetricItem(metrics.InTxInclusionState, TxInclusionStateMsgFromISCTxInclusionStateMsg(metrics.InTxInclusionState.LastMessage))),
-
-		OutPublishStateTransaction:      PublisherStateTransactionItem(MapMetricItem(metrics.OutPublishStateTransaction, StateTransactionFromISCStateTransaction(metrics.OutPublishStateTransaction.LastMessage))),
-		OutPublishGovernanceTransaction: TransactionMetricItem(MapMetricItem(metrics.OutPublishGovernanceTransaction, TransactionFromIotaGoTransaction(metrics.OutPublishGovernanceTransaction.LastMessage))),
-		OutPullLatestOutput:             InterfaceMetricItem(MapMetricItem(metrics.OutPullLatestOutput, metrics.OutPullLatestOutput.LastMessage)),
-		OutPullTxInclusionState:         TransactionIDMetricItem(MapMetricItem(metrics.OutPullTxInclusionState, TransactionFromIotaGoTransactionID(&metrics.OutPullTxInclusionState.LastMessage))),
-		OutPullOutputByID:               UTXOInputMetricItem(MapMetricItem(metrics.OutPullOutputByID, OutputIDFromIotaGoOutputID(metrics.OutPullOutputByID.LastMessage))),
+		InAnchor:                   AnchorMetricItem(MapMetricItem(metrics.InAnchor, StateAnchorFromISCStateAnchor(metrics.InAnchor.LastMessage))),
+		InOnLedgerRequest:          OnLedgerRequestMetricItem(MapMetricItem(metrics.InOnLedgerRequest, OnLedgerRequestFromISC(metrics.InOnLedgerRequest.LastMessage))),
+		OutPublishStateTransaction: PublisherStateTransactionItem(MapMetricItem(metrics.OutPublishStateTransaction, StateTransactionFromISCStateTransaction(metrics.OutPublishStateTransaction.LastMessage))),
 	}
 }
 
 func MapNodeMessageMetrics(metrics *dto.NodeMessageMetrics) *NodeMessageMetrics {
 	return &NodeMessageMetrics{
-		RegisteredChainIDs: MapRegisteredChainIDs(metrics.RegisteredChainIDs),
-
-		InMilestone:        MilestoneMetricItem(MapMetricItem(metrics.InMilestone, MilestoneFromIotaGoMilestone(metrics.InMilestone.LastMessage))),
-		InStateOutput:      InStateOutputMetricItem(MapMetricItem(metrics.InStateOutput, InStateOutputFromISCInStateOutput(metrics.InStateOutput.LastMessage))),
-		InAliasOutput:      AliasOutputMetricItem(MapMetricItem(metrics.InAliasOutput, OutputFromIotaGoOutput(metrics.InAliasOutput.LastMessage))),
-		InOutput:           InOutputMetricItem(MapMetricItem(metrics.InOutput, InOutputFromISCInOutput(metrics.InOutput.LastMessage))),
-		InOnLedgerRequest:  OnLedgerRequestMetricItem(MapMetricItem(metrics.InOnLedgerRequest, OnLedgerRequestFromISC(metrics.InOnLedgerRequest.LastMessage))),
-		InTxInclusionState: TxInclusionStateMsgMetricItem(MapMetricItem(metrics.InTxInclusionState, TxInclusionStateMsgFromISCTxInclusionStateMsg(metrics.InTxInclusionState.LastMessage))),
-
-		OutPublishStateTransaction:      PublisherStateTransactionItem(MapMetricItem(metrics.OutPublishStateTransaction, StateTransactionFromISCStateTransaction(metrics.OutPublishStateTransaction.LastMessage))),
-		OutPublishGovernanceTransaction: TransactionMetricItem(MapMetricItem(metrics.OutPublishGovernanceTransaction, TransactionFromIotaGoTransaction(metrics.OutPublishGovernanceTransaction.LastMessage))),
-		OutPullLatestOutput:             InterfaceMetricItem(MapMetricItem(metrics.OutPullLatestOutput, metrics.OutPullLatestOutput.LastMessage)),
-		OutPullTxInclusionState:         TransactionIDMetricItem(MapMetricItem(metrics.OutPullTxInclusionState, TransactionFromIotaGoTransactionID(&metrics.OutPullTxInclusionState.LastMessage))),
-		OutPullOutputByID:               UTXOInputMetricItem(MapMetricItem(metrics.OutPullOutputByID, OutputIDFromIotaGoOutputID(metrics.OutPullOutputByID.LastMessage))),
+		RegisteredChainIDs:         MapRegisteredChainIDs(metrics.RegisteredChainIDs),
+		InAnchor:                   AnchorMetricItem(MapMetricItem(metrics.InAnchor, StateAnchorFromISCStateAnchor(metrics.InAnchor.LastMessage))),
+		InOnLedgerRequest:          OnLedgerRequestMetricItem(MapMetricItem(metrics.InOnLedgerRequest, OnLedgerRequestFromISC(metrics.InOnLedgerRequest.LastMessage))),
+		OutPublishStateTransaction: PublisherStateTransactionItem(MapMetricItem(metrics.OutPublishStateTransaction, StateTransactionFromISCStateTransaction(metrics.OutPublishStateTransaction.LastMessage))),
 	}
 }
 
