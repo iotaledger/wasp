@@ -354,6 +354,8 @@ github.com/huin/goupnp v1.3.0/go.mod h1:gnGPsThkYa7bFi/KWmEysQRf48l2dvR5bxr2OFck
 github.com/iancoleman/orderedmap v0.3.0 h1:5cbR2grmZR/DiVt+VJopEhtVs9YGInGIxAoMJn+Ichc=
 github.com/iancoleman/orderedmap v0.3.0/go.mod h1:XuLcCUkdL5owUCQeF2Ue9uuw1EptkJDkXXS7VoV7XGE=
 github.com/ianlancetaylor/demangle v0.0.0-20210905161508-09a460cdf81d/go.mod h1:aYm2/VgdVmcIU8iMfdMvDMsRAQjcfZSKFby6HOFvi/w=
+github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4 h1:aIto4GH4O+y/z2y3gR5UGw2JQaIO+Fu1sR90XPlwoK0=
+github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4/go.mod h1:yTxBDTSAbTPf9Xz0JAiBTVRM9RlJCCZd6amEA85L6ac=
 github.com/iotaledger/go-ethereum v1.15.5-wasp1 h1:MlwX0FvZiErZcR6TjyZrZ1yMXThVNZfCGNdIMEjWZ7I=
 github.com/iotaledger/go-ethereum v1.15.5-wasp1/go.mod h1:1LG2LnMOx2yPRHR/S+xuipXH29vPr6BIH6GElD8N/fo=
 github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 h1:dTrD7X2PTNgli6EbS4tV9qu3QAm/kBU3XaYZV2xdzys=
@@ -362,8 +364,8 @@ github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2 h1:7bTc69Vq
 github.com/iotaledger/hive.go/app v0.0.0-20240319170702-c7591bb5f9f2/go.mod h1:8ZbIKR84oQd/3iQ5eeT7xpudO9/ytzXP7veIYnk7Orc=
 github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230417125513-e2e89991217f h1:7WLntDniah8KzA5XLb4hwhtR+gR+UYIot9gDpXPJ824=
 github.com/iotaledger/hive.go/apputils v1.0.0-rc.1.0.20230417125513-e2e89991217f/go.mod h1:07HqeSxRXp/JFguDfDH4jb+dwDJ/jIE4xZ0iTMtSrGc=
-github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2 h1:e6xpjV6XdDFlROqKodsxyqUloDFMu3/4hysGzWLgKks=
-github.com/iotaledger/hive.go/constraints v0.0.0-20240319170702-c7591bb5f9f2/go.mod h1:dOBOM2s4se3HcWefPe8sQLUalGXJ8yVXw58oK8jke3s=
+github.com/iotaledger/hive.go/constraints v0.0.0-20240520064018-c635e5900894 h1:T8Ajx7h46fbyrd+G8aJZdHJkX2S7Rc/fNe5yXtGB1mQ=
+github.com/iotaledger/hive.go/constraints v0.0.0-20240520064018-c635e5900894/go.mod h1:JF7jjkL6tSUOXm23SWadBzBrl7eJk1DQRLc/fNoVZ+o=
 github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2 h1:dKjT8wHtkbB4YKznFYMBWh6E7CzA22l/309xXtPxqzQ=
 github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2/go.mod h1:h3o6okvMSEK3KOX6pOp3yq1h9ohTkTfo6X8MzEadeb0=
 github.com/iotaledger/hive.go/ds v0.0.0-20240319170702-c7591bb5f9f2 h1:azKCUVlDxriUM3EyqtEkUPWp846iF3JzL+UERcmFFHE=
