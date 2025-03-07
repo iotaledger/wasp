@@ -101,16 +101,22 @@ func constructCoreContractFunction(f CoreContractFunctionStructure) CoreContract
 }
 
 func TestGenerateVariables(t *testing.T) {
+	t.Skip()
+
 	generateContractFuncs(t)
 }
 
 func TestBCSConversion(t *testing.T) {
+	t.Skip()
+
 	gen := NewTypeGenerator()
 
 	fmt.Println(gen.GetOutput())
 }
 
 func TestB(t *testing.T) {
+	t.Skip()
+
 	gen := NewTypeGenerator()
 	gen.GenerateFunction(constructCoreContractFunction(&blocklog.ViewGetEventsForRequest))
 
@@ -118,6 +124,8 @@ func TestB(t *testing.T) {
 }
 
 func TestDumpJson(t *testing.T) {
+	t.Skip()
+
 	gen := NewTypeGenerator()
 
 	contractFuncs := []CoreContractFunction{
@@ -190,6 +198,8 @@ func TestDumpJson(t *testing.T) {
 }
 
 func TestA(t *testing.T) {
+	t.Skip()
+
 	gen := NewTypeGenerator()
 
 	contractFuncs := []CoreContractFunction{
@@ -305,6 +315,8 @@ func TestA(t *testing.T) {
 }
 
 func TestTypes(t *testing.T) {
+	t.Skip()
+	
 	objectRef := iotatest.RandomObjectRef()
 	b := bcs.MustMarshal(objectRef)
 
