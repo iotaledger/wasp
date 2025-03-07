@@ -34,7 +34,7 @@ func EVMEstimateGas(
 ) (uint64, error) { //nolint:gocyclo,funlen
 	chainID := anchor.ChainID()
 	// Determine the lowest and highest possible gas limits to binary search in between
-	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, call.To == nil, true, true, true)
+	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, nil, call.To == nil, true, true, true)
 	if err != nil {
 		return 0, err
 	}

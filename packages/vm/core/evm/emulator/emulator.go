@@ -185,23 +185,25 @@ func (e *EVMEmulator) CallGasLimit() uint64 {
 
 func (e *EVMEmulator) ChainContext() core.ChainContext {
 	return &chainContext{
-		engine: ethash.NewFaker(),
+		emulator: e,
+		engine:   ethash.NewFaker(),
 	}
 }
 
 func coreMsgFromCallMsg(call ethereum.CallMsg, gasEstimateMode bool, statedb *StateDB) *core.Message {
 	return &core.Message{
-		To:                call.To,
-		From:              call.From,
-		Nonce:             statedb.GetNonce(call.From),
-		Value:             call.Value,
-		GasLimit:          call.Gas,
-		GasPrice:          call.GasPrice,
-		GasFeeCap:         call.GasFeeCap,
-		GasTipCap:         call.GasTipCap,
-		Data:              call.Data,
-		AccessList:        call.AccessList,
-		SkipAccountChecks: gasEstimateMode,
+		To:               call.To,
+		From:             call.From,
+		Nonce:            statedb.GetNonce(call.From),
+		Value:            call.Value,
+		GasLimit:         call.Gas,
+		GasPrice:         call.GasPrice,
+		GasFeeCap:        call.GasFeeCap,
+		GasTipCap:        call.GasTipCap,
+		Data:             call.Data,
+		AccessList:       call.AccessList,
+		SkipNonceChecks:  gasEstimateMode,
+		SkipFromEOACheck: gasEstimateMode,
 	}
 }
 
@@ -246,19 +248,18 @@ func (e *EVMEmulator) applyMessage(
 
 	blockContext := core.NewEVMBlockContext(header, e.ChainContext(), nil)
 	blockContext.BaseFee = new(big.Int)
-	txContext := core.NewEVMTxContext(msg)
 
 	vmConfig := e.vmConfig
 	vmConfig.Tracer = tracer
 
-	vmEnv := vm.NewEVM(blockContext, txContext, statedb, e.chainConfig, vmConfig)
+	vmEnv := vm.NewEVM(blockContext, statedb, e.chainConfig, vmConfig)
 
 	if msg.GasLimit > e.ctx.GasLimits().Call {
 		msg.GasLimit = e.ctx.GasLimits().Call
 	}
 
 	gasPool := core.GasPool(msg.GasLimit)
-	vmEnv.Reset(txContext, statedb)
+	vmEnv.SetTxContext(core.NewEVMTxContext(msg))
 
 	if onTxStart != nil {
 		onTxStart(vmEnv)
@@ -299,7 +300,11 @@ func (e *EVMEmulator) SendTransaction(
 	tracer *tracing.Hooks,
 	addToBlockchain ...bool,
 ) (receipt *types.Receipt, result *core.ExecutionResult, err error) {
-	statedb := e.StateDB()
+	statedbImpl := e.StateDB()
+	var statedb vm.StateDB = statedbImpl
+	if tracer != nil {
+		statedb = NewHookedState(statedbImpl, tracer)
+	}
 	pendingHeader := e.BlockchainDB().GetPendingHeader(e.ctx.Timestamp())
 
 	sender, err := types.Sender(e.Signer(), tx)
@@ -341,9 +346,9 @@ func (e *EVMEmulator) SendTransaction(
 		Type:              tx.Type(),
 		CumulativeGasUsed: cumulativeGasUsed,
 		GasUsed:           gasUsed,
-		Logs:              statedb.GetLogs(),
+		Logs:              statedbImpl.GetLogs(),
 	}
-	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+	receipt.Bloom = types.CreateBloom(receipt)
 
 	if result == nil || result.Failed() {
 		receipt.Status = types.ReceiptStatusFailed
@@ -376,7 +381,8 @@ func (e *EVMEmulator) Signer() types.Signer {
 }
 
 type chainContext struct {
-	engine consensus.Engine
+	emulator *EVMEmulator
+	engine   consensus.Engine
 }
 
 var _ core.ChainContext = &chainContext{}
@@ -387,4 +393,8 @@ func (c *chainContext) Engine() consensus.Engine {
 
 func (c *chainContext) GetHeader(common.Hash, uint64) *types.Header {
 	panic("not implemented")
+}
+
+func (c *chainContext) Config() *params.ChainConfig {
+	return c.emulator.chainConfig
 }
