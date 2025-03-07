@@ -35,12 +35,14 @@ func SplitMapKey[T ~string | ~[]byte](storeKey T, prefixToRemove ...string) (map
 	return storeKey, T("")
 }
 
-func GetMapElemPrefix[T ~string | ~[]byte](key T) (T, bool) {
+func GetMapElemPrefixes[T ~string | ~[]byte](key T) []T {
+	prefixes := make([]T, 0, 1)
+
 	for i := 0; i < len(key); i++ {
 		if key[i] == '.' {
-			return key[:i+1], true
+			prefixes = append(prefixes, key[:i+1])
 		}
 	}
 
-	return key, false
+	return prefixes
 }
