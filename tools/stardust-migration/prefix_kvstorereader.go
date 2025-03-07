@@ -10,12 +10,13 @@ import (
 	"github.com/samber/lo"
 )
 
-func NewPrefixKVStore(s old_kv.KVStore) *PrefixKVStore {
+func NewPrefixKVStore(s old_kv.KVStore, prefixFromKey func(key old_kv.Key) []byte) *PrefixKVStore {
 	prefixesTrieStore := old_trietest.NewInMemoryKVStore()
 	prefixesTrie := lo.Must(old_trie.NewTrieUpdatable(prefixesTrieStore, old_trie.MustInitRoot(prefixesTrieStore)))
 
 	return &PrefixKVStore{
 		s:                 s,
+		prefixFromKey:     prefixFromKey,
 		prefixesTrieStore: prefixesTrieStore,
 		prefixesTrie:      prefixesTrie,
 		recordsByPrefix:   map[string]map[string][]byte{},
@@ -24,6 +25,7 @@ func NewPrefixKVStore(s old_kv.KVStore) *PrefixKVStore {
 
 type PrefixKVStore struct {
 	s                 old_kv.KVStore
+	prefixFromKey     func(key old_kv.Key) []byte
 	prefixesTrieStore old_trie.KVStore
 	prefixesTrie      *old_trie.TrieUpdatable
 	recordsByPrefix   map[string]map[string][]byte
@@ -56,16 +58,34 @@ func (s *PrefixKVStore) RegisterPrefix(prefix string, subrealms ...any) {
 		prefix = prefixWithSubrealms + prefix
 	}
 
-	if s.recordsByPrefix[prefix] == nil {
+	_ = s.registerPrefix(prefix)
+}
+
+func (s *PrefixKVStore) registerPrefix(prefix string) map[string][]byte {
+	prefixRecords := s.recordsByPrefix[prefix]
+
+	if prefixRecords == nil {
+		prefixRecords = map[string][]byte{}
+		s.recordsByPrefix[prefix] = prefixRecords
 		s.prefixesTrie.UpdateStr(prefix, prefix)
 		s.prefixesTrie.Commit(s.prefixesTrieStore)
-
-		s.recordsByPrefix[prefix] = map[string][]byte{}
 	}
+
+	return prefixRecords
 }
 
 func (s *PrefixKVStore) Set(key old_kv.Key, value []byte) {
 	s.s.Set(key, value)
+
+	if s.prefixFromKey != nil {
+		prefixFromKey := s.prefixFromKey(key)
+		if prefixFromKey != nil {
+			prefixRecords := s.registerPrefix(string(prefixFromKey))
+			prefixRecords[string(key)] = value
+			// ignoring other keys for performance
+			return
+		}
+	}
 
 	matchedPrefixes := s.prefixesTrie.GetAllMatches([]byte(key))
 
@@ -76,6 +96,25 @@ func (s *PrefixKVStore) Set(key old_kv.Key, value []byte) {
 
 func (s *PrefixKVStore) Del(key old_kv.Key) {
 	s.s.Del(key)
+
+	if s.prefixFromKey != nil {
+		prefixFromKey := s.prefixFromKey(key)
+		if prefixFromKey != nil {
+			prefixRecords := s.recordsByPrefix[string(prefixFromKey)]
+			if prefixRecords != nil {
+				delete(prefixRecords, string(key))
+
+				if len(prefixRecords) == 0 {
+					delete(s.recordsByPrefix, string(prefixFromKey))
+					s.prefixesTrie.DeleteStr(string(prefixFromKey))
+					s.prefixesTrie.Commit(s.prefixesTrieStore)
+				}
+			}
+
+			// ignoring other keys for performance
+			return
+		}
+	}
 
 	matchedPrefixes := s.prefixesTrie.GetAllMatches([]byte(key))
 	for _, prefix := range matchedPrefixes {
@@ -94,10 +133,16 @@ func (s *PrefixKVStore) Has(key old_kv.Key) bool {
 func (s *PrefixKVStore) Iterate(prefix old_kv.Key, f func(key old_kv.Key, value []byte) bool) {
 	prefixRecords, prefixKnown := s.recordsByPrefix[string(prefix)]
 	if !prefixKnown {
+		if s.prefixFromKey != nil {
+			prefixFromKey := s.prefixFromKey(prefix)
+			if prefixFromKey != nil && old_kv.Key(prefixFromKey) == prefix {
+				// prefix is valid, but no records
+				return
+			}
+		}
+
 		panic(fmt.Sprintf("Prefix not registered: %v", prefix))
 	}
-
-	fmt.Println("XXX", prefixRecords)
 
 	for key, value := range prefixRecords {
 		if !f(old_kv.Key(key), value) {
@@ -109,6 +154,14 @@ func (s *PrefixKVStore) Iterate(prefix old_kv.Key, f func(key old_kv.Key, value 
 func (s *PrefixKVStore) IterateKeys(prefix old_kv.Key, f func(key old_kv.Key) bool) {
 	prefixRecords, prefixKnown := s.recordsByPrefix[string(prefix)]
 	if !prefixKnown {
+		if s.prefixFromKey != nil {
+			prefixFromKey := s.prefixFromKey(prefix)
+			if prefixFromKey != nil && old_kv.Key(prefixFromKey) == prefix {
+				// prefix is valid, but no records
+				return
+			}
+		}
+
 		panic(fmt.Sprintf("Prefix not registered: %v", prefix))
 	}
 

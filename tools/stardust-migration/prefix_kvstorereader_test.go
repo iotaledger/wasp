@@ -10,7 +10,7 @@ import (
 )
 
 func TestPrefixKVStoreReader(t *testing.T) {
-	s := NewPrefixKVStore(old_dict.New())
+	s := NewPrefixKVStore(old_dict.New(), nil)
 
 	require.Panics(t, func() {
 		s.Iterate("", func(key old_kv.Key, value []byte) bool { return true })
