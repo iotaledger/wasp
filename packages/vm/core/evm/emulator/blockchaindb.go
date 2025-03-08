@@ -4,15 +4,15 @@
 package emulator
 
 import (
-	"bytes"
 	"fmt"
+	"io"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 
-	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -233,11 +233,41 @@ func makeHeader(h *types.Header) *header {
 
 // note we do not check for excess data bytes because the old format was longer
 func mustHeaderFromBytes(data []byte) (ret *header) {
-	return bcs.MustUnmarshalStream[*header](bytes.NewReader(data))
+	rr := rwutil.NewBytesReader(data)
+	ret = new(header)
+	rr.Read(ret)
+	if rr.Err != nil {
+		panic(rr.Err)
+	}
+	return ret
+}
+
+func (h *header) Read(r io.Reader) error {
+	rr := rwutil.NewReader(r)
+	rr.ReadN(h.Hash[:])
+	h.GasLimit = rr.ReadGas64()
+	h.GasUsed = rr.ReadGas64()
+	h.Time = rr.ReadUint64()
+	rr.ReadN(h.TxHash[:])
+	rr.ReadN(h.ReceiptHash[:])
+	rr.ReadN(h.Bloom[:])
+	return rr.Err
+}
+
+func (h *header) Write(w io.Writer) error {
+	ww := rwutil.NewWriter(w)
+	ww.WriteN(h.Hash[:])
+	ww.WriteGas64(h.GasLimit)
+	ww.WriteGas64(h.GasUsed)
+	ww.WriteUint64(h.Time)
+	ww.WriteN(h.TxHash[:])
+	ww.WriteN(h.ReceiptHash[:])
+	ww.WriteN(h.Bloom[:])
+	return ww.Err
 }
 
 func (h *header) Bytes() []byte {
-	return bcs.MustMarshal(h)
+	return rwutil.WriteToBytes(h)
 }
 
 func (bc *BlockchainDB) makeEthereumHeader(g *header, blockNumber uint64) *types.Header {

@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/bcs-go"
 )
 
 func init() {
@@ -50,9 +50,13 @@ func init() {
 }
 
 func EncodeTransaction(tx *types.Transaction) []byte {
-	return bcs.MustMarshal(tx)
+	w := new(bytes.Buffer)
+	_ = tx.EncodeRLP(w)
+	return w.Bytes()
 }
 
-func DecodeTransaction(data []byte) (*types.Transaction, error) {
-	return bcs.Unmarshal[*types.Transaction](data)
+func DecodeTransaction(b []byte) (*types.Transaction, error) {
+	tx := new(types.Transaction)
+	err := tx.DecodeRLP(rlp.NewStream(bytes.NewReader(b), 0))
+	return tx, err
 }
