@@ -6,12 +6,12 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"runtime"
-	"runtime/debug"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/dgravesa/go-parallel/parallel"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
@@ -31,7 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 )
@@ -132,17 +131,6 @@ func printMemUsage() {
 	fmt.Printf("Memory usage: %.2fMB (Allocated) %.2fMB (System)\n", allocatedMB, systemMB)
 }
 
-func createNewDestStore(store *stateaccess.CityMap) (indexedstore.IndexedStore, *stateaccess.CityMap) {
-	newKVStore := stateaccess.NewCityMapWithData(store.Clone())
-
-	runtime.GC()
-	debug.FreeOSMemory()
-
-	newStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(newKVStore))
-
-	return newStore, newKVStore
-}
-
 func TestMigrateBlocklog(t *testing.T) {
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
@@ -152,7 +140,7 @@ func TestMigrateBlocklog(t *testing.T) {
 	indexFilePath := "/home/luke/dev/wasp_stardust_mainnet/trie_db.bcs"
 	srcStore, trieRoots := initSetup(srcDbPath, indexFilePath)
 
-	destKVDB := stateaccess.NewCityMap()
+	destKVDB := mapdb.NewMapDB()
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVDB))
 
 	// Coming from packages/origin/origin.go InitChain()
@@ -204,21 +192,7 @@ func TestMigrateBlocklog(t *testing.T) {
 
 			fmt.Printf("Free memory: %d, total memory: %d\n", freeMemory, totalMemory)
 		}
-
-		if i > 0 && i%10000 == 0 {
-			fmt.Printf("\n\n\nCreating new dest store (flushing memory) at index: %d\n\n", i)
-			newdestStore, newdestKVDB := createNewDestStore(destKVDB)
-			destKVDB.Clear()
-			destKVDB.Close()
-			destKVDB = nil
-			destStore = nil
-
-			destStore = newdestStore
-			destKVDB = newdestKVDB
-
-			fmt.Printf("\n\n\nDone: %d\n\n", i)
-			printMemUsage()
-		}
+		
 	}
 
 	fmt.Printf("Time start: %s, time now: %s\nDONE!", now.String(), time.Now().String())

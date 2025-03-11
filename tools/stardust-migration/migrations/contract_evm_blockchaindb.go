@@ -44,7 +44,7 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	newBlockChain.Set(emulator.KeyChainID, chainID)
 
 	// Migrate KeyBlockNumberByBlockHash
-	// Data can be just copied over
+	// (common.Hash:uint64) can be just copied over
 	oldBlockChain.IterateSorted(old_emulator.KeyBlockNumberByBlockHash, func(key old_kv.Key, value []byte) bool {
 		keyWithoutPrefix := []byte(key[len(old_emulator.KeyBlockIndexByTxHash):])
 		if len(keyWithoutPrefix) != common.HashLength {
@@ -85,16 +85,23 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		// Force decoding of the number to validate
 		old_codec.MustDecodeUint64(keyWithoutPrefix[:8])
 		// KeyReceiptsByBlockNumber is an array.
-		// If the len of the key (Without prefix) is just 8 bytes, it's the key containing the length of the array.
+		// If the len of the key (Without prefix) is just 8 bytes (uint64 len), it's the key containing the length of the array.
 		// Port it over as is.
 		if len(keyWithoutPrefix) == 8 {
 			newBlockChain.Set(kv.Key(key), value)
 			return true
 		}
-		// Otherwise the length of the key (without prefix) is 10. Consisting out of BlockNumber.ArrayIndex
+
+		// Otherwise the length of the key (without prefix) is 10 (uint64+uint16). Consisting out of BlockNumber.ArrayIndex
 		// If it is not 10, panic for now.
 		if len(keyWithoutPrefix) != 10 {
 			panic(fmt.Errorf("failed to migrate %s, invalid key length", "KeyTransactionsByBlockNumber"))
+		}
+
+		// TODO: This was caught after block 10000, probably pruning in play?
+		if value == nil {
+			newBlockChain.Set(kv.Key(key), nil)
+			return true
 		}
 
 		tx, err := old_evm_types.DecodeTransaction(value)
@@ -111,7 +118,15 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	// Migrate KeyBlockHeaderByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		blockNumber := old_codec.MustDecodeUint64([]byte(key[len(old_emulator.KeyBlockHeaderByBlockNumber):]))
-		oldHeader := old_emulator.MustHeaderFromBytes(value)
+		if value == nil {
+			newBlockChain.Set(kv.Key(key), value)
+			return true
+		}
+
+		oldHeader, err := old_emulator.HeaderFromBytes(value)
+		if err != nil {
+			panic(fmt.Errorf("failed to decode header of old evm type: %v", err))
+		}
 
 		newHeader := emulator.Header{
 			Hash:        oldHeader.Hash,
@@ -134,24 +149,18 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		old_codec.MustDecodeUint64(keyWithoutPrefix[:8])
 
 		// KeyReceiptsByBlockNumber is an array.
-		// If the len of the key (Without prefix) is just 8 bytes, it's the key containing the length of the array.
+		// If the len of the key (Without prefix) is just 8 bytes (uint64 len), it's the key containing the length of the array.
 		// Port it over as is.
 		if len(keyWithoutPrefix) == 8 {
 			newBlockChain.Set(kv.Key(key), value)
 			return true
 		}
 
-		// Otherwise the length of the key (without prefix) is 10. Consisting out of BlockNumber.ArrayIndex
+		// Otherwise the length of the key (without prefix) is 10 (uint64+uint16). Consisting out of BlockNumber.ArrayIndex
 		// If it is not 10, panic for now.
 		if len(keyWithoutPrefix) != 10 {
 			panic("unsupported receipt key length")
 		}
-
-		/* Seems like the uint64 is encoded equally between old and new codec, so we can reuse the old key as is.
-		newKey := []byte(emulator.MakeReceiptsByBlockNumberKey(blockNumber))
-		newKey = append(newKey, keyWithoutPrefix[8:]...) // Select the last two bytes for the index
-		fmt.Printf("%v\n%v", []byte(key)[:], newKey[:])
-		*/
 
 		oldReceipt, err := old_evm_types.DecodeReceipt(value)
 		if err != nil {

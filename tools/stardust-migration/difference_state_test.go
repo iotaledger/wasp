@@ -5,6 +5,7 @@ import (
 	_ "net/http/pprof"
 	"testing"
 
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 )
@@ -27,7 +27,7 @@ func TestDifferences(t *testing.T) {
 	indexFilePath := "/home/luke/dev/wasp_stardust_mainnet/trie_db.bcs"
 	srcStore, _ := initSetup(srcDbPath, indexFilePath)
 
-	destKVDB := stateaccess.NewCityMap()
+	destKVDB := mapdb.NewMapDB()
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVDB))
 
 	oldState := lo.Must(srcStore.StateByIndex(1))

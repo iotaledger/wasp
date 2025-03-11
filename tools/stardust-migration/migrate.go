@@ -108,16 +108,17 @@ func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
 	// For testing, this is not of much relevance but for the real deployment we need real values.
 	// So for now return a more or less random configuration
 
-	const debug = false
+	const debug = true
+
 	if debug {
 		// This comes from the default InitChain init params.
-		committeeAddress := lo.Must(cryptolib.AddressFromHex("0x92caa380e78d6c4c5229d0be5c1d55d086a56961b83eaf736d8bd16456e1c6d8"))
-		chainOwnerAddress := lo.Must(cryptolib.AddressFromHex("0x55d7503847b5484b318e113f98905e4a1b4da50931f96d5b93223e4bae710175"))
+		committeeAddress := lo.Must(cryptolib.AddressFromHex("0x91ac9fb46a35b87a71067f3feb7e227d216ce8fc31e1943fe0a9ba2361df9221"))
+		chainOwnerAddress := lo.Must(cryptolib.AddressFromHex("0xfa82a632d8cd8a36d1c639cedba7104486ab9b340c8e61636c7c00637324358e"))
 
 		// ChainID == AnchorID (This ID is an existing object on Alphanet)
-		chainID := lo.Must(iotago.ObjectIDFromHex("0x64702b66ade80586f6994ab5f3b573ea5977aeac0f1a292fb99ac5ee8a8fbcb1"))
-		assetsBagID := lo.Must(iotago.ObjectIDFromHex("0x34dfb08ea4e730bba0e925aef3f53b209b52eb044a4971b2fe27b62984be8c95"))
-		gasCoinObjectID := lo.Must(iotago.ObjectIDFromHex("0x0824b5cd76fe0c08ac25d42b875363011e6df0805a76444b933886af26299870"))
+		chainID := lo.Must(iotago.ObjectIDFromHex("0x6513b7653d9f9dd752c9f9b04bc4cf59561731cafd9414ebaf7d261a8259a01d"))
+		assetsBagID := lo.Must(iotago.ObjectIDFromHex("0x5eb6f701906db963ad697fa34b486470e56f7dadb585cf1f087dacd81c8cc4f8"))
+		gasCoinObjectID := lo.Must(iotago.ObjectIDFromHex("0x54021a41a13efec24b39a237f9f9abe9dd7a334b363e767dd0fc83455e449c02"))
 
 		return &isc_migration.PrepareConfiguration{
 			ChainOwner:          chainOwnerAddress,
@@ -294,6 +295,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata)
 		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
 
+		fmt.Printf("Block: %d\n", blockIndex)
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
 
