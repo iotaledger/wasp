@@ -167,7 +167,7 @@ func TestMigrateBlocklog(t *testing.T) {
 
 		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, oldChainID, newChainID, &transaction.StateMetadata{
 			L1Commitment: block.L1Commitment(),
-		})
+		}, nil)
 
 		// Handle deletions
 		// Here its easy, because the key remains the same for both databases
@@ -192,7 +192,7 @@ func TestMigrateBlocklog(t *testing.T) {
 
 			fmt.Printf("Free memory: %d, total memory: %d\n", freeMemory, totalMemory)
 		}
-		
+
 	}
 
 	fmt.Printf("Time start: %s, time now: %s\nDONE!", now.String(), time.Now().String())

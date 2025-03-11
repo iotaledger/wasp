@@ -193,6 +193,7 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 		AssetsBagID:         assetsBagRef.ObjectID,
 		GasCoinID:           &gasCoin,
 		ChainOwner:          kp.Address(),
+		PackageID:           packageID,
 	}
 
 	fmt.Println("Preparation finished:")

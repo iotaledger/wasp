@@ -111,6 +111,13 @@ func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
 	const debug = true
 
 	if debug {
+		config := "{\n  \"DKGCommitteeAddress\": \"0xa9e6c46acc90beec5c5ebe6c7273517861b399496c38d748cd84957eb551515b\",\n  \"ChainOwner\": \"0xf186fb4a9c807311d08b20621c77ae471117f4f4c4ebfd403405c604beafa08e\",\n  \"AssetsBagID\": \"0x564653223f41f7a7a00c56e35cad24c2fb66466b7cdd38d53fd3e58fc53e4e3c\",\n  \"GasCoinID\": \"0xd30c7853ec8486671153bd9f6a3c4c2cfa9a6d88b50018ff73f665876404d809\",\n  \"AnchorID\": \"0x2bc9ef026dfd9536880aace330f0f2c4bd5c7f37bef4b4483ab9ec611f013efb\",\n  \"PackageID\": \"0x7b117bb7cf4f77f33ec527d682647cc0c050de48ce2bbd66f332394bdffcd099\"\n}"
+		var prepareConfig isc_migration.PrepareConfiguration
+		if err := json.Unmarshal([]byte(config), &prepareConfig); err != nil {
+			panic(fmt.Errorf("error parsing migration_preparation.json: %v", err))
+		}
+		return &prepareConfig
+
 		// This comes from the default InitChain init params.
 		committeeAddress := lo.Must(cryptolib.AddressFromHex("0x91ac9fb46a35b87a71067f3feb7e227d216ce8fc31e1943fe0a9ba2361df9221"))
 		chainOwnerAddress := lo.Must(cryptolib.AddressFromHex("0xfa82a632d8cd8a36d1c639cedba7104486ab9b340c8e61636c7c00637324358e"))
@@ -119,6 +126,7 @@ func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
 		chainID := lo.Must(iotago.ObjectIDFromHex("0x6513b7653d9f9dd752c9f9b04bc4cf59561731cafd9414ebaf7d261a8259a01d"))
 		assetsBagID := lo.Must(iotago.ObjectIDFromHex("0x5eb6f701906db963ad697fa34b486470e56f7dadb585cf1f087dacd81c8cc4f8"))
 		gasCoinObjectID := lo.Must(iotago.ObjectIDFromHex("0x54021a41a13efec24b39a237f9f9abe9dd7a334b363e767dd0fc83455e449c02"))
+		packageID := lo.Must(iotago.PackageIDFromHex("0x28076f17da77e3cc7a0a8d5746b3480204fb0aa20afa00f7275bee88fb83eb89"))
 
 		return &isc_migration.PrepareConfiguration{
 			ChainOwner:          chainOwnerAddress,
@@ -126,6 +134,7 @@ func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
 			AnchorID:            chainID,
 			GasCoinID:           gasCoinObjectID,
 			AssetsBagID:         assetsBagID,
+			PackageID:           *packageID,
 		}
 	}
 
@@ -204,7 +213,7 @@ func migrateAllStates(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, oldChainID, newChainID, _, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	srcStore, destStore, oldChainID, newChainID, prepareConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
 
 	// // Trie-based state
@@ -292,7 +301,7 @@ func migrateAllStates(c *cmd.Context) error {
 		newState.StopMarking()
 		newState.DeleteMarkedIfNotSet()
 
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata, prepareConfig)
 		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
 
 		fmt.Printf("Block: %d\n", blockIndex)
@@ -301,12 +310,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 		newMuts := newState.Commit(true)
 
-		var nextStateDraft state.StateDraft
-		if stateMetadata.L1Commitment == nil || stateMetadata.L1Commitment.IsZero() {
-			nextStateDraft = destStore.NewOriginStateDraft()
-		} else {
-			nextStateDraft = lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
-		}
+		nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
 
 		newMuts.ApplyTo(nextStateDraft)
 		newBlock = destStore.Commit(nextStateDraft)
@@ -354,7 +358,6 @@ func migrateAllStates(c *cmd.Context) error {
 
 	cli.Logf("Finished at Index: %d\n", newBlock.StateIndex())
 	writeMigrationResult(stateMetadata, newBlock.StateIndex())
-
 	return nil
 }
 

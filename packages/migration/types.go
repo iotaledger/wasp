@@ -14,6 +14,7 @@ type PrepareConfiguration struct {
 	AssetsBagID         *iotago.ObjectID
 	GasCoinID           *iotago.ObjectID
 	AnchorID            *iotago.ObjectID
+	PackageID           iotago.PackageID
 }
 
 type MigrationResult struct {

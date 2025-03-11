@@ -40,7 +40,7 @@ func TestDifferences(t *testing.T) {
 	})
 
 	destStateDraft := destStore.NewOriginStateDraft()
-	migrations.MigrateBlocklogContract(oldState, destStateDraft, old_isc.ChainID{}, isc.ChainID{}, &transaction.StateMetadata{})
+	migrations.MigrateBlocklogContract(oldState, destStateDraft, old_isc.ChainID{}, isc.ChainID{}, &transaction.StateMetadata{}, nil)
 	newContractState := newstate.GetContactState(destStateDraft, blocklog.Contract.Hname())
 
 	fmt.Println("NEW STATE")

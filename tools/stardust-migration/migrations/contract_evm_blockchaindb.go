@@ -36,12 +36,16 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	// Migrate KeyNumber
 	// old / new codec Uint64 are compatible, so can be moved over as is.
 	number := oldBlockChain.Get(old_emulator.KeyNumber)
-	newBlockChain.Set(old_emulator.KeyNumber, number)
+	if number != nil {
+		newBlockChain.Set(emulator.KeyNumber, number)
+	}
 
 	// Migrate KeyChainID
 	// old / new codec Uint16 are compatible, so can be moved over as is.
 	chainID := oldBlockChain.Get(old_emulator.KeyChainID)
-	newBlockChain.Set(emulator.KeyChainID, chainID)
+	if chainID != nil {
+		newBlockChain.Set(emulator.KeyChainID, chainID)
+	}
 
 	// Migrate KeyBlockNumberByBlockHash
 	// (common.Hash:uint64) can be just copied over

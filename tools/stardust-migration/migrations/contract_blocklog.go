@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -32,7 +33,7 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
-func migrateBlockRegistry(blockIndex uint32, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
+func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareConfiguration, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(blockIndex + 1)
 
@@ -74,21 +75,21 @@ func migrateBlockRegistry(blockIndex uint32, stateMetadata *transaction.StateMet
 	// The following two structs will need some love regarding IDs, but we probably can fake most of them
 	migrationStateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
 		Object: &iscmove.Anchor{
-			Assets: iscmove.Referent[iscmove.AssetsBag]{ID: iotago.ObjectID{}, Value: &iscmove.AssetsBag{
+			Assets: iscmove.Referent[iscmove.AssetsBag]{ID: *prepareConfig.AssetsBagID, Value: &iscmove.AssetsBag{
 				ID:   iotago.ObjectID{},
 				Size: 0,
 			}},
-			ID:            iotago.ObjectID{},
+			ID:            *prepareConfig.AnchorID,
 			StateIndex:    blockIndex,
 			StateMetadata: stateMetadata.Bytes(),
 		},
 		ObjectRef: iotago.ObjectRef{
-			ObjectID: &iotago.ObjectID{},
+			ObjectID: prepareConfig.AnchorID,
 			Digest:   iotago.DigestFromBytes([]byte("MIGRATED")),
 			Version:  0,
 		},
-		Owner: &iotago.Address{},
-	}, iotago.PackageID{})
+		Owner: prepareConfig.ChainOwner.AsIotaAddress(),
+	}, prepareConfig.PackageID)
 
 	newBlockInfo := blocklog.BlockInfo{
 		GasFeeCharged:         coin.Value(oldBlockInfo.GasFeeCharged),
@@ -235,13 +236,13 @@ func migrateGlobalVars(oldState old_kv.KVStoreReader, newState kv.KVStore) uint3
 	return oldBlockIndex
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, stateMetadata *transaction.StateMetadata) blocklog.BlockInfo {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, stateMetadata *transaction.StateMetadata, prepareConfig *migration.PrepareConfiguration) blocklog.BlockInfo {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
 	//printWarningsForUnprocessableRequests(oldContractState)
 	blockIndex := migrateGlobalVars(oldChainState, newChainState)
-	blockInfo := migrateBlockRegistry(blockIndex, stateMetadata, oldContractState, newContractState)
+	blockInfo := migrateBlockRegistry(blockIndex, prepareConfig, stateMetadata, oldContractState, newContractState)
 	migrateRequestLookupIndex(oldContractState, newContractState)
 	migrateRequestReceipts(oldContractState, newContractState, oldChainID, newChainID)
 
