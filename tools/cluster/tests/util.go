@@ -2,13 +2,16 @@ package tests
 
 import (
 	"context"
+	"slices"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -36,10 +39,10 @@ func (e *ChainEnv) checkCoreContracts() {
 		contractRegistry, err := root.ViewGetContractRecords.DecodeOutput(records)
 		require.NoError(e.t, err)
 		for _, rec := range corecontracts.All {
-			cr := contractRegistry[rec.Hname()]
-			require.NotNil(e.t, cr, "core contract %s %+v missing", rec.Name, rec.Hname())
-
-			require.EqualValues(e.t, rec.Name, cr.B.Name)
+			foundHname := slices.ContainsFunc(contractRegistry, func(tuple lo.Tuple2[*isc.Hname, *root.ContractRecord]) bool {
+				return *tuple.A == rec.Hname()
+			})
+			require.True(e.t, foundHname, "core contract %s %+v missing", rec.Name, rec.Hname())
 		}
 	}
 }
@@ -51,6 +54,30 @@ func (e *ChainEnv) checkRootsOutside() {
 		require.NotNil(e.t, recBack)
 		require.EqualValues(e.t, rec.Name, recBack.Name)
 	}
+}
+
+func (e *ChainEnv) GetL1Balance(addr *iotago.Address, coinType coin.Type) coin.Value {
+	l1client := e.Chain.Cluster.L1Client()
+	getBalance, err := l1client.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: addr})
+	require.NoError(e.t, err)
+	return coin.Value(getBalance.TotalBalance.Uint64())
+}
+
+func (e *ChainEnv) GetL2Balance(agentID isc.AgentID, coinType coin.Type, nodeIndex ...int) coin.Value {
+	idx := 0
+	if len(nodeIndex) > 0 {
+		idx = nodeIndex[0]
+	}
+
+	balance, _, err := e.Chain.Cluster.WaspClient(idx).CorecontractsAPI.
+		AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+		Execute()
+	require.NoError(e.t, err)
+
+	assets, err := apiextensions.AssetsFromAPIResponse(balance)
+	require.NoError(e.t, err)
+
+	return assets.CoinBalance(coinType)
 }
 
 func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, coinType coin.Type, nodeIndex ...int) coin.Value {

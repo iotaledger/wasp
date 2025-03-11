@@ -5,12 +5,15 @@ package apilib
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -46,7 +49,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 
 	referenceGasPrice, err := par.Layer1Client.GetReferenceGasPrice(ctx)
 	if err != nil {
-		return isc.ChainID{}, err
+		return isc.ChainID{}, fmt.Errorf("failed to get reference gas price: %w", err)
 	}
 
 	anchor, err := par.Layer1Client.L2().StartNewChain(
@@ -61,16 +64,62 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		},
 	)
 	if err != nil {
-		return isc.ChainID{}, err
+		return isc.ChainID{}, fmt.Errorf("failed to call isc StartNewChain: %w", err)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n",
 		anchor.ObjectID.String(), stateControllerAddr.String())
+	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
+	if err != nil {
+		return isc.ChainID{}, fmt.Errorf("on-chain StateMetadata is invalid: %w", err)
+	}
+	fmt.Fprintf(textout, "on-chain StateMetadata: %s\n", stateMetadata.String())
+
+	// transfer the GasCoin object
+	gasCoinGetObj, err := par.Layer1Client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: stateMetadata.GasCoinObjectID})
+	if err != nil {
+		return isc.ChainID{}, fmt.Errorf("failed to get GasCoin's ObjectRef: %w", err)
+	}
+	ref := gasCoinGetObj.Data.Ref()
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb.Command(iotago.Command{TransferObjects: &iotago.ProgrammableTransferObjects{
+		Objects: []iotago.Argument{iotago.GetArgumentGasCoin()},
+		Address: ptb.MustPure(stateControllerAddr.AsIotaAddress()),
+	}})
+	pt := ptb.Finish()
+	tx := iotago.NewProgrammable(
+		par.OriginatorKeyPair.Address().AsIotaAddress(),
+		pt,
+		[]*iotago.ObjectRef{&ref},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+	txBytes, err := bcs.Marshal(&tx)
+	if err != nil {
+		return isc.ChainID{}, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
+	}
+	txnResponse, err := par.Layer1Client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			TxDataBytes: txBytes,
+			Signer:      cryptolib.SignerToIotaSigner(par.OriginatorKeyPair),
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
+	if err != nil {
+		return isc.ChainID{}, fmt.Errorf("failed to execute tranferring GasCoin: %w", err)
+	}
+	if !txnResponse.Effects.Data.IsSuccess() {
+		return isc.ChainID{}, errors.New("failed to transfer GasCoin")
+	}
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
-	return isc.ChainIDFromObjectID(*anchor.ObjectID), err
+	return isc.ChainIDFromObjectID(*anchor.ObjectID), nil
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its

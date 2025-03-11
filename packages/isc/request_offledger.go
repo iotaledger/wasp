@@ -17,7 +17,7 @@ import (
 
 // OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest
 type OffLedgerRequestDataEssence struct {
-	allowance *Assets `bcs:"export"`
+	allowance *Assets `bcs:"export,optional"`
 	chainID   ChainID `bcs:"export"`
 	msg       Message `bcs:"export"`
 	gasBudget uint64  `bcs:"export"`

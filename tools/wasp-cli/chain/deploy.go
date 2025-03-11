@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -71,11 +72,11 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
 	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
-		return iotago.ObjectID{}, err
+		return iotago.ObjectID{}, fmt.Errorf("GasCoin with targeting blanace not found: %w", err)
 	}
 
 	txb := iotago.NewProgrammableTransactionBuilder()
-	splitCoinCmd := txb.Command(
+	txb.Command(
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
@@ -83,8 +84,6 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 			},
 		},
 	)
-
-	txb.TransferArg(committeeAddress, splitCoinCmd)
 
 	txData := iotago.NewProgrammable(
 		wallet.Address().AsIotaAddress(),
@@ -111,12 +110,15 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		},
 	)
 	if err != nil {
-		return iotago.ObjectID{}, err
+		return iotago.ObjectID{}, fmt.Errorf("failed to create GasCoin: %w", err)
 	}
 
 	gasCoin, err := result.GetCreatedCoin("iota", "IOTA")
 	if err != nil {
-		return iotago.ObjectID{}, err
+		gasCoin, err = result.GetMutatedCoin("iota", "IOTA")
+		if err != nil {
+			return iotago.ObjectID{}, fmt.Errorf("failed to get GasCoin from tx: %w", err)
+		}
 	}
 
 	return *gasCoin.ObjectID, nil

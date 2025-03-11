@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc/jsonrpctest"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -138,7 +139,10 @@ func TestEVMJsonRPCZeroGasFee(t *testing.T) {
 		B: 0,
 	}
 	govClient := e.Chain.Client(e.Chain.OriginatorKeyPair)
-	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(fp1), chainclient.PostRequestParams{})
+	reqTx, err := govClient.PostRequest(context.Background(), governance.FuncSetFeePolicy.Message(fp1), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 10),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, false, 30*time.Second)
 	require.NoError(t, err)

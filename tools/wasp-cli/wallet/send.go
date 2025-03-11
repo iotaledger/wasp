@@ -23,6 +23,7 @@ func initSendFundsCmd() *cobra.Command {
 		Short: "Transfer L1 tokens",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
+			panic("FIXME")
 			targetAddress, err := cryptolib.NewAddressFromHexString(args[0])
 			log.Check(err)
 

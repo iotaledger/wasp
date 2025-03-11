@@ -12,6 +12,9 @@ type AssetsJSON struct {
 }
 
 func AssetsToAssetsJSON(a *Assets) AssetsJSON {
+	if a == nil {
+		return AssetsJSON{}
+	}
 	coins := a.Coins.JSON()
 	objs := a.Objects.Sorted()
 

@@ -43,7 +43,7 @@ func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clust
 	e := setupNativeInccounterTest(t, clusterSize, cmt)
 
 	for i := 0; i < numRequests; i++ {
-		client := e.createNewClient()
+		client, _ := e.NewRandomChainClient()
 		_, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
 		require.NoError(t, err)
 	}

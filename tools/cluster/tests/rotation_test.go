@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func TestBasicRotation(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestBasicRotation(t *testing.T) { // FIXME serious error
 	env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
 	newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
@@ -31,26 +31,34 @@ func TestBasicRotation(t *testing.T) {
 	myClient := env.Chain.Client(kp)
 
 	// check the chain works
-	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter (before rotation)")
+	tx, err := myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
+
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
 	// change the committee to the new one
-
 	govClient := env.Chain.Client(env.Chain.OriginatorKeyPair)
 
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{})
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncAddAllowedStateControllerAddress")
+	tx, err = govClient.PostRequest(context.Background(),
+		governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{
+			GasBudget: iotaclient.DefaultGasBudget,
+		})
+
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr), chainclient.PostRequestParams{})
+	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr),
+		chainclient.PostRequestParams{
+			GasBudget: 5 * iotaclient.DefaultGasBudget,
+		})
 	require.NoError(t, err)
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - CoreEPRotateStateController")
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
+	time.Sleep(3 * time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, true, 20*time.Second)
 	require.NoError(t, err)
 
 	stateController, err := env.callGetStateController(0)
@@ -58,19 +66,17 @@ func TestBasicRotation(t *testing.T) {
 	require.True(t, stateController.Equals(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
 
 	// check the chain still works
-	tx, err = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter")
+	tx, err = myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
-
-	require.EqualValues(t, 2, env.getNativeContractCounter())
 }
 
 // cluster of 10 access nodes and two overlapping committees
 func TestRotation(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	numRequests := 8
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})

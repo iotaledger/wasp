@@ -279,6 +279,9 @@ func AssetsFromBytes(b []byte) (*Assets, error) {
 
 func (a *Assets) Clone() *Assets {
 	r := NewEmptyAssets()
+	if a == nil {
+		return nil
+	}
 	r.Coins = a.Coins.Clone()
 	r.Objects = maps.Clone(a.Objects)
 	return r
@@ -376,6 +379,9 @@ func (a *Assets) SetBaseTokens(amount coin.Value) *Assets {
 }
 
 func (a *Assets) BaseTokens() coin.Value {
+	if a == nil {
+		return 0
+	}
 	return a.Coins.Get(coin.BaseTokenType)
 }
 

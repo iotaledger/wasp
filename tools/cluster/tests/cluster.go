@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
 	"github.com/stretchr/testify/require"
@@ -64,14 +65,21 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 		modifyNodesConfig = opt[0].modifyConfig
 	}
 
+	l1 = l1starter.ClusterStart(l1starter.L1EndpointConfig{
+		IsLocal:       false,
+		RandomizeSeed: false,
+		APIURL:        iotaconn.AlphanetEndpointURL,
+		FaucetURL:     iotaconn.AlphanetFaucetURL,
+	})
+
 	clusterConfig := cluster.NewConfig(
 		waspConfig,
 		l1,
 		modifyNodesConfig,
 	)
-
+	l1PackageID := l1.ISCPackageID()
 	dataPath := path.Join(os.TempDir(), dirname)
-	clu := cluster.New(t.Name(), clusterConfig, dataPath, t, nil)
+	clu := cluster.New(t.Name(), clusterConfig, dataPath, t, nil, &l1PackageID)
 
 	err := clu.InitDataPath(".", true)
 	require.NoError(t, err)
