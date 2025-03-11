@@ -479,11 +479,11 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 	offLedgerReq, ok := request.(isc.OffLedgerRequest)
 	if !ok {
-		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+		mpi.log.Warnf("Dropping non-OffLedger request form dist %T: %+v", request, request)
 		return false
 	}
 	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
-		mpi.log.Warn("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
+		mpi.log.Warnf("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
 
 		return mpi.addOffledger(offLedgerReq)
 	}
@@ -943,7 +943,7 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 		mpi.log.Debugf("removing off-ledger request from mempool: %s", req.ID())
 		mpi.offLedgerPool.Remove(req)
 	default:
-		mpi.log.Warn("Trying to remove request of unexpected type %T: %+v", req, req)
+		mpi.log.Warnf("Trying to remove request of unexpected type %T: %+v", req, req)
 	}
 }
 
