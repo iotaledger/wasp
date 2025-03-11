@@ -15,6 +15,19 @@ import (
 	cmd "github.com/urfave/cli/v2"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
+	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
+	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
+	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
+	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+	old_errors "github.com/nnikolash/wasp-types-exported/packages/vm/core/errors"
+	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
+	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -29,18 +42,6 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
-	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
-	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
-	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
-	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
-	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
-	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
-	old_errors "github.com/nnikolash/wasp-types-exported/packages/vm/core/errors"
-	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
-	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
 )
 
 func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dryRun bool) (
@@ -161,7 +162,7 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, oldChainID, newChainID, _, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	srcStore, destStore, _, _, _, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
 
 	var srcState old_kv.KVStoreReader
@@ -180,11 +181,11 @@ func migrateSingleState(c *cmd.Context) error {
 
 	cli.DebugLoggingEnabled = true
 
-	v := migrations.MigrateRootContract(srcState, stateDraft)
+	//v := migrations.MigrateRootContract(srcState, stateDraft)
 
-	migrations.MigrateAccountsContract(v, srcState, stateDraft, oldChainID, newChainID)
-	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata)
-	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
+	//migrations.MigrateAccountsContract(v, srcState, stateDraft, oldChainID, newChainID)
+	//migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata)
+	//migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateEVMContract(srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
