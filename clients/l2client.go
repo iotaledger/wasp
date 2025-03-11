@@ -4,7 +4,6 @@ package clients
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -44,7 +43,6 @@ type L2Client interface {
 		ctx context.Context,
 		coinID *iotago.ObjectID,
 	) (*iscmoveclient.MoveCoin, error)
-	GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error)
 }
 
 var _ L2Client = &iscmoveclient.Client{}
