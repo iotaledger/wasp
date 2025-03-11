@@ -309,7 +309,7 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 
 		newMuts.ApplyTo(nextStateDraft)
-		newBlock := destStore.Commit(nextStateDraft)
+		newBlock = destStore.Commit(nextStateDraft)
 		destStore.SetLatest(newBlock.TrieRoot())
 		stateMetadata.L1Commitment = newBlock.L1Commitment()
 

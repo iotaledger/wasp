@@ -99,8 +99,8 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		}
 
 		// TODO: This was caught after block 10000, probably pruning in play?
-		if value == nil {
-			newBlockChain.Set(kv.Key(key), nil)
+		if len(value) == 0 {
+			newBlockChain.Set(kv.Key(key), value)
 			return true
 		}
 
@@ -118,7 +118,9 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	// Migrate KeyBlockHeaderByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		blockNumber := old_codec.MustDecodeUint64([]byte(key[len(old_emulator.KeyBlockHeaderByBlockNumber):]))
-		if value == nil {
+
+		// TODO: This was caught after block 10000, probably pruning in play?
+		if len(value) == 0 {
 			newBlockChain.Set(kv.Key(key), value)
 			return true
 		}
@@ -160,6 +162,12 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		// If it is not 10, panic for now.
 		if len(keyWithoutPrefix) != 10 {
 			panic("unsupported receipt key length")
+		}
+
+		// TODO: This was caught after block 10000, probably pruning in play?
+		if len(value) == 0 {
+			newBlockChain.Set(kv.Key(key), value)
+			return true
 		}
 
 		oldReceipt, err := old_evm_types.DecodeReceipt(value)
