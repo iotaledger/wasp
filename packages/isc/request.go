@@ -86,3 +86,17 @@ func init() {
 func RequestHash(req Request) hashing.HashValue {
 	return hashing.HashData(req.Bytes())
 }
+
+// RequestGasPrice returns:
+// for ISC request: nil,
+// for EVM tx: the gas price set in the EVM tx (full decimals), or 0 if gas price is unset
+func RequestGasPrice(req Request) *big.Int {
+	callMsg := req.EVMCallMsg()
+	if callMsg == nil {
+		return nil
+	}
+	if callMsg.GasPrice == nil {
+		return big.NewInt(0)
+	}
+	return new(big.Int).Set(callMsg.GasPrice)
+}
