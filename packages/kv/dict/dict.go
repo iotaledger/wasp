@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/iotaledger/hive.go/lo"
 	"io"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
-
-	"github.com/iotaledger/hive.go/lo"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"

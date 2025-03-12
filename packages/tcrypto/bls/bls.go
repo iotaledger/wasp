@@ -1,6 +1,7 @@
 package bls
 
 import (
+	"github.com/iotaledger/hive.go/ierrors"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign"
@@ -8,7 +9,6 @@ import (
 	"go.dedis.ch/kyber/v3/util/random"
 
 	"github.com/iotaledger/hive.go/crypto"
-	"github.com/iotaledger/hive.go/ierrors"
 )
 
 const (

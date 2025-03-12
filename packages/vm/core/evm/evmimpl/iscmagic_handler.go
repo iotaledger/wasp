@@ -5,6 +5,7 @@ package evmimpl
 
 import (
 	"fmt"
+	"github.com/samber/lo"
 	"reflect"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -77,7 +77,7 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 	if len(results) == 0 {
 		return nil
 	}
-	ret, err := method.Outputs.Pack(lo.Map(results, func(v reflect.Value) any {
+	ret, err := method.Outputs.Pack(lo.Map(results, func(v reflect.Value, _ int) any {
 		return v.Interface()
 	})...)
 	if err != nil {

@@ -6,10 +6,10 @@ package registry
 import (
 	"context"
 	"fmt"
+	"github.com/samber/lo"
 	"os"
 
 	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/cryptolib"

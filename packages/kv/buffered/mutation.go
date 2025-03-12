@@ -2,10 +2,10 @@ package buffered
 
 import (
 	"fmt"
+	"github.com/iotaledger/hive.go/lo"
 	"sort"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/kv"
 )
 

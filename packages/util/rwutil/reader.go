@@ -6,12 +6,11 @@ package rwutil
 import (
 	"encoding/binary"
 	"errors"
+	"github.com/iotaledger/hive.go/serializer/v2"
 	"io"
 	"math"
 	"math/big"
 	"time"
-
-	"github.com/iotaledger/hive.go/serializer/v2"
 )
 
 type Reader struct {
