@@ -1,8 +1,7 @@
 import { bcs } from '@iota/iota-sdk/bcs';
-import { GetOwnedObjectsParams, IotaClient, IotaObjectData, IotaObjectResponse, IotaParsedData } from '@iota/iota-sdk/client';
+import { GetOwnedObjectsParams, IotaClient, IotaObjectData, IotaObjectResponse } from '@iota/iota-sdk/client';
 import { paginatedRequest } from './page_reader';
 import { Argument, Transaction, TransactionResult } from '@iota/iota-sdk/transactions';
-import { ISCMove } from './isc';
 import { basicOutputStructTag, foundryCapTypeTag, gasTypeTag, nftOutputStructTag, STARDUST_PACKAGE_ID } from './consts';
 
 export namespace AliasMigration {

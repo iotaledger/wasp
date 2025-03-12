@@ -1,7 +1,6 @@
-import { GetOwnedObjectsParams, IotaClient, IotaObjectData, IotaObjectResponse, IotaParsedData } from '@iota/iota-sdk/client';
-import { paginatedRequest } from './page_reader';
+import { IotaClient, IotaObjectData, IotaParsedData } from '@iota/iota-sdk/client';
 import { Argument, Transaction } from '@iota/iota-sdk/transactions';
-import { basicOutputStructTag, foundryCapTypeTag, gasTypeTag, nftOutputStructTag, STARDUST_PACKAGE_ID } from './consts';
+import { gasTypeTag, STARDUST_PACKAGE_ID } from './consts';
 
 export namespace BasicMigration {
   export async function getNativeTokens(iotaClient: IotaClient, obj: IotaObjectData) {
@@ -51,5 +50,13 @@ export namespace BasicMigration {
       typeArguments: [typeArg],
       arguments: [bag],
     });
+  }
+
+  export function unlockBasic(tx: Transaction, aliasObject: Argument, basicObject: Argument) {
+    return tx.moveCall({
+        target: `${STARDUST_PACKAGE_ID}::address_unlock_condition::unlock_alias_address_owned_basic`,
+        typeArguments: [gasTypeTag],
+        arguments: [aliasObject, basicObject],
+      });;
   }
 }

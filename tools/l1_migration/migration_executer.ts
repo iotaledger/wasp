@@ -7,8 +7,9 @@ import { AliasMigration } from './alias_migration';
 import { CoinMigration } from './coin_migration';
 import { BasicMigration } from './basic_migration';
 import { BagMigration } from './bag_migration';
+import { FoundryMigration } from './foundry_migration';
 
-export async function executeMigration(client: IotaClient, iscPackageId: string, governorAddress: string, aliasId: string) {
+export async function executeMigration(client: IotaClient, iscPackageId: string, governorAddress: string, aliasId: string, anchorId: string) {
   const aliasOutputId = await AliasMigration.getAliasOutputId(client, aliasId);
 
   if (!aliasOutputId) {
@@ -27,34 +28,21 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
 
   let tx = new Transaction();
 
-  let assetsBag = ISCMove.newAssetBag(iscPackageId, tx);
 
   const [baseTokens, nativeTokensBag, alias] = AliasMigration.extractAssetsFromAlias(tx, aliasId);
   const aliasBaseCoin = CoinMigration.fromBalance(tx, baseTokens);
 
-  ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, gasTypeTag, aliasBaseCoin);
+  ISCMove.addCoinToAssetsBag(iscPackageId, tx, anchorId, gasTypeTag, aliasBaseCoin);
   BagMigration.destroyEmpty(tx, nativeTokensBag);
 
-  for (let nft of assets.nfts) {
-    console.log(nft);
-    const nftOutputArg = tx.object(nft.objectId);
-
-    const nftOutput = NftMigration.unlockNft(tx, alias, nftOutputArg);
-    const [nftBaseTokens, nftNativeTokenBag, nftAsset] = NftMigration.extractAssetsFromNft(tx, nftOutput);
-    const nftBaseCoin = CoinMigration.fromBalance(tx, nftBaseTokens);
-
-    BagMigration.destroyEmpty(tx, nftNativeTokenBag);
-
-    ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, gasTypeTag, nftBaseCoin);
-    ISCMove.addObjectToAssetsBag(iscPackageId, tx, assetsBag, nftObjectTypeTag, nftAsset);
-  }
-  
   for (let basic of assets.basics) {
     const basicArg = tx.object(basic.objectId);
-    const [baseTokens, nativeTokensBag] = BasicMigration.extractAssetsFromBasicOutput(tx, basicArg);
+
+    const basicOutput = BasicMigration.unlockBasic(tx, alias, basicArg);
+    const [baseTokens, nativeTokensBag] = BasicMigration.extractAssetsFromBasicOutput(tx, basicOutput);
 
     const basicBaseCoin = CoinMigration.fromBalance(tx, baseTokens);
-    ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, gasTypeTag, basicBaseCoin);
+    ISCMove.addCoinToAssetsBag(iscPackageId, tx, anchorId, gasTypeTag, basicBaseCoin);
 
     const nativeTokens = await BasicMigration.getNativeTokens(client, basic);
 
@@ -63,14 +51,34 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
 
       const [bag, balance] = BasicMigration.utilitiesExtractBag(tx, typeArguments, nativeTokensBag);
 
-      ISCMove.addCoinToAssetsBag(iscPackageId, tx, assetsBag, typeArguments, balance);
+      ISCMove.addBalanceToAssetsBag(iscPackageId, tx, anchorId, typeArguments, balance);
       BagMigration.destroyEmpty(tx, bag);
     }
 
-    BagMigration.destroyEmpty(tx, nativeTokensBag);
+    //BagMigration.destroyEmpty(tx, nativeTokensBag);
   }
 
-  tx.transferObjects([assetsBag, alias], governorAddress);
+  for (let nft of assets.nfts) {
+    const nftOutputArg = tx.object(nft.objectId);
+
+    const nftOutput = NftMigration.unlockNft(tx, alias, nftOutputArg);
+    const [nftBaseTokens, nftNativeTokenBag, nftAsset] = NftMigration.extractAssetsFromNft(tx, nftOutput);
+    const nftBaseCoin = CoinMigration.fromBalance(tx, nftBaseTokens);
+
+    BagMigration.destroyEmpty(tx, nftNativeTokenBag);
+
+    ISCMove.addCoinToAssetsBag(iscPackageId, tx, anchorId, gasTypeTag, nftBaseCoin);
+    ISCMove.addObjectToAssetsBag(iscPackageId, tx, anchorId, nftObjectTypeTag, nftAsset);
+  }
+  
+  for (let foundry of assets.foundries) {
+    const foundryOutputArg = tx.object(foundry.objectId);
+    const foundryTypeArg = foundry.type!.split("<")[1].split(">")[0] || "";
+    const foundryOutput = FoundryMigration.unlockFoundry(tx, foundryTypeArg, alias, foundryOutputArg);
+    ISCMove.addObjectToAssetsBag(iscPackageId, tx, anchorId, foundry.type!, foundryOutput);
+  }
+
+  tx.transferObjects([anchorId, alias], governorAddress);
 
   return tx;
 }
