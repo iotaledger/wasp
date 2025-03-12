@@ -223,6 +223,7 @@ func migrateAllStates(c *cmd.Context) error {
 	startBlockIndex := uint32(c.Uint64("from-index"))
 	endBlockIndex := uint32(c.Uint64("to-index"))
 	overrideNewChainID := c.String("new-chain-id")
+	skipLoad := c.Bool("skip-load")
 	dryRun := c.Bool("dry-run")
 
 	srcStore, destStore, oldChainID, newChainID, prepareConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
@@ -259,10 +260,17 @@ func migrateAllStates(c *cmd.Context) error {
 	cli.Logf("Real from-index: %d", startBlockIndex)
 
 	if startBlockIndex != 0 {
-		cli.Logf("Loading state at block index %v", startBlockIndex-1)
+		var preloadStateIdx uint32
+		if skipLoad {
+			cli.Logf("Loading of initial state is SKIPPED - resulting database will be INVALID")
+		} else {
+			preloadStateIdx = startBlockIndex - 1
+		}
+
+		cli.Logf("Loading state at block index %v", preloadStateIdx)
 		count := 0
 
-		s := lo.Must(srcStore.StateByIndex(startBlockIndex - 1))
+		s := lo.Must(srcStore.StateByIndex(preloadStateIdx))
 		s.Iterate("", func(k old_kv.Key, v []byte) bool {
 			//oldStateTrie.Update([]byte(k), v)
 			oldState.Set(k, v)

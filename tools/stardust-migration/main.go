@@ -86,6 +86,10 @@ func main() {
 								Usage:   "Specify block index to migrate last. If not specified, all blocks will be migrated until last.",
 							},
 							&cmd.BoolFlag{
+								Name:  "skip-load",
+								Usage: "Do not pre-load full state at the start of migration, when using option '--from-index' / '-i'. WARNING: This will result in a BROKEN migrated db.",
+							},
+							&cmd.BoolFlag{
 								Name:    "dry-run",
 								Aliases: []string{"d"},
 								Usage:   "Do not write destination database.",

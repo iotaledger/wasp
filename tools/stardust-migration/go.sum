@@ -272,8 +272,8 @@ github.com/mr-tron/base58 v1.2.0/go.mod h1:BinMc/sQntlIE1frQmRFPUoPA1Zkr8VRgBdjW
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32/go.mod h1:9wM+0iRr9ahx58uYLpLIr5fm8diHn0JbqRycJi6w0Ms=
-github.com/nnikolash/wasp-types-exported v0.0.0-20250311172546-cf7461731f12 h1:63QQQ20B0Kth3euWkE2l7bh+7VvacnXaNs7JgwNChK0=
-github.com/nnikolash/wasp-types-exported v0.0.0-20250311172546-cf7461731f12/go.mod h1:cIHgn/8IiRE9hPrrcxMllFRKBI3obVEnEIYFGDcPjQs=
+github.com/nnikolash/wasp-types-exported v0.0.0-20250312155306-cba3d80c2d26 h1:5i5NmtibeShssL/ake+EE6Jaxj1bc408Kd3Zy5nNqRE=
+github.com/nnikolash/wasp-types-exported v0.0.0-20250312155306-cba3d80c2d26/go.mod h1:cIHgn/8IiRE9hPrrcxMllFRKBI3obVEnEIYFGDcPjQs=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
