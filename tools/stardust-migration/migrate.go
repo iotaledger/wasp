@@ -204,7 +204,8 @@ func migrateSingleState(c *cmd.Context) error {
 
 	v := migrations.MigrateRootContract(srcState, stateDraft)
 
-	migrations.MigrateAccountsContract(v, srcState, srcState, stateDraft, oldChainID, newChainID)
+	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID, newChainID)
+	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata, prepConfig)
 	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateEVMContract(srcState, stateDraft)
@@ -242,6 +243,8 @@ func migrateAllStates(c *cmd.Context) error {
 		return utils.GetMapElemPrefixes([]byte(key))
 	})
 
+	oldState.RegisterPrefix(old_accounts.PrefixBaseTokens, old_accounts.Contract.Hname())
+	oldState.RegisterPrefix(old_accounts.PrefixNativeTokens, old_accounts.Contract.Hname())
 	oldState.RegisterPrefix(old_accounts.PrefixFoundries, old_accounts.Contract.Hname())
 	oldState.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
 
@@ -279,7 +282,15 @@ func migrateAllStates(c *cmd.Context) error {
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed, errMutsProcessed := 0, 0, 0, 0, 0, 0
 
 	var newBlock state.Block
+
 	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+		defer func() {
+			if err := recover(); err != nil {
+				cli.Logf("Error at block index %v", blockIndex)
+				panic(err)
+			}
+		}()
+
 		oldMuts := block.Mutations()
 		// for k, v := range oldMuts.Sets {
 		// 	oldStateTrie.Update([]byte(k), v)
@@ -304,6 +315,9 @@ func migrateAllStates(c *cmd.Context) error {
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.MutationsCountDiff()
 
+		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID, newChainID)
+		accountsMuts := newState.MutationsCountDiff()
+
 		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
 		governanceMuts := newState.MutationsCountDiff()
 
@@ -313,8 +327,8 @@ func migrateAllStates(c *cmd.Context) error {
 		newState.StopMarking()
 		newState.DeleteMarkedIfNotSet()
 
-		migrations.MigrateAccountsContract(v, oldState, oldStateMutsOnly, newState, oldChainID, newChainID)
-		accountsMuts := newState.MutationsCountDiff()
+		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID, newChainID)
+		accountsMuts += newState.MutationsCountDiff()
 
 		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata, prepareConfig)
 		blocklogMuts := newState.MutationsCountDiff()

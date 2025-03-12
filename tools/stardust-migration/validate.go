@@ -64,6 +64,8 @@ func validateMigration(c *cmd.Context) error {
 	// 		Analyze the result. Ideally we should eventually have no unexpected difference there
 	// 4. Check special accounts and cases: L2Totals, CommonAccount etc.
 	// 	We could also do that not over states, but over mutations in blocks.
+	// 5. (not sure) Recalculate and validate commitment hash.
+	// 6. Specificy check those block, where "rare" objetcs like NFTs are present/changed.
 
 	newLatestState := lo.Must(destStore.LatestState())
 	cli.DebugLogf("Latest new state index: %v", newLatestState.BlockIndex())

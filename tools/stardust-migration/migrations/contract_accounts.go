@@ -29,32 +29,45 @@ type migratedAccount struct {
 	NewAgentID isc.AgentID
 }
 
-func MigrateAccountsContract(
+func MigrateAccountsContractMuts(
 	v old_isc.SchemaVersion,
-	oldChainState old_kv.KVStoreReader,
 	oldChainStateMuts old_kv.KVStoreReader,
 	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	cli.DebugLog("Migrating accounts contract...\n")
-	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
+	cli.DebugLog("Migrating accounts contract (muts)...\n")
 	oldStateMuts := oldstate.GetContactStateReader(oldChainStateMuts, old_accounts.Contract.Hname())
 	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
 
 	migrateAccountsList(oldStateMuts, newState, oldChainID, newChainID)
 	migrateBaseTokenBalances(v, oldStateMuts, newState, oldChainID, newChainID)
 	migrateNativeTokenBalances(oldStateMuts, newState, oldChainID, newChainID)
-	// NOTE: L2TotalsAccount is migrated implicitly inside of migrateBaseTokenBalances and migrateNativeTokenBalances
 	migrateFoundriesOutputs(oldStateMuts, newState)
 	//migrateFoundriesPerAccount(oldState, newState, oldChainID, newChainID)
 	migrateNativeTokenOutputs(oldStateMuts, newState)
-	migrateNFTs(oldState, oldStateMuts, newState, oldChainID, newChainID)
+	// migrateNFTs is done in MigrateAccountsContractFullState
 	// prefixNewlyMintedNFTs ignored
 	// PrefixMintIDMap ignored
 	migrateNonce(oldStateMuts, newState, oldChainID, newChainID)
 
-	cli.DebugLog("Migrated accounts contract\n")
+	cli.DebugLog("Migrated accounts contract (muts)\n")
+}
+
+func MigrateAccountsContractFullState(
+	oldChainState old_kv.KVStoreReader,
+	newChainState kv.KVStore,
+	oldChainID old_isc.ChainID,
+	newChainID isc.ChainID,
+) {
+	// NOTE: See comment in migrateNFTs for reason why MigrateAccountsContract is split into two functions.
+	cli.DebugLog("Migrating accounts contract (full state)...\n")
+	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
+	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
+
+	migrateNFTs(oldState, newState, oldChainID, newChainID)
+
+	cli.DebugLog("Migrated accounts contract (full state)\n")
 }
 
 func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChID old_isc.ChainID, newChID isc.ChainID) {
@@ -226,30 +239,28 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 
 func migrateNFTs(
 	oldState old_kv.KVStoreReader,
-	oldStateMuts old_kv.KVStoreReader,
 	newState kv.KVStore,
 	oldChainID old_isc.ChainID,
 	newChainID isc.ChainID,
 ) {
-	// TODO: implement
-	return
+	// NOTE: We cant use just mutations for this function, because GetNFTData() reads other stuff from the state.
+	// And even if we pass here both mutations and full state and iterate by mutations but read from full state,
+	// still it wouldn't work, because old state with applied mutations will not have the data read by GetNFTData().
+	// So to use mutations here, we need to have both mutations and PREV old state. That seems too complicated for now,
+	// just using full state here as special case of accounts contract migration.
 
 	cli.DebugLogf("Migrating NFTs...\n")
 
-	oldNFTOutputs := old_accounts.NftOutputMapR(oldStateMuts)
+	oldNFTOutputs := old_accounts.NftOutputMapR(oldState)
 	w := accounts.NewStateWriter(newSchema, newState)
 
 	var count uint32
-	oldNFTOutputs.Iterate(func(k []byte, v []byte) bool {
+	oldNFTOutputs.IterateKeys(func(k []byte) bool {
 		nftID := old_codec.MustDecodeNFTID([]byte(k))
 		oldNFT := old_accounts.GetNFTData(oldState, nftID)
 		owner := OldAgentIDtoNewAgentID(oldNFT.Owner, oldChainID, newChainID)
 		newObjectRecord := OldNFTIDtoNewObjectRecord(nftID)
-		if v != nil {
-			w.CreditObjectToAccount(owner, newObjectRecord, newChainID)
-		} else {
-			//w.DebitObjectFromAccount(owner, newObjectRecord.ID
-		}
+		w.CreditObjectToAccount(owner, newObjectRecord, newChainID)
 		count++
 		return true
 	})
