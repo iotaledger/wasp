@@ -29,6 +29,7 @@ type InMemoryKVStore struct {
 	marking          bool
 	uncommitedMarked map[kv.Key]struct{}
 	committedMarked  map[kv.Key]struct{}
+	prevMutsCount    int
 }
 
 var _ kv.KVStoreReader = &InMemoryKVStore{}
@@ -44,6 +45,13 @@ func (b *InMemoryKVStore) Mutations() *buffered.Mutations {
 
 func (b *InMemoryKVStore) MutationsCount() int {
 	return len(b.uncommitted.Mutations().Sets) + len(b.uncommitted.Mutations().Dels)
+}
+
+func (b *InMemoryKVStore) MutationsCountDiff() int {
+	newMutsCount := b.MutationsCount()
+	mutsCountDiff := newMutsCount - b.prevMutsCount
+	b.prevMutsCount = newMutsCount
+	return mutsCountDiff
 }
 
 func (b *InMemoryKVStore) StartMarking() {
@@ -108,6 +116,8 @@ func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) *buffered.Mutation
 	b.uncommitted.SetMutations(buffered.NewMutations())
 	b.committedMarked = b.uncommitedMarked
 	b.uncommitedMarked = make(map[kv.Key]struct{}, len(b.uncommitedMarked))
+
+	b.prevMutsCount = 0
 
 	return muts
 }

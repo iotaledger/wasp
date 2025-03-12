@@ -110,7 +110,7 @@ func validateStatesEqual(oldState old_state.State, newState state.State, oldChai
 	os.WriteFile(oldStateFilePath, []byte(oldStateContentStr), 0644)
 	os.WriteFile(newStateFilePath, []byte(newStateContentStr), 0644)
 
-	if oldStateContentStr != newStateContentStr {
+	if oldStateContentStr == newStateContentStr {
 		cli.DebugLogf("States are equal\n")
 	} else {
 		cli.DebugLogf("States are NOT equal\n")

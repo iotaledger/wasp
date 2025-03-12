@@ -59,12 +59,16 @@ func ListByPrefix[K comparable, V any](store old_kv.KVStoreReader, prefix string
 // Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
 // WARNING: It is UNSAFE to use in some cases, because the prefix could be subprefix of another prefix.
 func MigrateByPrefix[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldPrefix, newPrefix string, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) uint32 {
-	return IterateByPrefix(oldContractState, oldPrefix, func(oldKey OldK, oldVal OldV) {
+	return IterateByPrefix(oldContractState, oldPrefix, func(oldKey OldK, oldVal *OldV) {
 		newKey, newVal := migrationFunc(oldKey, oldVal)
 
 		newKeyBytes := kv.Key(newPrefix) + SerializeKey(newKey)
-		newValBytes := SerializeValue(newVal)
+		if newVal == nil {
+			newContractState.Del(newKeyBytes)
+			return
+		}
 
+		newValBytes := SerializeValue(newVal)
 		newContractState.Set(newKeyBytes, newValBytes)
 	})
 }
@@ -92,12 +96,16 @@ func IterateByKeys[OldK, OldV any](oldContractState old_kv.KVStoreReader, oldPre
 // Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
 // This is safe version of MigrateByPrefix, because it does not rely on prefix - it uses exact keys.
 func MigrateByKeys[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldPrefix, newPrefix string, oldKeys []old_kv.Key, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) {
-	IterateByKeys(oldContractState, oldPrefix, oldKeys, func(oldKey OldK, oldVal OldV) {
+	IterateByKeys(oldContractState, oldPrefix, oldKeys, func(oldKey OldK, oldVal *OldV) {
 		newKey, newVal := migrationFunc(oldKey, oldVal)
 
 		newKeyBytes := kv.Key(newPrefix) + SerializeKey(newKey)
-		newValBytes := SerializeValue(newVal)
+		if newVal == nil {
+			newContractState.Del(newKeyBytes)
+			return
+		}
 
+		newValBytes := SerializeValue(newVal)
 		newContractState.Set(newKeyBytes, newValBytes)
 	})
 }
@@ -105,22 +113,33 @@ func MigrateByKeys[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStoreRe
 // Iterate named map.
 // Key is automatically deserialized if it is not old_kv.Key.
 // Value is automatically deserialized if it is not []byte.
-func IterateMapByName[OldK, OldV any](oldContractState old_kv.KVStoreReader, oldMapName string, f func(k OldK, v OldV)) (count uint32) {
+func IterateMapByName[OldK, OldV any](oldContractState old_kv.KVStoreReader, oldMapName string, f func(k OldK, v *OldV)) (count uint32) {
 	oldMap := old_collections.NewMapReadOnly(oldContractState, oldMapName)
-	IterateMap(oldMap, f)
-	return oldMap.Len()
+	return IterateMap(oldMap, f)
 }
 
 // Iterate map.
 // Key is automatically deserialized if it is not old_kv.Key.
 // Value is automatically deserialized if it is not []byte.
-func IterateMap[OldK, OldV any](oldRecords *old_collections.ImmutableMap, f func(k OldK, v OldV)) {
+func IterateMap[OldK, OldV any](oldRecords *old_collections.ImmutableMap, f func(k OldK, v *OldV)) uint32 {
+	var count uint32
+
 	oldRecords.Iterate(func(kBytes []byte, vBytes []byte) bool {
+		count++
+
 		k := DeserializeKey[OldK](old_kv.Key(kBytes))
+		if vBytes == nil {
+			f(k, nil)
+			return true
+		}
+
 		v := DeserializeValue[OldV](vBytes)
-		f(k, v)
+		f(k, &v)
+
 		return true
 	})
+
+	return count
 }
 
 func BackupMapByName(
@@ -133,7 +152,7 @@ func BackupMapByName(
 		newContractState,
 		oldMapName,
 		WithBackupPrefix(oldMapName),
-		func(oldKey old_kv.Key, oldValue []byte) (kv.Key, []byte) {
+		func(oldKey old_kv.Key, oldValue *[]byte) (kv.Key, *[]byte) {
 			return kv.Key(oldKey), oldValue
 		},
 	)
@@ -152,22 +171,30 @@ func MigrateMapByName[OldK, OldV, NewK, NewV any](oldContractState old_kv.KVStor
 	oldRecords := old_collections.NewMapReadOnly(oldContractState, oldMapName)
 	newRecords := collections.NewMap(newContractState, newMapName)
 
-	MigrateMap(oldRecords, newRecords, migrationFunc)
-
-	return oldRecords.Len()
+	return MigrateMap(oldRecords, newRecords, migrationFunc)
 }
 
 // Migrate records from state map into another state map.
 // Keys and values are automatically serialized/deserialized, if needed (see RecordMigrationFunc).
-func MigrateMap[OldK, OldV, NewK, NewV any](oldRecords *old_collections.ImmutableMap, newRecords *collections.Map, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) {
-	IterateMap(oldRecords, func(k OldK, v OldV) {
+func MigrateMap[OldK, OldV, NewK, NewV any](oldRecords *old_collections.ImmutableMap, newRecords *collections.Map, migrationFunc KVMigrationFunc[OldK, OldV, NewK, NewV]) uint32 {
+	count := uint32(0)
+
+	IterateMap(oldRecords, func(k OldK, v *OldV) {
+		count++
+
 		newKey, newVal := migrationFunc(k, v)
 
 		newKeyBytes := SerializeKey(newKey)
-		newValBytes := SerializeValue(newVal)
+		if newVal == nil {
+			newRecords.DelAt([]byte(newKeyBytes))
+			return
+		}
 
+		newValBytes := SerializeValue(newVal)
 		newRecords.SetAt([]byte(newKeyBytes), newValBytes)
 	})
+
+	return count
 }
 
 // Iterate named array.
@@ -237,8 +264,13 @@ func ConvertKV[OldK, OldV, NewK, NewV any](
 	convertKey func(OldK) NewK,
 	convertValue func(OldV) NewV,
 ) KVMigrationFunc[OldK, OldV, NewK, NewV] {
-	return func(oldKey OldK, oldVal OldV) (NewK, NewV) {
-		return convertKey(oldKey), convertValue(oldVal)
+	return func(oldKey OldK, oldVal *OldV) (NewK, *NewV) {
+		if oldVal == nil {
+			return convertKey(oldKey), nil
+		}
+
+		convV := convertValue(*oldVal)
+		return convertKey(oldKey), &convV
 	}
 }
 
@@ -249,7 +281,7 @@ func ConvertKV[OldK, OldV, NewK, NewV any](
 // * OldValue - []byte
 // * NewKey - kv.Key
 // * NewValue - []byte
-type KVMigrationFunc[OldKey, OldValue, NewKey, NewValue any] func(OldKey, OldValue) (NewKey, NewValue)
+type KVMigrationFunc[OldKey, OldValue, NewKey, NewValue any] func(OldKey, *OldValue) (NewKey, *NewValue)
 
 // This is a migration function for a single KV pair.
 // Used for maps and for KV storages itself.
@@ -278,7 +310,7 @@ func DecodeKey[Value any](k old_kv.Key, prefixToRemove string, decodeFunc func([
 func p[OldK, OldV, NewK, NewV any](f KVMigrationFunc[OldK, OldV, NewK, NewV]) KVMigrationFunc[OldK, OldV, NewK, NewV] {
 	callCount := 0
 
-	return func(oldKey OldK, oldVal OldV) (NewK, NewV) {
+	return func(oldKey OldK, oldVal *OldV) (NewK, *NewV) {
 		callCount++
 		if callCount%100 == 0 {
 			cli.DebugLogf("\rProcessed: %v         ", callCount)

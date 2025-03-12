@@ -15,11 +15,13 @@ import (
 	cmd "github.com/urfave/cli/v2"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
 	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
+	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
@@ -91,6 +93,15 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dry
 
 	migrationConfig := readMigrationConfiguration()
 	newChainID := isc.ChainIDFromObjectID(*migrationConfig.AnchorID)
+
+	old_parameters.InitL1(&old_parameters.L1Params{
+		Protocol: &old_iotago.ProtocolParameters{
+			Bech32HRP: old_iotago.PrefixMainnet,
+		},
+		BaseToken: &old_parameters.BaseToken{
+			Decimals: 9, // TODO: 9? 6?
+		},
+	})
 
 	firstBlock, stateMetadata := initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
 
@@ -172,7 +183,7 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, _, _, _, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	srcStore, destStore, oldChainID, newChainID, prepConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
 
 	var srcState old_kv.KVStoreReader
@@ -191,11 +202,11 @@ func migrateSingleState(c *cmd.Context) error {
 
 	cli.DebugLoggingEnabled = true
 
-	//v := migrations.MigrateRootContract(srcState, stateDraft)
+	v := migrations.MigrateRootContract(srcState, stateDraft)
 
-	//migrations.MigrateAccountsContract(v, srcState, stateDraft, oldChainID, newChainID)
-	//migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata)
-	//migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
+	migrations.MigrateAccountsContract(v, srcState, srcState, stateDraft, oldChainID, newChainID)
+	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata, prepConfig)
+	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateEVMContract(srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
@@ -232,9 +243,10 @@ func migrateAllStates(c *cmd.Context) error {
 	})
 
 	oldState.RegisterPrefix(old_accounts.PrefixFoundries, old_accounts.Contract.Hname())
+	oldState.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
+
 	if startBlockIndex != 0 {
 		// these are needed only when initial state is non-empty and only on that first block
-		oldState.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
 		oldState.RegisterPrefix(old_evmimpl.PrefixPrivileged, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
 		oldState.RegisterPrefix(old_evmimpl.PrefixAllowance, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
 		oldState.RegisterPrefix(old_evmimpl.PrefixERC20ExternalNativeTokens, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
@@ -264,7 +276,7 @@ func migrateAllStates(c *cmd.Context) error {
 	lastPrintTime := time.Now()
 	blocksProcessed := 0
 	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
-	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed := 0, 0, 0, 0, 0
+	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed, errMutsProcessed := 0, 0, 0, 0, 0, 0
 
 	var newBlock state.Block
 	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
@@ -290,23 +302,25 @@ func migrateAllStates(c *cmd.Context) error {
 		newState.StartMarking()
 
 		v := migrations.MigrateRootContract(oldState, newState)
-		rootMuts := newState.MutationsCount()
-
-		migrations.MigrateAccountsContract(v, oldState, newState, oldChainID, newChainID)
-		accountsMuts := newState.MutationsCount() - rootMuts
+		rootMuts := newState.MutationsCountDiff()
 
 		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
-		governanceMuts := newState.MutationsCount() - rootMuts - accountsMuts
+		governanceMuts := newState.MutationsCountDiff()
+
+		migrations.MigrateErrorsContract(oldState, newState)
+		errMuts := newState.MutationsCountDiff()
 
 		newState.StopMarking()
 		newState.DeleteMarkedIfNotSet()
 
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata, prepareConfig)
-		blocklogMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts
+		migrations.MigrateAccountsContract(v, oldState, oldStateMutsOnly, newState, oldChainID, newChainID)
+		accountsMuts := newState.MutationsCountDiff()
 
-		fmt.Printf("Block: %d\n", blockIndex)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata, prepareConfig)
+		blocklogMuts := newState.MutationsCountDiff()
+
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
-		evmMuts := newState.MutationsCount() - rootMuts - accountsMuts - governanceMuts - blocklogMuts
+		evmMuts := newState.MutationsCountDiff()
 
 		newMuts := newState.Commit(true)
 
@@ -328,6 +342,7 @@ func migrateAllStates(c *cmd.Context) error {
 		blocklogMutsProcessed += blocklogMuts
 		govMutsProcessed += governanceMuts
 		evmMutsProcessed += evmMuts
+		errMutsProcessed += errMuts
 
 		if newBlock.StateIndex()%10000 == 0 {
 			cli.Logf("Block Index: %d\n", newBlock.StateIndex())
@@ -344,15 +359,15 @@ func migrateAllStates(c *cmd.Context) error {
 				float64(oldSetsProcessed)/float64(blocksProcessed), float64(oldDelsProcessed)/float64(blocksProcessed),
 				float64(newSetsProcessed)/float64(blocksProcessed), float64(newDelsProcessed)/float64(blocksProcessed),
 			)
-			cli.Logf("New mutations per block by contracts:\n\tRoot: %.1f\n\tAccounts: %.1f\n\tBlocklog: %.1f\n\tGovernance: %.1f\n\tEVM: %.1f",
+			cli.Logf("New mutations per block by contracts:\n\tRoot: %.1f\n\tAccounts: %.1f\n\tBlocklog: %.1f\n\tGovernance: %.1f\n\tError: %.1f\n\tEVM: %.1f",
 				float64(rootMutsProcessed)/float64(blocksProcessed), float64(accountMutsProcessed)/float64(blocksProcessed),
 				float64(blocklogMutsProcessed)/float64(blocksProcessed), float64(govMutsProcessed)/float64(blocksProcessed),
-				float64(evmMutsProcessed)/float64(blocksProcessed),
+				float64(errMutsProcessed)/float64(blocksProcessed), float64(evmMutsProcessed)/float64(blocksProcessed),
 			)
 
 			blocksProcessed = 0
 			oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed = 0, 0, 0, 0
-			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0
+			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, errMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0, 0
 		})
 	})
 

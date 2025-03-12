@@ -41,8 +41,8 @@ func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, wei *big.Int)
 	s.setBaseTokens(accountKey, baseTokens, remainderWei)
 }
 
-func (s *StateWriter) UnsafeSetBaseTokensFullDecimals(account isc.AgentID, chainID isc.ChainID, wei *big.Int) {
-	s.setBaseTokensFullDecimals(AccountKey(account, chainID), wei)
+func (s *StateWriter) UnsafeSetBaseTokensFullDecimals(accKey kv.Key, wei *big.Int) {
+	s.setBaseTokensFullDecimals(accKey, wei)
 }
 
 func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value, chainID isc.ChainID) {
@@ -81,5 +81,9 @@ func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
 }
 
 func (s *StateWriter) setWeiRemainder(accountKey kv.Key, v *big.Int) {
-	s.state.Set(AccountWeiRemainderKey(accountKey), codec.Encode(v))
+	if v.Cmp(new(big.Int)) == 0 {
+		s.state.Del(AccountWeiRemainderKey(accountKey))
+	} else {
+		s.state.Set(AccountWeiRemainderKey(accountKey), codec.Encode(v))
+	}
 }
