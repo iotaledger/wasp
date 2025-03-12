@@ -146,22 +146,22 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 	w := accounts.NewStateWriter(newSchema, newState)
 	oldState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
 		count++
-		accKey, ntIDBytes := utils.SplitMapKey(k, old_accounts.PrefixNativeTokens)
-		if ntIDBytes == "" {
+		oldAccKey, oldNtIDBytes := utils.SplitMapKey(k, old_accounts.PrefixNativeTokens)
+		if oldNtIDBytes == "" {
 			// not a map entry
 			return true
 		}
 
 		var newAccKey kv.Key
-		if accKey == old_accounts.L2TotalsAccount {
+		if oldAccKey == old_accounts.L2TotalsAccount {
 			newAccKey = accounts.L2TotalsAccount
 		} else {
-			oldAgentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), oldChainID))
+			oldAgentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(oldAccKey), oldChainID))
 			newAgentID := OldAgentIDtoNewAgentID(oldAgentID, oldChainID, newChainID)
 			newAccKey = accounts.AccountKey(newAgentID, newChainID)
 		}
 
-		oldNtID := old_isc.MustNativeTokenIDFromBytes([]byte(ntIDBytes))
+		oldNtID := old_isc.MustNativeTokenIDFromBytes([]byte(oldNtIDBytes))
 		newCoinType := OldNativeTokenIDtoNewCoinType(oldNtID)
 
 		var newBalance coin.Value

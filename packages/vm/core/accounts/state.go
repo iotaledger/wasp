@@ -4,6 +4,8 @@
 package accounts
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -63,7 +65,7 @@ func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 			copy(ethAddr[:], []byte(key))
 			return isc.NewEthereumAddressAgentID(chainID, ethAddr), nil
 		default:
-			panic("bad key length")
+			panic(fmt.Sprintf("bad key length: %d: %v / %x", len(key), string(key), key))
 		}
 	}
 	return codec.Decode[isc.AgentID]([]byte(key))
