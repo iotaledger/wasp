@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	"github.com/samber/lo"
 
@@ -188,4 +189,12 @@ func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 	}
 
 	return newAssets
+}
+
+func IsValidOldAccountKeyBytesLen(n int) bool {
+	if n > old_isc.ChainIDLength {
+		return true
+	}
+
+	return n == 4 || n == common.AddressLength
 }
