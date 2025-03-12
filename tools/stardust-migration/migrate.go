@@ -12,6 +12,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/samber/lo"
+	"github.com/slack-go/slack"
 	cmd "github.com/urfave/cli/v2"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -40,6 +41,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
+	"github.com/iotaledger/wasp/tools/stardust-migration/bot"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
@@ -56,6 +58,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dry
 	*transaction.StateMetadata,
 	func(),
 ) {
+
 	if srcChainDBDir == "" || destChainDBDir == "" {
 		log.Fatalf("source and destination chain database directories must be specified")
 	}
@@ -183,6 +186,8 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
+	bot.Get().PostMessage(fmt.Sprintf("*Starting Latest-State Migration* Started: %s", time.Now().String()))
+
 	srcStore, destStore, oldChainID, newChainID, prepConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
 
@@ -194,6 +199,8 @@ func migrateSingleState(c *cmd.Context) error {
 		cli.Log("Migrating latest state")
 		srcState = lo.Must(srcStore.LatestState())
 	}
+
+	bot.Get().PostMessage(fmt.Sprintf("Migrating state index: %d", blockIndex))
 
 	stateDraft, err := destStore.NewStateDraft(time.Now(), stateMetadata.L1Commitment)
 	if err != nil {
@@ -213,6 +220,8 @@ func migrateSingleState(c *cmd.Context) error {
 	newBlock := destStore.Commit(stateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
 
+	bot.Get().PostMessage(fmt.Sprintf("Latest-State migration succeeded: %d", blockIndex))
+
 	return nil
 }
 
@@ -225,6 +234,8 @@ func migrateAllStates(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	skipLoad := c.Bool("skip-load")
 	dryRun := c.Bool("dry-run")
+
+	bot.Get().PostMessage(fmt.Sprintf(":running: *Starting All-States Migration %s*", time.Now().String()), slack.MsgOptionIconEmoji(":running:"))
 
 	srcStore, destStore, oldChainID, newChainID, prepareConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
@@ -396,6 +407,9 @@ func migrateAllStates(c *cmd.Context) error {
 
 	cli.Logf("Finished at Index: %d\n", newBlock.StateIndex())
 	writeMigrationResult(stateMetadata, newBlock.StateIndex())
+
+	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", newBlock.StateIndex()))
+
 	return nil
 }
 
@@ -445,12 +459,13 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex u
 	indexer := blockindex.LoadOrCreate(srcStore)
 	printIndexerStats(indexer, srcStore)
 
+	bot.Get().PostMessage(fmt.Sprintf("Migrating from: *%d*, to: *%d*", startIndex, endIndex))
+
 	for i := startIndex; i <= endIndex; i++ {
 		printProgress()
 		block, trieRoot := indexer.BlockByIndex(i)
 		f(i, trieRoot, block)
 	}
-
 }
 
 func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {

@@ -5,10 +5,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"runtime/debug"
 
 	bcs "github.com/iotaledger/bcs-go"
 	old_iotago "github.com/iotaledger/iota.go/v3"
@@ -23,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/tools/stardust-migration/bot"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
@@ -41,6 +44,17 @@ func main() {
 	// For pprof profilings
 	go func() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
+	// For Slack notifications
+
+	defer func() { //catch or finally
+		if err := recover(); err != nil { //catch
+			errorStr := fmt.Sprintf(":collision: *Migration panicked!*\nError: %v\nStack: %v", err, string(debug.Stack()))
+			bot.Get().PostMessage(errorStr)
+			log.Println(errorStr)
+			os.Exit(1)
+		}
 	}()
 
 	app := &cmd.App{

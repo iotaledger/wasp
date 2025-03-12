@@ -1,9 +1,25 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/iotaledger/wasp/tools/stardust-migration/bot"
 )
+
+var lastNotifications map[string]time.Time = make(map[string]time.Time)
+
+func onlyForBlockProgress(entityPluralName string, msgType string, msg string) {
+	if entityPluralName != "blocks" {
+		return
+	}
+
+	if time.Now().Sub(lastNotifications[msgType]).Minutes() > 1 {
+		lastNotifications[msgType] = time.Now()
+		bot.Get().PostMessage(fmt.Sprintf("Status Update: %s\n%v", msgType, msg))
+	}
+}
 
 func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgress func(), done func()) {
 	const period = time.Second
@@ -27,8 +43,12 @@ func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgre
 					recentlyProcessed = 0
 				})
 
-				UpdateStatusBarf("%v processed: %v. Speed: %v %v/sec. Avg speed: %v %v/sec.",
+				updateString := fmt.Sprintf("%v processed: %v. Speed: %v %v/sec. Avg speed: %v %v/sec.",
 					entityPluralNameCapitalized, totalProcessed, currentSpeed, entityPluralName, avgSpeed, entityPluralName)
+
+				UpdateStatusBar(updateString)
+
+				onlyForBlockProgress(entityPluralName, "processing", updateString)
 			}, func() {
 				UpdateStatusBarf("")
 			}
@@ -52,8 +72,12 @@ func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgre
 				prevCountLeft = countLeft
 			})
 
-			UpdateStatusBarf("%v left: %v. Speed: %v %v/sec. Avg speed: %v %v/sec. Estimate time left: %v",
+			updateString := fmt.Sprintf("%v left: %v. Speed: %v %v/sec. Avg speed: %v %v/sec. Estimate time left: %v",
 				entityPluralNameCapitalized, countLeft, currentSpeed, entityPluralName, avgSpeed, entityPluralName, estimateRunTime)
+
+			UpdateStatusBar(updateString)
+
+			onlyForBlockProgress(entityPluralName, "estimate", updateString)
 		}, func() {
 			UpdateStatusBarf("")
 		}
