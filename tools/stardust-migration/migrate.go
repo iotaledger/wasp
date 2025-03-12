@@ -263,6 +263,7 @@ func migrateAllStates(c *cmd.Context) error {
 		var preloadStateIdx uint32
 		if skipLoad {
 			cli.Logf("Loading of initial state is SKIPPED - resulting database will be INVALID")
+			// Still preloading at least block 0, because it has old initial state.
 		} else {
 			preloadStateIdx = startBlockIndex - 1
 		}
