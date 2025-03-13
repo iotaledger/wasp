@@ -9,15 +9,21 @@ import (
 )
 
 var lastNotifications map[string]time.Time = make(map[string]time.Time)
+var lastGlobalStatusUpdate time.Time = time.Now()
 
 func onlyForBlockProgress(entityPluralName string, msgType string, msg string) {
 	if entityPluralName != "blocks" {
 		return
 	}
 
-	if time.Now().Sub(lastNotifications[msgType]).Minutes() > 1 {
+	// Send a fresh message every 45m so we have performance history
+	if time.Now().Sub(lastGlobalStatusUpdate).Minutes() > 45 {
+		bot.Get().InvalidateStatusUpdateReference()
+	}
+
+	if time.Now().Sub(lastNotifications[msgType]).Seconds() > 30 {
 		lastNotifications[msgType] = time.Now()
-		bot.Get().PostMessage(fmt.Sprintf("Status Update: %s\n%v", msgType, msg))
+		bot.Get().PostStatusUpdate(fmt.Sprintf("(This will update every 30s)\nStatus Update: %s\n%v", msgType, msg))
 	}
 }
 

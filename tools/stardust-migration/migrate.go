@@ -15,8 +15,6 @@ import (
 	"github.com/slack-go/slack"
 	cmd "github.com/urfave/cli/v2"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
@@ -30,6 +28,9 @@ import (
 	old_errors "github.com/nnikolash/wasp-types-exported/packages/vm/core/errors"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
+
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -186,7 +187,7 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	bot.Get().PostMessage(fmt.Sprintf("*Starting Latest-State Migration* Started: %s", time.Now().String()))
+	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"))
 
 	srcStore, destStore, oldChainID, newChainID, prepConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
@@ -234,8 +235,7 @@ func migrateAllStates(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	skipLoad := c.Bool("skip-load")
 	dryRun := c.Bool("dry-run")
-
-	bot.Get().PostMessage(fmt.Sprintf(":running: *Starting All-States Migration %s*", time.Now().String()), slack.MsgOptionIconEmoji(":running:"))
+	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
 	srcStore, destStore, oldChainID, newChainID, prepareConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()

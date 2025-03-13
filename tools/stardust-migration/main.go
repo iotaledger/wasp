@@ -11,14 +11,17 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"runtime/debug"
+	"time"
 
-	bcs "github.com/iotaledger/bcs-go"
-	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
+	"github.com/slack-go/slack"
 	cmd "github.com/urfave/cli/v2"
+
+	bcs "github.com/iotaledger/bcs-go"
+	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -46,12 +49,14 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
+	bot.Get().PostWelcomeMessage(fmt.Sprintf("*A new migration has been started.* %s", time.Now().String()))
+
 	// For Slack notifications
 
-	defer func() { //catch or finally
+	defer func() {                        //catch or finally
 		if err := recover(); err != nil { //catch
-			errorStr := fmt.Sprintf(":collision: *Migration panicked!*\nError: %v\nStack: %v", err, string(debug.Stack()))
-			bot.Get().PostMessage(errorStr)
+			errorStr := fmt.Sprintf(":collision: *Migration panicked!*\nError: %v\nStack: %v\n <!here> ", err, string(debug.Stack()))
+			bot.Get().PostMessage(errorStr, slack.MsgOptionLinkNames(true))
 			log.Println(errorStr)
 			os.Exit(1)
 		}
