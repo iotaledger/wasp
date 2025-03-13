@@ -2,10 +2,10 @@ package bls
 
 import (
 	"bytes"
-	"github.com/btcsuite/btcd/btcutil/base58"
+	"slices"
 
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/iotaledger/hive.go/ierrors"
-	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
 )
 
 // region Signature ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -151,7 +151,7 @@ func (s SignatureWithPublicKey) IsValid(data []byte) bool {
 
 // Bytes returns the signature in bytes.
 func (s SignatureWithPublicKey) Bytes() []byte {
-	return byteutils.ConcatBytes(s.PublicKey.Bytes(), s.Signature.Bytes())
+	return slices.Concat(s.PublicKey.Bytes(), s.Signature.Bytes())
 }
 
 // Encode returns the signature in bytes.
