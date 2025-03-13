@@ -321,6 +321,24 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// ask for proposal, assert 4,5,6 are proposed
 	askProposalExpectReqs(te.anchor, reqNonce4, reqNonce5, offLedgerReqs[3])
 	// nonce 10 was never proposed
+
+	t.Run("request with old nonce is rejected", func(t *testing.T) {
+		reqNonce0 := createReqWithNonce(0)
+		err = te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce0)
+		require.ErrorContains(t, err, "bad nonce")
+	})
+
+	t.Run("request with not enough funds is rejected", func(t *testing.T) {
+		kp := cryptolib.NewKeyPair()
+		req := isc.NewOffLedgerRequest(
+			te.chainID,
+			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
+			0,
+			gas.LimitsDefault.MaxGasPerRequest,
+		).Sign(kp)
+		err = te.mempools[chosenMempool].ReceiveOffLedgerRequest(req)
+		require.ErrorContains(t, err, "not enough funds")
+	})
 }
 
 func TestMempoolChainOwner(t *testing.T) {

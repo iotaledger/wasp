@@ -60,6 +60,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
@@ -479,11 +480,11 @@ func (mpi *mempoolImpl) distSyncRequestNeededCB(requestRef *isc.RequestRef) isc.
 func (mpi *mempoolImpl) distSyncRequestReceivedCB(request isc.Request) bool {
 	offLedgerReq, ok := request.(isc.OffLedgerRequest)
 	if !ok {
-		mpi.log.Warn("Dropping non-OffLedger request form dist %T: %+v", request, request)
+		mpi.log.Warnf("Dropping non-OffLedger request form dist %T: %+v", request, request)
 		return false
 	}
 	if err := mpi.shouldAddOffledgerRequest(offLedgerReq); err == nil {
-		mpi.log.Warn("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
+		mpi.log.Warnf("shouldAddOffledgerRequest: true, trying to add to offledger %T: %+v", request, request)
 
 		return mpi.addOffledger(offLedgerReq)
 	}
@@ -524,14 +525,15 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	}
 
 	// check user has on-chain balance
-	if !mpi.accountsState().AccountExists(req.SenderAccount(), mpi.chainID) {
-		// make an exception for gov calls (sender is chan owner and target is gov contract)
-		governanceState := governance.NewStateReaderFromChainState(mpi.chainHeadState)
-		// FIXME chain owner is set to the wrong one!!
+	governanceState := governance.NewStateReaderFromChainState(mpi.chainHeadState)
+	minFee := governanceState.GetGasFeePolicy().MinFee(isc.RequestGasPrice(req), parameters.Decimals)
+	balance := mpi.accountsState().GetBaseTokensBalanceDiscardExtraDecimals(req.SenderAccount(), mpi.chainID)
+	if balance < minFee {
+		// make an exception for gov calls (sender is chain owner and target is gov contract)
 		chainOwner := governanceState.GetChainOwnerID()
 		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.Message().Target.Contract == governance.Contract.Hname()
-		if !isGovRequest && governanceState.GetDefaultGasPrice().Cmp(util.Big0) != 0 {
-			return fmt.Errorf("no funds on chain")
+		if !isGovRequest {
+			return fmt.Errorf("not enough funds on chain to cover minimum fee")
 		}
 	}
 
@@ -943,7 +945,7 @@ func (mpi *mempoolImpl) tryRemoveRequest(req isc.Request) {
 		mpi.log.Debugf("removing off-ledger request from mempool: %s", req.ID())
 		mpi.offLedgerPool.Remove(req)
 	default:
-		mpi.log.Warn("Trying to remove request of unexpected type %T: %+v", req, req)
+		mpi.log.Warnf("Trying to remove request of unexpected type %T: %+v", req, req)
 	}
 }
 

@@ -155,13 +155,13 @@ func (a *acsImpl) Input(input gpa.Input) gpa.OutMessages {
 func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
 	msgT, ok := msg.(*gpa.WrappingMsg)
 	if !ok {
-		a.log.Warn("unexpected message of type %T: %+v", msg, msg)
+		a.log.Warnf("unexpected message of type %T: %+v", msg, msg)
 		return nil
 	}
 	msgs := gpa.NoMessages()
 	sub, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
 	if err != nil {
-		a.log.Warn("cannot delegate a message: %v", err)
+		a.log.Warnf("cannot delegate a message: %v", err)
 		return nil
 	}
 	msgs.AddAll(subMsgs)
