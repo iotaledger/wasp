@@ -5,11 +5,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
 	"runtime/debug"
 	"time"
 
@@ -53,7 +55,7 @@ func main() {
 
 	// For Slack notifications
 
-	defer func() {                        //catch or finally
+	defer func() { //catch or finally
 		if err := recover(); err != nil { //catch
 			errorStr := fmt.Sprintf(":collision: *Migration panicked!*\nError: %v\nStack: %v\n <!here> ", err, string(debug.Stack()))
 			bot.Get().PostMessage(errorStr, slack.MsgOptionLinkNames(true))
@@ -144,7 +146,8 @@ func main() {
 		},
 	}
 
-	lo.Must0(app.Run(os.Args))
+	programCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
+	lo.Must0(app.RunContext(programCtx, os.Args))
 }
 
 func processCommonFlags(c *cmd.Context) error {

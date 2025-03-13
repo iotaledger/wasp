@@ -297,11 +297,12 @@ func migrateAllStates(c *cmd.Context) error {
 	newState := NewInMemoryKVStore(false)
 
 	lastPrintTime := time.Now()
-	blocksProcessed := 0
+	lastProcessedBlockIndex := uint32(0)
+	recentlyBlocksProcessed := 0
 	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed, errMutsProcessed := 0, 0, 0, 0, 0, 0
 
-	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
+	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) bool {
 		defer func() {
 			if err := recover(); err != nil {
 				cli.Logf("Error at block index %v", blockIndex)
@@ -369,8 +370,10 @@ func migrateAllStates(c *cmd.Context) error {
 			}
 		}
 
+		lastProcessedBlockIndex = blockIndex
+
 		//Ugly stats code
-		blocksProcessed++
+		recentlyBlocksProcessed++
 		oldSetsProcessed += len(oldMuts.Sets)
 		oldDelsProcessed += len(oldMuts.Dels)
 		newSetsProcessed += len(newMuts.Sets)
@@ -389,33 +392,39 @@ func migrateAllStates(c *cmd.Context) error {
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
-			cli.Logf("Blocks processed: %v", blocksProcessed)
+			cli.Logf("Blocks processed: %v", recentlyBlocksProcessed)
 			//cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
 			//cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState), newState.CommittedSize())
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
 			cli.Logf("Mutations per state processed (sets/dels): old = %.1f/%.1f, new = %.1f/%.1f",
-				float64(oldSetsProcessed)/float64(blocksProcessed), float64(oldDelsProcessed)/float64(blocksProcessed),
-				float64(newSetsProcessed)/float64(blocksProcessed), float64(newDelsProcessed)/float64(blocksProcessed),
+				float64(oldSetsProcessed)/float64(recentlyBlocksProcessed), float64(oldDelsProcessed)/float64(recentlyBlocksProcessed),
+				float64(newSetsProcessed)/float64(recentlyBlocksProcessed), float64(newDelsProcessed)/float64(recentlyBlocksProcessed),
 			)
 			cli.Logf("New mutations per block by contracts:\n\tRoot: %.1f\n\tAccounts: %.1f\n\tBlocklog: %.1f\n\tGovernance: %.1f\n\tError: %.1f\n\tEVM: %.1f",
-				float64(rootMutsProcessed)/float64(blocksProcessed), float64(accountMutsProcessed)/float64(blocksProcessed),
-				float64(blocklogMutsProcessed)/float64(blocksProcessed), float64(govMutsProcessed)/float64(blocksProcessed),
-				float64(errMutsProcessed)/float64(blocksProcessed), float64(evmMutsProcessed)/float64(blocksProcessed),
+				float64(rootMutsProcessed)/float64(recentlyBlocksProcessed), float64(accountMutsProcessed)/float64(recentlyBlocksProcessed),
+				float64(blocklogMutsProcessed)/float64(recentlyBlocksProcessed), float64(govMutsProcessed)/float64(recentlyBlocksProcessed),
+				float64(errMutsProcessed)/float64(recentlyBlocksProcessed), float64(evmMutsProcessed)/float64(recentlyBlocksProcessed),
 			)
 
-			blocksProcessed = 0
+			recentlyBlocksProcessed = 0
 			oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed = 0, 0, 0, 0
 			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, errMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0, 0
 		})
+
+		if c.Err() != nil {
+			cli.Logf("Interrupted after block %v", blockIndex)
+			return false
+		}
+
+		return true
 	})
 
-	lastProcessedBlockIndex := startBlockIndex + uint32(blocksProcessed)
 	cli.Logf("Finished at Index: %d\n", lastProcessedBlockIndex)
 	if !dryRun {
 		writeMigrationResult(stateMetadata, lastProcessedBlockIndex)
 	}
 
-	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", blocksProcessed))
+	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", recentlyBlocksProcessed))
 
 	return nil
 }
@@ -424,7 +433,7 @@ func migrateAllStates(c *cmd.Context) error {
 // It uses index file index.bin if it is present, otherwise it uses indexing on-the-fly with blockindex.BlockIndexer.
 // If index file does not have enough entries, it retrieves the rest of the blocks without indexing.
 // Index file is created using stardust-block-indexer tool.
-func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex uint32, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block)) {
+func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex uint32, f func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) bool) {
 	latestBlockIndex := lo.Must(srcStore.LatestBlockIndex())
 
 	if startIndex > latestBlockIndex {
@@ -454,7 +463,9 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex u
 			trieRoot := blockTrieRoots[i]
 			printProgress()
 			block := lo.Must(srcStore.BlockByTrieRoot(trieRoot))
-			f(uint32(i), trieRoot, block)
+			if !f(uint32(i), trieRoot, block) {
+				return
+			}
 		}
 
 		return
@@ -471,7 +482,9 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex u
 	for i := startIndex; i <= endIndex; i++ {
 		printProgress()
 		block, trieRoot := indexer.BlockByIndex(i)
-		f(i, trieRoot, block)
+		if !f(i, trieRoot, block) {
+			return
+		}
 	}
 }
 
