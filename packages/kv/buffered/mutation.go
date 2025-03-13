@@ -2,8 +2,9 @@ package buffered
 
 import (
 	"fmt"
-	"github.com/iotaledger/hive.go/lo"
 	"sort"
+
+	"github.com/iotaledger/hive.go/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/kv"

@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/iotaledger/hive.go/lo"
 	"io"
+	"slices"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -30,7 +30,7 @@ func New() Dict {
 func (d Dict) Clone() Dict {
 	clone := make(Dict)
 	d.ForEach(func(key kv.Key, value []byte) bool {
-		clone.Set(key, lo.CopySlice(value))
+		clone.Set(key, slices.Clone(value))
 		return true
 	})
 	return clone

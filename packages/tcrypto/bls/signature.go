@@ -5,6 +5,7 @@ import (
 	"slices"
 
 	"github.com/btcsuite/btcd/btcutil/base58"
+
 	"github.com/iotaledger/hive.go/ierrors"
 )
 

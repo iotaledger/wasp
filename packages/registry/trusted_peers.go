@@ -6,8 +6,9 @@ package registry
 import (
 	"context"
 	"fmt"
-	"github.com/samber/lo"
 	"os"
+
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/runtime/event"

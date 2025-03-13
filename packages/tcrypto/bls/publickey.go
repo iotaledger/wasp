@@ -2,6 +2,7 @@ package bls
 
 import (
 	"bytes"
+
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"

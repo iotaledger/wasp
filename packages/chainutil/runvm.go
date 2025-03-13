@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
-	"github.com/iotaledger/hive.go/log"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"

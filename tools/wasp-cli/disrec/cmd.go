@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	hivep2p "github.com/iotaledger/hive.go/crypto/p2p"
 	hivelog "github.com/iotaledger/hive.go/log"
-	
+
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 

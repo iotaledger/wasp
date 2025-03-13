@@ -5,9 +5,10 @@ package evmimpl
 
 import (
 	"fmt"
-	"github.com/samber/lo"
 	"reflect"
 	"strings"
+
+	"github.com/samber/lo"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"

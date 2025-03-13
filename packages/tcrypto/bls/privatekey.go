@@ -2,10 +2,12 @@ package bls
 
 import (
 	"bytes"
+
 	"github.com/btcsuite/btcd/btcutil/base58"
-	"github.com/iotaledger/hive.go/ierrors"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
+
+	"github.com/iotaledger/hive.go/ierrors"
 )
 
 // PrivateKey is the type of BLS private keys.
@@ -16,7 +18,7 @@ type PrivateKey struct {
 // PrivateKeyFromBytes creates a PrivateKey from the given bytes.
 func PrivateKeyFromBytes(b []byte) (privateKey PrivateKey, err error) {
 	buffer := bytes.NewReader(b)
-	
+
 	if privateKey, err = PrivateKeyFromMarshalUtil(buffer); err != nil {
 		err = ierrors.Wrap(err, "failed to parse PublicKey from MarshalUtil")
 	}

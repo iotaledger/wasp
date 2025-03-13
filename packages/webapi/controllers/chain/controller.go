@@ -3,8 +3,9 @@ package chain
 import (
 	"net/http"
 
-	log "github.com/iotaledger/hive.go/log"
 	"github.com/pangpanglabs/echoswagger/v2"
+
+	log "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"

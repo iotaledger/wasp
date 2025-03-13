@@ -11,11 +11,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
-	"github.com/samber/lo"
-	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
 

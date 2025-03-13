@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/log"
 	"github.com/labstack/echo/v4"
 	slogzap "github.com/samber/slog-zap/v2"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"

@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 )
 
 func initMergeCmd() *cobra.Command {

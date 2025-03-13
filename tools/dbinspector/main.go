@@ -12,8 +12,8 @@ import (
 	"os/signal"
 	"runtime"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/db"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 
 	"github.com/iotaledger/wasp/packages/database"

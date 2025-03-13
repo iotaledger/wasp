@@ -12,13 +12,14 @@ import (
 
 	"golang.org/x/exp/maps"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/samber/lo"
 )
 
 type batchProposalSet map[gpa.NodeID]*BatchProposal

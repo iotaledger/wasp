@@ -3,8 +3,9 @@ package testlogger_test
 import (
 	"testing"
 
-	"github.com/iotaledger/hive.go/log"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
