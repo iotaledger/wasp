@@ -7,12 +7,10 @@ toolchain go1.24.0
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1
 	github.com/iotaledger/wasp => ../..
-	github.com/nnikolash/wasp-types-exported => ../../../wasp-types-exported
 )
 
 require (
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
-	github.com/nnikolash/wasp-types-exported v0.0.0-20250307155910-c8c26cb96e7f
 	github.com/samber/lo v1.49.1
 )
 
@@ -145,6 +143,7 @@ require (
 	github.com/multiformats/go-multihash v0.2.3 // indirect
 	github.com/multiformats/go-multistream v0.4.1 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
+	github.com/nnikolash/wasp-types-exported v0.0.0-20250312155306-cba3d80c2d26 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/onsi/ginkgo/v2 v2.12.0 // indirect
 	github.com/opencontainers/runtime-spec v1.1.0 // indirect
