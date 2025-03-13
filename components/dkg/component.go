@@ -6,6 +6,7 @@ package dkg
 import (
 	"fmt"
 
+	"github.com/iotaledger/hive.go/logger"
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
@@ -43,7 +44,7 @@ func provide(c *dig.Container) error {
 			deps.NodeIdentityProvider.NodeIdentity(),
 			deps.NetworkProvider,
 			deps.DKShareRegistryProvider,
-			Component.Logger(),
+			Component.Logger,
 		)
 		if err != nil {
 			Component.LogPanic(fmt.Errorf("failed to initialize the DKG node: %w", err))

@@ -4,6 +4,8 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/publisher"
 )
@@ -37,7 +39,7 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func() publisherResult {
 		return publisherResult{
 			Publisher: publisher.New(
-				Component.Logger(),
+				Component.Logger
 			),
 		}
 	}); err != nil {

@@ -34,7 +34,7 @@ require (
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/hive.go/lo v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/hive.go/log v0.0.0-20240520064018-c635e5900894
-	github.com/iotaledger/hive.go/logger v0.0.0-20230417125513-e2e89991217f
+	github.com/iotaledger/hive.go/logger v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/hive.go/objectstorage v0.0.0-20231018191940-f36386f4e2fa
 	github.com/iotaledger/hive.go/runtime v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240517131232-748f1ce3a2d2
