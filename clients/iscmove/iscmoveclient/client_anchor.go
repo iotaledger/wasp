@@ -117,6 +117,9 @@ func (c *Client) GetAnchorFromObjectID(
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
 	}
+	if getObjectResponse.Error != nil {
+		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.Data.String())
+	}
 	return decodeAnchorBCS(
 		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,
 		getObjectResponse.Data.Ref(),

@@ -45,7 +45,7 @@ func TestGetInfo(t *testing.T) {
 	chainID, ownerAgentID, contracts := chain.GetInfo()
 
 	require.EqualValues(t, chain.ChainID, chainID)
-	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
+	require.EqualValues(t, chain.OwnerAgentID(), ownerAgentID)
 	require.GreaterOrEqual(t, len(contracts), len(corecontracts.All))
 
 	_, ok := contracts[root.Contract.Hname()]
@@ -74,7 +74,7 @@ func TestChangeOwnerAuthorized(t *testing.T) {
 	require.NoError(t, err)
 
 	_, ownerAgentID, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
+	require.EqualValues(t, chain.OwnerAgentID(), ownerAgentID)
 
 	req = solo.NewCallParams(governance.FuncClaimChainOwnership.Message()).
 		WithGasBudget(100_000).
@@ -99,5 +99,5 @@ func TestChangeOwnerUnauthorized(t *testing.T) {
 	require.ErrorContains(t, err, "unauthorized")
 
 	_, ownerAgentID, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OriginatorAgentID, ownerAgentID)
+	require.EqualValues(t, chain.OwnerAgentID(), ownerAgentID)
 }

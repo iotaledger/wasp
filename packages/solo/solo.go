@@ -79,9 +79,11 @@ type chainData struct {
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID isc.ChainID
 
-	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
-	// It is a default key pair in many of Solo calls which require private key.
-	OriginatorPrivateKey *cryptolib.KeyPair
+	// OperatorPrivateKey the key pair used to create and operate the chain.
+	OperatorPrivateKey *cryptolib.KeyPair
+
+	// OwnerPrivateKey the key pair designed as ChainOwner
+	OwnerPrivateKey *cryptolib.KeyPair
 
 	db kvstore.KVStore
 
@@ -92,9 +94,6 @@ type chainData struct {
 // There may be several parallel instances of the chain in the 'solo' test
 type Chain struct {
 	chainData
-
-	OriginatorAddress *cryptolib.Address
-	OriginatorAgentID isc.AgentID
 
 	// Env is a pointer to the global structure of the 'solo' test
 	Env *Solo
@@ -245,15 +244,15 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultChainOriginatorBaseTokens = 50 * isc.Million
+	DefaultChainOwnerBaseTokens = 50 * isc.Million
 )
 
 // NewChain deploys a new default chain instance.
-func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
+func (env *Solo) NewChain(depositFundsForOwner ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
+	if len(depositFundsForOwner) == 0 || depositFundsForOwner[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, ret.OriginatorPrivateKey)
+		err := ret.DepositBaseTokensToL2(DefaultChainOwnerBaseTokens, ret.OwnerPrivateKey)
 		require.NoError(env.T, err)
 	}
 	return ret
@@ -264,7 +263,7 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 }
 
 func (env *Solo) deployChain(
-	chainOriginator *cryptolib.KeyPair,
+	chainOwner *cryptolib.KeyPair,
 	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
@@ -272,20 +271,20 @@ func (env *Solo) deployChain(
 ) (chainData, *isc.StateAnchor) {
 	env.logger.Debugf("deploying new chain '%s'", name)
 
-	if chainOriginator == nil {
-		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
-		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-		env.GetFundsFromFaucet(originatorAddr)
+	if chainOwner == nil {
+		chainOwner = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
+		env.GetFundsFromFaucet(chainOwner.Address())
 	}
 
+	chainOperator := env.NewKeyPairFromIndex(-2000 + len(env.chains))
+	env.GetFundsFromFaucet(chainOperator.Address())
+
 	initParams := origin.NewInitParams(
-		isc.NewAddressAgentID(chainOriginator.Address()),
+		isc.NewAddressAgentID(chainOwner.Address()),
 		evmChainID,
 		blockKeepAmount,
 		true,
 	)
-
-	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
 
 	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
 
@@ -293,7 +292,7 @@ func (env *Solo) deployChain(
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue)
+	gasCoinRef := env.makeBaseTokenCoin(chainOperator, isc.GasCoinTargetValue, nil)
 
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
@@ -307,40 +306,56 @@ func (env *Solo) deployChain(
 	var initCoin *iotago.ObjectRef
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
-			chainOriginator,
+			chainOperator,
 			initCommonAccountBaseTokens,
+			func(c *iotajsonrpc.Coin) bool {
+				return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID)
+			},
 		)
 	}
+
+	gasPayment, err := iotajsonrpc.PickupCoinsWithFilter(
+		env.L1BaseTokenCoins(chainOperator.Address()),
+		uint64(iotaclient.DefaultGasBudget),
+		func(c *iotajsonrpc.Coin) bool {
+			return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID) &&
+				(initCoin == nil || !c.CoinObjectID.Equals(*initCoin.ObjectID))
+		},
+	)
+	require.NoError(env.T, err)
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
 		env.ctx,
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainOriginator,
-			ChainOwnerAddress: chainOriginator.Address(),
+			Signer:            chainOperator,
+			ChainOwnerAddress: chainOperator.Address(),
 			PackageID:         env.ISCPackageID(),
 			StateMetadata:     stateMetadata.Bytes(),
 			InitCoinRef:       initCoin,
 			GasPrice:          iotaclient.DefaultGasPrice,
 			GasBudget:         iotaclient.DefaultGasBudget,
+			GasPayments:       gasPayment.CoinRefs(),
 		},
 	)
 	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
 	env.logger.Infof(
-		"deployed chain '%s' - ID: %s - state controller address: %s - origin trie root: %s",
+		"deployed chain '%s' - ID: %s - chain operator: %s - chain owner: %s - origin trie root: %s",
 		name,
 		chainID,
-		originatorAddr,
+		chainOperator.Address(),
+		chainOwner.Address(),
 		block.TrieRoot(),
 	)
 
 	return chainData{
-		Name:                 name,
-		ChainID:              chainID,
-		OriginatorPrivateKey: chainOriginator,
-		db:                   db,
-		migrationScheme:      allmigrations.DefaultScheme,
+		Name:               name,
+		ChainID:            chainID,
+		OperatorPrivateKey: chainOperator,
+		OwnerPrivateKey:    chainOwner,
+		db:                 db,
+		migrationScheme:    allmigrations.DefaultScheme,
 	}, nil
 }
 
@@ -383,14 +398,12 @@ func (env *Solo) NewChainExt(
 
 func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
-		chainData:         chData,
-		OriginatorAddress: chData.OriginatorPrivateKey.GetPublicKey().AsAddress(),
-		OriginatorAgentID: isc.NewAddressAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
-		Env:               env,
-		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
-		proc:              env.processorConfig,
-		log:               env.logger.Named(chData.Name),
-		migrationScheme:   chData.migrationScheme,
+		chainData:       chData,
+		Env:             env,
+		store:           indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
+		proc:            env.processorConfig,
+		log:             env.logger.Named(chData.Name),
+		migrationScheme: chData.migrationScheme,
 	}
 	env.chains[chData.ChainID] = ch
 	return ch
@@ -429,6 +442,27 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 	return &stateAnchor
 }
 
+func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
+	getObjRes, err := env.ISCMoveClient().GetObject(
+		env.ctx,
+		iotaclient.GetObjectRequest{
+			ObjectID: id,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		},
+	)
+	require.NoError(env.T, err)
+	require.Nil(env.T, getObjRes.Error)
+	var moveGasCoin iscmoveclient.MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	require.NoError(env.T, err)
+	gasCoinRef := getObjRes.Data.Ref()
+	return &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(moveGasCoin.Balance),
+		Ref:   &gasCoinRef,
+	}
+}
+
 func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
 		ch.Env.ctx,
@@ -438,23 +472,7 @@ func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 
 	metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 	require.NoError(ch.Env.T, err)
-	getObjRes, err := ch.Env.ISCMoveClient().GetObject(
-		ch.Env.ctx,
-		iotaclient.GetObjectRequest{
-			ObjectID: metadata.GasCoinObjectID,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
-		},
-	)
-	require.NoError(ch.Env.T, err)
-	var moveGasCoin iscmoveclient.MoveCoin
-	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
-	require.NoError(ch.Env.T, err)
-	gasCoinRef := getObjRes.Data.Ref()
-	return &coin.CoinWithRef{
-		Type:  coin.BaseTokenType,
-		Value: coin.Value(moveGasCoin.Balance),
-		Ref:   &gasCoinRef,
-	}
+	return ch.Env.GetCoin(metadata.GasCoinObjectID)
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
