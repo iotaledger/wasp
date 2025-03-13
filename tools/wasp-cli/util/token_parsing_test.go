@@ -4,12 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/iotaledger/iota.go/v3/bech32"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
 func TestTokenParsing(t *testing.T) {
@@ -26,11 +23,4 @@ func TestTokenParsing(t *testing.T) {
 
 	require.Equal(t, assets.BaseTokens().Uint64(), uint64(2000))
 	require.Equal(t, assets.CoinBalance(fakeCoin).Uint64(), uint64(1074))
-}
-
-func TestSeed(t *testing.T) {
-	see := "iotaprivkey1qranfhgmyxs5qazfse4xx8p6l4c5m974j6nfcfl690autxedgalh6w4y74r"
-	k, b, e := bech32.Decode(see)
-	log.Check(e)
-	fmt.Printf("%v %s", k, hexutil.Encode(b))
 }

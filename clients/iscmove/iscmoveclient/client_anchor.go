@@ -90,6 +90,32 @@ func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAncho
 	return true, nil
 }
 
+func (c *Client) GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
+	obj, err := c.Client.GetObject(ctx, req)
+
+	counter := 0
+	for {
+		if counter >= c.WaitUntilEffectsVisible.Attempts {
+			return nil, errors.New("could not get object in time")
+		}
+
+		if obj != nil && obj.Error == nil {
+			return obj, err
+		}
+
+		if obj != nil && obj.Error.Data.NotExists == nil {
+			return obj, err
+		}
+
+		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
+
+		obj, err = c.Client.GetObject(ctx, req)
+		counter++
+	}
+
+	return nil, errors.New("could not get object in time")
+}
+
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	req *StartNewChainRequest,
