@@ -72,7 +72,7 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 		)
 	}
 
-	if gasPrice := reqctx.txGasPrice(); gasPrice != nil {
+	if gasPrice := isc.RequestGasPrice(reqctx.req); gasPrice != nil {
 		if err := evmutil.CheckGasPrice(gasPrice, reqctx.vm.chainInfo.GasFeePolicy); err != nil {
 			return err
 		}
