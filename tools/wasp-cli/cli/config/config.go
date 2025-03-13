@@ -244,5 +244,7 @@ func GetAuthTokenForImport() map[string]string {
 	return authTokenMap
 }
 
-func GetTestingSeed() string     { return viper.GetString("wallet.testing_seed") }
-func SetTestingSeed(seed string) { viper.Set("wallet.testing_seed", seed) }
+func GetTestingSeed() string         { return viper.GetString("wallet.testing_seed") }
+func SetTestingSeed(seed string)     { viper.Set("wallet.testing_seed", seed) }
+func GetTestingMnemonic() string     { return viper.GetString("wallet.testing_mnemonic") }
+func SetTestingMnemonic(seed string) { viper.Set("wallet.testing_mnemonic", seed) }

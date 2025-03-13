@@ -15,6 +15,7 @@ type PrepareConfiguration struct {
 	GasCoinID           *iotago.ObjectID
 	AnchorID            *iotago.ObjectID
 	PackageID           iotago.PackageID
+	L1ApiUrl            string
 }
 
 type MigrationResult struct {

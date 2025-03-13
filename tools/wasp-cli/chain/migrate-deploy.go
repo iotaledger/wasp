@@ -159,7 +159,6 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	cwd, err := os.Getwd()
 	log.Check(err)
 
-	//dryRunL1MigrationTransactionAndValidate(ctx, packageID, kp, l1Client)
 	dkgCommitteeAddress := doDKG(ctx, node, peers, quorum)
 
 	fmt.Println("Execute Asset migration")
@@ -172,19 +171,21 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	})
 
 	fmt.Println("Creating Anchor")
-	anchor, err := l1Client.L2().CreateAnchorWithAssetsBagRef(ctx, &iscmoveclient.CreateAnchorWithAssetsBagRefRequest{
+	anchor, err := l1Client.L2().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
 		PackageID:         packageID,
-		AssetsBagRef:      assetsBagRef,
 		GasPayments:       []*iotago.ObjectRef{getFirstCoin(ctx, kp, l1Client)},
 		ChainOwnerAddress: kp.Address(),
 		Signer:            kp,
 		GasPrice:          iotaclient.DefaultGasPrice,
 		GasBudget:         iotaclient.DefaultGasBudget,
+		StateMetadata:     make([]byte, 0),
+		InitCoinRef:       nil,
 	})
 	log.Check(err)
 
 	fmt.Println("Creating GasCoin")
-	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, dkgCommitteeAddress.AsIotaAddress())
+	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, kp.Address().AsIotaAddress())
+
 	log.Check(err)
 
 	prepareConfiguration := &migration.PrepareConfiguration{
@@ -194,6 +195,7 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 		GasCoinID:           &gasCoin,
 		ChainOwner:          kp.Address(),
 		PackageID:           packageID,
+		L1ApiUrl:            config.L1APIAddress(),
 	}
 
 	fmt.Println("Preparation finished:")
@@ -230,6 +232,11 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 		GasPrice:      iotaclient.DefaultGasPrice,
 	})
 
+	if !success || err != nil {
+		log.Printf("FAILED TO UPDATE STATE! result:%v, \nerr:%v", success, err)
+		panic("omg")
+	}
+
 	transfer, err := l1Client.TransferObject(ctx, iotaclient.TransferObjectRequest{
 		Signer:    kp.Address().AsIotaAddress(),
 		ObjectID:  anchorRef.ObjectID,
@@ -237,6 +244,10 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 		GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
 		Gas:       getFirstCoin(ctx, kp, l1Client).ObjectID,
 	})
+	if err != nil {
+		log.Printf("FAILED TO CONSTRUCT -TRANSFER ANCHOR-: err:%v", err)
+		panic("omg")
+	}
 
 	result, err := l1Client.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(kp),
@@ -245,13 +256,12 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 			ShowObjectChanges: true,
 		},
 	})
-
-	log.Printf("\n%v\n %v\n", transfer, result)
-
-	if !success || err != nil {
-		log.Printf("UPDATE ERROR: result:%v, \nerr:%v", success, err)
+	if err != nil {
+		log.Printf("FAILED TO EXECUTE -TRANSFER ANCHOR-: err:%v", err)
 		panic("omg")
 	}
+
+	log.Printf("\n%v\n %v\n", transfer, result)
 
 	chainID := isc.ChainIDFromObjectID(*prepareConfig.AnchorID)
 	config.AddChain(chainName, chainID.String())

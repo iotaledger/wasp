@@ -123,6 +123,22 @@ func NewSignerWithMnemonic(mnemonic string, flag KeySchemeFlag) (Signer, error) 
 	return NewSigner(key.Key, flag), nil
 }
 
+func KeyFromMnemonic(mnemonic string, flag KeySchemeFlag) (*Key, KeySchemeFlag) {
+	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
+	if err != nil {
+		return nil, KeySchemeFlagEd25519
+	}
+	bip32, err := BuildBip32Path(SignatureFlagEd25519, IotaCoinType, 0)
+	if err != nil {
+		return nil, KeySchemeFlagEd25519
+	}
+	key, err := DeriveForPath("m/"+bip32, seed)
+	if err != nil {
+		return nil, KeySchemeFlagEd25519
+	}
+	return key, flag
+}
+
 func (s *InMemorySigner) PrivateKey() []byte {
 	switch {
 	case s.ed25519Keypair != nil:

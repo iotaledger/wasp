@@ -19,6 +19,7 @@ var AddressIndex uint32
 type WalletProvider string
 
 const (
+	ProviderReadOnlyMnemonic          WalletProvider = "unsafe_inmemory_testing_mnemonic"
 	ProviderUnsafeInMemoryTestingSeed WalletProvider = "unsafe_inmemory_testing_seed"
 	ProviderKeyChain                  WalletProvider = "keychain"
 	ProviderLedger                    WalletProvider = "ledger"
@@ -29,7 +30,7 @@ func GetWalletProvider() WalletProvider {
 	provider := WalletProvider(config.GetWalletProviderString())
 
 	switch provider {
-	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug:
+	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderReadOnlyMnemonic, ProviderLedgerDebug:
 		return provider
 	}
 	return ProviderKeyChain
@@ -37,7 +38,7 @@ func GetWalletProvider() WalletProvider {
 
 func SetWalletProvider(provider WalletProvider) error {
 	switch provider {
-	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug:
+	case ProviderKeyChain, ProviderUnsafeInMemoryTestingSeed, ProviderLedger, ProviderLedgerDebug, ProviderReadOnlyMnemonic:
 		config.SetWalletProviderString(string(provider))
 		return nil
 	}
@@ -76,11 +77,13 @@ func Load() wallets.Wallet {
 		switch walletProvider {
 		case ProviderLedger, ProviderLedgerDebug:
 			loadedWallet = providers.NewExternalWallet(initializeLedger(walletProvider), AddressIndex, iotasigner.IotaCoinType)
-
 		case ProviderKeyChain:
 			loadedWallet = providers.LoadKeyChain(AddressIndex)
 		case ProviderUnsafeInMemoryTestingSeed:
 			loadedWallet = providers.LoadUnsafeInMemoryTestingSeed(AddressIndex)
+		case ProviderReadOnlyMnemonic:
+			loadedWallet = providers.LoadMnemonicSeed()
+
 		}
 	}
 
