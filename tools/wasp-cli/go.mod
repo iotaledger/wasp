@@ -21,7 +21,6 @@ require (
 	github.com/iotaledger/hive.go/crypto v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240319170702-c7591bb5f9f2
 	github.com/iotaledger/hive.go/logger v0.0.0-20240319170702-c7591bb5f9f2
-	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
 	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
 	github.com/samber/lo v1.49.1
 	github.com/spf13/cobra v1.9.1
@@ -99,6 +98,7 @@ require (
 	github.com/iotaledger/hive.go/web v0.0.0-20240319170702-c7591bb5f9f2 // indirect
 	github.com/iotaledger/inx-app v1.0.0-rc.3.0.20230417131029-0bfe891d7c4a // indirect
 	github.com/iotaledger/iota.go v1.0.0 // indirect
+	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/ipfs/go-log/v2 v2.5.1 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
