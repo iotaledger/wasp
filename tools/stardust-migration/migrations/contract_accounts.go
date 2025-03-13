@@ -146,7 +146,7 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 	w := accounts.NewStateWriter(newSchema, newState)
 	oldState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
 		count++
-		oldAccKey, oldNtIDBytes := utils.SplitMapKey(k, old_accounts.PrefixNativeTokens)
+		oldAccKey, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
 		if oldNtIDBytes == "" {
 			// not a map entry
 			return true

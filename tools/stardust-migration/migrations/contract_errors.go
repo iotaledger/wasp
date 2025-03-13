@@ -24,8 +24,9 @@ func migrateErrorTemplates(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	// TODO: Iterating by prefix is unsafe. Is there another way in this case?
 
 	oldState.Iterate(old_kv.Key(old_errors.PrefixErrorTemplateMap), func(oldKey old_kv.Key, oldVal []byte) bool {
-		// When we iterate by prefix, we find both map itself and its elements.
-		oldContractIDBytes, oldErrorIDBytes := utils.SplitMapKey(oldKey, old_errors.PrefixErrorTemplateMap)
+		const contracrIDLen = 4
+
+		oldContractIDBytes, oldErrorIDBytes := utils.MustSplitMapKey(oldKey, contracrIDLen, old_errors.PrefixErrorTemplateMap)
 		if oldErrorIDBytes == "" {
 			// Not a map element
 			return true

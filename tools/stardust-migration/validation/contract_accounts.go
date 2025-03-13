@@ -148,8 +148,7 @@ func newBaseTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.Chain
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
 	contractState.Iterate(kv.Key(accounts.PrefixAccountCoinBalances), func(balanceKey kv.Key, v []byte) bool {
-		accKey, coinTypeBytes := utils.SplitMapKey(balanceKey, accounts.PrefixAccountCoinBalances)
-
+		accKey, coinTypeBytes := utils.MustSplitMapKey(balanceKey, 0, accounts.PrefixAccountCoinBalances)
 		if coinTypeBytes == "" {
 			// not a map entry
 			return true

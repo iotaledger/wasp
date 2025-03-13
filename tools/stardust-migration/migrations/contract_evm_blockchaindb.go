@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	old_evm_types "github.com/nnikolash/wasp-types-exported/packages/evm/evmtypes"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
@@ -89,41 +88,28 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 
 	// Migrate KeyTransactionsByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(key old_kv.Key, value []byte) bool {
-		keyWithoutPrefix := utils.MustRemovePrefix(key, old_emulator.KeyTransactionsByBlockNumber)
 		const blockNumberLen = 8
-		const sepLen = 1
-		const txIndexLen = 4
-		const expectedTotalLen = blockNumberLen + sepLen + txIndexLen
-		if len(keyWithoutPrefix) != expectedTotalLen {
-			return true
-		}
 
-		if keyWithoutPrefix[blockNumberLen+sepLen] != '#' {
-			panic(fmt.Sprintf("unexpected key format: %x / %v", key, string(key)))
-		}
-
-		oldBlockNumberBytes := keyWithoutPrefix[:blockNumberLen]
-		txIndexBytes := keyWithoutPrefix[blockNumberLen+sepLen:]
-
-		var blockNumber uint64
-		if len(oldBlockNumberBytes) == 8 {
-			blockNumber = old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
-		} else if len(oldBlockNumberBytes) < 8 {
-			// NOTE: There is a bug in wasp - for old blocks big.Int.Bytes() was used to encode block number,
+		oldBlockNumberBytes, oldTxIndexBytes, err := utils.SplitArrayKey(key, blockNumberLen, old_emulator.KeyTransactionsByBlockNumber)
+		if err != nil {
+			// NOTE: Seems that there is a bug in wasp - for old blocks big.Int.Bytes() was used to encode block number,
 			// and database was not migrated after implementation changed.
 			// Example: key 6e3a740023000000000000 at block 8960
 
 			// TODO:
-			// Revisit this. For now, just skipping these records, because I value is also invalid - just one byte 0x09.
+			// Revisit this. For now, just skipping these records, because the value is also invalid - just one byte 0x09.
 			// Maybe they were deleted upon migration in such way?
-
 			return true
-			// blockNumber = big.NewInt(0).SetBytes([]byte(oldBlockNumberBytes)).Uint64()
-		} else {
-			panic(fmt.Sprintf("invalid key length: %v: %x, %x", len(oldBlockNumberBytes), oldBlockNumberBytes, key))
 		}
 
-		txIndex := old_rwutil.NewBytesReader([]byte(txIndexBytes)).Must().ReadUint32()
+		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
+		if oldTxIndexBytes == "" {
+			// It's a length record
+			newBlockChain.Set(emulator.MakeTransactionsByBlockNumberKey(blockNumber), value)
+			return true
+		}
+
+		txIndex := old_rwutil.NewBytesReader([]byte(oldTxIndexBytes)).Must().ReadUint32()
 		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), txIndex)
 
 		// TODO: This was caught after block 10000, probably pruning in play?
@@ -133,7 +119,6 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		}
 
 		tx := lo.Must(old_evm_types.DecodeTransaction(value))
-
 		newBlockChain.Set(newKey, evmtypes.EncodeTransaction(tx))
 
 		return true
@@ -170,25 +155,18 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 
 	// Migrate KeyReceiptsByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyReceiptsByBlockNumber, func(key old_kv.Key, value []byte) bool {
-		keyWithoutPrefix := utils.MustRemovePrefix(key, old_emulator.KeyReceiptsByBlockNumber)
-
 		const blockNumberLen = 8
-		const sepLen = 1
-		const recIndexLen = 4
-		const expectedTotalLen = blockNumberLen + sepLen + recIndexLen
-		if len(keyWithoutPrefix) != expectedTotalLen {
+
+		oldBlockNumberBytes, oldRecIndexBytes := utils.MustSplitArrayKey(key, blockNumberLen, old_emulator.KeyReceiptsByBlockNumber)
+
+		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
+		if oldRecIndexBytes == "" {
+			// It's a length record
+			newBlockChain.Set(emulator.MakeTransactionsByBlockNumberKey(blockNumber), value)
 			return true
 		}
 
-		if keyWithoutPrefix[blockNumberLen+sepLen] != '#' {
-			panic(fmt.Sprintf("unexpected key format: %x / %v", key, string(key)))
-		}
-
-		oldBlockNumberBytes := keyWithoutPrefix[:blockNumberLen]
-		recIndexBytes := keyWithoutPrefix[blockNumberLen+sepLen:]
-
-		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
-		recIndex := old_rwutil.NewBytesReader([]byte(recIndexBytes)).Must().ReadUint32()
+		recIndex := old_rwutil.NewBytesReader([]byte(oldRecIndexBytes)).Must().ReadUint32()
 		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), recIndex)
 
 		// TODO: This was caught after block 10000, probably pruning in play?
@@ -197,10 +175,8 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 			return true
 		}
 
-		oldReceipt := lo.Must(old_evm_types.DecodeReceipt(value))
-		newReceipt := types.Receipt(*oldReceipt)
-
-		newBlockChain.Set(newKey, evmtypes.EncodeReceipt(&newReceipt))
+		rec := lo.Must(old_evm_types.DecodeReceipt(value))
+		newBlockChain.Set(newKey, evmtypes.EncodeReceipt(rec))
 
 		return true
 	})
