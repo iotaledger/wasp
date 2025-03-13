@@ -11,7 +11,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -69,7 +69,7 @@ func genericTest(
 	dealer := nodeIDs[rand.Intn(len(nodeIDs))]
 	dealCB := func(i int, e []byte) []byte {
 		if silentNodes <= i && i < silentNodes+faultyDeals {
-			log.Infof("Corrupting the deal for node[%v]=%v", i, nodeIDs[i])
+			log.LogInfof("Corrupting the deal for node[%v]=%v", i, nodeIDs[i])
 			e[0] ^= 0xff // Corrupt the data.
 		}
 		return e

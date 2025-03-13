@@ -17,7 +17,7 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
@@ -58,7 +58,7 @@ const (
 type Solo struct {
 	// instance of the test
 	T                    Context
-	logger               *logger.Logger
+	logger               log.Logger
 	chainsMutex          sync.RWMutex
 	chains               map[isc.ChainID]*Chain
 	processorConfig      *processors.Config
@@ -102,7 +102,7 @@ type Chain struct {
 	// Store is where the chain data (blocks, state) is stored
 	store indexedstore.IndexedStore
 	// Log is the named logger of the chain
-	log *logger.Logger
+	log log.Logger
 	// global processor cache
 	proc *processors.Config
 	// related to asynchronous backlog processing
@@ -116,7 +116,7 @@ type InitOptions struct {
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
-	Log               *logger.Logger
+	Log               log.Logger
 }
 
 type L1Config struct {
@@ -520,7 +520,7 @@ func (ch *Chain) ID() isc.ChainID {
 	return ch.ChainID
 }
 
-func (ch *Chain) Log() *logger.Logger {
+func (ch *Chain) Log() log.Logger {
 	return ch.log
 }
 

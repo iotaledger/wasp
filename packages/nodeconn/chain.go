@@ -9,13 +9,14 @@ import (
 	"sync"
 
 	bcs "github.com/iotaledger/bcs-go"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
@@ -25,7 +26,7 @@ import (
 
 // ncChain is responsible for maintaining the information related to a single chain.
 type ncChain struct {
-	*logger.WrappedLogger
+	log.Logger
 
 	nodeConn       *nodeConnection
 	chainID        isc.ChainID
@@ -59,7 +60,7 @@ func newNCChain(
 		ctx,
 		nodeConn.iscPackageID,
 		*anchorAddress,
-		nodeConn.Logger(),
+		nodeConn.Logger,
 		wsURL,
 		httpURL,
 	)
@@ -68,7 +69,7 @@ func newNCChain(
 	}
 
 	ncc := &ncChain{
-		WrappedLogger:  logger.NewWrappedLogger(nodeConn.Logger()),
+		Logger:         nodeConn.Logger,
 		nodeConn:       nodeConn,
 		chainID:        chainID,
 		feed:           feed,

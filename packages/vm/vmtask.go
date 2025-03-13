@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -39,7 +39,7 @@ type VMTask struct {
 
 	Migrations *migrations.MigrationScheme // for testing and Solo only
 
-	Log *logger.Logger
+	Log log.Logger
 }
 
 type VMTaskResult struct {

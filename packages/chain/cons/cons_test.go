@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -478,7 +478,7 @@ func newTestConsInst(
 	dkShareRegistryProviders []registry.DKShareRegistryProvider,
 	requests []isc.Request,
 	doneCB func(nextInput *testInstInput),
-	log *logger.Logger,
+	log log.Logger,
 ) *testConsInst {
 	consInstID := []byte(fmt.Sprintf("testConsInst-%v", stateIndex))
 	nodes := map[gpa.NodeID]gpa.GPA{}

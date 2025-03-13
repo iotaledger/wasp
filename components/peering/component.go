@@ -7,6 +7,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
+
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -59,7 +60,7 @@ func provide(c *dig.Container) error {
 			nodeIdentity,
 			deps.TrustedPeersRegistryProvider,
 			deps.PeeringMetricsProvider,
-			Component.Logger(),
+			Component.Logger,
 		)
 		if err != nil {
 			Component.LogPanicf("Init.peering: %v", err)
@@ -71,7 +72,7 @@ func provide(c *dig.Container) error {
 			TrustedNetworkManager: tnmImpl,
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil

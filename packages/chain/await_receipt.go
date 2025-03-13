@@ -7,7 +7,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -25,10 +25,10 @@ type awaitReceiptImpl struct {
 	queries        *shrinkingmap.ShrinkingMap[isc.RequestID, []*awaitReceiptReq]
 	cleanupCounter int
 	cleanupEvery   int
-	log            *logger.Logger
+	log            log.Logger
 }
 
-func NewAwaitReceipt(cleanupEvery int, log *logger.Logger) AwaitReceipt {
+func NewAwaitReceipt(cleanupEvery int, log log.Logger) AwaitReceipt {
 	return &awaitReceiptImpl{
 		state:          nil,
 		queries:        shrinkingmap.New[isc.RequestID, []*awaitReceiptReq](),

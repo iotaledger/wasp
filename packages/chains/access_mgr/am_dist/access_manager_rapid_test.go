@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr/am_dist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -26,7 +26,7 @@ type accessMgrSM struct {
 	//
 	// These are initialized once.
 	initialized     bool
-	log             *logger.Logger
+	log             log.Logger
 	nodeKeys        []*cryptolib.KeyPair
 	nodePubs        []*cryptolib.PublicKey
 	nodeIDs         []gpa.NodeID

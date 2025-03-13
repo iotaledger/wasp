@@ -12,7 +12,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -45,7 +46,7 @@ type distSyncImpl struct {
 	needed            *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *distSyncReqNeeded]
 	missingReqsMetric func(count int)
 	rnd               *rand.Rand
-	log               *logger.Logger
+	log               log.Logger
 }
 
 var _ gpa.GPA = &distSyncImpl{}
@@ -61,7 +62,7 @@ func New(
 	requestReceivedCB func(isc.Request) bool,
 	maxMsgsPerTick int,
 	missingReqsMetric func(count int),
-	log *logger.Logger,
+	log log.Logger,
 ) gpa.GPA {
 	return &distSyncImpl{
 		me:                me,
@@ -80,7 +81,7 @@ func New(
 }
 
 func (dsi *distSyncImpl) Input(input gpa.Input) gpa.OutMessages {
-	dsi.log.Debugf("Input %T: %+v", input, input)
+	dsi.log.LogDebugf("Input %T: %+v", input, input)
 	switch input := input.(type) {
 	case *inputServerNodes:
 		return dsi.handleInputServerNodes(input)
@@ -103,7 +104,7 @@ func (dsi *distSyncImpl) Message(msg gpa.Message) gpa.OutMessages {
 	case *msgShareRequest:
 		return dsi.handleMsgShareRequest(msg)
 	}
-	dsi.log.Warnf("unexpected message %T: %+v", msg, msg)
+	dsi.log.LogWarnf("unexpected message %T: %+v", msg, msg)
 	return nil
 }
 
@@ -116,7 +117,7 @@ func (dsi *distSyncImpl) StatusString() string {
 }
 
 func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) gpa.OutMessages {
-	dsi.log.Debugf("handleInputServerNodes: %v", input)
+	dsi.log.LogDebugf("handleInputServerNodes: %v", input)
 	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.serverNodes = input.serverNodes
 	for i := range dsi.committeeNodes { // Ensure server nodes contain the committee nodes.
@@ -128,7 +129,7 @@ func (dsi *distSyncImpl) handleInputServerNodes(input *inputServerNodes) gpa.Out
 }
 
 func (dsi *distSyncImpl) handleInputAccessNodes(input *inputAccessNodes) gpa.OutMessages {
-	dsi.log.Debugf("handleInputAccessNodes: %v", input)
+	dsi.log.LogDebugf("handleInputAccessNodes: %v", input)
 	dsi.handleCommitteeNodes(input.committeeNodes)
 	dsi.accessNodes = input.accessNodes
 	for i := range dsi.committeeNodes { // Ensure access nodes contain the committee nodes.
@@ -169,9 +170,9 @@ func (dsi *distSyncImpl) propagateRequest(request isc.Request) gpa.OutMessages {
 	var publishToNodes []gpa.NodeID
 	if len(dsi.committeeNodes) > 0 {
 		publishToNodes = dsi.committeeNodes
-		dsi.log.Debugf("Forwarding request %v to committee nodes: %v", request.ID(), dsi.committeeNodes)
+		dsi.log.LogDebugf("Forwarding request %v to committee nodes: %v", request.ID(), dsi.committeeNodes)
 	} else {
-		dsi.log.Debugf("Forwarding request %v to server nodes: %v", request.ID(), dsi.serverNodes)
+		dsi.log.LogDebugf("Forwarding request %v to server nodes: %v", request.ID(), dsi.serverNodes)
 		publishToNodes = dsi.serverNodes
 	}
 	for i := range publishToNodes {
@@ -225,11 +226,11 @@ func (dsi *distSyncImpl) handleInputTimeTick() gpa.OutMessages {
 		stillNeeded := lo.ContainsBy(reqNeeded.waiters, func(ctx context.Context) bool { return ctx.Err() == nil })
 		if !stillNeeded {
 			dsi.needed.Delete(reqRefKey)
-			dsi.log.Debugf("Clearing MsgMissingRequest, not needed anymore: %v", reqNeeded.reqRef)
+			dsi.log.LogDebugf("Clearing MsgMissingRequest, not needed anymore: %v", reqNeeded.reqRef)
 			return true
 		}
 		recipient := dsi.serverNodes[nodePerm[counter%nodeCount]]
-		dsi.log.Debugf("Sending MsgMissingRequest for %v to %v", reqNeeded.reqRef, recipient)
+		dsi.log.LogDebugf("Sending MsgMissingRequest for %v to %v", reqNeeded.reqRef, recipient)
 		msgs.Add(newMsgMissingRequest(reqNeeded.reqRef, recipient))
 		counter++
 		return counter <= dsi.maxMsgsPerTick

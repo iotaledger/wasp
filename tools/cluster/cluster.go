@@ -26,7 +26,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -59,7 +59,7 @@ type Cluster struct {
 	l1                clients.L1Client
 	waspCmds          []*waspCmd
 	t                 *testing.T
-	log               *logger.Logger
+	log               log.Logger
 }
 
 type waspCmd struct {
@@ -67,7 +67,7 @@ type waspCmd struct {
 	logScanner sync.WaitGroup
 }
 
-func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log *logger.Logger) *Cluster {
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger) *Cluster {
 	if log == nil {
 		if t == nil {
 			panic("one of t or log must be set")

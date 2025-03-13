@@ -12,8 +12,9 @@ import (
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
@@ -21,7 +22,7 @@ import (
 )
 
 type blockWAL struct {
-	*logger.WrappedLogger
+	log.Logger
 
 	dir     string
 	metrics *metrics.ChainBlockWALMetrics
@@ -32,16 +33,16 @@ const (
 	constBlockWALTmpFileSuffix = ".tmp"
 )
 
-func NewBlockWAL(log *logger.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
+func NewBlockWAL(log log.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	dir := filepath.Join(baseDir, chainID.String())
 	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
 	}
 
 	result := &blockWAL{
-		WrappedLogger: logger.NewWrappedLogger(log.Named("WAL")),
-		dir:           dir,
-		metrics:       metrics,
+		Logger:  log.NewChildLogger("WAL"),
+		dir:     dir,
+		metrics: metrics,
 	}
 	result.LogDebugf("BlockWAL created in folder %v", dir)
 	return result, nil

@@ -12,7 +12,7 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
@@ -28,7 +28,7 @@ type blockCacheNoWALTestSM struct { // State machine for block cache no WAL prop
 	blocksInCache       []BlockKey
 	blockCacheMaxSize   int
 	addBlockCallback    func(state.Block)
-	log                 *logger.Logger
+	log                 log.Logger
 }
 
 var _ rapid.StateMachine = &blockCacheNoWALTestSM{}

@@ -6,7 +6,7 @@ package mostefaoui
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -26,10 +26,10 @@ type varDone struct {
 	recv    map[gpa.NodeID]int // All the received DONE messages and last our decision.
 	doneCB  func() gpa.OutMessages
 	done    bool
-	log     *logger.Logger
+	log     log.Logger
 }
 
-func newVarDone(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, doneCB func() gpa.OutMessages, log *logger.Logger) *varDone {
+func newVarDone(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, doneCB func() gpa.OutMessages, log log.Logger) *varDone {
 	return &varDone{
 		nodeIDs: nodeIDs,
 		me:      me,

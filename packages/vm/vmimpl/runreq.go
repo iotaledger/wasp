@@ -94,7 +94,7 @@ func (reqctx *requestContext) consumeRequest() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	reqctx.vm.task.Log.Debugf("consumeRequest: %s with %s", req.ID(), req.Assets())
+	reqctx.vm.task.Log.LogDebugf("consumeRequest: %s with %s", req.ID(), req.Assets())
 	reqctx.vm.txbuilder.ConsumeRequest(req)
 
 	// if sender is specified, all assets goes to sender's sender
@@ -182,7 +182,7 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 	})
 	if err != nil {
 		// this should never happen. something is wrong here, SKIP the request
-		reqctx.vm.task.Log.Errorf("panic before request execution (reqid: %s): %v", reqctx.req.ID(), err)
+		reqctx.vm.task.Log.LogErrorf("panic before request execution (reqid: %s): %v", reqctx.req.ID(), err)
 		return nil, err
 	}
 
@@ -251,8 +251,8 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 		if executionErr != nil {
 			callErrStr = executionErr.Error()
 		}
-		reqctx.vm.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, err)
-		reqctx.vm.task.Log.Debug(string(debug.Stack()))
+		reqctx.vm.task.Log.LogErrorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, err)
+		reqctx.vm.task.Log.LogDebug(string(debug.Stack()))
 		return nil, err
 	}
 
@@ -428,7 +428,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
 	targetCommonAccountBalance := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetGasCoinTargetValue()
 	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
-	reqctx.vm.task.Log.Debugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)
+	reqctx.vm.task.Log.LogDebugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)
 
 	if commonAccountBal < targetCommonAccountBalance {
 		// pay to common account since the balance of common account is less than min
@@ -439,7 +439,7 @@ func (reqctx *requestContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		reqctx.vm.task.Log.Debugf("transferring %d to common account", transferToCommonAcc)
+		reqctx.vm.task.Log.LogDebugf("transferring %d to common account", transferToCommonAcc)
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),
@@ -482,6 +482,6 @@ func (vmctx *vmContext) checkTransactionSize() error {
 	// * max_size_written_objects
 	// * max_serialized_tx_effects_size_bytes
 	// * max_pure_argument_size
-	vmctx.task.Log.Info("TODO: checkTransactionSize")
+	vmctx.task.Log.LogInfo("TODO: checkTransactionSize")
 	return nil
 }

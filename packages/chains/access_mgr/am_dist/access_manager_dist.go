@@ -15,7 +15,8 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -36,7 +37,7 @@ type accessMgrDist struct {
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID                    // Convert PubKeys to NodeIDs.
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey)                // Called when a set of servers has changed for a chain.
 	dismissPeerCB    func(*cryptolib.PublicKey)                               // To stop redelivery at the upper layer.
-	log              *logger.Logger
+	log              log.Logger
 }
 
 var _ gpa.GPA = &accessMgrDist{}
@@ -45,7 +46,7 @@ func NewAccessMgr(
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
 	serversUpdatedCB func(chainID isc.ChainID, servers []*cryptolib.PublicKey),
 	dismissPeerCB func(*cryptolib.PublicKey),
-	log *logger.Logger,
+	log log.Logger,
 ) AccessMgr {
 	return &accessMgrDist{
 		nodes:            shrinkingmap.New[gpa.NodeID, *accessMgrNode](),
@@ -210,7 +211,7 @@ type accessMgrChain struct {
 	server           *shrinkingmap.ShrinkingMap[gpa.NodeID, *cryptolib.PublicKey]
 	pubKeyToNodeID   func(*cryptolib.PublicKey) gpa.NodeID
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey)
-	log              *logger.Logger
+	log              log.Logger
 }
 
 func newAccessMgrChain(
@@ -218,7 +219,7 @@ func newAccessMgrChain(
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
 	initialServers []*cryptolib.PublicKey,
 	serversUpdatedCB func(isc.ChainID, []*cryptolib.PublicKey),
-	log *logger.Logger,
+	log log.Logger,
 ) *accessMgrChain {
 	amc := &accessMgrChain{
 		chainID:          chainID,
@@ -234,7 +235,7 @@ func newAccessMgrChain(
 	}
 
 	serverNodes := amc.server.Values()
-	amc.log.Debugf("Chain %v server nodes updated to %+v on init.", amc.chainID.ShortString(), serverNodes)
+	amc.log.LogDebugf("Chain %v server nodes updated to %+v on init.", amc.chainID.ShortString(), serverNodes)
 	amc.serversUpdatedCB(amc.chainID, serverNodes)
 	return amc
 }
@@ -257,7 +258,7 @@ func (amc *accessMgrChain) MarkAsServerFor(nodePubKey *cryptolib.PublicKey, gran
 	}
 	if wasServer != granted {
 		serverNodes := amc.server.Values()
-		amc.log.Debugf("Chain %v server nodes updated to %+v.", amc.chainID.ShortString(), serverNodes)
+		amc.log.LogDebugf("Chain %v server nodes updated to %+v.", amc.chainID.ShortString(), serverNodes)
 		amc.serversUpdatedCB(amc.chainID, serverNodes)
 	}
 }
@@ -271,7 +272,7 @@ func (amc *accessMgrChain) Disabled() {
 	if amc.server.Size() == 0 {
 		return
 	}
-	amc.log.Debugf("Chain %v server nodes updated to [] on dismiss.", amc.chainID.ShortString())
+	amc.log.LogDebugf("Chain %v server nodes updated to [] on dismiss.", amc.chainID.ShortString())
 	amc.serversUpdatedCB(amc.chainID, []*cryptolib.PublicKey{})
 }
 

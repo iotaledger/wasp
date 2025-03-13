@@ -8,13 +8,11 @@ import (
 	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	hivep2p "github.com/iotaledger/hive.go/crypto/p2p"
+	hivelog "github.com/iotaledger/hive.go/log"
+	
 	"github.com/samber/lo"
 	"github.com/spf13/cobra"
-
-	"github.com/iotaledger/hive.go/app/configuration"
-	appLogger "github.com/iotaledger/hive.go/app/logger"
-	hivep2p "github.com/iotaledger/hive.go/crypto/p2p"
-	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -104,8 +102,7 @@ func initSignAndPostCmd() *cobra.Command {
 				peerIdentities = append(peerIdentities, keyPair)
 				dkRegistries = append(dkRegistries, lo.Must(registry.NewDKSharesRegistry(dkSharesDir, privKey)))
 			}
-			_ = appLogger.InitGlobalLogger(configuration.New())
-			log := logger.NewLogger("disrec")
+			log := hivelog.NewLogger(hivelog.WithName("disrec"))
 			signer := testpeers.NewTestDSSSigner(committeeAddress, dkRegistries, nodeIDs, peerIdentities, log)
 
 			//
@@ -130,11 +127,11 @@ func initSignAndPostCmd() *cobra.Command {
 				panic(fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest))
 			}
 
-			log.Infof("Transaction posted! Digest: %s\n", res.Digest)
-			log.Info("Transaction data:")
+			log.LogInfof("Transaction posted! Digest: %s\n", res.Digest)
+			log.LogInfo("Transaction data:")
 
-			log.Infof("Object Changes:\n%v\n", string(lo.Must(json.MarshalIndent(res.ObjectChanges, "\t", " "))))
-			log.Infof("Effects:\n%v\n", string(lo.Must(json.MarshalIndent(res.Effects, "\t", " "))))
+			log.LogInfof("Object Changes:\n%v\n", string(lo.Must(json.MarshalIndent(res.ObjectChanges, "\t", " "))))
+			log.LogInfof("Effects:\n%v\n", string(lo.Must(json.MarshalIndent(res.Effects, "\t", " "))))
 		},
 	}
 	return cmd

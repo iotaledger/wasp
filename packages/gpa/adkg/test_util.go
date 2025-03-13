@@ -12,7 +12,7 @@ import (
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -26,7 +26,7 @@ func MakeTestDistributedKey(
 	nodeSKs map[gpa.NodeID]kyber.Scalar,
 	nodePKs map[gpa.NodeID]kyber.Point,
 	f int,
-	log *logger.Logger,
+	log log.Logger,
 ) (kyber.Point, map[gpa.NodeID]tcrypto.SecretShare) {
 	n := len(nodeIDs)
 	threshold := n - f

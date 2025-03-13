@@ -30,7 +30,8 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -67,7 +68,7 @@ type dssImpl struct {
 	dssSigner                *dss.DSS
 	signature                []byte // The output.
 	msgWrapper               *gpa.MsgWrapper
-	log                      *logger.Logger
+	log                      log.Logger
 }
 
 var _ DSS = &dssImpl{}
@@ -80,7 +81,7 @@ func New(
 	me gpa.NodeID,
 	mySK kyber.Scalar,
 	longTermSecretShare tcrypto.SecretShare,
-	log *logger.Logger,
+	log log.Logger,
 ) DSS {
 	d := &dssImpl{
 		suite:                    suite,
@@ -112,7 +113,7 @@ func (d *dssImpl) AsGPA() gpa.GPA {
 
 // Handle the input to the protocol.
 func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
-	d.log.Debugf("Input %+v", input)
+	d.log.LogDebugf("Input %+v", input)
 	switch input := input.(type) {
 	case *inputStart:
 		msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Input(nonce.NewInputStart()))
@@ -127,14 +128,14 @@ func (d *dssImpl) Input(input gpa.Input) gpa.OutMessages {
 func (d *dssImpl) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgT := msg.(type) {
 	case *msgPartialSig:
-		d.log.Debugf("Message %+v", msg)
+		d.log.LogDebugf("Message %+v", msg)
 		return d.handlePartialSig(msgT)
 	case *gpa.WrappingMsg:
 		if msgT.Subsystem() == subsystemDKG && msgT.Index() == 0 {
 			msgs := d.msgWrapper.WrapMessages(subsystemDKG, 0, d.dkg.Message(msgT.Wrapped()))
 			return d.tryHandleDkgOutput(msgs)
 		}
-		d.log.Warnf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped())
+		d.log.LogWarnf("unknown wrapped message %+v, wrapped %T: %v", msgT, msgT.Wrapped(), msgT.Wrapped())
 		return nil
 	default:
 		panic(fmt.Errorf("unknown message %T: %v", msg, msg))
@@ -168,13 +169,13 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		// Create a partial signature.
 		dssSigner, err := dss.NewDSS(d.suite, d.mySK, d.nodePKArray(), d.longTermSecretShare, d.dkgOutNonce, d.messageToSign, d.longTermSecretShare.Threshold())
 		if err != nil {
-			d.log.Error("Failed to create DSS Signer: %v", err)
+			d.log.LogError("Failed to create DSS Signer: %v", err)
 			return msgs
 		}
 		d.dssSigner = dssSigner
 		partialSig, err := d.dssSigner.PartialSig()
 		if err != nil {
-			d.log.Errorf("cannot create a partial signature: %v", err)
+			d.log.LogErrorf("cannot create a partial signature: %v", err)
 			return msgs
 		}
 		//
@@ -183,7 +184,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 			d.dssPartialSigBuffer.ForEach(func(nid gpa.NodeID, ps *dss.PartialSig) bool {
 				err := d.dssSigner.ProcessPartialSig(ps)
 				if err != nil {
-					d.log.Errorf("Failed to process a buffered partial signature: %v", err)
+					d.log.LogErrorf("Failed to process a buffered partial signature: %v", err)
 				}
 
 				d.dssPartialSigBuffer.Delete(nid)
@@ -209,7 +210,7 @@ func (d *dssImpl) tryHandleDkgOutput(msgs gpa.OutMessages) gpa.OutMessages {
 		if d.dssSigner.EnoughPartialSig() {
 			sig, err := d.dssSigner.Signature()
 			if err != nil {
-				d.log.Errorf("unable to aggregate the signature: %v", err)
+				d.log.LogErrorf("unable to aggregate the signature: %v", err)
 				return msgs
 			}
 			d.signature = sig
@@ -225,7 +226,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	}
 	if d.dssSigner == nil {
 		if d.dssPartialSigBuffer.Has(msg.Sender()) {
-			d.log.Warn("duplicate partial signature from %v", msg.Sender())
+			d.log.LogWarn("duplicate partial signature from %v", msg.Sender())
 			return nil
 		}
 
@@ -236,7 +237,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 	// Then process the one received with the current message.
 	err := d.dssSigner.ProcessPartialSig(msg.partialSig)
 	if err != nil {
-		d.log.Warnf("Failed to process a partial signature: %v", err)
+		d.log.LogWarnf("Failed to process a partial signature: %v", err)
 		return nil
 	}
 	if !d.dssSigner.EnoughPartialSig() {
@@ -245,7 +246,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 
 	sig, err := d.dssSigner.Signature()
 	if err != nil {
-		d.log.Errorf("unable to aggregate the signature: %v", err)
+		d.log.LogErrorf("unable to aggregate the signature: %v", err)
 		return nil
 	}
 	d.signature = sig
@@ -254,7 +255,7 @@ func (d *dssImpl) handlePartialSig(msg *msgPartialSig) gpa.OutMessages {
 
 func (d *dssImpl) handleDecided(input *inputDecided) gpa.OutMessages {
 	if d.dkgDecidedIndexProposals != nil {
-		d.log.Warn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
+		d.log.LogWarn("Duplicate will be dropped: DecidedIndexes=%+v", input.decidedIndexProposals)
 		return nil
 	}
 	d.dkgDecidedIndexProposals = input.decidedIndexProposals

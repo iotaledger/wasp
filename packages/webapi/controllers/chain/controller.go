@@ -3,9 +3,9 @@ package chain
 import (
 	"net/http"
 
+	log "github.com/iotaledger/hive.go/log"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	loggerpkg "github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
@@ -15,7 +15,7 @@ import (
 )
 
 type Controller struct {
-	log *loggerpkg.Logger
+	log log.Logger
 
 	chainService     interfaces.ChainService
 	evmService       interfaces.EVMService
@@ -27,7 +27,7 @@ type Controller struct {
 	accountDumpsPath string
 }
 
-func NewChainController(log *loggerpkg.Logger,
+func NewChainController(log log.Logger,
 	chainService interfaces.ChainService,
 	committeeService interfaces.CommitteeService,
 	evmService interfaces.EVMService,

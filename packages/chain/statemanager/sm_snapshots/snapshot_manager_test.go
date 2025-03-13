@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -26,7 +26,7 @@ import (
 const localSnapshotsPathConst = "testSnapshots"
 
 type (
-	createNewNodeFun      func(isc.ChainID, *state.BlockHash, state.Store, *logger.Logger) SnapshotManager
+	createNewNodeFun      func(isc.ChainID, *state.BlockHash, state.Store, log.Logger) SnapshotManager
 	snapshotsAvailableFun func(isc.ChainID, []SnapshotInfo)
 )
 
@@ -69,7 +69,7 @@ func testSnapshotManager(
 }
 
 func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
-	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log *logger.Logger) SnapshotManager {
+	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log log.Logger) SnapshotManager {
 			snapshotManager, err := NewSnapshotManager(
 				context.Background(),
 				nil,
@@ -104,7 +104,7 @@ func getNetworkFileFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) 
 }
 
 func getNetworkFuns(t *testing.T, networkPaths []string) (createNewNodeFun, snapshotsAvailableFun) {
-	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log *logger.Logger) SnapshotManager {
+	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log log.Logger) SnapshotManager {
 			snapshotManager, err := NewSnapshotManager(
 				context.Background(),
 				nil,
