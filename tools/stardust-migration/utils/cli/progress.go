@@ -60,9 +60,9 @@ func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgre
 
 	return func() {
 			countLeft--
+			totalProcessed := totalCount - countLeft
 
 			periodicAction(period, &lastEstimateUpdateTime, func() {
-				totalProcessed := totalCount - countLeft
 				relProgress := float64(totalProcessed) / float64(totalCount)
 				estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
 				avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
@@ -77,7 +77,7 @@ func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgre
 
 			UpdateStatusBar(updateString)
 
-			onlyForBlockProgress(entityPluralName, "estimate", updateString)
+			onlyForBlockProgress(entityPluralName, "estimate", fmt.Sprintf("Block index: %v. %v", totalProcessed, updateString))
 		}, func() {
 			UpdateStatusBarf("")
 		}

@@ -301,8 +301,6 @@ func migrateAllStates(c *cmd.Context) error {
 	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
 	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed, errMutsProcessed := 0, 0, 0, 0, 0, 0
 
-	var newBlock state.Block
-
 	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -358,12 +356,18 @@ func migrateAllStates(c *cmd.Context) error {
 
 		newMuts := newState.Commit(true)
 
-		nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
+		if !dryRun {
+			nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
+			newMuts.ApplyTo(nextStateDraft)
+			newBlock := destStore.Commit(nextStateDraft)
+			destStore.SetLatest(newBlock.TrieRoot())
+			stateMetadata.L1Commitment = newBlock.L1Commitment()
 
-		newMuts.ApplyTo(nextStateDraft)
-		newBlock = destStore.Commit(nextStateDraft)
-		destStore.SetLatest(newBlock.TrieRoot())
-		stateMetadata.L1Commitment = newBlock.L1Commitment()
+			if newBlock.StateIndex() != blockIndex {
+				// just temporary check to ensure implementation correctness
+				panic("State index and block index mismatch")
+			}
+		}
 
 		//Ugly stats code
 		blocksProcessed++
@@ -378,9 +382,9 @@ func migrateAllStates(c *cmd.Context) error {
 		evmMutsProcessed += evmMuts
 		errMutsProcessed += errMuts
 
-		if newBlock.StateIndex()%10000 == 0 {
-			cli.Logf("Block Index: %d\n", newBlock.StateIndex())
-			writeMigrationResult(stateMetadata, newBlock.StateIndex())
+		if blockIndex%10000 == 0 && !dryRun {
+			cli.Logf("Block Index: %d\n", blockIndex)
+			writeMigrationResult(stateMetadata, blockIndex)
 		}
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
@@ -405,10 +409,13 @@ func migrateAllStates(c *cmd.Context) error {
 		})
 	})
 
-	cli.Logf("Finished at Index: %d\n", newBlock.StateIndex())
-	writeMigrationResult(stateMetadata, newBlock.StateIndex())
+	lastProcessedBlockIndex := startBlockIndex + uint32(blocksProcessed)
+	cli.Logf("Finished at Index: %d\n", lastProcessedBlockIndex)
+	if !dryRun {
+		writeMigrationResult(stateMetadata, lastProcessedBlockIndex)
+	}
 
-	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", newBlock.StateIndex()))
+	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", blocksProcessed))
 
 	return nil
 }

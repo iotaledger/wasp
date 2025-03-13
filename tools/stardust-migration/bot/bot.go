@@ -39,12 +39,16 @@ func initSlackBot() Bot {
 	err := godotenv.Load(".env")
 	if err != nil {
 		log.Warn("Error loading .env file. No Slack bot will be enabled.")
-
 		return &NoopBot{}
 	}
 
 	token := os.Getenv("SLACK_AUTH_TOKEN")
 	channelID := os.Getenv("SLACK_CHANNEL_ID")
+
+	if token == "" || channelID == "" {
+		log.Warn("Slack bot disabled - SLACK_AUTH_TOKEN and SLACK_CHANNEL_ID are not set in .env file.")
+		return &NoopBot{}
+	}
 
 	return &ActiveBot{
 		Token:     token,
