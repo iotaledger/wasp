@@ -89,18 +89,7 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	// Migrate KeyTransactionsByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		const blockNumberLen = 8
-
-		oldBlockNumberBytes, oldTxIndexBytes, err := utils.SplitArrayKey(key, blockNumberLen, old_emulator.KeyTransactionsByBlockNumber)
-		if err != nil {
-			// NOTE: Seems that there is a bug in wasp - for old blocks big.Int.Bytes() was used to encode block number,
-			// and database was not migrated after implementation changed.
-			// Example: key 6e3a740023000000000000 at block 8960
-
-			// TODO:
-			// Revisit this. For now, just skipping these records, because the value is also invalid - just one byte 0x09.
-			// Maybe they were deleted upon migration in such way?
-			return true
-		}
+		oldBlockNumberBytes, oldTxIndexBytes := utils.MustSplitArrayKey(key, blockNumberLen, old_emulator.KeyTransactionsByBlockNumber)
 
 		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
 		if oldTxIndexBytes == "" {
@@ -156,7 +145,6 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	// Migrate KeyReceiptsByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyReceiptsByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		const blockNumberLen = 8
-
 		oldBlockNumberBytes, oldRecIndexBytes := utils.MustSplitArrayKey(key, blockNumberLen, old_emulator.KeyReceiptsByBlockNumber)
 
 		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
