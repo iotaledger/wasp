@@ -1,7 +1,9 @@
 package solo
 
 import (
+	"hash/fnv"
 	"math"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -41,6 +43,17 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 		index += math.MaxUint32 / 2
 	}
 	seed := cryptolib.SubSeed(env.seed[:], uint32(index))
+	return &seed
+}
+
+func (env *Solo) NewSeedFromTestName(testName string) *cryptolib.Seed {
+	algorithm := fnv.New32a()
+	_, err := algorithm.Write([]byte(testName + time.Now().String()))
+	if err != nil {
+		panic(err)
+	}
+
+	seed := cryptolib.SubSeed(env.seed[:], algorithm.Sum32()/2)
 	return &seed
 }
 

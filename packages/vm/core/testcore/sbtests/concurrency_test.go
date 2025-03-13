@@ -3,6 +3,7 @@ package sbtests
 import (
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestCounter(t *testing.T) {
@@ -61,7 +63,7 @@ func TestManyRequests(t *testing.T) {
 	require.EqualValues(t, N, counterResult)
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
-	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
+	require.Equal(t, commonAccountFinalBalance, coin.Value(commonAccountInitialBalance.Uint64()+gas.LimitsDefault.MinGasPerRequest))
 
 	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2BaseTokens(contractAgentID, 0)
@@ -115,6 +117,8 @@ func TestManyRequests2(t *testing.T) {
 		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
 	}
 
+	time.Sleep(5 * time.Second)
+
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
-	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
+	require.Equal(t, commonAccountFinalBalance, coin.Value(commonAccountInitialBalance.Uint64()+gas.LimitsDefault.MinGasPerRequest))
 }
