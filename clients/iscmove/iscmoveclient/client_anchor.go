@@ -204,7 +204,7 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObjectWithRetry(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
