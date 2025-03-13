@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
@@ -39,13 +38,13 @@ func TestManyRequests(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
+	gasCoinValueBefore := coin.Value(chain.GetLatestGasCoin().Value)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
 
 	const N = 100
-	for i := 0; i < N; i++ {
+	for range N {
 		_, _, err2 := chain.SendRequest(req, nil)
 		require.NoError(t, err2)
 	}
@@ -60,8 +59,8 @@ func TestManyRequests(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, N, counterResult)
 
-	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
-	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
+	gasCoinValueAfter := coin.Value(chain.GetLatestGasCoin().Value)
+	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 
 	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2BaseTokens(contractAgentID, 0)
@@ -74,7 +73,7 @@ func TestManyRequests2(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	commonAccountInitialBalance := chain.L2BaseTokens(accounts.CommonAccount())
+	gasCoinValueBefore := coin.Value(chain.GetLatestGasCoin().Value)
 
 	var baseTokensSentPerRequest coin.Value = 1 * isc.Million
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
@@ -115,6 +114,6 @@ func TestManyRequests2(t *testing.T) {
 		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
 	}
 
-	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
-	require.Equal(t, commonAccountFinalBalance, commonAccountInitialBalance)
+	gasCoinValueAfter := coin.Value(chain.GetLatestGasCoin().Value)
+	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 }
