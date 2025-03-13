@@ -1,6 +1,7 @@
 package vmtxbuilder
 
 import (
+	"fmt"
 	"slices"
 
 	"github.com/samber/lo"
@@ -11,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 // AnchorTransactionBuilder represents structure which handles all the data needed to eventually
@@ -144,4 +146,31 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		})
 	}
 	return ptb.Finish()
+}
+
+func (txb *AnchorTransactionBuilder) ViewPTB() *iotago.ProgrammableTransactionBuilder {
+	return txb.ptb.Clone()
+}
+
+func (txb *AnchorTransactionBuilder) CheckTransactionSize() error {
+	const maxTxSizeBytes = 128 * 1024
+	const maxInputObjects = 2048
+	const maxProgrammableTxCommands = 1024
+	ptb := txb.ViewPTB()
+
+	emptyStateMetadata := make([]byte, 32)
+	tx := txb.BuildTransactionEssence(emptyStateMetadata, 10)
+
+	if len(tx.Inputs) > maxInputObjects {
+		return fmt.Errorf("tx input len: %d, exceed max_input_objects: %w", len(tx.Inputs), vmexceptions.ErrMaxTransactionSizeExceeded)
+	}
+	if len(ptb.Commands) > maxProgrammableTxCommands {
+		return fmt.Errorf("tx command len: %d, exceed max_programmable_tx_commands: %w", len(tx.Commands), vmexceptions.ErrMaxTransactionSizeExceeded)
+	}
+
+	b, _ := bcs.Marshal(&tx)
+	if len(b) > maxTxSizeBytes {
+		return fmt.Errorf("ptb serialized size: %d, exceed max_tx_size_bytes: %w", maxTxSizeBytes, vmexceptions.ErrMaxTransactionSizeExceeded)
+	}
+	return nil
 }
