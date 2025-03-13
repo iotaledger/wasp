@@ -8,11 +8,15 @@ import (
 	old_evm_types "github.com/nnikolash/wasp-types-exported/packages/evm/evmtypes"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
+	old_rwutil "github.com/nnikolash/wasp-types-exported/packages/util/rwutil"
 	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 )
 
 /*
@@ -85,36 +89,52 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 
 	// Migrate KeyTransactionsByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(key old_kv.Key, value []byte) bool {
-		keyWithoutPrefix := []byte(key[len(old_emulator.KeyTransactionsByBlockNumber):])
-		// Force decoding of the number to validate
-		old_codec.MustDecodeUint64(keyWithoutPrefix[:8])
-		// KeyReceiptsByBlockNumber is an array.
-		// If the len of the key (Without prefix) is just 8 bytes (uint64 len), it's the key containing the length of the array.
-		// Port it over as is.
-		if len(keyWithoutPrefix) == 8 {
-			newBlockChain.Set(kv.Key(key), value)
+		keyWithoutPrefix := utils.MustRemovePrefix(key, old_emulator.KeyTransactionsByBlockNumber)
+		const blockNumberLen = 8
+		const sepLen = 1
+		const txIndexLen = 4
+		const expectedTotalLen = blockNumberLen + sepLen + txIndexLen
+		if len(keyWithoutPrefix) != expectedTotalLen {
 			return true
 		}
 
-		// Otherwise the length of the key (without prefix) is 10 (uint64+uint16). Consisting out of BlockNumber.ArrayIndex
-		// If it is not 10, panic for now.
-		if len(keyWithoutPrefix) != 10 {
-			panic(fmt.Errorf("failed to migrate %s, invalid key length", "KeyTransactionsByBlockNumber"))
+		if keyWithoutPrefix[blockNumberLen+sepLen] != '#' {
+			panic(fmt.Sprintf("unexpected key format: %x / %v", key, string(key)))
 		}
+
+		oldBlockNumberBytes := keyWithoutPrefix[:blockNumberLen]
+		txIndexBytes := keyWithoutPrefix[blockNumberLen+sepLen:]
+
+		var blockNumber uint64
+		if len(oldBlockNumberBytes) == 8 {
+			blockNumber = old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
+		} else if len(oldBlockNumberBytes) < 8 {
+			// NOTE: There is a bug in wasp - for old blocks big.Int.Bytes() was used to encode block number,
+			// and database was not migrated after implementation changed.
+			// Example: key 6e3a740023000000000000 at block 8960
+
+			// TODO:
+			// Revisit this. For now, just skipping these records, because I value is also invalid - just one byte 0x09.
+			// Maybe they were deleted upon migration in such way?
+
+			return true
+			// blockNumber = big.NewInt(0).SetBytes([]byte(oldBlockNumberBytes)).Uint64()
+		} else {
+			panic(fmt.Sprintf("invalid key length: %v: %x, %x", len(oldBlockNumberBytes), oldBlockNumberBytes, key))
+		}
+
+		txIndex := old_rwutil.NewBytesReader([]byte(txIndexBytes)).Must().ReadUint32()
+		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), txIndex)
 
 		// TODO: This was caught after block 10000, probably pruning in play?
-		if len(value) == 0 {
-			newBlockChain.Set(kv.Key(key), value)
+		if value == nil {
+			newBlockChain.Del(newKey)
 			return true
 		}
 
-		tx, err := old_evm_types.DecodeTransaction(value)
-		if err != nil {
-			panic(fmt.Errorf("failed to decode transaction of old evm type: %v", err))
-		}
+		tx := lo.Must(old_evm_types.DecodeTransaction(value))
 
-		// We are working with the same type here, so that should work.
-		newBlockChain.Set(kv.Key(key), evmtypes.EncodeTransaction(tx))
+		newBlockChain.Set(newKey, evmtypes.EncodeTransaction(tx))
 
 		return true
 	})
@@ -150,54 +170,38 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 
 	// Migrate KeyReceiptsByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyReceiptsByBlockNumber, func(key old_kv.Key, value []byte) bool {
-		keyWithoutPrefix := []byte(key[len(old_emulator.KeyReceiptsByBlockNumber):])
-		// Force decoding of the number to validate
-		old_codec.MustDecodeUint64(keyWithoutPrefix[:8])
+		keyWithoutPrefix := utils.MustRemovePrefix(key, old_emulator.KeyReceiptsByBlockNumber)
 
-		// KeyReceiptsByBlockNumber is an array.
-		// If the len of the key (Without prefix) is just 8 bytes (uint64 len), it's the key containing the length of the array.
-		// Port it over as is.
-		if len(keyWithoutPrefix) == 8 {
-			newBlockChain.Set(kv.Key(key), value)
+		const blockNumberLen = 8
+		const sepLen = 1
+		const recIndexLen = 4
+		const expectedTotalLen = blockNumberLen + sepLen + recIndexLen
+		if len(keyWithoutPrefix) != expectedTotalLen {
 			return true
 		}
 
-		// Otherwise the length of the key (without prefix) is 10 (uint64+uint16). Consisting out of BlockNumber.ArrayIndex
-		// If it is not 10, panic for now.
-		if len(keyWithoutPrefix) != 10 {
-			panic("unsupported receipt key length")
+		if keyWithoutPrefix[blockNumberLen+sepLen] != '#' {
+			panic(fmt.Sprintf("unexpected key format: %x / %v", key, string(key)))
 		}
+
+		oldBlockNumberBytes := keyWithoutPrefix[:blockNumberLen]
+		recIndexBytes := keyWithoutPrefix[blockNumberLen+sepLen:]
+
+		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
+		recIndex := old_rwutil.NewBytesReader([]byte(recIndexBytes)).Must().ReadUint32()
+		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), recIndex)
 
 		// TODO: This was caught after block 10000, probably pruning in play?
-		if len(value) == 0 {
-			newBlockChain.Set(kv.Key(key), value)
+		if value == nil {
+			newBlockChain.Del(newKey)
 			return true
 		}
 
-		oldReceipt, err := old_evm_types.DecodeReceipt(value)
-		if err != nil {
-			panic(fmt.Errorf("failed to decode receipt from old emulator: %v", err))
-		}
+		oldReceipt := lo.Must(old_evm_types.DecodeReceipt(value))
+		newReceipt := types.Receipt(*oldReceipt)
 
-		newReceipt := types.Receipt{
-			Type:              oldReceipt.Type,
-			PostState:         oldReceipt.PostState,
-			Status:            oldReceipt.Status,
-			CumulativeGasUsed: oldReceipt.CumulativeGasUsed,
-			Bloom:             oldReceipt.Bloom,
-			Logs:              oldReceipt.Logs,
-			TxHash:            oldReceipt.TxHash,
-			ContractAddress:   oldReceipt.ContractAddress,
-			GasUsed:           oldReceipt.GasUsed,
-			EffectiveGasPrice: oldReceipt.EffectiveGasPrice,
-			BlobGasUsed:       oldReceipt.BlobGasUsed,
-			BlobGasPrice:      oldReceipt.BlobGasPrice,
-			BlockHash:         oldReceipt.BlockHash,
-			BlockNumber:       oldReceipt.BlockNumber,
-			TransactionIndex:  oldReceipt.TransactionIndex,
-		}
+		newBlockChain.Set(newKey, evmtypes.EncodeReceipt(&newReceipt))
 
-		newBlockChain.Set(kv.Key(key), evmtypes.EncodeReceipt(&newReceipt))
 		return true
 	})
 }

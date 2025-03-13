@@ -294,7 +294,7 @@ func migrateAllStates(c *cmd.Context) error {
 		cli.Logf("Loaded %v entries into initial state", count)
 	}
 
-	newState := NewInMemoryKVStore(true)
+	newState := NewInMemoryKVStore(false)
 
 	lastPrintTime := time.Now()
 	blocksProcessed := 0

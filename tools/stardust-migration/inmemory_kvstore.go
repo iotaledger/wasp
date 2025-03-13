@@ -9,10 +9,12 @@ import (
 
 func NewInMemoryKVStore(readOnlyUncommitted bool) *InMemoryKVStore {
 	committed := buffered.NewBufferedKVStore(NoopKVStoreReader[kv.Key]{})
-	uncommitted := buffered.NewBufferedKVStore(committed)
 
+	var uncommitted *buffered.BufferedKVStore
 	if readOnlyUncommitted {
 		uncommitted = buffered.NewBufferedKVStore(NoopKVStoreReader[kv.Key]{})
+	} else {
+		uncommitted = buffered.NewBufferedKVStore(committed)
 	}
 
 	return &InMemoryKVStore{
