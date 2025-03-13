@@ -249,8 +249,9 @@ func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value)
 			TxDataBytes: tx.TxBytes,
 			Signer:      cryptolib.SignerToIotaSigner(keyPair),
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
+				ShowEffects:        true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
 			},
 		},
 	)
@@ -258,6 +259,7 @@ func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value)
 	require.True(env.T, txnResponse.Effects.Data.IsSuccess())
 	require.Len(env.T, txnResponse.Effects.Data.V1.Created, 1)
 	coin := txnResponse.Effects.Data.V1.Created[0]
+
 	return &iotago.ObjectRef{
 		ObjectID: coin.Reference.ObjectID,
 		Version:  coin.Reference.Version,

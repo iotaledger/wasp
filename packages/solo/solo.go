@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -294,6 +295,15 @@ func (env *Solo) deployChain(
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
 	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue)
+	fmt.Printf("Chain Originator address: %s\n", originatorAddr)
+	fmt.Printf("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
+
+	gasCoinRefCheck, err := env.IotaClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{ObjectID: gasCoinRef.ObjectID})
+	require.NoError(env.T, err)
+	gasCoinRefCheckRef := gasCoinRefCheck.Data.Ref()
+	gasCoinRef = &gasCoinRefCheckRef
+
+	fmt.Printf("GAS COIN AFTER PULL: %v\n", gasCoinRef)
 
 	block, stateMetadata := origin.InitChain(
 		schemaVersion,
@@ -305,11 +315,21 @@ func (env *Solo) deployChain(
 	)
 
 	var initCoin *iotago.ObjectRef
+
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
 			chainOriginator,
 			initCommonAccountBaseTokens,
 		)
+
+		fmt.Printf("INIT COIN BEFORE PULL: %v\n", initCoin)
+
+		initCoinCheck, err := env.IotaClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{ObjectID: initCoin.ObjectID})
+		require.NoError(env.T, err)
+		initCoinCheckRef := initCoinCheck.Data.Ref()
+		initCoin = &initCoinCheckRef
+
+		fmt.Printf("INIT COIN AFTER PULL: %v\n", initCoin)
 	}
 
 	anchorRef, err := env.ISCMoveClient().StartNewChain(
