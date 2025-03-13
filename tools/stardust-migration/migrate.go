@@ -187,7 +187,7 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"))
+	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"), slack.MsgOptionIconEmoji(":running:"))
 
 	srcStore, destStore, oldChainID, newChainID, prepConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
 	defer flush()
