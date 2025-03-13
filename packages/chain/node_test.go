@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -501,7 +501,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()
@@ -518,13 +518,13 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(te.log)
 	} else {
-		netLogger := testlogger.WithLevel(te.log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(te.log.NewChildLogger("Network"), log.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	te.peeringNetwork = testutil.NewPeeringNetwork(
 		te.peeringURLs, te.peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(te.log, logger.LevelWarn, false),
+		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
@@ -548,7 +548,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t, te.l1Client, te.iscPackageID)
-		log := te.log.Named(fmt.Sprintf("N#%v", i))
+		log := te.log.NewChildLogger(fmt.Sprintf("N#%v", i))
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.nodes[i], err = chain.New(
 			te.ctx,
@@ -591,12 +591,12 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)
 	}
-	te.log = te.log.Named("TC")
+	te.log = te.log.NewChildLogger("TC")
 	return te
 }
 
 func (te *testEnv) close() {
 	te.ctxCancel()
 	te.peeringNetwork.Close()
-	te.log.Sync()
+	te.log.Shutdown()
 }

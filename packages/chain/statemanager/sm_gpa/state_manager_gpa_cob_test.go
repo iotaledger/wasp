@@ -61,7 +61,7 @@ func runTestChainOfBlocks(
 	blocksInChain []state.Block,
 	blocksExpected []state.Block,
 ) {
-	defer log.Sync()
+	defer log.Shutdown()
 
 	for _, block := range blocksToCommit {
 		sd := bf.GetStateDraft(block)

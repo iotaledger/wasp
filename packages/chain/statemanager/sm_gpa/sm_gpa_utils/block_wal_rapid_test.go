@@ -43,7 +43,7 @@ func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
 }
 
 func (bwtsmT *blockWALTestSM) cleanup() {
-	bwtsmT.log.Sync()
+	bwtsmT.log.Shutdown()
 	os.RemoveAll(constTestFolder)
 }
 

@@ -157,7 +157,7 @@ func testSnapshotManagerAny(
 	numberBeforeLast int,
 ) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	defer cleanupAfterSnapshotManagerTest(t)
 
 	numberOfBlocks := 20

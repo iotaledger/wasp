@@ -85,7 +85,7 @@ func newAccessMgrSM(t *rapid.T, nodeCount, chainCount int) *accessMgrSM {
 				sm.servers[nidCopy][chainID] = servers
 			},
 			func(pk *cryptolib.PublicKey) {},
-			sm.log.Named(nid.ShortString()),
+			sm.log.NewChildLogger(nid.ShortString()),
 		).AsGPA()
 	}
 	sm.tc = gpa.NewTestContext(sm.nodes)
@@ -139,7 +139,7 @@ func (sm *accessMgrSM) Reboot(t *rapid.T) {
 			sm.servers[nodeID][chainID] = servers
 		},
 		func(pk *cryptolib.PublicKey) {},
-		sm.log.Named(nodeID.ShortString()),
+		sm.log.NewChildLogger(nodeID.ShortString()),
 	).AsGPA()
 	//
 	// Re-initialize all the persistent info: access information, active chains, trusted nodes.

@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/log"
+	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -76,7 +76,7 @@ func TestGrBasic(t *testing.T) {
 func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
@@ -100,13 +100,13 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(log)
 	} else {
-		netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(log.NewChildLogger("Network"), hivelog.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peeringURL, peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(log, logger.LevelWarn, false),
+		testlogger.WithLevel(log, hivelog.LevelWarning, false),
 	)
 	defer peeringNetwork.Close()
 	networkProviders := peeringNetwork.NetworkProviders()
@@ -154,7 +154,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			5*time.Second, // PrintStatusPeriod
 			chainMetrics.Consensus,
 			chainMetrics.Pipe,
-			log.Named(fmt.Sprintf("N#%v", i)),
+			log.NewChildLogger(fmt.Sprintf("N#%v", i)),
 		)
 	}
 	//

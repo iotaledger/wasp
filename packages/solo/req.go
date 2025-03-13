@@ -442,7 +442,7 @@ func (ch *Chain) CallViewByHname(msg isc.Message) (isc.CallArguments, error) {
 }
 
 func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
-	ch.Log().Debugf("callView: %s::%s", msg.Target.Contract, msg.Target.EntryPoint)
+	ch.Log().LogDebugf("callView: %s::%s", msg.Target.Contract, msg.Target.EntryPoint)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
@@ -462,7 +462,7 @@ func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message)
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
 func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
-	ch.Log().Debugf("GetMerkleProof")
+	ch.Log().LogDebugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
@@ -484,7 +484,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 
 // GetBlockProof returns Merkle proof of the key in the state
 func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.MerkleProof, error) {
-	ch.Log().Debugf("GetBlockProof")
+	ch.Log().LogDebugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()

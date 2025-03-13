@@ -54,7 +54,7 @@ func newBlockCacheNoWALTestSM(t *rapid.T) *blockCacheNoWALTestSM {
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Cleanup() {
-	bcnwtsmT.log.Sync()
+	bcnwtsmT.log.Shutdown()
 }
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Check(t *rapid.T) {

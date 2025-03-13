@@ -29,7 +29,7 @@ func (n *NodeIdentityProviderMock) NodePublicKey() *cryptolib.PublicKey {
 }
 
 func main() {
-	mockLog := logger.NewNopLogger()
+	mockLog := log.NewLogger()
 	e := echo.New()
 
 	if app.Version == "" {

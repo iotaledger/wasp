@@ -95,7 +95,7 @@ func (clu *Cluster) Logf(format string, args ...any) {
 		clu.t.Logf(format, args...)
 		return
 	}
-	clu.log.Infof(format, args...)
+	clu.log.LogInfof(format, args...)
 }
 
 func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Address, error) {
@@ -651,7 +651,7 @@ func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 		clu.stopNode(i)
 		if !keepDB {
 			dbPath := clu.NodeDataPath(i) + "/waspdb/chains/data/"
-			clu.log.Infof("Deleting DB from %v", dbPath)
+			clu.log.LogInfof("Deleting DB from %v", dbPath)
 			if err := os.RemoveAll(dbPath); err != nil {
 				return fmt.Errorf("cannot remove the node=%v DB at %v: %w", i, dbPath, err)
 			}
@@ -844,7 +844,7 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsIotaAddress())
 	if err != nil {
-		clu.log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
+		clu.log.LogPanicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
 		return nil
 	}
 
