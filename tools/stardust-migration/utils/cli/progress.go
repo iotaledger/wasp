@@ -54,7 +54,7 @@ func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgre
 
 				UpdateStatusBar(updateString)
 
-				onlyForBlockProgress(entityPluralName, "processing", updateString)
+				onlyForBlockProgress(entityPluralName, "processing", fmt.Sprintf("Time: %v\n"+updateString, time.Now().Format(time.DateTime)))
 			}, func() {
 				UpdateStatusBarf("")
 			}
