@@ -103,8 +103,9 @@ func (c *Client) SignAndExecutePTB(
 			TxDataBytes: txnBytes,
 			Signer:      signer,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
+				ShowEffects:        true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
 			},
 		},
 	)

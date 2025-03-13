@@ -101,6 +101,8 @@ func TestManyRequests2(t *testing.T) {
 		}
 	}
 
+	time.Sleep(5 * time.Second)
+
 	const maxRequestsPerBlock = 50
 	runs := chain.RunAllReceivedRequests(maxRequestsPerBlock)
 	require.EqualValues(t, sum/maxRequestsPerBlock, runs)
@@ -116,8 +118,6 @@ func TestManyRequests2(t *testing.T) {
 		chain.AssertL2BaseTokens(isc.NewAddressAgentID(userAddr[i]), expectedBalance)
 		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
 	}
-
-	time.Sleep(5 * time.Second)
 
 	commonAccountFinalBalance := chain.L2BaseTokens(accounts.CommonAccount())
 	require.Equal(t, commonAccountFinalBalance, coin.Value(commonAccountInitialBalance.Uint64()+gas.LimitsDefault.MinGasPerRequest))

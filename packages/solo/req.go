@@ -4,6 +4,7 @@
 package solo
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -290,6 +291,9 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 			GasBudget:        iotaclient.DefaultGasBudget,
 		},
 	)
+
+	fmt.Printf("SendRequest result: %+v, data: %s\n", res, string(lo.Must(json.Marshal(res))))
+
 	if err != nil {
 		return nil, nil, err
 	}

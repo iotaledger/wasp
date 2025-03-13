@@ -3,6 +3,7 @@
 package testcore
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -788,13 +789,16 @@ func TestGovernanceGasPayout(t *testing.T) {
 		user1,
 	)
 	require.NoError(t, err)
+	fmt.Printf("GovGasPayout: Common3; BaseTokens: %d, WithTargetValue: %d, GasFeeCharged: %d\n", commonBal3.BaseTokens(), isc.GasCoinTargetValue-commonBal3.BaseTokens(), vmRes.Receipt.GasFeeCharged)
 	addedToCommonAccount3 := min(
 		isc.GasCoinTargetValue-commonBal3.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
+
 	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
+	fmt.Printf("GovGasPayout: Common3; addedToCommonAccount3: %d, CommonBal4: %d\n", addedToCommonAccount3, commonBal4.BaseTokens())
 	require.Equal(t, ownerBal3.BaseTokens(), ownerBal4.BaseTokens())
 	require.Equal(t, commonBal3.BaseTokens()+addedToCommonAccount3, commonBal4.BaseTokens())
 	require.Equal(t, user1Bal3.BaseTokens()+transferAmt-addedToCommonAccount3, user1Bal4.BaseTokens())
