@@ -26,6 +26,7 @@ import (
 	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -112,6 +113,11 @@ func main() {
 								Usage:   "Do not pre-load full state at the start of migration, when using option '--from-index' / '-i'. WARNING: This will result in a BROKEN migrated db.",
 							},
 							&cmd.BoolFlag{
+								Name:    "continue",
+								Aliases: []string{"c"},
+								Usage:   "Continue migration from the last block in the destination database.",
+							},
+							&cmd.BoolFlag{
 								Name:    "dry-run",
 								Aliases: []string{"d"},
 								Usage:   "Do not write destination database.",
@@ -187,7 +193,7 @@ func GetAnchorOutput(chainState old_kv.KVStoreReader) *old_iotago.AliasOutput {
 	return blockInfo.PreviousAliasOutput.GetAliasOutput()
 }
 
-func GetAnchorObject(chainState kv.KVStoreReader) *iscmove.Anchor {
+func GetStateAnchor(chainState kv.KVStoreReader) *isc.StateAnchor {
 	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
 
 	registry := collections.NewArrayReadOnly(contractState, blocklog.PrefixBlockRegistry)
@@ -198,5 +204,9 @@ func GetAnchorObject(chainState kv.KVStoreReader) *iscmove.Anchor {
 	blockInfoBytes := registry.GetAt(registry.Len() - 1)
 	blockInfo := bcs.MustUnmarshal[blocklog.BlockInfo](blockInfoBytes)
 
-	return blockInfo.PreviousAnchor.Anchor().Object
+	return blockInfo.PreviousAnchor
+}
+
+func GetAnchorObject(chainState kv.KVStoreReader) *iscmove.Anchor {
+	return GetStateAnchor(chainState).Anchor().Object
 }

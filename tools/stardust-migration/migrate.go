@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kv"
 	isc_migration "github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/state"
@@ -49,40 +50,57 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 )
 
-func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dryRun bool) (
+func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration bool, dryRun bool) (
 	old_indexedstore.IndexedStore,
 	indexedstore.IndexedStore,
 	old_isc.ChainID,
 	isc.ChainID,
 	*isc_migration.PrepareConfiguration,
-	state.Block,
 	*transaction.StateMetadata,
 	func(),
 ) {
 
-	if srcChainDBDir == "" || destChainDBDir == "" {
-		log.Fatalf("source and destination chain database directories must be specified")
+	if srcChainDBDir == "" {
+		log.Fatalf("source chain database directories must be specified")
 	}
 
 	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
-	destChainDBDir = lo.Must(filepath.Abs(destChainDBDir))
 
-	if strings.HasPrefix(destChainDBDir, srcChainDBDir) {
-		log.Fatalf("destination database cannot reside inside source database folder")
+	if !dryRun {
+		if destChainDBDir == "" {
+			log.Fatalf("destination chain database directories must be specified")
+		}
+
+		destChainDBDir = lo.Must(filepath.Abs(destChainDBDir))
+
+		if strings.HasPrefix(destChainDBDir, srcChainDBDir) {
+			log.Fatalf("destination database cannot reside inside source database folder")
+		}
+
+		if continueMigration {
+			if _, err := os.Stat(destChainDBDir); os.IsNotExist(err) {
+				log.Fatalf("destination directory does not exist - cannot continue migration: %v", destChainDBDir)
+			}
+
+			entries := lo.Must(os.ReadDir(destChainDBDir))
+			if len(entries) == 0 {
+				log.Fatalf("destination directory is empty - cannot continue migration: %v", destChainDBDir)
+			}
+		} else {
+			lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
+			entries := lo.Must(os.ReadDir(destChainDBDir))
+
+			if len(entries) > 0 {
+				log.Fatalf("destination directory is not empty - cannot create new db: %v", destChainDBDir)
+			}
+		}
+	} else if continueMigration {
+		log.Fatalf("cannot continue migration in dry-run mode")
 	}
 
 	srcKVS := db.ConnectOld(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
-
 	oldChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(srcStore.LatestState())).AliasID)
-
-	lo.Must0(os.MkdirAll(destChainDBDir, 0o755))
-
-	entries := lo.Must(os.ReadDir(destChainDBDir))
-	if len(entries) > 0 {
-		// TODO: Disabled this check now, so you can run the migrator multiple times for testing
-		// log.Fatalf("destination directory is not empty: %v", destChainDBDir)
-	}
 
 	var destStore indexedstore.IndexedStore
 	var close func()
@@ -107,15 +125,27 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, dry
 		},
 	})
 
-	firstBlock, stateMetadata := initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
+	var stateMetadata *transaction.StateMetadata
+	if continueMigration {
+		stateMetadata = getLatestStateMetadata(destStore)
+	} else {
+		stateMetadata = initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
+	}
 
-	return srcStore, destStore, oldChainID, newChainID, migrationConfig, firstBlock, stateMetadata, close
+	return srcStore, destStore, oldChainID, newChainID, migrationConfig, stateMetadata, close
 }
 
-func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) (state.Block, *transaction.StateMetadata) {
+func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
-	block, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
-	return block, stateMetadata
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
+	return stateMetadata
+}
+
+func getLatestStateMetadata(store indexedstore.IndexedStore) *transaction.StateMetadata {
+	stateMetaBytes := GetStateAnchor(lo.Must(store.LatestState())).GetStateMetadata()
+	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(stateMetaBytes))
+	stateMetadata.L1Commitment = lo.Must(store.LatestBlock()).L1Commitment()
+	return stateMetadata
 }
 
 func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
@@ -187,10 +217,10 @@ func migrateSingleState(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"), slack.MsgOptionIconEmoji(":running:"))
-
-	srcStore, destStore, oldChainID, newChainID, prepConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	srcStore, destStore, oldChainID, newChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, false, dryRun)
 	defer flush()
+
+	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"), slack.MsgOptionIconEmoji(":running:"))
 
 	var srcState old_kv.KVStoreReader
 	if blockIndexSpecified {
@@ -211,7 +241,6 @@ func migrateSingleState(c *cmd.Context) error {
 	cli.DebugLoggingEnabled = true
 
 	v := migrations.MigrateRootContract(srcState, stateDraft)
-
 	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID, newChainID)
 	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata, prepConfig)
@@ -234,67 +263,28 @@ func migrateAllStates(c *cmd.Context) error {
 	endBlockIndex := uint32(c.Uint64("to-index"))
 	overrideNewChainID := c.String("new-chain-id")
 	skipLoad := c.Bool("skip-load")
+	continueMigration := c.Bool("continue")
 	dryRun := c.Bool("dry-run")
-	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	srcStore, destStore, oldChainID, newChainID, prepareConfig, _, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, dryRun)
+	if continueMigration {
+		if startBlockIndex != 0 {
+			log.Fatalf("cannot continue migration from block index other than what is in the destination database")
+		}
+		if skipLoad {
+			log.Fatalf("cannot skip loading source state when continuing migration")
+		}
+	}
+
+	srcStore, destStore, oldChainID, newChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, continueMigration, dryRun)
 	defer flush()
 
-	// // Trie-based state
-	// oldStateStore := old_trietest.NewInMemoryKVStore()
-	// oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
-	// oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
-	// oldStateTriePrevRoot := oldStateTrie.Root()
+	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	// // Dict-based state
-	//oldState := old_dict.New()
-
-	// // Hybrid-KV-based state
-	oldStateStore := old_dict.New()
-	oldState := NewPrefixKVStore(oldStateStore, func(key old_kv.Key) [][]byte {
-		return utils.GetMapElemPrefixes([]byte(key))
-	})
-
-	oldState.RegisterPrefix(old_accounts.PrefixBaseTokens, old_accounts.Contract.Hname())
-	oldState.RegisterPrefix(old_accounts.PrefixNativeTokens, old_accounts.Contract.Hname())
-	oldState.RegisterPrefix(old_accounts.PrefixFoundries, old_accounts.Contract.Hname())
-	oldState.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
-
-	if startBlockIndex != 0 {
-		// these are needed only when initial state is non-empty and only on that first block
-		oldState.RegisterPrefix(old_evmimpl.PrefixPrivileged, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
-		oldState.RegisterPrefix(old_evmimpl.PrefixAllowance, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
-		oldState.RegisterPrefix(old_evmimpl.PrefixERC20ExternalNativeTokens, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
-		oldState.RegisterPrefix("", old_evm.Contract.Hname(), old_evm.KeyEmulatorState)
+	oldStateStore, oldState, newState := initInMemoryStates(c, srcStore, destStore, startBlockIndex, skipLoad, continueMigration)
+	if c.Err() != nil {
+		cli.Logf("Interrupted before migration started")
+		return nil
 	}
-
-	cli.Logf("Real from-index: %d", startBlockIndex)
-
-	if startBlockIndex != 0 {
-		var preloadStateIdx uint32
-		if skipLoad {
-			cli.Logf("Loading of initial state is SKIPPED - resulting database will be INVALID")
-			// Still preloading at least block 0, because it has old initial state.
-		} else {
-			preloadStateIdx = startBlockIndex - 1
-		}
-
-		cli.Logf("Loading state at block index %v", preloadStateIdx)
-		count := 0
-
-		s := lo.Must(srcStore.StateByIndex(preloadStateIdx))
-		s.Iterate("", func(k old_kv.Key, v []byte) bool {
-			//oldStateTrie.Update([]byte(k), v)
-			oldState.Set(k, v)
-			count++
-			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
-			return true
-		})
-
-		cli.Logf("Loaded %v entries into initial state", count)
-	}
-
-	newState := NewInMemoryKVStore(false)
 
 	lastPrintTime := time.Now()
 	lastProcessedBlockIndex := uint32(0)
@@ -361,7 +351,7 @@ func migrateAllStates(c *cmd.Context) error {
 			nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
 			newMuts.ApplyTo(nextStateDraft)
 			newBlock := destStore.Commit(nextStateDraft)
-			destStore.SetLatest(newBlock.TrieRoot())
+			lo.Must0(destStore.SetLatest(newBlock.TrieRoot()))
 			stateMetadata.L1Commitment = newBlock.L1Commitment()
 
 			if newBlock.StateIndex() != blockIndex {
@@ -413,10 +403,9 @@ func migrateAllStates(c *cmd.Context) error {
 
 		if c.Err() != nil {
 			cli.Logf("Interrupted after block %v", blockIndex)
-			return false
 		}
 
-		return true
+		return c.Err() == nil
 	})
 
 	cli.Logf("Finished at Index: %d\n", lastProcessedBlockIndex)
@@ -427,6 +416,83 @@ func migrateAllStates(c *cmd.Context) error {
 	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", recentlyBlocksProcessed))
 
 	return nil
+}
+
+func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, startBlockIndex uint32, skipLoad, continueMigration bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore) {
+	defer cli.UpdateStatusBarf("")
+
+	// // Trie-based state
+	// oldStateStore := old_trietest.NewInMemoryKVStore()
+	// oldStateTrie := lo.Must(old_trie.NewTrieUpdatable(oldStateStore, old_trie.MustInitRoot(oldStateStore)))
+	// oldState := &old_state.TrieKVAdapter{oldStateTrie.TrieReader}
+	// oldStateTriePrevRoot := oldStateTrie.Root()
+
+	// // Dict-based state
+	//oldState := old_dict.New()
+
+	// // Hybrid-KV-based state
+	oldStateStore := old_dict.New()
+	oldState := NewPrefixKVStore(oldStateStore, func(key old_kv.Key) [][]byte {
+		return utils.GetMapElemPrefixes([]byte(key))
+	})
+
+	oldState.RegisterPrefix(old_accounts.PrefixBaseTokens, old_accounts.Contract.Hname())
+	oldState.RegisterPrefix(old_accounts.PrefixNativeTokens, old_accounts.Contract.Hname())
+	oldState.RegisterPrefix(old_accounts.PrefixFoundries, old_accounts.Contract.Hname())
+	oldState.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
+
+	newState := NewInMemoryKVStore(false)
+
+	if continueMigration {
+		startBlockIndex = lo.Must(destStore.LatestBlockIndex()) + 1
+		cli.Logf("Continuing migration from block index %v", startBlockIndex)
+
+		cli.Logf("Loading destination state at block index %v", startBlockIndex-1)
+		count := 0
+		latestDestState := lo.Must(destStore.LatestState())
+		latestDestState.Iterate("", func(k kv.Key, v []byte) bool {
+			newState.Set(k, v)
+			count++
+			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
+			return ctx.Err() == nil
+		})
+
+		cli.Logf("Loaded %v entries into in-memory destination state", count)
+	}
+
+	if startBlockIndex != 0 {
+		// these are needed only when initial state is non-empty and only on that first block
+		oldState.RegisterPrefix(old_evmimpl.PrefixPrivileged, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
+		oldState.RegisterPrefix(old_evmimpl.PrefixAllowance, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
+		oldState.RegisterPrefix(old_evmimpl.PrefixERC20ExternalNativeTokens, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
+		oldState.RegisterPrefix("", old_evm.Contract.Hname(), old_evm.KeyEmulatorState)
+
+		cli.Logf("Real from-index: %d", startBlockIndex)
+
+		var preloadStateIdx uint32
+		if skipLoad {
+			cli.Logf("Loading of source state is SKIPPED - resulting database will be INVALID")
+			// Still preloading at least block 0, because it has old initial state.
+		} else {
+			preloadStateIdx = startBlockIndex - 1
+		}
+
+		cli.Logf("Loading source state at block index %v", preloadStateIdx)
+		count := 0
+
+		s := lo.Must(srcStore.StateByIndex(preloadStateIdx))
+		s.Iterate("", func(k old_kv.Key, v []byte) bool {
+			//oldStateTrie.Update([]byte(k), v)
+			oldState.Set(k, v)
+			count++
+			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
+			return ctx.Err() == nil
+		})
+
+		cli.Logf("Loaded %v entries into in-memory source state", count)
+	}
+
+	return oldStateStore, oldState, newState
 }
 
 // forEachBlock iterates over all blocks.
