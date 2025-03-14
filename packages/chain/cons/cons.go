@@ -94,8 +94,8 @@ type Result struct {
 
 func (r *Result) String() string {
 	return fmt.Sprintf(
-		"{cons.Result, txHash=%v, baseAO=%v, outBlockHash=%v}",
-		lo.Must(r.Transaction.Hash()).Hex(),
+		"{cons.Result, txDigest=%s, baseAO=%v, outBlockHash=%v}",
+		lo.Must(r.Transaction.Digest()),
 		r.DecidedAO,
 		r.Block.Hash(),
 	)

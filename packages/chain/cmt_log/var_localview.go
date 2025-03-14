@@ -111,7 +111,7 @@ func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAO *
 	stateIndex := consumedAO.GetStateIndex()
 	stateIndexEntries, _ := lvi.pendingTXes.GetOrCreate(stateIndex, func() []*varLocalViewEntry { return []*varLocalViewEntry{} })
 	contains := lo.ContainsBy(stateIndexEntries, func(entry *varLocalViewEntry) bool {
-		return lo.Must(tx.Hash()) == (lo.Must(entry.transaction.Hash()))
+		return lo.Must(tx.Digest()).Equals(*lo.Must(entry.transaction.Digest()))
 	})
 	if !contains {
 		stateIndexEntries = append(stateIndexEntries, &varLocalViewEntry{

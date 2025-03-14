@@ -10,14 +10,12 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
 // creditToAccount credits assets to the chain ledger
@@ -206,19 +204,4 @@ func (reqctx *requestContext) updateOffLedgerRequestNonce() {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		s.IncrementNonce(reqctx.req.SenderAccount(), reqctx.ChainID())
 	})
-}
-
-// adjustL2BaseTokensIfNeeded adjust L2 ledger for base tokens if the L1 changed because of storage deposit changes
-func (reqctx *requestContext) adjustL2BaseTokensIfNeeded(adjustment coin.Value, account isc.AgentID) {
-	if adjustment == 0 {
-		return
-	}
-	err := panicutil.CatchPanicReturnError(func() {
-		reqctx.callAccounts(func(s *accounts.StateWriter) {
-			s.AdjustAccountBaseTokens(account, adjustment, reqctx.ChainID())
-		})
-	}, accounts.ErrNotEnoughFunds)
-	if err != nil {
-		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
-	}
 }
