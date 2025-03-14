@@ -293,8 +293,8 @@ func (env *Solo) deployChain(
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue, nil)
-	fmt.Printf("Chain Originator address: %s\n", originatorAddr)
+	gasCoinRef := env.makeBaseTokenCoin(chainOperator, isc.GasCoinTargetValue, nil)
+	fmt.Printf("Chain Originator address: %v\n", chainOperator)
 	fmt.Printf("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
 	gasCoinRefCheck, err := env.IotaClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{ObjectID: gasCoinRef.ObjectID})
