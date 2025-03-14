@@ -430,7 +430,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 
 // 		ch.AssertL2Coins(senderAgentID, nativeTokenID, big1)
 // 		ch.AssertL2TotalCoins(nativeTokenID, big1)
-// 		ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
+// 		ownerBal1 := ch.L2Assets(ch.OwnerAgentID())
 // 		commonAccountBalanceBeforeLastMint := ch.L2CommonAccountBaseTokens()
 
 // 		// after minting 1 token, try to mint the remaining tokens
@@ -443,7 +443,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 // 		commonAccountBalanceAfterLastMint := ch.L2CommonAccountBaseTokens()
 // 		require.Equal(t, commonAccountBalanceAfterLastMint, commonAccountBalanceBeforeLastMint)
 // 		// assert that no extra base tokens were used for the storage deposit
-// 		ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+// 		ownerBal2 := ch.L2Assets(ch.OwnerAgentID())
 // 		receipt := ch.LastReceipt()
 // 		require.Equal(t, ownerBal1.BaseTokens+receipt.GasFeeCharged, ownerBal2.BaseTokens)
 // 	})
@@ -680,7 +680,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 		require.NoError(t, err)
 
 		// make the chain produce 2 blocks (prune the previous block with the initial deposit info)
-		for i := 0; i < 2; i++ {
+		for range 2 {
 			_, err = ch2.PostRequestSync(solo.NewCallParamsEx("contract", "func"), v.user)
 			require.Error(t, err)                      // dummy request, so an error is expected
 			require.NotNil(t, ch2.LastReceipt().Error) // but it produced a receipt, thus make the state progress
@@ -732,7 +732,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.OriginatorPrivateKey)
+	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.OwnerPrivateKey)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
 
 	v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(100))

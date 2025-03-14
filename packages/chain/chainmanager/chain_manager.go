@@ -366,8 +366,8 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPublishResult) gpa.OutMessages {
 	cmi.log.Debugf("handleInputChainTxPublishResult: %+v", input)
 	// >     Clear the TX from the NeedPublishTX variable.
-	if cmi.needPublishTX.Has(input.txHash) {
-		cmi.needPublishTX.Delete(input.txHash)
+	if cmi.needPublishTX.Has(input.txDigest.HashValue()) {
+		cmi.needPublishTX.Delete(input.txDigest.HashValue())
 		cmi.needPublishCB(cmi.needPublishTX)
 	}
 	if input.confirmed {
@@ -401,14 +401,14 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	// >     IF ConsensusOutput.BaseAO == NeedConsensus THEN
 	// >         Add ConsensusOutput.TX to NeedPublishTX
 	if true { // TODO: Reconsider this condition. Several recent consensus instances should be published, if we run consensus instances in parallel.
-		txHash := lo.Must(input.consensusResult.Transaction.Hash())
-		if !cmi.needPublishTX.Has(txHash) && input.consensusResult.Block != nil {
+		txDigest := lo.Must(input.consensusResult.Transaction.Digest())
+		if !cmi.needPublishTX.Has(txDigest.HashValue()) && input.consensusResult.Block != nil {
 			// Inform the access nodes on new block produced.
 			block := input.consensusResult.Block
 			activeAccessNodes, activeCommitteeNodes := cmi.activeNodesCB()
 			cmi.log.Debugf(
-				"Sending MsgBlockProduced (stateIndex=%v, l1Commitment=%v, txHash=%v) to access nodes: %v except committeeNodes %v",
-				block.StateIndex(), block.L1Commitment(), txHash.Hex(), activeAccessNodes, activeCommitteeNodes,
+				"Sending MsgBlockProduced (stateIndex=%v, l1Commitment=%v, txDigest=%s) to access nodes: %v except committeeNodes %v",
+				block.StateIndex(), block.L1Commitment(), txDigest, activeAccessNodes, activeCommitteeNodes,
 			)
 			for i := range activeAccessNodes {
 				if lo.Contains(activeCommitteeNodes, activeAccessNodes[i]) {
@@ -417,8 +417,8 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 				msgs.Add(NewMsgBlockProduced(cmi.nodeIDFromPubKey(activeAccessNodes[i]), input.consensusResult.Transaction, block))
 			}
 		}
-		if !cmi.needPublishTX.Has(txHash) {
-			cmi.needPublishTX.Set(txHash, &NeedPublishTX{
+		if !cmi.needPublishTX.Has(txDigest.HashValue()) {
+			cmi.needPublishTX.Set(txDigest.HashValue(), &NeedPublishTX{
 				CommitteeAddr: input.committeeAddr,
 				LogIndex:      input.logIndex,
 				Tx:            input.consensusResult.Transaction,

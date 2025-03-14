@@ -1,7 +1,6 @@
 package iscmove_test
 
 import (
-	"crypto/rand"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -31,15 +30,11 @@ func TestIscCodec(t *testing.T) {
 
 	anchor := iscmovetest.RandomAnchor()
 
-	var digest iotago.Base58 = make([]byte, 10)
-	_, err := rand.Read(digest)
-	require.NoError(t, err)
-
 	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
 		ObjectRef: iotago.ObjectRef{
 			ObjectID: &anchor.ID,
 			Version:  13,
-			Digest:   &digest,
+			Digest:   iotatest.RandomDigest(),
 		},
 		Object: &anchor,
 		Owner:  iotago.MustAddressFromHex(testcommon.TestAddress),

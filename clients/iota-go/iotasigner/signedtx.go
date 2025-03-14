@@ -2,7 +2,6 @@ package iotasigner
 
 import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/hashing"
 )
 
 type SignedTransaction struct {
@@ -17,13 +16,12 @@ func NewSignedTransaction(unsignedTx *iotago.TransactionData, signature *Signatu
 	}
 }
 
-func (st *SignedTransaction) Hash() (hashing.HashValue, error) {
+func (st *SignedTransaction) Digest() (*iotago.Digest, error) {
 	digest, err := st.Data.Digest()
 	if err != nil {
-		return hashing.NilHash, err
+		return nil, err
 	}
-
-	return hashing.HashValue(digest.Data()), nil
+	return digest, nil
 }
 
 // We use it to find the consumed anchor ref from the TX.

@@ -56,7 +56,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	result, err := reqctx.callTheContract()
 	if err == nil {
-		err = vmctx.checkTransactionSize()
+		err = vmctx.txbuilder.CheckTransactionSize()
 	}
 	if err != nil {
 		// skip the request / rollback tx builder (no need to rollback the state, because the mutations will never be applied)
@@ -460,15 +460,4 @@ func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *r
 
 func (vmctx *vmContext) loadChainConfig() {
 	vmctx.chainInfo = governance.NewStateReaderFromChainState(vmctx.stateDraft).GetChainInfo(vmctx.ChainID())
-}
-
-// checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
-func (vmctx *vmContext) checkTransactionSize() error {
-	// TODO the following requirements we need to check
-	// * The encoded bytes of ptb should be smaller than `max_tx_size_bytes`
-	// * max_size_written_objects
-	// * max_serialized_tx_effects_size_bytes
-	// * max_pure_argument_size
-	vmctx.task.Log.Info("TODO: checkTransactionSize")
-	return nil
 }

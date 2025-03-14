@@ -223,7 +223,7 @@ func (cr *consRecover) String() string {
 type txPublished struct {
 	committeeAddr   cryptolib.Address
 	logIndex        cmt_log.LogIndex
-	txID            hashing.HashValue
+	txID            iotago.Digest
 	nextAliasOutput *isc.StateAnchor
 	confirmed       bool
 }
@@ -695,10 +695,10 @@ func (cni *chainNodeImpl) handleRotateTo(address *iotago.Address) {
 
 func (cni *chainNodeImpl) handleTxPublished(txPubResult *txPublished) {
 	cni.log.Debugf("handleTxPublished, txID=%v", txPubResult.txID)
-	if !cni.publishingTXes.Has(txPubResult.txID) {
+	if !cni.publishingTXes.Has(txPubResult.txID.HashValue()) {
 		return
 	}
-	cni.publishingTXes.Delete(txPubResult.txID)
+	cni.publishingTXes.Delete(txPubResult.txID.HashValue())
 
 	outMsgs := cni.chainMgr.Input(
 		chainmanager.NewInputChainTxPublishResult(txPubResult.committeeAddr, txPubResult.logIndex, txPubResult.txID, txPubResult.nextAliasOutput, txPubResult.confirmed),
@@ -789,21 +789,21 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainmanager.NeedPublishTXMap) {
 	upd.ForEach(func(ti hashing.HashValue, needPublishTx *chainmanager.NeedPublishTX) bool {
 		txToPost := needPublishTx // Have to take a copy to be used in callback.
-		txHash := lo.Must(txToPost.Tx.Hash())
+		txDigest := lo.Must(txToPost.Tx.Digest())
 
-		if !cni.publishingTXes.Has(txHash) {
+		if !cni.publishingTXes.Has(txDigest.HashValue()) {
 			subCtx, subCancel := context.WithCancel(ctx)
-			cni.publishingTXes.Set(txHash, subCancel)
+			cni.publishingTXes.Set(txDigest.HashValue(), subCancel)
 			publishStart := time.Now()
-			cni.log.Debugf("XXX: PublishTX %v ..., consumed anchor=%v", txHash, needPublishTx.BaseAnchorRef)
+			cni.log.Debugf("XXX: PublishTX %s ..., consumed anchor=%v", txDigest, needPublishTx.BaseAnchorRef)
 			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
-				cni.log.Debugf("XXX: PublishTX %v done, next anchor=%v, err=%v", txHash, newStateAnchor, err)
+				cni.log.Debugf("XXX: PublishTX %s done, next anchor=%v, err=%v", txDigest, newStateAnchor, err)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 
 				cni.recvTxPublishedPipe.In() <- &txPublished{
 					committeeAddr:   txToPost.CommitteeAddr,
 					logIndex:        txToPost.LogIndex,
-					txID:            txHash,
+					txID:            *txDigest,
 					nextAliasOutput: newStateAnchor,
 					confirmed:       err == nil,
 				}

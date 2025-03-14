@@ -737,7 +737,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	user1AgentID := isc.NewAddressAgentID(user1Addr)
 
 	// transfer some tokens from a new account (user1)
-	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal1 := ch.L2Assets(ch.OwnerAgentID())
 	commonBal1 := ch.L2CommonAccountAssets()
 	user1Bal1 := ch.L2Assets(user1AgentID)
 	transferAmt := coin.Value(2000)
@@ -754,7 +754,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal1.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal2 := ch.L2Assets(ch.OwnerAgentID())
 	user1Bal2 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal1.BaseTokens()+gasFees-addedToCommonAccount1, ownerBal2.BaseTokens())
 	require.Equal(t, user1Bal1.BaseTokens()+transferAmt-gasFees, user1Bal2.BaseTokens())
@@ -769,7 +769,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	require.NoError(t, err)
 
 	// no balance changes (owner calls to gov contract don't pay fees)
-	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal3 := ch.L2Assets(ch.OwnerAgentID())
 	commonBal3 := ch.L2CommonAccountAssets()
 	user1Bal3 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal2.BaseTokens(), ownerBal3.BaseTokens())
@@ -794,8 +794,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal3.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-
-	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal4 := ch.L2Assets(ch.OwnerAgentID())
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
 	fmt.Printf("GovGasPayout: Common3; addedToCommonAccount3: %d, CommonBal4: %d\n", addedToCommonAccount3, commonBal4.BaseTokens())

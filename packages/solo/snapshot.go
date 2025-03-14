@@ -9,7 +9,7 @@ type ChainSnapshot struct {
 	Name                   string
 	StateControllerKeyPair []byte
 	ChainID                []byte
-	OriginatorPrivateKey   []byte
+	OwnerPrivateKey        []byte
 	ValidatorFeeTarget     []byte
 	DB                     [][]byte
 }
@@ -27,7 +27,7 @@ func (env *Solo) TakeSnapshot() *Snapshot {
 	// 		Name:                   ch.Name,
 	// 		StateControllerKeyPair: rwutil.WriteToBytes(ch.StateControllerKeyPair),
 	// 		ChainID:                ch.ChainID.Bytes(),
-	// 		OriginatorPrivateKey:   rwutil.WriteToBytes(ch.OriginatorPrivateKey),
+	// 		OwnerPrivateKey:   rwutil.WriteToBytes(ch.OwnerPrivateKey),
 	// 		ValidatorFeeTarget:     ch.ValidatorFeeTarget.Bytes(),
 	// 	}
 	//
@@ -57,7 +57,7 @@ func (env *Solo) RestoreSnapshot(snapshot *Snapshot) {
 	// 	chainID, err := isc.ChainIDFromBytes(chainSnapshot.ChainID)
 	// 	require.NoError(env.T, err)
 	//
-	// 	okp, err := rwutil.ReadFromBytes(chainSnapshot.OriginatorPrivateKey, new(cryptolib.KeyPair))
+	// 	okp, err := rwutil.ReadFromBytes(chainSnapshot.OwnerPrivateKey, new(cryptolib.KeyPair))
 	// 	require.NoError(env.T, err)
 	//
 	// 	val, err := isc.AgentIDFromBytes(chainSnapshot.ValidatorFeeTarget)
@@ -74,7 +74,7 @@ func (env *Solo) RestoreSnapshot(snapshot *Snapshot) {
 	// 		Name:                   chainSnapshot.Name,
 	// 		StateControllerKeyPair: sckp,
 	// 		ChainID:                chainID,
-	// 		OriginatorPrivateKey:   okp,
+	// 		OwnerPrivateKey:   okp,
 	// 		ValidatorFeeTarget:     val,
 	// 		db:                     db,
 	// 		migrationScheme:        &migrations.MigrationScheme{},
