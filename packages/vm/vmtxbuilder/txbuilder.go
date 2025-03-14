@@ -159,7 +159,7 @@ func (txb *AnchorTransactionBuilder) CheckTransactionSize() error {
 	ptb := txb.ViewPTB()
 
 	emptyStateMetadata := make([]byte, 32)
-	tx := txb.BuildTransactionEssence(emptyStateMetadata, 10)
+	tx := txb.Clone().BuildTransactionEssence(emptyStateMetadata, 10)
 
 	if len(tx.Inputs) > maxInputObjects {
 		return fmt.Errorf("tx input len: %d, exceed max_input_objects: %w", len(tx.Inputs), vmexceptions.ErrMaxTransactionSizeExceeded)
