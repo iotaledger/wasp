@@ -323,6 +323,10 @@ func TestMultiGetTransactionBlocks(t *testing.T) {
 }
 
 func TestTryGetPastObject(t *testing.T) {
+	// This test might work in general, but can not be executed on either the L1 starter,
+	// nor on Alphanet as objects can vanish at any time
+	t.Skip()
+
 	api := l1starter.Instance().L1Client()
 	// there is no software-level guarantee/SLA that objects with past versions can be retrieved by this API
 	resp, err := api.TryGetPastObject(
@@ -340,6 +344,10 @@ func TestTryGetPastObject(t *testing.T) {
 }
 
 func TestTryMultiGetPastObjects(t *testing.T) {
+	// This test might work in general, but can not be executed on either the L1 starter,
+	// nor on Alphanet as objects can vanish at any time
+	t.Skip()
+
 	api := l1starter.Instance().L1Client()
 	req := []*iotajsonrpc.IotaGetPastObjectRequest{
 		{

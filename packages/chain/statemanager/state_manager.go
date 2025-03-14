@@ -242,7 +242,7 @@ func (smT *stateManager) addInput(input gpa.Input) {
 	smT.inputPipe.In() <- input
 }
 
-func (smT *stateManager) run() { //nolint:gocyclo
+func (smT *stateManager) run() {
 	defer smT.cleanupFun()
 	inputPipeCh := smT.inputPipe.Out()
 	messagePipeCh := smT.messagePipe.Out()

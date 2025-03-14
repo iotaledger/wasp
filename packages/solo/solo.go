@@ -6,6 +6,7 @@ package solo
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -258,6 +259,60 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
+// WithWaitForNextVersion waits for an object to change its version.
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
+func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) *iotago.ObjectRef {
+	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
+	if currentRef == nil {
+		cb()
+		return currentRef
+	}
+
+	cb()
+
+	count := 0
+	for {
+		count++
+
+		if count > 30 {
+			panic(fmt.Errorf("WithWaitForNextVersion: object version did not change in time: %v\n", currentRef))
+		}
+
+		env.logger.LogInfof("WaitForNextVersion: Trying ref %v\n", currentRef)
+
+		newRef, err := env.IotaClient().GetObject(env.ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+		if err != nil {
+			time.Sleep(250 * time.Millisecond)
+			continue
+		}
+
+		if newRef.Error != nil {
+			// The provided object got consumed and is gone. We can return.
+			if newRef.Error.Data.Deleted != nil {
+				return currentRef
+			}
+
+			if newRef.Error.Data.NotExists != nil {
+				return currentRef
+			}
+
+			time.Sleep(250 * time.Millisecond)
+			continue
+		}
+
+		if newRef.Data.Ref().Version > currentRef.Version {
+			env.logger.LogInfof("WaitForNextVersion: Found the updated version of %v, which is: %v \n", currentRef, newRef.Data.Ref())
+			ref := newRef.Data.Ref()
+			return &ref
+		}
+
+		env.logger.LogInfof("WaitForNextVersion: Getting the same version ref as before. Retrying. %v\n", currentRef)
+
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
 func (env *Solo) deployChain(
 	chainOwner *cryptolib.KeyPair,
 	initCommonAccountBaseTokens coin.Value,
@@ -289,8 +344,13 @@ func (env *Solo) deployChain(
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
 	gasCoinRef := env.makeBaseTokenCoin(chainOperator, isc.GasCoinTargetValue, nil)
+	env.logger.LogInfof("Chain Originator address: %v\n", chainOperator)
+	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
-	block, stateMetadata := origin.InitChain(
+	var block state.Block
+	var stateMetadata *transaction.StateMetadata
+
+	block, stateMetadata = origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
@@ -300,6 +360,7 @@ func (env *Solo) deployChain(
 	)
 
 	var initCoin *iotago.ObjectRef
+
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
 			chainOperator,
@@ -320,19 +381,25 @@ func (env *Solo) deployChain(
 	)
 	require.NoError(env.T, err)
 
-	anchorRef, err := env.ISCMoveClient().StartNewChain(
-		env.ctx,
-		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainOperator,
-			ChainOwnerAddress: chainOperator.Address(),
-			PackageID:         env.ISCPackageID(),
-			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       initCoin,
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
-			GasPayments:       gasPayment.CoinRefs(),
-		},
-	)
+	var anchorRef *iscmove.AnchorWithRef
+	env.WithWaitForNextVersion(gasPayment.CoinRefs()[0], func() {
+		env.WithWaitForNextVersion(initCoin, func() {
+			anchorRef, err = env.ISCMoveClient().StartNewChain(
+				env.ctx,
+				&iscmoveclient.StartNewChainRequest{
+					Signer:            chainOperator,
+					ChainOwnerAddress: chainOperator.Address(),
+					PackageID:         env.ISCPackageID(),
+					StateMetadata:     stateMetadata.Bytes(),
+					InitCoinRef:       initCoin,
+					GasPrice:          iotaclient.DefaultGasPrice,
+					GasBudget:         iotaclient.DefaultGasBudget,
+					GasPayments:       gasPayment.CoinRefs(),
+				},
+			)
+		})
+	})
+
 	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 

@@ -411,7 +411,7 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 	cgr.tryHandleOutput()
 }
 
-func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
+func (cgr *ConsGr) tryHandleOutput() {
 	outputUntyped := cgr.consInst.Output()
 	if outputUntyped == nil {
 		return
