@@ -29,7 +29,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/hive.go/logger"
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -70,7 +69,7 @@ type waspCmd struct {
 	logScanner sync.WaitGroup
 }
 
-func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log *logger.Logger, l1PacakgeID *iotago.PackageID) *Cluster {
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger, l1PacakgeID *iotago.PackageID) *Cluster {
 	if log == nil {
 		if t == nil {
 			panic("one of t or log must be set")
@@ -251,6 +250,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		Cluster:           clu,
 	}
 
+	l1Client := clu.L1Client()
 	address := chain.OriginatorAddress()
 
 	err := clu.RequestFunds(address)
@@ -280,7 +280,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		false,
 	).Encode()
 
-	getCoinsRes, err := clu.Config.L1Client().GetCoins(
+	getCoinsRes, err := l1Client.GetCoins(
 		context.Background(),
 		iotaclient.GetCoinsRequest{Owner: address.AsIotaAddress()},
 	)
@@ -295,6 +295,29 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			iotaclient.FundsFromFaucetAmount <= coin.Balance.Uint64() {
 			gascoin = coin
 		}
+	}
+
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	err = ptb.TransferObject(stateAddr.AsIotaAddress(), gascoin.Ref())
+	if err != nil {
+		return nil, fmt.Errorf("cant transfer gas coin: %w", err)
+	}
+	pt := ptb.Finish()
+
+	resTransferGasCoin, err := l1Client.SignAndExecuteTxWithRetry(
+		context.Background(),
+		cryptolib.SignerToIotaSigner(chain.OriginatorKeyPair),
+		pt,
+		nil,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowInput:   true,
+			ShowEffects: true,
+		},
+	)
+	if err != nil || !resTransferGasCoin.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("can't transfer GasCoin, resTransferGasCoin.Effects.Data.IsSuccess(): %v: %w", resTransferGasCoin.Effects.Data.IsSuccess(), err)
 	}
 	fmt.Printf("chosen GasCoin %s", gascoin.String())
 
@@ -317,7 +340,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	chainID, err := apilib.DeployChain(
 		context.Background(),
 		apilib.CreateChainParams{
-			Layer1Client:      clu.L1Client(),
+			Layer1Client:      l1Client,
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,

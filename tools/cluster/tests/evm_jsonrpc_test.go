@@ -92,6 +92,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 		chainclient.PostRequestParams{
 			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
 			Allowance: isc.NewAssets(amount),
+			GasBudget: iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(e.T, err)

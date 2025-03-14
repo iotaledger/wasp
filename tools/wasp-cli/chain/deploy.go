@@ -76,7 +76,7 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	}
 
 	txb := iotago.NewProgrammableTransactionBuilder()
-	txb.Command(
+	splitCoinCmd := txb.Command(
 		iotago.Command{
 			SplitCoins: &iotago.ProgrammableSplitCoins{
 				Coin:    iotago.GetArgumentGasCoin(),
@@ -84,6 +84,8 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 			},
 		},
 	)
+
+	txb.TransferArg(committeeAddress, splitCoinCmd)
 
 	txData := iotago.NewProgrammable(
 		wallet.Address().AsIotaAddress(),
@@ -115,10 +117,7 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 
 	gasCoin, err := result.GetCreatedCoin("iota", "IOTA")
 	if err != nil {
-		gasCoin, err = result.GetMutatedCoin("iota", "IOTA")
-		if err != nil {
-			return iotago.ObjectID{}, fmt.Errorf("failed to get GasCoin from tx: %w", err)
-		}
+		return iotago.ObjectID{}, err
 	}
 
 	return *gasCoin.ObjectID, nil
