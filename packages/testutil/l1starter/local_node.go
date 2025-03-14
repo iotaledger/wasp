@@ -56,7 +56,7 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	).WithDeadline(4 * time.Minute)
 
 	req := testcontainers.ContainerRequest{
-		Image:          "iotaledger/iota-tools:devnet",
+		Image:          "lukasmoe/iota-test-node:latest",
 		ImagePlatform:  imagePlatform,
 		ExposedPorts:   []string{"9000/tcp", "9123/tcp"},
 		WaitingFor:     portWaiter,
