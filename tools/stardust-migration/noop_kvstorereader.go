@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+
+	"github.com/iotaledger/wasp/packages/kv"
 )
 
 type NoopKVStoreReader[KeyType any] struct {
