@@ -92,14 +92,11 @@ func (c *Client) GetTransactionBlock(
 	return Retry(
 		ctx,
 		func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-			fmt.Println("RETRYING GET TRANSACTION BLOCK")
-
 			var resp iotajsonrpc.IotaTransactionBlockResponse
 			err := c.transport.Call(ctx, &resp, getTransactionBlock, req.Digest, req.Options)
 			if err != nil {
 				return &resp, err
 			}
-			fmt.Printf("GET TRANSACTION BLOCK => %v\n", resp)
 
 			return &resp, nil
 		},
