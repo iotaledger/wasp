@@ -54,6 +54,7 @@ func initRotateCmd() *cobra.Command {
 	return cmd
 }
 
+//lint:ignore U1000 Ignore unused function temporarily for debugging
 func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chain string, status bool, offledger bool) {
 	msg := governance.FuncStartMaintenance.Message()
 	if !status {

@@ -3,7 +3,6 @@
 package testcore
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 

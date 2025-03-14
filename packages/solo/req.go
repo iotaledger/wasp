@@ -305,7 +305,6 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 			GasBudget:        iotaclient.DefaultGasBudget,
 		},
 	)
-
 	if err != nil {
 		return nil, nil, err
 	}

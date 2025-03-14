@@ -192,7 +192,7 @@ func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 			return ww.WriteN(size64Encode(uint64(val)))
 		}
 		debug.PrintStack()
-		ww.Err = errors.New(fmt.Sprintf("invalid write size limit (val: %d, limit: %d)", val, limit))
+		ww.Err = fmt.Errorf("invalid write size limit (val: %d, limit: %d)", val, limit)
 	}
 	return ww
 }

@@ -89,7 +89,6 @@ func initConfigParams(c *dig.Container) error {
 	return nil
 }
 
-//nolint:funlen
 func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, log log.Logger) *echo.Echo {
 	e := httpserver.NewEcho(
 		log,
@@ -214,7 +213,6 @@ func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	return echoSwagger
 }
 
-//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
