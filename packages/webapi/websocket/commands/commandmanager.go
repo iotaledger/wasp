@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
@@ -35,12 +35,12 @@ type CommandHandler interface {
 }
 
 type CommandManager struct {
-	log                 *logger.Logger
+	log                 log.Logger
 	commands            []CommandHandler
 	subscriptionManager *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]
 }
 
-func NewCommandHandler(log *logger.Logger, subscriptionManager *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]) *CommandManager {
+func NewCommandHandler(log log.Logger, subscriptionManager *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]) *CommandManager {
 	return &CommandManager{
 		log: log,
 		commands: []CommandHandler{
@@ -59,13 +59,13 @@ func (c *CommandManager) handleError(err error, client *websockethub.Client, com
 
 	switch {
 	case errors.Is(err, ErrFailedToDeserializeCommand):
-		c.log.Warnf("Failed to deserialize for client:[%d], command:[%s], err:[%v]", client.ID(), commandType, unwrappedError)
+		c.log.LogWarnf("Failed to deserialize for client:[%d], command:[%s], err:[%v]", client.ID(), commandType, unwrappedError)
 	case errors.Is(err, ErrFailedToSendMessage):
-		c.log.Warnf("Failed to send event to client:[%d], command:[%s], err:[%v]", client.ID(), commandType, unwrappedError)
+		c.log.LogWarnf("Failed to send event to client:[%d], command:[%s], err:[%v]", client.ID(), commandType, unwrappedError)
 	case errors.Is(err, ErrFailedToValidateCommand):
-		c.log.Warnf("Failed to validate received command from client:[%d], command:[%s], err:[%v]", client.ID(), commandType, unwrappedError)
+		c.log.LogWarnf("Failed to validate received command from client:[%d], command:[%s], err:[%v]", client.ID(), commandType, unwrappedError)
 	default:
-		c.log.Warnf("Unhandled error in websocket command handler for client:[%d], command:[%s], err:[%v]", client.ID(), commandType, err)
+		c.log.LogWarnf("Unhandled error in websocket command handler for client:[%d], command:[%s], err:[%v]", client.ID(), commandType, err)
 	}
 
 	return err

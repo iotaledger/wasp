@@ -14,7 +14,7 @@ import (
 
 func TestGetRandomOtherNodeIDs(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	meIndex := 3
 	nodeIDsToGet := 5
@@ -28,7 +28,7 @@ func TestGetRandomOtherNodeIDs(t *testing.T) {
 
 func TestGetRandomOtherNodeIDsToFew(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	meIndex := 3
 	nodeIDsToGet := 5
@@ -42,7 +42,7 @@ func TestGetRandomOtherNodeIDsToFew(t *testing.T) {
 
 func TestGetRandomOtherNodeIDsAfterChanges(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	nodeIDsToGet := 5
 	iterationCount := 7

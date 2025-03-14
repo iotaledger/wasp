@@ -54,7 +54,7 @@ func TestChainMgrBasic(t *testing.T) {
 
 func testChainMgrBasic(t *testing.T, n, f int) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	//
 	// Node identities and DKG.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -116,7 +116,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			-1,   // pipeliningLimit
 			1,    // postponeRecoveryMilestones
 			nil,  // metrics
-			log.Named(nid.ShortString()),
+			log.NewChildLogger(nid.ShortString()),
 		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()

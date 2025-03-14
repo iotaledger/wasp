@@ -7,12 +7,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/app/configuration"
-	appLogger "github.com/iotaledger/hive.go/app/logger"
-	"github.com/iotaledger/hive.go/logger"
+	appLogger "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
+
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -20,8 +19,7 @@ import (
 )
 
 func initTest(ctx context.Context) (*publisher.Publisher, *EventHandler, *event.Event1[*ISCEvent], *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]) {
-	_ = appLogger.InitGlobalLogger(configuration.New())
-	log := logger.NewLogger("Test")
+	log := appLogger.NewLogger(appLogger.WithName("Test"))
 
 	pub := publisher.New(log)
 

@@ -1,7 +1,7 @@
 package database
 
 import (
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 )
 

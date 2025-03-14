@@ -12,7 +12,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -41,7 +42,7 @@ type typedPool[V isc.Request] struct {
 	maxPoolSize        int
 	sizeMetric         func(int)
 	timeMetric         func(time.Duration)
-	log                *logger.Logger
+	log                log.Logger
 }
 
 type typedPoolEntry[V isc.Request] struct {
@@ -52,7 +53,7 @@ type typedPoolEntry[V isc.Request] struct {
 
 var _ RequestPool[isc.OffLedgerRequest] = &typedPool[isc.OffLedgerRequest]{}
 
-func NewTypedPool[V isc.Request](maxOnledgerInPool int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) RequestPool[V] {
+func NewTypedPool[V isc.Request](maxOnledgerInPool int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log log.Logger) RequestPool[V] {
 	return &typedPool[V]{
 		waitReq:            waitReq,
 		requests:           shrinkingmap.New[isc.RequestRefKey, *typedPoolEntry[V]](),
@@ -109,7 +110,7 @@ func (olp *typedPool[V]) Add(request V) {
 
 	//
 	// update metrics and signal that the request is available
-	olp.log.Debugf("ADD %v as key=%v", request.ID(), refKey)
+	olp.log.LogDebugf("ADD %v as key=%v", request.ID(), refKey)
 	olp.sizeMetric(olp.requests.Size())
 	olp.waitReq.MarkAvailable(request)
 }
@@ -134,7 +135,7 @@ func (olp *typedPool[V]) LimitPoolSize() []*typedPoolEntry[V] {
 	}
 
 	for _, r := range reqsToDelete {
-		olp.log.Debugf("LimitPoolSize dropping request: %v", r.req.ID())
+		olp.log.LogDebugf("LimitPoolSize dropping request: %v", r.req.ID())
 		olp.Remove(r.req)
 	}
 	olp.hasDroppedRequests = true
@@ -179,7 +180,7 @@ func (olp *typedPool[V]) Remove(request V) {
 	}
 
 	// log and update metrics
-	olp.log.Debugf("DEL %v as key=%v", request.ID(), refKey)
+	olp.log.LogDebugf("DEL %v as key=%v", request.ID(), refKey)
 	olp.sizeMetric(olp.requests.Size())
 	olp.timeMetric(time.Since(entry.ts))
 }

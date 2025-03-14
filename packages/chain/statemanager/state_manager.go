@@ -7,7 +7,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
@@ -77,7 +78,7 @@ func (r *reqPreliminaryBlock) Respond(err error) {
 }
 
 type stateManager struct {
-	log                  *logger.Logger
+	log                  log.Logger
 	chainID              isc.ChainID
 	stateManagerGPA      gpa.GPA
 	nodeRandomiser       sm_utils.NodeRandomiser
@@ -118,14 +119,14 @@ func New(
 	shutdownCoordinator *shutdown.Coordinator,
 	metrics *metrics.ChainStateManagerMetrics,
 	pipeMetrics *metrics.ChainPipeMetrics,
-	log *logger.Logger,
+	log log.Logger,
 	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {
-	smLog := log.Named("SM")
+	smLog := log.NewChildLogger("SM")
 	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
 	stateManagerGPA, err := sm_gpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
-		smLog.Errorf("failed to create state manager GPA: %w", err)
+		smLog.LogErrorf("failed to create state manager GPA: %w", err)
 		return nil, err
 	}
 	result := &stateManager{
@@ -159,7 +160,7 @@ func New(
 
 	unhook := result.net.Attach(&result.netPeeringID, peering.ReceiverStateManager, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != constMsgTypeStm {
-			result.log.Warnf("Unexpected message, type=%v", recv.MsgType)
+			result.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
 		result.messagePipe.In() <- recv
@@ -256,7 +257,7 @@ func (smT *stateManager) run() { //nolint:gocyclo
 			}
 			// TODO what should the statemgr wait for?
 			smT.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
-			smT.log.Debugf("Stopping state manager, because context was closed")
+			smT.log.LogDebugf("Stopping state manager, because context was closed")
 			smT.shutdownCoordinator.Done()
 			return
 		}
@@ -294,7 +295,7 @@ func (smT *stateManager) run() { //nolint:gocyclo
 			}
 		case <-statusTimerCh:
 			statusTimerCh = smT.parameters.TimeProvider.After(constStatusTimerTime)
-			smT.log.Debugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
+			smT.log.LogDebugf("State manager loop iteration; there are %v inputs, %v messages, %v public key changes waiting to be handled",
 				smT.inputPipe.Len(), smT.messagePipe.Len(), smT.nodePubKeysPipe.Len())
 		case <-smT.ctx.Done():
 			continue
@@ -311,7 +312,7 @@ func (smT *stateManager) handleInput(input gpa.Input) {
 func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 	msg, err := smT.stateManagerGPA.UnmarshalMessage(peerMsg.MsgData)
 	if err != nil {
-		smT.log.Warnf("Parsing message failed: %v", err)
+		smT.log.LogWarnf("Parsing message failed: %v", err)
 		return
 	}
 	msg.SetSender(gpa.NodeIDFromPublicKey(peerMsg.SenderPubKey))
@@ -331,7 +332,7 @@ func (smT *stateManager) handleOutput() {
 }
 
 func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
-	smT.log.Debugf("handleNodePublicKeys: %v", req)
+	smT.log.LogDebugf("handleNodePublicKeys: %v", req)
 	smT.nodeIDToPubKey = map[gpa.NodeID]*cryptolib.PublicKey{}
 	peerNodeIDs := []gpa.NodeID{}
 	for _, pubKey := range req.serverNodes {
@@ -356,7 +357,7 @@ func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
 		}
 	}
 
-	smT.log.Infof("Updating list of nodeIDs: [%v]",
+	smT.log.LogInfof("Updating list of nodeIDs: [%v]",
 		lo.Reduce(peerNodeIDs, func(acc string, item gpa.NodeID, _ int) string {
 			return acc + " " + item.ShortString()
 		}, ""),
@@ -367,16 +368,16 @@ func (smT *stateManager) handleNodePublicKeys(req *reqChainNodesUpdated) {
 func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 	if !smT.wal.Contains(msg.block.Hash()) {
 		if err := smT.wal.Write(msg.block); err != nil {
-			smT.log.Warnf("Preliminary block index %v %s cannot be saved to the WAL: %v",
+			smT.log.LogWarnf("Preliminary block index %v %s cannot be saved to the WAL: %v",
 				msg.block.StateIndex(), msg.block.L1Commitment(), err)
 			msg.Respond(err)
 			return
 		}
-		smT.log.Warnf("Preliminary block index %v %s saved to the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
+		smT.log.LogWarnf("Preliminary block index %v %s saved to the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
 		msg.Respond(nil)
 		return
 	}
-	smT.log.Warnf("Preliminary block index %v %s already exist in the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
+	smT.log.LogWarnf("Preliminary block index %v %s already exist in the WAL.", msg.block.StateIndex(), msg.block.L1Commitment())
 	msg.Respond(nil)
 }
 
@@ -393,7 +394,7 @@ func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
 		pm := peering.NewPeerMessageData(smT.netPeeringID, peering.ReceiverStateManager, constMsgTypeStm, msgBytes)
 		recipientPubKey, ok := smT.nodeIDToPubKey[msg.Recipient()]
 		if !ok {
-			smT.log.Debugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient().ShortString())
+			smT.log.LogDebugf("Dropping outgoing message, because NodeID=%s it is not in the NodeList.", msg.Recipient().ShortString())
 			return
 		}
 		smT.net.SendMsgByPubKey(recipientPubKey, pm)

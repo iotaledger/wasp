@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmimpl"
@@ -16,10 +17,10 @@ import (
 
 type vmAsync struct {
 	metrics *metrics.ChainConsensusMetrics
-	log     *logger.Logger
+	log     log.Logger
 }
 
-func NewVMAsync(metrics *metrics.ChainConsensusMetrics, log *logger.Logger) VM {
+func NewVMAsync(metrics *metrics.ChainConsensusMetrics, log log.Logger) VM {
 	return &vmAsync{
 		metrics: metrics,
 		log:     log,
@@ -39,7 +40,7 @@ func (vma *vmAsync) run(task *vm.VMTask, respCh chan *vm.VMTaskResult) {
 	vmResult, err := vmimpl.Run(task)
 	runTime := time.Since(startTime)
 	vma.metrics.VMRun(runTime, reqCount)
-	vma.log.Debugf("VM processed %v requests in %v", reqCount, runTime)
+	vma.log.LogDebugf("VM processed %v requests in %v", reqCount, runTime)
 	if err != nil {
 		panic(fmt.Errorf("error running the VM:  %w", err))
 	}

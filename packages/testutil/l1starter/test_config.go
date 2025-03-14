@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/testutil/testconfig"
 	"github.com/testcontainers/testcontainers-go"
+
+	"github.com/iotaledger/wasp/packages/testutil/testconfig"
 )
 
 type L1EndpointConfig struct {

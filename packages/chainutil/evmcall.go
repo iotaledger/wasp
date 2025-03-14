@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -21,7 +21,7 @@ func EVMCall(
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	call ethereum.CallMsg,
 ) ([]byte, error) {
 	chainID := anchor.ChainID()

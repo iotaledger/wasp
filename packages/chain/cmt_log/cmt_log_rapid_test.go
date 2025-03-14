@@ -59,7 +59,7 @@ package cmt_log_test
 // 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 // 		require.NoError(t, err)
 // 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-// 		cmtLogInst, err := cmt_log.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.Named(fmt.Sprintf("N%v", i)))
+// 		cmtLogInst, err := cmt_log.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
 // 		require.NoError(t, err)
 // 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 // 	}

@@ -6,7 +6,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/shutdown"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -15,7 +16,7 @@ import (
 // To avoid code duplication, a common parts of regular and mocked snapshot managers
 // are extracted to `snapshotManagerRunner`.
 type snapshotManagerRunner struct {
-	log                 *logger.Logger
+	log                 log.Logger
 	ctx                 context.Context
 	shutdownCoordinator *shutdown.Coordinator
 
@@ -38,7 +39,7 @@ func newSnapshotManagerRunner(
 	createPeriod uint32,
 	delayPeriod uint32,
 	core snapshotManagerCore,
-	log *logger.Logger,
+	log log.Logger,
 ) *snapshotManagerRunner {
 	result := &snapshotManagerRunner{
 		log:                       log,
@@ -104,7 +105,7 @@ func (smrT *snapshotManagerRunner) run() {
 				return
 			}
 			if smrT.shutdownCoordinator.CheckNestedDone() {
-				smrT.log.Debugf("Stopping snapshot manager, because context was closed")
+				smrT.log.LogDebugf("Stopping snapshot manager, because context was closed")
 				smrT.shutdownCoordinator.Done()
 				return
 			}

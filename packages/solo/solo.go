@@ -14,13 +14,13 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	bcs "github.com/iotaledger/bcs-go"
+
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -59,7 +59,7 @@ const (
 type Solo struct {
 	// instance of the test
 	T                    Context
-	logger               *logger.Logger
+	logger               log.Logger
 	chainsMutex          sync.RWMutex
 	chains               map[isc.ChainID]*Chain
 	processorConfig      *processors.Config
@@ -102,7 +102,7 @@ type Chain struct {
 	// Store is where the chain data (blocks, state) is stored
 	store indexedstore.IndexedStore
 	// Log is the named logger of the chain
-	log *logger.Logger
+	log log.Logger
 	// global processor cache
 	proc *processors.Config
 	// related to asynchronous backlog processing
@@ -116,7 +116,7 @@ type InitOptions struct {
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
-	Log               *logger.Logger
+	Log               log.Logger
 }
 
 type L1Config struct {
@@ -144,7 +144,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	if opt.Log == nil {
 		opt.Log = testlogger.NewNamedLogger(t.Name(), timeLayout)
 		if !opt.Debug {
-			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+			opt.Log = testlogger.WithLevel(opt.Log, log.LevelInfo, opt.PrintStackTrace)
 		}
 	}
 	evmlogger.Init(opt.Log)
@@ -173,11 +173,11 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		processorConfig:      coreprocessors.NewConfigWithTestContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
 		seed:                 cryptolib.NewSeed(),
-		publisher:            publisher.New(opt.Log.Named("publisher")),
+		publisher:            publisher.New(opt.Log.NewChildLogger("publisher")),
 		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
-		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
+		ret.logger.LogInfof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
 
 	go ret.publisher.Run(ctx)
@@ -223,10 +223,6 @@ func (env *Solo) IterateChainLatestStates(
 			return true
 		})
 	}
-}
-
-func (env *Solo) SyncLog() {
-	_ = env.logger.Sync()
 }
 
 func (env *Solo) Publisher() *publisher.Publisher {
@@ -323,7 +319,7 @@ func (env *Solo) deployChain(
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (chainData, *isc.StateAnchor) {
-	env.logger.Debugf("deploying new chain '%s'", name)
+	env.logger.LogDebugf("deploying new chain '%s'", name)
 
 	if chainOwner == nil {
 		chainOwner = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
@@ -406,7 +402,7 @@ func (env *Solo) deployChain(
 	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
-	env.logger.Infof(
+	env.logger.LogInfof(
 		"deployed chain '%s' - ID: %s - chain operator: %s - chain owner: %s - origin trie root: %s",
 		name,
 		chainID,
@@ -458,7 +454,7 @@ func (env *Solo) NewChainExt(
 	defer env.chainsMutex.Unlock()
 	ch := env.addChain(chData)
 
-	ch.log.Infof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
+	ch.log.LogInfof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
 	return ch, anchorRef
 }
 
@@ -468,7 +464,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 		Env:             env,
 		store:           indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
 		proc:            env.processorConfig,
-		log:             env.logger.Named(chData.Name),
+		log:             env.logger.NewChildLogger(chData.Name),
 		migrationScheme: chData.migrationScheme,
 	}
 	env.chains[chData.ChainID] = ch
@@ -578,7 +574,7 @@ func (ch *Chain) RunRequestBatch(maxRequestsInBlock int) (
 	ptbRes, results := ch.runRequestsNolock(batch)
 	for _, res := range results {
 		if res.Receipt.Error != nil {
-			ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
+			ch.log.LogErrorf("runRequestsSync: %v", res.Receipt.Error)
 		}
 	}
 	return ptbRes, results
@@ -604,7 +600,7 @@ func (ch *Chain) ID() isc.ChainID {
 	return ch.ChainID
 }
 
-func (ch *Chain) Log() *logger.Logger {
+func (ch *Chain) Log() log.Logger {
 	return ch.log
 }
 

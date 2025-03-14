@@ -316,7 +316,7 @@ func TestA(t *testing.T) {
 
 func TestTypes(t *testing.T) {
 	t.Skip()
-	
+
 	objectRef := iotatest.RandomObjectRef()
 	b := bcs.MustMarshal(objectRef)
 

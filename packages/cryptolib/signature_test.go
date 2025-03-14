@@ -3,9 +3,10 @@ package cryptolib_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/stretchr/testify/require"
 )
 
 func TestSignatureSerialization(t *testing.T) {

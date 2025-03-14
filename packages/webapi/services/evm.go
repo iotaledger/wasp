@@ -8,8 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/labstack/echo/v4"
 
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
-	"github.com/iotaledger/hive.go/logger"
+	hivedb "github.com/iotaledger/hive.go/db"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -39,7 +40,7 @@ type EVMService struct {
 	indexDbPath     string
 	metrics         *metrics.ChainMetricsProvider
 	jsonrpcParams   *jsonrpc.Parameters
-	log             *logger.Logger
+	log             log.Logger
 }
 
 func NewEVMService(
@@ -50,7 +51,7 @@ func NewEVMService(
 	indexDbPath string,
 	metrics *metrics.ChainMetricsProvider,
 	jsonrpcParams *jsonrpc.Parameters,
-	log *logger.Logger,
+	log log.Logger,
 ) interfaces.EVMService {
 	return &EVMService{
 		chainsProvider:        chainsProvider,
@@ -91,7 +92,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 			e.chainsProvider().IsArchiveNode(),
 			hivedb.EngineRocksDB,
 			e.indexDbPath,
-			e.log.Named("EVMChain"),
+			e.log.NewChildLogger("EVMChain"),
 		),
 		jsonrpc.NewAccountManager(nil),
 		e.metrics.GetChainMetrics(chainID).WebAPI,

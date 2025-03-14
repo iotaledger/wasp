@@ -3,8 +3,9 @@ package wallet
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/spf13/cobra"
+
+	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"

@@ -1,7 +1,7 @@
 package chainutil
 
 import (
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -13,7 +13,7 @@ func CallView(
 	chainID isc.ChainID,
 	chainState state.State,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	msg isc.Message,
 ) (isc.CallArguments, error) {
 	vctx, err := viewcontext.New(chainID, chainState, processors, log, false)
