@@ -67,30 +67,30 @@ func (s *StateWriter) SetGasCoinTargetValue(m coin.Value) {
 }
 
 func (s *StateReader) GetChainOwnerID() isc.AgentID {
-	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainOwnerID)))
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(VarChainOwnerID)))
 }
 
 func (s *StateWriter) SetChainOwnerID(a isc.AgentID) {
-	s.state.Set(varChainOwnerID, codec.Encode(a))
+	s.state.Set(VarChainOwnerID, codec.Encode(a))
 	if s.GetChainOwnerIDDelegated() != nil {
-		s.state.Del(varChainOwnerIDDelegated)
+		s.state.Del(VarChainOwnerIDDelegated)
 	}
 }
 
 func (s *StateReader) GetChainOwnerIDDelegated() isc.AgentID {
-	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainOwnerIDDelegated), nil))
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(VarChainOwnerIDDelegated), nil))
 }
 
 func (s *StateWriter) SetChainOwnerIDDelegated(a isc.AgentID) {
-	s.state.Set(varChainOwnerIDDelegated, codec.Encode(a))
+	s.state.Set(VarChainOwnerIDDelegated, codec.Encode(a))
 }
 
 func (s *StateReader) GetPayoutAgentID() isc.AgentID {
-	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varPayoutAgentID)))
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(VarPayoutAgentID)))
 }
 
 func (s *StateWriter) SetPayoutAgentID(a isc.AgentID) {
-	s.state.Set(varPayoutAgentID, codec.Encode(a))
+	s.state.Set(VarPayoutAgentID, codec.Encode(a))
 }
 
 func (s *StateReader) GetGasFeePolicy() *gas.FeePolicy {

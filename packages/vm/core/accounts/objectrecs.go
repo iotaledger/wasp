@@ -8,11 +8,11 @@ import (
 )
 
 func (s *StateWriter) objectRecordsMap() *collections.Map {
-	return collections.NewMap(s.state, keyObjectRecords)
+	return collections.NewMap(s.state, KeyObjectRecords)
 }
 
 func (s *StateReader) objectRecordsMapR() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, keyObjectRecords)
+	return collections.NewMapReadOnly(s.state, KeyObjectRecords)
 }
 
 func (s *StateWriter) SaveObject(rec *ObjectRecord) {

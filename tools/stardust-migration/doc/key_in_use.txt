@@ -1,0 +1,31 @@
+Accounts
+        prefixBaseTokens: 13526
+        PrefixNFTsByCollection: 65
+        PrefixNFTs: 57
+        PrefixNativeTokens: 21
+        keyFoundryOutputRecords: 2
+        prefixNewlyMintedNFTs: 44
+        keyNFTOutputRecords: 29
+        keyNFTOwner: 7
+        keyNativeTokenOutputMap: 7
+        keyAllAccounts: 16419
+        PrefixFoundries: 2
+Governance
+        VarGasLimitsBytes: 1
+        VarMaintenanceStatus: 1
+        VarChainOwnerID: 1
+        VarPayoutAgentID: 1
+        VarMinBaseTokensOnCommonAccount: 1
+        VarBlockKeepAmount: 1
+        VarGasFeePolicyBytes: 1
+EVM
+        keyISCMagic: 2
+        keyEmulatorState: 4208208
+BlockLog
+ERROR READING KEY 2bef38f548
+ERROR READING KEY 2bef38f549
+ERROR READING KEY 2bef38f554  
+        ERROR: 3
+        PrefixBlockRegistry: 10001
+        prefixRequestLookupIndex: 5692190
+        prefixRequestReceipts: 18099

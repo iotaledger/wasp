@@ -13,15 +13,15 @@ import (
 )
 
 func (s *StateWriter) GetBlockRegistry() *collections.Array {
-	return collections.NewArray(s.state, prefixBlockRegistry)
+	return collections.NewArray(s.state, PrefixBlockRegistry)
 }
 
 func (s *StateReader) GetBlockRegistry() *collections.ArrayReadOnly {
-	return collections.NewArrayReadOnly(s.state, prefixBlockRegistry)
+	return collections.NewArrayReadOnly(s.state, PrefixBlockRegistry)
 }
 
 func (s *StateReader) IterateBlockRegistryPrefix(f func(blockInfo *BlockInfo)) {
-	s.state.Iterate(collections.ArrayElemPrefix(prefixBlockRegistry), func(key kv.Key, value []byte) bool {
+	s.state.Iterate(collections.ArrayElemPrefix(PrefixBlockRegistry), func(key kv.Key, value []byte) bool {
 		f(lo.Must(BlockInfoFromBytes(value)))
 		return true
 	})
@@ -29,14 +29,14 @@ func (s *StateReader) IterateBlockRegistryPrefix(f func(blockInfo *BlockInfo)) {
 
 // SaveNextBlockInfo appends block info and returns its index
 func (s *StateWriter) SaveNextBlockInfo(blockInfo *BlockInfo) {
-	registry := collections.NewArray(s.state, prefixBlockRegistry)
+	registry := collections.NewArray(s.state, PrefixBlockRegistry)
 	registry.Push(blockInfo.Bytes())
 }
 
 // SaveRequestReceipt appends request record to the record log and creates records for fast lookup
 func (s *StateWriter) SaveRequestReceipt(rec *RequestReceipt, key RequestLookupKey) error {
 	// save lookup record for fast lookup
-	lookupTable := collections.NewMap(s.state, prefixRequestLookupIndex)
+	lookupTable := collections.NewMap(s.state, PrefixRequestLookupIndex)
 	digest := rec.Request.ID().LookupDigest()
 	var lst RequestLookupKeyList
 	digestExists := lookupTable.HasAt(digest[:])
@@ -61,16 +61,16 @@ func (s *StateWriter) SaveRequestReceipt(rec *RequestReceipt, key RequestLookupK
 	lookupTable.SetAt(digest[:], lst.Bytes())
 	// save the record. Key is a LookupKey
 	data := rec.Bytes()
-	collections.NewMap(s.state, prefixRequestReceipts).SetAt(key.Bytes(), data)
+	collections.NewMap(s.state, PrefixRequestReceipts).SetAt(key.Bytes(), data)
 	return nil
 }
 
 func (s *StateWriter) SaveEvent(eventKey []byte, event *isc.Event) {
-	collections.NewMap(s.state, prefixRequestEvents).SetAt(eventKey, event.Bytes())
+	collections.NewMap(s.state, PrefixRequestEvents).SetAt(eventKey, event.Bytes())
 }
 
 func (s *StateReader) mustGetLookupKeyListFromReqID(reqID isc.RequestID) RequestLookupKeyList {
-	lookupTable := collections.NewMapReadOnly(s.state, prefixRequestLookupIndex)
+	lookupTable := collections.NewMapReadOnly(s.state, PrefixRequestLookupIndex)
 	digest := reqID.LookupDigest()
 	seen := lookupTable.HasAt(digest[:])
 	if !seen {
@@ -87,7 +87,7 @@ func (s *StateReader) mustGetLookupKeyListFromReqID(reqID isc.RequestID) Request
 
 // RequestLookupKeyList contains multiple references for record entries with colliding digests, this function returns the correct record for the given requestID
 func (s *StateReader) getCorrectRecordFromLookupKeyList(keyList RequestLookupKeyList, reqID isc.RequestID) (*RequestReceipt, error) {
-	records := collections.NewMapReadOnly(s.state, prefixRequestReceipts)
+	records := collections.NewMapReadOnly(s.state, PrefixRequestReceipts)
 	for _, lookupKey := range keyList {
 		recBytes := records.GetAt(lookupKey.Bytes())
 		rec, err := RequestReceiptFromBytes(recBytes, lookupKey.BlockIndex(), lookupKey.RequestIndex())
@@ -121,7 +121,7 @@ func (s *StateReader) getRequestEventsInternal(reqID isc.RequestID) ([][]byte, e
 		return nil, nil
 	}
 	eventIndex := uint16(0)
-	events := collections.NewMapReadOnly(s.state, prefixRequestEvents)
+	events := collections.NewMapReadOnly(s.state, PrefixRequestEvents)
 	var ret [][]byte
 	for {
 		key := NewEventLookupKey(record.BlockIndex, record.RequestIndex, eventIndex).Bytes()
@@ -145,7 +145,7 @@ type EventsForContractQuery struct {
 }
 
 func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [][]byte {
-	registry := collections.NewArrayReadOnly(s.state, prefixBlockRegistry)
+	registry := collections.NewArrayReadOnly(s.state, PrefixBlockRegistry)
 	latestBlockIndex := registry.Len() - 1
 	adjustedToBlock := q.BlockRange.To
 
@@ -155,7 +155,7 @@ func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [
 
 	filteredEvents := make([][]byte, 0)
 	for blockNumber := q.BlockRange.From; blockNumber <= adjustedToBlock; blockNumber++ {
-		eventBlockKey := collections.MapElemKey(prefixRequestEvents, codec.Encode[uint32](blockNumber))
+		eventBlockKey := collections.MapElemKey(PrefixRequestEvents, codec.Encode[uint32](blockNumber))
 		s.state.Iterate(eventBlockKey, func(_ kv.Key, value []byte) bool {
 			parsedContractID, _ := isc.ContractIDFromEventBytes(value)
 			if parsedContractID == q.Contract {
@@ -169,7 +169,7 @@ func (s *StateReader) getSmartContractEventsInternal(q EventsForContractQuery) [
 }
 
 func (s *StateWriter) pruneEventsByBlockIndex(blockIndex uint32, totalRequests uint16) {
-	events := collections.NewMap(s.state, prefixRequestEvents)
+	events := collections.NewMap(s.state, PrefixRequestEvents)
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		eventIndex := uint16(0)
 		for {
@@ -201,7 +201,7 @@ func (s *StateReader) getRequestLogRecordsForBlockBin(blockIndex uint32) ([][]by
 }
 
 func (s *StateWriter) pruneRequestLookupTable(lookupDigest isc.RequestLookupDigest, blockIndex uint32) error {
-	lut := collections.NewMap(s.state, prefixRequestLookupIndex)
+	lut := collections.NewMap(s.state, PrefixRequestLookupIndex)
 
 	res := lut.GetAt(lookupDigest[:])
 	if len(res) == 0 {
@@ -226,7 +226,7 @@ func (s *StateWriter) pruneRequestLookupTable(lookupDigest isc.RequestLookupDige
 }
 
 func (s *StateWriter) pruneRequestLogRecordsByBlockIndex(blockIndex uint32, totalRequests uint16) {
-	receiptMap := collections.NewMap(s.state, prefixRequestReceipts)
+	receiptMap := collections.NewMap(s.state, PrefixRequestReceipts)
 
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
 		lookupKey := NewRequestLookupKey(blockIndex, reqIdx)
@@ -251,16 +251,16 @@ func (s *StateWriter) pruneRequestLogRecordsByBlockIndex(blockIndex uint32, tota
 }
 
 func (s *StateReader) getBlockInfoBytes(blockIndex uint32) []byte {
-	return collections.NewArrayReadOnly(s.state, prefixBlockRegistry).GetAt(blockIndex)
+	return collections.NewArrayReadOnly(s.state, PrefixBlockRegistry).GetAt(blockIndex)
 }
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
-	return []byte(collections.MapElemKey(prefixRequestReceipts, rkey.Bytes()))
+	return []byte(collections.MapElemKey(PrefixRequestReceipts, rkey.Bytes()))
 }
 
 func (s *StateReader) getRequestRecordDataByRef(blockIndex uint32, requestIndex uint16) ([]byte, bool) {
 	lookupKey := NewRequestLookupKey(blockIndex, requestIndex)
-	lookupTable := collections.NewMapReadOnly(s.state, prefixRequestReceipts)
+	lookupTable := collections.NewMapReadOnly(s.state, PrefixRequestReceipts)
 	recBin := lookupTable.GetAt(lookupKey[:])
 	if recBin == nil {
 		return nil, false
@@ -281,7 +281,7 @@ func getBlockIndexParams(ctx isc.SandboxView, blockIndexOptional *uint32) uint32
 	if blockIndexOptional != nil {
 		return *blockIndexOptional
 	}
-	registry := collections.NewArrayReadOnly(ctx.StateR(), prefixBlockRegistry)
+	registry := collections.NewArrayReadOnly(ctx.StateR(), PrefixBlockRegistry)
 	return registry.Len() - 1
 }
 
@@ -291,7 +291,7 @@ func (s *StateWriter) pruneBlock(blockIndex uint32) {
 		// already pruned?
 		return
 	}
-	registry := collections.NewArray(s.state, prefixBlockRegistry)
+	registry := collections.NewArray(s.state, PrefixBlockRegistry)
 	registry.PruneAt(blockIndex)
 	s.pruneRequestLogRecordsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 	s.pruneEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)

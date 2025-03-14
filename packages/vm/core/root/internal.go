@@ -35,11 +35,11 @@ func (s *StateWriter) StoreContractRecord(rec *ContractRecord) {
 }
 
 func (s *StateWriter) GetContractRegistry() *collections.Map {
-	return collections.NewMap(s.state, varContractRegistry)
+	return collections.NewMap(s.state, VarContractRegistry)
 }
 
 func (s *StateReader) GetContractRegistry() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, varContractRegistry)
+	return collections.NewMapReadOnly(s.state, VarContractRegistry)
 }
 
 // FindContract is an internal utility function which finds a contract in the KVStore

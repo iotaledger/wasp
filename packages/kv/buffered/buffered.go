@@ -42,6 +42,10 @@ func (b *BufferedKVStore) Mutations() *Mutations {
 	return b.muts
 }
 
+func (b *BufferedKVStore) MutationsCount() int {
+	return len(b.muts.Sets) + len(b.muts.Dels)
+}
+
 func (b *BufferedKVStore) SetMutations(muts *Mutations) {
 	b.muts = muts
 }

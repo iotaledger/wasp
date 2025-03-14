@@ -23,6 +23,6 @@ var (
 
 // state variables
 const (
-	varSchemaVersion    = "v" // covered in: TestDeployNativeContract
-	varContractRegistry = "r" // covered in: TestDeployNativeContract
+	VarSchemaVersion    = "v" // covered in: TestDeployNativeContract
+	VarContractRegistry = "r" // covered in: TestDeployNativeContract
 )

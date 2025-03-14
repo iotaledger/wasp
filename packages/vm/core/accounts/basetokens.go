@@ -41,6 +41,10 @@ func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, wei *big.Int)
 	s.setBaseTokens(accountKey, baseTokens, remainderWei)
 }
 
+func (s *StateWriter) UnsafeSetBaseTokensFullDecimals(accKey kv.Key, wei *big.Int) {
+	s.setBaseTokensFullDecimals(accKey, wei)
+}
+
 func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value, chainID isc.ChainID) {
 	b := isc.NewCoinBalances().AddBaseTokens(adjustment)
 	switch {
@@ -52,24 +56,24 @@ func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment co
 }
 
 func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts coin.Value, remainder *big.Int) {
-	return s.getBaseTokens(accountKey(agentID, chainID))
+	return s.getBaseTokens(AccountKey(agentID, chainID))
 }
 
 func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID, chainID isc.ChainID) *big.Int {
-	return s.getBaseTokensFullDecimals(accountKey(agentID, chainID))
+	return s.getBaseTokensFullDecimals(AccountKey(agentID, chainID))
 }
 
 func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) coin.Value {
-	bts, _ := s.getBaseTokens(accountKey(agentID, chainID))
+	bts, _ := s.getBaseTokens(AccountKey(agentID, chainID))
 	return bts
 }
 
-func accountWeiRemainderKey(accountKey kv.Key) kv.Key {
-	return prefixAccountWeiRemainder + accountKey
+func AccountWeiRemainderKey(accountKey kv.Key) kv.Key {
+	return PrefixAccountWeiRemainder + accountKey
 }
 
 func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
-	b := s.state.Get(accountWeiRemainderKey(accountKey))
+	b := s.state.Get(AccountWeiRemainderKey(accountKey))
 	if b == nil {
 		return new(big.Int)
 	}
@@ -78,8 +82,8 @@ func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
 
 func (s *StateWriter) setWeiRemainder(accountKey kv.Key, v *big.Int) {
 	if v.Sign() == 0 {
-		s.state.Del(accountWeiRemainderKey(accountKey))
+		s.state.Del(AccountWeiRemainderKey(accountKey))
 	} else {
-		s.state.Set(accountWeiRemainderKey(accountKey), codec.Encode(v))
+		s.state.Set(AccountWeiRemainderKey(accountKey), codec.Encode(v))
 	}
 }

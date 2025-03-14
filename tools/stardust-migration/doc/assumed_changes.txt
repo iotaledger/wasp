@@ -1,0 +1,99 @@
+root
+    VarSchemaVersion            = "v" // no change, or maybe set to 4
+    VarContractRegistry         = "r" // ContractRecord changed
+    VarDeployPermissionsEnabled = "a" // ignore
+    VarDeployPermissions        = "p" // ignore
+accounts
+    // keyAllAccounts stores a map of <agentID> => true
+    keyAllAccounts = "a" // QQ: did AgentID change format?
+                         // QQ: are there off-chain AgentIDs?
+    // prefixBaseTokens | <accountID> stores the amount of base tokens (big.Int)
+    prefixBaseTokens = "b" // merged with PrefixNativeTokens into "C" (map of <coinType> => coin.Value)
+                           // and "w" for the decimals remainder
+    // prefixBaseTokens | <accountID> stores a map of <nativeTokenID> => big.Int
+    PrefixNativeTokens = "t" // merged with prefixBaseTokens into "C" (map of <coinType> => coin.Value)
+    // L2TotalsAccount is the special <accountID> storing the total fungible tokens
+    // controlled by the chain
+    L2TotalsAccount = "*" // value is now CoinBalances
+    // PrefixNFTs | <agentID> stores a map of <NFTID> => true
+    PrefixNFTs = "n" // changed to "o" and <ObjectID> => true
+    // PrefixNFTsByCollection | <agentID> | <collectionID> stores a map of <nftID> => true
+    PrefixNFTsByCollection = "c" // changed to <ObjectID> => true
+    // prefixNewlyMintedNFTs stores a map of <position in minted list> => <newly minted NFT> to be updated when the outputID is known
+    prefixNewlyMintedNFTs = "N" // ignore
+    // prefixMintIDMap stores a map of <internal NFTID> => <NFTID> it is updated when the NFTID of newly minted nfts is known
+    prefixMintIDMap = "M" // ignore
+    // PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
+    PrefixFoundries = "f" // ignore?
+    // keyNonce stores a map of <agentID> => nonce (uint64)
+    keyNonce = "m" // no change
+    // keyNativeTokenOutputMap stores a map of <nativeTokenID> => nativeTokenOutputRec
+    keyNativeTokenOutputMap = "TO" // keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
+    // keyFoundryOutputRecords stores a map of <foundrySN> => foundryOutputRec
+    keyFoundryOutputRecords = "FO" // ignore?
+    // keyNFTOutputRecords stores a map of <NFTID> => NFTOutputRec
+    keyNFTOutputRecords = "NO" // keyObjectRecords stores a map of <ObjectID> => ObjectRecord
+    // keyNFTOwner stores a map of <NFTID> => isc.AgentID
+    keyNFTOwner = "NW" // keyObjectOwner stores a map of <ObjectID> => isc.AgentID
+    // keyNewNativeTokens stores an array of <nativeTokenID>, containing the newly created native tokens that need filling out the OutputID
+    keyNewNativeTokens = "TN" // ignore
+    // keyNewFoundries stores an array of <foundrySN>, containing the newly created foundries that need filling out the OutputID
+    keyNewFoundries = "FN" // ignore
+    // keyNewNFTs stores an array of <NFTID>, containing the newly created NFTs that need filling out the OutputID
+    keyNewNFTs = "NN" // ignore
+blocklog
+    // Array of blockIndex => BlockInfo (pruned)
+    PrefixBlockRegistry = "a" // re-encode BlockInfo
+    // Map of request.ID().LookupDigest() => []RequestLookupKey (pruned)
+    //   LookupDigest = reqID[:6] | outputIndex
+    //   RequestLookupKey = blockIndex | requestIndex
+    prefixRequestLookupIndex = "b" // maybe re-encode needed?
+    // Map of RequestLookupKey => RequestReceipt (pruned)
+    //   RequestLookupKey = blockIndex | requestIndex
+    prefixRequestReceipts = "c" // re-encode Receipt
+    // Map of EventLookupKey => event (pruned)
+    //   EventLookupKey = blockIndex | requestIndex | eventIndex
+    prefixRequestEvents = "d" // maybe re-encode needed?
+    // Map of requestID => unprocessableRequestRecord
+    prefixUnprocessableRequests = "u" // ignore
+    // Array of requestID.
+    // Temporary list of unprocessable requests that need updating the outputID field
+    prefixNewUnprocessableRequests = "U" // ignore
+errors
+    // maybe binary format of VMErrorTemplate changed
+governance
+    VarAllowedStateControllerAddresses = "a" // ignore?
+    VarRotateToAddress                 = "r" // ignore
+    VarPayoutAgentID                = "pa" // re-encode AgentID
+    VarMinBaseTokensOnCommonAccount = "vs" // delete after migration
+    // chain owner
+    VarChainOwnerID          = "o" // re-encode AgentID
+    VarChainOwnerIDDelegated = "n" // re-encode AgentID
+    // gas
+    VarGasFeePolicyBytes = "g" // maybe re-encode needed?
+    VarGasLimitsBytes    = "l" // maybe re-encode needed?
+    // access nodes
+    VarAccessNodes          = "an" // no change
+    VarAccessNodeCandidates = "ac" // value changed to bool
+    // maintenance
+    VarMaintenanceStatus = "m" // no change
+    // L2 metadata (provided by the webapi, located by the public url)
+    VarMetadata = "md" // maybe re-encode needed?
+    // L1 metadata (stored and provided in the tangle)
+    VarPublicURL = "x" // maybe re-encode needed?
+    // state pruning
+    VarBlockKeepAmount = "b" // no change
+evm/iscmagic
+    // prefixPrivileged stores the directory of EVM contracts that have access to
+    // the "privileged" ISC magic methods.
+    prefixPrivileged = "p" // no change
+    // prefixAllowance stores the allowance between accounts (e.g. by calling
+    // ISC.allow() from solidity).
+    prefixAllowance = "a" // re-encode assets
+    // prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
+    // registered by calling ISC.registerERC20NativeToken() from solidity.
+    prefixERC20ExternalNativeTokens = "e" // no change? (what about NativeTokenID?)
+evm/emulator/statedb
+    // no change
+evm/emulator/blockchaindb
+    // no change

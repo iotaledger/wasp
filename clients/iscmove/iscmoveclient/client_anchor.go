@@ -2,7 +2,9 @@ package iscmoveclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -21,6 +23,101 @@ type StartNewChainRequest struct {
 	GasPayments       []*iotago.ObjectRef
 	GasPrice          uint64
 	GasBudget         uint64
+}
+
+// the only excpetion which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// this func automatically pick a coin
+type CreateAnchorWithAssetsBagRefRequest struct {
+	Signer            cryptolib.Signer
+	ChainOwnerAddress *cryptolib.Address
+	PackageID         iotago.PackageID
+	AssetsBagRef      *iotago.ObjectRef
+	GasPayments       []*iotago.ObjectRef
+	GasPrice          uint64
+	GasBudget         uint64
+}
+
+func (c *Client) CreateAnchorWithAssetsBagRef(ctx context.Context, req *CreateAnchorWithAssetsBagRefRequest) (*iscmove.AnchorWithRef, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	ptb = PTBCreateAnchorWithAssetsBagRef(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AssetsBagRef}), req.ChainOwnerAddress)
+
+	txnResponse, err := c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("create Anchor PTB failed: %w", err)
+	}
+
+	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to GetCreatedObjectInfo: %w", err)
+	}
+	return c.GetAnchorFromObjectID(ctx, anchorRef.ObjectID)
+}
+
+type UpdateAnchorStateMetadataRequest struct {
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorRef     *iotago.ObjectRef
+	StateMetadata []byte
+	StateIndex    uint32
+	GasPayments   []*iotago.ObjectRef
+	GasPrice      uint64
+	GasBudget     uint64
+}
+
+func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAnchorStateMetadataRequest) (bool, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+
+	ptb = PTBUpdateAnchorStateMetadata(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}), req.StateMetadata, req.StateIndex)
+	res, err := c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
+	)
+	if err != nil {
+		return false, fmt.Errorf("updating ptb state metadata failed: %w", err)
+	}
+
+	if len(res.Errors) > 0 {
+		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.Errors)
+	}
+
+	return true, nil
+}
+
+func (c *Client) GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
+	obj, err := c.Client.GetObject(ctx, req)
+
+	counter := 0
+	for {
+		if counter >= c.WaitUntilEffectsVisible.Attempts {
+			return nil, errors.New("could not get object in time")
+		}
+
+		if obj != nil && obj.Error == nil {
+			return obj, err
+		}
+
+		if obj != nil && obj.Error.Data.NotExists == nil {
+			return obj, err
+		}
+
+		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
+
+		obj, err = c.Client.GetObject(ctx, req)
+		counter++
+	}
+
+	return nil, errors.New("could not get object in time")
 }
 
 // the only excpetion which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
@@ -112,7 +209,7 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.Client.GetObjectWithRetry(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})

@@ -24,52 +24,52 @@ var (
 	ErrImmutableMetadataInvalid = coreerrors.Register("IRC27 metadata is invalid: '%s'")
 )
 
-const (
-	// keyAllAccounts stores a map of <agentID> => true
+var (
+	// KeyAllAccounts stores a map of <agentID> => true
 	// Covered in: TestFoundries
-	keyAllAccounts = "a"
+	KeyAllAccounts = "a"
 
-	// prefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
+	// PrefixAccountCoinBalances | <accountID> stores a map of <coinType> => coin.Value
 	// Covered in: TestFoundries
-	prefixAccountCoinBalances = "C"
+	PrefixAccountCoinBalances = "C"
 
-	// prefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
-	prefixAccountWeiRemainder = "w"
+	// PrefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
+	PrefixAccountWeiRemainder kv.Key = "w"
 
 	// L2TotalsAccount is the special <accountID> storing the total coin balances
 	// controlled by the chain
 	// Covered in: TestFoundries
-	L2TotalsAccount = "*"
+	L2TotalsAccount kv.Key = "*"
 
-	// prefixObjects | <agentID> stores a map of <ObjectID> => true
+	// PrefixObjects | <agentID> stores a map of <ObjectID> => true
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixObjects = "o"
-	// prefixObjectsByCollection | <agentID> | <collectionID> stores a map of <ObjectID> => true
+	PrefixObjects = "o"
+	// PrefixObjectsByCollection | <agentID> | <collectionID> stores a map of <ObjectID> => true
 	// Covered in: TestNFTMint
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixObjectsByCollection = "c"
+	PrefixObjectsByCollection = "c"
 
-	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
+	// NoCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
 	// Covered in: TestNFTMint
-	noCollection = "-"
+	NoCollection kv.Key = "-"
 
-	// keyNonce stores a map of <agentID> => nonce (uint64)
+	// KeyNonce stores a map of <agentID> => nonce (uint64)
 	// Covered in: TestNFTMint
-	keyNonce = "m"
+	KeyNonce kv.Key = "m"
 
-	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
+	// KeyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
-	keyCoinInfo = "RC"
-	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
+	KeyCoinInfo = "RC"
+	// KeyObjectRecords stores a map of <ObjectID> => ObjectRecord
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyObjectRecords = "RO"
+	KeyObjectRecords = "RO"
 
-	// keyObjectOwner stores a map of <ObjectID> => isc.AgentID
+	// KeyObjectOwner stores a map of <ObjectID> => isc.AgentID
 	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyObjectOwner = "W"
+	KeyObjectOwner = "W"
 )
 
-func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
+func AccountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
 	if agentID.BelongsToChain(chainID) {
 		// save bytes by skipping the chainID bytes on agentIDs for this chain
 		return kv.Key(agentID.BytesWithoutChainID())
@@ -78,15 +78,15 @@ func accountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
 }
 
 func (s *StateWriter) allAccountsMap() *collections.Map {
-	return collections.NewMap(s.state, keyAllAccounts)
+	return collections.NewMap(s.state, KeyAllAccounts)
 }
 
 func (s *StateReader) allAccountsMapR() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, keyAllAccounts)
+	return collections.NewMapReadOnly(s.state, KeyAllAccounts)
 }
 
 func (s *StateReader) AccountExists(agentID isc.AgentID, chainID isc.ChainID) bool {
-	return s.allAccountsMapR().HasAt([]byte(accountKey(agentID, chainID)))
+	return s.allAccountsMapR().HasAt([]byte(AccountKey(agentID, chainID)))
 }
 
 func (s *StateReader) AllAccountsAsDict() dict.Dict {
@@ -98,9 +98,13 @@ func (s *StateReader) AllAccountsAsDict() dict.Dict {
 	return ret
 }
 
+func (s *StateReader) IterateAllAccounts(f func(accKey []byte) bool) {
+	s.allAccountsMapR().IterateKeys(f)
+}
+
 // touchAccount ensures the account is in the list of all accounts
 func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
-	s.allAccountsMap().SetAt([]byte(accountKey(agentID, chainID)), codec.Encode(true))
+	s.allAccountsMap().SetAt([]byte(AccountKey(agentID, chainID)), codec.Encode(true))
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance
@@ -108,7 +112,7 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 	if allowance == nil || allowance.IsEmpty() {
 		return true
 	}
-	accountKey := accountKey(agentID, chainID)
+	accountKey := AccountKey(agentID, chainID)
 	for coinType, amount := range allowance.Coins {
 		if s.getCoinBalance(accountKey, coinType) < amount {
 			return false
@@ -129,10 +133,10 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 		return nil
 	}
 
-	if !s.debitFromAccount(accountKey(fromAgentID, chainID), assets.Coins) {
+	if !s.debitFromAccount(AccountKey(fromAgentID, chainID), assets.Coins) {
 		return errors.New("MoveBetweenAccounts: not enough funds")
 	}
-	s.creditToAccount(accountKey(toAgentID, chainID), assets.Coins)
+	s.creditToAccount(AccountKey(toAgentID, chainID), assets.Coins)
 
 	for id := range assets.Objects {
 		obj := s.GetObject(id)

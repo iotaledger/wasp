@@ -77,5 +77,5 @@ func BlockInfoFromBytes(data []byte) (*BlockInfo, error) {
 
 // BlockInfoKey a key to access block info record inside SC state
 func BlockInfoKey(index uint32) []byte {
-	return []byte(collections.ArrayElemKey(prefixBlockRegistry, index))
+	return []byte(collections.ArrayElemKey(PrefixBlockRegistry, index))
 }

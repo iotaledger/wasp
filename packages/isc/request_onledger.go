@@ -26,6 +26,17 @@ var (
 	_ Calldata        = new(OnLedgerRequestData)
 )
 
+func NewOnLedgerRequestData(requestRef iotago.ObjectRef, senderAddress *cryptolib.Address, targetAddress *cryptolib.Address, assets *Assets, assetsBag *iscmove.AssetsBag, requestMetadata *RequestMetadata) *OnLedgerRequestData {
+	return &OnLedgerRequestData{
+		requestRef:      requestRef,
+		senderAddress:   senderAddress,
+		targetAddress:   targetAddress,
+		assets:          assets,
+		assetsBag:       assetsBag,
+		requestMetadata: requestMetadata,
+	}
+}
+
 func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
 	assets, err := AssetsFromAssetsBagWithBalances(&request.Object.AssetsBag)
 	if err != nil {

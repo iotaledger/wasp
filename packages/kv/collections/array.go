@@ -83,7 +83,7 @@ func (a *Array) addToSize(amount uint32) uint32 {
 	if newSize < oldSize {
 		panic(ErrArrayOverflow)
 	}
-	a.setSize(newSize)
+	a.SetSize(newSize)
 	return oldSize
 }
 
@@ -92,7 +92,7 @@ func (a *Array) Erase() {
 	for i := uint32(0); i < length; i++ {
 		a.kvw.Del(a.getArrayElemKey(i))
 	}
-	a.setSize(0)
+	a.SetSize(0)
 }
 
 func (a *Array) Extend(other *ArrayReadOnly) {
@@ -131,7 +131,7 @@ func (a *Array) SetAt(index uint32, value []byte) {
 	a.kvw.Set(a.getArrayElemKey(index), value)
 }
 
-func (a *Array) setSize(size uint32) {
+func (a *Array) SetSize(size uint32) {
 	if size == 0 {
 		a.kvw.Del(kv.Key(a.name))
 		return

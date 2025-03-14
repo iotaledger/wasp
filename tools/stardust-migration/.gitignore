@@ -1,1 +1,6 @@
 tmp
+main
+.env
+stardust-migration
+*.pprof
+index.bin
