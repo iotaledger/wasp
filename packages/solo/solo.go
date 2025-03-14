@@ -263,6 +263,59 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
+// WithWaitForNextVersion waits for an object to change its version.
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
+func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) *iotago.ObjectRef {
+	if currentRef == nil {
+		cb()
+		return currentRef
+	}
+
+	cb()
+
+	count := 0
+	for {
+		count++
+
+		if count > 30 {
+			panic(fmt.Errorf("WithWaitForNextVersion: object version did not change in time: %v\n", currentRef))
+		}
+
+		env.logger.Infof("WaitForNextVersion: Trying ref %v\n", currentRef)
+
+		newRef, err := env.IotaClient().GetObject(env.ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+		if err != nil {
+			time.Sleep(250 * time.Millisecond)
+			continue
+		}
+
+		if newRef.Error != nil {
+			// The provided object got consumed and is gone. We can return.
+			if newRef.Error.Data.Deleted != nil {
+				return currentRef
+			}
+
+			if newRef.Error.Data.NotExists != nil {
+				return currentRef
+			}
+
+			time.Sleep(250 * time.Millisecond)
+			continue
+		}
+
+		if newRef.Data.Ref().Version > currentRef.Version {
+			env.logger.Infof("WaitForNextVersion: Found the updated version of %v, which is: %v \n", currentRef, newRef.Data.Ref())
+			ref := newRef.Data.Ref()
+			return &ref
+		}
+
+		env.logger.Infof("WaitForNextVersion: Getting the same version ref as before. Retrying. %v\n", currentRef)
+
+		time.Sleep(250 * time.Millisecond)
+	}
+}
+
 func (env *Solo) deployChain(
 	chainOwner *cryptolib.KeyPair,
 	initCommonAccountBaseTokens coin.Value,
@@ -297,14 +350,10 @@ func (env *Solo) deployChain(
 	fmt.Printf("Chain Originator address: %v\n", chainOperator)
 	fmt.Printf("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
-	gasCoinRefCheck, err := env.IotaClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{ObjectID: gasCoinRef.ObjectID})
-	require.NoError(env.T, err)
-	gasCoinRefCheckRef := gasCoinRefCheck.Data.Ref()
-	gasCoinRef = &gasCoinRefCheckRef
+	var block state.Block
+	var stateMetadata *transaction.StateMetadata
 
-	fmt.Printf("GAS COIN AFTER PULL: %v\n", gasCoinRef)
-
-	block, stateMetadata := origin.InitChain(
+	block, stateMetadata = origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
@@ -323,15 +372,6 @@ func (env *Solo) deployChain(
 				return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID)
 			},
 		)
-
-		fmt.Printf("INIT COIN BEFORE PULL: %v\n", initCoin)
-
-		initCoinCheck, err := env.IotaClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{ObjectID: initCoin.ObjectID})
-		require.NoError(env.T, err)
-		initCoinCheckRef := initCoinCheck.Data.Ref()
-		initCoin = &initCoinCheckRef
-
-		fmt.Printf("INIT COIN AFTER PULL: %v\n", initCoin)
 	}
 
 	gasPayment, err := iotajsonrpc.PickupCoinsWithFilter(
@@ -344,19 +384,25 @@ func (env *Solo) deployChain(
 	)
 	require.NoError(env.T, err)
 
-	anchorRef, err := env.ISCMoveClient().StartNewChain(
-		env.ctx,
-		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainOperator,
-			ChainOwnerAddress: chainOperator.Address(),
-			PackageID:         env.ISCPackageID(),
-			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       initCoin,
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
-			GasPayments:       gasPayment.CoinRefs(),
-		},
-	)
+	var anchorRef *iscmove.AnchorWithRef
+	env.WithWaitForNextVersion(gasPayment.CoinRefs()[0], func() {
+		env.WithWaitForNextVersion(initCoin, func() {
+			anchorRef, err = env.ISCMoveClient().StartNewChain(
+				env.ctx,
+				&iscmoveclient.StartNewChainRequest{
+					Signer:            chainOperator,
+					ChainOwnerAddress: chainOperator.Address(),
+					PackageID:         env.ISCPackageID(),
+					StateMetadata:     stateMetadata.Bytes(),
+					InitCoinRef:       initCoin,
+					GasPrice:          iotaclient.DefaultGasPrice,
+					GasBudget:         iotaclient.DefaultGasBudget,
+					GasPayments:       gasPayment.CoinRefs(),
+				},
+			)
+		})
+	})
+
 	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 

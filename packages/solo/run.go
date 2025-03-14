@@ -101,13 +101,19 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 	if os.Getenv("DEBUG") != "" {
 		res.UnsignedTransaction.Print("-- runRequestsNolock -- ")
 	}
-	ptbRes := ch.Env.executePTB(
-		res.UnsignedTransaction,
-		ch.OperatorPrivateKey,
-		[]*iotago.ObjectRef{gasPayment.Ref},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
-	)
+
+	var ptbRes *iotajsonrpc.IotaTransactionBlockResponse
+
+	ch.Env.WithWaitForNextVersion(gasPayment.Ref, func() {
+		ptbRes = ch.Env.executePTB(
+			res.UnsignedTransaction,
+			ch.OperatorPrivateKey,
+			[]*iotago.ObjectRef{gasPayment.Ref},
+			iotaclient.DefaultGasBudget,
+			iotaclient.DefaultGasPrice,
+		)
+	})
+
 	ch.settleStateTransition(res.StateDraft)
 	return ptbRes, res.RequestResults
 }
