@@ -50,7 +50,7 @@ func testBasic(t *testing.T, n, f, silent int) {
 		if i >= n-silent {
 			nodes[nid] = gpa.MakeTestSilentNode()
 		} else {
-			nodeLog := log.Named(nid.ShortString())
+			nodeLog := log.NewChildLogger(nid.ShortString())
 			ii := i
 			makeCCInstFun := func(nodeID gpa.NodeID, round int) gpa.GPA {
 				sid := fmt.Sprintf("%s-%v", nodeID, round)

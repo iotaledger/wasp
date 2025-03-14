@@ -1,12 +1,13 @@
 package bls
 
 import (
+	"bytes"
+
 	"github.com/btcsuite/btcd/btcutil/base58"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/sign/bdn"
 
 	"github.com/iotaledger/hive.go/ierrors"
-	"github.com/iotaledger/hive.go/serializer/v2/marshalutil"
 )
 
 // PrivateKey is the type of BLS private keys.
@@ -15,44 +16,32 @@ type PrivateKey struct {
 }
 
 // PrivateKeyFromBytes creates a PrivateKey from the given bytes.
-func PrivateKeyFromBytes(bytes []byte) (privateKey PrivateKey, consumedBytes int, err error) {
-	marshalUtil := marshalutil.New(bytes)
-	if privateKey, err = PrivateKeyFromMarshalUtil(marshalUtil); err != nil {
-		err = ierrors.Wrap(err, "failed to parse PrivateKey from MarshalUtil")
-	}
-	consumedBytes = marshalUtil.ReadOffset()
+func PrivateKeyFromBytes(b []byte) (privateKey PrivateKey, err error) {
+	buffer := bytes.NewReader(b)
 
-	return
-}
-
-// PrivateKeyFromBase58EncodedString creates a PrivateKey from a base58 encoded string.
-func PrivateKeyFromBase58EncodedString(base58String string) (privateKey PrivateKey, err error) {
-	bytes := base58.Decode(base58String)
-	if len(bytes) == 0 {
-		err = ierrors.Wrapf(ErrBase58DecodeFailed, "error while decoding base58 encoded PrivateKey: %s", base58String)
-
-		return
-	}
-
-	if privateKey, _, err = PrivateKeyFromBytes(bytes); err != nil {
-		err = ierrors.Wrap(err, "failed to parse PrivateKey from bytes")
-
-		return
+	if privateKey, err = PrivateKeyFromMarshalUtil(buffer); err != nil {
+		err = ierrors.Wrap(err, "failed to parse PublicKey from MarshalUtil")
 	}
 
 	return
 }
 
 // PrivateKeyFromMarshalUtil unmarshals a PrivateKey using a MarshalUtil (for easier unmarshalling).
-func PrivateKeyFromMarshalUtil(marshalUtil *marshalutil.MarshalUtil) (privateKey PrivateKey, err error) {
-	bytes, err := marshalUtil.ReadBytes(PrivateKeySize)
+func PrivateKeyFromMarshalUtil(reader *bytes.Reader) (privateKey PrivateKey, err error) {
+	privateKeyBytes := make([]byte, PrivateKeySize)
+
+	n, err := reader.Read(privateKeyBytes)
 	if err != nil {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read PrivateKey bytes: %w", err)
-
 		return
 	}
 
-	if err = privateKey.Scalar.UnmarshalBinary(bytes); err != nil {
+	if n != PrivateKeySize {
+		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to read PrivateKey length: %d", n)
+		return
+	}
+
+	if err = privateKey.Scalar.UnmarshalBinary(privateKeyBytes); err != nil {
 		err = ierrors.Wrapf(ErrParseBytesFailed, "failed to unmarshal PrivateKey: %w", err)
 
 		return

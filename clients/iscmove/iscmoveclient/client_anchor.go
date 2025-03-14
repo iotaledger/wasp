@@ -25,6 +25,8 @@ type StartNewChainRequest struct {
 	GasBudget         uint64
 }
 
+// the only excpetion which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// this func automatically pick a coin
 type CreateAnchorWithAssetsBagRefRequest struct {
 	Signer            cryptolib.Signer
 	ChainOwnerAddress *cryptolib.Address
@@ -118,6 +120,8 @@ func (c *Client) GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjec
 	return nil, errors.New("could not get object in time")
 }
 
+// the only excpetion which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// this func automatically pick a coin
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	req *StartNewChainRequest,
@@ -211,6 +215,9 @@ func (c *Client) GetAnchorFromObjectID(
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
+	}
+	if getObjectResponse.Error != nil {
+		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.Data.String())
 	}
 	return decodeAnchorBCS(
 		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,

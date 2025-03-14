@@ -6,10 +6,11 @@ package tests
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/clients/chainclient"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/clients/chainclient"
 
 	"github.com/stretchr/testify/require"
 

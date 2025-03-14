@@ -77,7 +77,7 @@ func TestBlocklog_BlockInfoSeveral(t *testing.T) {
 	ch := env.NewChain()
 
 	const numReqs = 6
-	for i := 0; i < numReqs; i++ {
+	for range numReqs {
 		err := ch.DepositBaseTokensToL2(100_000, nil)
 		require.NoError(t, err)
 	}
@@ -235,6 +235,6 @@ func TestBlocklog_FoundriesWithPruning(t *testing.T) {
 		ch.DepositBaseTokensToL2(1000, nil)
 	}
 
-	err = ch.DestroyFoundry(sn, ch.OriginatorPrivateKey)
+	err = ch.DestroyFoundry(sn, ch.OwnerPrivateKey)
 	require.NoError(t, err)
 }

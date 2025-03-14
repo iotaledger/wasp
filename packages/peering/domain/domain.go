@@ -7,7 +7,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
@@ -20,14 +21,14 @@ type DomainImpl struct {
 	permPubKeys []*cryptolib.PublicKey
 	peeringID   peering.PeeringID
 	unhookFuncs []context.CancelFunc
-	log         *logger.Logger
+	log         log.Logger
 	mutex       *sync.RWMutex
 }
 
 var _ peering.PeerDomainProvider = &DomainImpl{}
 
 // NewPeerDomain creates a collection. Ignores self
-func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log *logger.Logger) *DomainImpl {
+func NewPeerDomain(netProvider peering.NetworkProvider, peeringID peering.PeeringID, initialNodes []peering.PeerSender, log log.Logger) *DomainImpl {
 	ret := &DomainImpl{
 		netProvider: netProvider,
 		nodes:       make(map[cryptolib.PublicKeyKey]peering.PeerSender),
@@ -50,7 +51,7 @@ func (d *DomainImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msgReceiver, m
 	defer d.mutex.RUnlock()
 	peer, ok := d.nodes[pubKey.AsKey()]
 	if !ok {
-		d.log.Warnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.String())
+		d.log.LogWarnf("SendMsgByPubKey: PubKey %v is not in the domain", pubKey.String())
 		return
 	}
 	peer.SendMsg(peering.NewPeerMessageData(d.peeringID, msgReceiver, msgType, msgData))
@@ -95,12 +96,12 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 		}
 		newPeerSender, err := d.netProvider.PeerByPubKey(newPeerPubKey)
 		if err != nil {
-			d.log.Warnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey.String(), err)
+			d.log.LogWarnf("Domain peer skipped for now, pubKey=%v not found, reason: %v", newPeerPubKey.String(), err)
 			continue
 		}
 		changed = true
 		nodes[newPeerSender.PubKey().AsKey()] = newPeerSender
-		d.log.Infof("Domain peer added, pubKey=%v, peeringURL=%v", newPeerSender.PubKey().String(), newPeerSender.PeeringURL())
+		d.log.LogInfof("Domain peer added, pubKey=%v, peeringURL=%v", newPeerSender.PubKey().String(), newPeerSender.PeeringURL())
 	}
 	//
 	// Remove peers that are not needed anymore and retain others.
@@ -121,7 +122,7 @@ func (d *DomainImpl) UpdatePeers(newPeerPubKeys []*cryptolib.PublicKey) {
 		}
 		if oldPeerDropped {
 			changed = true
-			d.log.Infof("Domain peer removed, pubKey=%v, peeringURL=%v", oldPeer.PubKey().String(), oldPeer.PeeringURL())
+			d.log.LogInfof("Domain peer removed, pubKey=%v, peeringURL=%v", oldPeer.PubKey().String(), oldPeer.PeeringURL())
 		}
 	}
 	if changed {
@@ -148,20 +149,20 @@ func (d *DomainImpl) initPermPubKeys() {
 	var err error
 	d.permutation, err = util.NewPermutation16(uint16(len(d.permPubKeys)))
 	if err != nil {
-		d.log.Warnf("Error generating cryptographically secure random domains permutation: %v", err)
+		d.log.LogWarnf("Error generating cryptographically secure random domains permutation: %v", err)
 	}
 }
 
 func (d *DomainImpl) Attach(receiver byte, callback func(recv *peering.PeerMessageIn)) context.CancelFunc {
 	unhook := d.netProvider.Attach(&d.peeringID, receiver, func(recv *peering.PeerMessageIn) {
 		if recv.SenderPubKey.Equals(d.netProvider.Self().PubKey()) {
-			d.log.Debugf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
+			d.log.LogDebugf("dropping message for receiver=%v MsgType=%v from %v: message from self.",
 				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
 			return
 		}
 		_, ok := d.nodes[recv.SenderPubKey.AsKey()]
 		if !ok {
-			d.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: it does not belong to the peer domain.",
+			d.log.LogWarnf("dropping message for receiver=%v MsgType=%v from %v: it does not belong to the peer domain.",
 				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String())
 			return
 		}

@@ -10,7 +10,8 @@ import (
 
 	libp2ppeer "github.com/libp2p/go-libp2p/core/peer"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -36,13 +37,13 @@ type peer struct {
 	numUsers         int
 	trusted          bool
 	net              *netImpl
-	log              *logger.Logger
+	log              log.Logger
 }
 
 var _ peering.PeerSender = &peer{}
 
 func newPeer(name, peeringURL string, remotePubKey *cryptolib.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
-	log := n.log.Named("peer:" + peeringURL)
+	log := n.log.NewChildLogger("peer:" + peeringURL)
 	messagePriorityFun := func(msg *peering.PeerMessageNet) bool {
 		// TODO: decide if prioritetisation is needed and implement it then.
 		return false
@@ -130,7 +131,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 	p.accessLock.RLock()
 	msgNet := &peering.PeerMessageNet{PeerMessageData: msg}
 	if !p.trusted {
-		p.log.Infof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
+		p.log.LogInfof("Dropping outgoing message, because it was meant to send to a distrusted peer.")
 		p.accessLock.RUnlock()
 		return
 	}
@@ -141,7 +142,7 @@ func (p *peer) SendMsg(msg *peering.PeerMessageData) {
 
 func (p *peer) RecvMsg(msg *peering.PeerMessageNet) {
 	if traceMessages {
-		p.log.Debugf("Peer message received from peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
+		p.log.LogDebugf("Peer message received from peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
 			p.PeeringURL(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
 	}
 	p.noteReceived()
@@ -166,21 +167,21 @@ func (p *peer) recvLoop() {
 func (p *peer) sendMsgDirect(msg *peering.PeerMessageNet) {
 	stream, err := p.net.lppHost.NewStream(p.net.ctx, p.remoteLppID, lppProtocolPeering)
 	if err != nil {
-		p.log.Warnf("Failed to send outgoing message, unable to allocate stream, reason=%v", err)
+		p.log.LogWarnf("Failed to send outgoing message, unable to allocate stream, reason=%v", err)
 		return
 	}
 	defer stream.Close()
 	//
 	msgBytes := msg.Bytes() // Do not use msg signatures, we are using TLS.
 	if err := writeFrame(stream, msgBytes); err != nil {
-		p.log.Warnf("Failed to send outgoing message to %s, send failed with reason=%v", p.remotePeeringURL, err)
+		p.log.LogWarnf("Failed to send outgoing message to %s, send failed with reason=%v", p.remotePeeringURL, err)
 		return
 	}
 	p.accessLock.Lock()
 	p.lastMsgSent = time.Now()
 	p.accessLock.Unlock()
 	if traceMessages {
-		p.log.Debugf("Peer message sent to peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
+		p.log.LogDebugf("Peer message sent to peer %v, peeringID %v, receiver %v, type %v, length %v, first bytes %v",
 			p.PeeringURL(), msg.PeeringID, msg.MsgReceiver, msg.MsgType, len(msg.MsgData), firstBytes(16, msg.MsgData))
 	}
 }

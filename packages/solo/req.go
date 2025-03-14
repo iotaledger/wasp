@@ -171,7 +171,7 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 // mainly for estimating gas.
 func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, error) {
 	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
+		keyPair = ch.OwnerPrivateKey
 	}
 	ref := iotatest.RandomObjectRef()
 	assetsBagRef := iotatest.RandomObjectRef()
@@ -198,7 +198,7 @@ func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
 	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
+		keyPair = ch.OwnerPrivateKey
 	}
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAddressAgentID(keyPair.Address()))
@@ -208,7 +208,7 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) 
 	return ret.Sign(keyPair)
 }
 
-func (env *Solo) selectCoinsForGas(
+func (env *Solo) SelectCoinsForGas(
 	addr *cryptolib.Address,
 	targetPTB *iotago.ProgrammableTransaction,
 	gasBudget uint64,
@@ -222,15 +222,20 @@ func (env *Solo) selectCoinsForGas(
 	return pickedCoins.CoinRefs()
 }
 
-func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value) *iotago.ObjectRef {
+func (env *Solo) makeBaseTokenCoin(
+	keyPair *cryptolib.KeyPair,
+	value coin.Value,
+	filter func(*iotajsonrpc.Coin) bool,
+) *iotago.ObjectRef {
 	allCoins := env.L1BaseTokenCoins(keyPair.Address())
 	require.NotEmpty(env.T, allCoins)
 
 	const gasBudget = iotaclient.DefaultGasBudget
 
-	pickedCoins, err := iotajsonrpc.PickupCoinsSimple(
+	pickedCoins, err := iotajsonrpc.PickupCoinsWithFilter(
 		env.L1BaseTokenCoins(keyPair.Address()),
 		uint64(value+gasBudget),
+		filter,
 	)
 
 	tx := lo.Must(env.IotaClient().PayIota(
@@ -268,7 +273,7 @@ func (env *Solo) makeBaseTokenCoin(keyPair *cryptolib.KeyPair, value coin.Value)
 // SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
 func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
+		keyPair = ch.OwnerPrivateKey
 	}
 	res, err := ch.Env.ISCMoveClient().CreateAndSendRequestWithAssets(
 		ch.Env.ctx,
@@ -360,7 +365,7 @@ func (ch *Chain) PostRequestSyncExt(
 	err error,
 ) {
 	if keyPair == nil {
-		keyPair = ch.OriginatorPrivateKey
+		keyPair = ch.OwnerPrivateKey
 	}
 	defer ch.logRequestLastBlock()
 
@@ -442,7 +447,7 @@ func (ch *Chain) CallViewByHname(msg isc.Message) (isc.CallArguments, error) {
 }
 
 func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
-	ch.Log().Debugf("callView: %s::%s", msg.Target.Contract, msg.Target.EntryPoint)
+	ch.Log().LogDebugf("callView: %s::%s", msg.Target.Contract, msg.Target.EntryPoint)
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
@@ -462,7 +467,7 @@ func (ch *Chain) callViewByHnameAtState(chainState state.State, msg isc.Message)
 
 // GetMerkleProofRaw returns Merkle proof of the key in the state
 func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
-	ch.Log().Debugf("GetMerkleProof")
+	ch.Log().LogDebugf("GetMerkleProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
@@ -484,7 +489,7 @@ func (ch *Chain) GetMerkleProofRaw(key []byte) *trie.MerkleProof {
 
 // GetBlockProof returns Merkle proof of the key in the state
 func (ch *Chain) GetBlockProof(blockIndex uint32) (*blocklog.BlockInfo, *trie.MerkleProof, error) {
-	ch.Log().Debugf("GetBlockProof")
+	ch.Log().LogDebugf("GetBlockProof")
 
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()

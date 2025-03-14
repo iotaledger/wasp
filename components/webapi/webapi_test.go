@@ -3,15 +3,19 @@ package webapi_test
 import (
 	"context"
 	"io"
+	"log/slog"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/labstack/echo/v4"
+	slogzap "github.com/samber/slog-zap/v2"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
+
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
@@ -20,7 +24,8 @@ import (
 func TestInternalServerErrors(t *testing.T) {
 	// start a webserver with a test log
 	logCore, logObserver := observer.New(zapcore.DebugLevel)
-	log := zap.New(logCore)
+	zapLogger := zap.New(logCore)
+	logger := slogzap.Option{Level: slog.LevelDebug, Logger: zapLogger}.NewZapHandler()
 
 	e := webapi.NewEcho(&webapi.ParametersWebAPI{
 		Enabled:     true,
@@ -38,7 +43,7 @@ func TestInternalServerErrors(t *testing.T) {
 		DebugRequestLoggerEnabled: true,
 	},
 		nil,
-		log.Sugar(),
+		log.NewLogger(log.WithHandler(logger)),
 	)
 
 	// Add an endpoint that just panics with "foobar" and start the server

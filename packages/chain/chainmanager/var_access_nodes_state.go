@@ -1,7 +1,8 @@
 package chainmanager
 
 import (
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -26,7 +27,7 @@ type VarAccessNodeState interface {
 type varAccessNodeStateImpl struct {
 	chainID isc.ChainID
 	tipAO   *isc.StateAnchor
-	log     *logger.Logger
+	log     log.Logger
 }
 
 type varAccessNodeStateEntry struct {
@@ -34,7 +35,7 @@ type varAccessNodeStateEntry struct {
 	consumed iotago.ObjectID  // The AO used as an input for the TX.
 }
 
-func NewVarAccessNodeState(chainID isc.ChainID, log *logger.Logger) VarAccessNodeState {
+func NewVarAccessNodeState(chainID isc.ChainID, log log.Logger) VarAccessNodeState {
 	return &varAccessNodeStateImpl{
 		chainID: chainID,
 		tipAO:   nil,
@@ -48,34 +49,34 @@ func (vas *varAccessNodeStateImpl) Tip() *isc.StateAnchor {
 
 // TODO: Probably this function can be removed at all. This left from the pipelining.
 func (vas *varAccessNodeStateImpl) BlockProduced(tx *iotasigner.SignedTransaction) (*isc.StateAnchor, bool, *state.L1Commitment) {
-	vas.log.Debugf("BlockProduced: tx=%v", tx)
+	vas.log.LogDebugf("BlockProduced: tx=%v", tx)
 	return vas.tipAO, false, nil
 }
 
 func (vas *varAccessNodeStateImpl) BlockConfirmed(confirmed *isc.StateAnchor) (*isc.StateAnchor, bool) {
-	vas.log.Debugf("BlockConfirmed: confirmed=%v", confirmed)
+	vas.log.LogDebugf("BlockConfirmed: confirmed=%v", confirmed)
 	return vas.outputIfChanged(confirmed)
 }
 
 func (vas *varAccessNodeStateImpl) outputIfChanged(newTip *isc.StateAnchor) (*isc.StateAnchor, bool) {
 	if vas.tipAO == nil && newTip == nil {
-		vas.log.Debugf("⊳ Tip remains nil.")
+		vas.log.LogDebugf("⊳ Tip remains nil.")
 		return vas.tipAO, false
 	}
 	if newTip == nil {
-		vas.log.Debugf("⊳ Tip remains %v, new candidate was nil.", vas.tipAO)
+		vas.log.LogDebugf("⊳ Tip remains %v, new candidate was nil.", vas.tipAO)
 		return vas.tipAO, false
 	}
 	if vas.tipAO == nil {
-		vas.log.Debugf("⊳ New tip=%v, was %v", newTip, vas.tipAO)
+		vas.log.LogDebugf("⊳ New tip=%v, was %v", newTip, vas.tipAO)
 		vas.tipAO = newTip
 		return vas.tipAO, true
 	}
 	if vas.tipAO.Equals(newTip) {
-		vas.log.Debugf("⊳ Tip remains %v.", vas.tipAO)
+		vas.log.LogDebugf("⊳ Tip remains %v.", vas.tipAO)
 		return vas.tipAO, false
 	}
-	vas.log.Debugf("⊳ New tip=%v, was %v", newTip, vas.tipAO)
+	vas.log.LogDebugf("⊳ New tip=%v, was %v", newTip, vas.tipAO)
 	vas.tipAO = newTip
 	return vas.tipAO, true
 }

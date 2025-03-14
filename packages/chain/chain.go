@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -103,7 +103,7 @@ type ChainCore interface {
 	Processors() *processors.Config
 	GetChainNodes() []peering.PeerStatusProvider     // CommitteeNodes + AccessNodes
 	GetCandidateNodes() []*governance.AccessNodeInfo // All the current candidates.
-	Log() *logger.Logger
+	Log() log.Logger
 }
 
 type ConsensusPipeMetrics interface { // TODO: Review it.

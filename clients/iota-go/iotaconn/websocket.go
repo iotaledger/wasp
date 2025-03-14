@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 )
 
 type WebsocketClient struct {
@@ -22,7 +22,7 @@ type WebsocketClient struct {
 	conn              *websocket.Conn
 	writeQueue        chan *jsonrpcMessage
 	readers           sync.Map // id -> chan *jsonrpcMessage
-	log               *logger.Logger
+	log               log.Logger
 	shutdownWaitGroup sync.WaitGroup
 	reconnectMx       sync.Mutex
 	subscriptions     []*subscription
@@ -32,7 +32,7 @@ type WebsocketClient struct {
 func NewWebsocketClient(
 	ctx context.Context,
 	url string,
-	log *logger.Logger,
+	log log.Logger,
 ) (*WebsocketClient, error) {
 
 	c := &WebsocketClient{
@@ -65,21 +65,21 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 	}
 	receivedMsgs := make(chan readMsgResult)
 	go func() {
-		c.log.Infof("websocket loop started")
-		defer c.log.Infof("websocket loop finished")
+		c.log.LogInfof("websocket loop started")
+		defer c.log.LogInfof("websocket loop finished")
 		defer close(receivedMsgs)
 		for {
 			m, p, err := c.readMessage()
 			if err != nil {
-				c.log.Errorf("WebsocketClient read loop: %s", err)
+				c.log.LogErrorf("WebsocketClient read loop: %s", err)
 				continue
 			}
 			var j *jsonrpcMessage
 			if err := json.Unmarshal(p, &j); err != nil {
-				c.log.Errorf("WebsocketClient: could not unmarshal response body: %s", err)
+				c.log.LogErrorf("WebsocketClient: could not unmarshal response body: %s", err)
 				continue
 			}
-			c.log.Debugf("ws message was read: %v, %v", j.ID, j.Method)
+			c.log.LogDebugf("ws message was read: %v, %v", j.ID, j.Method)
 			receivedMsgs <- readMsgResult{messageType: m, p: p}
 		}
 	}()
@@ -92,12 +92,12 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 		case msgToSend := <-c.writeQueue:
 			reqBody, err := json.Marshal(msgToSend)
 			if err != nil {
-				c.log.Errorf("WebsocketClient: could not marshal json: %s", err)
+				c.log.LogErrorf("WebsocketClient: could not marshal json: %s", err)
 				continue
 			}
 			err = c.writeMessage(websocket.TextMessage, reqBody)
 			if err != nil {
-				c.log.Errorf("WebsocketClient: write error: %s", err)
+				c.log.LogErrorf("WebsocketClient: write error: %s", err)
 				return
 			}
 		case receivedMsg, ok := <-receivedMsgs:
@@ -109,27 +109,27 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 			case websocket.TextMessage:
 				var m *jsonrpcMessage
 				if err := json.Unmarshal(receivedMsg.p, &m); err != nil {
-					c.log.Errorf("WebsocketClient: could not unmarshal response body: %s", err)
+					c.log.LogErrorf("WebsocketClient: could not unmarshal response body: %s", err)
 					continue
 				}
 				var id string
 				if len(m.ID) > 0 {
 					// this is a response to a method call
 					id = string(m.ID)
-					c.log.Debugf("response to method call: %+v", m.ID)
+					c.log.LogDebugf("response to method call: %+v", m.ID)
 				} else if m.Method != "" {
 					// this is a subscription message
 					var s struct {
 						Subscription uint64 `json:"subscription"`
 					}
 					if err := json.Unmarshal(m.Params, &s); err != nil {
-						c.log.Errorf("WebsocketClient: could not unmarshal subscription params: %s", err)
+						c.log.LogErrorf("WebsocketClient: could not unmarshal subscription params: %s", err)
 						continue
 					}
 					id = fmt.Sprintf("%s:%d", m.Method, s.Subscription)
-					c.log.Debugf("subscription message: %v", id)
+					c.log.LogDebugf("subscription message: %v", id)
 				} else {
-					c.log.Errorf("WebsocketClient: cannot identify message: %s", receivedMsg.p)
+					c.log.LogErrorf("WebsocketClient: cannot identify message: %s", receivedMsg.p)
 					continue
 				}
 				readCh, ok := c.readers.Load(id)
@@ -137,12 +137,12 @@ func (c *WebsocketClient) loop(ctx context.Context) {
 					readCh.(chan *jsonrpcMessage) <- m
 				} else {
 					// this can sometimes happen, but it's not an issue: the channel should be associated with the new id by now
-					c.log.Errorf("WebsocketClient: no reader for message: %s", receivedMsg.p)
+					c.log.LogErrorf("WebsocketClient: no reader for message: %s", receivedMsg.p)
 					continue
 				}
 
 			default:
-				c.log.Warnf("WebsocketClient: ignoring binary message: %x", receivedMsg.p)
+				c.log.LogWarnf("WebsocketClient: ignoring binary message: %x", receivedMsg.p)
 			}
 		}
 	}
@@ -155,7 +155,7 @@ func (c *WebsocketClient) readMessage() (messageType int, p []byte, err error) {
 
 	messageType, p, err = c.conn.ReadMessage()
 	if err != nil {
-		c.log.Warnf("read failed: %s", err)
+		c.log.LogWarnf("read failed: %s", err)
 		if reconnErr := c.reconnect(context.Background()); reconnErr != nil {
 			return 0, nil, fmt.Errorf("read failed and reconnect failed: %w", err)
 		}
@@ -170,7 +170,7 @@ func (c *WebsocketClient) writeMessage(messageType int, data []byte) error {
 	}
 	err := c.conn.WriteMessage(messageType, data)
 	if err != nil {
-		c.log.Warnf("write failed: %s", err)
+		c.log.LogWarnf("write failed: %s", err)
 		if reconnErr := c.reconnect(context.Background()); reconnErr != nil {
 			return fmt.Errorf("write failed and reconnect failed: %w", err)
 		}
@@ -226,9 +226,9 @@ func (c *WebsocketClient) CallContext(
 
 	readCh, _ := c.readers.Load(id)
 	defer c.readers.Delete(id)
-	c.log.Debugf("waiting for response to %s", id)
+	c.log.LogDebugf("waiting for response to %s", id)
 	respmsg := <-readCh.(chan *jsonrpcMessage)
-	c.log.Debugf("response to %s received", id)
+	c.log.LogDebugf("response to %s received", id)
 	if respmsg.Error != nil {
 		return respmsg.Error
 	}
@@ -253,13 +253,15 @@ func (c *WebsocketClient) Subscribe(
 	readCh := make(chan *jsonrpcMessage)
 	c.readers.Store(id, readCh)
 
-	c.subscriptions = append(c.subscriptions, &subscription{
-		method: method,
-		args:   args,
-		id:     id,
-		uuid:   uuid.New(),
-	})
-	c.log.Debugf("subscribing to %s", method)
+	c.subscriptions = append(
+		c.subscriptions, &subscription{
+			method: method,
+			args:   args,
+			id:     id,
+			uuid:   uuid.New(),
+		},
+	)
+	c.log.LogDebugf("subscribing to %s", method)
 
 	go func() {
 		defer close(resultCh)
@@ -270,19 +272,19 @@ func (c *WebsocketClient) Subscribe(
 				return
 			case msg := <-readCh:
 				if msg.Error != nil {
-					c.log.Errorf("subscription error: %s", msg.Error)
+					c.log.LogErrorf("subscription error: %s", msg.Error)
 					return
 				}
 				if len(msg.Params) == 0 {
-					c.log.Warnf("Ignoring websocket subscription message: %+v\n", msg)
+					c.log.LogWarnf("Ignoring websocket subscription message: %+v\n", msg)
 					continue
 				}
 				var params jsonrpcWebsocketParams
 				if err := json.Unmarshal(msg.Params, &params); err != nil {
-					c.log.Errorf("could not unmarshal msg.Params: %s", err)
+					c.log.LogErrorf("could not unmarshal msg.Params: %s", err)
 					continue
 				}
-				c.log.Debugf("subscription result: %+v", params.Result)
+				c.log.LogDebugf("subscription result: %+v", params.Result)
 				resultCh <- params.Result
 			}
 		}
@@ -313,7 +315,7 @@ func (c *WebsocketClient) nextID() string {
 }
 
 func (c *WebsocketClient) reconnect(ctx context.Context) error {
-	c.log.Debugf("reconnecting")
+	c.log.LogDebugf("reconnecting")
 	if c.reconnectMx.TryLock() {
 		defer c.reconnectMx.Unlock()
 	} else {
@@ -333,7 +335,7 @@ func (c *WebsocketClient) reconnect(ctx context.Context) error {
 		dialer := websocket.Dialer{}
 		conn, _, err := dialer.DialContext(ctx, c.url, nil)
 		if err != nil {
-			c.log.Warnf("connection attempt %d failed: %v", attempt, err)
+			c.log.LogWarnf("connection attempt %d failed: %v", attempt, err)
 			select {
 			case <-ctx.Done():
 				return fmt.Errorf("context cancelled while reconnecting: %w", ctx.Err())
@@ -344,7 +346,7 @@ func (c *WebsocketClient) reconnect(ctx context.Context) error {
 		}
 
 		c.conn = conn
-		c.log.Debugf("new connection set after %d attempts", attempt)
+		c.log.LogDebugf("new connection set after %d attempts", attempt)
 
 		// recreating subscriptions and recreating pending calls. This should happen asynchronously because it needs the loop to be running
 		go c.resubscribe(ctx)
@@ -356,43 +358,45 @@ func (c *WebsocketClient) reconnect(ctx context.Context) error {
 
 // recreatePendingCalls recreates pending calls. Errors in this function will cause particular calls to not complete, so no need to fail other calls
 func (c *WebsocketClient) recreatePendingCalls() {
-	c.pendingCalls.Range(func(key, value interface{}) bool {
-		call := value.(*call)
-		oldId := key.(string)
+	c.pendingCalls.Range(
+		func(key, value interface{}) bool {
+			call := value.(*call)
+			oldId := key.(string)
 
-		msg, err := c.newMessage(call.method.String(), call.args...)
-		if err != nil {
-			c.log.Errorf("failed to recreate pending call %s: %s", oldId, err)
+			msg, err := c.newMessage(call.method.String(), call.args...)
+			if err != nil {
+				c.log.LogErrorf("failed to recreate pending call %s: %s", oldId, err)
+				return true
+			}
+
+			newId := string(msg.ID)
+
+			c.log.LogDebugf("recreate writing message: oldId: %s, newId: %s, %+v", oldId, newId, msg)
+
+			ch, ok := c.readers.Load(oldId)
+			if !ok {
+				c.log.LogErrorf("failed to recreate pending call: reader for old id %s not found", oldId)
+				return true
+			}
+			readCh := ch.(chan *jsonrpcMessage)
+			c.readers.Store(newId, readCh)
+			c.writeQueue <- msg
+
+			c.readers.Delete(oldId)
+
 			return true
-		}
-
-		newId := string(msg.ID)
-
-		c.log.Debugf("recreate writing message: oldId: %s, newId: %s, %+v", oldId, newId, msg)
-
-		ch, ok := c.readers.Load(oldId)
-		if !ok {
-			c.log.Errorf("failed to recreate pending call: reader for old id %s not found", oldId)
-			return true
-		}
-		readCh := ch.(chan *jsonrpcMessage)
-		c.readers.Store(newId, readCh)
-		c.writeQueue <- msg
-
-		c.readers.Delete(oldId)
-
-		return true
-	})
+		},
+	)
 }
 
 // resubscribe to subscriptions. Errors in this function probably mean that subscription configurations themself contain errors, so ignoring
 func (c *WebsocketClient) resubscribe(ctx context.Context) {
-	c.log.Debugf("resubscribing to %d subscriptions", len(c.subscriptions))
-	defer c.log.Debugf("resubscribed")
+	c.log.LogDebugf("resubscribing to %d subscriptions", len(c.subscriptions))
+	defer c.log.LogDebugf("resubscribed")
 
 	for _, sub := range c.subscriptions {
-		c.log.Debugf("resubscribing to %s, %+v", sub.method, sub.args)
-		defer c.log.Debugf("resubscribed to %s", sub.method)
+		c.log.LogDebugf("resubscribing to %s, %+v", sub.method, sub.args)
+		defer c.log.LogDebugf("resubscribed to %s", sub.method)
 
 		method := sub.method
 		args := sub.args
@@ -401,7 +405,7 @@ func (c *WebsocketClient) resubscribe(ctx context.Context) {
 		var subID uint64
 		err := c.CallContext(ctx, &subID, method, args...)
 		if err != nil {
-			c.log.Errorf("failed to resubscribe to %s: %s", method, err)
+			c.log.LogErrorf("failed to resubscribe to %s: %s", method, err)
 			continue
 		}
 		newId := fmt.Sprintf("%s:%d", method, subID)
@@ -410,7 +414,7 @@ func (c *WebsocketClient) resubscribe(ctx context.Context) {
 		ch, ok := c.readers.Load(oldId)
 		c.readers.Delete(oldId)
 		if !ok {
-			c.log.Errorf("reader for old id %s not found", oldId)
+			c.log.LogErrorf("reader for old id %s not found", oldId)
 			continue
 		}
 		c.readers.Store(newId, ch)

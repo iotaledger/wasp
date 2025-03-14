@@ -29,7 +29,6 @@ func TestInitLoad(t *testing.T) {
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	_ = ch.Log().Sync()
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,
@@ -42,7 +41,10 @@ func TestInitLoad(t *testing.T) {
 
 // TestLedgerBaseConsistency deploys chain and check consistency of L1 and L2 ledgers
 func TestLedgerBaseConsistency(t *testing.T) {
-	env := solo.New(t)
+	env := solo.New(t, &solo.InitOptions{
+		Debug:           true,
+		PrintStackTrace: true,
+	})
 	ch, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ch.CheckChain()
@@ -74,7 +76,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		ch.L2BaseTokens(accounts.CommonAccount()),
 	)
 	// chain owner's account is empty
-	require.Zero(t, ch.L2BaseTokens(ch.OriginatorAgentID))
+	require.Zero(t, ch.L2BaseTokens(ch.OwnerAgentID()))
 
 	// total owned by the chain is initialCommonAccountBalance
 	require.EqualValues(t,
@@ -140,7 +142,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	// amount used to top up the common account
 	require.EqualValues(t,
 		vmRes.Receipt.GasFeeCharged-addedToCommonAccount,
-		ch.L2BaseTokens(ch.OriginatorAgentID),
+		ch.L2BaseTokens(ch.OwnerAgentID()),
 	)
 }
 
@@ -184,7 +186,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			})
 			ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-			senderKeyPair, senderAddr := ch.OriginatorPrivateKey, ch.OriginatorAddress
+			senderKeyPair, senderAddr := ch.OwnerPrivateKey, ch.OwnerAddress()
 			if !test.SenderIsOriginator {
 				senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
 			}
@@ -194,7 +196,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
 			senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
 			senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
-			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OriginatorAgentID)
+			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OwnerAgentID())
 			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
 			require.EqualValues(t, 0, commonAccountBaseTokensBefore)
@@ -218,7 +220,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			t.Logf("senderL2BaseTokensBefore: %d, senderL2BaseTokensAfter: %d", senderL2BaseTokensBefore, senderL2BaseTokensAfter)
 			commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 			t.Logf("commonAccountBaseTokensBefore: %d, commonAccountBaseTokensAfter: %d", commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
-			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OriginatorAgentID)
+			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OwnerAgentID())
 			t.Logf("originatorL2BaseTokensBefore: %d, originatorL2BaseTokensAfter: %d", originatorL2BaseTokensBefore, originatorL2BaseTokensAfter)
 			l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
 			l2GasFee := ch.LastReceipt().GasFeeCharged
@@ -420,7 +422,7 @@ func TestMessageSize(t *testing.T) {
 	const maxRequestsPerBlock = 1
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
-	for i := 0; i < len(reqs); i++ {
+	for i := range reqs {
 		req, _, err := ch.SendRequest(
 			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize))).
 				AddBaseTokens(attachedBaseTokens).
@@ -456,7 +458,7 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 		isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil),
 		0,
 		math.MaxUint64,
-	).WithSender(ch.OriginatorPrivateKey.GetPublicKey())
+	).WithSender(ch.OwnerPrivateKey.GetPublicKey())
 
 	require.ErrorContains(t, req.VerifySignature(), "invalid signature")
 

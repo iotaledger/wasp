@@ -15,7 +15,7 @@ import (
 
 func TestVarLogIndexV2Basic(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	n := 4
 	f := 1
 	//
@@ -40,7 +40,7 @@ func TestVarLogIndexV2Basic(t *testing.T) {
 
 func TestVarLogIndexV2Other(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	n := 4
 	f := 1
 	//

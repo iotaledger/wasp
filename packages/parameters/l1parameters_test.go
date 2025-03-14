@@ -3,12 +3,13 @@ package parameters_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/stretchr/testify/require"
 )
 
 func TestInitL1(t *testing.T) {

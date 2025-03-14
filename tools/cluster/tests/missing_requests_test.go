@@ -17,7 +17,7 @@ import (
 
 func TestMissingRequests(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
-	
+
 	clu := newCluster(t, waspClusterOpts{nNodes: 4})
 	cmt := []int{0, 1, 2, 3}
 	threshold := uint16(4)

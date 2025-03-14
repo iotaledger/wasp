@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/logger"
+	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -55,7 +55,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	t.Parallel()
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	defer ctxCancel()
 
 	peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -64,13 +64,13 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(log)
 	} else {
-		netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(log.NewChildLogger("Network"), hivelog.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peeringURLs, peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(log, logger.LevelWarn, false),
+		testlogger.WithLevel(log, hivelog.LevelWarning, false),
 	)
 	networkProviders := peeringNetwork.NetworkProviders()
 	defer peeringNetwork.Close()
@@ -83,7 +83,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 			t.Logf("servers updated, ChainID=%v, servers=%+v", chainID, servers)
 			nodeServers[ii] = servers
 		}
-		accessMgrs[i] = access_mgr.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.Named(fmt.Sprintf("N#%v", i)))
+		accessMgrs[i] = access_mgr.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.NewChildLogger(fmt.Sprintf("N#%v", i)))
 	}
 	//
 	// Make all of them trusted.

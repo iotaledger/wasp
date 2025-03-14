@@ -95,12 +95,12 @@ func initDeployCmd() *cobra.Command {
 			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 
-			stateControllerAddress := doDKG(ctx, node, peers, quorum)
+			committeeAddr := doDKG(ctx, node, peers, quorum)
 
-			gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, stateControllerAddress.AsIotaAddress())
+			gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress())
 			log.Check(err)
 
-			stateMetadata := initializeNewChainState(stateControllerAddress, gasCoin)
+			stateMetadata := initializeNewChainState(committeeAddr, gasCoin)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
@@ -111,7 +111,7 @@ func initDeployCmd() *cobra.Command {
 				StateMetadata:     *stateMetadata,
 			}
 
-			chainID, err := apilib.DeployChain(ctx, par, stateControllerAddress)
+			chainID, err := apilib.DeployChain(ctx, par, committeeAddr)
 			log.Check(err)
 
 			config.AddChain(chainName, chainID.String())

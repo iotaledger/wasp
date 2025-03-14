@@ -68,7 +68,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	b.chain.Log().Debugf("EVMSendTransaction, evm.tx.nonce=%v, evm.tx.hash=%v => isc.req.id=%v", tx.Nonce(), tx.Hash().Hex(), req.ID())
+	b.chain.Log().LogDebugf("EVMSendTransaction, evm.tx.nonce=%v, evm.tx.hash=%v => isc.req.id=%v", tx.Nonce(), tx.Hash().Hex(), req.ID())
 	if err := b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey); err != nil {
 		return fmt.Errorf("tx not added to the mempool: %v", err.Error())
 	}

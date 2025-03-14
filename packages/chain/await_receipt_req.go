@@ -7,7 +7,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
@@ -17,11 +18,11 @@ type awaitReceiptReq struct {
 	requestID  isc.RequestID
 	responseCh chan<- *blocklog.RequestReceipt
 	startTime  time.Time
-	log        *logger.Logger
+	log        log.Logger
 }
 
-func newAwaitReceiptReq(ctx context.Context, requestID isc.RequestID, log *logger.Logger) (*awaitReceiptReq, <-chan *blocklog.RequestReceipt) {
-	log.Debugf("AwaitRequestProcessed(%v) started", requestID)
+func newAwaitReceiptReq(ctx context.Context, requestID isc.RequestID, log log.Logger) (*awaitReceiptReq, <-chan *blocklog.RequestReceipt) {
+	log.LogDebugf("AwaitRequestProcessed(%v) started", requestID)
 	responseCh := make(chan *blocklog.RequestReceipt, 1)
 	r := &awaitReceiptReq{
 		ctx:        ctx,
@@ -34,7 +35,7 @@ func newAwaitReceiptReq(ctx context.Context, requestID isc.RequestID, log *logge
 }
 
 func (r *awaitReceiptReq) Respond(receipt *blocklog.RequestReceipt) {
-	r.log.Debugf("AwaitRequestProcessed(%v) responding in %v", r.requestID, time.Since(r.startTime))
+	r.log.LogDebugf("AwaitRequestProcessed(%v) responding in %v", r.requestID, time.Since(r.startTime))
 	if r.ctx.Err() != nil {
 		close(r.responseCh)
 		return
