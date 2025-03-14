@@ -60,14 +60,8 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 		return fmt.Errorf("could not verify: %w", err2)
 	}
 
-	// check req is for the correct chain
-	if !request.ChainID().Equals(chainID) {
-		// do not add to cache, it can still be sent to the correct chain
-		return errors.New("request is for a different chain")
-	}
-
 	// check chain exists
-	chain, err := c.chainService.GetChainByID(chainID)
+	chain, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}

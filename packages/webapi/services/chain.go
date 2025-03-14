@@ -46,26 +46,26 @@ func NewChainService(
 	}
 }
 
-func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
-	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
+func (c *ChainService) ActivateChain() error {
+	_, err := c.chainRecordRegistryProvider.ActivateChainRecord()
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Activate(chainID)
+	return c.chainsProvider().Activate()
 }
 
-func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
-	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
+func (c *ChainService) DeactivateChain() error {
+	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord()
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Deactivate(chainID)
+	return c.chainsProvider().Deactivate()
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
-	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
+	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord()
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,6 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 
 	if storedChainRec != nil {
 		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
-			chainRecord.ChainID(),
 			func(rec *registry.ChainRecord) bool {
 				rec.AccessNodes = chainRecord.AccessNodes
 				rec.Active = chainRecord.Active
@@ -110,22 +109,12 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	return nil
 }
 
-func (c *ChainService) HasChain(chainID isc.ChainID) bool {
-	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
-	if err != nil {
-		c.log.LogInfof("hasChain err:[%v]", err)
-		return false
-	}
-
-	return storedChainRec != nil
+func (c *ChainService) GetChain() (chainpkg.Chain, error) {
+	return c.chainsProvider().Get()
 }
 
-func (c *ChainService) GetChainByID(chainID isc.ChainID) (chainpkg.Chain, error) {
-	return c.chainsProvider().Get(chainID)
-}
-
-func (c *ChainService) GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (uint16, error) {
-	ch, err := c.GetChainByID(chainID)
+func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error) {
+	ch, err := c.GetChain()
 	if err != nil {
 		return 0, err
 	}
@@ -151,13 +140,13 @@ func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
 	return chainIDs, nil
 }
 
-func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+func (c *ChainService) GetChainInfoByChainID(blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord()
 	if err != nil {
 		return nil, err
 	}
 
-	ch, err := c.GetChainByID(chainID)
+	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +154,7 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTr
 	governanceChainInfo, err := corecontracts.GetChainInfo(ch, blockIndexOrTrieRoot)
 	if err != nil {
 		if chainRecord != nil && errors.Is(err, interfaces.ErrChainNotFound) {
-			return &dto.ChainInfo{ChainID: chainID, IsActive: false}, nil
+			return &dto.ChainInfo{ChainID: chainRecord.ChainID(), IsActive: false}, nil
 		}
 
 		return nil, err
@@ -176,8 +165,8 @@ func (c *ChainService) GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTr
 	return chainInfo, nil
 }
 
-func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error) {
-	ch, err := c.GetChainByID(chainID)
+func (c *ChainService) GetContracts(blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error) {
+	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
@@ -188,8 +177,8 @@ func (c *ChainService) GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot st
 	return root.ViewGetContractRecords.DecodeOutput(res)
 }
 
-func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error) {
-	ch, err := c.GetChainByID(chainID)
+func (c *ChainService) GetState(stateKey []byte) (state []byte, err error) {
+	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
@@ -202,8 +191,8 @@ func (c *ChainService) GetState(chainID isc.ChainID, stateKey []byte) (state []b
 	return latestState.Get(kv.Key(stateKey)), nil
 }
 
-func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error) {
-	ch, err := c.GetChainByID(chainID)
+func (c *ChainService) WaitForRequestProcessed(ctx context.Context, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error) {
+	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
@@ -222,8 +211,8 @@ func (c *ChainService) WaitForRequestProcessed(ctx context.Context, chainID isc.
 	}
 }
 
-func (c *ChainService) RotateTo(ctx context.Context, chainID isc.ChainID, rotateToAddress *iotago.Address) error {
-	ch, err := c.GetChainByID(chainID)
+func (c *ChainService) RotateTo(ctx context.Context, rotateToAddress *iotago.Address) error {
+	ch, err := c.GetChain()
 	if err != nil {
 		return err
 	}

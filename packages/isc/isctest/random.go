@@ -173,5 +173,5 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() isc.AgentID {
-	return isc.NewContractAgentID(RandomChainID(), isc.Hn("testName"))
+	return isc.NewContractAgentID(isc.Hn("testName"))
 }

@@ -329,8 +329,7 @@ func (e *EVMChain) Balance(address common.Address, blockNumberOrHash *rpc.BlockN
 		return nil, err
 	}
 	return e.accountsState(chainState).GetBaseTokensBalanceFullDecimals(
-		isc.NewEthereumAddressAgentID(*e.backend.ISCChainID(), address),
-		*e.backend.ISCChainID(),
+		isc.NewEthereumAddressAgentID(address),
 	), nil
 }
 

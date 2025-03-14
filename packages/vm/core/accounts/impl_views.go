@@ -14,25 +14,25 @@ import (
 func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) isc.CoinBalances {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	ctx.Log().Debugf("accounts.viewBalance %s", aid)
-	return NewStateReaderFromSandbox(ctx).getFungibleTokens(accountKey(aid, ctx.ChainID()))
+	return NewStateReaderFromSandbox(ctx).getFungibleTokens(accountKey(aid))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
 func viewBalanceBaseToken(ctx isc.SandboxView, optionalAgentID *isc.AgentID) coin.Value {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
-	return NewStateReaderFromSandbox(ctx).GetBaseTokensBalanceDiscardExtraDecimals(aid, ctx.ChainID())
+	return NewStateReaderFromSandbox(ctx).GetBaseTokensBalanceDiscardExtraDecimals(aid)
 }
 
 // viewBalanceBaseTokenEVM returns the base tokens balance of the account belonging to the AgentID (in the EVM format with 18 decimals)
 func viewBalanceBaseTokenEVM(ctx isc.SandboxView, optionalAgentID *isc.AgentID) *big.Int {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
-	return NewStateReaderFromSandbox(ctx).GetBaseTokensBalanceFullDecimals(aid, ctx.ChainID())
+	return NewStateReaderFromSandbox(ctx).GetBaseTokensBalanceFullDecimals(aid)
 }
 
 func viewBalanceCoin(ctx isc.SandboxView, optionalAgentID *isc.AgentID, coinID coin.Type) coin.Value {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getCoinBalance(
-		accountKey(aid, ctx.ChainID()),
+		accountKey(aid),
 		coinID,
 	)
 }
@@ -46,7 +46,7 @@ func viewTotalAssets(ctx isc.SandboxView) isc.CoinBalances {
 // nonces are only sent with off-ledger requests
 func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint64 {
 	account := coreutil.FromOptional(optionalAgentID, ctx.Caller())
-	return NewStateReaderFromSandbox(ctx).AccountNonce(account, ctx.ChainID())
+	return NewStateReaderFromSandbox(ctx).AccountNonce(account)
 }
 
 // viewAccountObjects returns the ObjectIDs of Objects owned by an account

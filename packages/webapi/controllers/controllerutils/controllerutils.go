@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
@@ -22,9 +21,6 @@ func ChainIDFromParams(c echo.Context, cs interfaces.ChainService) (isc.ChainID,
 		return isc.ChainID{}, err
 	}
 
-	if !cs.HasChain(chainID) {
-		return isc.ChainID{}, apierrors.ChainNotFoundError()
-	}
 	// set chainID to be used by the prometheus metrics
 	c.Set(EchoContextKeyChainID, chainID)
 	return chainID, nil
@@ -35,18 +31,11 @@ func SetOperation(c echo.Context, op string) {
 	c.Set(EchoContextKeyOperation, op)
 }
 
-func ChainFromParams(c echo.Context, cs interfaces.ChainService) (chain.Chain, isc.ChainID, error) {
-	chainID, err := params.DecodeChainID(c)
+func ChainFromParams(c echo.Context, cs interfaces.ChainService) (chain.Chain, error) {
+	chain, err := cs.GetChain()
 	if err != nil {
-		return nil, isc.ChainID{}, err
+		return nil, err
 	}
 
-	chain, err := cs.GetChainByID(chainID)
-	if err != nil {
-		return nil, isc.ChainID{}, err
-	}
-
-	// set chainID to be used by the prometheus metrics
-	c.Set(EchoContextKeyChainID, chainID)
-	return chain, chainID, nil
+	return chain, nil
 }

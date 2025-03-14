@@ -149,7 +149,7 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (isc.CallArguments, error) {
-	req, err := isc.NewEVMOffLedgerTxRequest(ch.ChainID, tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(tx)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,7 @@ func EthereumAccountByIndex(i int) (*ecdsa.PrivateKey, common.Address) {
 
 func (ch *Chain) EthereumAccountByIndexWithL2Funds(i int, baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := EthereumAccountByIndex(i)
-	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
 	return key, addr
 }
 
@@ -192,6 +192,6 @@ func NewEthereumAccount() (*ecdsa.PrivateKey, common.Address) {
 
 func (ch *Chain) NewEthereumAccountWithL2Funds(baseTokens ...coin.Value) (*ecdsa.PrivateKey, common.Address) {
 	key, addr := NewEthereumAccount()
-	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(ch.ChainID, addr), baseTokens...)
+	ch.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), baseTokens...)
 	return key, addr
 }

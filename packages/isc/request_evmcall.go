@@ -18,15 +18,13 @@ import (
 
 // evmOffLedgerCallRequest is used to wrap an EVM call (for the eth_call or eth_estimateGas jsonrpc methods)
 type evmOffLedgerCallRequest struct {
-	chainID ChainID          `bcs:"export"`
 	callMsg ethereum.CallMsg `bcs:"export"`
 }
 
 var _ OffLedgerRequest = &evmOffLedgerCallRequest{}
 
-func NewEVMOffLedgerCallRequest(chainID ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
+func NewEVMOffLedgerCallRequest(callMsg ethereum.CallMsg) OffLedgerRequest {
 	return &evmOffLedgerCallRequest{
-		chainID: chainID,
 		callMsg: callMsg,
 	}
 }
@@ -52,10 +50,6 @@ func (req *evmOffLedgerCallRequest) Message() Message {
 	)
 }
 
-func (req *evmOffLedgerCallRequest) ChainID() ChainID {
-	return req.chainID
-}
-
 func (req *evmOffLedgerCallRequest) GasBudget() (gas uint64, isEVM bool) {
 	return req.callMsg.Gas, true
 }
@@ -73,7 +67,7 @@ func (req *evmOffLedgerCallRequest) Nonce() uint64 {
 }
 
 func (req *evmOffLedgerCallRequest) SenderAccount() AgentID {
-	return NewEthereumAddressAgentID(req.chainID, req.callMsg.From)
+	return NewEthereumAddressAgentID(req.callMsg.From)
 }
 
 func (req *evmOffLedgerCallRequest) String() string {
@@ -87,7 +81,7 @@ func (req *evmOffLedgerCallRequest) String() string {
 }
 
 func (req *evmOffLedgerCallRequest) TargetAddress() *cryptolib.Address {
-	return req.chainID.AsAddress()
+	return cryptolib.NewEmptyAddress()
 }
 
 func (req *evmOffLedgerCallRequest) VerifySignature() error {

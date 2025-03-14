@@ -20,12 +20,12 @@ import (
 
 // creditToAccount credits assets to the chain ledger
 func (reqctx *requestContext) creditToAccount(agentID isc.AgentID, coins isc.CoinBalances) {
-	reqctx.accountsStateWriter(false).CreditToAccount(agentID, coins, reqctx.ChainID())
+	reqctx.accountsStateWriter(false).CreditToAccount(agentID, coins)
 }
 
 // creditToAccountFullDecimals credits assets to the chain ledger
 func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, amount *big.Int, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount, reqctx.ChainID())
+	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount)
 }
 
 func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []iotago.ObjectID) {
@@ -35,27 +35,27 @@ func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, object
 			ID:  id,
 			BCS: []byte{},
 		}
-		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, &rec, reqctx.ChainID())
+		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, &rec)
 	}
 }
 
 // debitFromAccount subtracts tokens from account if there are enough.
 func (reqctx *requestContext) debitFromAccount(agentID isc.AgentID, coins isc.CoinBalances, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitFromAccount(agentID, coins, reqctx.ChainID())
+	reqctx.accountsStateWriter(gasBurn).DebitFromAccount(agentID, coins)
 }
 
 // debitFromAccountFullDecimals subtracts basetokens tokens from account if there are enough.
 func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitFromAccountFullDecimals(agentID, amount, reqctx.ChainID())
+	reqctx.accountsStateWriter(gasBurn).DebitFromAccountFullDecimals(agentID, amount)
 }
 
 // debitObjectFromAccount removes a Object from an account.
 func (reqctx *requestContext) debitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitObjectFromAccount(agentID, objectID, reqctx.ChainID())
+	reqctx.accountsStateWriter(gasBurn).DebitObjectFromAccount(agentID, objectID)
 }
 
 func (reqctx *requestContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, gasBurn bool) {
-	lo.Must0(reqctx.accountsStateWriter(gasBurn).MoveBetweenAccounts(fromAgentID, toAgentID, assets, reqctx.ChainID()))
+	lo.Must0(reqctx.accountsStateWriter(gasBurn).MoveBetweenAccounts(fromAgentID, toAgentID, assets))
 }
 
 func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *root.ContractRecord) {
@@ -64,7 +64,7 @@ func findContractByHname(chainState kv.KVStore, contractHname isc.Hname) (ret *r
 
 func (reqctx *requestContext) GetBaseTokensBalance(agentID isc.AgentID) (bts coin.Value, remainder *big.Int) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		bts, remainder = s.GetBaseTokensBalance(agentID, reqctx.ChainID())
+		bts, remainder = s.GetBaseTokensBalance(agentID)
 	})
 	return
 }
@@ -77,7 +77,7 @@ func (reqctx *requestContext) GetBaseTokensBalanceDiscardRemainder(agentID isc.A
 func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
 	var ret bool
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.HasEnoughForAllowance(agentID, allowance, reqctx.ChainID())
+		ret = s.HasEnoughForAllowance(agentID, allowance)
 	})
 	return ret
 }
@@ -85,7 +85,7 @@ func (reqctx *requestContext) HasEnoughForAllowance(agentID isc.AgentID, allowan
 func (reqctx *requestContext) GetCoinBalance(agentID isc.AgentID, nativeTokenID coin.Type) coin.Value {
 	var ret coin.Value
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetCoinBalance(agentID, nativeTokenID, reqctx.ChainID())
+		ret = s.GetCoinBalance(agentID, nativeTokenID)
 	})
 	return ret
 }
@@ -101,7 +101,7 @@ func (reqctx *requestContext) GetCoinBalanceTotal(coinType coin.Type) coin.Value
 func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
 	var ret isc.CoinBalances
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetCoins(agentID, reqctx.ChainID())
+		ret = s.GetCoins(agentID)
 	})
 	return ret
 }
@@ -202,6 +202,6 @@ func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, p
 // updateOffLedgerRequestNonce updates stored nonce for ISC off ledger requests
 func (reqctx *requestContext) updateOffLedgerRequestNonce() {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		s.IncrementNonce(reqctx.req.SenderAccount(), reqctx.ChainID())
+		s.IncrementNonce(reqctx.req.SenderAccount())
 	})
 }

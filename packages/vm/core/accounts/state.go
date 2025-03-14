@@ -48,7 +48,7 @@ func NewStateWriterFromSandbox(ctx isc.Sandbox) *StateWriter {
 }
 
 // converts an account key from the accounts contract (shortform without chainID) to an AgentID
-func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
+func AgentIDFromKey(key kv.Key) (isc.AgentID, error) {
 	if len(key) < isc.ChainIDLength {
 		// short form saved (withoutChainID)
 		switch len(key) {
@@ -57,11 +57,11 @@ func AgentIDFromKey(key kv.Key, chainID isc.ChainID) (isc.AgentID, error) {
 			if err != nil {
 				return nil, err
 			}
-			return isc.NewContractAgentID(chainID, hn), nil
+			return isc.NewContractAgentID(hn), nil
 		case common.AddressLength:
 			var ethAddr common.Address
 			copy(ethAddr[:], []byte(key))
-			return isc.NewEthereumAddressAgentID(chainID, ethAddr), nil
+			return isc.NewEthereumAddressAgentID(ethAddr), nil
 		default:
 			panic("bad key length")
 		}

@@ -72,14 +72,12 @@ var (
 	)
 
 	FuncSandboxCall            = Contract.ViewFunc("testSandboxCall")
-	FuncCheckContextFromFullEP = coreutil.NewEP4(Contract, "checkContextFromFullEP",
-		coreutil.Field[isc.ChainID](""),
+	FuncCheckContextFromFullEP = coreutil.NewEP3(Contract, "checkContextFromFullEP",
 		coreutil.Field[isc.AgentID](""),
 		coreutil.Field[isc.AgentID](""),
 		coreutil.Field[isc.AgentID](""),
 	)
-	FuncCheckContextFromViewEP = coreutil.NewViewEP3(Contract, "checkContextFromViewEP",
-		coreutil.Field[isc.ChainID](""),
+	FuncCheckContextFromViewEP = coreutil.NewViewEP2(Contract, "checkContextFromViewEP",
 		coreutil.Field[isc.AgentID](""),
 		coreutil.Field[isc.AgentID](""),
 	)
@@ -91,8 +89,7 @@ var (
 	FuncCallPanicViewEPFromFull = Contract.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = Contract.ViewFunc("testCallPanicViewEPFromView")
 
-	FuncWithdrawFromChain = coreutil.NewEP4(Contract, "withdrawFromChain",
-		coreutil.Field[isc.ChainID](""),
+	FuncWithdrawFromChain = coreutil.NewEP3(Contract, "withdrawFromChain",
 		coreutil.Field[coin.Value](""),
 		coreutil.FieldOptional[uint64](""),
 		coreutil.FieldOptional[uint64](""),

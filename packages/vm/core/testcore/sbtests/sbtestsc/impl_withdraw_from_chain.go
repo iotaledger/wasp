@@ -10,7 +10,7 @@ import (
 )
 
 // withdrawFromChain withdraws all the available balance existing on the target chain
-func withdrawFromChain(ctx isc.Sandbox, targetChain isc.ChainID, withdrawal coin.Value, gasReserve *uint64, gasReserveTransferAccountToChain *uint64) {
+func withdrawFromChain(ctx isc.Sandbox, withdrawal coin.Value, gasReserve *uint64, gasReserveTransferAccountToChain *uint64) {
 	ctx.Log().Infof(FuncWithdrawFromChain.Name)
 
 	// if it is not already present in the SC's account the caller should have
@@ -27,7 +27,7 @@ func withdrawFromChain(ctx isc.Sandbox, targetChain isc.ChainID, withdrawal coin
 	// make sure to send enough to cover the storage deposit and gas fees
 	// the storage deposit will be returned along with the withdrawal
 	ctx.Send(isc.RequestParameters{
-		TargetAddress: targetChain.AsAddress(),
+		TargetAddress: ctx.ChainID().AsAddress(),
 		Assets:        isc.NewAssets(coin.Value(storageDeposit + *gasReserveTransferAccountToChain + *gasReserve)),
 		Metadata: &isc.SendMetadata{
 			Message:   accounts.FuncTransferAccountToChain.Message(gasReserve),

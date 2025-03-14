@@ -159,7 +159,7 @@ func transitionAnchor(
 
 	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
 	chainInfo := governance.NewStateReaderFromChainState(state).
-		GetChainInfo(anchor.ChainID())
+		GetChainInfo()
 
 	newStateMetadata := transaction.NewStateMetadata(
 		stateMetadata.SchemaVersion,
@@ -225,7 +225,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 	{
 		state := lo.Must(store.LatestState())
 		senderL2Balance := accounts.NewStateReaderFromChainState(schemaVersion, state).
-			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()), chainID)
+			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()))
 		require.Zero(t, senderL2Balance.BaseTokens())
 	}
 
@@ -250,7 +250,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 		state := lo.Must(store.LatestState())
 		require.Equal(t, block.StateIndex(), state.BlockIndex())
 		senderL2Balance := accounts.NewStateReaderFromChainState(schemaVersion, state).
-			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()), chainID)
+			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()))
 		receipt := lo.Must(blocklog.NewStateReaderFromChainState(state).
 			GetRequestReceipt(req.ID()))
 		require.EqualValues(t, baseTokens-receipt.GasFeeCharged, senderL2Balance.BaseTokens())

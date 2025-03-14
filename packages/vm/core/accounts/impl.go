@@ -42,7 +42,7 @@ var Processor = Contract.Processor(nil,
 func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *isc.IotaCoinInfo) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
 	s.SaveCoinInfo(baseTokenCoinInfo)
-	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor), isc.ChainID{})
+	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor))
 }
 
 // deposit is a function to deposit attached assets to the sender's chain account
@@ -168,12 +168,6 @@ func transferAccountToChain(ctx isc.Sandbox, optionalGasReserve *uint64) {
 	if !ok || callerContract.Hname().IsNil() {
 		// caller must be contract
 		panic(vm.ErrUnauthorized)
-	}
-
-	// if the caller contract is on the same chain the transfer would end up
-	// in the same L2 account it is taken from, so we do nothing in that case
-	if callerContract.ChainID().Equals(ctx.ChainID()) {
-		return
 	}
 
 	// save the assets to send to the transfer request, as specified by the allowance

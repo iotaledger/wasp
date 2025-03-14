@@ -27,8 +27,6 @@ const AgentIDStringSeparator = "@"
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
 	Bytes() []byte
-	BelongsToChain(ChainID) bool
-	BytesWithoutChainID() []byte
 	Equals(other AgentID) bool
 	Kind() AgentIDKind
 	String() string
@@ -86,9 +84,9 @@ func AgentIDFromString(s string) (AgentID, error) {
 
 	if contractPart != "" {
 		if strings.HasPrefix(contractPart, "0x") {
-			return ethAgentIDFromString(contractPart, addrPart)
+			return ethAgentIDFromString(addrPart)
 		}
-		return contractAgentIDFromString(contractPart, addrPart)
+		return contractAgentIDFromString(addrPart)
 	}
 
 	return addressAgentIDFromString(s)

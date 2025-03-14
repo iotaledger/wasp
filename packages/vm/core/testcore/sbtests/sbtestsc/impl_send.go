@@ -57,7 +57,7 @@ func pingAllowanceBack(ctx isc.Sandbox) {
 	caller := ctx.Caller()
 	addr, ok := isc.AddressFromAgentID(caller)
 	// assert caller is L1 address, not a SC
-	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(caller),
+	ctx.Requiref(ok,
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
 	toSend := ctx.AllowanceAvailable()

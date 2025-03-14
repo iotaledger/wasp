@@ -44,9 +44,8 @@ func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
 }
 
 // GetChainInfo returns global variables of the chain
-func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
+func (s *StateReader) GetChainInfo() *isc.ChainInfo {
 	ret := &isc.ChainInfo{
-		ChainID:  chainID,
 		Metadata: &isc.PublicChainMetadata{},
 	}
 	ret.ChainOwnerID = s.GetChainOwnerID()

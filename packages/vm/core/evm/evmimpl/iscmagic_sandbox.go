@@ -48,8 +48,8 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 	assets := allowance.Unwrap()
 	subtractFromAllowance(h.ctx, addr, h.caller, assets)
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), addr),
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
+		isc.NewEthereumAddressAgentID(addr),
+		isc.NewEthereumAddressAgentID(h.caller),
 		assets,
 	)
 	// emit ERC20 / ERC721 events for native tokens & NFTs
@@ -63,8 +63,8 @@ var errInvalidAllowance = coreerrors.Register("allowance must not be greater tha
 func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Value {
 	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.Decimals)
 
-	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
-	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller)
+	evmAddr := isc.NewEthereumAddressAgentID(iscmagic.Address)
+	caller := isc.NewEthereumAddressAgentID(h.caller)
 
 	// Move the already transferred base tokens from the 0x1074 address back to the callers account.
 	h.ctx.Privileged().MustMoveBetweenAccounts(
@@ -127,7 +127,7 @@ var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (
 // account before sending to L1
 func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
+		isc.NewEthereumAddressAgentID(h.caller),
 		h.ctx.AccountID(),
 		assets,
 	)

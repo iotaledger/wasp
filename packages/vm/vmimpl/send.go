@@ -18,13 +18,6 @@ func (reqctx *requestContext) send(params isc.RequestParameters) {
 		// simply send assets to a L1 address
 		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
 	} else {
-		// sending cross chain request to a contract on the other chain
-		packageID := reqctx.vm.task.Anchor.ISCPackage()
-		reqctx.vm.txbuilder.SendCrossChainRequest(
-			&packageID,
-			params.TargetAddress.AsIotaAddress(),
-			params.Assets,
-			params.Metadata,
-		)
+		panic("unsupported")
 	}
 }

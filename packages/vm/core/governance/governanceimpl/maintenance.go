@@ -13,8 +13,7 @@ func startMaintenance(ctx isc.Sandbox) {
 	ctx.RequireCallerIsChainOwner()
 	// check if caller is a contract from this chain, panic if so.
 	caller := ctx.Caller()
-	if caller.Kind() == isc.AgentIDKindContract &&
-		caller.(*isc.ContractAgentID).ChainID().Equals(ctx.ChainID()) {
+	if caller.Kind() == isc.AgentIDKindContract {
 		panic(vm.ErrUnauthorized)
 	}
 	state := governance.NewStateWriterFromSandbox(ctx)

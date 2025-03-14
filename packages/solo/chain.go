@@ -121,7 +121,7 @@ func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byt
 func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, value *big.Int, args ...any) (common.Address, abi.ABI) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
-	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(ch.ChainID, creatorAddress))
+	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(creatorAddress))
 
 	contractABI, data := EVMCallDataFromArtifacts(ch.Env.T, abiJSON, bytecode, args...)
 

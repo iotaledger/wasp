@@ -79,10 +79,7 @@ contract ERC20Coin {
      * @return The balance of the token owner.
      */
     function balanceOf(address tokenOwner) public view returns (uint256) {
-        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
-            tokenOwner,
-            __iscSandbox.getChainID()
-        );
+        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(tokenOwner);
         return __iscAccounts.getL2BalanceCoin(_iotaCoinType, ownerAgentID);
     }
 
