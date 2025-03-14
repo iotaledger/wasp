@@ -107,8 +107,11 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
 
-		ncc.LogDebug("POSTING TX")
-		ncc.LogDebugf("%v %v\n", res, err)
+		if err != nil {
+			ncc.LogErrorf("POSTING TX error: %v\n", err)
+		} else {
+			ncc.LogDebugf("POSTING TX response: %v\n", res)
+		}
 
 		if err != nil {
 			return nil, err
