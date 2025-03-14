@@ -263,6 +263,7 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 // This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
 // Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
 func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) *iotago.ObjectRef {
+	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
 	if currentRef == nil {
 		cb()
 		return currentRef
@@ -278,7 +279,7 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 			panic(fmt.Errorf("WithWaitForNextVersion: object version did not change in time: %v\n", currentRef))
 		}
 
-		env.logger.Infof("WaitForNextVersion: Trying ref %v\n", currentRef)
+		env.logger.LogInfof("WaitForNextVersion: Trying ref %v\n", currentRef)
 
 		newRef, err := env.IotaClient().GetObject(env.ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
 		if err != nil {
@@ -301,12 +302,12 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 		}
 
 		if newRef.Data.Ref().Version > currentRef.Version {
-			env.logger.Infof("WaitForNextVersion: Found the updated version of %v, which is: %v \n", currentRef, newRef.Data.Ref())
+			env.logger.LogInfof("WaitForNextVersion: Found the updated version of %v, which is: %v \n", currentRef, newRef.Data.Ref())
 			ref := newRef.Data.Ref()
 			return &ref
 		}
 
-		env.logger.Infof("WaitForNextVersion: Getting the same version ref as before. Retrying. %v\n", currentRef)
+		env.logger.LogInfof("WaitForNextVersion: Getting the same version ref as before. Retrying. %v\n", currentRef)
 
 		time.Sleep(250 * time.Millisecond)
 	}

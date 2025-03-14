@@ -46,7 +46,7 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 	return &seed
 }
 
-func (env *Solo) NewSeedFromTestName(testName string) *cryptolib.Seed {
+func (env *Solo) NewSeedFromTestNameAndTimestamp(testName string) *cryptolib.Seed {
 	algorithm := fnv.New32a()
 	_, err := algorithm.Write([]byte(testName + time.Now().String()))
 	if err != nil {

@@ -19,7 +19,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 	// setupTestSandboxSC(t, ch, nil)
 	//
 	// // send 1 tx will 1_000_000 BaseTokens which should result in too many outputs, so the request must fail
-	// wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	//
 	// req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSplitFunds.Name).
 	// 	AddBaseTokens(1000 * isc.Million).
@@ -35,7 +35,7 @@ func TestSeveralOutputsInASingleCall(t *testing.T) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil)
 
-	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 
 	err := ch.DepositBaseTokensToL2(100_000, wallet)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestSeveralOutputsInASingleCallFail(t *testing.T) {
 	// _, ch := setupChain(t, nil)
 	// setupTestSandboxSC(t, ch, nil)
 	//
-	// wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	//
 	// err := ch.DepositBaseTokensToL2(100_000, wallet)
 	// require.NoError(t, err)
@@ -83,7 +83,7 @@ func TestSplitTokensFail(t *testing.T) {
 	// _, ch := setupChain(t, nil)
 	// setupTestSandboxSC(t, ch, nil)
 	//
-	// wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	//
 	// err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
 	// require.NoError(t, err)
@@ -111,7 +111,7 @@ func TestSplitTokensSuccess(t *testing.T) {
 	// _, ch := setupChain(t, nil)
 	// setupTestSandboxSC(t, ch, nil)
 	//
-	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	// agentID := isc.NewAddressAgentID(addr)
 	//
 	// err := ch.DepositBaseTokensToL2(2*isc.Million, wallet)
@@ -142,7 +142,7 @@ func TestPingBaseTokens1(t *testing.T) {
 	_, ch := setupChain(t, nil)
 	setupTestSandboxSC(t, ch, nil)
 
-	user, userAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	user, userAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 
 	userFundsBefore := ch.L1L2Funds(userAddr)
 	commonBefore := ch.L2CommonAccountAssets()
@@ -194,7 +194,7 @@ func TestSendNFTsBack(t *testing.T) {
 	// _, ch := setupChain(t, nil)
 	// setupTestSandboxSC(t, ch, nil)
 	//
-	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	//
 	// nft := mintDummyNFT(t, ch, wallet, addr)
 	//
@@ -221,7 +221,7 @@ func TestNFTOffledgerWithdraw(t *testing.T) {
 	// _, ch := setupChain(t, nil)
 	// setupTestSandboxSC(t, ch, nil)
 	//
-	// wallet, issuerAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, issuerAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	//
 	// nft := mintDummyNFT(t, ch, wallet, issuerAddr)
 	//
@@ -259,7 +259,7 @@ func TestNFTMintToChain(t *testing.T) {
 	// _, ch := setupChain(t, nil)
 	// setupTestSandboxSC(t, ch, nil)
 	//
-	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestName(t.Name()))
+	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	//
 	// nftToBeMinted := &isc.NFT{
 	// 	ID:       iotago.ObjectID{},

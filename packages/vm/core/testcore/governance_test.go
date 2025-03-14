@@ -40,7 +40,7 @@ func TestGovernance1(t *testing.T) {
 		env := solo.New(t)
 		chain := env.NewChain()
 
-		_, addr1 := env.NewKeyPair(env.NewSeedFromTestName(t.Name()))
+		_, addr1 := env.NewKeyPair(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 		err := chain.AddAllowedStateController(addr1, nil)
 		require.NoError(t, err)
 		res := chain.GetAllowedStateControllerAddresses()
@@ -127,9 +127,9 @@ func TestGovernanceRotate(t *testing.T) {
 func TestGovernanceAccessNodes(t *testing.T) {
 	t.Skip("TODO")
 	env := solo.New(t)
-	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestName(t.Name()))
-	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestName(t.Name()))
-	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestName(t.Name()))
+	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	chain, _ := env.NewChainExt(chainKP, 0, "chain1", 0, 0)
 
 	//
@@ -207,11 +207,11 @@ func TestMaintenanceMode(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
-	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestName(t.Name()))
+	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ownerAgentID := isc.NewAddressAgentID(ownerAddr)
 	ch.DepositBaseTokensToL2(10*isc.Million, ownerWallet)
 
-	userWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestName(t.Name()))
+	userWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch.DepositBaseTokensToL2(10*isc.Million, userWallet)
 
 	// set owner of the chain
