@@ -3,7 +3,6 @@ package iscmoveclient
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"sort"
 
@@ -83,13 +82,10 @@ func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateA
 		return nil, 0, err
 	}
 
-	fmt.Printf("CoinOptions: %s", lo.Must(json.MarshalIndent(coinOptions, "", "  ")))
-
 	coin, err := coinOptions.PickCoinNoLess(iotaBalance)
 	if err != nil {
 		return nil, 0, err
 	}
-	fmt.Printf("PickedCoin: %s", lo.Must(json.MarshalIndent(coin, "", "  ")))
 
 	return coin, iotaBalance, nil
 }

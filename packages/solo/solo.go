@@ -344,8 +344,8 @@ func (env *Solo) deployChain(
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
 	gasCoinRef := env.makeBaseTokenCoin(chainOperator, isc.GasCoinTargetValue, nil)
-	fmt.Printf("Chain Originator address: %v\n", chainOperator)
-	fmt.Printf("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
+	env.logger.LogInfof("Chain Originator address: %v\n", chainOperator)
+	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
 	var block state.Block
 	var stateMetadata *transaction.StateMetadata

@@ -99,7 +99,7 @@ func TestManyRequests2(t *testing.T) {
 		}
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	const maxRequestsPerBlock = 50
 	runs := chain.RunAllReceivedRequests(maxRequestsPerBlock)

@@ -56,10 +56,11 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	).WithDeadline(4 * time.Minute)
 
 	req := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-tools:devnet",
-		ImagePlatform: imagePlatform,
-		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
-		WaitingFor:    portWaiter,
+		Image:          "iotaledger/iota-tools:devnet",
+		ImagePlatform:  imagePlatform,
+		ExposedPorts:   []string{"9000/tcp", "9123/tcp"},
+		WaitingFor:     portWaiter,
+		LogConsumerCfg: &testcontainers.LogConsumerConfig{Consumers: []testcontainers.LogConsumer{&testcontainers.StdoutLogConsumer{}}},
 		Cmd: []string{
 			"iota",
 			"start",
@@ -79,6 +80,9 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.logf("Starting LocalIotaNode...")
 	container, err := testcontainers.GenericContainer(ctxTimeout, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
+		Logger: Logger{
+			Prefix: "DOCKER: ",
+		},
 	})
 	if err != nil {
 		panic(fmt.Errorf("failed to start container: %w", err))
