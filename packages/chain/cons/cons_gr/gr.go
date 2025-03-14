@@ -379,7 +379,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
-			cgr.log.LogDebug("Consensus Instance: %v", cgr.consInst.StatusString())
+			cgr.log.LogDebugf("Consensus Instance: %v", cgr.consInst.StatusString())
 		case <-ctxClose:
 			cgr.log.LogDebugf("Closing ConsGr because context closed.")
 			return
