@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -22,7 +23,7 @@ import (
 type snapshotManagerImpl struct {
 	*snapshotManagerRunner
 
-	log     *logger.Logger
+	log     log.Logger
 	ctx     context.Context
 	chainID isc.ChainID
 	metrics *metrics.ChainSnapshotsMetrics
@@ -61,10 +62,10 @@ func NewSnapshotManager(
 	baseNetworkPaths []string,
 	store state.Store,
 	metrics *metrics.ChainSnapshotsMetrics,
-	log *logger.Logger,
+	log log.Logger,
 ) (SnapshotManager, error) {
 	localPath := filepath.Join(baseLocalPath, chainID.String())
-	snapMLog := log.Named("Snap")
+	snapMLog := log.NewChildLogger("Snap")
 	result := &snapshotManagerImpl{
 		log:              snapMLog,
 		ctx:              ctx,
@@ -79,7 +80,7 @@ func NewSnapshotManager(
 		return nil, fmt.Errorf("cannot create folder %s: %v", localPath, err)
 	}
 	result.cleanTempFiles() // To be able to make snapshots, which were not finished. See comment in `createSnapshot` function
-	snapMLog.Debugf("Snapshot manager created; folder %v is used for snapshots", localPath)
+	snapMLog.LogDebugf("Snapshot manager created; folder %v is used for snapshots", localPath)
 	result.snapshotManagerRunner = newSnapshotManagerRunner(ctx, store, shutdownCoordinator, createPeriod, delayPeriod, result, snapMLog)
 	return result, nil
 }
@@ -105,27 +106,27 @@ func (smiT *snapshotManagerImpl) createSnapshot(snapshotInfo SnapshotInfo) {
 	start := time.Now()
 	stateIndex := snapshotInfo.StateIndex()
 	commitment := snapshotInfo.Commitment()
-	smiT.log.Debugf("Creating snapshot %v %s...", stateIndex, commitment)
+	smiT.log.LogDebugf("Creating snapshot %v %s...", stateIndex, commitment)
 	tmpFileName := tempSnapshotFileName(stateIndex, commitment.BlockHash())
 	tmpFilePath := filepath.Join(smiT.localPath, tmpFileName)
 	exists, _, _ := ioutils.PathExists(tmpFilePath)
 	if exists {
-		smiT.log.Debugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
+		smiT.log.LogDebugf("Creating snapshot %v %s: skipped making snapshot as it is already being produced", stateIndex, commitment)
 		return
 	}
 	f, err := os.OpenFile(tmpFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 	if err != nil {
-		smiT.log.Errorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
+		smiT.log.LogErrorf("Creating snapshot %v %s: failed to create temporary snapshot file %s: %v", stateIndex, commitment, tmpFilePath, err)
 		f.Close()
 		return
 	}
 	go func() {
 		defer f.Close()
 
-		smiT.log.Debugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
+		smiT.log.LogDebugf("Creating snapshot %v %s: storing it to file", stateIndex, commitment)
 		err := smiT.snapshotter.storeSnapshot(snapshotInfo, f)
 		if err != nil {
-			smiT.log.Errorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
+			smiT.log.LogErrorf("Creating snapshot %v %s: failed to write snapshot to temporary file %s: %v", stateIndex, commitment, tmpFilePath, err)
 			return
 		}
 
@@ -133,12 +134,12 @@ func (smiT *snapshotManagerImpl) createSnapshot(snapshotInfo SnapshotInfo) {
 		finalFilePath := filepath.Join(smiT.localPath, finalFileName)
 		err = os.Rename(tmpFilePath, finalFilePath)
 		if err != nil {
-			smiT.log.Errorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
+			smiT.log.LogErrorf("Creating snapshot %v %s: failed to move temporary snapshot file %s to permanent location %s: %v",
 				stateIndex, commitment, tmpFilePath, finalFilePath, err)
 			return
 		}
 		smiT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
-		smiT.log.Infof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
+		smiT.log.LogInfof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
 		smiT.metrics.SnapshotCreated(time.Since(start), stateIndex)
 	}()
 }
@@ -153,21 +154,21 @@ func (smiT *snapshotManagerImpl) loadSnapshot() SnapshotInfo {
 		largestIndex := uint32(0)
 		considerSnapshotFun = func(snapshotInfo SnapshotInfo, path string) {
 			if snapshotInfo.StateIndex() < largestIndex {
-				smiT.log.Debugf("Snapshot %s found in %s; it is ignored, because its index is lower than current largest index %v",
+				smiT.log.LogDebugf("Snapshot %s found in %s; it is ignored, because its index is lower than current largest index %v",
 					path, snapshotInfo, largestIndex)
 				return
 			}
 			if snapshotInfo.StateIndex() == largestIndex {
 				snapshotPaths = append(snapshotPaths, path)
 				snapshotInfos = append(snapshotInfos, snapshotInfo)
-				smiT.log.Debugf("Snapshot %s found in %s; it is added to the list of considered snapshots, because its index mathec current largest index",
+				smiT.log.LogDebugf("Snapshot %s found in %s; it is added to the list of considered snapshots, because its index mathec current largest index",
 					path, snapshotInfo)
 				return
 			}
 			// NOTE: snapshotInfo.StateIndex() > largestIndex
 			snapshotPaths = []string{path}
 			snapshotInfos = []SnapshotInfo{snapshotInfo}
-			smiT.log.Debugf("Snapshot %s found in %s; it is now the only considered snapshot, because its index is larger than former largest index %v",
+			smiT.log.LogDebugf("Snapshot %s found in %s; it is now the only considered snapshot, because its index is larger than former largest index %v",
 				path, snapshotInfo, largestIndex)
 			largestIndex = snapshotInfo.StateIndex()
 		}
@@ -177,28 +178,28 @@ func (smiT *snapshotManagerImpl) loadSnapshot() SnapshotInfo {
 			if snapshotInfo.BlockHash().Equals(*smiT.snapshotToLoad) {
 				snapshotPaths = append(snapshotPaths, path)
 				snapshotInfos = append(snapshotInfos, snapshotInfo)
-				smiT.log.Debugf("Snapshot %s found in %s; it is added to the list of considered snapshots, because its hash matches what was requested",
+				smiT.log.LogDebugf("Snapshot %s found in %s; it is added to the list of considered snapshots, because its hash matches what was requested",
 					path, snapshotInfo)
 				return
 			}
-			smiT.log.Debugf("Snapshot %s found in %s; it is ignored, because its hash does not match what was requested", path, snapshotInfo)
+			smiT.log.LogDebugf("Snapshot %s found in %s; it is ignored, because its hash does not match what was requested", path, snapshotInfo)
 		}
 		searchCondition = fmt.Sprintf("block hash %s", *smiT.snapshotToLoad)
 	}
 
 	smiT.searchLocalSnapshots(considerSnapshotFun)
 	smiT.searchNetworkSnapshots(smiT.baseNetworkPaths, considerSnapshotFun)
-	smiT.log.Debugf("%v snapshots with %s will be considered for loading in this order: %v", len(snapshotPaths), searchCondition, snapshotPaths)
+	smiT.log.LogDebugf("%v snapshots with %s will be considered for loading in this order: %v", len(snapshotPaths), searchCondition, snapshotPaths)
 
 	for i := range snapshotPaths {
 		err := smiT.loadSnapshotFromPath(snapshotInfos[i], snapshotPaths[i])
 		if err == nil {
-			smiT.log.Infof("Snapshot %s successfully loaded from %s", snapshotInfos[i], snapshotPaths[i])
+			smiT.log.LogInfof("Snapshot %s successfully loaded from %s", snapshotInfos[i], snapshotPaths[i])
 			return snapshotInfos[i]
 		}
-		smiT.log.Errorf("Failed to load snapshot %s from %s: %v", snapshotInfos[i], snapshotPaths[i], err)
+		smiT.log.LogErrorf("Failed to load snapshot %s from %s: %v", snapshotInfos[i], snapshotPaths[i], err)
 	}
-	smiT.log.Warnf("Failed to load any snapshot; will continue with empty store")
+	smiT.log.LogWarnf("Failed to load any snapshot; will continue with empty store")
 	return nil
 }
 
@@ -213,7 +214,7 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	tempFileRegExpWithPath := filepath.Join(smiT.localPath, tempFileRegExp)
 	tempFiles, err := filepath.Glob(tempFileRegExpWithPath)
 	if err != nil {
-		smiT.log.Errorf("Failed to obtain temporary snapshot file list: %v", err)
+		smiT.log.LogErrorf("Failed to obtain temporary snapshot file list: %v", err)
 		return
 	}
 
@@ -221,12 +222,12 @@ func (smiT *snapshotManagerImpl) cleanTempFiles() {
 	for _, tempFile := range tempFiles {
 		err = os.Remove(tempFile)
 		if err != nil {
-			smiT.log.Warnf("Failed to remove temporary snapshot file %s: %v", tempFile, err)
+			smiT.log.LogWarnf("Failed to remove temporary snapshot file %s: %v", tempFile, err)
 		} else {
 			removed++
 		}
 	}
-	smiT.log.Debugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
+	smiT.log.LogDebugf("Removed %v out of %v temporary snapshot files", removed, len(tempFiles))
 }
 
 func (smiT *snapshotManagerImpl) searchLocalSnapshots(considerSnapshotFun func(SnapshotInfo, string)) {
@@ -234,7 +235,7 @@ func (smiT *snapshotManagerImpl) searchLocalSnapshots(considerSnapshotFun func(S
 	fileRegExpWithPath := filepath.Join(smiT.localPath, fileRegExp)
 	files, err := filepath.Glob(fileRegExpWithPath)
 	if err != nil {
-		smiT.log.Errorf("Search local snapshots: failed to obtain snapshot file list: %v", err)
+		smiT.log.LogErrorf("Search local snapshots: failed to obtain snapshot file list: %v", err)
 		return
 	}
 	snapshotCount := 0
@@ -242,20 +243,20 @@ func (smiT *snapshotManagerImpl) searchLocalSnapshots(considerSnapshotFun func(S
 		func() { // Function to make the defers sooner
 			f, err := os.Open(file)
 			if err != nil {
-				smiT.log.Errorf("Search local snapshots: failed to open snapshot file %s: %v", file, err)
+				smiT.log.LogErrorf("Search local snapshots: failed to open snapshot file %s: %v", file, err)
 				return
 			}
 			defer f.Close()
 			snapshotInfo, err := readSnapshotInfo(f)
 			if err != nil {
-				smiT.log.Errorf("Search local snapshots: failed to read snapshot info from file %s: %v", file, err)
+				smiT.log.LogErrorf("Search local snapshots: failed to read snapshot info from file %s: %v", file, err)
 				return
 			}
 			considerSnapshotFun(snapshotInfo, constLocalAddress+file)
 			snapshotCount++
 		}()
 	}
-	smiT.log.Debugf("Search local snapshots: %v snapshot files found", snapshotCount)
+	smiT.log.LogDebugf("Search local snapshots: %v snapshot files found", snapshotCount)
 }
 
 func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []string, considerSnapshotFun func(SnapshotInfo, string)) {
@@ -264,17 +265,17 @@ func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []strin
 		func() { // Function to make the defers sooner
 			baseNetworkPathWithChainID, err := url.JoinPath(baseNetworkPath, chainIDString)
 			if err != nil {
-				smiT.log.Errorf("Search network snapshots: unable to join paths %s and %s: %v", baseNetworkPath, chainIDString, err)
+				smiT.log.LogErrorf("Search network snapshots: unable to join paths %s and %s: %v", baseNetworkPath, chainIDString, err)
 				return
 			}
 			scheme, basePath, err := smiT.splitURL(baseNetworkPathWithChainID)
 			if err != nil {
-				smiT.log.Errorf("Search network snapshots: unable to parse url %s: %v", baseNetworkPathWithChainID, err)
+				smiT.log.LogErrorf("Search network snapshots: unable to parse url %s: %v", baseNetworkPathWithChainID, err)
 				return
 			}
 			reader, err := smiT.getReadCloser(scheme, "index file", basePath, constIndexFileName)
 			if err != nil {
-				smiT.log.Errorf("Search network snapshots: failed to open index file: %v", err)
+				smiT.log.LogErrorf("Search network snapshots: failed to open index file: %v", err)
 				return
 			}
 			defer reader.Close()
@@ -285,18 +286,18 @@ func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []strin
 					snapshotFileName := scanner.Text()
 					sReader, er := smiT.getReadCloser(scheme, "snapshot header", basePath, snapshotFileName)
 					if er != nil {
-						smiT.log.Errorf("Search network snapshots: failed to open snapshot file: %v", er)
+						smiT.log.LogErrorf("Search network snapshots: failed to open snapshot file: %v", er)
 						return
 					}
 					defer sReader.Close()
 					snapshotInfo, er := readSnapshotInfo(sReader)
 					if er != nil {
-						smiT.log.Errorf("Search network snapshots: failed to read snapshot info from %s in %s: %v", snapshotFileName, basePath, er)
+						smiT.log.LogErrorf("Search network snapshots: failed to read snapshot info from %s in %s: %v", snapshotFileName, basePath, er)
 						return
 					}
 					baseNetworkPathSnapshot, er := url.JoinPath(baseNetworkPathWithChainID, snapshotFileName)
 					if er != nil {
-						smiT.log.Errorf("Search network snapshots: unable to join paths %s and %s: %v", baseNetworkPathWithChainID, snapshotFileName, er)
+						smiT.log.LogErrorf("Search network snapshots: unable to join paths %s and %s: %v", baseNetworkPathWithChainID, snapshotFileName, er)
 						return
 					}
 					considerSnapshotFun(snapshotInfo, baseNetworkPathSnapshot)
@@ -305,9 +306,9 @@ func (smiT *snapshotManagerImpl) searchNetworkSnapshots(baseNetworkPaths []strin
 			}
 			err = scanner.Err()
 			if err != nil && !errors.Is(err, io.EOF) {
-				smiT.log.Errorf("Search network snapshots: failed read index file from %s: %v", basePath, err)
+				smiT.log.LogErrorf("Search network snapshots: failed read index file from %s: %v", basePath, err)
 			}
-			smiT.log.Debugf("Search network snapshots: %v snapshot files found on %s", snapshotCount, baseNetworkPath)
+			smiT.log.LogDebugf("Search network snapshots: %v snapshot files found on %s", snapshotCount, baseNetworkPath)
 		}()
 	}
 }
@@ -338,7 +339,7 @@ func (smiT *snapshotManagerImpl) loadSnapshotFromPath(snapshotInfo SnapshotInfo,
 		if err != nil {
 			return err
 		}
-		smiT.log.Debugf("Loading snapshot %s from url %s: snapshot successfully downloaded to %s", snapshotInfo, url, filePathLocal)
+		smiT.log.LogDebugf("Loading snapshot %s from url %s: snapshot successfully downloaded to %s", snapshotInfo, url, filePathLocal)
 		return loadLocalFun(filePathLocal)
 	}
 
@@ -348,10 +349,10 @@ func (smiT *snapshotManagerImpl) loadSnapshotFromPath(snapshotInfo SnapshotInfo,
 	}
 	switch scheme {
 	case constSchemeHTTP:
-		smiT.log.Debugf("Loading snapshot %s from url %s...", snapshotInfo, path)
+		smiT.log.LogDebugf("Loading snapshot %s from url %s...", snapshotInfo, path)
 		return loadNetworkFun(path)
 	case constSchemeFile:
-		smiT.log.Debugf("Loading snapshot %s from file %s...", snapshotInfo, path)
+		smiT.log.LogDebugf("Loading snapshot %s from file %s...", snapshotInfo, path)
 		return loadLocalFun(path)
 	default:
 		return fmt.Errorf("Loading snapshot %s failed: unknown scheme %s in %s", snapshotInfo, scheme, url)

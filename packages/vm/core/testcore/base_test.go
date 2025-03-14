@@ -29,7 +29,6 @@ func TestInitLoad(t *testing.T) {
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	_ = ch.Log().Sync()
 
 	cassets := ch.L2CommonAccountAssets()
 	require.EqualValues(t,

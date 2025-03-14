@@ -71,7 +71,8 @@ package mostefaoui
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -107,7 +108,7 @@ type abaImpl struct {
 	postponedMsgs      []*msgVote              // Buffer for future round messages.
 	msgWrapper         *gpa.MsgWrapper         // Helper to wrap messages for sub-components.
 	asGPA              gpa.GPA                 // This object, but with required wrappers.
-	log                *logger.Logger          // A logger.
+	log                log.Logger              // A logger.
 }
 
 var (
@@ -120,7 +121,7 @@ var (
 // Here `ccCreateFun` is used as a factory function to create Common Coin instances for each round.
 // This way this implementation is made independent of particular CC instance. The created CC
 // is expected to take `nil` inputs and produce `*bool` outputs.
-func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int) gpa.GPA, log *logger.Logger) ABA {
+func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(round int) gpa.GPA, log log.Logger) ABA {
 	nodeIdx := map[gpa.NodeID]bool{}
 	for _, n := range nodeIDs {
 		nodeIdx[n] = true
@@ -238,13 +239,13 @@ func (a *abaImpl) Message(msg gpa.Message) gpa.OutMessages {
 	case *gpa.WrappingMsg: // The CC messages.
 		return a.handleMsgWrapped(msgT)
 	}
-	a.log.Warnf("unexpected message of type %T: %+v", msg, msg)
+	a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
 	return nil
 }
 
 func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
 	if _, ok := a.nodeIdx[msgT.Sender()]; !ok {
-		a.log.Warnf("unknown sender: %+v", msgT)
+		a.log.LogWarnf("unknown sender: %+v", msgT)
 		return nil // Unknown sender.
 	}
 	if msgT.round < a.round || (a.output != nil && a.output.Terminated) {
@@ -260,7 +261,7 @@ func (a *abaImpl) handleMsgVote(msgT *msgVote) gpa.OutMessages {
 	case AUX:
 		return a.varAuxVals.msgVoteAUXReceived(msgT)
 	}
-	a.log.Warnf("unexpected msgVote message: %+v", msgT)
+	a.log.LogWarnf("unexpected msgVote message: %+v", msgT)
 	return nil
 }
 
@@ -275,7 +276,7 @@ func (a *abaImpl) handleMsgWrapped(msgT *gpa.WrappingMsg) gpa.OutMessages {
 	msgs := gpa.NoMessages()
 	subGPA, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
 	if err != nil {
-		a.log.Warnf("cannot select subsystem: %v", err)
+		a.log.LogWarnf("cannot select subsystem: %v", err)
 		return nil
 	}
 	msgs.AddAll(subMsgs)

@@ -14,6 +14,7 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/iotaledger/hive.go/app"
+
 	"github.com/iotaledger/wasp/packages/daemon"
 	"github.com/iotaledger/wasp/packages/metrics"
 )
@@ -56,11 +57,11 @@ type dependencies struct {
 
 func provide(c *dig.Container) error {
 	if err := c.Provide(metrics.NewChainMetricsProvider); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	if err := c.Provide(metrics.NewPeeringMetricsProvider); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	type depsOut struct {
@@ -80,7 +81,7 @@ func provide(c *dig.Container) error {
 			PrometheusRegistry: prometheus.NewRegistry(),
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil
@@ -136,7 +137,7 @@ func run() error {
 		//nolint:contextcheck // false positive
 		err := deps.PrometheusEcho.Shutdown(shutdownCtx)
 		if err != nil {
-			Component.LogWarn(err)
+			Component.LogWarn(err.Error())
 		}
 
 		Component.LogInfo("Stopping Prometheus exporter ... done")

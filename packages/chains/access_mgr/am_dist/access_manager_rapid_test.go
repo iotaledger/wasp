@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/chains/access_mgr/am_dist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -26,7 +26,7 @@ type accessMgrSM struct {
 	//
 	// These are initialized once.
 	initialized     bool
-	log             *logger.Logger
+	log             log.Logger
 	nodeKeys        []*cryptolib.KeyPair
 	nodePubs        []*cryptolib.PublicKey
 	nodeIDs         []gpa.NodeID
@@ -85,7 +85,7 @@ func newAccessMgrSM(t *rapid.T, nodeCount, chainCount int) *accessMgrSM {
 				sm.servers[nidCopy][chainID] = servers
 			},
 			func(pk *cryptolib.PublicKey) {},
-			sm.log.Named(nid.ShortString()),
+			sm.log.NewChildLogger(nid.ShortString()),
 		).AsGPA()
 	}
 	sm.tc = gpa.NewTestContext(sm.nodes)
@@ -139,7 +139,7 @@ func (sm *accessMgrSM) Reboot(t *rapid.T) {
 			sm.servers[nodeID][chainID] = servers
 		},
 		func(pk *cryptolib.PublicKey) {},
-		sm.log.Named(nodeID.ShortString()),
+		sm.log.NewChildLogger(nodeID.ShortString()),
 	).AsGPA()
 	//
 	// Re-initialize all the persistent info: access information, active chains, trusted nodes.

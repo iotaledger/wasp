@@ -255,4 +255,3 @@ func (s *hookedStateDB) AddLog(log *types.Log) {
 func (s *hookedStateDB) Finalise(deleteEmptyObjects bool) {
 	defer s.inner.Finalise(deleteEmptyObjects)
 }
-

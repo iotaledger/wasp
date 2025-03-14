@@ -3,7 +3,6 @@ package websocket
 import (
 	"context"
 
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/publisher"
@@ -49,9 +48,18 @@ func NewEventHandler(pub *publisher.Publisher, publishEvent *event.Event1[*ISCEv
 	}
 }
 
-func (p *EventHandler) AttachToEvents() context.CancelFunc {
-	return lo.Batch(
+func batch(callbacks ...func()) func() {
+	return func() {
+		for _, callback := range callbacks {
+			if callback != nil {
+				callback()
+			}
+		}
+	}
+}
 
+func (p *EventHandler) AttachToEvents() context.CancelFunc {
+	return batch(
 		p.publisher.Events.NewBlock.Hook(func(block *publisher.ISCEvent[*publisher.BlockWithTrieRoot]) {
 			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
 				return
