@@ -9,7 +9,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/chains/access_mgr/am_dist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -35,7 +36,7 @@ type accessMgrImpl struct {
 	netPeeringID            peering.PeeringID
 	netPeerPubs             map[gpa.NodeID]*cryptolib.PublicKey
 	net                     peering.NetworkProvider
-	log                     *logger.Logger
+	log                     log.Logger
 }
 
 type reqTrustedNodes struct {
@@ -68,7 +69,7 @@ func New(
 	serversUpdatedCB func(chainID isc.ChainID, servers []*cryptolib.PublicKey),
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
-	log *logger.Logger,
+	log log.Logger,
 ) AccessMgr {
 	// there is only one AccessMgr per Wasp node, so the identifier is a constant.
 	netPeeringID := peering.HashPeeringIDFromBytes([]byte("AccessManager")) // AccessManager
@@ -92,7 +93,7 @@ func New(
 	netRecvPipeInCh := ami.netRecvPipe.In()
 	unhook := net.Attach(&netPeeringID, peering.ReceiverAccessMgr, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeAccessMgr {
-			ami.log.Warnf("Unexpected message, type=%v", recv.MsgType)
+			ami.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
 		netRecvPipeInCh <- recv
@@ -173,22 +174,22 @@ func (ami *accessMgrImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 }
 
 func (ami *accessMgrImpl) handleReqTrustedNodes(recv *reqTrustedNodes) {
-	ami.log.Debugf("handleReqTrustedNodes: trusted=%v", recv.trusted)
+	ami.log.LogDebugf("handleReqTrustedNodes: trusted=%v", recv.trusted)
 	ami.sendMessages(ami.dist.Input(am_dist.NewInputTrustedNodes(recv.trusted)))
 }
 
 func (ami *accessMgrImpl) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
-	ami.log.Debugf("handleReqChainAccessNodes: chainID=%v, access=%v", recv.chainID, recv.accessNodes)
+	ami.log.LogDebugf("handleReqChainAccessNodes: chainID=%v, access=%v", recv.chainID, recv.accessNodes)
 	ami.sendMessages(ami.dist.Input(am_dist.NewInputAccessNodes(recv.chainID, recv.accessNodes)))
 }
 
 func (ami *accessMgrImpl) handleReqChainDismissed(recv *reqChainDismissed) {
-	ami.log.Debugf("handleReqChainDismissed: chainID=%v", recv.chainID)
+	ami.log.LogDebugf("handleReqChainDismissed: chainID=%v", recv.chainID)
 	ami.sendMessages(ami.dist.Input(am_dist.NewInputChainDisabled(recv.chainID)))
 }
 
 func (ami *accessMgrImpl) handleDistDebugTick() {
-	ami.log.Debugf(
+	ami.log.LogDebugf(
 		"AccessMgr, dist=%v",
 		ami.dist.StatusString(),
 	)
@@ -201,7 +202,7 @@ func (ami *accessMgrImpl) handleDistTimeTick(timestamp time.Time) {
 func (ami *accessMgrImpl) handleNetMessage(recv *peering.PeerMessageIn) {
 	msg, err := ami.dist.UnmarshalMessage(recv.MsgData)
 	if err != nil {
-		ami.log.Warnf("cannot parse message: %v", err)
+		ami.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
 	msg.SetSender(ami.pubKeyAsNodeID(recv.SenderPubKey))

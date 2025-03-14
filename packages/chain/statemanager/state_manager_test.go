@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
@@ -30,7 +30,6 @@ import (
 func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	t.Skip()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
 
 	nodeCount := 15
 	committeeSize := 5
@@ -59,7 +58,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	network := testutil.NewPeeringNetwork(
 		peeringURLs, peerIdentities, 10000,
 		networkBehaviour,
-		log.Named("net"),
+		log.NewChildLogger("net"),
 	)
 	netProviders := network.NetworkProviders()
 	bf := sm_gpa_utils.NewBlockFactory(t)
@@ -69,7 +68,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
-	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManager {
+	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log hivelog.Logger) sm_snapshots.SnapshotManager {
 		var createPeriod uint32
 		var delayPeriod uint32
 		if createSnapshots {
@@ -84,7 +83,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
-		logNode := log.Named(peeringURLs[i])
+		logNode := log.NewChildLogger(peeringURLs[i])
 		stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
 		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)

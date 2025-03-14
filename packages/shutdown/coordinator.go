@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 )
 
 // Shutdown coordinator implements a hierarchical await.
@@ -18,14 +18,14 @@ type Coordinator struct {
 	nestedWG   *sync.WaitGroup
 	nestedLock *sync.RWMutex
 	nested     *shrinkingmap.ShrinkingMap[string, *Coordinator]
-	log        *logger.Logger
+	log        log.Logger
 }
 
-func NewCoordinator(name string, log *logger.Logger) *Coordinator {
+func NewCoordinator(name string, log log.Logger) *Coordinator {
 	return newCoordinator(name, nil, log)
 }
 
-func newCoordinator(name string, parent *Coordinator, log *logger.Logger) *Coordinator {
+func newCoordinator(name string, parent *Coordinator, log log.Logger) *Coordinator {
 	path := name
 	if parent != nil {
 		path = parent.path + "." + name
@@ -58,7 +58,7 @@ func (s *Coordinator) Nested(name string) *Coordinator {
 }
 
 func (s *Coordinator) Done() {
-	s.log.Debugf("context '%s' marked as done", s.path)
+	s.log.LogDebugf("context '%s' marked as done", s.path)
 	if s.parent == nil {
 		return
 	}
@@ -87,7 +87,7 @@ func (s *Coordinator) WaitNestedWithLogging(logPeriod time.Duration) {
 		if now.After(nextLogTime) {
 			s.nestedLock.RLock()
 			s.nested.ForEachKey(func(name string) bool {
-				s.log.Debugf("context '%s' waits for '%s' to complete", s.path, name)
+				s.log.LogDebugf("context '%s' waits for '%s' to complete", s.path, name)
 				return true
 			})
 			s.nestedLock.RUnlock()

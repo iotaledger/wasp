@@ -14,7 +14,7 @@ import (
 
 func TestWriteReadDifferentStores(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	var err error
 	numberOfBlocks := 10

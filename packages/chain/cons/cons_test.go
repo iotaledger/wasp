@@ -8,10 +8,9 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -66,7 +65,7 @@ func TestConsBasic(t *testing.T) {
 func testConsBasic(t *testing.T, n, f int) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -159,7 +158,7 @@ func testConsBasic(t *testing.T, n, f int) {
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		nodeLog := log.Named(nid.ShortString())
+		nodeLog := log.NewChildLogger(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
@@ -236,7 +235,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedMempoolRequests)
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.NotNil(t, out.NeedVMResult)
-		out.NeedVMResult.Log = out.NeedVMResult.Log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelError)).Sugar() // Decrease VM logging.
+		out.NeedVMResult.Log = hivelog.NewLogger(hivelog.WithLevel(hivelog.LevelError)) // Decrease VM logging.
 		vmResult, err := vmimpl.Run(out.NeedVMResult)
 		require.NoError(t, err)
 		tc.WithInput(nid, cons.NewInputVMResult(vmResult))
@@ -323,7 +322,7 @@ func TestChained(t *testing.T) {
 func testChained(t *testing.T, n, f, b int) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	//
 	// Node Identities, shared key and ledger.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -478,12 +477,12 @@ func newTestConsInst(
 	dkShareRegistryProviders []registry.DKShareRegistryProvider,
 	requests []isc.Request,
 	doneCB func(nextInput *testInstInput),
-	log *logger.Logger,
+	log log.Logger,
 ) *testConsInst {
 	consInstID := []byte(fmt.Sprintf("testConsInst-%v", stateIndex))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		nodeLog := log.Named(nid.ShortString())
+		nodeLog := log.NewChildLogger(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)

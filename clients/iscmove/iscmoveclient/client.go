@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -38,7 +38,7 @@ func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
 	waitUntilEffectsVisible *iotaclient.WaitParams,
-	log *logger.Logger,
+	log log.Logger,
 ) (*Client, error) {
 	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
 	if err != nil {

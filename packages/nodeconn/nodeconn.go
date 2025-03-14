@@ -19,7 +19,7 @@ import (
 
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
@@ -56,7 +56,7 @@ func (g *SingleL1Info) GetL1Params() *parameters.L1Params {
 // Single Wasp node is expected to connect to a single L1 node, thus
 // we expect to have a single instance of this structure.
 type nodeConnection struct {
-	*logger.WrappedLogger
+	log.Logger
 
 	iscPackageID        iotago.PackageID
 	httpClient          *iscmoveclient.Client
@@ -78,14 +78,14 @@ func New(
 	maxNumberOfRequests int,
 	wsURL string,
 	httpURL string,
-	log *logger.Logger,
+	log log.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
 ) (chain.NodeConnection, error) {
 
 	httpClient := iscmoveclient.NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
 
 	return &nodeConnection{
-		WrappedLogger:       logger.NewWrappedLogger(log),
+		Logger:              log,
 		iscPackageID:        iscPackageID,
 		wsURL:               wsURL,
 		httpURL:             httpURL,
@@ -193,7 +193,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		err = parameters.InitL1(*nc.httpClient.Client, nc.Logger())
+		err = parameters.InitL1(*nc.httpClient.Client, nc.Logger)
 		if err != nil {
 			panic(err)
 		}

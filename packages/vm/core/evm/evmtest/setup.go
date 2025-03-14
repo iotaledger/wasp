@@ -72,7 +72,7 @@ func (e *SoloChainEnv) parseISCCallOptions(opts []iscCallOptions) iscCallOptions
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
-		opt.wallet = e.Chain.OriginatorPrivateKey
+		opt.wallet = e.Chain.OwnerPrivateKey
 	}
 	return opt
 }
@@ -219,7 +219,7 @@ func (e *SoloChainEnv) maxGasLimit() uint64 {
 	return gas.EVMCallGasLimit(gl, &fp.EVMGasRatio)
 }
 
-func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...interface{}) *EVMContractInstance {
+func (e *SoloChainEnv) DeployContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, args ...any) *EVMContractInstance {
 	contractAddr, contractABI := e.Chain.DeployEVMContract(creator, abiJSON, bytecode, big.NewInt(0), args...)
 
 	return &EVMContractInstance{

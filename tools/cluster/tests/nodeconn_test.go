@@ -10,8 +10,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/stretchr/testify/require"
+
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/state"
@@ -45,14 +46,14 @@ func TestNodeConn(t *testing.T) {
 		}
 
 		log := testlogger.NewLogger(t)
-		defer log.Sync()
+		defer log.Shutdown()
 		peerCount := 1
 
 		//
 		// Start a peering network.
 		// peeringID := peering.RandomPeeringID()
 		peeringURLs, peerIdentities := testpeers.SetupKeys(uint16(peerCount))
-		networkLog := testlogger.WithLevel(log.Named("Network"), 0, false)
+		networkLog := testlogger.WithLevel(log.NewChildLogger("Network"), 0, false)
 		_, networkCloser := testpeers.SetupNet(
 			peeringURLs,
 			peerIdentities,
@@ -67,7 +68,7 @@ func TestNodeConn(t *testing.T) {
 		ctxInit, cancelInit := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancelInit()
 
-		nodeBridge := nodebridge.NewNodeBridge(log.Named("NodeBridge"))
+		nodeBridge := nodebridge.NewNodeBridge(log.NewChildLogger("NodeBridge"))
 		err := nodeBridge.Connect(ctxInit, l1.Config.INXAddress, 10)
 		require.NoError(t, err)
 

@@ -3,11 +3,12 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"os"
-	"path"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/cluster/templates"

@@ -31,7 +31,8 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/aba/mostefaoui"
 	"github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
@@ -67,7 +68,7 @@ type acsImpl struct {
 	termCond   *uponTermCondition     // Tracks the termination condition.
 	msgWrapper *gpa.MsgWrapper        // Helper to wrap messages for sub-components.
 	asGPA      gpa.GPA                // This object with required wrappers.
-	log        *logger.Logger         // A logger.
+	log        log.Logger             // A logger.
 }
 
 var (
@@ -78,7 +79,7 @@ var (
 // > Let {RBC_i}_N refer to N instances of the reliable broadcast protocol,
 // > where P_i is the sender of RBC_i. Let {BA_i}_N refer to N instances
 // > of the binary byzantine agreement protocol.
-func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.NodeID, round int) gpa.GPA, log *logger.Logger) ACS {
+func New(nodeIDs []gpa.NodeID, me gpa.NodeID, f int, ccCreateFun func(node gpa.NodeID, round int) gpa.GPA, log log.Logger) ACS {
 	nodeIdx := map[gpa.NodeID]int{}
 	rbcInsts := map[gpa.NodeID]gpa.GPA{}
 	abaInsts := map[gpa.NodeID]gpa.GPA{}
@@ -155,13 +156,13 @@ func (a *acsImpl) Input(input gpa.Input) gpa.OutMessages {
 func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
 	msgT, ok := msg.(*gpa.WrappingMsg)
 	if !ok {
-		a.log.Warnf("unexpected message of type %T: %+v", msg, msg)
+		a.log.LogWarnf("unexpected message of type %T: %+v", msg, msg)
 		return nil
 	}
 	msgs := gpa.NoMessages()
 	sub, subMsgs, err := a.msgWrapper.DelegateMessage(msgT)
 	if err != nil {
-		a.log.Warnf("cannot delegate a message: %v", err)
+		a.log.LogWarnf("cannot delegate a message: %v", err)
 		return nil
 	}
 	msgs.AddAll(subMsgs)
@@ -173,7 +174,7 @@ func (a *acsImpl) Message(msg gpa.Message) gpa.OutMessages {
 		msgs.AddAll(a.tryHandleABAOutput(a.nodeIDs[msgT.Index()], sub))
 		return msgs
 	default:
-		a.log.Warnf("unexpected subsystem: %v", msgT.Subsystem())
+		a.log.LogWarnf("unexpected subsystem: %v", msgT.Subsystem())
 		return nil
 	}
 }

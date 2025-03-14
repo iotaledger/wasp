@@ -87,7 +87,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 func (c *Controller) getChainList(e echo.Context) error {
 	chainIDs, err := c.chainService.GetAllChainIDs()
-	c.log.Infof("After allChainIDS %v", err)
+	c.log.LogInfof("After allChainIDS %v", err)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 
 	for _, chainID := range chainIDs {
 		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, "")
-		c.log.Infof("getchaininfo %v", err)
+		c.log.LogInfof("getchaininfo %v", err)
 
 		if errors.Is(err, interfaces.ErrChainNotFound) {
 			// TODO: Validate this logic here. Is it possible to still get more chain info?
@@ -112,7 +112,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		evmChainID := uint16(0)
 		if chainInfo.IsActive {
 			evmChainID, err = c.chainService.GetEVMChainID(chainID, "")
-			c.log.Infof("getevmchainid %v", err)
+			c.log.LogInfof("getevmchainid %v", err)
 
 			if err != nil {
 				return err
@@ -120,7 +120,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 		}
 
 		chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
-		c.log.Infof("mapchaininfo %v", err)
+		c.log.LogInfof("mapchaininfo %v", err)
 
 		chainList = append(chainList, chainInfoResponse)
 	}
@@ -174,17 +174,17 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 
 		err := os.MkdirAll(filepath.Join(c.accountDumpsPath, chainID.String()), os.ModePerm)
 		if err != nil {
-			c.log.Errorf("dumpAccounts - Creating dir failed: %s", err.Error())
+			c.log.LogErrorf("dumpAccounts - Creating dir failed: %s", err.Error())
 			return
 		}
 		f, err := os.Create(filepath.Join(c.accountDumpsPath, chainID.String(), filename))
 		if err != nil {
-			c.log.Errorf("dumpAccounts - Creating account dump file failed: %s", err.Error())
+			c.log.LogErrorf("dumpAccounts - Creating account dump file failed: %s", err.Error())
 			return
 		}
 		_, err = f.WriteString("{")
 		if err != nil {
-			c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
+			c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
 			return
 		}
 		sa := accounts.NewStateReaderFromChainState(allmigrations.DefaultScheme.LatestSchemaVersion(), chainState)
@@ -197,7 +197,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 			if prevString != "" {
 				_, err2 := f.WriteString(prevString)
 				if err2 != nil {
-					c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err2.Error())
+					c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err2.Error())
 					return false
 				}
 			}
@@ -206,7 +206,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 			accountAssets := sa.GetAccountFungibleTokens(agentID, chainID)
 			assetsJSON, err2 := json.Marshal(accountAssets)
 			if err2 != nil {
-				c.log.Errorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
+				c.log.LogErrorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
 				return false
 			}
 			prevString = fmt.Sprintf("%q:%s,", agentID.String(), string(assetsJSON))
@@ -216,7 +216,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 		prevString = prevString[:len(prevString)-1]
 		_, err = f.WriteString(fmt.Sprintf("%s}\n", prevString))
 		if err != nil {
-			c.log.Errorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
+			c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
 		}
 	}()
 

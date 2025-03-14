@@ -1,8 +1,9 @@
 package coreutil
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"reflect"
+
+	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 type FieldArg interface {

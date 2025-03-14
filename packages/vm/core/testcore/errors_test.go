@@ -25,7 +25,7 @@ func setupErrorsTest(t *testing.T) *solo.Chain {
 	chain, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	chain.MustDepositBaseTokensToL2(10*isc.Million, nil)
-	defer chain.Log().Sync()
+	defer chain.Log().Shutdown()
 
 	chain.CheckChain()
 

@@ -13,7 +13,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -32,10 +32,10 @@ type OffLedgerPool struct {
 	maxPoolSize       int
 	sizeMetric        func(int)
 	timeMetric        func(time.Duration)
-	log               *logger.Logger
+	log               log.Logger
 }
 
-func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log *logger.Logger) *OffLedgerPool {
+func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log log.Logger) *OffLedgerPool {
 	return &OffLedgerPool{
 		waitReq:             waitReq,
 		refLUT:              shrinkingmap.New[isc.RequestRefKey, *OrderedPoolEntry](),
@@ -76,7 +76,7 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 	//
 	// add the request to the "request ref" Lookup Table
 	if !p.refLUT.Set(ref.AsKey(), entry) {
-		p.log.Debugf("OffLedger Request NOT ADDED, already exists. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
+		p.log.LogDebugf("OffLedger Request NOT ADDED, already exists. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
 		return true // not added already exists
 	}
 
@@ -135,13 +135,13 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 	deleted := p.LimitPoolSize()
 	if lo.Contains(deleted, entry) {
 		// this exact request was deleted from the pool, do not update metrics, or mark available
-		p.log.Debugf("OffLedger Request NOT ADDED, was removed already. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
+		p.log.LogDebugf("OffLedger Request NOT ADDED, was removed already. reqID: %v as key=%v, senderAccount: %v", request.ID(), ref, account)
 		return false
 	}
 
 	//
 	// update metrics and signal that the request is available
-	p.log.Debugf("ADD %v as key=%v, senderAccount: %s", request.ID(), ref, account)
+	p.log.LogDebugf("ADD %v as key=%v, senderAccount: %s", request.ID(), ref, account)
 	p.sizeMetric(p.refLUT.Size())
 	p.waitReq.MarkAvailable(request)
 	return true
@@ -167,7 +167,7 @@ func (p *OffLedgerPool) LimitPoolSize() []*OrderedPoolEntry {
 	}
 
 	for _, r := range reqsToDelete {
-		p.log.Debugf("LimitPoolSize dropping request: %v", r.req.ID())
+		p.log.LogDebugf("LimitPoolSize dropping request: %v", r.req.ID())
 		p.Remove(r.req)
 	}
 	return reqsToDelete
@@ -226,7 +226,7 @@ func (p *OffLedgerPool) Remove(request isc.OffLedgerRequest) {
 	//
 	// delete from the "requests reference" LookupTable
 	if p.refLUT.Delete(refKey) {
-		p.log.Debugf("DEL %v as key=%v", request.ID(), refKey)
+		p.log.LogDebugf("DEL %v as key=%v", request.ID(), refKey)
 	}
 
 	//
@@ -235,14 +235,14 @@ func (p *OffLedgerPool) Remove(request isc.OffLedgerRequest) {
 		account := entry.req.SenderAccount().String()
 		reqsByAccount, exists := p.reqsByAcountOrdered.Get(account)
 		if !exists {
-			p.log.Error("inconsistency trying to DEL %v as key=%v, no request list for account %s", request.ID(), refKey, account)
+			p.log.LogError("inconsistency trying to DEL %v as key=%v, no request list for account %s", request.ID(), refKey, account)
 			return
 		}
 		indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry) bool {
 			return refKey == isc.RequestRefFromRequest(e.req).AsKey()
 		})
 		if indexToDel == -1 {
-			p.log.Error("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
+			p.log.LogError("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
 			return
 		}
 		if len(reqsByAccount) == 1 { // just remove the entire array for the account

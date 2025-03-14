@@ -59,7 +59,7 @@ func testBasic(t *testing.T, n, f int, inpType string, silent int) {
 		if i >= n-silent {
 			nodes[nid] = gpa.MakeTestSilentNode()
 		} else {
-			nodeLog := log.Named(nid.ShortString())
+			nodeLog := log.NewChildLogger(nid.ShortString())
 			ii := i
 			makeCCInst := func(round int) gpa.GPA {
 				realCC := blssig.New(

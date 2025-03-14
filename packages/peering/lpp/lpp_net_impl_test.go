@@ -20,7 +20,7 @@ import (
 func TestLPPPeeringImpl(t *testing.T) {
 	var err error
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	doneCh := make(chan bool)
 	peeringURLs := []string{"localhost:9027", "localhost:9028", "localhost:9029"}
@@ -38,11 +38,11 @@ func TestLPPPeeringImpl(t *testing.T) {
 			require.NoError(t, err)
 		}
 	}
-	nodes[0], _, err = lpp.NewNetworkProvider(peeringURLs[0], 9027, keys[0], tnms[0], peering.NewEmptyMetrics(), log.Named("node0"))
+	nodes[0], _, err = lpp.NewNetworkProvider(peeringURLs[0], 9027, keys[0], tnms[0], peering.NewEmptyMetrics(), log.NewChildLogger("node0"))
 	require.NoError(t, err)
-	nodes[1], _, err = lpp.NewNetworkProvider(peeringURLs[1], 9028, keys[1], tnms[1], peering.NewEmptyMetrics(), log.Named("node1"))
+	nodes[1], _, err = lpp.NewNetworkProvider(peeringURLs[1], 9028, keys[1], tnms[1], peering.NewEmptyMetrics(), log.NewChildLogger("node1"))
 	require.NoError(t, err)
-	nodes[2], _, err = lpp.NewNetworkProvider(peeringURLs[2], 9029, keys[2], tnms[2], peering.NewEmptyMetrics(), log.Named("node2"))
+	nodes[2], _, err = lpp.NewNetworkProvider(peeringURLs[2], 9029, keys[2], tnms[2], peering.NewEmptyMetrics(), log.NewChildLogger("node2"))
 	require.NoError(t, err)
 	for i := range nodes {
 		go nodes[i].Run(context.Background())

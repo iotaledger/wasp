@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -28,7 +28,7 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 	return NewSignerWithFunds(t, seed[:], index)
 }
 
-func NewWebSocketClient(ctx context.Context, log *logger.Logger) (*iscmoveclient.Client, error) {
+func NewWebSocketClient(ctx context.Context, log log.Logger) (*iscmoveclient.Client, error) {
 	if l1starter.IsLocalConfigured() {
 		panic("Right now no WS support")
 	}

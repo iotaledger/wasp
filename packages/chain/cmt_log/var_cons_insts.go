@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -33,7 +34,7 @@ type varConsInstsImpl struct {
 	persistCB   func(li LogIndex)
 	outputCB    func(lis Output)
 	delayed     []LogIndex
-	log         *logger.Logger
+	log         log.Logger
 }
 
 var _ VarConsInsts = &varConsInstsImpl{}
@@ -43,7 +44,7 @@ func NewVarConsInsts(
 	minLI LogIndex,
 	persistCB func(li LogIndex),
 	outputCB func(lis Output),
-	log *logger.Logger,
+	log log.Logger,
 ) VarConsInsts {
 	vci := &varConsInstsImpl{
 		haveConsOut: false,
@@ -146,7 +147,7 @@ func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc
 	// Cleanup old instances.
 	for i := range vci.lis {
 		if i < vci.minLI {
-			vci.log.Debugf("Cleaning up LI=%v, minLI=%v, maxLI=%v", i, vci.minLI, vci.maxLI)
+			vci.log.LogDebugf("Cleaning up LI=%v, minLI=%v, maxLI=%v", i, vci.minLI, vci.maxLI)
 			delete(vci.lis, i)
 			continue
 		}

@@ -151,7 +151,7 @@ func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuc
 	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState))
 	blocklogState.SaveNextBlockInfo(blockInfo)
 	blocklogState.Prune(blockInfo.BlockIndex, vmctx.chainInfo.BlockKeepAmount)
-	vmctx.task.Log.Debugf("saved blockinfo:\n%s", blockInfo)
+	vmctx.task.Log.LogDebugf("saved blockinfo:\n%s", blockInfo)
 	return nil
 }
 

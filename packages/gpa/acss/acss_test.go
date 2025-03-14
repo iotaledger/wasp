@@ -11,7 +11,7 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 
-	"github.com/iotaledger/hive.go/logger"
+	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
 	"github.com/iotaledger/wasp/packages/tcrypto"
@@ -53,8 +53,8 @@ func genericTest(
 ) {
 	t.Parallel()
 	require.True(t, silentNodes+faultyDeals <= f) // Assert tests are within assumptions.
-	log := testlogger.WithLevel(testlogger.NewLogger(t), logger.LevelWarn, false)
-	defer log.Sync()
+	log := testlogger.WithLevel(testlogger.NewLogger(t), hivelog.LevelWarning, false)
+	defer log.Shutdown()
 	suite := tcrypto.DefaultEd25519Suite()
 	secretToShare := suite.Scalar().Pick(suite.RandomStream())
 	//
@@ -69,7 +69,7 @@ func genericTest(
 	dealer := nodeIDs[rand.Intn(len(nodeIDs))]
 	dealCB := func(i int, e []byte) []byte {
 		if silentNodes <= i && i < silentNodes+faultyDeals {
-			log.Infof("Corrupting the deal for node[%v]=%v", i, nodeIDs[i])
+			log.LogInfof("Corrupting the deal for node[%v]=%v", i, nodeIDs[i])
 			e[0] ^= 0xff // Corrupt the data.
 		}
 		return e
@@ -77,7 +77,7 @@ func genericTest(
 	faulty := nodeIDs[:silentNodes]
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for _, nid := range nodeIDs {
-		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.Named(nid.ShortString()))
+		nodes[nid] = acss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], dealer, dealCB, log.NewChildLogger(nid.ShortString()))
 		if isNodeInList(nid, faulty) {
 			nodes[nid] = &silentNode{nested: nodes[nid]}
 		}

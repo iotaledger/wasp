@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
 )
@@ -31,7 +31,7 @@ type SubscriptionEvent struct {
 }
 
 type SubscriptionCommandHandler struct {
-	log                 *logger.Logger
+	log                 log.Logger
 	subscriptionManager *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]
 }
 

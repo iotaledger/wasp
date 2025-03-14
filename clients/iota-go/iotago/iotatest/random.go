@@ -21,10 +21,8 @@ func RandomAddress() *iotago.Address {
 }
 
 func RandomDigest() *iotago.Digest {
-	var b [32]byte
 	var d iotago.Digest
-	_, _ = rand.Read(b[:])
-	d = b[:]
+	_, _ = rand.Read(d[:])
 	return &d
 }
 

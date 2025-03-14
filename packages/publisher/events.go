@@ -3,8 +3,9 @@ package publisher
 import (
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
+
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -65,7 +66,7 @@ func triggerEvent[T any](events *Events, event *event.Event1[*ISCEvent[T]], obj 
 }
 
 // PublishBlockEvents extracts the events from a block, its returns a chan of ISCEventType, so they can be filtered
-func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.Logger) {
+func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logger) {
 	block := blockApplied.block
 	chainID := blockApplied.chainID
 	//
@@ -74,7 +75,7 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	blocklogState := blocklog.NewStateReaderFromBlockMutations(block)
 	blockInfo, ok := blocklogState.GetBlockInfo(blockIndex)
 	if !ok {
-		log.Errorf("unable to get blockInfo for blockIndex %d", blockIndex)
+		log.LogErrorf("unable to get blockInfo for blockIndex %d", blockIndex)
 	}
 
 	triggerEvent(events, events.NewBlock, &ISCEvent[*BlockWithTrieRoot]{
@@ -91,14 +92,14 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log *logger.
 	// Publish receipts of processed requests.
 	receipts, err := blocklog.RequestReceiptsFromBlock(block)
 	if err != nil {
-		log.Errorf("unable to get receipts from a block: %v", err)
+		log.LogErrorf("unable to get receipts from a block: %v", err)
 	} else {
 		errorsState := errors.NewStateReaderFromChainState(blockApplied.latestState)
 
 		for index, receipt := range receipts {
 			vmError, resolveError := errorsState.Resolve(receipt.Error)
 			if resolveError != nil {
-				log.Errorf("Could not parse vmerror of receipt [%v]: %v", receipt.Request.ID(), resolveError)
+				log.LogErrorf("Could not parse vmerror of receipt [%v]: %v", receipt.Request.ID(), resolveError)
 			}
 
 			receipt.BlockIndex = blockIndex

@@ -27,7 +27,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 }
 
 func newSoloTestEnv(t testing.TB) *soloTestEnv {
-	var log *logger.Logger
+	var log log.Logger
 	if _, ok := t.(*testing.B); ok {
 		log = testlogger.NewSilentLogger(t.Name(), true)
 	}

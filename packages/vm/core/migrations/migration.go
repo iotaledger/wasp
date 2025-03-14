@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -12,7 +12,7 @@ import (
 
 type Migration struct {
 	Contract *coreutil.ContractInfo
-	Apply    func(contractState kv.KVStore, log *logger.Logger) error
+	Apply    func(contractState kv.KVStore, log log.Logger) error
 }
 
 type MigrationScheme struct {

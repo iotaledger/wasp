@@ -46,12 +46,14 @@ package cmt_log
 import (
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/samber/lo"
 )
 
 type VarLocalView interface {
@@ -86,11 +88,11 @@ type varLocalViewImpl struct {
 	// Callback for the TIP changes.
 	tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages
 	// Just a logger.
-	log *logger.Logger
+	log log.Logger
 }
 
-func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages, log *logger.Logger) VarLocalView {
-	log.Debugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
+func NewVarLocalView(pipeliningLimit int, tipUpdatedCB func(ao *isc.StateAnchor) gpa.OutMessages, log log.Logger) VarLocalView {
+	log.LogDebugf("NewVarLocalView, pipeliningLimit=%v", pipeliningLimit)
 	return &varLocalViewImpl{
 		latestTip:    nil,
 		confirmedAO:  nil,
@@ -109,7 +111,7 @@ func (lvi *varLocalViewImpl) TransactionProduced(logIndex LogIndex, consumedAO *
 	stateIndex := consumedAO.GetStateIndex()
 	stateIndexEntries, _ := lvi.pendingTXes.GetOrCreate(stateIndex, func() []*varLocalViewEntry { return []*varLocalViewEntry{} })
 	contains := lo.ContainsBy(stateIndexEntries, func(entry *varLocalViewEntry) bool {
-		return lo.Must(tx.Hash()) == (lo.Must(entry.transaction.Hash()))
+		return lo.Must(tx.Digest()).Equals(*lo.Must(entry.transaction.Digest()))
 	})
 	if !contains {
 		stateIndexEntries = append(stateIndexEntries, &varLocalViewEntry{

@@ -6,7 +6,8 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/kv"
 )
 
@@ -34,7 +35,7 @@ func CatchPanicReturnError(fun func(), catchErrors ...error) error {
 	return err
 }
 
-func CatchAllButDBError(f func(), log *logger.Logger, prefix ...string) (err error) {
+func CatchAllButDBError(f func(), log log.Logger, prefix ...string) (err error) {
 	s := ""
 	if len(prefix) > 0 {
 		s = prefix[0]
@@ -47,14 +48,14 @@ func CatchAllButDBError(f func(), log *logger.Logger, prefix ...string) (err err
 			}
 			switch err1 := r.(type) {
 			case *kv.DBError:
-				log.Panicf("DB error: %v", err1)
+				log.LogPanicf("DB error: %v", err1)
 			case error:
 				err = err1
 			default:
 				err = fmt.Errorf("%s%v", s, err1)
 			}
-			log.Debugf("%s%v", s, err)
-			log.Debug(string(debug.Stack()))
+			log.LogDebugf("%s%v", s, err)
+			log.LogDebug(string(debug.Stack()))
 		}()
 		f()
 	}()

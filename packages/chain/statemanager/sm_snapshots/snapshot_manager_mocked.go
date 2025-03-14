@@ -10,7 +10,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/time_util"
@@ -20,7 +21,7 @@ type MockedSnapshotManager struct {
 	*snapshotManagerRunner
 
 	t            *testing.T
-	log          *logger.Logger
+	log          log.Logger
 	createPeriod uint32
 
 	readySnapshots      map[uint32]*util.SliceStruct[*state.L1Commitment]
@@ -52,11 +53,11 @@ func NewMockedSnapshotManager(
 	snapshotToLoad SnapshotInfo,
 	snapshotCommitTime time.Duration,
 	timeProvider time_util.TimeProvider,
-	log *logger.Logger,
+	log log.Logger,
 ) *MockedSnapshotManager {
 	result := &MockedSnapshotManager{
 		t:                   t,
-		log:                 log.Named("MSnap"),
+		log:                 log.NewChildLogger("MSnap"),
 		createPeriod:        createPeriod,
 		readySnapshots:      make(map[uint32]*util.SliceStruct[*state.L1Commitment]),
 		readySnapshotsMutex: sync.Mutex{},
@@ -109,12 +110,12 @@ func (msmT *MockedSnapshotManager) WaitSnapshotCreateFinalisedCount(count uint32
 
 func (msmT *MockedSnapshotManager) createSnapshot(snapshotInfo SnapshotInfo) {
 	msmT.snapshotCreateRequestCount.Add(1)
-	msmT.log.Debugf("Creating snapshot %s...", snapshotInfo)
+	msmT.log.LogDebugf("Creating snapshot %s...", snapshotInfo)
 	go func() {
 		<-msmT.timeProvider.After(msmT.snapshotCommitTime)
 		msmT.snapshotCreatedCount.Add(1)
 		msmT.snapshotReady(snapshotInfo)
-		msmT.log.Debugf("Creating snapshot %s: completed", snapshotInfo)
+		msmT.log.LogDebugf("Creating snapshot %s: completed", snapshotInfo)
 		msmT.snapshotCreateFinalisedCount.Add(1)
 		msmT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
 	}()
@@ -124,13 +125,13 @@ func (msmT *MockedSnapshotManager) loadSnapshot() SnapshotInfo {
 	if msmT.snapshotToLoad == nil {
 		return nil
 	}
-	msmT.log.Debugf("Loading snapshot %s...", msmT.snapshotToLoad)
+	msmT.log.LogDebugf("Loading snapshot %s...", msmT.snapshotToLoad)
 	snapshot := new(bytes.Buffer)
 	err := msmT.origStore.TakeSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
 	err = msmT.nodeStore.RestoreSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
-	msmT.log.Debugf("Loading snapshot %s: snapshot loaded", msmT.snapshotToLoad)
+	msmT.log.LogDebugf("Loading snapshot %s: snapshot loaded", msmT.snapshotToLoad)
 	return msmT.snapshotToLoad
 }
 

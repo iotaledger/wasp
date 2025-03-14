@@ -23,7 +23,8 @@ import (
 	"go.dedis.ch/kyber/v3/sign/bdn"
 	"go.dedis.ch/kyber/v3/sign/tbls"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -38,7 +39,7 @@ type ccImpl struct {
 	sid       []byte
 	sigShares map[gpa.NodeID][]byte
 	output    *bool
-	log       *logger.Logger
+	log       log.Logger
 }
 
 var _ gpa.GPA = &ccImpl{}
@@ -51,7 +52,7 @@ func New(
 	t int,
 	me gpa.NodeID,
 	sid []byte,
-	log *logger.Logger,
+	log log.Logger,
 ) gpa.GPA {
 	cc := &ccImpl{
 		suite:     suite,
@@ -128,11 +129,11 @@ func (cc *ccImpl) tryOutput() {
 	}
 	mainSig, err := tbls.Recover(cc.suite, cc.pubPoly, cc.sid, sigs, cc.t, cc.n)
 	if err != nil {
-		cc.log.Warnf("cannot recover the signature with %v/%v shares: %v", len(cc.sigShares), cc.n, err)
+		cc.log.LogWarnf("cannot recover the signature with %v/%v shares: %v", len(cc.sigShares), cc.n, err)
 		return
 	}
 	if err := bdn.Verify(cc.suite, cc.pubPoly.Commit(), cc.sid, mainSig); err != nil {
-		cc.log.Warnf("cannot verify the signature: %v", err)
+		cc.log.LogWarnf("cannot verify the signature: %v", err)
 		return
 	}
 	coin := mainSig[len(mainSig)-1]%2 == 1

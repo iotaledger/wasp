@@ -8,7 +8,8 @@ import (
 	"time"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -155,7 +156,7 @@ func L1() *L1Params {
 	return l1Params
 }
 
-func InitL1(client iotaclient.Client, logger *logger.Logger) error {
+func InitL1(client iotaclient.Client, logger log.Logger) error {
 	var protocol Protocol
 	var totalSupply *iotajsonrpc.Supply
 	timeout := 600 * time.Second
@@ -164,7 +165,7 @@ func InitL1(client iotaclient.Client, logger *logger.Logger) error {
 
 		summary, err := client.GetLatestIotaSystemState(ctx)
 		if err != nil {
-			logger.Errorln("can't get latest epoch: ", err)
+			logger.LogError("can't get latest epoch: ", err)
 			time.Sleep(60 * time.Second)
 			continue
 		}
@@ -182,7 +183,7 @@ func InitL1(client iotaclient.Client, logger *logger.Logger) error {
 		totalSupply, err = client.GetTotalSupply(ctx, iotajsonrpc.IotaCoinType.String())
 		cancel()
 		if err != nil {
-			logger.Errorln("can't get latest total supply: ", err)
+			logger.LogError("can't get latest total supply: ", err)
 			time.Sleep(60 * time.Second)
 			continue
 		}

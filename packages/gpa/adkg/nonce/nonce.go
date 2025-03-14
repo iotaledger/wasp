@@ -40,7 +40,8 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss"
 )
@@ -66,7 +67,7 @@ type nonceDKGImpl struct {
 	agreedT   []int                   // Output from the external consensus.
 	output    gpa.Output              // Output of the ADKG, can be intermediate (PriShare=nil).
 	wrapper   *gpa.MsgWrapper
-	log       *logger.Logger
+	log       log.Logger
 }
 
 var _ gpa.GPA = &nonceDKGImpl{}
@@ -86,7 +87,7 @@ func New(
 	f int,
 	me gpa.NodeID,
 	mySK kyber.Scalar,
-	log *logger.Logger,
+	log log.Logger,
 ) gpa.GPA {
 	myIdx := -1
 	for i := range nodeIDs {
@@ -139,7 +140,7 @@ func (n *nonceDKGImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case msgWrapperACSS:
 			return n.handleACSSMessage(msgT)
 		default:
-			n.log.Warnf("unexpected message subsystem: %+v", msg)
+			n.log.LogWarnf("unexpected message subsystem: %+v", msg)
 			return nil
 		}
 	default:
@@ -210,7 +211,7 @@ func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.Ou
 	voteCounts := make([]int, n.n)
 	for _, proposal := range input.proposals {
 		if len(proposal) < n.f+1 {
-			n.log.Warn("len(proposal) < f+1, that should not happen")
+			n.log.LogWarn("len(proposal) < f+1, that should not happen")
 			continue
 		}
 		for i := range proposal {
@@ -218,7 +219,7 @@ func (n *nonceDKGImpl) handleAgreementResult(input *inputAgreementResult) gpa.Ou
 			for j := range proposal {
 				if i != j && proposal[i] == proposal[j] {
 					duplicatesFound = true
-					n.log.Warn("msgAgreementResult with duplicate votes")
+					n.log.LogWarn("msgAgreementResult with duplicate votes")
 				}
 			}
 			if !duplicatesFound {
@@ -247,7 +248,7 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() gpa.OutMessages {
 	sum := n.suite.Scalar().Zero()
 	for _, j := range n.agreedT {
 		if _, ok := n.st[j]; !ok {
-			n.log.Debugf("Don't have S/T[%v] yet, have to wait, agreedT=%+v, have S/T indexes: %v.", j, n.agreedT, lo.Keys(n.st))
+			n.log.LogDebugf("Don't have S/T[%v] yet, have to wait, agreedT=%+v, have S/T indexes: %v.", j, n.agreedT, lo.Keys(n.st))
 			return nil
 		}
 		sum.Add(sum.Clone(), n.st[j].V)
@@ -260,7 +261,7 @@ func (n *nonceDKGImpl) tryMakeFinalOutput() gpa.OutMessages {
 			var err error
 			sumCommitPoly, err = sumCommitPoly.Add(jCommitPoly)
 			if err != nil {
-				n.log.Error("Unable to sum public commitments: %v", err)
+				n.log.LogError("Unable to sum public commitments: %v", err)
 				return nil
 			}
 		}

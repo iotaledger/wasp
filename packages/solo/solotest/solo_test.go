@@ -22,13 +22,13 @@ func TestSaveSnapshot(t *testing.T) {
 
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
-	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.OriginatorPrivateKey)
+	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.OwnerPrivateKey)
 
 	// create foundry and native tokens on L2
 	// sn, nativeTokenID, err := ch.NewNativeTokenParams(1000).CreateFoundry()
 	// require.NoError(t, err)
 	// // mint some tokens for the user
-	// err = ch.MintTokens(sn, 1000, ch.OriginatorPrivateKey)
+	// err = ch.MintTokens(sn, 1000, ch.OwnerPrivateKey)
 	// require.NoError(t, err)
 
 	// _, err = ch.GetNativeTokenIDByFoundrySN(sn)
@@ -37,14 +37,14 @@ func TestSaveSnapshot(t *testing.T) {
 
 	// TODO impl NFT
 	// create NFT on L1 and deposit on L2
-	// nft, _, err := ch.Env.MintNFTL1(ch.OriginatorPrivateKey, ch.OriginatorAddress, []byte("foobar"))
+	// nft, _, err := ch.Env.MintNFTL1(ch.OwnerPrivateKey, ch.OriginatorAddress, []byte("foobar"))
 	// require.NoError(t, err)
 	// _, err = ch.PostRequestSync(
 	// 	solo.NewCallParams(accounts.FuncDeposit.Message()).
 	// 		WithNFT(nft).
 	// 		AddBaseTokens(10*isc.Million).
 	// 		WithMaxAffordableGasBudget(),
-	// 	ch.OriginatorPrivateKey)
+	// 	ch.OwnerPrivateKey)
 	// require.NoError(t, err)
 
 	// require.NotEmpty(t, ch.L2NFTs(ch.OriginatorAgentID))

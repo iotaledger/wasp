@@ -127,7 +127,7 @@ func (r *rbc) Message(msg gpa.Message) gpa.OutMessages {
 		case msgBrachaTypeReady:
 			return r.handleReady(msgT)
 		default:
-			r.log.Warnf("unexpected brachaType=%v in message: %+v", msgT.brachaType, msgT)
+			r.log.LogWarnf("unexpected brachaType=%v in message: %+v", msgT.brachaType, msgT)
 			return nil
 		}
 	default:

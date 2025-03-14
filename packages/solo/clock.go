@@ -15,6 +15,6 @@ func (env *Solo) GlobalTime() time.Time {
 // AdvanceClockBy advances logical clock by time step
 func (env *Solo) AdvanceClockBy(step time.Duration) {
 	env.mockTime = env.mockTime.Add(step)
-	env.logger.Infof("AdvanceClockBy: logical clock advanced by %v to %s",
+	env.logger.LogInfof("AdvanceClockBy: logical clock advanced by %v to %s",
 		step, env.GlobalTime().Format(timeLayout))
 }

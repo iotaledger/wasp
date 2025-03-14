@@ -8,11 +8,12 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/options"
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
+
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/webapi/websocket/commands"
 )
@@ -21,7 +22,7 @@ type Service struct {
 	commandHandler        *commands.CommandManager
 	eventHandler          *EventHandler
 	hub                   *websockethub.Hub
-	log                   *logger.Logger
+	log                   log.Logger
 	publisherEvent        *event.Event1[*ISCEvent]
 	subscriptionManager   *subscriptionmanager.SubscriptionManager[websockethub.ClientID, string]
 	subscriptionValidator *SubscriptionValidator
@@ -35,7 +36,7 @@ func WithMaxTopicSubscriptionsPerClient(maxTopicSubscriptionsPerClient int) opti
 	}
 }
 
-func NewWebsocketService(log *logger.Logger, hub *websockethub.Hub, msgTypes []publisher.ISCEventType, pub *publisher.Publisher, opts ...options.Option[Service]) *Service {
+func NewWebsocketService(log log.Logger, hub *websockethub.Hub, msgTypes []publisher.ISCEventType, pub *publisher.Publisher, opts ...options.Option[Service]) *Service {
 	serviceOptions := options.Apply(&Service{
 		maxTopicSubscriptionsPerClient: 0,
 	}, opts)
@@ -56,7 +57,7 @@ func NewWebsocketService(log *logger.Logger, hub *websockethub.Hub, msgTypes []p
 	commandHandler := commands.NewCommandHandler(log, subscriptionManager)
 
 	return &Service{
-		log:                   log.Named("Websocket Service"),
+		log:                   log.NewChildLogger("Websocket Service"),
 		hub:                   hub,
 		commandHandler:        commandHandler,
 		eventHandler:          eventHandler,
@@ -76,7 +77,7 @@ func (p *Service) onClientCreated(client *websockethub.Client) {
 			}
 
 			if err := client.Send(client.Context(), iscEvent); err != nil {
-				p.log.Warnf("error sending message to client:[%d], err:[%v]", client.ID(), err)
+				p.log.LogWarnf("error sending message to client:[%d], err:[%v]", client.ID(), err)
 			}
 		}).Unhook
 		defer unhook()
@@ -109,13 +110,13 @@ func (p *Service) onClientCreated(client *websockethub.Client) {
 }
 
 func (p *Service) onConnect(client *websockethub.Client, request *http.Request) {
-	p.log.Infof("accepted websocket connection for client:[%d], from:[%s]", client.ID(), request.RemoteAddr)
+	p.log.LogInfof("accepted websocket connection for client:[%d], from:[%s]", client.ID(), request.RemoteAddr)
 	p.subscriptionManager.Connect(client.ID())
 }
 
 func (p *Service) onDisconnect(client *websockethub.Client, request *http.Request) {
 	p.subscriptionManager.Disconnect(client.ID())
-	p.log.Infof("closed websocket connection for client:[%d], from:[%s]", client.ID(), request.RemoteAddr)
+	p.log.LogInfof("closed websocket connection for client:[%d], from:[%s]", client.ID(), request.RemoteAddr)
 }
 
 // ServeHTTP serves the websocket.

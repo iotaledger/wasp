@@ -6,7 +6,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/time_util"
@@ -18,7 +19,7 @@ type blockTime struct {
 }
 
 type blockCache struct {
-	log          *logger.Logger
+	log          log.Logger
 	blocks       *shrinkingmap.ShrinkingMap[BlockKey, state.Block]
 	maxCacheSize int
 	wal          BlockWAL
@@ -29,9 +30,9 @@ type blockCache struct {
 
 var _ BlockCache = &blockCache{}
 
-func NewBlockCache(tp time_util.TimeProvider, maxCacheSize int, wal BlockWAL, metrics *metrics.ChainStateManagerMetrics, log *logger.Logger) (BlockCache, error) {
+func NewBlockCache(tp time_util.TimeProvider, maxCacheSize int, wal BlockWAL, metrics *metrics.ChainStateManagerMetrics, log log.Logger) (BlockCache, error) {
 	return &blockCache{
-		log:          log.Named("BC"),
+		log:          log.NewChildLogger("BC"),
 		blocks:       shrinkingmap.New[BlockKey, state.Block](),
 		maxCacheSize: maxCacheSize,
 		wal:          wal,
@@ -45,7 +46,7 @@ func NewBlockCache(tp time_util.TimeProvider, maxCacheSize int, wal BlockWAL, me
 func (bcT *blockCache) AddBlock(block state.Block) {
 	err := bcT.wal.Write(block)
 	if err != nil {
-		bcT.log.Errorf("Failed writing block index %v %s to WAL: %v", block.StateIndex(), block.L1Commitment(), err)
+		bcT.log.LogErrorf("Failed writing block index %v %s to WAL: %v", block.StateIndex(), block.L1Commitment(), err)
 	}
 	bcT.addBlockToCache(block)
 }
@@ -65,14 +66,14 @@ func (bcT *blockCache) addBlockToCache(block state.Block) {
 		time:     bcT.timeProvider.GetNow(),
 		blockKey: blockKey,
 	})
-	bcT.log.Debugf("Block index %v %s added to cache", block.StateIndex(), commitment)
+	bcT.log.LogDebugf("Block index %v %s added to cache", block.StateIndex(), commitment)
 
 	if bcT.Size() > bcT.maxCacheSize {
 		blockKey := bcT.times[0].blockKey
 		bcT.times[0] = nil // Freeing up memory
 		bcT.times = bcT.times[1:]
 		bcT.blocks.Delete(blockKey)
-		bcT.log.Debugf("Block %s deleted from cache, because cache is too large", blockKey)
+		bcT.log.LogDebugf("Block %s deleted from cache, because cache is too large", blockKey)
 	}
 	bcT.metrics.SetCacheSize(bcT.Size())
 }
@@ -82,7 +83,7 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 	// Check in cache
 	block, exists := bcT.blocks.Get(blockKey)
 	if exists {
-		bcT.log.Debugf("Block index %v %s retrieved from cache", block.StateIndex(), commitment)
+		bcT.log.LogDebugf("Block index %v %s retrieved from cache", block.StateIndex(), commitment)
 		return block
 	}
 
@@ -90,11 +91,11 @@ func (bcT *blockCache) GetBlock(commitment *state.L1Commitment) state.Block {
 	if bcT.wal.Contains(commitment.BlockHash()) {
 		block, err := bcT.wal.Read(commitment.BlockHash())
 		if err != nil {
-			bcT.log.Errorf("Error reading block index %v %s from WAL: %w", block.StateIndex(), commitment, err)
+			bcT.log.LogErrorf("Error reading block index %v %s from WAL: %w", block.StateIndex(), commitment, err)
 			return nil
 		}
 		bcT.addBlockToCache(block)
-		bcT.log.Debugf("Block index %v %s retrieved from WAL", block.StateIndex(), commitment)
+		bcT.log.LogDebugf("Block index %v %s retrieved from WAL", block.StateIndex(), commitment)
 		return block
 	}
 
@@ -110,7 +111,7 @@ func (bcT *blockCache) CleanOlderThan(limit time.Time) {
 		}
 		bcT.blocks.Delete(bt.blockKey)
 		bcT.times[i] = nil // Freeing up memory
-		bcT.log.Debugf("Block %s deleted from cache, because it is too old", bt.blockKey)
+		bcT.log.LogDebugf("Block %s deleted from cache, because it is too old", bt.blockKey)
 	}
 	bcT.times = make([]*blockTime, 0) // All the blocks were deleted
 }

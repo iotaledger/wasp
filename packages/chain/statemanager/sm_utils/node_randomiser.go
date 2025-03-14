@@ -3,7 +3,8 @@ package sm_utils
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/util"
 )
@@ -12,10 +13,10 @@ type nodeRandomiser struct {
 	me          gpa.NodeID
 	nodeIDs     []gpa.NodeID
 	permutation *util.Permutation16
-	log         *logger.Logger
+	log         log.Logger
 }
 
-func NewNodeRandomiser(me gpa.NodeID, nodeIDs []gpa.NodeID, log *logger.Logger) NodeRandomiser {
+func NewNodeRandomiser(me gpa.NodeID, nodeIDs []gpa.NodeID, log log.Logger) NodeRandomiser {
 	result := NewNodeRandomiserNoInit(me, log)
 	result.(*nodeRandomiser).init(nodeIDs)
 	return result
@@ -23,12 +24,12 @@ func NewNodeRandomiser(me gpa.NodeID, nodeIDs []gpa.NodeID, log *logger.Logger) 
 
 // Before using the returned NodeRandomiser, it must be initted: UpdateNodeIDs
 // method must be called.
-func NewNodeRandomiserNoInit(me gpa.NodeID, log *logger.Logger) NodeRandomiser {
+func NewNodeRandomiserNoInit(me gpa.NodeID, log log.Logger) NodeRandomiser {
 	return &nodeRandomiser{
 		me:          me,
 		nodeIDs:     nil, // Will be set in result.UpdateNodeIDs([]gpa.NodeID).
 		permutation: nil, // Will be set in result.UpdateNodeIDs([]gpa.NodeID).
-		log:         log.Named("NR"),
+		log:         log.NewChildLogger("NR"),
 	}
 }
 
@@ -39,7 +40,7 @@ func (nrT *nodeRandomiser) init(allNodeIDs []gpa.NodeID) {
 	var err error
 	nrT.permutation, err = util.NewPermutation16(uint16(len(nrT.nodeIDs)))
 	if err != nil {
-		nrT.log.Warnf("Failed to generate cryptographically secure random domains permutation; will use insecure one: %v", err)
+		nrT.log.LogWarnf("Failed to generate cryptographically secure random domains permutation; will use insecure one: %v", err)
 		return
 	}
 }

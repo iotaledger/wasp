@@ -56,7 +56,7 @@ func provide(c *dig.Container) error {
 			chains.ParamsChains.MempoolMaxOnledgerInPool,
 			ParamsL1.WebsocketURL,
 			ParamsL1.HttpURL,
-			Component.Logger().Named("nc"),
+			Component.Logger.NewChildLogger("nc"),
 			deps.ShutdownHandler,
 		)
 		if err != nil {
@@ -64,7 +64,7 @@ func provide(c *dig.Container) error {
 		}
 		return nodeConnection
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil

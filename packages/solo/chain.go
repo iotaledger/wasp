@@ -39,7 +39,8 @@ import (
 func (ch *Chain) String() string {
 	w := new(rwutil.Buffer)
 	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
-	fmt.Fprintf(w, "Chain state controller: %s\n", ch.OriginatorAddress)
+	fmt.Fprintf(w, "Chain operator: %s\n", ch.OperatorAddress())
+	fmt.Fprintf(w, "Chain owner: %s\n", ch.OwnerAddress())
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
@@ -103,7 +104,7 @@ func (ch *Chain) SetGasLimits(user *cryptolib.KeyPair, gl *gas.Limits) {
 	require.NoError(ch.Env.T, err)
 }
 
-func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...interface{}) (abi.ABI, []byte) {
+func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byte, args ...any) (abi.ABI, []byte) {
 	contractABI, err := abi.JSON(strings.NewReader(abiJSON))
 	require.NoError(t, err)
 
@@ -117,7 +118,7 @@ func EVMCallDataFromArtifacts(t require.TestingT, abiJSON string, bytecode []byt
 }
 
 // DeployEVMContract deploys an evm contract on the chain
-func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, value *big.Int, args ...interface{}) (common.Address, abi.ABI) {
+func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, bytecode []byte, value *big.Int, args ...any) (common.Address, abi.ABI) {
 	creatorAddress := crypto.PubkeyToAddress(creator.PublicKey)
 
 	nonce := ch.Nonce(isc.NewEthereumAddressAgentID(ch.ChainID, creatorAddress))
@@ -233,7 +234,7 @@ func (ch *Chain) GetRequestReceiptsForBlock(blockIndex ...uint32) []*blocklog.Re
 	}
 	recs, err := blocklog.ViewGetRequestReceiptsForBlock.DecodeOutput(res)
 	if err != nil {
-		ch.Log().Warn(err)
+		ch.Log().LogWarn(err.Error())
 		return nil
 	}
 	return recs.Receipts
@@ -389,4 +390,20 @@ func (ch *Chain) SaveDB(path string) {
 		return true
 	}))
 	lo.Must0(store.Flush())
+}
+
+func (ch *Chain) OwnerAddress() *cryptolib.Address {
+	return ch.OwnerPrivateKey.Address()
+}
+
+func (ch *Chain) OwnerAgentID() isc.AgentID {
+	return isc.NewAddressAgentID(ch.OwnerAddress())
+}
+
+func (ch *Chain) OperatorAddress() *cryptolib.Address {
+	return ch.OperatorPrivateKey.Address()
+}
+
+func (ch *Chain) OperatorAgentID() isc.AgentID {
+	return isc.NewAddressAgentID(ch.OperatorAddress())
 }

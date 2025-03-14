@@ -49,7 +49,7 @@ func TestMarshalPublicKey(t *testing.T) {
 	pubKey := privateKey.PublicKey()
 
 	pubKeyBytes := pubKey.Bytes()
-	pubKeyBack, _, err := bls.PublicKeyFromBytes(pubKeyBytes)
+	pubKeyBack, err := bls.PublicKeyFromBytes(pubKeyBytes)
 	require.NoError(t, err)
 	require.EqualValues(t, pubKeyBytes, pubKeyBack.Bytes())
 }

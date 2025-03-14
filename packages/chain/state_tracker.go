@@ -6,7 +6,8 @@ package chain
 import (
 	"context"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -41,7 +42,7 @@ type stateTrackerImpl struct {
 	awaitReceipt           AwaitReceipt
 	metricWantStateIndexCB func(uint32)
 	metricHaveStateIndexCB func(uint32)
-	log                    *logger.Logger
+	log                    log.Logger
 }
 
 var _ StateTracker = &stateTrackerImpl{}
@@ -52,7 +53,7 @@ func NewStateTracker(
 	haveLatestCB StateTrackerStepCB,
 	metricWantStateIndexCB func(uint32),
 	metricHaveStateIndexCB func(uint32),
-	log *logger.Logger,
+	log log.Logger,
 ) StateTracker {
 	return &stateTrackerImpl{
 		ctx:                    ctx,
@@ -75,7 +76,7 @@ func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.StateAnchor, strict bool) 
 		// We don't have the latest AO while we are still synching.
 		return
 	}
-	sti.log.Debugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
+	sti.log.LogDebugf("TrackAliasOutput[strict=%v], ao=%v, haveAO=%v, nextAO=%v", strict, ao, sti.haveAO, sti.nextAO)
 	if !strict && sti.haveAO != nil && sti.haveAO.GetStateIndex() >= ao.GetStateIndex() {
 		return
 	}
@@ -95,7 +96,7 @@ func (sti *stateTrackerImpl) TrackAliasOutput(ao *isc.StateAnchor, strict bool) 
 }
 
 func (sti *stateTrackerImpl) AwaitRequestReceipt(query *awaitReceiptReq) {
-	sti.log.Debugf("AwaitRequestReceipt, query.requestID=%v", query.requestID)
+	sti.log.LogDebugf("AwaitRequestReceipt, query.requestID=%v", query.requestID)
 	sti.awaitReceipt.Await(query)
 }
 
@@ -109,7 +110,7 @@ func (sti *stateTrackerImpl) ChainNodeAwaitStateMgrCh() <-chan *sm_inputs.ChainF
 func (sti *stateTrackerImpl) ChainNodeStateMgrResponse(results *sm_inputs.ChainFetchStateDiffResults) {
 	sti.cancelQuery()
 	newState := results.GetNewState()
-	sti.log.Debugf(
+	sti.log.LogDebugf(
 		"Have latest state for %v, state.BlockIndex=%v, state.trieRoot=%v, previous=%v, |blocksAdded|=%v, |blockRemoved|=%v",
 		sti.nextAO, newState.BlockIndex(), newState.TrieRoot(), sti.haveAO, len(results.GetAdded()), len(results.GetRemoved()),
 	)

@@ -5,7 +5,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -25,7 +26,7 @@ func Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 		res = runTask(task)
 	}, task.Log)
 	if err != nil {
-		task.Log.Warnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
+		task.Log.LogWarnf("GENERAL VM EXCEPTION: the task has been abandoned due to: %s", err.Error())
 	}
 	return res, err
 }
@@ -53,7 +54,7 @@ func (vmctx *vmContext) calculateTopUpFee() coin.Value {
 
 	bal := vmctx.commonAccountBalance()
 	if bal < topUp {
-		vmctx.task.Log.Warnf(
+		vmctx.task.Log.LogWarnf(
 			"not enough tokens in common account for topping up gas coin (has %d, want %d)",
 			bal,
 			topUp,
@@ -61,7 +62,7 @@ func (vmctx *vmContext) calculateTopUpFee() coin.Value {
 		topUp = bal
 	}
 
-	vmctx.task.Log.Debugf(
+	vmctx.task.Log.LogDebugf(
 		"calculateTopUpFee: gasCoinBalance: %d, target: %d, commonAccountBalance: %d, topUp: %d",
 		gasCoinBalance,
 		targetValue,
@@ -108,7 +109,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		return taskResult
 	}
 
-	vmctx.task.Log.Debugf("runTask, ran %d requests. success: %d, offledger: %d",
+	vmctx.task.Log.LogDebugf("runTask, ran %d requests. success: %d, offledger: %d",
 		numProcessed, numSuccess, numOffLedger)
 
 	topUpFee := vmctx.calculateTopUpFee()
@@ -120,15 +121,15 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		numProcessed, numSuccess, numOffLedger,
 	)
 
-	vmctx.task.Log.Debugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
+	vmctx.task.Log.LogDebugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
 		blockIndex, l1Commitment, timestamp, rotationAddr)
 
 	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment, task.GasCoin)
-	vmctx.task.Log.Debugf("runTask OUT. block index: %d", blockIndex)
+	vmctx.task.Log.LogDebugf("runTask OUT. block index: %d", blockIndex)
 	if rotationAddr != nil {
 		// rotation happens
 		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
-		vmctx.task.Log.Debugf("runTask OUT: rotate to address %s", rotationAddr.String())
+		vmctx.task.Log.LogDebugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
 
 	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
@@ -189,7 +190,7 @@ func (vmctx *vmContext) emitEVMEventL1NFTMint(nftID iotago.NFTID, owner *isc.Eth
 func (vmctx *vmContext) runRequests(
 	reqs []isc.Request,
 	maintenanceMode bool,
-	log *logger.Logger,
+	log log.Logger,
 ) (
 	results []*vm.RequestResult,
 	numSuccess uint16,
@@ -204,7 +205,7 @@ func (vmctx *vmContext) runRequests(
 		result, skipReason := vmctx.runRequest(req, requestIndexCounter, maintenanceMode)
 		if skipReason != nil {
 			// some requests are just ignored (deterministically)
-			log.Infof("request skipped (ignored) by the VM: %s, reason: %v",
+			log.LogInfof("request skipped (ignored) by the VM: %s, reason: %v",
 				req.ID().String(), skipReason)
 			continue
 		}
@@ -216,14 +217,14 @@ func (vmctx *vmContext) runRequests(
 		}
 
 		if result.Receipt.Error != nil {
-			log.Debugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
+			log.LogDebugf("runTask, ERROR running request: %s, error: %v", req.ID().String(), result.Receipt.Error)
 			continue
 		}
 		numSuccess++
 
 		// abort if num of requests is above max_uint16.
 		if reqIndex+1 == math.MaxUint16 {
-			log.Warnf("aborting vm run due to excessive number of requests. total: %d, executed: %d", len(reqs), reqIndex+1)
+			log.LogWarnf("aborting vm run due to excessive number of requests. total: %d, executed: %d", len(reqs), reqIndex+1)
 			break
 		}
 	}

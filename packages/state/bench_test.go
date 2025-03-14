@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/trie"
 )

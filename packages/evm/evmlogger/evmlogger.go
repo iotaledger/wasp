@@ -6,14 +6,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 
-	hiveLog "github.com/iotaledger/hive.go/logger"
+	hiveLog "github.com/iotaledger/hive.go/log"
 )
 
-func Init(hiveLogger *hiveLog.Logger) {
+func Init(hiveLogger hiveLog.Logger) {
 	log.SetDefault(log.NewLogger(&hiveLogHandler{hiveLogger}))
 }
 
-type hiveLogHandler struct{ *hiveLog.Logger }
+type hiveLogHandler struct{ hiveLog.Logger }
 
 // Enabled implements slog.Handler.
 func (*hiveLogHandler) Enabled(context.Context, slog.Level) bool {
@@ -24,13 +24,13 @@ func (*hiveLogHandler) Enabled(context.Context, slog.Level) bool {
 func (h *hiveLogHandler) Handle(ctx context.Context, r slog.Record) error {
 	switch {
 	case r.Level >= slog.LevelError:
-		h.Logger.Error(r.Message)
+		h.Logger.LogError(r.Message)
 	case r.Level <= slog.LevelDebug:
-		h.Logger.Debug(r.Message)
+		h.Logger.LogDebug(r.Message)
 	case r.Level == slog.LevelWarn:
-		h.Logger.Warn(r.Message)
+		h.Logger.LogWarn(r.Message)
 	default:
-		h.Logger.Info(r.Message)
+		h.Logger.LogInfo(r.Message)
 	}
 	return nil
 }

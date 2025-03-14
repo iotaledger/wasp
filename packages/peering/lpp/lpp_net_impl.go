@@ -40,8 +40,9 @@ import (
 	"github.com/multiformats/go-multiaddr"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/peering/domain"
@@ -69,7 +70,7 @@ type netImpl struct {
 	nodeKeyPair  *cryptolib.KeyPair
 	trusted      peering.TrustedNetworkManager
 	metrics      peering.Metrics
-	log          *logger.Logger
+	log          log.Logger
 }
 
 var (
@@ -85,7 +86,7 @@ func NewNetworkProvider(
 	nodeKeyPair *cryptolib.KeyPair,
 	trusted peering.TrustedNetworkManager,
 	metrics peering.Metrics,
-	log *logger.Logger,
+	log log.Logger,
 ) (peering.NetworkProvider, peering.TrustedNetworkManager, error) {
 	privKey, err := crypto.UnmarshalEd25519PrivateKey(nodeKeyPair.GetPrivateKey().AsBytes())
 	if err != nil {
@@ -127,7 +128,7 @@ func NewNetworkProvider(
 
 	if trusted.IsTrustedPeer(n.PubKey()) != nil {
 		selfName := "me"
-		log.Infof("Adding this node as trusted for itself, name=%v, pubKey=%v, peeringURL=%v", selfName, n.PubKey(), n.myPeeringURL)
+		log.LogInfof("Adding this node as trusted for itself, name=%v, pubKey=%v, peeringURL=%v", selfName, n.PubKey(), n.myPeeringURL)
 		if _, err = trusted.TrustPeer(selfName, n.PubKey(), n.myPeeringURL); err != nil {
 			ctxCancel()
 			return nil, nil, fmt.Errorf("unable to add self to trusted peers: %w", err)
@@ -171,7 +172,7 @@ func (n *netImpl) lppAddToPeerStore(trustedPeer *peering.TrustedPeer) (libp2ppee
 		addrs = addrs2
 	}
 
-	n.log.Infof("Registering %v as libp2p PeerID=%v with addresses: %+v", trustedPeer.PeeringURL, lppPeerID, addrs)
+	n.log.LogInfof("Registering %v as libp2p PeerID=%v with addresses: %+v", trustedPeer.PeeringURL, lppPeerID, addrs)
 	n.lppHost.Peerstore().AddAddrs(lppPeerID, addrs, peerstore.PermanentAddrTTL)
 	err = n.lppHost.Peerstore().AddPubKey(lppPeerID, lppPeerPub)
 	if err != nil {
@@ -230,21 +231,21 @@ func (n *netImpl) lppPeeringProtocolHandler(stream network.Stream) {
 	remotePeer, exists := n.peers.Get(stream.Conn().RemotePeer())
 	n.peersLock.RUnlock()
 	if !exists {
-		n.log.Warnf("Dropping incoming message from unknown peer: %v", stream.Conn().RemotePeer())
+		n.log.LogWarnf("Dropping incoming message from unknown peer: %v", stream.Conn().RemotePeer())
 		return
 	}
 	if !remotePeer.trusted {
-		n.log.Warnf("Dropping incoming message from untrusted peer: %v", stream.Conn().RemotePeer())
+		n.log.LogWarnf("Dropping incoming message from untrusted peer: %v", stream.Conn().RemotePeer())
 		return
 	}
 	payload, err := readFrame(stream)
 	if err != nil {
-		n.log.Warnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
+		n.log.LogWarnf("Failed to read incoming payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
 		return
 	}
 	peerMsg, err := peering.PeerMessageNetFromBytes(payload) // Do not use the signatures, we have TLS.
 	if err != nil {
-		n.log.Warnf("error while decoding a message, reason=%v", err)
+		n.log.LogWarnf("error while decoding a message, reason=%v", err)
 		return
 	}
 	remotePeer.RecvMsg(peerMsg)
@@ -256,16 +257,16 @@ func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 	remotePeer, exists := n.peers.Get(stream.Conn().RemotePeer())
 	n.peersLock.RUnlock()
 	if !exists {
-		n.log.Warnf("Dropping incoming heartbeat from unknown peer: %v", stream.Conn().RemotePeer())
+		n.log.LogWarnf("Dropping incoming heartbeat from unknown peer: %v", stream.Conn().RemotePeer())
 		return
 	}
 	payload, err := readFrame(stream)
 	if err != nil {
-		n.log.Warnf("Failed to read incoming heartbeat payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
+		n.log.LogWarnf("Failed to read incoming heartbeat payload from %v, reason=%v", remotePeer.remotePeeringURL, err)
 		return
 	}
 	if len(payload) != 1 {
-		n.log.Warnf("Failed to read incoming heartbeat payload from %v, invalid payload size=%v", remotePeer.remotePeeringURL, len(payload))
+		n.log.LogWarnf("Failed to read incoming heartbeat payload from %v, invalid payload size=%v", remotePeer.remotePeeringURL, len(payload))
 		return
 	}
 	remotePeer.noteReceived()
@@ -277,7 +278,7 @@ func (n *netImpl) lppHeartbeatProtocolHandler(stream network.Stream) {
 func (n *netImpl) lppHeartbeatSend(peer *peer, ackNeeded bool) {
 	stream, err := n.lppHost.NewStream(n.ctx, peer.remoteLppID, lppProtocolHeartbeat)
 	if err != nil {
-		n.log.Warnf("Failed to send heartbeat to %v, cannot allocate stream, reason: %v", peer.remotePeeringURL, err)
+		n.log.LogWarnf("Failed to send heartbeat to %v, cannot allocate stream, reason: %v", peer.remotePeeringURL, err)
 		return
 	}
 	defer stream.Close()
@@ -286,7 +287,7 @@ func (n *netImpl) lppHeartbeatSend(peer *peer, ackNeeded bool) {
 		frame[0] = 1
 	}
 	if err := writeFrame(stream, frame); err != nil {
-		n.log.Warnf("Failed to send heartbeat to %v, reason: %v", peer.remotePeeringURL, err)
+		n.log.LogWarnf("Failed to send heartbeat to %v, reason: %v", peer.remotePeeringURL, err)
 		return
 	}
 }
@@ -374,7 +375,7 @@ func (n *netImpl) PeerDomain(peeringID peering.PeeringID, peerPubKeys []*cryptol
 func (n *netImpl) SendMsgByPubKey(pubKey *cryptolib.PublicKey, msg *peering.PeerMessageData) {
 	peer, err := n.PeerByPubKey(pubKey)
 	if err != nil {
-		n.log.Warnf("SendMsgByPubKey: PubKey %v is not in the network", pubKey.String())
+		n.log.LogWarnf("SendMsgByPubKey: PubKey %v is not in the network", pubKey.String())
 		return
 	}
 	peer.SendMsg(msg)

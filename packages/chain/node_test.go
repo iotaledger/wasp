@@ -15,7 +15,8 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -98,11 +99,11 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
 	defer ctxTimeoutCancel()
 
-	te.log.Debugf("All started.")
+	te.log.LogDebugf("All started.")
 	for _, tnc := range te.nodeConns {
 		tnc.waitAttached()
 	}
-	te.log.Debugf("All attached to node conns.")
+	te.log.LogDebugf("All attached to node conns.")
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
@@ -169,7 +170,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
-			te.log.Debugf("Counter[node=%v]=%v", i, cnt)
+			te.log.LogDebugf("Counter[node=%v]=%v", i, cnt)
 			if cnt >= int64(incCount) {
 				// TODO: Double-check with the published TX.
 				/*
@@ -211,11 +212,11 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 			lastPublishedAO := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
 			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
-				te.log.Debugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
+				te.log.LogDebugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
 				return false
 			}
 			if !lastPublishedAO.Equals(activeAO) {
-				te.log.Debugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
+				te.log.LogDebugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
 				return false
 			}
 			return true
@@ -227,7 +228,7 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 	reqRefs := isc.RequestRefsFromRequests(requests)
 	for i, node := range te.nodes {
 		for reqNum, reqRef := range reqRefs {
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
+			te.log.LogDebugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
 
 			await := func(confirmed bool) {
 				select {
@@ -244,7 +245,7 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 
 			await(false)
 			// await(true)
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
+			te.log.LogDebugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
 }
@@ -257,10 +258,10 @@ func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate fun
 			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
 		default:
 			if predicate() {
-				te.log.Debugf("Predicate %v become true.", desc)
+				te.log.LogDebugf("Predicate %v become true.", desc)
 				return
 			}
-			te.log.Debugf("Predicate %v still false, will retry.", desc)
+			te.log.LogDebugf("Predicate %v still false, will retry.", desc)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
@@ -478,7 +479,7 @@ type testEnv struct {
 	t                *testing.T
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
-	log              *logger.Logger
+	log              log.Logger
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
@@ -500,7 +501,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()
@@ -517,13 +518,13 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(te.log)
 	} else {
-		netLogger := testlogger.WithLevel(te.log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(te.log.NewChildLogger("Network"), log.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	te.peeringNetwork = testutil.NewPeeringNetwork(
 		te.peeringURLs, te.peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(te.log, logger.LevelWarn, false),
+		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
@@ -547,7 +548,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t, te.l1Client, te.iscPackageID)
-		log := te.log.Named(fmt.Sprintf("N#%v", i))
+		log := te.log.NewChildLogger(fmt.Sprintf("N#%v", i))
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.nodes[i], err = chain.New(
 			te.ctx,
@@ -590,12 +591,12 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)
 	}
-	te.log = te.log.Named("TC")
+	te.log = te.log.NewChildLogger("TC")
 	return te
 }
 
 func (te *testEnv) close() {
 	te.ctxCancel()
 	te.peeringNetwork.Close()
-	te.log.Sync()
+	te.log.Shutdown()
 }

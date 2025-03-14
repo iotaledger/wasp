@@ -15,7 +15,7 @@ func TestDSSSigner(t *testing.T) {
 	//
 	// Infrastructure.
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	n := 4
 	f := 1
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))

@@ -153,7 +153,7 @@ func startServer(t *testing.T, port string, handler http.Handler) {
 
 func testDownloader(t *testing.T, writeFun func(io.Writer), readFun func(io.Reader), chunkSize ...uint64) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	defer cleanupAfterDownloaderTest(t)
 
 	err := ioutils.CreateDirectory(downloaderServerPathConst, 0o777)

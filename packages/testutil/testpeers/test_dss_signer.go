@@ -7,7 +7,7 @@ import (
 	"github.com/samber/lo"
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -20,7 +20,7 @@ type testDssSigner struct {
 	dkShares []tcrypto.DKShare
 	nodeIDs  []gpa.NodeID
 	nodeKeys []*cryptolib.KeyPair
-	log      *logger.Logger
+	log      log.Logger
 }
 
 func NewTestDSSSigner(
@@ -28,7 +28,7 @@ func NewTestDSSSigner(
 	reg []registry.DKShareRegistryProvider,
 	nodeIDs []gpa.NodeID,
 	nodeKeys []*cryptolib.KeyPair,
-	log *logger.Logger,
+	log log.Logger,
 ) cryptolib.Signer {
 	dkShares := lo.Map(reg, func(prov registry.DKShareRegistryProvider, index int) tcrypto.DKShare {
 		return lo.Must(prov.LoadDKShare(addr))

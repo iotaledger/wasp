@@ -32,17 +32,17 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func() registry.NodeIdentityProvider {
 		return nodeIdentityRegistry()
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	if err := c.Provide(func() registry.ChainRecordRegistryProvider {
 		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(ParamsRegistries.Chains.FilePath)
 		if err != nil {
-			Component.LogPanic(err)
+			Component.LogPanic(err.Error())
 		}
 		return chainRecordRegistryProvider
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	type consensusRegistryDeps struct {
@@ -54,11 +54,11 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func(deps consensusRegistryDeps) cmt_log.ConsensusStateRegistry {
 		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path)
 		if err != nil {
-			Component.LogPanic(err)
+			Component.LogPanic(err.Error())
 		}
 		return consensusStateRegistry
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	type dkSharesRegistryDeps struct {
@@ -71,21 +71,21 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func(deps dkSharesRegistryDeps) registry.DKShareRegistryProvider {
 		dkSharesRegistry, err := registry.NewDKSharesRegistry(ParamsRegistries.DKShares.Path, deps.NodeIdentityProvider.NodeIdentity().GetPrivateKey())
 		if err != nil {
-			Component.LogPanic(err)
+			Component.LogPanic(err.Error())
 		}
 		return dkSharesRegistry
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	if err := c.Provide(func() registry.TrustedPeersRegistryProvider {
 		trustedPeersRegistryProvider, err := registry.NewTrustedPeersRegistryImpl(ParamsRegistries.TrustedPeers.FilePath)
 		if err != nil {
-			Component.LogPanic(err)
+			Component.LogPanic(err.Error())
 		}
 		return trustedPeersRegistryProvider
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil
@@ -102,7 +102,7 @@ func nodeIdentityRegistry() *registry.NodeIdentity {
 	// load up the previously generated identity or create a new one
 	privKey, newlyCreated, err := hivep2p.LoadOrCreateIdentityPrivateKey(ParamsP2P.Identity.FilePath, ParamsP2P.Identity.PrivateKey)
 	if err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	if newlyCreated {

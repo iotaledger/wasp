@@ -37,11 +37,11 @@ func TestPregenerateDKS(t *testing.T) {
 func testPregenerateDKS(t *testing.T, n, f uint16) {
 	var err error
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	threshold := n - f
 	require.GreaterOrEqual(t, threshold, (n*2)/3+1)
 	peeringURLs, identities := testpeers.SetupKeys(n)
-	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, peeringURLs, identities, tcrypto.DefaultBLSSuite(), log.Named("dkg"))
+	dksAddr, dksRegistries := testpeers.SetupDkg(t, threshold, peeringURLs, identities, tcrypto.DefaultBLSSuite(), log.NewChildLogger("dkg"))
 	ww := rwutil.NewBytesWriter()
 	ww.WriteSize16(len(dksRegistries))
 	require.NoError(t, ww.Err)

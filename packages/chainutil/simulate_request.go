@@ -3,7 +3,7 @@ package chainutil
 import (
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -16,7 +16,7 @@ func SimulateRequest(
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	req isc.Request,
 	estimateGasMode bool,
 ) (*blocklog.RequestReceipt, error) {

@@ -18,7 +18,7 @@ import (
 
 func TestBlockCacheSimple(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
@@ -35,7 +35,7 @@ func TestBlockCacheSimple(t *testing.T) {
 
 func TestBlockCacheCleaning(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(6, 2)
@@ -82,7 +82,7 @@ func TestBlockCacheCleaning(t *testing.T) {
 
 func TestBlockCacheSameBlockCleaning(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(3, 2)
@@ -114,7 +114,7 @@ func TestBlockCacheSameBlockCleaning(t *testing.T) {
 // Test if blocks are put/taken from WAL, if they are not available in cache
 func TestBlockCacheWAL(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(3, 2)
@@ -138,7 +138,7 @@ func TestBlockCacheWAL(t *testing.T) {
 // Test if blocks are cleaned from cache on timer as well as on cache size.
 func TestBlockCacheCleanUp(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(16, 2)
@@ -214,7 +214,7 @@ func TestBlockCacheCleanUp(t *testing.T) {
 // unlikely. It may happen only if WAL gets corrupted outside Wasp.
 func TestBlockCacheFull(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(5, 2)

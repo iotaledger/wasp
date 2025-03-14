@@ -6,6 +6,7 @@ package testpeers
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -14,7 +15,8 @@ import (
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/peering"
@@ -48,7 +50,7 @@ func SetupDkg(
 	peeringURLs []string,
 	peerIdentities []*cryptolib.KeyPair,
 	suite tcrypto.Suite,
-	log *logger.Logger,
+	log log.Logger,
 ) (*cryptolib.Address, []registry.DKShareRegistryProvider) {
 	timeout := 300 * time.Second
 	networkProviders, networkCloser := SetupNet(peeringURLs, peerIdentities, testutil.NewPeeringNetReliable(log), log)
@@ -60,7 +62,7 @@ func SetupDkg(
 		dkShareRegistryProviders[i] = testutil.NewDkgRegistryProvider(peerIdentities[i].GetPrivateKey())
 		dkgNode, err := dkg.NewNode(
 			peerIdentities[i], networkProviders[i], dkShareRegistryProviders[i],
-			testlogger.WithLevel(log.With("peeringURL", peeringURLs[i]), logger.LevelError, false),
+			testlogger.WithLevel(log.NewChildLogger(fmt.Sprintf("peeringURL:%s", peeringURLs[i])), slog.LevelError, false),
 		)
 		require.NoError(t, err)
 		dkgNodes[i] = dkgNode
@@ -157,11 +159,11 @@ func SetupNet(
 	peeringURLs []string,
 	peerIdentities []*cryptolib.KeyPair,
 	behavior testutil.PeeringNetBehavior,
-	log *logger.Logger,
+	log log.Logger,
 ) ([]peering.NetworkProvider, io.Closer) {
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peeringURLs, peerIdentities, 10000, behavior,
-		testlogger.WithLevel(log, logger.LevelWarn, false),
+		testlogger.WithLevel(log, slog.LevelWarn, false),
 	)
 	networkProviders := peeringNetwork.NetworkProviders()
 	return networkProviders, peeringNetwork

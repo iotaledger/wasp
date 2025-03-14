@@ -5,7 +5,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/metrics"
 )
@@ -32,7 +33,7 @@ type varLogIndexImpl struct {
 	qcStarted *QuorumCounter
 	outputCB  func(li LogIndex) gpa.OutMessages
 	metrics   *metrics.ChainCmtLogMetrics
-	log       *logger.Logger
+	log       log.Logger
 }
 
 func NewVarLogIndex(
@@ -42,7 +43,7 @@ func NewVarLogIndex(
 	persistedLI LogIndex,
 	outputCB func(li LogIndex) gpa.OutMessages,
 	metrics *metrics.ChainCmtLogMetrics,
-	log *logger.Logger,
+	log log.Logger,
 ) VarLogIndex {
 	vli := &varLogIndexImpl{
 		nodeIDs:   nodeIDs,
@@ -67,7 +68,7 @@ func (vli *varLogIndexImpl) StatusString() string {
 }
 
 func (vli *varLogIndexImpl) ConsensusStarted(consensusLI LogIndex) gpa.OutMessages {
-	vli.log.Debugf("ConsensusStarted: consensusLI=%v", consensusLI)
+	vli.log.LogDebugf("ConsensusStarted: consensusLI=%v", consensusLI)
 	msgs := gpa.NoMessages()
 	msgs.AddAll(vli.qcStarted.MaybeSendVote(consensusLI))
 	msgs.AddAll(vli.tryOutputOnStarted())
@@ -75,10 +76,10 @@ func (vli *varLogIndexImpl) ConsensusStarted(consensusLI LogIndex) gpa.OutMessag
 }
 
 func (vli *varLogIndexImpl) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.OutMessages {
-	vli.log.Debugf("MsgNextLogIndexReceived, %v", msg)
+	vli.log.LogDebugf("MsgNextLogIndexReceived, %v", msg)
 	sender := msg.Sender()
 	if !vli.knownNodeID(sender) {
-		vli.log.Warnf("⊢ MsgNextLogIndex from unknown sender: %+v", msg)
+		vli.log.LogWarnf("⊢ MsgNextLogIndex from unknown sender: %+v", msg)
 		return nil
 	}
 
@@ -86,7 +87,7 @@ func (vli *varLogIndexImpl) MsgNextLogIndexReceived(msg *MsgNextLogIndex) gpa.Ou
 	case MsgNextLogIndexCauseStarted:
 		return vli.msgNextLogIndexOnStarted(msg)
 	default:
-		vli.log.Warnf("⊢ MsgNextLogIndex with unexpected cause: %+v", msg)
+		vli.log.LogWarnf("⊢ MsgNextLogIndex with unexpected cause: %+v", msg)
 		return nil
 	}
 }
@@ -107,7 +108,7 @@ func (vli *varLogIndexImpl) tryOutput(li LogIndex, cause MsgNextLogIndexCause) g
 		return nil
 	}
 	vli.agreedLI = li
-	vli.log.Debugf("⊢ Output, li=%v", vli.agreedLI)
+	vli.log.LogDebugf("⊢ Output, li=%v", vli.agreedLI)
 	if vli.metrics != nil {
 		switch cause {
 		case MsgNextLogIndexCauseStarted:

@@ -4,16 +4,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
+
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
 
 func TestLoggerBasic(t *testing.T) {
-	l := testlogger.WithLevel(testlogger.NewLogger(t), zapcore.DebugLevel, true)
+	l := testlogger.WithLevel(testlogger.NewLogger(t), log.LevelDebug, true)
 	require.NotNil(t, l)
-	l.Info("testing the logger 1")
-	l.Debug("testing debug 1")
-	l = testlogger.WithLevel(l, zapcore.InfoLevel, false)
-	l.Debug("should not appear")
+	l.LogInfo("testing the logger 1")
+	l.LogDebug("testing debug 1")
+	l = testlogger.WithLevel(l, log.LevelInfo, false)
+	l.LogDebug("should not appear")
 }

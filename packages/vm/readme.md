@@ -59,7 +59,7 @@ type VMTask struct {
 	Timestamp                time.Time
 	Entropy                  hashing.HashValue
 	ValidatorFeeTarget       *isc.AgentID
-	Log                      *logger.Logger
+	Log                      log.Logger
 	OnFinish                 func(callResult dict.Dict, callError error, vmError error)
 	ResultTransactionEssence *ledgerstate.TransactionEssence // if not nil it is a normal block
 	RotationAddress          ledgerstate.Address             // if not nil, it is a rotation

@@ -32,7 +32,7 @@ func TestCallRecursive(t *testing.T) {
 	setupTestSandboxSC(t, chain, nil)
 
 	depth := uint64(27)
-	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OriginatorAgentID))
+	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OwnerAgentID()))
 	req := solo.NewCallParams(
 		sbtestsc.FuncCallOnChain.Message(isc.NewCallArguments(
 			codec.Encode(depth),

@@ -10,7 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"
@@ -26,14 +27,14 @@ type groupImpl struct {
 	selfIndex   uint16
 	peeringID   peering.PeeringID
 	unhookFuncs []context.CancelFunc
-	log         *logger.Logger
+	log         log.Logger
 }
 
 var _ peering.GroupProvider = &groupImpl{}
 
 // NewPeeringGroupProvider creates a generic peering group.
 // That should be used as a helper for peering implementations.
-func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peering.PeeringID, nodes []peering.PeerSender, log *logger.Logger) (peering.GroupProvider, error) {
+func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peering.PeeringID, nodes []peering.PeerSender, log log.Logger) (peering.GroupProvider, error) {
 	other := make(map[uint16]peering.PeerSender)
 	selfFound := false
 	selfIndex := uint16(0)
@@ -135,7 +136,7 @@ func (g *groupImpl) ExchangeRound(
 			}
 			senderIndex, err := g.PeerIndexByPubKey(recvMsgNoIndex.SenderPubKey)
 			if err != nil {
-				g.log.Warnf(
+				g.log.LogWarnf(
 					"Dropping message %v -> %v, MsgType=%v because of %v",
 					recvMsgNoIndex.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
 					recvMsgNoIndex.MsgType, err,
@@ -147,7 +148,7 @@ func (g *groupImpl) ExchangeRound(
 				SenderIndex:   senderIndex,
 			}
 			if acks[recvMsg.SenderIndex] { // Only consider first successful message.
-				g.log.Warnf(
+				g.log.LogWarnf(
 					"Dropping duplicate message %v -> %v, receiver=%v, MsgType=%v",
 					recvMsg.SenderPubKey.String(), g.netProvider.Self().PubKey().String(),
 					recvMsg.MsgReceiver, recvMsg.MsgType,
@@ -237,7 +238,7 @@ func (g *groupImpl) Attach(receiver byte, callback func(recv *peering.PeerMessag
 			err = errors.New("sender does not belong to the group")
 		}
 		if err != nil {
-			g.log.Warnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
+			g.log.LogWarnf("dropping message for receiver=%v MsgType=%v from %v: %v.",
 				recv.MsgReceiver, recv.MsgType, recv.SenderPubKey.String(), err)
 			return
 		}

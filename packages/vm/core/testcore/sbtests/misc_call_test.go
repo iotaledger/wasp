@@ -18,7 +18,7 @@ func TestChainOwnerIDView(t *testing.T) {
 		return chain.CallViewWithContract(ScName, msg)
 	})
 	require.NoError(t, err)
-	require.EqualValues(t, chain.OriginatorAgentID.Bytes(), chainOwnderID.Bytes())
+	require.EqualValues(t, chain.OwnerAgentID().Bytes(), chainOwnderID.Bytes())
 }
 
 func TestChainOwnerIDFull(t *testing.T) {
@@ -31,7 +31,7 @@ func TestChainOwnerIDFull(t *testing.T) {
 		return chain.PostRequestSync(req, nil)
 	})
 	require.NoError(t, err)
-	require.True(t, chain.OriginatorAgentID.Equals(chainOwnderID))
+	require.True(t, chain.OwnerAgentID().Equals(chainOwnderID))
 }
 
 func TestSandboxCall(t *testing.T) {

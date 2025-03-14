@@ -92,7 +92,8 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/gpa/acss/crypto"
 	rbc "github.com/iotaledger/wasp/packages/gpa/rbc/bracha"
@@ -130,7 +131,7 @@ type acssImpl struct {
 	outS          *share.PriShare                // Our share of the secret (decrypted from rbcOutE).
 	output        bool
 	msgWrapper    *gpa.MsgWrapper
-	log           *logger.Logger
+	log           log.Logger
 }
 
 var _ gpa.GPA = &acssImpl{}
@@ -144,7 +145,7 @@ func New(
 	mySK kyber.Scalar, // Secret Key of this node.
 	dealer gpa.NodeID, // The dealer node for this protocol instance.
 	dealCB func(int, []byte) []byte, // For tests only: interceptor for the deal to be shared.
-	log *logger.Logger, // A logger to use.
+	log log.Logger, // A logger to use.
 ) gpa.GPA {
 	n := len(peers)
 	if dealCB == nil {
@@ -209,7 +210,7 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case subsystemRBC:
 			return a.handleRBCMessage(m)
 		default:
-			a.log.Warnf("unexpected wrapped message subsystem: %+v", m)
+			a.log.LogWarnf("unexpected wrapped message subsystem: %+v", m)
 			return nil
 		}
 	case *msgVote:
@@ -219,7 +220,7 @@ func (a *acssImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case msgVoteREADY:
 			return a.handleVoteREADY(m)
 		default:
-			a.log.Warnf("unexpected vote message: %+v", m)
+			a.log.LogWarnf("unexpected vote message: %+v", m)
 			return nil
 		}
 	case *msgImplicateRecover:
@@ -355,7 +356,7 @@ func (a *acssImpl) handleImplicateRecoverReceived(msg *msgImplicateRecover) gpa.
 	case msgImplicateRecoverKindRECOVER:
 		return a.handleRecover(msg)
 	default:
-		a.log.Warnf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", msg.kind, msg)
+		a.log.LogWarnf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", msg.kind, msg)
 		return nil
 	}
 }
@@ -384,7 +385,7 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs gpa.OutMessages) gpa.OutMe
 		case msgImplicateRecoverKindRECOVER:
 			msgs.AddAll(a.handleRecover(m))
 		default:
-			a.log.Warnf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m)
+			a.log.LogWarnf("handleImplicateRecoverReceived: unexpected msgImplicateRecover.kind=%v, message: %+v", m.kind, m)
 			// Don't return here, we are just dropping incorrect message.
 		}
 	}
@@ -405,7 +406,7 @@ func (a *acssImpl) handleImplicateRecoverPending(msgs gpa.OutMessages) gpa.OutMe
 func (a *acssImpl) handleImplicate(msg *msgImplicateRecover) gpa.OutMessages {
 	peerIndex := a.peerIndex(msg.sender)
 	if peerIndex == -1 {
-		a.log.Warnf("implicate received from unknown peer: %v", msg.sender)
+		a.log.LogWarnf("implicate received from unknown peer: %v", msg.sender)
 		return nil
 	}
 	//
@@ -419,13 +420,13 @@ func (a *acssImpl) handleImplicate(msg *msgImplicateRecover) gpa.OutMessages {
 	// Check implicate.
 	secret, err := crypto.CheckImplicate(a.suite, a.rbcOut.PubKey, a.peerPKs[msg.sender], msg.data)
 	if err != nil {
-		a.log.Warnf("Invalid implication received: %v", err)
+		a.log.LogWarnf("Invalid implication received: %v", err)
 		return nil
 	}
 	_, err = crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, secret)
 	if err == nil {
 		// if we are able to decrypt the share, the implication is not correct
-		a.log.Warn("encrypted share is valid")
+		a.log.LogWarn("encrypted share is valid")
 		return nil
 	}
 	//
@@ -450,17 +451,17 @@ func (a *acssImpl) handleRecover(msg *msgImplicateRecover) gpa.OutMessages {
 	}
 	peerIndex := a.peerIndex(msg.sender)
 	if peerIndex == -1 {
-		a.log.Warnf("Recover received from unexpected sender: %v", msg.sender)
+		a.log.LogWarnf("Recover received from unexpected sender: %v", msg.sender)
 		return nil
 	}
 	if _, ok := a.recoverRecv[msg.sender]; ok {
-		a.log.Warnf("Recover was already received from %v", msg.sender)
+		a.log.LogWarnf("Recover was already received from %v", msg.sender)
 		return nil
 	}
 
 	peerSecret, err := crypto.DecryptShare(a.suite, a.rbcOut, peerIndex, msg.data)
 	if err != nil {
-		a.log.Warn("invalid secret revealed")
+		a.log.LogWarn("invalid secret revealed")
 		return nil
 	}
 	a.recoverRecv[msg.sender] = peerSecret
@@ -477,7 +478,7 @@ func (a *acssImpl) handleRecover(msg *msgImplicateRecover) gpa.OutMessages {
 
 		myPriShare, err := crypto.InterpolateShare(a.suite, priShares, a.n, a.myIdx)
 		if err != nil {
-			a.log.Warnf("Failed to recover pri-poly: %v", err)
+			a.log.LogWarnf("Failed to recover pri-poly: %v", err)
 		}
 		a.outS = myPriShare
 		a.output = true
@@ -500,7 +501,7 @@ func (a *acssImpl) broadcastVote(voteKind msgVoteKind, msgs gpa.OutMessages) gpa
 }
 
 func (a *acssImpl) broadcastImplicate(reason error, msgs gpa.OutMessages) gpa.OutMessages {
-	a.log.Warnf("Sending implicate because of: %v", reason)
+	a.log.LogWarnf("Sending implicate because of: %v", reason)
 	implicate := crypto.Implicate(a.suite, a.rbcOut.PubKey, a.mySK)
 	return a.broadcastImplicateRecover(msgImplicateRecoverKindIMPLICATE, implicate, msgs)
 }

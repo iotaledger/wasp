@@ -3,7 +3,8 @@ package iotaclient
 import (
 	"context"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 )
 
@@ -17,9 +18,9 @@ func NewWebsocket(
 	ctx context.Context,
 	wsURL string,
 	waitUntilEffectsVisible *WaitParams,
-	log *logger.Logger,
+	log log.Logger,
 ) (*Client, error) {
-	ws, err := iotaconn.NewWebsocketClient(ctx, wsURL, log.Named("iotago-ws"))
+	ws, err := iotaconn.NewWebsocketClient(ctx, wsURL, log.NewChildLogger("iotago-ws"))
 	if err != nil {
 		return nil, err
 	}

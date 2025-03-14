@@ -12,7 +12,7 @@ import (
 func TestTransactionData(t *testing.T) {
 	sender := iotago.MustAddressFromHex("0x0")
 	b := [32]byte{}
-	b58 := iotago.Base58(b[:])
+	b58 := iotago.Digest(b[:])
 	gasPaymentsRef := iotago.ObjectRef{
 		ObjectID: iotago.MustObjectIDFromHex("0x0"),
 		Version:  0,
@@ -46,7 +46,7 @@ func TestTransactionData(t *testing.T) {
 	}
 	digest, err := tx.Digest()
 	require.NoError(t, err)
-	require.Equal(t, targetHash, digest.Data())
+	require.Equal(t, targetHash, digest.Bytes())
 
 	bcs.TestCodec(t, tx)
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/configuration"
+
 	"github.com/iotaledger/wasp/packages/users"
 )
 
@@ -72,7 +73,7 @@ func provide(c *dig.Container) error {
 			UserManager: userManager,
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil

@@ -133,11 +133,11 @@ func (u utilImplBLS) AggregateBLSSignatures(pubKeysBin, sigsBin [][]byte) ([]byt
 
 	sigPubKey := make([]bls.SignatureWithPublicKey, len(pubKeysBin))
 	for i := range pubKeysBin {
-		pubKey, _, err := bls.PublicKeyFromBytes(pubKeysBin[i])
+		pubKey, err := bls.PublicKeyFromBytes(pubKeysBin[i])
 		if err != nil {
 			return nil, nil, fmt.Errorf("BLSUtil: wrong public key bytes: %w", err)
 		}
-		sig, _, err := bls.SignatureFromBytes(sigsBin[i])
+		sig, err := bls.SignatureFromBytes(sigsBin[i])
 		if err != nil {
 			return nil, nil, fmt.Errorf("BLSUtil: wrong signature bytes: %w", err)
 		}

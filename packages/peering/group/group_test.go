@@ -17,7 +17,7 @@ import (
 
 func TestGroupProvider(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	nodeCount := 4
 	peeringURLs, nodeIdentities := testpeers.SetupKeys(uint16(nodeCount))

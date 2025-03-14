@@ -4,9 +4,8 @@ import (
 	"math/big"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +30,7 @@ type ViewContext struct {
 	processors            *processors.Config
 	stateReader           state.State
 	chainID               isc.ChainID
-	log                   *logger.Logger
+	log                   log.Logger
 	chainInfo             *isc.ChainInfo
 	gasBurnLog            *gas.BurnLog
 	gasBudget             uint64
@@ -47,14 +46,14 @@ func New(
 	chainID isc.ChainID,
 	stateReader state.State,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	gasBurnLoggingEnabled bool,
 ) (*ViewContext, error) {
 	return &ViewContext{
 		processors:            processors,
 		stateReader:           stateReader,
 		chainID:               chainID,
-		log:                   log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		log:                   log,
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 		schemaVersion:         stateReader.SchemaVersion(),
 	}, nil
@@ -143,7 +142,7 @@ func (ctx *ViewContext) GetCoinBalance(agentID isc.AgentID, coinType coin.Type) 
 }
 
 func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) isc.CallArguments {
-	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", msg.Target.Contract, msg.Target.EntryPoint)
+	ctx.log.LogDebugf("Call. TargetContract: %s entry point: %s", msg.Target.Contract, msg.Target.EntryPoint)
 	return ctx.callView(msg)
 }
 
@@ -189,15 +188,15 @@ func (ctx *ViewContext) GasEstimateMode() bool {
 }
 
 func (ctx *ViewContext) Infof(format string, params ...interface{}) {
-	ctx.log.Infof(format, params...)
+	ctx.log.LogInfof(format, params...)
 }
 
 func (ctx *ViewContext) Debugf(format string, params ...interface{}) {
-	ctx.log.Debugf(format, params...)
+	ctx.log.LogDebugf(format, params...)
 }
 
 func (ctx *ViewContext) Panicf(format string, params ...interface{}) {
-	ctx.log.Panicf(format, params...)
+	ctx.log.LogPanicf(format, params...)
 }
 
 // only for debugging

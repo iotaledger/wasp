@@ -18,7 +18,7 @@ package cmt_log_test
 
 // func TestVarLocalView(t *testing.T) {
 // 	log := testlogger.NewLogger(t)
-// 	defer log.Sync()
+// 	defer log.Shutdown()
 // 	j := cmt_log.NewVarLocalView(-1, func(anchor *isc.StateAnchor) {}, log)
 // 	require.Nil(t, j.Value())
 // 	randAnchor := isctest.RandomStateAnchor()

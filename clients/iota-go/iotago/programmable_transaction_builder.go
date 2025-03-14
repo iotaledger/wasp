@@ -98,7 +98,15 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 				},
 			}
 		} else {
-			if oldObjArg != objArg {
+			oldObjArgBytes, err := bcs.Marshal(&oldObjArg)
+			if err != nil {
+				return Argument{}, fmt.Errorf("can't marsharl oldObjArg %v: %w", oldObjArg, err)
+			}
+			objArgBytes, err := bcs.Marshal(&objArg)
+			if err != nil {
+				return Argument{}, fmt.Errorf("can't marsharl objArg %v: %w", objArg, err)
+			}
+			if !slices.Equal(oldObjArgBytes, objArgBytes) {
 				return Argument{}, fmt.Errorf(
 					"mismatched Object argument kind for object %s. "+
 						"%v is not compatible with %v", id.String(), oldValue, objArg,

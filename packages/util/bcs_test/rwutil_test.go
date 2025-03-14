@@ -5,10 +5,11 @@ import (
 	"io"
 	"testing"
 
-	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
+
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
 type BasicWithRwUtilCodec string
