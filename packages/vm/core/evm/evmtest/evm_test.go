@@ -848,7 +848,7 @@ func TestSendBaseTokens(t *testing.T) {
 	env := InitEVM(t)
 
 	ethKey, ethAddress := env.Chain.EthereumAccountByIndexWithL2Funds(0)
-	_, receiver := env.solo.NewKeyPair(env.solo.NewSeedFromIndex(1))
+	_, receiver := env.solo.NewKeyPair(env.solo.NewSeedFromTestNameAndTimestamp(t.Name()))
 
 	iscTest := env.deployISCTestContract(ethKey)
 
@@ -1644,7 +1644,7 @@ func TestERC20CoinWithExternalFoundry(t *testing.T) {
 	// 	tokenDecimals     = 8
 	// )
 	//
-	// foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromIndex(1))
+	// foundryOwner, foundryOwnerAddr := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromTestNameAndTimestamp(t.Name()))
 	// err := env.Chain.DepositBaseTokensToL2(env.solo.L1BaseTokens(foundryOwnerAddr)/2, foundryOwner)
 	// require.NoError(t, err)
 	//
@@ -2410,7 +2410,7 @@ func TestSelfDestruct(t *testing.T) {
 	// send some tokens to the ISCTest contract
 	{
 		const baseTokensDepositFee = 500
-		k, _ := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromIndex(1))
+		k, _ := env.solo.NewKeyPairWithFunds(env.solo.NewSeedFromTestNameAndTimestamp(t.Name()))
 		err := env.Chain.SendFromL1ToL2AccountBaseTokens(baseTokensDepositFee, 1*isc.Million, iscTestAgentID, k)
 		require.NoError(t, err)
 		require.EqualValues(t, 1*isc.Million, env.Chain.L2BaseTokens(iscTestAgentID))

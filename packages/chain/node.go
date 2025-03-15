@@ -807,7 +807,6 @@ func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainman
 					nextAliasOutput: newStateAnchor,
 					confirmed:       err == nil,
 				}
-
 			}); err != nil {
 				cni.log.LogError(err.Error())
 			}
@@ -819,7 +818,6 @@ func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainman
 	})
 
 	cni.cleanupPublishingTXes(upd)
-
 }
 
 func (cni *chainNodeImpl) handleConsensusOutput(out *consOutput) {

@@ -55,7 +55,7 @@ type IRC27NFTMetadata struct {
 	Standard    string
 	Version     string
 	MimeType    string
-	Uri         string //nolint:revive // "URI" would break serialization
+	Uri         string
 	Name        string
 	Description string
 }

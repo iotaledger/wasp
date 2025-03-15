@@ -232,41 +232,53 @@ func (env *Solo) makeBaseTokenCoin(
 
 	const gasBudget = iotaclient.DefaultGasBudget
 
-	pickedCoins, err := iotajsonrpc.PickupCoinsWithFilter(
+	pickedCoin, err := iotajsonrpc.PickupCoinWithFilter(
 		env.L1BaseTokenCoins(keyPair.Address()),
 		uint64(value+gasBudget),
 		filter,
 	)
 
-	tx := lo.Must(env.IotaClient().PayIota(
+	require.NoError(env.T, err)
+	require.NotNil(env.T, pickedCoin)
+
+	var tx *iotajsonrpc.TransactionBytes = lo.Must(env.IotaClient().PayIota(
 		env.ctx,
 		iotaclient.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),
-			InputCoins: pickedCoins.ObjectIDs(),
+			InputCoins: []*iotago.ObjectID{pickedCoin.CoinObjectID},
 			Amount:     []*iotajsonrpc.BigInt{iotajsonrpc.NewBigInt(uint64(value))},
 			Recipients: []*iotago.Address{keyPair.Address().AsIotaAddress()},
 			GasBudget:  iotajsonrpc.NewBigInt(gasBudget),
 		},
 	))
-	txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
-		env.ctx,
-		&iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: tx.TxBytes,
-			Signer:      cryptolib.SignerToIotaSigner(keyPair),
-			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
+
+	var baseTokenCoin iotajsonrpc.OwnedObjectRef
+
+	env.WithWaitForNextVersion(pickedCoin.Ref(), func() {
+		txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
+			env.ctx,
+			&iotaclient.SignAndExecuteTransactionRequest{
+				TxDataBytes: tx.TxBytes,
+				Signer:      cryptolib.SignerToIotaSigner(keyPair),
+				Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+					ShowEffects:        true,
+					ShowObjectChanges:  true,
+					ShowBalanceChanges: true,
+				},
 			},
-		},
-	)
-	require.NoError(env.T, err)
-	require.True(env.T, txnResponse.Effects.Data.IsSuccess())
-	require.Len(env.T, txnResponse.Effects.Data.V1.Created, 1)
-	coin := txnResponse.Effects.Data.V1.Created[0]
+		)
+
+		require.NoError(env.T, err)
+		require.True(env.T, txnResponse.Effects.Data.IsSuccess())
+		require.Len(env.T, txnResponse.Effects.Data.V1.Created, 1)
+
+		baseTokenCoin = txnResponse.Effects.Data.V1.Created[0]
+	})
+
 	return &iotago.ObjectRef{
-		ObjectID: coin.Reference.ObjectID,
-		Version:  coin.Reference.Version,
-		Digest:   &coin.Reference.Digest,
+		ObjectID: baseTokenCoin.Reference.ObjectID,
+		Version:  baseTokenCoin.Reference.Version,
+		Digest:   &baseTokenCoin.Reference.Digest,
 	}
 }
 

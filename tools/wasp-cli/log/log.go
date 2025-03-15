@@ -155,7 +155,6 @@ func Check(err error, msg ...string) {
 	Fatalf("%v", message)
 }
 
-//nolint:govet
 func PrintTable(header []string, rows [][]string) {
 	if len(rows) == 0 {
 		return

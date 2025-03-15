@@ -385,7 +385,7 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 
 // ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
 //
-//nolint:revive // needs to be ChainId to match the JSONRPC interface
+
 func (e *EthService) ChainId() (hexutil.Uint, error) {
 	return withMetrics(e.metrics, "eth_chainId", func() (hexutil.Uint, error) {
 		chainID := e.evmChain.ChainID()
