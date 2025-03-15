@@ -26,11 +26,16 @@ func TestOffLedger(t *testing.T) {
 	chain.DepositBaseTokensToL2(env.L1BaseTokens(userAddress)/10, userWallet)
 
 	req := isc.NewOffLedgerRequest(chain.ID(), accounts.FuncDeposit.Message(), 0, math.MaxUint64)
+
 	altReq := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestDataEssence)).
 		WithSenderAddress(userWallet.Address())
+
+	require.NotNil(t, altReq.SenderAccount())
+	require.Equal(t, altReq.SenderAccount().String(), userWallet.Address().String())
 
 	res := chain.EstimateGas(altReq)
 	require.NotNil(t, res.Receipt)
 	require.Nil(t, res.Receipt.Error)
 	require.Greater(t, res.Receipt.GasFeeCharged, uint64(0))
+
 }
