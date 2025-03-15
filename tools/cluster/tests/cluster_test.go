@@ -46,7 +46,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 
 	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) }) // FIXME feature not implement in WebAPI
 	// t.Run("webapi ISC estimategas onledger NFT", func(t *testing.T) { run(t, testEstimateGasOnLedgerNFT) })
-	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) }) // FIXME impl in WebAPI may be wrong
+	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) })
 }
 
 func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *testing.T, f func(*testing.T, *ChainEnv)) {
