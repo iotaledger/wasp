@@ -57,7 +57,7 @@ func testAccounts(e *ChainEnv) {
 	require.NoError(e.t, err)
 
 	balance2 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
-	require.Equal(e.t, balance1.TotalBalance.Int64(), balance2)
+	require.Equal(e.t, balance1.TotalBalance.Uint64(), balance2.Uint64())
 
 	_, err = originatorClient.PostOffLedgerRequest(context.Background(),
 		accounts.FuncWithdraw.Message(),
@@ -69,7 +69,7 @@ func testAccounts(e *ChainEnv) {
 	time.Sleep(3 * time.Second)
 
 	balance3 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
-	require.Equal(e.t, balance1.TotalBalance.Int64()+10, balance3)
+	require.Equal(e.t, balance1.TotalBalance.Uint64()+10, balance3.Uint64())
 }
 
 // executed in cluster_test.go

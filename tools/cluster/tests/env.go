@@ -142,7 +142,7 @@ func (e *ChainEnv) DeploySolidityContract(creator *ecdsa.PrivateKey, abiJSON str
 	require.NoError(e.t, err)
 
 	// await tx confirmed
-	_, err = e.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx.Hash(), false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx.Hash(), false, 30*time.Second)
 	require.NoError(e.t, err)
 
 	return crypto.CreateAddress(creatorAddress, nonce), contractABI
