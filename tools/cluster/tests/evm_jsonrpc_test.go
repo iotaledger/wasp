@@ -84,7 +84,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 	if len(baseTokens) > 0 {
 		amount = baseTokens[0]
 	} else {
-		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens
+		amount = e.Clu.L1BaseTokens(walletAddr) - transferAllowanceToGasBudgetBaseTokens - iotaclient.DefaultGasBudget
 	}
 	tx, err := e.Chain.Client(walletKey).PostRequest(
 		context.Background(),
