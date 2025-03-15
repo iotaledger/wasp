@@ -11,11 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 )
 
 func TestAccessNodesOnLedger(t *testing.T) {
@@ -38,17 +41,28 @@ func TestAccessNodesOnLedger(t *testing.T) {
 	})
 }
 
+// This is the value of the Gas used per deposit
+// This should probably be a bit nicer, than a hardcoded const hidden in a test :)
+const BaseTokensDepositFee = 100
+
 func testAccessNodesOnLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int) {
 	cmt := util.MakeRange(0, numValidatorNodes)
 	e := setupNativeInccounterTest(t, clusterSize, cmt)
+	client, _ := e.NewRandomChainClient()
 
 	for i := 0; i < numRequests; i++ {
-		client, _ := e.NewRandomChainClient()
-		_, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+		_, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+			GasBudget:   iotaclient.DefaultGasBudget,
+			Allowance:   isc.NewAssets(iotaclient.DefaultGasBudget),
+			L2GasBudget: iotaclient.DefaultGasBudget,
+			Transfer:    isc.NewAssets(iotaclient.DefaultGasBudget),
+		})
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), e.Clu.AllNodes(), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
+	expectedBalance := (iotaclient.DefaultGasBudget - BaseTokensDepositFee) * numRequests
+
+	waitUntil(t, e.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), e.Clu.AllNodes(), 40*time.Second, "a required number of testAccessNodesOnLedger requests")
 }
 
 func TestAccessNodesOffLedger(t *testing.T) {
@@ -87,24 +101,38 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	require.NoError(t, err)
 
 	accountsClient := e.Chain.Client(keyPair)
+	coinType := iotajsonrpc.IotaCoinType.String()
+	balance, err := accountsClient.L1Client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{
+		CoinType: &coinType,
+		Owner:    accountsClient.KeyPair.Address().AsIotaAddress(),
+	})
+
+	require.NoError(t, err)
+
 	tx, err := accountsClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer: isc.NewAssets(1_000_000),
+		Transfer:  isc.NewAssets(coin.Value(balance.Data[0].Balance.Uint64()) - iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
 	})
 	require.NoError(t, err)
 
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, false, 30*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 30*time.Second)
 	require.NoError(t, err)
 
-	myClient := e.Chain.Client(keyPair)
+	client := e.Chain.Client(keyPair)
+
+	someRandomsAddress := isc.NewAddressAgentID(cryptolib.NewRandomAddress())
 
 	for i := 0; i < numRequests; i++ {
-		_, err = myClient.PostOffLedgerRequest(
-			context.Background(),
-			inccounter.FuncIncCounter.Message(nil),
-			chainclient.PostRequestParams{Nonce: uint64(i)},
-		)
+		_, err := client.PostOffLedgerRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(someRandomsAddress), chainclient.PostRequestParams{
+			GasBudget:   iotaclient.DefaultGasBudget,
+			Allowance:   isc.NewAssets(iotaclient.DefaultGasBudget),
+			L2GasBudget: iotaclient.DefaultGasBudget,
+			Transfer:    isc.NewAssets(iotaclient.DefaultGasBudget),
+		})
 		require.NoError(t, err)
 	}
 
-	waitUntil(t, e.counterEquals(int64(numRequests)), util.MakeRange(0, clusterSize-1), to, "requests counted")
+	expectedBalance := iotaclient.DefaultGasBudget * numRequests
+
+	waitUntil(t, e.balanceEquals(someRandomsAddress, expectedBalance), util.MakeRange(0, clusterSize-1), to, "requests counted")
 }

@@ -39,14 +39,14 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("post 3", func(t *testing.T) { run(t, testPost3Requests) })            // passed
 	t.Run("post 5 async", func(t *testing.T) { run(t, testPost5AsyncRequests) }) // passed
 
-	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) }) // FIXME
+	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) }) // passed
 
 	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) }) // passed
 	t.Run("offledger nonce", func(t *testing.T) { run(t, testOffledgerNonce) })   // passed
 
 	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) }) // FIXME feature not implement in WebAPI
 	// t.Run("webapi ISC estimategas onledger NFT", func(t *testing.T) { run(t, testEstimateGasOnLedgerNFT) })
-	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) })
+	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) }) // passed
 }
 
 func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *testing.T, f func(*testing.T, *ChainEnv)) {

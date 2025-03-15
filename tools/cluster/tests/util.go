@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -176,6 +178,30 @@ func waitTrue(timeout time.Duration, fun func() bool) bool {
 		if time.Now().After(deadline) {
 			return false
 		}
+	}
+}
+
+func (e *ChainEnv) balanceEquals(agentID isc.AgentID, amount int) conditionFn {
+	return func(t *testing.T, nodeIndex int) bool {
+		ret, err := apiextensions.CallView(
+			context.Background(),
+			e.Chain.Cluster.WaspClient(nodeIndex),
+			e.Chain.ChainID.String(),
+			apiclient.ContractCallViewRequest{
+				ContractHName: accounts.Contract.Hname().String(),
+				FunctionHName: accounts.ViewBalanceBaseToken.Hname().String(),
+				Arguments:     accounts.ViewBalanceBaseToken.Message(&agentID).Params.ToCallArgumentsJSON(),
+			})
+		if err != nil {
+			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)
+			return false
+		}
+
+		balance, err := accounts.ViewBalanceBaseToken.DecodeOutput(ret)
+
+		fmt.Printf("CURRENT BALANCE: %d, EXPECTED: %d\n", balance, amount)
+
+		return coin.Value(amount) == balance
 	}
 }
 
