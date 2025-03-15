@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -40,17 +40,21 @@ func initializeStabilityTest(t *testing.T, numValidators, clusterSize int) *Sabo
 	}
 }
 
-func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) {
+func (e *SabotageEnv) sendRequests(numRequests int, messageDelay time.Duration) (*chainclient.Client, int) {
 	client, _ := e.chainEnv.NewRandomChainClient()
 	for i := 0; i < numRequests; i++ {
 		_, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-			Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
-			GasBudget: iotaclient.DefaultGasBudget,
+			GasBudget:   iotaclient.DefaultGasBudget,
+			Allowance:   isc.NewAssets(iotaclient.DefaultGasBudget),
+			L2GasBudget: iotaclient.DefaultGasBudget,
+			Transfer:    isc.NewAssets(iotaclient.DefaultGasBudget),
 		})
 		require.NoError(e.chainEnv.t, err)
 
 		time.Sleep(messageDelay)
 	}
+
+	return client, (iotaclient.DefaultGasBudget - BaseTokensDepositFee) * numRequests
 }
 
 func (e *SabotageEnv) setSabotageValidators(breakCount int) {
@@ -129,8 +133,9 @@ func TestSuccessfulIncCounterIncreaseWithoutInstability(t *testing.T) {
 	const numRequests = 35
 
 	env := initializeStabilityTest(t, numValidators, clusterSize)
-	env.sendRequests(numRequests, time.Millisecond*250)
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.chainEnv.Clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
+	client, expectedBalance := env.sendRequests(numRequests, time.Millisecond*250)
+
+	waitUntil(t, env.chainEnv.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), env.chainEnv.Clu.Config.AllNodes(), 120*time.Second, "incCounter matches expectation")
 }
 
 func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
@@ -148,11 +153,11 @@ func TestSuccessfulIncCounterIncreaseWithMildInstability(t *testing.T) {
 	env.setSabotageValidators(numBrokenNodes)
 
 	wg := env.sabotageNodes(4*time.Second, 1*time.Second)
-	env.sendRequests(numRequests, time.Millisecond*250)
+	client, expectedBalance := env.sendRequests(numRequests, time.Millisecond*250)
 
 	wg.Wait()
 
-	waitUntil(t, env.chainEnv.counterEquals(int64(numRequests)), env.getActiveNodeList(), 120*time.Second, "incCounter matches expectation")
+	waitUntil(t, env.chainEnv.balanceEquals(isc.NewAddressAgentID(client.KeyPair.Address()), expectedBalance), env.getActiveNodeList(), 120*time.Second, "incCounter matches expectation")
 }
 
 func runTestFailsIncCounterIncreaseAsQuorumNotMet(t *testing.T, clusterSize, numValidators, numBrokenNodes, numRequests int) {

@@ -8,13 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/util"
@@ -70,8 +70,16 @@ func TestAccessNodesOffLedger(t *testing.T) {
 		t.SkipNow()
 	}
 
+	t.Run("cluster=6,N=4,req=8", func(t *testing.T) {
+		const waitFor = 90 * time.Second
+		const numRequests = 8
+		const numValidatorNodes = 4
+		const clusterSize = 6
+		testAccessNodesOffLedger(t, numRequests, numValidatorNodes, clusterSize, waitFor)
+	})
+
 	t.Run("cluster=10,N=4,req=50", func(t *testing.T) {
-		const waitFor = 30 * time.Second
+		const waitFor = 90 * time.Second
 		const numRequests = 50
 		const numValidatorNodes = 4
 		const clusterSize = 10
@@ -89,7 +97,7 @@ func TestAccessNodesOffLedger(t *testing.T) {
 }
 
 func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clusterSize int, timeout ...time.Duration) {
-	to := 60 * time.Second
+	to := 90 * time.Second
 	if len(timeout) > 0 {
 		to = timeout[0]
 	}
@@ -118,18 +126,18 @@ func testAccessNodesOffLedger(t *testing.T, numRequests, numValidatorNodes, clus
 	_, err = e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 30*time.Second)
 	require.NoError(t, err)
 
-	client := e.Chain.Client(keyPair)
+	someRandomsAddress := isc.NewEthereumAddressAgentID(e.Chain.ChainID, common.MaxAddress)
 
-	someRandomsAddress := isc.NewAddressAgentID(cryptolib.NewRandomAddress())
+	nonce, err := accountsClient.ISCNonce(context.Background())
+	require.NoError(t, err)
 
 	for i := 0; i < numRequests; i++ {
-		_, err := client.PostOffLedgerRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(someRandomsAddress), chainclient.PostRequestParams{
-			GasBudget:   iotaclient.DefaultGasBudget,
-			Allowance:   isc.NewAssets(iotaclient.DefaultGasBudget),
-			L2GasBudget: iotaclient.DefaultGasBudget,
-			Transfer:    isc.NewAssets(iotaclient.DefaultGasBudget),
+		_, err2 := accountsClient.PostOffLedgerRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(someRandomsAddress), chainclient.PostRequestParams{
+			Allowance: isc.NewAssets(iotaclient.DefaultGasBudget),
+			GasBudget: iotaclient.DefaultGasBudget,
+			Nonce:     nonce + uint64(i),
 		})
-		require.NoError(t, err)
+		require.NoError(t, err2)
 	}
 
 	expectedBalance := iotaclient.DefaultGasBudget * numRequests
