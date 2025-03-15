@@ -4,10 +4,10 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**ActivateChain**](ChainsAPI.md#ActivateChain) | **Post** /v1/chain/activate | Activate a chain
+[**ActivateChain**](ChainsAPI.md#ActivateChain) | **Post** /v1/chain/activate/{chainID} | Activate a chain
 [**AddAccessNode**](ChainsAPI.md#AddAccessNode) | **Put** /v1/chain/access-node/{peer} | Configure a trusted node to be an access node.
 [**CallView**](ChainsAPI.md#CallView) | **Post** /v1/chain/callview | Call a view function on a contract by Hname
-[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chain/deactivate | Deactivate a chain
+[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chain/deactivate/{chainID} | Deactivate a chain
 [**DumpAccounts**](ChainsAPI.md#DumpAccounts) | **Post** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
 [**EstimateGasOffledger**](ChainsAPI.md#EstimateGasOffledger) | **Post** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**EstimateGasOnledger**](ChainsAPI.md#EstimateGasOnledger) | **Post** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
@@ -19,7 +19,7 @@ Method | HTTP request | Description
 [**GetStateValue**](ChainsAPI.md#GetStateValue) | **Get** /v1/chain/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
 [**RemoveAccessNode**](ChainsAPI.md#RemoveAccessNode) | **Delete** /v1/chain/access-node/{peer} | Remove an access node.
 [**RotateChain**](ChainsAPI.md#RotateChain) | **Post** /v1/chain/rotate | Rotate a chain
-[**SetChainRecord**](ChainsAPI.md#SetChainRecord) | **Post** /v1/chain/chainrecord | Sets the chain record.
+[**SetChainRecord**](ChainsAPI.md#SetChainRecord) | **Post** /v1/chain/chainrecord/{chainID} | Sets the chain record.
 [**V1ChainEvmPost**](ChainsAPI.md#V1ChainEvmPost) | **Post** /v1/chain/evm | Ethereum JSON-RPC
 [**V1ChainEvmWsGet**](ChainsAPI.md#V1ChainEvmWsGet) | **Get** /v1/chain/evm/ws | Ethereum JSON-RPC (Websocket transport)
 [**WaitForRequest**](ChainsAPI.md#WaitForRequest) | **Get** /v1/chain/requests/{requestID}/wait | Wait until the given request has been processed by the node

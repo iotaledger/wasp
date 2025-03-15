@@ -136,7 +136,7 @@ paths:
       summary: Configure a trusted node to be an access node.
       tags:
       - chains
-  /v1/chain/activate:
+  /v1/chain/activate/{chainID}:
     post:
       operationId: activateChain
       parameters:
@@ -192,7 +192,7 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: ""
-  /v1/chain/chainrecord:
+  /v1/chain/chainrecord/{chainID}:
     post:
       operationId: setChainRecord
       parameters:
@@ -1042,7 +1042,7 @@ paths:
       summary: Get the chain owner
       tags:
       - corecontracts
-  /v1/chain/deactivate:
+  /v1/chain/deactivate/{chainID}:
     post:
       operationId: deactivateChain
       parameters:
@@ -1364,7 +1364,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: "30"
                   format: string
                   type: string
                 type: object

@@ -116,14 +116,14 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.POST("chain/activate", c.activateChain, authentication.ValidatePermissions([]string{permissions.Write})).
+	adminAPI.POST("chain/activate/:chainID", c.activateChain, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusNotModified, "Chain was not activated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully activated", nil, nil).
 		SetOperationId("activateChain").
 		SetSummary("Activate a chain")
 
-	adminAPI.POST("chain/deactivate", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.Write})).
+	adminAPI.POST("chain/deactivate/:chainID", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
@@ -148,7 +148,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("getContracts").
 		SetSummary("Get all available chain contracts")
 
-	adminAPI.POST("chain/chainrecord", c.setChainRecord, authentication.ValidatePermissions([]string{permissions.Write})).
+	adminAPI.POST("chain/chainrecord/:chainID", c.setChainRecord, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
 		AddParamBody(mocker.Get(models.ChainRecord{}), "ChainRecord", "Chain Record", true).
 		AddResponse(http.StatusCreated, "Chain record was saved", nil, nil).

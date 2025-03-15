@@ -123,19 +123,21 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 				if status == 0 || status == http.StatusOK {
 					status = http.StatusInternalServerError
 				}
+
+				return err
 			}
 
 			chainID, ok := c.Get(controllerutils.EchoContextKeyChainID).(isc.ChainID)
 			if !ok {
-				return err
+				return nil
 			}
 
 			operation, ok := c.Get(controllerutils.EchoContextKeyOperation).(string)
 			if !ok {
-				return err
+				return nil
 			}
 			metrics.GetChainMetrics(chainID).WebAPI.WebAPIRequest(operation, status, time.Since(start))
-			return err
+			return nil
 		}
 	})
 

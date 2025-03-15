@@ -39,7 +39,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chain/activate'
+        const localVarPath = '/v1/chain/activate/{chainID}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
 
         // Make Request Context
@@ -155,7 +155,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chain/deactivate'
+        const localVarPath = '/v1/chain/deactivate/{chainID}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
 
         // Make Request Context
@@ -582,7 +582,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chain/chainrecord'
+        const localVarPath = '/v1/chain/chainrecord/{chainID}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
 
         // Make Request Context

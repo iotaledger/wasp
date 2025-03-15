@@ -61,7 +61,7 @@ func (a *ChainsAPIService) ActivateChainExecute(r ApiActivateChainRequest) (*htt
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chain/activate"
+	localVarPath := localBasePath + "/v1/chain/activate/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -400,7 +400,7 @@ func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chain/deactivate"
+	localVarPath := localBasePath + "/v1/chain/deactivate/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1774,7 +1774,7 @@ func (a *ChainsAPIService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chain/chainrecord"
+	localVarPath := localBasePath + "/v1/chain/chainrecord/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)

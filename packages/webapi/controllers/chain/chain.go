@@ -80,49 +80,6 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }
 
-func (c *Controller) getChainList(e echo.Context) error {
-	chainIDs, err := c.chainService.GetAllChainIDs()
-	c.log.LogInfof("After allChainIDS %v", err)
-	if err != nil {
-		return err
-	}
-
-	chainList := make([]models.ChainInfoResponse, 0)
-
-	for _, chainID := range chainIDs {
-		chainInfo, err := c.chainService.GetChainInfo("")
-		c.log.LogInfof("getchaininfo %v", err)
-
-		if errors.Is(err, interfaces.ErrChainNotFound) {
-			// TODO: Validate this logic here. Is it possible to still get more chain info?
-			chainList = append(chainList, models.ChainInfoResponse{
-				IsActive: false,
-				ChainID:  chainID.String(),
-			})
-			continue
-		} else if err != nil {
-			return err
-		}
-
-		evmChainID := uint16(0)
-		if chainInfo.IsActive {
-			evmChainID, err = c.chainService.GetEVMChainID("")
-			c.log.LogInfof("getevmchainid %v", err)
-
-			if err != nil {
-				return err
-			}
-		}
-
-		chainInfoResponse := models.MapChainInfoResponse(chainInfo, evmChainID)
-		c.log.LogInfof("mapchaininfo %v", err)
-
-		chainList = append(chainList, chainInfoResponse)
-	}
-
-	return e.JSON(http.StatusOK, chainList)
-}
-
 func (c *Controller) getState(e echo.Context) error {
 	controllerutils.SetOperation(e, "get_state")
 
