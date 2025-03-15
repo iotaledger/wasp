@@ -40,7 +40,6 @@ export * from '../models/Limits';
 export * from '../models/LoginRequest';
 export * from '../models/LoginResponse';
 export * from '../models/NativeTokenIDRegistryResponse';
-export * from '../models/NodeMessageMetrics';
 export * from '../models/NodeOwnerCertificateResponse';
 export * from '../models/OffLedgerRequest';
 export * from '../models/OnLedgerRequest';
@@ -110,7 +109,6 @@ import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
@@ -196,7 +194,6 @@ let typeMap: {[index: string]: any} = {
     "LoginRequest": LoginRequest,
     "LoginResponse": LoginResponse,
     "NativeTokenIDRegistryResponse": NativeTokenIDRegistryResponse,
-    "NodeMessageMetrics": NodeMessageMetrics,
     "NodeOwnerCertificateResponse": NodeOwnerCertificateResponse,
     "OffLedgerRequest": OffLedgerRequest,
     "OnLedgerRequest": OnLedgerRequest,

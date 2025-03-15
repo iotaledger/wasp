@@ -32,7 +32,6 @@ func EVMEstimateGas(
 	log log.Logger,
 	call ethereum.CallMsg,
 ) (uint64, error) { //nolint:gocyclo,funlen
-	chainID := anchor.ChainID()
 	// Determine the lowest and highest possible gas limits to binary search in between
 	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, nil, call.To == nil, true, true, true)
 	if err != nil {
@@ -48,7 +47,7 @@ func EVMEstimateGas(
 	if err != nil {
 		return 0, err
 	}
-	info := getChainInfo(chainID, latestState)
+	info := getChainInfo(latestState)
 
 	maximumPossibleGas := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
 	if call.Gas >= params.TxGas {
@@ -67,7 +66,7 @@ func EVMEstimateGas(
 	blockTime := time.Now()
 	executable := func(gas uint64) (failed bool, result *vm.RequestResult, err error) {
 		call.Gas = gas
-		iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
+		iscReq := isc.NewEVMOffLedgerCallRequest(call)
 		res, err := runISCRequest(
 			anchor,
 			l1Params,
@@ -149,8 +148,8 @@ func EVMEstimateGas(
 	return hi, nil
 }
 
-func getChainInfo(chainID isc.ChainID, chainState state.State) *isc.ChainInfo {
-	return governance.NewStateReaderFromChainState(chainState).GetChainInfo(chainID)
+func getChainInfo(chainState state.State) *isc.ChainInfo {
+	return governance.NewStateReaderFromChainState(chainState).GetChainInfo()
 }
 
 func resolveError(chainState state.State, receiptError *isc.UnresolvedVMError) (isOutOfGas bool, resolved *isc.VMError, err error) {

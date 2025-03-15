@@ -44,7 +44,6 @@ import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
@@ -199,11 +198,10 @@ export class ObservableChainsApi {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public addAccessNodeWithHttpInfo(chainID: string, peer: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.addAccessNode(chainID, peer, _options);
+    public addAccessNodeWithHttpInfo(peer: string, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.addAccessNode(peer, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -223,21 +221,19 @@ export class ObservableChainsApi {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public addAccessNode(chainID: string, peer: string, _options?: Configuration): Observable<void> {
-        return this.addAccessNodeWithHttpInfo(chainID, peer, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public addAccessNode(peer: string, _options?: Configuration): Observable<void> {
+        return this.addAccessNodeWithHttpInfo(peer, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callViewWithHttpInfo(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<HttpInfo<Array<string>>> {
-        const requestContextPromise = this.requestFactory.callView(chainID, contractCallViewRequest, _options);
+    public callViewWithHttpInfo(contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<HttpInfo<Array<string>>> {
+        const requestContextPromise = this.requestFactory.callView(contractCallViewRequest, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -258,11 +254,10 @@ export class ObservableChainsApi {
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<Array<string>> {
-        return this.callViewWithHttpInfo(chainID, contractCallViewRequest, _options).pipe(map((apiResponse: HttpInfo<Array<string>>) => apiResponse.data));
+    public callView(contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Observable<Array<string>> {
+        return this.callViewWithHttpInfo(contractCallViewRequest, _options).pipe(map((apiResponse: HttpInfo<Array<string>>) => apiResponse.data));
     }
 
     /**
@@ -298,10 +293,9 @@ export class ObservableChainsApi {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Hex Address)
      */
-    public dumpAccountsWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.dumpAccounts(chainID, _options);
+    public dumpAccountsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.dumpAccounts(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -321,19 +315,17 @@ export class ObservableChainsApi {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Hex Address)
      */
-    public dumpAccounts(chainID: string, _options?: Configuration): Observable<void> {
-        return this.dumpAccountsWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public dumpAccounts(_options?: Configuration): Observable<void> {
+        return this.dumpAccountsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledgerWithHttpInfo(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
-        const requestContextPromise = this.requestFactory.estimateGasOffledger(chainID, request, _options);
+    public estimateGasOffledgerWithHttpInfo(request: EstimateGasRequestOffledger, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
+        const requestContextPromise = this.requestFactory.estimateGasOffledger(request, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -353,20 +345,18 @@ export class ObservableChainsApi {
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Observable<ReceiptResponse> {
-        return this.estimateGasOffledgerWithHttpInfo(chainID, request, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
+    public estimateGasOffledger(request: EstimateGasRequestOffledger, _options?: Configuration): Observable<ReceiptResponse> {
+        return this.estimateGasOffledgerWithHttpInfo(request, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
     }
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledgerWithHttpInfo(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
-        const requestContextPromise = this.requestFactory.estimateGasOnledger(chainID, request, _options);
+    public estimateGasOnledgerWithHttpInfo(request: EstimateGasRequestOnledger, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
+        const requestContextPromise = this.requestFactory.estimateGasOnledger(request, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -386,20 +376,18 @@ export class ObservableChainsApi {
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Observable<ReceiptResponse> {
-        return this.estimateGasOnledgerWithHttpInfo(chainID, request, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
+    public estimateGasOnledger(request: EstimateGasRequestOnledger, _options?: Configuration): Observable<ReceiptResponse> {
+        return this.estimateGasOnledgerWithHttpInfo(request, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
     }
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getChainInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<ChainInfoResponse>> {
-        const requestContextPromise = this.requestFactory.getChainInfo(chainID, block, _options);
+    public getChainInfoWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<ChainInfoResponse>> {
+        const requestContextPromise = this.requestFactory.getChainInfo(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -419,49 +407,18 @@ export class ObservableChainsApi {
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getChainInfo(chainID: string, block?: string, _options?: Configuration): Observable<ChainInfoResponse> {
-        return this.getChainInfoWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<ChainInfoResponse>) => apiResponse.data));
-    }
-
-    /**
-     * Get a list of all chains
-     */
-    public getChainsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<Array<ChainInfoResponse>>> {
-        const requestContextPromise = this.requestFactory.getChains(_options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getChainsWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get a list of all chains
-     */
-    public getChains(_options?: Configuration): Observable<Array<ChainInfoResponse>> {
-        return this.getChainsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<ChainInfoResponse>>) => apiResponse.data));
+    public getChainInfo(block?: string, _options?: Configuration): Observable<ChainInfoResponse> {
+        return this.getChainInfoWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<ChainInfoResponse>) => apiResponse.data));
     }
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getCommitteeInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<CommitteeInfoResponse>> {
-        const requestContextPromise = this.requestFactory.getCommitteeInfo(chainID, block, _options);
+    public getCommitteeInfoWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<CommitteeInfoResponse>> {
+        const requestContextPromise = this.requestFactory.getCommitteeInfo(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -481,20 +438,18 @@ export class ObservableChainsApi {
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getCommitteeInfo(chainID: string, block?: string, _options?: Configuration): Observable<CommitteeInfoResponse> {
-        return this.getCommitteeInfoWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<CommitteeInfoResponse>) => apiResponse.data));
+    public getCommitteeInfo(block?: string, _options?: Configuration): Observable<CommitteeInfoResponse> {
+        return this.getCommitteeInfoWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<CommitteeInfoResponse>) => apiResponse.data));
     }
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getContractsWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<Array<ContractInfoResponse>>> {
-        const requestContextPromise = this.requestFactory.getContracts(chainID, block, _options);
+    public getContractsWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<Array<ContractInfoResponse>>> {
+        const requestContextPromise = this.requestFactory.getContracts(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -514,19 +469,17 @@ export class ObservableChainsApi {
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getContracts(chainID: string, block?: string, _options?: Configuration): Observable<Array<ContractInfoResponse>> {
-        return this.getContractsWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<Array<ContractInfoResponse>>) => apiResponse.data));
+    public getContracts(block?: string, _options?: Configuration): Observable<Array<ContractInfoResponse>> {
+        return this.getContractsWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<Array<ContractInfoResponse>>) => apiResponse.data));
     }
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Hex Address)
      */
-    public getMempoolContentsWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<Array<number>>> {
-        const requestContextPromise = this.requestFactory.getMempoolContents(chainID, _options);
+    public getMempoolContentsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<Array<number>>> {
+        const requestContextPromise = this.requestFactory.getMempoolContents(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -546,19 +499,17 @@ export class ObservableChainsApi {
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Hex Address)
      */
-    public getMempoolContents(chainID: string, _options?: Configuration): Observable<Array<number>> {
-        return this.getMempoolContentsWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<Array<number>>) => apiResponse.data));
+    public getMempoolContents(_options?: Configuration): Observable<Array<number>> {
+        return this.getMempoolContentsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<Array<number>>) => apiResponse.data));
     }
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceiptWithHttpInfo(chainID: string, requestID: string, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
-        const requestContextPromise = this.requestFactory.getReceipt(chainID, requestID, _options);
+    public getReceiptWithHttpInfo(requestID: string, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
+        const requestContextPromise = this.requestFactory.getReceipt(requestID, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -578,20 +529,18 @@ export class ObservableChainsApi {
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Observable<ReceiptResponse> {
-        return this.getReceiptWithHttpInfo(chainID, requestID, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
+    public getReceipt(requestID: string, _options?: Configuration): Observable<ReceiptResponse> {
+        return this.getReceiptWithHttpInfo(requestID, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
     }
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
-    public getStateValueWithHttpInfo(chainID: string, stateKey: string, _options?: Configuration): Observable<HttpInfo<StateResponse>> {
-        const requestContextPromise = this.requestFactory.getStateValue(chainID, stateKey, _options);
+    public getStateValueWithHttpInfo(stateKey: string, _options?: Configuration): Observable<HttpInfo<StateResponse>> {
+        const requestContextPromise = this.requestFactory.getStateValue(stateKey, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -611,20 +560,18 @@ export class ObservableChainsApi {
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
-    public getStateValue(chainID: string, stateKey: string, _options?: Configuration): Observable<StateResponse> {
-        return this.getStateValueWithHttpInfo(chainID, stateKey, _options).pipe(map((apiResponse: HttpInfo<StateResponse>) => apiResponse.data));
+    public getStateValue(stateKey: string, _options?: Configuration): Observable<StateResponse> {
+        return this.getStateValueWithHttpInfo(stateKey, _options).pipe(map((apiResponse: HttpInfo<StateResponse>) => apiResponse.data));
     }
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public removeAccessNodeWithHttpInfo(chainID: string, peer: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.removeAccessNode(chainID, peer, _options);
+    public removeAccessNodeWithHttpInfo(peer: string, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.removeAccessNode(peer, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -644,20 +591,18 @@ export class ObservableChainsApi {
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Observable<void> {
-        return this.removeAccessNodeWithHttpInfo(chainID, peer, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public removeAccessNode(peer: string, _options?: Configuration): Observable<void> {
+        return this.removeAccessNodeWithHttpInfo(peer, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
      * Rotate a chain
-     * @param chainID ChainID (Hex Address)
      * @param [rotateRequest] RotateRequest
      */
-    public rotateChainWithHttpInfo(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.rotateChain(chainID, rotateRequest, _options);
+    public rotateChainWithHttpInfo(rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.rotateChain(rotateRequest, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -677,11 +622,10 @@ export class ObservableChainsApi {
 
     /**
      * Rotate a chain
-     * @param chainID ChainID (Hex Address)
      * @param [rotateRequest] RotateRequest
      */
-    public rotateChain(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<void> {
-        return this.rotateChainWithHttpInfo(chainID, rotateRequest, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public rotateChain(rotateRequest?: RotateChainRequest, _options?: Configuration): Observable<void> {
+        return this.rotateChainWithHttpInfo(rotateRequest, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
@@ -719,10 +663,9 @@ export class ObservableChainsApi {
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmPostWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.v1ChainsChainIDEvmPost(chainID, _options);
+    public v1ChainEvmPostWithHttpInfo(_options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.v1ChainEvmPost(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -736,24 +679,22 @@ export class ObservableChainsApi {
                 for (const middleware of this.configuration.middleware) {
                     middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
                 }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.v1ChainsChainIDEvmPostWithHttpInfo(rsp)));
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.v1ChainEvmPostWithHttpInfo(rsp)));
             }));
     }
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmPost(chainID: string, _options?: Configuration): Observable<void> {
-        return this.v1ChainsChainIDEvmPostWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public v1ChainEvmPost(_options?: Configuration): Observable<void> {
+        return this.v1ChainEvmPostWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmWsGetWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.v1ChainsChainIDEvmWsGet(chainID, _options);
+    public v1ChainEvmWsGetWithHttpInfo(_options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.v1ChainEvmWsGet(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -767,27 +708,25 @@ export class ObservableChainsApi {
                 for (const middleware of this.configuration.middleware) {
                     middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
                 }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.v1ChainsChainIDEvmWsGetWithHttpInfo(rsp)));
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.v1ChainEvmWsGetWithHttpInfo(rsp)));
             }));
     }
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmWsGet(chainID: string, _options?: Configuration): Observable<void> {
-        return this.v1ChainsChainIDEvmWsGetWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public v1ChainEvmWsGet(_options?: Configuration): Observable<void> {
+        return this.v1ChainEvmWsGetWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [timeoutSeconds] The timeout in seconds, maximum 60s
      * @param [waitForL1Confirmation] Wait for the block to be confirmed on L1
      */
-    public waitForRequestWithHttpInfo(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
-        const requestContextPromise = this.requestFactory.waitForRequest(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
+    public waitForRequestWithHttpInfo(requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
+        const requestContextPromise = this.requestFactory.waitForRequest(requestID, timeoutSeconds, waitForL1Confirmation, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -807,13 +746,12 @@ export class ObservableChainsApi {
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [timeoutSeconds] The timeout in seconds, maximum 60s
      * @param [waitForL1Confirmation] Wait for the block to be confirmed on L1
      */
-    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<ReceiptResponse> {
-        return this.waitForRequestWithHttpInfo(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
+    public waitForRequest(requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Observable<ReceiptResponse> {
+        return this.waitForRequestWithHttpInfo(requestID, timeoutSeconds, waitForL1Confirmation, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
     }
 
 }
@@ -836,12 +774,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountBalanceWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AssetsResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetAccountBalance(chainID, agentID, block, _options);
+    public accountsGetAccountBalanceWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AssetsResponse>> {
+        const requestContextPromise = this.requestFactory.accountsGetAccountBalance(agentID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -861,12 +798,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountBalance(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AssetsResponse> {
-        return this.accountsGetAccountBalanceWithHttpInfo(chainID, agentID, block, _options).pipe(map((apiResponse: HttpInfo<AssetsResponse>) => apiResponse.data));
+    public accountsGetAccountBalance(agentID: string, block?: string, _options?: Configuration): Observable<AssetsResponse> {
+        return this.accountsGetAccountBalanceWithHttpInfo(agentID, block, _options).pipe(map((apiResponse: HttpInfo<AssetsResponse>) => apiResponse.data));
     }
 
     /**
@@ -906,12 +842,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNFTIDsWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AccountNFTsResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetAccountNFTIDs(chainID, agentID, block, _options);
+    public accountsGetAccountNFTIDsWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AccountNFTsResponse>> {
+        const requestContextPromise = this.requestFactory.accountsGetAccountNFTIDs(agentID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -931,22 +866,20 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNFTIDs(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AccountNFTsResponse> {
-        return this.accountsGetAccountNFTIDsWithHttpInfo(chainID, agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountNFTsResponse>) => apiResponse.data));
+    public accountsGetAccountNFTIDs(agentID: string, block?: string, _options?: Configuration): Observable<AccountNFTsResponse> {
+        return this.accountsGetAccountNFTIDsWithHttpInfo(agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountNFTsResponse>) => apiResponse.data));
     }
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNonceWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AccountNonceResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetAccountNonce(chainID, agentID, block, _options);
+    public accountsGetAccountNonceWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AccountNonceResponse>> {
+        const requestContextPromise = this.requestFactory.accountsGetAccountNonce(agentID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -966,12 +899,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNonce(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AccountNonceResponse> {
-        return this.accountsGetAccountNonceWithHttpInfo(chainID, agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountNonceResponse>) => apiResponse.data));
+    public accountsGetAccountNonce(agentID: string, block?: string, _options?: Configuration): Observable<AccountNonceResponse> {
+        return this.accountsGetAccountNonceWithHttpInfo(agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountNonceResponse>) => apiResponse.data));
     }
 
     /**
@@ -1011,12 +943,11 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param [block] Block index or trie root
      */
-    public accountsGetNFTDataWithHttpInfo(chainID: string, nftID: string, block?: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.accountsGetNFTData(chainID, nftID, block, _options);
+    public accountsGetNFTDataWithHttpInfo(nftID: string, block?: string, _options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.accountsGetNFTData(nftID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1036,21 +967,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param [block] Block index or trie root
      */
-    public accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Observable<void> {
-        return this.accountsGetNFTDataWithHttpInfo(chainID, nftID, block, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public accountsGetNFTData(nftID: string, block?: string, _options?: Configuration): Observable<void> {
+        return this.accountsGetNFTDataWithHttpInfo(nftID, block, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetNativeTokenIDRegistryWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<NativeTokenIDRegistryResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetNativeTokenIDRegistry(chainID, block, _options);
+    public accountsGetNativeTokenIDRegistryWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<NativeTokenIDRegistryResponse>> {
+        const requestContextPromise = this.requestFactory.accountsGetNativeTokenIDRegistry(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1070,20 +999,18 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetNativeTokenIDRegistry(chainID: string, block?: string, _options?: Configuration): Observable<NativeTokenIDRegistryResponse> {
-        return this.accountsGetNativeTokenIDRegistryWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<NativeTokenIDRegistryResponse>) => apiResponse.data));
+    public accountsGetNativeTokenIDRegistry(block?: string, _options?: Configuration): Observable<NativeTokenIDRegistryResponse> {
+        return this.accountsGetNativeTokenIDRegistryWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<NativeTokenIDRegistryResponse>) => apiResponse.data));
     }
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetTotalAssetsWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AssetsResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetTotalAssets(chainID, block, _options);
+    public accountsGetTotalAssetsWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<AssetsResponse>> {
+        const requestContextPromise = this.requestFactory.accountsGetTotalAssets(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1103,21 +1030,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetTotalAssets(chainID: string, block?: string, _options?: Configuration): Observable<AssetsResponse> {
-        return this.accountsGetTotalAssetsWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<AssetsResponse>) => apiResponse.data));
+    public accountsGetTotalAssets(block?: string, _options?: Configuration): Observable<AssetsResponse> {
+        return this.accountsGetTotalAssetsWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<AssetsResponse>) => apiResponse.data));
     }
 
     /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetBlockInfoWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<BlockInfoResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetBlockInfo(chainID, blockIndex, block, _options);
+    public blocklogGetBlockInfoWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<BlockInfoResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetBlockInfo(blockIndex, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1137,21 +1062,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetBlockInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<BlockInfoResponse> {
-        return this.blocklogGetBlockInfoWithHttpInfo(chainID, blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<BlockInfoResponse>) => apiResponse.data));
+    public blocklogGetBlockInfo(blockIndex: number, block?: string, _options?: Configuration): Observable<BlockInfoResponse> {
+        return this.blocklogGetBlockInfoWithHttpInfo(blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<BlockInfoResponse>) => apiResponse.data));
     }
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetControlAddressesWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<ControlAddressesResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetControlAddresses(chainID, block, _options);
+    public blocklogGetControlAddressesWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<ControlAddressesResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetControlAddresses(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1171,21 +1094,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetControlAddresses(chainID: string, block?: string, _options?: Configuration): Observable<ControlAddressesResponse> {
-        return this.blocklogGetControlAddressesWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<ControlAddressesResponse>) => apiResponse.data));
+    public blocklogGetControlAddresses(block?: string, _options?: Configuration): Observable<ControlAddressesResponse> {
+        return this.blocklogGetControlAddressesWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<ControlAddressesResponse>) => apiResponse.data));
     }
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfBlockWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<EventsResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetEventsOfBlock(chainID, blockIndex, block, _options);
+    public blocklogGetEventsOfBlockWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<EventsResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetEventsOfBlock(blockIndex, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1205,21 +1126,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<EventsResponse> {
-        return this.blocklogGetEventsOfBlockWithHttpInfo(chainID, blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<EventsResponse>) => apiResponse.data));
+    public blocklogGetEventsOfBlock(blockIndex: number, block?: string, _options?: Configuration): Observable<EventsResponse> {
+        return this.blocklogGetEventsOfBlockWithHttpInfo(blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<EventsResponse>) => apiResponse.data));
     }
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfLatestBlockWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<EventsResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetEventsOfLatestBlock(chainID, block, _options);
+    public blocklogGetEventsOfLatestBlockWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<EventsResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetEventsOfLatestBlock(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1239,21 +1158,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<EventsResponse> {
-        return this.blocklogGetEventsOfLatestBlockWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<EventsResponse>) => apiResponse.data));
+    public blocklogGetEventsOfLatestBlock(block?: string, _options?: Configuration): Observable<EventsResponse> {
+        return this.blocklogGetEventsOfLatestBlockWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<EventsResponse>) => apiResponse.data));
     }
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfRequestWithHttpInfo(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<HttpInfo<EventsResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetEventsOfRequest(chainID, requestID, block, _options);
+    public blocklogGetEventsOfRequestWithHttpInfo(requestID: string, block?: string, _options?: Configuration): Observable<HttpInfo<EventsResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetEventsOfRequest(requestID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1273,21 +1190,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfRequest(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<EventsResponse> {
-        return this.blocklogGetEventsOfRequestWithHttpInfo(chainID, requestID, block, _options).pipe(map((apiResponse: HttpInfo<EventsResponse>) => apiResponse.data));
+    public blocklogGetEventsOfRequest(requestID: string, block?: string, _options?: Configuration): Observable<EventsResponse> {
+        return this.blocklogGetEventsOfRequestWithHttpInfo(requestID, block, _options).pipe(map((apiResponse: HttpInfo<EventsResponse>) => apiResponse.data));
     }
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetLatestBlockInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<BlockInfoResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetLatestBlockInfo(chainID, block, _options);
+    public blocklogGetLatestBlockInfoWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<BlockInfoResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetLatestBlockInfo(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1307,21 +1222,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetLatestBlockInfo(chainID: string, block?: string, _options?: Configuration): Observable<BlockInfoResponse> {
-        return this.blocklogGetLatestBlockInfoWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<BlockInfoResponse>) => apiResponse.data));
+    public blocklogGetLatestBlockInfo(block?: string, _options?: Configuration): Observable<BlockInfoResponse> {
+        return this.blocklogGetLatestBlockInfoWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<BlockInfoResponse>) => apiResponse.data));
     }
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForBlockWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<RequestIDsResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetRequestIDsForBlock(chainID, blockIndex, block, _options);
+    public blocklogGetRequestIDsForBlockWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<RequestIDsResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetRequestIDsForBlock(blockIndex, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1341,21 +1254,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<RequestIDsResponse> {
-        return this.blocklogGetRequestIDsForBlockWithHttpInfo(chainID, blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<RequestIDsResponse>) => apiResponse.data));
+    public blocklogGetRequestIDsForBlock(blockIndex: number, block?: string, _options?: Configuration): Observable<RequestIDsResponse> {
+        return this.blocklogGetRequestIDsForBlockWithHttpInfo(blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<RequestIDsResponse>) => apiResponse.data));
     }
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<RequestIDsResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetRequestIDsForLatestBlock(chainID, block, _options);
+    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<RequestIDsResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetRequestIDsForLatestBlock(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1375,21 +1286,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<RequestIDsResponse> {
-        return this.blocklogGetRequestIDsForLatestBlockWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<RequestIDsResponse>) => apiResponse.data));
+    public blocklogGetRequestIDsForLatestBlock(block?: string, _options?: Configuration): Observable<RequestIDsResponse> {
+        return this.blocklogGetRequestIDsForLatestBlockWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<RequestIDsResponse>) => apiResponse.data));
     }
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIsProcessedWithHttpInfo(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<HttpInfo<RequestProcessedResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetRequestIsProcessed(chainID, requestID, block, _options);
+    public blocklogGetRequestIsProcessedWithHttpInfo(requestID: string, block?: string, _options?: Configuration): Observable<HttpInfo<RequestProcessedResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetRequestIsProcessed(requestID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1409,22 +1318,20 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIsProcessed(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<RequestProcessedResponse> {
-        return this.blocklogGetRequestIsProcessedWithHttpInfo(chainID, requestID, block, _options).pipe(map((apiResponse: HttpInfo<RequestProcessedResponse>) => apiResponse.data));
+    public blocklogGetRequestIsProcessed(requestID: string, block?: string, _options?: Configuration): Observable<RequestProcessedResponse> {
+        return this.blocklogGetRequestIsProcessedWithHttpInfo(requestID, block, _options).pipe(map((apiResponse: HttpInfo<RequestProcessedResponse>) => apiResponse.data));
     }
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptWithHttpInfo(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
-        const requestContextPromise = this.requestFactory.blocklogGetRequestReceipt(chainID, requestID, block, _options);
+    public blocklogGetRequestReceiptWithHttpInfo(requestID: string, block?: string, _options?: Configuration): Observable<HttpInfo<ReceiptResponse>> {
+        const requestContextPromise = this.requestFactory.blocklogGetRequestReceipt(requestID, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1444,22 +1351,20 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Observable<ReceiptResponse> {
-        return this.blocklogGetRequestReceiptWithHttpInfo(chainID, requestID, block, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
+    public blocklogGetRequestReceipt(requestID: string, block?: string, _options?: Configuration): Observable<ReceiptResponse> {
+        return this.blocklogGetRequestReceiptWithHttpInfo(requestID, block, _options).pipe(map((apiResponse: HttpInfo<ReceiptResponse>) => apiResponse.data));
     }
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<Array<ReceiptResponse>>> {
-        const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfBlock(chainID, blockIndex, block, _options);
+    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Observable<HttpInfo<Array<ReceiptResponse>>> {
+        const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfBlock(blockIndex, block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1479,21 +1384,19 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
-        return this.blocklogGetRequestReceiptsOfBlockWithHttpInfo(chainID, blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<Array<ReceiptResponse>>) => apiResponse.data));
+    public blocklogGetRequestReceiptsOfBlock(blockIndex: number, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
+        return this.blocklogGetRequestReceiptsOfBlockWithHttpInfo(blockIndex, block, _options).pipe(map((apiResponse: HttpInfo<Array<ReceiptResponse>>) => apiResponse.data));
     }
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<Array<ReceiptResponse>>> {
-        const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfLatestBlock(chainID, block, _options);
+    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<Array<ReceiptResponse>>> {
+        const requestContextPromise = this.requestFactory.blocklogGetRequestReceiptsOfLatestBlock(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1513,11 +1416,10 @@ export class ObservableCorecontractsApi {
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
-        return this.blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<Array<ReceiptResponse>>) => apiResponse.data));
+    public blocklogGetRequestReceiptsOfLatestBlock(block?: string, _options?: Configuration): Observable<Array<ReceiptResponse>> {
+        return this.blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<Array<ReceiptResponse>>) => apiResponse.data));
     }
 
     /**
@@ -1560,11 +1462,10 @@ export class ObservableCorecontractsApi {
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddressesWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
-        const requestContextPromise = this.requestFactory.governanceGetAllowedStateControllerAddresses(chainID, block, _options);
+    public governanceGetAllowedStateControllerAddressesWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
+        const requestContextPromise = this.requestFactory.governanceGetAllowedStateControllerAddresses(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1585,21 +1486,19 @@ export class ObservableCorecontractsApi {
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddresses(chainID: string, block?: string, _options?: Configuration): Observable<GovAllowedStateControllerAddressesResponse> {
-        return this.governanceGetAllowedStateControllerAddressesWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<GovAllowedStateControllerAddressesResponse>) => apiResponse.data));
+    public governanceGetAllowedStateControllerAddresses(block?: string, _options?: Configuration): Observable<GovAllowedStateControllerAddressesResponse> {
+        return this.governanceGetAllowedStateControllerAddressesWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovAllowedStateControllerAddressesResponse>) => apiResponse.data));
     }
 
     /**
      * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<GovChainInfoResponse>> {
-        const requestContextPromise = this.requestFactory.governanceGetChainInfo(chainID, block, _options);
+    public governanceGetChainInfoWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<GovChainInfoResponse>> {
+        const requestContextPromise = this.requestFactory.governanceGetChainInfo(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1620,21 +1519,19 @@ export class ObservableCorecontractsApi {
     /**
      * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainInfo(chainID: string, block?: string, _options?: Configuration): Observable<GovChainInfoResponse> {
-        return this.governanceGetChainInfoWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<GovChainInfoResponse>) => apiResponse.data));
+    public governanceGetChainInfo(block?: string, _options?: Configuration): Observable<GovChainInfoResponse> {
+        return this.governanceGetChainInfoWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovChainInfoResponse>) => apiResponse.data));
     }
 
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainOwnerWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Observable<HttpInfo<GovChainOwnerResponse>> {
-        const requestContextPromise = this.requestFactory.governanceGetChainOwner(chainID, block, _options);
+    public governanceGetChainOwnerWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<GovChainOwnerResponse>> {
+        const requestContextPromise = this.requestFactory.governanceGetChainOwner(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1655,11 +1552,10 @@ export class ObservableCorecontractsApi {
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainOwner(chainID: string, block?: string, _options?: Configuration): Observable<GovChainOwnerResponse> {
-        return this.governanceGetChainOwnerWithHttpInfo(chainID, block, _options).pipe(map((apiResponse: HttpInfo<GovChainOwnerResponse>) => apiResponse.data));
+    public governanceGetChainOwner(block?: string, _options?: Configuration): Observable<GovChainOwnerResponse> {
+        return this.governanceGetChainOwnerWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovChainOwnerResponse>) => apiResponse.data));
     }
 
 }
@@ -1758,10 +1654,9 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainMessageMetricsWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<ChainMessageMetrics>> {
-        const requestContextPromise = this.requestFactory.getChainMessageMetrics(chainID, _options);
+    public getChainMessageMetricsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ChainMessageMetrics>> {
+        const requestContextPromise = this.requestFactory.getChainMessageMetrics(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1781,18 +1676,16 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainMessageMetrics(chainID: string, _options?: Configuration): Observable<ChainMessageMetrics> {
-        return this.getChainMessageMetricsWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<ChainMessageMetrics>) => apiResponse.data));
+    public getChainMessageMetrics(_options?: Configuration): Observable<ChainMessageMetrics> {
+        return this.getChainMessageMetricsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ChainMessageMetrics>) => apiResponse.data));
     }
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainPipeMetricsWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<ConsensusPipeMetrics>> {
-        const requestContextPromise = this.requestFactory.getChainPipeMetrics(chainID, _options);
+    public getChainPipeMetricsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ConsensusPipeMetrics>> {
+        const requestContextPromise = this.requestFactory.getChainPipeMetrics(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1812,18 +1705,16 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainPipeMetrics(chainID: string, _options?: Configuration): Observable<ConsensusPipeMetrics> {
-        return this.getChainPipeMetricsWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<ConsensusPipeMetrics>) => apiResponse.data));
+    public getChainPipeMetrics(_options?: Configuration): Observable<ConsensusPipeMetrics> {
+        return this.getChainPipeMetricsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ConsensusPipeMetrics>) => apiResponse.data));
     }
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainWorkflowMetricsWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<ConsensusWorkflowMetrics>> {
-        const requestContextPromise = this.requestFactory.getChainWorkflowMetrics(chainID, _options);
+    public getChainWorkflowMetricsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<ConsensusWorkflowMetrics>> {
+        const requestContextPromise = this.requestFactory.getChainWorkflowMetrics(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1843,39 +1734,9 @@ export class ObservableMetricsApi {
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainWorkflowMetrics(chainID: string, _options?: Configuration): Observable<ConsensusWorkflowMetrics> {
-        return this.getChainWorkflowMetricsWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<ConsensusWorkflowMetrics>) => apiResponse.data));
-    }
-
-    /**
-     * Get accumulated message metrics.
-     */
-    public getNodeMessageMetricsWithHttpInfo(_options?: Configuration): Observable<HttpInfo<NodeMessageMetrics>> {
-        const requestContextPromise = this.requestFactory.getNodeMessageMetrics(_options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.getNodeMessageMetricsWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get accumulated message metrics.
-     */
-    public getNodeMessageMetrics(_options?: Configuration): Observable<NodeMessageMetrics> {
-        return this.getNodeMessageMetricsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<NodeMessageMetrics>) => apiResponse.data));
+    public getChainWorkflowMetrics(_options?: Configuration): Observable<ConsensusWorkflowMetrics> {
+        return this.getChainWorkflowMetricsWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<ConsensusWorkflowMetrics>) => apiResponse.data));
     }
 
 }

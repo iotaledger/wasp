@@ -33,7 +33,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 		return err
 	}
 
-	chain, err := c.chainService.GetChainInfoByChainID(chainID, "")
+	chain, err := c.chainService.GetChainInfo("")
 	if err != nil {
 		return apierrors.ChainNotFoundError()
 	}
@@ -60,12 +60,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 
 func (c *Controller) getChainInfo(e echo.Context) error {
 	controllerutils.SetOperation(e, "get_chain_info")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
-	if err != nil {
-		return err
-	}
-
-	chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	chainInfo, err := c.chainService.GetChainInfo(e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if errors.Is(err, interfaces.ErrChainNotFound) {
 		return e.NoContent(http.StatusNotFound)
 	} else if err != nil {
@@ -74,7 +69,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 
 	evmChainID := uint16(0)
 	if chainInfo.IsActive {
-		evmChainID, err = c.chainService.GetEVMChainID(chainID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		evmChainID, err = c.chainService.GetEVMChainID(e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return err
 		}
@@ -95,7 +90,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 	chainList := make([]models.ChainInfoResponse, 0)
 
 	for _, chainID := range chainIDs {
-		chainInfo, err := c.chainService.GetChainInfoByChainID(chainID, "")
+		chainInfo, err := c.chainService.GetChainInfo("")
 		c.log.LogInfof("getchaininfo %v", err)
 
 		if errors.Is(err, interfaces.ErrChainNotFound) {
@@ -111,7 +106,7 @@ func (c *Controller) getChainList(e echo.Context) error {
 
 		evmChainID := uint16(0)
 		if chainInfo.IsActive {
-			evmChainID, err = c.chainService.GetEVMChainID(chainID, "")
+			evmChainID, err = c.chainService.GetEVMChainID("")
 			c.log.LogInfof("getevmchainid %v", err)
 
 			if err != nil {
@@ -130,17 +125,13 @@ func (c *Controller) getChainList(e echo.Context) error {
 
 func (c *Controller) getState(e echo.Context) error {
 	controllerutils.SetOperation(e, "get_state")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
-	if err != nil {
-		return err
-	}
 
 	stateKey, err := cryptolib.DecodeHex(e.Param(params.ParamStateKey))
 	if err != nil {
 		return apierrors.InvalidPropertyError(params.ParamStateKey, err)
 	}
 
-	state, err := c.chainService.GetState(chainID, stateKey)
+	state, err := c.chainService.GetState(stateKey)
 	if err != nil {
 		panic(err)
 	}
@@ -155,11 +146,7 @@ func (c *Controller) getState(e echo.Context) error {
 var dumpAccountsMutex = sync.Mutex{}
 
 func (c *Controller) dumpAccounts(e echo.Context) error {
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
-	if err != nil {
-		return err
-	}
-	ch := lo.Must(c.chainService.GetChainByID(chainID))
+	ch := lo.Must(c.chainService.GetChain())
 
 	if !dumpAccountsMutex.TryLock() {
 		return e.String(http.StatusLocked, "account dump in progress")
@@ -172,12 +159,12 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 		stateRoot := chainState.TrieRoot()
 		filename := fmt.Sprintf("block_%d_stateroot_%s.json", blockIndex, stateRoot.String())
 
-		err := os.MkdirAll(filepath.Join(c.accountDumpsPath, chainID.String()), os.ModePerm)
+		err := os.MkdirAll(filepath.Join(c.accountDumpsPath, ch.ID().String()), os.ModePerm)
 		if err != nil {
 			c.log.LogErrorf("dumpAccounts - Creating dir failed: %s", err.Error())
 			return
 		}
-		f, err := os.Create(filepath.Join(c.accountDumpsPath, chainID.String(), filename))
+		f, err := os.Create(filepath.Join(c.accountDumpsPath, ch.ID().String(), filename))
 		if err != nil {
 			c.log.LogErrorf("dumpAccounts - Creating account dump file failed: %s", err.Error())
 			return

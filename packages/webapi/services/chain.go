@@ -46,26 +46,26 @@ func NewChainService(
 	}
 }
 
-func (c *ChainService) ActivateChain() error {
-	_, err := c.chainRecordRegistryProvider.ActivateChainRecord()
+func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
+	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Activate()
+	return c.chainsProvider().Activate(chainID)
 }
 
-func (c *ChainService) DeactivateChain() error {
-	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord()
+func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
+	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Deactivate()
+	return c.chainsProvider().Deactivate(chainID)
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
-	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord()
+	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
 	if err != nil {
 		return err
 	}
@@ -74,6 +74,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 
 	if storedChainRec != nil {
 		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
+			chainRecord.ChainID(),
 			func(rec *registry.ChainRecord) bool {
 				rec.AccessNodes = chainRecord.AccessNodes
 				rec.Active = chainRecord.Active
@@ -110,7 +111,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 }
 
 func (c *ChainService) GetChain() (chainpkg.Chain, error) {
-	return c.chainsProvider().Get()
+	return c.chainsProvider().GetFirst()
 }
 
 func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error) {
@@ -140,13 +141,13 @@ func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
 	return chainIDs, nil
 }
 
-func (c *ChainService) GetChainInfoByChainID(blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord()
+func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
+	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
 
-	ch, err := c.GetChain()
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(ch.ID())
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (c *ChainService) GetChainInfoByChainID(blockIndexOrTrieRoot string) (*dto.
 	governanceChainInfo, err := corecontracts.GetChainInfo(ch, blockIndexOrTrieRoot)
 	if err != nil {
 		if chainRecord != nil && errors.Is(err, interfaces.ErrChainNotFound) {
-			return &dto.ChainInfo{ChainID: chainRecord.ChainID(), IsActive: false}, nil
+			return &dto.ChainInfo{ChainID: ch.ID(), IsActive: false}, nil
 		}
 
 		return nil, err

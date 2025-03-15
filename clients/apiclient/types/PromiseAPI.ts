@@ -43,7 +43,6 @@ import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
-import { NodeMessageMetrics } from '../models/NodeMessageMetrics';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
@@ -157,43 +156,39 @@ export class PromiseChainsApi {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public addAccessNodeWithHttpInfo(chainID: string, peer: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.addAccessNodeWithHttpInfo(chainID, peer, _options);
+    public addAccessNodeWithHttpInfo(peer: string, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.addAccessNodeWithHttpInfo(peer, _options);
         return result.toPromise();
     }
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public addAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<void> {
-        const result = this.api.addAccessNode(chainID, peer, _options);
+    public addAccessNode(peer: string, _options?: Configuration): Promise<void> {
+        const result = this.api.addAccessNode(peer, _options);
         return result.toPromise();
     }
 
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callViewWithHttpInfo(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<HttpInfo<Array<string>>> {
-        const result = this.api.callViewWithHttpInfo(chainID, contractCallViewRequest, _options);
+    public callViewWithHttpInfo(contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<HttpInfo<Array<string>>> {
+        const result = this.api.callViewWithHttpInfo(contractCallViewRequest, _options);
         return result.toPromise();
     }
 
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<Array<string>> {
-        const result = this.api.callView(chainID, contractCallViewRequest, _options);
+    public callView(contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<Array<string>> {
+        const result = this.api.callView(contractCallViewRequest, _options);
         return result.toPromise();
     }
 
@@ -217,233 +212,195 @@ export class PromiseChainsApi {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Hex Address)
      */
-    public dumpAccountsWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.dumpAccountsWithHttpInfo(chainID, _options);
+    public dumpAccountsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.dumpAccountsWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Hex Address)
      */
-    public dumpAccounts(chainID: string, _options?: Configuration): Promise<void> {
-        const result = this.api.dumpAccounts(chainID, _options);
+    public dumpAccounts(_options?: Configuration): Promise<void> {
+        const result = this.api.dumpAccounts(_options);
         return result.toPromise();
     }
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledgerWithHttpInfo(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
-        const result = this.api.estimateGasOffledgerWithHttpInfo(chainID, request, _options);
+    public estimateGasOffledgerWithHttpInfo(request: EstimateGasRequestOffledger, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        const result = this.api.estimateGasOffledgerWithHttpInfo(request, _options);
         return result.toPromise();
     }
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<ReceiptResponse> {
-        const result = this.api.estimateGasOffledger(chainID, request, _options);
+    public estimateGasOffledger(request: EstimateGasRequestOffledger, _options?: Configuration): Promise<ReceiptResponse> {
+        const result = this.api.estimateGasOffledger(request, _options);
         return result.toPromise();
     }
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledgerWithHttpInfo(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
-        const result = this.api.estimateGasOnledgerWithHttpInfo(chainID, request, _options);
+    public estimateGasOnledgerWithHttpInfo(request: EstimateGasRequestOnledger, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        const result = this.api.estimateGasOnledgerWithHttpInfo(request, _options);
         return result.toPromise();
     }
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<ReceiptResponse> {
-        const result = this.api.estimateGasOnledger(chainID, request, _options);
+    public estimateGasOnledger(request: EstimateGasRequestOnledger, _options?: Configuration): Promise<ReceiptResponse> {
+        const result = this.api.estimateGasOnledger(request, _options);
         return result.toPromise();
     }
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getChainInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<ChainInfoResponse>> {
-        const result = this.api.getChainInfoWithHttpInfo(chainID, block, _options);
+    public getChainInfoWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<ChainInfoResponse>> {
+        const result = this.api.getChainInfoWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<ChainInfoResponse> {
-        const result = this.api.getChainInfo(chainID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get a list of all chains
-     */
-    public getChainsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<Array<ChainInfoResponse>>> {
-        const result = this.api.getChainsWithHttpInfo(_options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get a list of all chains
-     */
-    public getChains(_options?: Configuration): Promise<Array<ChainInfoResponse>> {
-        const result = this.api.getChains(_options);
+    public getChainInfo(block?: string, _options?: Configuration): Promise<ChainInfoResponse> {
+        const result = this.api.getChainInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getCommitteeInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<CommitteeInfoResponse>> {
-        const result = this.api.getCommitteeInfoWithHttpInfo(chainID, block, _options);
+    public getCommitteeInfoWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<CommitteeInfoResponse>> {
+        const result = this.api.getCommitteeInfoWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getCommitteeInfo(chainID: string, block?: string, _options?: Configuration): Promise<CommitteeInfoResponse> {
-        const result = this.api.getCommitteeInfo(chainID, block, _options);
+    public getCommitteeInfo(block?: string, _options?: Configuration): Promise<CommitteeInfoResponse> {
+        const result = this.api.getCommitteeInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getContractsWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<Array<ContractInfoResponse>>> {
-        const result = this.api.getContractsWithHttpInfo(chainID, block, _options);
+    public getContractsWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<Array<ContractInfoResponse>>> {
+        const result = this.api.getContractsWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public getContracts(chainID: string, block?: string, _options?: Configuration): Promise<Array<ContractInfoResponse>> {
-        const result = this.api.getContracts(chainID, block, _options);
+    public getContracts(block?: string, _options?: Configuration): Promise<Array<ContractInfoResponse>> {
+        const result = this.api.getContracts(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Hex Address)
      */
-    public getMempoolContentsWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<Array<number>>> {
-        const result = this.api.getMempoolContentsWithHttpInfo(chainID, _options);
+    public getMempoolContentsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<Array<number>>> {
+        const result = this.api.getMempoolContentsWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Hex Address)
      */
-    public getMempoolContents(chainID: string, _options?: Configuration): Promise<Array<number>> {
-        const result = this.api.getMempoolContents(chainID, _options);
+    public getMempoolContents(_options?: Configuration): Promise<Array<number>> {
+        const result = this.api.getMempoolContents(_options);
         return result.toPromise();
     }
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceiptWithHttpInfo(chainID: string, requestID: string, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
-        const result = this.api.getReceiptWithHttpInfo(chainID, requestID, _options);
+    public getReceiptWithHttpInfo(requestID: string, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        const result = this.api.getReceiptWithHttpInfo(requestID, _options);
         return result.toPromise();
     }
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<ReceiptResponse> {
-        const result = this.api.getReceipt(chainID, requestID, _options);
+    public getReceipt(requestID: string, _options?: Configuration): Promise<ReceiptResponse> {
+        const result = this.api.getReceipt(requestID, _options);
         return result.toPromise();
     }
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
-    public getStateValueWithHttpInfo(chainID: string, stateKey: string, _options?: Configuration): Promise<HttpInfo<StateResponse>> {
-        const result = this.api.getStateValueWithHttpInfo(chainID, stateKey, _options);
+    public getStateValueWithHttpInfo(stateKey: string, _options?: Configuration): Promise<HttpInfo<StateResponse>> {
+        const result = this.api.getStateValueWithHttpInfo(stateKey, _options);
         return result.toPromise();
     }
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
-    public getStateValue(chainID: string, stateKey: string, _options?: Configuration): Promise<StateResponse> {
-        const result = this.api.getStateValue(chainID, stateKey, _options);
+    public getStateValue(stateKey: string, _options?: Configuration): Promise<StateResponse> {
+        const result = this.api.getStateValue(stateKey, _options);
         return result.toPromise();
     }
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public removeAccessNodeWithHttpInfo(chainID: string, peer: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.removeAccessNodeWithHttpInfo(chainID, peer, _options);
+    public removeAccessNodeWithHttpInfo(peer: string, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.removeAccessNodeWithHttpInfo(peer, _options);
         return result.toPromise();
     }
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public removeAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<void> {
-        const result = this.api.removeAccessNode(chainID, peer, _options);
+    public removeAccessNode(peer: string, _options?: Configuration): Promise<void> {
+        const result = this.api.removeAccessNode(peer, _options);
         return result.toPromise();
     }
 
     /**
      * Rotate a chain
-     * @param chainID ChainID (Hex Address)
      * @param [rotateRequest] RotateRequest
      */
-    public rotateChainWithHttpInfo(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.rotateChainWithHttpInfo(chainID, rotateRequest, _options);
+    public rotateChainWithHttpInfo(rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.rotateChainWithHttpInfo(rotateRequest, _options);
         return result.toPromise();
     }
 
     /**
      * Rotate a chain
-     * @param chainID ChainID (Hex Address)
      * @param [rotateRequest] RotateRequest
      */
-    public rotateChain(chainID: string, rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<void> {
-        const result = this.api.rotateChain(chainID, rotateRequest, _options);
+    public rotateChain(rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<void> {
+        const result = this.api.rotateChain(rotateRequest, _options);
         return result.toPromise();
     }
 
@@ -469,61 +426,55 @@ export class PromiseChainsApi {
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmPostWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.v1ChainsChainIDEvmPostWithHttpInfo(chainID, _options);
+    public v1ChainEvmPostWithHttpInfo(_options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.v1ChainEvmPostWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmPost(chainID: string, _options?: Configuration): Promise<void> {
-        const result = this.api.v1ChainsChainIDEvmPost(chainID, _options);
+    public v1ChainEvmPost(_options?: Configuration): Promise<void> {
+        const result = this.api.v1ChainEvmPost(_options);
         return result.toPromise();
     }
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmWsGetWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.v1ChainsChainIDEvmWsGetWithHttpInfo(chainID, _options);
+    public v1ChainEvmWsGetWithHttpInfo(_options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.v1ChainEvmWsGetWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Hex Address)
      */
-    public v1ChainsChainIDEvmWsGet(chainID: string, _options?: Configuration): Promise<void> {
-        const result = this.api.v1ChainsChainIDEvmWsGet(chainID, _options);
+    public v1ChainEvmWsGet(_options?: Configuration): Promise<void> {
+        const result = this.api.v1ChainEvmWsGet(_options);
         return result.toPromise();
     }
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [timeoutSeconds] The timeout in seconds, maximum 60s
      * @param [waitForL1Confirmation] Wait for the block to be confirmed on L1
      */
-    public waitForRequestWithHttpInfo(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
-        const result = this.api.waitForRequestWithHttpInfo(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
+    public waitForRequestWithHttpInfo(requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        const result = this.api.waitForRequestWithHttpInfo(requestID, timeoutSeconds, waitForL1Confirmation, _options);
         return result.toPromise();
     }
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [timeoutSeconds] The timeout in seconds, maximum 60s
      * @param [waitForL1Confirmation] Wait for the block to be confirmed on L1
      */
-    public waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<ReceiptResponse> {
-        const result = this.api.waitForRequest(chainID, requestID, timeoutSeconds, waitForL1Confirmation, _options);
+    public waitForRequest(requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<ReceiptResponse> {
+        const result = this.api.waitForRequest(requestID, timeoutSeconds, waitForL1Confirmation, _options);
         return result.toPromise();
     }
 
@@ -548,23 +499,21 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountBalanceWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
-        const result = this.api.accountsGetAccountBalanceWithHttpInfo(chainID, agentID, block, _options);
+    public accountsGetAccountBalanceWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
+        const result = this.api.accountsGetAccountBalanceWithHttpInfo(agentID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountBalance(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AssetsResponse> {
-        const result = this.api.accountsGetAccountBalance(chainID, agentID, block, _options);
+    public accountsGetAccountBalance(agentID: string, block?: string, _options?: Configuration): Promise<AssetsResponse> {
+        const result = this.api.accountsGetAccountBalance(agentID, block, _options);
         return result.toPromise();
     }
 
@@ -592,45 +541,41 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNFTIDsWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AccountNFTsResponse>> {
-        const result = this.api.accountsGetAccountNFTIDsWithHttpInfo(chainID, agentID, block, _options);
+    public accountsGetAccountNFTIDsWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AccountNFTsResponse>> {
+        const result = this.api.accountsGetAccountNFTIDsWithHttpInfo(agentID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNFTIDs(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AccountNFTsResponse> {
-        const result = this.api.accountsGetAccountNFTIDs(chainID, agentID, block, _options);
+    public accountsGetAccountNFTIDs(agentID: string, block?: string, _options?: Configuration): Promise<AccountNFTsResponse> {
+        const result = this.api.accountsGetAccountNFTIDs(agentID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNonceWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AccountNonceResponse>> {
-        const result = this.api.accountsGetAccountNonceWithHttpInfo(chainID, agentID, block, _options);
+    public accountsGetAccountNonceWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AccountNonceResponse>> {
+        const result = this.api.accountsGetAccountNonceWithHttpInfo(agentID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
      */
-    public accountsGetAccountNonce(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AccountNonceResponse> {
-        const result = this.api.accountsGetAccountNonce(chainID, agentID, block, _options);
+    public accountsGetAccountNonce(agentID: string, block?: string, _options?: Configuration): Promise<AccountNonceResponse> {
+        const result = this.api.accountsGetAccountNonce(agentID, block, _options);
         return result.toPromise();
     }
 
@@ -658,317 +603,287 @@ export class PromiseCorecontractsApi {
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param [block] Block index or trie root
      */
-    public accountsGetNFTDataWithHttpInfo(chainID: string, nftID: string, block?: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.accountsGetNFTDataWithHttpInfo(chainID, nftID, block, _options);
+    public accountsGetNFTDataWithHttpInfo(nftID: string, block?: string, _options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.accountsGetNFTDataWithHttpInfo(nftID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param [block] Block index or trie root
      */
-    public accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Promise<void> {
-        const result = this.api.accountsGetNFTData(chainID, nftID, block, _options);
+    public accountsGetNFTData(nftID: string, block?: string, _options?: Configuration): Promise<void> {
+        const result = this.api.accountsGetNFTData(nftID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetNativeTokenIDRegistryWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<NativeTokenIDRegistryResponse>> {
-        const result = this.api.accountsGetNativeTokenIDRegistryWithHttpInfo(chainID, block, _options);
+    public accountsGetNativeTokenIDRegistryWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<NativeTokenIDRegistryResponse>> {
+        const result = this.api.accountsGetNativeTokenIDRegistryWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetNativeTokenIDRegistry(chainID: string, block?: string, _options?: Configuration): Promise<NativeTokenIDRegistryResponse> {
-        const result = this.api.accountsGetNativeTokenIDRegistry(chainID, block, _options);
+    public accountsGetNativeTokenIDRegistry(block?: string, _options?: Configuration): Promise<NativeTokenIDRegistryResponse> {
+        const result = this.api.accountsGetNativeTokenIDRegistry(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetTotalAssetsWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
-        const result = this.api.accountsGetTotalAssetsWithHttpInfo(chainID, block, _options);
+    public accountsGetTotalAssetsWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
+        const result = this.api.accountsGetTotalAssetsWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public accountsGetTotalAssets(chainID: string, block?: string, _options?: Configuration): Promise<AssetsResponse> {
-        const result = this.api.accountsGetTotalAssets(chainID, block, _options);
+    public accountsGetTotalAssets(block?: string, _options?: Configuration): Promise<AssetsResponse> {
+        const result = this.api.accountsGetTotalAssets(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetBlockInfoWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
-        const result = this.api.blocklogGetBlockInfoWithHttpInfo(chainID, blockIndex, block, _options);
+    public blocklogGetBlockInfoWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
+        const result = this.api.blocklogGetBlockInfoWithHttpInfo(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetBlockInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<BlockInfoResponse> {
-        const result = this.api.blocklogGetBlockInfo(chainID, blockIndex, block, _options);
+    public blocklogGetBlockInfo(blockIndex: number, block?: string, _options?: Configuration): Promise<BlockInfoResponse> {
+        const result = this.api.blocklogGetBlockInfo(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetControlAddressesWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<ControlAddressesResponse>> {
-        const result = this.api.blocklogGetControlAddressesWithHttpInfo(chainID, block, _options);
+    public blocklogGetControlAddressesWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<ControlAddressesResponse>> {
+        const result = this.api.blocklogGetControlAddressesWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetControlAddresses(chainID: string, block?: string, _options?: Configuration): Promise<ControlAddressesResponse> {
-        const result = this.api.blocklogGetControlAddresses(chainID, block, _options);
+    public blocklogGetControlAddresses(block?: string, _options?: Configuration): Promise<ControlAddressesResponse> {
+        const result = this.api.blocklogGetControlAddresses(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfBlockWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<EventsResponse>> {
-        const result = this.api.blocklogGetEventsOfBlockWithHttpInfo(chainID, blockIndex, block, _options);
+    public blocklogGetEventsOfBlockWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<EventsResponse>> {
+        const result = this.api.blocklogGetEventsOfBlockWithHttpInfo(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<EventsResponse> {
-        const result = this.api.blocklogGetEventsOfBlock(chainID, blockIndex, block, _options);
+    public blocklogGetEventsOfBlock(blockIndex: number, block?: string, _options?: Configuration): Promise<EventsResponse> {
+        const result = this.api.blocklogGetEventsOfBlock(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfLatestBlockWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<EventsResponse>> {
-        const result = this.api.blocklogGetEventsOfLatestBlockWithHttpInfo(chainID, block, _options);
+    public blocklogGetEventsOfLatestBlockWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<EventsResponse>> {
+        const result = this.api.blocklogGetEventsOfLatestBlockWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<EventsResponse> {
-        const result = this.api.blocklogGetEventsOfLatestBlock(chainID, block, _options);
+    public blocklogGetEventsOfLatestBlock(block?: string, _options?: Configuration): Promise<EventsResponse> {
+        const result = this.api.blocklogGetEventsOfLatestBlock(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfRequestWithHttpInfo(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<HttpInfo<EventsResponse>> {
-        const result = this.api.blocklogGetEventsOfRequestWithHttpInfo(chainID, requestID, block, _options);
+    public blocklogGetEventsOfRequestWithHttpInfo(requestID: string, block?: string, _options?: Configuration): Promise<HttpInfo<EventsResponse>> {
+        const result = this.api.blocklogGetEventsOfRequestWithHttpInfo(requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetEventsOfRequest(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<EventsResponse> {
-        const result = this.api.blocklogGetEventsOfRequest(chainID, requestID, block, _options);
+    public blocklogGetEventsOfRequest(requestID: string, block?: string, _options?: Configuration): Promise<EventsResponse> {
+        const result = this.api.blocklogGetEventsOfRequest(requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetLatestBlockInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
-        const result = this.api.blocklogGetLatestBlockInfoWithHttpInfo(chainID, block, _options);
+    public blocklogGetLatestBlockInfoWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
+        const result = this.api.blocklogGetLatestBlockInfoWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetLatestBlockInfo(chainID: string, block?: string, _options?: Configuration): Promise<BlockInfoResponse> {
-        const result = this.api.blocklogGetLatestBlockInfo(chainID, block, _options);
+    public blocklogGetLatestBlockInfo(block?: string, _options?: Configuration): Promise<BlockInfoResponse> {
+        const result = this.api.blocklogGetLatestBlockInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForBlockWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
-        const result = this.api.blocklogGetRequestIDsForBlockWithHttpInfo(chainID, blockIndex, block, _options);
+    public blocklogGetRequestIDsForBlockWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
+        const result = this.api.blocklogGetRequestIDsForBlockWithHttpInfo(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<RequestIDsResponse> {
-        const result = this.api.blocklogGetRequestIDsForBlock(chainID, blockIndex, block, _options);
+    public blocklogGetRequestIDsForBlock(blockIndex: number, block?: string, _options?: Configuration): Promise<RequestIDsResponse> {
+        const result = this.api.blocklogGetRequestIDsForBlock(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
-        const result = this.api.blocklogGetRequestIDsForLatestBlockWithHttpInfo(chainID, block, _options);
+    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
+        const result = this.api.blocklogGetRequestIDsForLatestBlockWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIDsForLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<RequestIDsResponse> {
-        const result = this.api.blocklogGetRequestIDsForLatestBlock(chainID, block, _options);
+    public blocklogGetRequestIDsForLatestBlock(block?: string, _options?: Configuration): Promise<RequestIDsResponse> {
+        const result = this.api.blocklogGetRequestIDsForLatestBlock(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIsProcessedWithHttpInfo(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<HttpInfo<RequestProcessedResponse>> {
-        const result = this.api.blocklogGetRequestIsProcessedWithHttpInfo(chainID, requestID, block, _options);
+    public blocklogGetRequestIsProcessedWithHttpInfo(requestID: string, block?: string, _options?: Configuration): Promise<HttpInfo<RequestProcessedResponse>> {
+        const result = this.api.blocklogGetRequestIsProcessedWithHttpInfo(requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestIsProcessed(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<RequestProcessedResponse> {
-        const result = this.api.blocklogGetRequestIsProcessed(chainID, requestID, block, _options);
+    public blocklogGetRequestIsProcessed(requestID: string, block?: string, _options?: Configuration): Promise<RequestProcessedResponse> {
+        const result = this.api.blocklogGetRequestIsProcessed(requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptWithHttpInfo(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
-        const result = this.api.blocklogGetRequestReceiptWithHttpInfo(chainID, requestID, block, _options);
+    public blocklogGetRequestReceiptWithHttpInfo(requestID: string, block?: string, _options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+        const result = this.api.blocklogGetRequestReceiptWithHttpInfo(requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<ReceiptResponse> {
-        const result = this.api.blocklogGetRequestReceipt(chainID, requestID, block, _options);
+    public blocklogGetRequestReceipt(requestID: string, block?: string, _options?: Configuration): Promise<ReceiptResponse> {
+        const result = this.api.blocklogGetRequestReceipt(requestID, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
-        const result = this.api.blocklogGetRequestReceiptsOfBlockWithHttpInfo(chainID, blockIndex, block, _options);
+    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(blockIndex: number, block?: string, _options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
+        const result = this.api.blocklogGetRequestReceiptsOfBlockWithHttpInfo(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
-        const result = this.api.blocklogGetRequestReceiptsOfBlock(chainID, blockIndex, block, _options);
+    public blocklogGetRequestReceiptsOfBlock(blockIndex: number, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
+        const result = this.api.blocklogGetRequestReceiptsOfBlock(blockIndex, block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
-        const result = this.api.blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(chainID, block, _options);
+    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
+        const result = this.api.blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
-        const result = this.api.blocklogGetRequestReceiptsOfLatestBlock(chainID, block, _options);
+    public blocklogGetRequestReceiptsOfLatestBlock(block?: string, _options?: Configuration): Promise<Array<ReceiptResponse>> {
+        const result = this.api.blocklogGetRequestReceiptsOfLatestBlock(block, _options);
         return result.toPromise();
     }
 
@@ -999,66 +914,60 @@ export class PromiseCorecontractsApi {
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddressesWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
-        const result = this.api.governanceGetAllowedStateControllerAddressesWithHttpInfo(chainID, block, _options);
+    public governanceGetAllowedStateControllerAddressesWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
+        const result = this.api.governanceGetAllowedStateControllerAddressesWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddresses(chainID: string, block?: string, _options?: Configuration): Promise<GovAllowedStateControllerAddressesResponse> {
-        const result = this.api.governanceGetAllowedStateControllerAddresses(chainID, block, _options);
+    public governanceGetAllowedStateControllerAddresses(block?: string, _options?: Configuration): Promise<GovAllowedStateControllerAddressesResponse> {
+        const result = this.api.governanceGetAllowedStateControllerAddresses(block, _options);
         return result.toPromise();
     }
 
     /**
      * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainInfoWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<GovChainInfoResponse>> {
-        const result = this.api.governanceGetChainInfoWithHttpInfo(chainID, block, _options);
+    public governanceGetChainInfoWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<GovChainInfoResponse>> {
+        const result = this.api.governanceGetChainInfoWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<GovChainInfoResponse> {
-        const result = this.api.governanceGetChainInfo(chainID, block, _options);
+    public governanceGetChainInfo(block?: string, _options?: Configuration): Promise<GovChainInfoResponse> {
+        const result = this.api.governanceGetChainInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainOwnerWithHttpInfo(chainID: string, block?: string, _options?: Configuration): Promise<HttpInfo<GovChainOwnerResponse>> {
-        const result = this.api.governanceGetChainOwnerWithHttpInfo(chainID, block, _options);
+    public governanceGetChainOwnerWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<GovChainOwnerResponse>> {
+        const result = this.api.governanceGetChainOwnerWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Hex Address)
      * @param [block] Block index or trie root
      */
-    public governanceGetChainOwner(chainID: string, block?: string, _options?: Configuration): Promise<GovChainOwnerResponse> {
-        const result = this.api.governanceGetChainOwner(chainID, block, _options);
+    public governanceGetChainOwner(block?: string, _options?: Configuration): Promise<GovChainOwnerResponse> {
+        const result = this.api.governanceGetChainOwner(block, _options);
         return result.toPromise();
     }
 
@@ -1134,71 +1043,49 @@ export class PromiseMetricsApi {
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainMessageMetricsWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<ChainMessageMetrics>> {
-        const result = this.api.getChainMessageMetricsWithHttpInfo(chainID, _options);
+    public getChainMessageMetricsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ChainMessageMetrics>> {
+        const result = this.api.getChainMessageMetricsWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Get chain specific message metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainMessageMetrics(chainID: string, _options?: Configuration): Promise<ChainMessageMetrics> {
-        const result = this.api.getChainMessageMetrics(chainID, _options);
+    public getChainMessageMetrics(_options?: Configuration): Promise<ChainMessageMetrics> {
+        const result = this.api.getChainMessageMetrics(_options);
         return result.toPromise();
     }
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainPipeMetricsWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<ConsensusPipeMetrics>> {
-        const result = this.api.getChainPipeMetricsWithHttpInfo(chainID, _options);
+    public getChainPipeMetricsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ConsensusPipeMetrics>> {
+        const result = this.api.getChainPipeMetricsWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Get chain pipe event metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainPipeMetrics(chainID: string, _options?: Configuration): Promise<ConsensusPipeMetrics> {
-        const result = this.api.getChainPipeMetrics(chainID, _options);
+    public getChainPipeMetrics(_options?: Configuration): Promise<ConsensusPipeMetrics> {
+        const result = this.api.getChainPipeMetrics(_options);
         return result.toPromise();
     }
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainWorkflowMetricsWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<ConsensusWorkflowMetrics>> {
-        const result = this.api.getChainWorkflowMetricsWithHttpInfo(chainID, _options);
+    public getChainWorkflowMetricsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<ConsensusWorkflowMetrics>> {
+        const result = this.api.getChainWorkflowMetricsWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Get chain workflow metrics.
-     * @param chainID ChainID (Hex Address)
      */
-    public getChainWorkflowMetrics(chainID: string, _options?: Configuration): Promise<ConsensusWorkflowMetrics> {
-        const result = this.api.getChainWorkflowMetrics(chainID, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get accumulated message metrics.
-     */
-    public getNodeMessageMetricsWithHttpInfo(_options?: Configuration): Promise<HttpInfo<NodeMessageMetrics>> {
-        const result = this.api.getNodeMessageMetricsWithHttpInfo(_options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get accumulated message metrics.
-     */
-    public getNodeMessageMetrics(_options?: Configuration): Promise<NodeMessageMetrics> {
-        const result = this.api.getNodeMessageMetrics(_options);
+    public getChainWorkflowMetrics(_options?: Configuration): Promise<ConsensusWorkflowMetrics> {
+        const result = this.api.getChainWorkflowMetrics(_options);
         return result.toPromise();
     }
 

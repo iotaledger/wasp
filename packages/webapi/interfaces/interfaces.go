@@ -37,17 +37,17 @@ type ChainService interface {
 	DeactivateChain(chainID isc.ChainID) error
 	GetAllChainIDs() ([]isc.ChainID, error)
 	GetChain() (chain.Chain, error)
-	GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
-	GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error)
-	GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (uint16, error)
-	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
-	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
-	RotateTo(ctx context.Context, chainID isc.ChainID, rotateToAddress *iotago.Address) error
+	GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
+	GetContracts(blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error)
+	GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error)
+	GetState(stateKey []byte) (state []byte, err error)
+	WaitForRequestProcessed(ctx context.Context, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
+	RotateTo(ctx context.Context, rotateToAddress *iotago.Address) error
 }
 
 type EVMService interface {
-	HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error
-	HandleWebsocket(ctx context.Context, chainID isc.ChainID, echoCtx echo.Context) error
+	HandleJSONRPC(request *http.Request, response *echo.Response) error
+	HandleWebsocket(ctx context.Context, echoCtx echo.Context) error
 }
 
 type MetricsService interface {

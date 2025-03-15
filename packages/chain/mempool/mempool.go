@@ -504,7 +504,7 @@ func (mpi *mempoolImpl) nonce(account isc.AgentID) uint64 {
 	if evmSender, ok := account.(*isc.EthereumAddressAgentID); ok {
 		return evmState.Nonce(evmSender.EthAddress())
 	}
-	return mpi.accountsState().AccountNonce(account, mpi.chainID)
+	return mpi.accountsState().AccountNonce(account)
 }
 
 func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) error {
@@ -527,7 +527,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	// check user has on-chain balance
 	governanceState := governance.NewStateReaderFromChainState(mpi.chainHeadState)
 	minFee := governanceState.GetGasFeePolicy().MinFee(isc.RequestGasPrice(req), parameters.Decimals)
-	balance := mpi.accountsState().GetBaseTokensBalanceDiscardExtraDecimals(req.SenderAccount(), mpi.chainID)
+	balance := mpi.accountsState().GetBaseTokensBalanceDiscardExtraDecimals(req.SenderAccount())
 	if balance < minFee {
 		// make an exception for gov calls (sender is chain owner and target is gov contract)
 		chainOwner := governanceState.GetChainOwnerID()

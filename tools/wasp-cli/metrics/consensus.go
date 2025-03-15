@@ -7,8 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -26,17 +24,14 @@ func initConsensusMetricsCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
-			chainAddress, err := cryptolib.NewAddressFromHexString(chainAlias)
-			log.Check(err)
 
-			chainID := isc.ChainIDFromAddress(chainAddress)
 			workflowStatus, _, err := client.MetricsAPI.
-				GetChainWorkflowMetrics(ctx, chainID.String()).
+				GetChainWorkflowMetrics(ctx).
 				Execute()
 			log.Check(err)
 
 			pipeMetrics, _, err := client.MetricsAPI.
-				GetChainPipeMetrics(ctx, chainID.String()).
+				GetChainPipeMetrics(ctx).
 				Execute()
 			log.Check(err)
 

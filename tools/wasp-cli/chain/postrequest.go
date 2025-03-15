@@ -22,7 +22,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	chainClient := cliclients.ChainClient(client, chainID)
 
 	if offLedger {
-		util.WithOffLedgerRequest(ctx, client, chainID, func() (isc.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(ctx, client, func() (isc.OffLedgerRequest, error) {
 			return chainClient.PostOffLedgerRequest(ctx, msg, params)
 		})
 		return
@@ -31,7 +31,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 		return chainClient.PostRequest(ctx, msg, params)
 	})
 }

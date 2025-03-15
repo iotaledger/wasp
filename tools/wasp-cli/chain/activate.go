@@ -38,7 +38,7 @@ func initActivateCmd() *cobra.Command {
 
 func activateChain(ctx context.Context, node string, chainName string, chainID isc.ChainID) {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
-	r, httpStatus, err := client.ChainsAPI.GetChainInfo(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
+	r, httpStatus, err := client.ChainsAPI.GetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
 
 	if err != nil && httpStatus.StatusCode != http.StatusNotFound {
 		log.Check(err)

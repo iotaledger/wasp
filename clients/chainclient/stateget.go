@@ -14,7 +14,7 @@ func (c *Client) ContractStateGet(ctx context.Context, contract isc.Hname, key s
 
 // StateGet fetches the raw value associated with the given key in the chain state
 func (c *Client) StateGet(ctx context.Context, key string) ([]byte, error) {
-	stateResponse, _, err := c.WaspClient.ChainsAPI.GetStateValue(ctx, c.ChainID.String(), cryptolib.EncodeHex([]byte(key))).Execute()
+	stateResponse, _, err := c.WaspClient.ChainsAPI.GetStateValue(ctx, cryptolib.EncodeHex([]byte(key))).Execute()
 	if err != nil {
 		return nil, err
 	}

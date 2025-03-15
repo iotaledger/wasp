@@ -23,7 +23,7 @@ func (m *MultiClient) WaitUntilRequestProcessed(ctx context.Context, chainID isc
 	var receipt *apiclient.ReceiptResponse
 	var err error
 	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipt, _, err = w.ChainsAPI.WaitForRequest(ctx, chainID.String(), reqID.String()).
+		receipt, _, err = w.ChainsAPI.WaitForRequest(ctx, reqID.String()).
 			WaitForL1Confirmation(waitForL1Confirmation).
 			Execute()
 		return err
@@ -73,7 +73,7 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID
 	var receipts []*apiclient.ReceiptResponse
 	var err error
 	err = m.Do(func(i int, w *apiclient.APIClient) error {
-		receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(ctx, w, chainID, tx, waitForL1Confirmation, timeout)
+		receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(ctx, w, tx, waitForL1Confirmation, timeout)
 		return err
 	})
 

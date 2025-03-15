@@ -6,7 +6,6 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
@@ -30,7 +29,7 @@ func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoRespon
 }
 
 func (c *Controller) getChainInfo(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -46,7 +45,7 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 }
 
 func (c *Controller) getChainOwner(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -64,7 +63,7 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 }
 
 func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}

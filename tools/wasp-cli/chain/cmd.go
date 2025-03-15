@@ -21,7 +21,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
-	chainCmd.AddCommand(initListCmd())
 	chainCmd.AddCommand(initDeployCmd())
 	chainCmd.AddCommand(initInfoCmd())
 	chainCmd.AddCommand(initListContractsCmd())

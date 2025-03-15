@@ -16,7 +16,7 @@ import (
 
 func (c *Controller) executeCallView(e echo.Context) error {
 	controllerutils.SetOperation(e, "call_view")
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
@@ -17,35 +16,35 @@ func (c *Controller) getNodeMessageMetrics(e echo.Context) error {
 }
 
 func (c *Controller) getChainMessageMetrics(e echo.Context) error {
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
 
-	metricsReport := c.metricsService.GetChainMessageMetrics(chainID)
+	metricsReport := c.metricsService.GetChainMessageMetrics(ch.ID())
 	mappedMetrics := models.MapChainMessageMetrics(metricsReport)
 
 	return e.JSON(http.StatusOK, mappedMetrics)
 }
 
 func (c *Controller) getChainWorkflowMetrics(e echo.Context) error {
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
 
-	metricsReport := c.metricsService.GetChainConsensusWorkflowMetrics(chainID)
+	metricsReport := c.metricsService.GetChainConsensusWorkflowMetrics(ch.ID())
 
 	return e.JSON(http.StatusOK, metricsReport)
 }
 
 func (c *Controller) getChainPipeMetrics(e echo.Context) error {
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
 
-	metricsReport := c.metricsService.GetChainConsensusPipeMetrics(chainID)
+	metricsReport := c.metricsService.GetChainConsensusPipeMetrics(ch.ID())
 
 	return e.JSON(http.StatusOK, metricsReport)
 }

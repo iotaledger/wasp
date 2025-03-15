@@ -147,7 +147,7 @@ func validateAndPushURL(target *string, urlValue nilableString) {
 }
 
 func updateMetadata(ctx context.Context, client *apiclient.APIClient, node string, chainAliasName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
-	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
+	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		log.Fatal("Chain not found")
 	}
@@ -156,7 +156,7 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 
 	if useCliURL {
 		apiURL := config.WaspAPIURL(node)
-		chainPath, err2 := url.JoinPath(apiURL, "/v1/chains/", chainID.String())
+		chainPath, err2 := url.JoinPath(apiURL, "/v1/chain/")
 		log.Check(err2)
 
 		publicURL = chainPath

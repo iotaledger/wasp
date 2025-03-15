@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -99,7 +98,7 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			callGovView := func(viewName string) isc.CallResults {
-				apiResult, _, err := client.ChainsAPI.CallView(ctx, config.GetChain(chain).String()).
+				apiResult, _, err := client.ChainsAPI.CallView(ctx).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,

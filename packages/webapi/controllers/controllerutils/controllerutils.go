@@ -31,7 +31,7 @@ func SetOperation(c echo.Context, op string) {
 	c.Set(EchoContextKeyOperation, op)
 }
 
-func ChainFromParams(c echo.Context, cs interfaces.ChainService) (chain.Chain, error) {
+func ChainFromParams(cs interfaces.ChainService) (chain.Chain, error) {
 	chain, err := cs.GetChain()
 	if err != nil {
 		return nil, err

@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -28,17 +27,16 @@ func initInfoCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 
-			chainID := config.GetChain(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			chainInfo, _, err := client.ChainsAPI.
-				GetChainInfo(ctx, chainID.String()).
+				GetChainInfo(ctx).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			committeeInfo, _, err := client.ChainsAPI.
-				GetCommitteeInfo(ctx, chainID.String()).
+				GetCommitteeInfo(ctx).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
@@ -80,7 +78,7 @@ func initInfoCmd() *cobra.Command {
 				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
 				log.Printf("\n")
 
-				contracts, _, err := client.ChainsAPI.GetContracts(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
+				contracts, _, err := client.ChainsAPI.GetContracts(ctx).Execute() //nolint:bodyclose // false positive
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 

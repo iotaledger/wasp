@@ -5,7 +5,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
@@ -15,7 +14,8 @@ type ErrorMessageFormatResponse struct {
 }
 
 func (c *Controller) getErrorMessageFormat(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
+
 	if err != nil {
 		return c.handleViewCallError(err)
 	}

@@ -40,7 +40,7 @@ func initBalanceCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			balance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(ctx, chainID.String(), agentID.String()).Execute() //nolint:bodyclose // false positive
+			balance, _, err := client.CorecontractsAPI.AccountsGetAccountBalance(ctx, agentID.String()).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
 			header := []string{"token", "amount"}
@@ -76,7 +76,7 @@ func initAccountNFTsCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			nfts, _, err := client.CorecontractsAPI.
-				AccountsGetAccountNFTIDs(ctx, chainID.String(), agentID.String()).
+				AccountsGetAccountNFTIDs(ctx, agentID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
@@ -96,7 +96,7 @@ func initAccountNFTsCmd() *cobra.Command {
 //nolint:unused
 func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
-		apiResult, _, err := client.ChainsAPI.CallView(context.Background(), config.GetChain(chain).String()).
+		apiResult, _, err := client.ChainsAPI.CallView(context.Background()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractName: governance.Contract.Name,
 				FunctionName: viewName,
@@ -150,7 +150,7 @@ func initDepositCmd() *cobra.Command {
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
 				allowance := isc.NewAssets(tokens.BaseTokens() / 10)
 
-				util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+				util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
