@@ -4,8 +4,8 @@
 package isc
 
 import (
-	"errors"
-	"strings"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -68,26 +68,17 @@ func AgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}
-	var contractPart, addrPart string
-	{
-		parts := strings.Split(s, AgentIDStringSeparator)
-		switch len(parts) {
-		case 1:
-			addrPart = parts[0]
-		case 2:
-			addrPart = parts[1]
-			contractPart = parts[0]
-		default:
-			return nil, errors.New("invalid AgentID format")
-		}
+
+	addressAsBytes := hexutil.MustDecode(s)
+
+	if len(addressAsBytes) == common.AddressLength {
+		return ethAgentIDFromString(s)
 	}
 
-	if contractPart != "" {
-		if strings.HasPrefix(contractPart, "0x") {
-			return ethAgentIDFromString(addrPart)
-		}
-		return contractAgentIDFromString(addrPart)
+	if len(addressAsBytes) == 4 { // Uint32
+		return contractAgentIDFromString(s)
 	}
 
+	// Rebased
 	return addressAgentIDFromString(s)
 }

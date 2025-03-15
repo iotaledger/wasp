@@ -66,7 +66,6 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -80,7 +79,7 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 				ctx,
 				client,
 				chain,
-				isc.NewMessageFromNames(hname, fname, util.EncodeParams(funcArgs(cmd), chainID)),
+				isc.NewMessageFromNames(hname, fname, util.EncodeParams(funcArgs(cmd))),
 				params,
 				postrequestParams.offLedger,
 				postrequestParams.adjustStorageDeposit,

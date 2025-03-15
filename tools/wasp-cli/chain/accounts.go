@@ -17,9 +17,9 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -34,9 +34,7 @@ func initBalanceCmd() *cobra.Command {
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
-			agentID := util.AgentIDFromArgs(args, chainID)
+			agentID := util.AgentIDFromArgs(args)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -70,8 +68,7 @@ func initAccountNFTsCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
-			agentID := util.AgentIDFromArgs(args, chainID)
+			agentID := util.AgentIDFromArgs(args)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -136,8 +133,8 @@ func initDepositCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-
 			chainID := config.GetChain(chain)
+
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*1000)
 			defer cancel()
 
@@ -161,7 +158,7 @@ func initDepositCmd() *cobra.Command {
 				})
 			} else {
 				// deposit to some other agentID
-				agentID := util.AgentIDFromString(args[0], chainID)
+				agentID := util.AgentIDFromString(args[0])
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 				allowance := isc.NewAssets(tokens.BaseTokens() - 10000)
 

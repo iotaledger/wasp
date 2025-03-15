@@ -51,13 +51,12 @@ func initPostRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			cname := args[0]
 			fname := args[1]
-			params := util.EncodeParams(args[2:], chainID)
+			params := util.EncodeParams(args[2:])
 			msg := isc.NewMessage(isc.Hn(cname), isc.Hn(fname), params)
 
 			// allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
