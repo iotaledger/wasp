@@ -250,7 +250,6 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 	}
 }
 
-//nolint:revive
 func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
 	for {
 		select {

@@ -24,7 +24,7 @@ const BaseTokensDepositFee = 100
 
 func TestAccounts_Deposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
-	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
 
 	err := ch.DepositBaseTokensToL2(100_000, sender)
@@ -39,7 +39,7 @@ func TestAccounts_Deposit(t *testing.T) {
 // allowance shouldn't allow you to bypass gas fees.
 func TestAccounts_DepositCheatAllowance(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
-	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	senderAgentID := isc.NewAddressAgentID(senderAddr)
 	ch := env.NewChain()
 
@@ -63,7 +63,7 @@ func TestAccounts_DepositCheatAllowance(t *testing.T) {
 
 func TestAccounts_WithdrawEverything(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
-	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	sender, senderAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	senderAgentID := isc.NewAddressAgentID(senderAddr)
 	ch := env.NewChain()
 
@@ -120,7 +120,7 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 // 	initTest := func() {
 // 		env = solo.New(t, &solo.InitOptions{})
 // 		ch, _ = env.NewChainExt(nil, 10*isc.Million, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-// 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+// 		senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 // 		senderAgentID = isc.NewAddressAgentID(senderAddr)
 
 // 		ch.MustDepositBaseTokensToL2(10*isc.Million, senderKeyPair)
@@ -481,9 +481,9 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 	ret := &accountsDepositTest{}
 	ret.env = solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 
-	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(10))
+	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ret.chainOwnerAgentID = isc.NewAddressAgentID(ret.chainOwnerAddr)
-	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromIndex(11))
+	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ret.userAgentID = isc.NewAddressAgentID(ret.userAddr)
 
 	initBaseTokens := coin.Value(isc.GasCoinTargetValue)
@@ -739,7 +739,7 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 	v.ch.AssertL2TotalCoins(v.coinType, coin.Value(100))
 
 	// send funds to user2
-	user2, user2Addr := v.env.NewKeyPairWithFunds(v.env.NewSeedFromIndex(100))
+	user2, user2Addr := v.env.NewKeyPairWithFunds(v.env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	user2AgentID := isc.NewAddressAgentID(user2Addr)
 
 	// deposit 1 base token to "create account" for user2 // TODO maybe remove if account creation is not needed
@@ -886,8 +886,7 @@ func TestAccounts_DepositNFTWithMinStorageDeposit(t *testing.T) {
 	// env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	// ch := env.NewChain()
 	//
-	// issuerWallet, issuerAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	//
+	// issuerWallet, issuerAddress := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name())	//
 	// nft, err := env.MintNFTL1(issuerWallet, issuerAddress, []byte("foobar"))
 	// require.NoError(t, err)
 	// req := solo.NewCallParams(accounts.FuncDeposit.Message()).
@@ -947,7 +946,7 @@ func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
 
 func TestAccounts_DepositWithNoGasBudget(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
-	senderWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(11))
+	senderWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
 
 	// try to deposit with 0 gas budget
@@ -1040,8 +1039,8 @@ func TestAccounts_Nonces(t *testing.T) {
 // }
 
 // t.Run("mint for another user", func(t *testing.T) {
-// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 // 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
 // 	// mint NFT to another user and keep it on chain
@@ -1065,8 +1064,8 @@ func TestAccounts_Nonces(t *testing.T) {
 // })
 
 // t.Run("mint with invalid IRC27 metadata", func(t *testing.T) {
-// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 // 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
 // 	// mint NFT to another user and keep it on chain
@@ -1087,8 +1086,8 @@ func TestAccounts_Nonces(t *testing.T) {
 // })
 
 // t.Run("mint without IRC27 metadata", func(t *testing.T) {
-// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
-// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 // 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
 // 	// mint NFT to another user and keep it on chain
@@ -1103,9 +1102,9 @@ func TestAccounts_Nonces(t *testing.T) {
 // })
 
 // t.Run("mint for another user, directly to outside the chain", func(t *testing.T) {
-// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	wallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 
-// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	_, anotherUserAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 // 	anotherUserAgentID := isc.NewAddressAgentID(anotherUserAddr)
 
 // 	// mint NFT to another user and withdraw it
@@ -1134,7 +1133,7 @@ func TestAccounts_Nonces(t *testing.T) {
 // })
 
 // t.Run("mint to self, then mint from it as a collection", func(t *testing.T) {
-// 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 // 	agentID := isc.NewAddressAgentID(address)
 
 // 	// mint NFT to self and keep it on chain
@@ -1182,7 +1181,7 @@ func TestAccounts_Nonces(t *testing.T) {
 // })
 
 // t.Run("mint to self, then withdraw it", func(t *testing.T) {
-// 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromIndex(seedIndex()))
+// 	wallet, address := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))))
 // 	agentID := isc.NewAddressAgentID(address)
 
 // 	// mint NFT to self and keep it on chain

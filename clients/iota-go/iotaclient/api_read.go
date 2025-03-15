@@ -47,7 +47,8 @@ type GetObjectRequest struct {
 }
 
 func (c *Client) GetObject(ctx context.Context, req GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
-	return Retry(ctx,
+	return Retry(
+		ctx,
 		func() (*iotajsonrpc.IotaObjectResponse, error) {
 			var resp iotajsonrpc.IotaObjectResponse
 			err := c.transport.Call(ctx, &resp, getObject, req.ObjectID, req.Options)
@@ -88,7 +89,8 @@ func (c *Client) GetTransactionBlock(
 	ctx context.Context,
 	req GetTransactionBlockRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	return Retry(ctx,
+	return Retry(
+		ctx,
 		func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 			var resp iotajsonrpc.IotaTransactionBlockResponse
 			err := c.transport.Call(ctx, &resp, getTransactionBlock, req.Digest, req.Options)
@@ -150,7 +152,8 @@ func (c *Client) TryGetPastObject(
 	ctx context.Context,
 	req TryGetPastObjectRequest,
 ) (*iotajsonrpc.IotaPastObjectResponse, error) {
-	return Retry(ctx,
+	return Retry(
+		ctx,
 		func() (*iotajsonrpc.IotaPastObjectResponse, error) {
 			var resp iotajsonrpc.IotaPastObjectResponse
 			err := c.transport.Call(ctx, &resp, tryGetPastObject, req.ObjectID, req.Version, req.Options)

@@ -4,5 +4,4 @@
 package tests
 
 func init() {
-	//l1 = l1starter.ClusterStart(parseConfig())
 }

@@ -212,10 +212,10 @@ func (bfT *BlockFactory) GetNextBlock(
 		Owner:     consumedAnchor.Anchor().Owner,
 		ObjectRef: consumedAnchor.Anchor().ObjectRef,
 		Object: &iscmove.Anchor{
-			consumedAnchor.Anchor().Object.ID,
-			consumedAnchor.Anchor().Object.Assets,
-			consumedMetadata.Bytes(),
-			consumedAnchor.Anchor().Object.StateIndex + 1,
+			ID:            consumedAnchor.Anchor().Object.ID,
+			Assets:        consumedAnchor.Anchor().Object.Assets,
+			StateMetadata: consumedMetadata.Bytes(),
+			StateIndex:    consumedAnchor.Anchor().Object.StateIndex + 1,
 		},
 	}, consumedAnchor.ISCPackage())
 

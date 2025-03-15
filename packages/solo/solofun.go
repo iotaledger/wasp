@@ -1,7 +1,9 @@
 package solo
 
 import (
+	"hash/fnv"
 	"math"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -44,6 +46,40 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 	return &seed
 }
 
+func (env *Solo) NewSeedFromTestNameAndTimestamp(testName string) *cryptolib.Seed {
+	algorithm := fnv.New32a()
+	_, err := algorithm.Write([]byte(testName + time.Now().String()))
+	if err != nil {
+		panic(err)
+	}
+
+	seed := cryptolib.SubSeed(env.seed[:], algorithm.Sum32()/2)
+	return &seed
+}
+
+func (env *Solo) WaitForNewBalance(address *cryptolib.Address, startBalance coin.Value) {
+	const amountOfRetries = 10
+	currentBalance := env.L1BaseTokens(address)
+
+	if currentBalance > startBalance {
+		return
+	}
+
+	count := 0
+	for {
+		if count == amountOfRetries {
+			panic("Could not get funds from Faucet")
+		}
+
+		if env.L1BaseTokens(address) > startBalance {
+			break
+		}
+
+		count++
+		time.Sleep(1 * time.Second)
+	}
+}
+
 // NewKeyPairWithFunds generates new ed25519 signature scheme
 // and requests some tokens from the UTXODB faucet.
 // The amount of tokens is equal to utxodb.FundsFromFaucetAmount (=1000Mi) base tokens
@@ -51,11 +87,14 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPair, *cryptolib.Address) {
 	keyPair, addr := env.NewKeyPair(seed...)
 	env.GetFundsFromFaucet(addr)
+
 	return keyPair, addr
 }
 
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
+	currentBalance := env.L1BaseTokens(target)
 	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
+	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
 	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))
 }

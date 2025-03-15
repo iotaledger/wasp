@@ -27,7 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
-func TestCruelWorld(t *testing.T) { //nolint:gocyclo
+func TestCruelWorld(t *testing.T) {
 	t.Skip()
 	log := testlogger.NewLogger(t)
 
@@ -211,7 +211,6 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 }
 
 func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
-	//nolint:revive // we ignore the empty-block here because we wait for blockProduced 0 to become true
 	for !blockProduced[0].Load() {
 	}
 	var maxIndex int

@@ -150,7 +150,7 @@ func TestPeeringNetDynamicChanging(t *testing.T) {
 	behavior.Close()
 }
 
-func TestPeeringNetDynamicLosingChannel(t *testing.T) { //nolint:dupl
+func TestPeeringNetDynamicLosingChannel(t *testing.T) {
 	inCh := make(chan *peeringMsg)
 	outCh := make(chan *peeringMsg, 1000)
 	stopCh := make(chan bool)
@@ -175,7 +175,7 @@ func TestPeeringNetDynamicLosingChannel(t *testing.T) { //nolint:dupl
 	behavior.Close()
 }
 
-func TestPeeringNetDynamicRepeatingChannel(t *testing.T) { //nolint:dupl
+func TestPeeringNetDynamicRepeatingChannel(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
