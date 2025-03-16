@@ -19,5 +19,18 @@ func (reqctx *requestContext) send(params isc.RequestParameters) {
 	// For now removed everything related to it.
 
 	// simply send assets to a L1 address
-	reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
+	if params.Metadata == nil {
+		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
+
+	} else {
+		panic("refactor me: send:CrossChainRequest")
+		packageID := reqctx.vm.task.Anchor.ISCPackage()
+
+		reqctx.vm.txbuilder.SendCrossChainRequest(
+			&packageID,
+			params.TargetAddress.AsIotaAddress(),
+			params.Assets,
+			params.Metadata,
+		)
+	}
 }
