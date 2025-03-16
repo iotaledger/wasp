@@ -3,13 +3,13 @@
 
 pragma solidity >=0.8.11;
 
-import "./ISCSandbox.sol";
-import "./ISCAccounts.sol";
-import "./ISCUtil.sol";
-import "./ISCPrivileged.sol";
-import "./ERC20Coin.sol";
-import "./ERC721NFTs.sol";
-import "./ERC721NFTCollection.sol";
+import {IotaObjectID} from "./ISCTypes.sol";
+import {ISCSandbox, __iscSandbox} from "./ISCSandbox.sol";
+import {ISCAccounts, __iscAccounts} from "./ISCAccounts.sol";
+import {ISCUtil, __iscUtil} from "./ISCUtil.sol";
+import {ERC20Coin} from "./ERC20Coin.sol";
+import {ERC721NFTs, __erc721NFTs} from "./ERC721NFTs.sol";
+import {ERC721NFTCollection} from "./ERC721NFTCollection.sol";
 
 /**
  * @title ISC Library
