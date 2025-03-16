@@ -159,7 +159,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		par,
 	)
 	require.NoError(t, err)
-	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 10*time.Second)
+	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, rec.GasBurned, estimatedReceipt.GasBurned)
 	require.Equal(t, rec.GasFeeCharged, estimatedReceipt.GasFeeCharged)

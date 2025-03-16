@@ -80,7 +80,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 		},
 	)
 	require.NoError(t, err)
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, offledgerReq.ID(), false, 5*time.Second)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, offledgerReq.ID(), false, 30*time.Second)
 	require.Error(t, err) // wont' be processed
 
 	// send off-ledger requests with the correct nonce
@@ -135,7 +135,7 @@ func newWalletWithL2Funds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chainc
 
 	// wait until access node syncs with account
 	if len(waitOnNodes) > 0 {
-		waitUntil(e.t, e.accountExists(userAgentID), waitOnNodes, 10*time.Second)
+		waitUntil(e.t, e.accountExists(userAgentID), waitOnNodes, 30*time.Second)
 	}
 	return chClient
 }

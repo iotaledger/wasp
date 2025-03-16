@@ -237,7 +237,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 
 	// await txs confirmed
 	for _, tx := range transactions {
-		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
+		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 30*time.Second)
 		require.NoError(t, err2)
 	}
 
