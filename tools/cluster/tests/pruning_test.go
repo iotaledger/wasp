@@ -11,18 +11,17 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/evm/evmtest"
+	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 func TestPruning(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	t.Parallel()
 	blockKeepAmount := 10
 	clu := newCluster(t, waspClusterOpts{
@@ -45,18 +44,19 @@ func TestPruning(t *testing.T) {
 	require.NoError(t, err)
 	env := newChainEnv(t, clu, chain)
 
+	var baseTokensToWithdraw coin.Value = 100
+	chClient := env.NewChainClient(env.Chain.OriginatorKeyPair)
+	req, err := chClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
+		chainclient.PostRequestParams{
+			Allowance: isc.NewAssets(baseTokensToWithdraw),
+		},
+	)
+	require.NoError(t, err)
+	_, err = chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), chain.ChainID, req.ID(), true, 30*time.Second)
+	require.NoError(t, err)
+
 	// let's send 100 EVM requests (wait for each request individually, so that the chain height increases as much as possible)
 	const numRequests = 100
-
-	// deposit funds for EVM
-	keyPair, _, err := clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-	evmPvtKey, evmAddr := solo.NewEthereumAccount()
-	evmAgentID := isc.NewEthereumAddressAgentID(chain.ChainID, evmAddr)
-	env.TransferFundsTo(isc.NewAssets(1*isc.Million), nil, keyPair, evmAgentID)
-
-	// deploy solidity inccounter
-	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))
 
 	initialBlockIndex, err := env.Chain.BlockIndex()
 	require.NoError(t, err)
@@ -65,23 +65,10 @@ func TestPruning(t *testing.T) {
 	lightClient := env.EVMJSONRPClient(1)
 
 	txs := make([]*types.Transaction, numRequests)
-	nonce := env.GetNonceEVM(evmAddr)
 	for i := uint64(0); i < numRequests; i++ {
-		// send tx to change the stored value
-		callArguments, err2 := storageContractABI.Pack("store", uint32(i))
-		require.NoError(t, err2)
-		tx, err2 := types.SignTx(
-			types.NewTransaction(nonce+i, storageContractAddr, big.NewInt(0), 100000, env.GetGasPriceEVM(), callArguments),
-			EVMSigner(),
-			evmPvtKey,
-		)
+		tx := env.CallStore(archiveClient, lightClient, i)
 		txs[i] = tx
-		require.NoError(t, err2)
-		err2 = archiveClient.SendTransaction(context.Background(), tx)
-		require.NoError(t, err2)
-		// await tx confirmed
-		_, err2 = clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
-		require.NoError(t, err2)
+		time.Sleep(10 * time.Second)
 	}
 
 	finalBlockIndex := initialBlockIndex + numRequests
@@ -101,7 +88,7 @@ func TestPruning(t *testing.T) {
 	t.Run("eth_getlogs", func(t *testing.T) {
 		t.Parallel()
 		filterQuery := ethereum.FilterQuery{
-			Addresses: []common.Address{storageContractAddr},
+			Addresses: []common.Address{env.testContractEnv.EvmTestContractAddr},
 			FromBlock: big.NewInt(int64(initialBlockIndex + 1)),
 			ToBlock:   big.NewInt(int64(finalBlockIndex)),
 		}
@@ -119,15 +106,15 @@ func TestPruning(t *testing.T) {
 
 	t.Run("eth_call", func(t *testing.T) {
 		t.Parallel()
-		callArgs, err := storageContractABI.Pack("retrieve")
+		callArgs, err := env.testContractEnv.EvmTestContractABI.Pack("retrieve")
 		require.NoError(t, err)
 		callMsg := ethereum.CallMsg{
-			To:   &storageContractAddr,
+			To:   &env.testContractEnv.EvmTestContractAddr,
 			Data: callArgs,
 		}
 		ret, err := archiveClient.CallContract(context.Background(), callMsg, big.NewInt(50))
 		require.NoError(t, err)
-		val, err := storageContractABI.Unpack("retrieve", ret)
+		val, err := env.testContractEnv.EvmTestContractABI.Unpack("retrieve", ret)
 		require.NoError(t, err)
 		require.EqualValues(t, 50-initialBlockIndex-1, val[0].(uint32))
 		_, err = lightClient.CallContract(context.Background(), callMsg, big.NewInt(50))
@@ -199,14 +186,14 @@ func TestPruning(t *testing.T) {
 
 	t.Run("eth_getBalance", func(t *testing.T) {
 		t.Parallel()
-		bal, err := archiveClient.BalanceAt(context.Background(), evmAddr, big.NewInt(25))
+		bal, err := archiveClient.BalanceAt(context.Background(), env.testContractEnv.EvmTesterAddr, big.NewInt(25))
 		require.NoError(t, err)
 		require.Positive(t, bal.Cmp(big.NewInt(0)))
 	})
 
 	t.Run("eth_getCode", func(t *testing.T) {
 		t.Parallel()
-		code, err := archiveClient.CodeAt(context.Background(), evmAddr, big.NewInt(25))
+		code, err := archiveClient.CodeAt(context.Background(), env.testContractEnv.EvmTesterAddr, big.NewInt(25))
 		require.NoError(t, err)
 		require.NotNil(t, code)
 	})
@@ -220,7 +207,7 @@ func TestPruning(t *testing.T) {
 
 	t.Run("eth_getStorageAt", func(t *testing.T) {
 		t.Parallel()
-		val, err := archiveClient.StorageAt(context.Background(), storageContractAddr, common.BigToHash(big.NewInt(0)), big.NewInt(55))
+		val, err := archiveClient.StorageAt(context.Background(), env.testContractEnv.EvmTestContractAddr, common.BigToHash(big.NewInt(0)), big.NewInt(55))
 		require.NoError(t, err)
 		require.NotNil(t, val)
 	})
@@ -237,7 +224,7 @@ func TestPruning(t *testing.T) {
 		require.NoError(t, err)
 		receipts, err := blocklog.ViewGetRequestReceiptsForBlock.DecodeOutput(res)
 		require.NoError(t, err)
-		require.Len(t, receipts, 1)
+		require.Len(t, receipts.Receipts, 1)
 		require.NoError(t, err)
 		require.NotZero(t, receipts.Receipts[0].GasFeeCharged)
 

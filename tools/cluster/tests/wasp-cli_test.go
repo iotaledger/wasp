@@ -114,23 +114,21 @@ func getAddress(out []string) string {
 	return r[1]
 }
 
-func TestWaspCLISendFunds(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestWaspCLISendFunds(t *testing.T) { // FIXME error in wasp-cli
 	w := newWaspCLITest(t)
 
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 
-	w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
+	w.MustRun("send-funds", alternativeAddress, "base|1000000")
 	checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
 }
 
 func TestWaspCLIDeposit(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
+	// w.MustRun("request-funds")
+	// time.Sleep(3 * time.Second)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
@@ -232,7 +230,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 
 func findRequestIDInOutput(out []string) string {
 	for _, line := range out {
-		m := regexp.MustCompile(`(?m)\(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
+		m := regexp.MustCompile(`Request ID:\s*(0x[a-f0-9]+)`).FindStringSubmatch(line)
 		if len(m) == 0 {
 			continue
 		}
@@ -242,15 +240,15 @@ func findRequestIDInOutput(out []string) string {
 }
 
 func TestWaspCLIBlockLog(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+	t.Skip("wasp-cli need to be fixed")
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
-	out := w.MustRun("chain", "deposit", "base:100", "--node=0")
+	w.MustRun("request-funds")
+	out := w.MustRun("chain", "deposit", "base|100", "--node=0")
 	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
@@ -272,7 +270,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	t.Log(out)
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error: (empty)") {
+		if strings.Contains(line, "Request found in block 1") {
 			found = true
 			break
 		}
@@ -285,7 +283,6 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.NotEmpty(t, reqID)
 
 	out = w.MustRun("chain", "request", reqID, "--node=0")
-
 	found = false
 	for _, line := range out {
 		if strings.Contains(line, "Error: ") {

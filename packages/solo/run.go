@@ -103,7 +103,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 
 	var ptbRes *iotajsonrpc.IotaTransactionBlockResponse
 
-	ch.Env.WithWaitForNextVersion(gasPayment.Ref, func() {
+	ch.Env.MustWithWaitForNextVersion(gasPayment.Ref, func() {
 		ptbRes = ch.Env.executePTB(
 			res.UnsignedTransaction,
 			ch.OperatorPrivateKey,

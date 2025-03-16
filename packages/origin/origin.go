@@ -141,12 +141,17 @@ func InitChain(
 		contracts = append(contracts, sbtestsc.Contract)
 	}
 
+	var blockKeepAmount int32 = governance.DefaultBlockKeepAmount
+	if initParams.BlockKeepAmount != 0 {
+		blockKeepAmount = initParams.BlockKeepAmount
+	}
+
 	// init the state of each core contract
 	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, baseTokenCoinInfo)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState()
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, initParams.BlockKeepAmount)
+	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, blockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
 	if initParams.DeployTestContracts {
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
