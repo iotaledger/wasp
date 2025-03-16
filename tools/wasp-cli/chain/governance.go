@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
@@ -68,7 +69,9 @@ func initChangeAccessNodesCmd() *cobra.Command {
 				client,
 				chain,
 				governance.FuncChangeAccessNodes.Message(pars),
-				chainclient.PostRequestParams{},
+				chainclient.PostRequestParams{
+					GasBudget: iotaclient.DefaultGasBudget,
+				},
 				offLedger,
 				true,
 			)
@@ -121,7 +124,9 @@ func initDisableFeePolicyCmd() *cobra.Command {
 				client,
 				chain,
 				governance.FuncSetFeePolicy.Message(feePolicy),
-				chainclient.PostRequestParams{},
+				chainclient.PostRequestParams{
+					GasBudget: iotaclient.DefaultGasBudget,
+				},
 				offLedger,
 				true,
 			)

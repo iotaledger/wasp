@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/isc"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -211,6 +212,9 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		PrintTree(tree, tab, tabwidth)
 	case string:
 		fmt.Printf("%s%s\n", indent, node)
+	case isc.CallArguments:
+		fmt.Printf("%s%s\n", indent, node)
+		return
 	default:
 		panic(fmt.Sprintf("no handler of value of type %T", node))
 	}
