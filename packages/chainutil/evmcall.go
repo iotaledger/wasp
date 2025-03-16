@@ -40,7 +40,7 @@ func EVMCall(
 		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
 	}
 
-	iscReq := isc.NewEVMOffLedgerCallRequest(call)
+	iscReq := isc.NewEVMOffLedgerCallRequest(info.ChainID, call)
 	res, err := runISCRequest(
 		anchor,
 		l1Params,

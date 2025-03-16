@@ -64,7 +64,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 		return core.ErrIntrinsicGas
 	}
 
-	req, err := isc.NewEVMOffLedgerTxRequest(tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(b.chain.ID(), tx)
 	if err != nil {
 		return err
 	}

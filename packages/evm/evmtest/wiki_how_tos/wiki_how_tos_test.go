@@ -58,7 +58,7 @@ func TestNFTBalance(t *testing.T) {
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
 
 	// get the agentId of the contract deployer
-	senderAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
+	senderAgentID := isc.NewEthereumAddressAgentID(deployer)
 
 	// mint an NFToken to the contract deployer
 	// and check if the balance returned by the contract is correct
@@ -87,7 +87,7 @@ func TestAgentID(t *testing.T) {
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
 
 	// get the agentId of the contract deployer
-	senderAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
+	senderAgentID := isc.NewEthereumAddressAgentID(deployer)
 
 	// get the agnetId of the contract deployer
 	// and compare it with the agentId returned by the contract

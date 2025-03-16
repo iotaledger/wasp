@@ -4,10 +4,14 @@
 package isc
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
 
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -69,16 +73,22 @@ func AgentIDFromString(s string) (AgentID, error) {
 		return &NilAgentID{}, nil
 	}
 
+	fmt.Println(len(s))
+	// TODO Use proper length validation.
+	if len(s) == 4*2 { // Hname => uint32
+		return contractAgentIDFromString(s)
+	}
+
 	addressAsBytes := hexutil.MustDecode(s)
 
 	if len(addressAsBytes) == common.AddressLength {
 		return ethAgentIDFromString(s)
 	}
 
-	if len(addressAsBytes) == 4 { // Uint32
-		return contractAgentIDFromString(s)
+	if len(addressAsBytes) == iotago.AddressLen {
+		// Rebased
+		return addressAgentIDFromString(s)
 	}
 
-	// Rebased
-	return addressAgentIDFromString(s)
+	return nil, errors.Errorf("AgentIDFromString: invalid address length %d", len(addressAsBytes))
 }

@@ -203,7 +203,7 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) 
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAddressAgentID(keyPair.Address()))
 	}
-	ret := isc.NewOffLedgerRequest(r.msg, r.nonce, r.gasBudget).
+	ret := isc.NewOffLedgerRequest(ch.ChainID, r.msg, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }

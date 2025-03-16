@@ -149,7 +149,7 @@ func (ch *Chain) EVM() *jsonrpc.EVMChain {
 }
 
 func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (isc.CallArguments, error) {
-	req, err := isc.NewEVMOffLedgerTxRequest(tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(ch.ChainID, tx)
 	if err != nil {
 		return nil, err
 	}

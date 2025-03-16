@@ -127,9 +127,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		WithSender(keyPair.GetPublicKey())
 
 	// Test that the API will fail if the FromAddress is missing
-	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background(),
-		env.Chain.ChainID.String(),
-	).Request(apiclient.EstimateGasRequestOffledger{
+	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background()).Request(apiclient.EstimateGasRequestOffledger{
 		RequestBytes: cryptolib.EncodeHex(estimationReq.Bytes()),
 	}).Execute()
 	require.Error(t, err)
@@ -138,9 +136,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	requestHex := cryptolib.EncodeHex(estimationReq.Bytes())
 
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background(),
-		env.Chain.ChainID.String(),
-	).Request(apiclient.EstimateGasRequestOffledger{
+	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background()).Request(apiclient.EstimateGasRequestOffledger{
 		FromAddress:  keyPair.Address().String(),
 		RequestBytes: requestHex,
 	}).Execute()

@@ -72,7 +72,7 @@ func (e *ChainEnv) GetL2Balance(agentID isc.AgentID, coinType coin.Type, nodeInd
 	}
 
 	balance, _, err := e.Chain.Cluster.WaspClient(idx).CorecontractsAPI.
-		AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+		AccountsGetAccountBalance(context.Background(), agentID.String()).
 		Execute()
 	require.NoError(e.t, err)
 
@@ -89,7 +89,7 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, coinType coin.Type, no
 	}
 
 	balance, _, err := e.Chain.Cluster.WaspClient(idx).CorecontractsAPI.
-		AccountsGetAccountBalance(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+		AccountsGetAccountBalance(context.Background(), agentID.String()).
 		Execute()
 	require.NoError(e.t, err)
 
@@ -106,7 +106,7 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, coinType coin.Type, 
 
 func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.ObjectID {
 	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsAPI.
-		AccountsGetAccountNFTIDs(context.Background(), e.Chain.ChainID.String(), agentID.String()).
+		AccountsGetAccountNFTIDs(context.Background(), agentID.String()).
 		Execute()
 	require.NoError(e.t, err)
 
@@ -123,7 +123,7 @@ func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.ObjectID {
 
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.
-		GetChainInfo(context.Background(), e.Chain.ChainID.String()).
+		GetChainInfo(context.Background()).
 		Execute()
 	require.NoError(e.t, err)
 
@@ -148,7 +148,7 @@ func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRe
 	ret, err := apiextensions.CallView(
 		context.Background(),
 		e.Chain.Cluster.WaspClient(i),
-		e.Chain.ChainID.String(),
+
 		apiextensions.CallViewReq(root.ViewFindContract.Message(hname)),
 	)
 
@@ -186,7 +186,6 @@ func (e *ChainEnv) balanceEquals(agentID isc.AgentID, amount int) conditionFn {
 		ret, err := apiextensions.CallView(
 			context.Background(),
 			e.Chain.Cluster.WaspClient(nodeIndex),
-			e.Chain.ChainID.String(),
 			apiclient.ContractCallViewRequest{
 				ContractHName: accounts.Contract.Hname().String(),
 				FunctionHName: accounts.ViewBalanceBaseToken.Hname().String(),
@@ -210,7 +209,6 @@ func (e *ChainEnv) counterEquals(expected int64) conditionFn {
 		ret, err := apiextensions.CallView(
 			context.Background(),
 			e.Chain.Cluster.WaspClient(nodeIndex),
-			e.Chain.ChainID.String(),
 			apiclient.ContractCallViewRequest{
 				ContractHName: inccounter.Contract.Hname().String(),
 				FunctionHName: inccounter.ViewGetCounter.Hname().String(),

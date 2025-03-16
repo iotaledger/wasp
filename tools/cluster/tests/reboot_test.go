@@ -49,7 +49,7 @@ func TestReboot(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	receipts, err := apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 30*time.Second)
+	receipts, err := apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), tx, true, 30*time.Second)
 	require.NoError(t, err)
 	gasFeeCharged1, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, err)
 
 	receipt, _, err := env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		WaitForRequest(context.Background(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestReboot(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), tx, true, 10*time.Second)
 	require.NoError(t, err)
 	gasFeeCharged3, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, err)
 
 	receipt, _, err = env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		WaitForRequest(context.Background(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)
@@ -118,7 +118,7 @@ func (icc *incCounterClient) MustIncOnLedger() {
 	})
 	require.NoError(icc.t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), icc.env.Clu.WaspClient(0), tx, true, 10*time.Second)
 	require.NoError(icc.t, err)
 
 	icc.expected++
@@ -130,7 +130,7 @@ func (icc *incCounterClient) MustIncOffLedger() {
 	require.NoError(icc.t, err)
 
 	_, _, err = icc.env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), icc.env.Chain.ChainID.String(), req.ID().String()).
+		WaitForRequest(context.Background(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(icc.t, err)
@@ -267,7 +267,6 @@ func TestRebootDuringTasks(t *testing.T) {
 		ret, err := apiextensions.CallView(
 			context.Background(),
 			env.Clu.WaspClient(0),
-			env.Chain.ChainID.String(),
 			apiclient.ContractCallViewRequest{
 				ContractHName: inccounter.Contract.Hname().String(),
 				FunctionHName: inccounter.ViewGetCounter.Hname().String(),
@@ -313,7 +312,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	// env.expectCounter(1)
@@ -322,7 +321,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		WaitForRequest(context.Background(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)
@@ -339,7 +338,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)
+	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), tx, false, 10*time.Second)
 	require.NoError(t, err)
 	// env.expectCounter(3)
 
@@ -348,7 +347,7 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	require.NoError(t, err)
 
 	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
+		WaitForRequest(context.Background(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)

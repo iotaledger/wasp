@@ -202,14 +202,10 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	}
 
 	// Hack to get the chainID that was deployed
-	data, err := os.ReadFile(w.dir + "/wasp-cli.json")
-	require.NoError(w.T, err)
-	chainIDStr := regexp.MustCompile(fmt.Sprintf(`%q:\s?"(.*)"`, chainName)).
-		FindStringSubmatch(string(data))[1]
 
 	chainIsUpAndRunning := func(t *testing.T, nodeIndex int) bool {
 		_, _, err := w.Cluster.WaspClient(nodeIndex).ChainsAPI.
-			CallView(context.Background(), chainIDStr).
+			CallView(context.Background()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractHName: governance.Contract.Hname().String(),
 				FunctionHName: governance.ViewGetChainInfo.Hname().String(),

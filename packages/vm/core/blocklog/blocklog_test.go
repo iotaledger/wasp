@@ -18,7 +18,7 @@ import (
 
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
-	req := isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("0"), isc.Hn("0")), nonce, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.Hn("0"), isc.Hn("0")), nonce, gas.LimitsDefault.MaxGasPerRequest)
 	signedReq := req.Sign(cryptolib.NewKeyPair())
 	rec := &RequestReceipt{
 		Request: signedReq,

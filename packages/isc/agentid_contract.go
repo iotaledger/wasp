@@ -60,5 +60,6 @@ func (a *ContractAgentID) Kind() AgentIDKind {
 }
 
 func (a *ContractAgentID) String() string {
-	return a.hname.String() + AgentIDStringSeparator
+	k := a.hname.String()
+	return k
 }

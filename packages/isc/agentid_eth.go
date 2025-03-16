@@ -59,5 +59,5 @@ func (a *EthereumAddressAgentID) Kind() AgentIDKind {
 
 func (a *EthereumAddressAgentID) String() string {
 	// eth.String includes 0x prefix
-	return a.eth.String() + AgentIDStringSeparator
+	return a.eth.String()
 }
