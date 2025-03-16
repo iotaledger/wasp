@@ -3,7 +3,7 @@
 
 pragma solidity >=0.8.11;
 
-import "./ISCTypes.sol";
+import {ISCHname, ISC_MAGIC_ADDRESS} from "./ISCTypes.sol";
 
 /**
  * @title ISCUtil

@@ -3,7 +3,19 @@
 
 pragma solidity >=0.8.11;
 
-import "./ISCTypes.sol";
+import {
+    ISCRequestID, 
+    ISCAgentID, 
+    ISCAssets, 
+    IotaAddress, 
+    ISCSendMetadata, 
+    ISCSendOptions, 
+    ISCMessage, 
+    ISCChainID, 
+    IotaCoinInfo, 
+    IotaObjectID, 
+    ISC_MAGIC_ADDRESS
+} from "./ISCTypes.sol";
 
 /**
  * @title ISCSandbox

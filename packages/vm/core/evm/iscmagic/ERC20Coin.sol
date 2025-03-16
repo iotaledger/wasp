@@ -2,10 +2,10 @@
 
 pragma solidity >=0.8.11;
 
-import "./ISCTypes.sol";
-import "./ISCSandbox.sol";
-import "./ISCAccounts.sol";
-import "./ISCPrivileged.sol";
+import {ISCTypes, ISCAgentID, ISCSendMetadata, ISCAssets, CoinBalance} from "./ISCTypes.sol";
+import {__iscSandbox} from "./ISCSandbox.sol";
+import {__iscAccounts} from "./ISCAccounts.sol";
+import {__iscPrivileged} from "./ISCPrivileged.sol";
 
 /**
  * @title ERC20Coin

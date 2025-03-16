@@ -3,11 +3,9 @@
 
 pragma solidity >=0.8.11;
 
-import "./ISCTypes.sol";
-import "./ISCSandbox.sol";
-import "./ISCAccounts.sol";
-import "./ISCPrivileged.sol";
-import "./ERC721NFTs.sol";
+import {ISCAgentID, IotaObjectID} from "./ISCTypes.sol";
+import {__iscAccounts} from "./ISCAccounts.sol";
+import {ERC721NFTs} from "./ERC721NFTs.sol";
 
 /**
  * @title ERC721NFTCollection
