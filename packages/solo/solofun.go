@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -15,8 +16,11 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
-func (env *Solo) IotaClient() *iotaclient.Client {
-	return iotaclient.NewHTTP(env.l1Config.IotaRPCURL, l1starter.WaitUntilEffectsVisible)
+func (env *Solo) L1Client() clients.L1Client {
+	return clients.NewL1Client(clients.L1Config{
+		APIURL:    env.l1Config.IotaRPCURL,
+		FaucetURL: env.l1Config.IotaFaucetURL,
+	}, iotaclient.WaitForEffectsEnabled)
 }
 
 func (env *Solo) ISCMoveClient() *iscmoveclient.Client {

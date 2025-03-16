@@ -277,7 +277,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		isc.NewAddressAgentID(chain.OriginatorAddress()),
 		1074,
 		blockKeepAmountVal,
-		true,
+		false,
 	).Encode()
 
 	getCoinsRes, err := l1Client.GetCoins(
