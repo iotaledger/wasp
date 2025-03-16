@@ -168,7 +168,9 @@ func TestRotationFromSingle(t *testing.T) {
 		myClient := chain.Client(keyPair)
 		for i := 0; i < numRequests; i++ {
 			t.Logf("Posting inccounter request number %v", i)
-			_, err2 = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+			_, err2 = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+				GasBudget: iotaclient.DefaultGasBudget,
+			})
 			if err2 != nil {
 				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
 				return
@@ -193,7 +195,9 @@ func TestRotationFromSingle(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{})
+	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 30*time.Second))
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
@@ -278,7 +282,9 @@ func TestRotationMany(t *testing.T) {
 
 		waitUntil(t, chEnv.counterEquals(int64(numRequests*(i+1))), chEnv.Clu.Config.AllNodes(), 30*time.Second)
 
-		tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{})
+		tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{
+			GasBudget: iotaclient.DefaultGasBudget,
+		})
 		require.NoError(t, err)
 		require.NoError(t, chEnv.waitStateControllers(rotation.Address, waitTimeout))
 		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)

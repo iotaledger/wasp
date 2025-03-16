@@ -211,6 +211,7 @@ func NewPostRequestParams() *PostRequestParams {
 	return &PostRequestParams{
 		Transfer:  isc.NewEmptyAssets(),
 		Allowance: isc.NewEmptyAssets(),
+		GasBudget: iotaclient.DefaultGasBudget,
 	}
 }
 
