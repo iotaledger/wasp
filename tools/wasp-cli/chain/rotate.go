@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -58,7 +59,9 @@ func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chai
 	if !status {
 		msg = governance.FuncStopMaintenance.Message()
 	}
-	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{}, offledger, true)
+	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	}, offledger, true)
 }
 
 func initChangeGovControllerCmd() *cobra.Command {

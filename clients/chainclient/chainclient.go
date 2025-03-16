@@ -2,6 +2,7 @@ package chainclient
 
 import (
 	"context"
+	"fmt"
 	"math"
 
 	"github.com/iotaledger/wasp/clients"
@@ -46,18 +47,26 @@ func New(
 }
 
 type PostRequestParams struct {
-	Transfer  *isc.Assets
-	Nonce     uint64
-	NFT       *isc.NFT
-	Allowance *isc.Assets
-	gasBudget uint64
+	Transfer    *isc.Assets
+	Nonce       uint64
+	NFT         *isc.NFT
+	Allowance   *isc.Assets
+	GasBudget   uint64
+	L2GasBudget uint64
 }
 
-func (par *PostRequestParams) GasBudget() uint64 {
-	if par.gasBudget == 0 {
+func (par *PostRequestParams) GetGasBudget() uint64 {
+	if par.GasBudget == 0 {
 		return math.MaxUint64
 	}
-	return par.gasBudget
+	return par.GasBudget
+}
+
+func (par *PostRequestParams) GetL2GasBudget() uint64 {
+	if par.L2GasBudget == 0 {
+		return math.MaxUint64
+	}
+	return par.L2GasBudget
 }
 
 func defaultParams(params ...PostRequestParams) PostRequestParams {
@@ -73,6 +82,9 @@ func (c *Client) PostRequest(
 	msg isc.Message,
 	param PostRequestParams,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	if param.GasBudget == 0 {
+		return nil, fmt.Errorf("GasBudget is empty")
+	}
 	return c.postSingleRequest(ctx, msg, param)
 }
 
@@ -99,9 +111,11 @@ func (c *Client) postSingleRequest(
 	iscmsg isc.Message,
 	params PostRequestParams,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	assets := iscmove.NewAssets(0)
-	for coinType, coinbal := range params.Transfer.Coins {
-		assets.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinbal.Uint64()))
+	transferAssets := iscmove.NewAssets(0)
+	if params.Transfer != nil {
+		for coinType, coinbal := range params.Transfer.Coins {
+			transferAssets.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinbal.Uint64()))
+		}
 	}
 	msg := &iscmove.Message{
 		Contract: uint32(iscmsg.Target.Contract),
@@ -109,8 +123,10 @@ func (c *Client) postSingleRequest(
 		Args:     iscmsg.Params,
 	}
 	allowances := iscmove.NewAssets(0)
-	for coinType, coinBalance := range params.Allowance.Coins {
-		allowances.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinBalance.Uint64()))
+	if params.Allowance != nil {
+		for coinType, coinBalance := range params.Allowance.Coins {
+			allowances.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinBalance.Uint64()))
+		}
 	}
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(
 		ctx,
@@ -118,12 +134,12 @@ func (c *Client) postSingleRequest(
 			Signer:           c.KeyPair,
 			PackageID:        c.IscPackageID,
 			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
-			Assets:           assets,
+			Assets:           transferAssets,
 			Message:          msg,
 			Allowance:        allowances,
-			OnchainGasBudget: params.GasBudget(),
+			OnchainGasBudget: params.GetL2GasBudget(),
 			GasPrice:         parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasBudget:        params.GetGasBudget(),
 		},
 	)
 }
@@ -164,7 +180,7 @@ func (c *Client) PostOffLedgerRequest(
 		}
 		par.Nonce = nonce
 	}
-	req := isc.NewOffLedgerRequest(msg, par.Nonce, par.GasBudget())
+	req := isc.NewOffLedgerRequest(msg, par.Nonce, par.GetL2GasBudget())
 	req.WithAllowance(par.Allowance)
 	req.WithNonce(par.Nonce)
 	signed := req.Sign(c.KeyPair)
@@ -185,7 +201,9 @@ func (c *Client) PostOffLedgerRequest(
 
 func (c *Client) DepositFunds(n coin.Value) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	return c.PostRequest(context.Background(), accounts.FuncDeposit.Message(), PostRequestParams{
-		Transfer: isc.NewAssets(n),
+		Transfer:  isc.NewAssets(n),
+		Allowance: isc.NewAssets(n),
+		GasBudget: iotaclient.DefaultGasBudget,
 	})
 }
 
@@ -193,6 +211,7 @@ func NewPostRequestParams() *PostRequestParams {
 	return &PostRequestParams{
 		Transfer:  isc.NewEmptyAssets(),
 		Allowance: isc.NewEmptyAssets(),
+		GasBudget: iotaclient.DefaultGasBudget,
 	}
 }
 
@@ -203,10 +222,5 @@ func (par *PostRequestParams) WithTransfer(transfer *isc.Assets) *PostRequestPar
 
 func (par *PostRequestParams) WithBaseTokens(i coin.Value) *PostRequestParams {
 	par.Transfer.AddBaseTokens(i)
-	return par
-}
-
-func (par *PostRequestParams) WithGasBudget(budget uint64) *PostRequestParams {
-	par.gasBudget = budget
 	return par
 }

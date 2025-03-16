@@ -6,7 +6,6 @@ package solo
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"math"
 	"slices"
 	"sync"
@@ -259,58 +258,18 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
+// MustWithWaitForNextVersion waits for an object to change its version and panics on timeouts
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
+func (env *Solo) MustWithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) *iotago.ObjectRef {
+	return lo.Must(env.WithWaitForNextVersion(currentRef, cb))
+}
+
 // WithWaitForNextVersion waits for an object to change its version.
 // This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
 // Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
-func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) *iotago.ObjectRef {
-	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
-	if currentRef == nil {
-		cb()
-		return currentRef
-	}
-
-	cb()
-
-	count := 0
-	for {
-		count++
-
-		if count > 30 {
-			panic(fmt.Errorf("WithWaitForNextVersion: object version did not change in time: %v\n", currentRef))
-		}
-
-		env.logger.LogInfof("WaitForNextVersion: Trying ref %v\n", currentRef)
-
-		newRef, err := env.IotaClient().GetObject(env.ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
-		if err != nil {
-			time.Sleep(250 * time.Millisecond)
-			continue
-		}
-
-		if newRef.Error != nil {
-			// The provided object got consumed and is gone. We can return.
-			if newRef.Error.Data.Deleted != nil {
-				return currentRef
-			}
-
-			if newRef.Error.Data.NotExists != nil {
-				return currentRef
-			}
-
-			time.Sleep(250 * time.Millisecond)
-			continue
-		}
-
-		if newRef.Data.Ref().Version > currentRef.Version {
-			env.logger.LogInfof("WaitForNextVersion: Found the updated version of %v, which is: %v \n", currentRef, newRef.Data.Ref())
-			ref := newRef.Data.Ref()
-			return &ref
-		}
-
-		env.logger.LogInfof("WaitForNextVersion: Getting the same version ref as before. Retrying. %v\n", currentRef)
-
-		time.Sleep(250 * time.Millisecond)
-	}
+func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
+	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
 }
 
 func (env *Solo) deployChain(
@@ -382,8 +341,8 @@ func (env *Solo) deployChain(
 	require.NoError(env.T, err)
 
 	var anchorRef *iscmove.AnchorWithRef
-	env.WithWaitForNextVersion(gasPayment.CoinRefs()[0], func() {
-		env.WithWaitForNextVersion(initCoin, func() {
+	env.MustWithWaitForNextVersion(gasPayment.CoinRefs()[0], func() {
+		env.MustWithWaitForNextVersion(initCoin, func() {
 			anchorRef, err = env.ISCMoveClient().StartNewChain(
 				env.ctx,
 				&iscmoveclient.StartNewChainRequest{
@@ -612,9 +571,9 @@ func (ch *Chain) Processors() *processors.Config {
 // ---------------------------------------------
 
 func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.IotaCoinInfo {
-	md, err := env.IotaClient().GetCoinMetadata(env.ctx, coinType.String())
+	md, err := env.L1Client().GetCoinMetadata(env.ctx, coinType.String())
 	require.NoError(env.T, err)
-	ts, err := env.IotaClient().GetTotalSupply(env.ctx, coinType.String())
+	ts, err := env.L1Client().GetTotalSupply(env.ctx, coinType.String())
 	require.NoError(env.T, err)
 	return isc.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
@@ -624,7 +583,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 }
 
 func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
-	r, err := env.IotaClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
+	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner: addr.AsIotaAddress(),
 		Limit: math.MaxUint,
 	})
@@ -634,7 +593,7 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
 
 func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajsonrpc.Coin {
 	coinTypeStr := coinType.String()
-	r, err := env.IotaClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
+	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: &coinTypeStr,
 		Limit:    math.MaxUint,
@@ -648,7 +607,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 }
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
-	r, err := env.IotaClient().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
+	r, err := env.L1Client().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: coinType.String(),
 	})
@@ -662,7 +621,7 @@ func (env *Solo) L1NFTs(addr *cryptolib.Address) []iotago.ObjectID {
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
-	r, err := env.IotaClient().GetAllBalances(env.ctx, addr.AsIotaAddress())
+	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
@@ -751,7 +710,7 @@ func (env *Solo) executePTB(
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(env.T, err)
 
-	execRes, err := env.IotaClient().SignAndExecuteTransaction(
+	execRes, err := env.L1Client().SignAndExecuteTransaction(
 		env.ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
@@ -778,7 +737,7 @@ func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
 ) {
 	return iotaclienttest.DeployCoinPackage(
 		env.T,
-		env.IotaClient(),
+		env.L1Client().IotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
 		contracts.Testcoin(),
 	)
@@ -794,7 +753,7 @@ func (env *Solo) L1MintCoin(
 ) (coinRef *iotago.ObjectRef) {
 	return iotaclienttest.MintCoins(
 		env.T,
-		env.IotaClient(),
+		env.L1Client().IotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
 		packageID,
 		moduleName,

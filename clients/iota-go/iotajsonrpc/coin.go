@@ -1,6 +1,7 @@
 package iotajsonrpc
 
 import (
+	"encoding/json"
 	"errors"
 	"math/big"
 	"sort"
@@ -27,6 +28,17 @@ func (c *Coin) Ref() *iotago.ObjectRef {
 		Version:  c.Version.Uint64(),
 		ObjectID: c.CoinObjectID,
 	}
+}
+
+func (c *Coin) String() string {
+	if c == nil {
+		panic("coin is nil")
+	}
+	b, err := json.Marshal(c)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }
 
 func (c *Coin) IsIOTA() bool {

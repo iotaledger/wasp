@@ -3,9 +3,12 @@ package clients
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -223,6 +226,8 @@ type L1Client interface {
 		gasPrice uint64,
 		options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 	) (*iotajsonrpc.IotaTransactionBlockResponse, error)
+
+	WaitForNextVersionForTesting(ctx context.Context, timeout time.Duration, logger log.Logger, currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error)
 }
 
 var _ L1Client = &l1Client{}
@@ -286,6 +291,68 @@ func (c *l1Client) L2() L2Client {
 
 func (c *l1Client) IotaClient() *iotaclient.Client {
 	return c.Client
+}
+
+// WaitForNextVersionForTesting waits for an object to change its version.
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
+func (c *l1Client) WaitForNextVersionForTesting(ctx context.Context, timeout time.Duration, logger log.Logger, currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
+	// Some 'sugar' to make dynamic refs handling easier (where refs can be nil or set depending on state)
+	if currentRef == nil {
+		cb()
+		return currentRef, nil
+	}
+
+	cb()
+
+	// Create a ticker for polling
+	ticker := time.NewTicker(250 * time.Millisecond)
+	defer ticker.Stop()
+
+	// Add timeout to context if not already set
+	ctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
+		case <-ticker.C:
+			// Poll for object update
+			newRef, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+			if err != nil {
+				if logger != nil {
+					logger.LogInfof("WaitForNextVersionForTesting: error getting object: %v, retrying...", err)
+				}
+				continue
+			}
+
+			if newRef.Error != nil {
+				// The provided object got consumed and is gone. We can return.
+				if newRef.Error.Data.Deleted != nil || newRef.Error.Data.NotExists != nil {
+					return currentRef, nil
+				}
+
+				if logger != nil {
+					logger.LogInfof("WaitForNextVersionForTesting: object error: %v, retrying...", newRef.Error)
+				}
+				continue
+			}
+
+			if newRef.Data.Ref().Version > currentRef.Version {
+				if logger != nil {
+					logger.LogInfof("WaitForNextVersionForTesting: Found the updated version of %v, which is: %v", currentRef, newRef.Data.Ref())
+				}
+
+				ref := newRef.Data.Ref()
+				return &ref, nil
+			}
+
+			if logger != nil {
+				logger.LogInfof("WaitForNextVersionForTesting: Getting the same version ref as before. Retrying. %v", currentRef)
+			}
+		}
+	}
 }
 
 func NewL1Client(l1Config L1Config, waitUntilEffectsVisible *iotaclient.WaitParams) L1Client {

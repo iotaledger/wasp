@@ -61,8 +61,6 @@ func TestGrBasic(t *testing.T) {
 		)
 	}
 
-	t.Parallel()
-
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
@@ -165,6 +163,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		outputChs[i] = outputCh
 		n.Input(anchor, func(o *consGR.Output) { outputCh <- o }, func() {})
 	}
+
+	time.Sleep(1 * time.Second)
+
 	//
 	// Provide data from Mempool and StateMgr.
 	for i := range nodes {

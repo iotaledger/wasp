@@ -17,7 +17,7 @@ import (
 
 // OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest
 type OffLedgerRequestDataEssence struct {
-	allowance *Assets `bcs:"export"`
+	allowance *Assets `bcs:"export,optional"`
 	msg       Message `bcs:"export"`
 	gasBudget uint64  `bcs:"export"`
 	nonce     uint64  `bcs:"export"`
@@ -26,6 +26,7 @@ type OffLedgerRequestDataEssence struct {
 // OffLedgerRequestData implements OffLedgerRequest
 type OffLedgerRequestData struct {
 	OffLedgerRequestDataEssence
+
 	signature *cryptolib.Signature `bcs:"export"`
 }
 
@@ -42,18 +43,23 @@ type ImpersonatedOffLedgerRequestData struct {
 }
 
 func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) ImpersonatedOffLedgerRequest {
-	var copyReq OffLedgerRequestData
-	copyReq.OffLedgerRequestDataEssence = *request
-	copyReq.signature = cryptolib.NewEmptySignature()
-
 	return &ImpersonatedOffLedgerRequestData{
-		OffLedgerRequestData: copyReq,
-		address:              nil,
+		OffLedgerRequestData: OffLedgerRequestData{
+			OffLedgerRequestDataEssence: OffLedgerRequestDataEssence{
+				allowance: request.allowance,
+				chainID:   request.chainID,
+				msg:       request.msg,
+				gasBudget: request.gasBudget,
+				nonce:     request.nonce,
+			},
+			signature: cryptolib.NewDummySignature(cryptolib.NewEmptyPublicKey()),
+		},
+		address: nil,
 	}
 }
 
-func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *cryptolib.Address) OffLedgerRequest {
-	r.address = address
+func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(senderAddress *cryptolib.Address) OffLedgerRequest {
+	r.address = senderAddress
 	return r
 }
 

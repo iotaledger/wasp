@@ -241,7 +241,7 @@ func (env *Solo) makeBaseTokenCoin(
 	require.NoError(env.T, err)
 	require.NotNil(env.T, pickedCoin)
 
-	var tx *iotajsonrpc.TransactionBytes = lo.Must(env.IotaClient().PayIota(
+	var tx *iotajsonrpc.TransactionBytes = lo.Must(env.L1Client().PayIota(
 		env.ctx,
 		iotaclient.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),
@@ -254,8 +254,8 @@ func (env *Solo) makeBaseTokenCoin(
 
 	var baseTokenCoin iotajsonrpc.OwnedObjectRef
 
-	env.WithWaitForNextVersion(pickedCoin.Ref(), func() {
-		txnResponse, err := env.IotaClient().SignAndExecuteTransaction(
+	env.MustWithWaitForNextVersion(pickedCoin.Ref(), func() {
+		txnResponse, err := env.L1Client().SignAndExecuteTransaction(
 			env.ctx,
 			&iotaclient.SignAndExecuteTransactionRequest{
 				TxDataBytes: tx.TxBytes,

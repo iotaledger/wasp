@@ -5,6 +5,7 @@ package chain
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -71,7 +72,7 @@ func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject i
 func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
 	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
-		return iotago.ObjectID{}, err
+		return iotago.ObjectID{}, fmt.Errorf("GasCoin with targeting blanace not found: %w", err)
 	}
 
 	txb := iotago.NewProgrammableTransactionBuilder()
@@ -111,7 +112,7 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		},
 	)
 	if err != nil {
-		return iotago.ObjectID{}, err
+		return iotago.ObjectID{}, fmt.Errorf("failed to create GasCoin: %w", err)
 	}
 
 	gasCoin, err := result.GetCreatedCoin("iota", "IOTA")

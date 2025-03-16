@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -74,6 +75,7 @@ func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *co
 			params := chainclient.PostRequestParams{
 				Transfer:  util.ParseFungibleTokens(postrequestParams.transfer),
 				Allowance: allowanceTokens,
+				GasBudget: iotaclient.DefaultGasBudget,
 			}
 			postRequest(
 				ctx,
