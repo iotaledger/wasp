@@ -423,9 +423,9 @@ func migrateAllStates(c *cmd.Context) error {
 		writeMigrationResult(stateMetadata, lastProcessedBlockIndex)
 	}
 
-	saveInMemoryStates(oldStateStore, newState, lastProcessedBlockIndex, srcChainDBDir)
-
 	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", recentlyBlocksProcessed))
+
+	saveInMemoryStates(oldStateStore, newState, lastProcessedBlockIndex, srcChainDBDir)
 
 	return nil
 }
@@ -508,6 +508,9 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 		})
 
 		cli.Logf("Loaded %v entries into in-memory destination state", count)
+
+		cli.Logf("Saving in-memory states to disk to avoid loading them next time")
+		saveInMemoryStates(oldStateStore, newState, startBlockIndex-1, srcChainDBDir)
 	}
 
 	return oldStateStore, oldState, newState, startBlockIndex
