@@ -54,7 +54,7 @@ import (
 )
 
 const (
-	inMemoryStatesSevingPeriodBlocks = 20000
+	inMemoryStatesSevingPeriodBlocks = 1000
 )
 
 func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration bool, dryRun bool) (
@@ -401,9 +401,10 @@ func migrateAllStates(c *cmd.Context) error {
 			cli.Logf("Block Index: %d\n", blockIndex)
 			writeMigrationResult(stateMetadata, blockIndex)
 		}
-		if blockIndex%inMemoryStatesSevingPeriodBlocks == 0 {
+		if blockIndex != 0 && blockIndex%inMemoryStatesSevingPeriodBlocks == 0 {
 			cli.Logf("Pre-saving in-memory states at block index %v", blockIndex)
 			saveInMemoryStates(oldStateStore, newState, blockIndex, srcChainDBDir)
+			deleteInMemoryStateFiles(srcChainDBDir, (blockIndex - inMemoryStatesSevingPeriodBlocks))
 		}
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
@@ -602,6 +603,26 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Di
 	cli.Logf("New in-memory state loaded: size = %v", newState.Len())
 
 	return oldStateStore, oldState, newState, true
+}
+
+func deleteInMemoryStateFiles(srcChainDBDir string, blockIndex uint32) {
+	cli.Logf("Deleting obsolete files of in-memory states: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
+	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
+	if err := os.Remove(oldStateFilePath); err != nil {
+		if !os.IsNotExist(err) {
+			panic(err)
+		}
+	} else {
+		cli.Logf("Deleted in-memory old state file: path = %v", oldStateFilePath)
+	}
+
+	if err := os.Remove(newStateFilePath); err != nil {
+		if !os.IsNotExist(err) {
+			panic(err)
+		}
+	} else {
+		cli.Logf("Deleted in-memory new state file: path = %v", newStateFilePath)
+	}
 }
 
 func initSrcState(store old_dict.Dict, willBePrefilled bool) *PrefixKVStore {
