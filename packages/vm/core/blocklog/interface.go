@@ -48,7 +48,7 @@ var (
 	)
 )
 
-const (
+var (
 	// Array of blockIndex => BlockInfo (pruned)
 	// Covered in: TestGetEvents
 	PrefixBlockRegistry = "a"

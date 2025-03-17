@@ -34,6 +34,14 @@ type PrefixKVStore struct {
 var _ old_kv.KVStore = &PrefixKVStore{}
 var _ old_kv.KVStoreReader = &PrefixKVStore{}
 
+// Needs to be ran after all prefixes are registered when using non-empty store
+func (s *PrefixKVStore) IndexRecords() {
+	s.s.Iterate("", func(key old_kv.Key, value []byte) bool {
+		s.addToIndex(key, value)
+		return true
+	})
+}
+
 func (s *PrefixKVStore) RegisterPrefix(prefix string, subrealms ...any) {
 	// In theory, prefixes could be detected automatically after calls Iterate*().
 	// But it is unnecesary complication and is less reliable because of the order of execution.
@@ -76,7 +84,10 @@ func (s *PrefixKVStore) registerPrefix(prefix string) map[string][]byte {
 
 func (s *PrefixKVStore) Set(key old_kv.Key, value []byte) {
 	s.s.Set(key, value)
+	s.addToIndex(key, value)
+}
 
+func (s *PrefixKVStore) addToIndex(key old_kv.Key, value []byte) {
 	if s.prefixesFromKey != nil {
 		prefixesFromKey := s.prefixesFromKey(key)
 		if prefixesFromKey != nil {

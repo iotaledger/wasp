@@ -160,7 +160,6 @@ func processCommonFlags(c *cmd.Context) error {
 	if c.Bool("hm-prefixes") {
 		cli.Logf("WARNING: Using human-readable prefixes\n")
 
-		// NOTE: I've jsut did it for accounts for now
 		accounts.PrefixAccountCoinBalances = "<coin_balances>"
 		accounts.PrefixAccountWeiRemainder = "<wei_remainder>"
 		accounts.L2TotalsAccount = "<l2_totals>"
@@ -172,6 +171,11 @@ func processCommonFlags(c *cmd.Context) error {
 		accounts.KeyObjectRecords = "<object_records>"
 		accounts.KeyObjectOwner = "<object_owner>"
 		accounts.KeyAllAccounts = "<all_accounts>"
+
+		blocklog.PrefixBlockRegistry = "<block_registry>"
+		blocklog.PrefixRequestEvents = "<request_events>"
+		blocklog.PrefixRequestLookupIndex = "<request_lookup_index>"
+		blocklog.PrefixRequestReceipts = "<request_receipts>"
 	}
 
 	return nil

@@ -19,20 +19,22 @@ func NewInMemoryKVStore(readOnlyUncommitted bool) *InMemoryKVStore {
 	}
 
 	return &InMemoryKVStore{
-		committed:        committed,
-		uncommitted:      uncommitted,
-		committedMarked:  make(map[kv.Key]struct{}),
-		uncommitedMarked: make(map[kv.Key]struct{}),
+		committed:           committed,
+		uncommitted:         uncommitted,
+		committedMarked:     make(map[kv.Key]struct{}),
+		uncommitedMarked:    make(map[kv.Key]struct{}),
+		readOnlyUncommitted: readOnlyUncommitted,
 	}
 }
 
 type InMemoryKVStore struct {
-	committed        dict.Dict
-	uncommitted      *buffered.BufferedKVStore
-	marking          bool
-	uncommitedMarked map[kv.Key]struct{}
-	committedMarked  map[kv.Key]struct{}
-	prevMutsCount    int
+	committed           dict.Dict
+	uncommitted         *buffered.BufferedKVStore
+	marking             bool
+	uncommitedMarked    map[kv.Key]struct{}
+	committedMarked     map[kv.Key]struct{}
+	prevMutsCount       int
+	readOnlyUncommitted bool
 }
 
 var _ kv.KVStoreReader = &InMemoryKVStore{}
@@ -46,12 +48,23 @@ func (b *InMemoryKVStore) CommittedSize() int {
 	return len(b.committed)
 }
 
-func (b *InMemoryKVStore) CommittedState() map[kv.Key][]byte {
-	return b.committed
+func (b *InMemoryKVStore) CommittedState() (state map[kv.Key][]byte, marks map[kv.Key]struct{}) {
+	return b.committed, b.committedMarked
 }
 
-func (b *InMemoryKVStore) SetCommittedState(s map[kv.Key][]byte) {
-	b.committed = s
+func (b *InMemoryKVStore) SetCommittedState(state map[kv.Key][]byte, marks map[kv.Key]struct{}) {
+	if state != nil {
+		b.committed = state
+
+		if b.readOnlyUncommitted {
+			b.uncommitted = buffered.NewBufferedKVStore(NoopKVStoreReader[kv.Key]{})
+		} else {
+			b.uncommitted = buffered.NewBufferedKVStore(b.committed)
+		}
+	}
+	if marks != nil {
+		b.committedMarked = marks
+	}
 }
 
 func (b *InMemoryKVStore) Mutations() *buffered.Mutations {
@@ -78,14 +91,18 @@ func (b *InMemoryKVStore) StopMarking() {
 }
 
 // DeleteIfNotSet deletes marked entries if they where not set since the last commit
-func (b *InMemoryKVStore) DeleteMarkedIfNotSet() {
+func (b *InMemoryKVStore) DeleteMarkedIfNotSet() int {
 	uncommittedSets := b.uncommitted.Mutations().Sets
 
+	count := 0
 	for key := range b.committedMarked {
 		if _, isSet := uncommittedSets[key]; !isSet {
 			b.uncommitted.Del(key)
+			count++
 		}
 	}
+
+	return count
 }
 
 // DeleteIfNotSet deletes entries if they where not set since the last commit

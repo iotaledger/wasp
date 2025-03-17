@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -53,7 +54,7 @@ import (
 )
 
 const (
-	inMemoryStatesSevingPeriodBlocks = 20000
+	inMemoryStatesSevingPeriodBlocks = 1000
 )
 
 func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration bool, dryRun bool) (
@@ -133,7 +134,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, con
 
 	var stateMetadata *transaction.StateMetadata
 	if continueMigration {
-		stateMetadata = getLatestStateMetadata(destStore)
+		stateMetadata = getStateMetadataByIndex(destStore, lo.Must(destStore.LatestBlockIndex()))
 	} else {
 		stateMetadata = initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
 	}
@@ -147,10 +148,14 @@ func initializeMigrateChainState(store indexedstore.IndexedStore, stateControlle
 	return stateMetadata
 }
 
-func getLatestStateMetadata(store indexedstore.IndexedStore) *transaction.StateMetadata {
-	stateMetaBytes := GetStateAnchor(lo.Must(store.LatestState())).GetStateMetadata()
+func getStateMetadataByIndex(store indexedstore.IndexedStore, stateIndex uint32) *transaction.StateMetadata {
+	state := lo.Must(store.StateByIndex(stateIndex))
+	block := lo.Must(store.BlockByIndex(stateIndex))
+
+	stateMetaBytes := GetStateAnchor(state).GetStateMetadata()
 	stateMetadata := lo.Must(transaction.StateMetadataFromBytes(stateMetaBytes))
-	stateMetadata.L1Commitment = lo.Must(store.LatestBlock()).L1Commitment()
+	stateMetadata.L1Commitment = block.L1Commitment()
+
 	return stateMetadata
 }
 
@@ -292,6 +297,16 @@ func migrateAllStates(c *cmd.Context) error {
 		return nil
 	}
 
+	var latestDestBlockIndex uint32
+	if continueMigration {
+		latestDestBlockIndex = lo.Must(destStore.LatestBlockIndex())
+		if startBlockIndex <= latestDestBlockIndex {
+			cli.Logf("Pre-loaded state index is lower, then actual latest state index in destination db (%v <= %v) - not committing first %v blocks",
+				startBlockIndex, latestDestBlockIndex, latestDestBlockIndex-startBlockIndex)
+			stateMetadata = getStateMetadataByIndex(destStore, startBlockIndex-1)
+		}
+	}
+
 	lastPrintTime := time.Now()
 	lastProcessedBlockIndex := uint32(0)
 	recentlyBlocksProcessed := 0
@@ -319,7 +334,7 @@ func migrateAllStates(c *cmd.Context) error {
 		oldMuts.ApplyTo(oldState)
 
 		var oldStateMutsOnly old_kv.KVStoreReader
-		if blockIndex == startBlockIndex && startBlockIndex != 0 {
+		if blockIndex == startBlockIndex && startBlockIndex != 0 && !continueMigration {
 			oldStateMutsOnly = oldState
 		} else {
 			oldStateMutsOnly = dictKvFromMuts(oldMuts)
@@ -341,6 +356,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 		newState.StopMarking()
 		newState.DeleteMarkedIfNotSet()
+		_ = newState.MutationsCountDiff()
 
 		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID, newChainID)
 		accountsMuts += newState.MutationsCountDiff()
@@ -356,13 +372,13 @@ func migrateAllStates(c *cmd.Context) error {
 		if !dryRun {
 			nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
 			newMuts.ApplyTo(nextStateDraft)
-			newBlock := destStore.Commit(nextStateDraft)
-			lo.Must0(destStore.SetLatest(newBlock.TrieRoot()))
-			stateMetadata.L1Commitment = newBlock.L1Commitment()
-
-			if newBlock.StateIndex() != blockIndex {
-				// just temporary check to ensure implementation correctness
-				panic("State index and block index mismatch")
+			if !continueMigration || blockIndex > latestDestBlockIndex {
+				newBlock := destStore.Commit(nextStateDraft)
+				lo.Must0(destStore.SetLatest(newBlock.TrieRoot()))
+				stateMetadata.L1Commitment = newBlock.L1Commitment()
+			} else {
+				newBlock := destStore.ExtractBlock(nextStateDraft)
+				stateMetadata.L1Commitment = newBlock.L1Commitment()
 			}
 		}
 
@@ -439,20 +455,20 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 	}
 
 	if startBlockIndex != 0 {
-		savedSrcStateStore, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1)
+		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1)
 		if loaded {
 			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", startBlockIndex-1)
-			return savedSrcStateStore, initSrcState(savedSrcStateStore, true), savedDestState, startBlockIndex
+			return savedSrcStateStore, saverSrcState, savedDestState, startBlockIndex
 		}
 
 		cli.Logf("In-memory states not found on disk for block %v", startBlockIndex-1)
 
 		closestAutoSavedBlockIndex := (startBlockIndex - 2) - (startBlockIndex-2)%inMemoryStatesSevingPeriodBlocks
 		cli.Logf("Trying to load auto-saved in-memory states from disk for block %v", closestAutoSavedBlockIndex)
-		savedSrcStateStore, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex)
+		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex)
 		if loaded {
 			cli.Logf("Loaded auto-saved in-memory states from disk: blockIndex = %v", closestAutoSavedBlockIndex)
-			return savedSrcStateStore, initSrcState(savedSrcStateStore, true), savedDestState, closestAutoSavedBlockIndex + 1
+			return savedSrcStateStore, saverSrcState, savedDestState, closestAutoSavedBlockIndex + 1
 		}
 	}
 
@@ -529,14 +545,15 @@ func saveInMemoryStates(oldState old_dict.Dict, newState *InMemoryKVStore, lastP
 	oldStateBytes = nil
 
 	cli.Logf("Marshaling new in-memory state: size = %v", newState.Len())
-	s := newState.CommittedState()
+	committedState, committedMarks := newState.CommittedState()
+	s := lo.T2(committedState, committedMarks)
 	newStateBytes := bcs.MustMarshal(&s)
 
 	cli.Logf("Writing new in-memory state to disk: path = %v, size = %v", newStateFilePath, len(newStateBytes))
 	lo.Must0(os.WriteFile(newStateFilePath, newStateBytes, os.ModePerm))
 }
 
-func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Dict, *InMemoryKVStore, bool) {
+func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, bool) {
 	cli.Logf("Trying to load in-memory states from disk: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
 	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
 
@@ -545,34 +562,43 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Di
 	if err != nil {
 		if os.IsNotExist(err) {
 			cli.Logf("Old in-memory state file not found: path = %v", oldStateFilePath)
-			return nil, nil, false
+			return nil, nil, nil, false
 		}
 		panic(err)
 	}
 
 	cli.Logf("Unmarshaling old in-memory state: size = %v", len(oldStateBytes))
-	oldState := old_dict.New()
-	bcs.MustUnmarshalInto(oldStateBytes, &oldState)
+	oldStateStore := old_dict.New()
+	bcs.MustUnmarshalInto(oldStateBytes, &oldStateStore)
 	oldStateBytes = nil
-	cli.Logf("Old in-memory state loaded: size = %v", len(oldState))
+	cli.Logf("Old in-memory state loaded: size = %v", len(oldStateStore))
+
+	cli.Logf("Indexing old state...")
+	oldState := initSrcState(oldStateStore, true)
+	oldState.IndexRecords()
 
 	cli.Logf("Read new in-memory state from disk: path = %v", newStateFilePath)
 	newStateBytes, err := os.ReadFile(newStateFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			cli.Logf("New in-memory state file not found: path = %v", newStateFilePath)
-			return nil, nil, false
+			return nil, nil, nil, false
 		}
 		panic(err)
 	}
 
 	cli.Logf("Unmarshaling new in-memory state: size = %v", len(newStateBytes))
+
+	var committedState map[kv.Key][]byte
+	var committedMarks map[kv.Key]struct{}
+	r := bytes.NewReader(newStateBytes)
+	bcs.MustUnmarshalStreamInto(r, &committedState)
+	bcs.MustUnmarshalStreamInto(r, &committedMarks)
 	newState := NewInMemoryKVStore(false)
-	s := newState.CommittedState()
-	bcs.MustUnmarshalInto(newStateBytes, &s)
+	newState.SetCommittedState(committedState, committedMarks)
 	cli.Logf("New in-memory state loaded: size = %v", newState.Len())
 
-	return oldState, newState, true
+	return oldStateStore, oldState, newState, true
 }
 
 func initSrcState(store old_dict.Dict, willBePrefilled bool) *PrefixKVStore {
