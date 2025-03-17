@@ -96,7 +96,7 @@ func (b *ActiveBot) PostMessage(msg string, options ...slack.MsgOption) (string,
 // PostStatusUpdate writes an initial message. Any reoccouring call will update the posted message, not write a new one
 // This is used for Status Updates, so we don't write a new message each minute, flooding the channel
 func (b *ActiveBot) PostStatusUpdate(msg string, options ...slack.MsgOption) (string, string, error) {
-	if len(b.LastUpdateMessageTS) == 0 {
+	if b.LastUpdateMessageTS == "" {
 		allOptions := make([]slack.MsgOption, 0, len(options)+2)
 		allOptions = append(allOptions, slack.MsgOptionText(msg, false))
 		allOptions = append(allOptions, slack.MsgOptionTS(b.FirstMessageTS))
@@ -116,7 +116,13 @@ func (b *ActiveBot) PostStatusUpdate(msg string, options ...slack.MsgOption) (st
 	allOptions = append(allOptions, slack.MsgOptionUpdate(b.LastUpdateMessageTS))
 	allOptions = append(allOptions, options...)
 
-	return b.Client.PostMessage(b.ChannelID, allOptions...)
+	a, ts, err := b.Client.PostMessage(b.ChannelID, allOptions...)
+	if err != nil {
+		return "", "", err
+	}
+
+	b.LastUpdateMessageTS = ts
+	return a, ts, nil
 }
 
 // InvalidateStatusUpdateReference will reset the status update message reference, causing the next StatusUpdate to be posted as a new message again
