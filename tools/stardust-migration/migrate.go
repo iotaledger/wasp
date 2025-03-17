@@ -54,7 +54,7 @@ import (
 )
 
 const (
-	inMemoryStatesSevingPeriodBlocks = 1000
+	inMemoryStatesSevingPeriodBlocks = 20000
 )
 
 func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration bool, dryRun bool) (
