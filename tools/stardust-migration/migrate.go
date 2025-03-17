@@ -515,6 +515,7 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 	if continueMigration {
 		cli.Logf("Loading destination state at block index %v", startBlockIndex-1)
 		count := 0
+
 		latestDestState := lo.Must(destStore.LatestState())
 		latestDestState.Iterate("", func(k kv.Key, v []byte) bool {
 			newState.Set(k, v)
@@ -522,6 +523,8 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
 			return ctx.Err() == nil
 		})
+
+		_ = newState.Commit(false)
 
 		cli.Logf("Loaded %v entries into in-memory destination state", count)
 
