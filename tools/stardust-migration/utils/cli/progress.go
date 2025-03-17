@@ -18,6 +18,7 @@ func onlyForBlockProgress(entityPluralName string, msgType string, msg string) {
 
 	// Send a fresh message every 45m so we have performance history
 	if time.Now().Sub(lastGlobalStatusUpdate).Minutes() > 45 {
+		lastGlobalStatusUpdate = time.Now()
 		bot.Get().InvalidateStatusUpdateReference()
 	}
 
