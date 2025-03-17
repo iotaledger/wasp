@@ -85,8 +85,9 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 		},
 		ObjectRef: iotago.ObjectRef{
 			ObjectID: prepareConfig.AnchorID,
-			Digest:   iotago.DigestFromBytes([]byte("MIGRATED")),
-			Version:  0,
+			// TODO: Fix digest
+			Digest:  iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
+			Version: 0,
 		},
 		Owner: prepareConfig.ChainOwner.AsIotaAddress(),
 	}, prepareConfig.PackageID)

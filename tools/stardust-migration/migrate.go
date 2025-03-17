@@ -29,11 +29,13 @@ import (
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	isc_migration "github.com/iotaledger/wasp/packages/migration"
@@ -48,6 +50,10 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
+)
+
+const (
+	inMemoryStatesSevingPeriodBlocks = 20000
 )
 
 func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration bool, dryRun bool) (
@@ -280,7 +286,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	oldStateStore, oldState, newState := initInMemoryStates(c, srcStore, destStore, startBlockIndex, skipLoad, continueMigration)
+	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration)
 	if c.Err() != nil {
 		cli.Logf("Interrupted before migration started")
 		return nil
@@ -379,6 +385,10 @@ func migrateAllStates(c *cmd.Context) error {
 			cli.Logf("Block Index: %d\n", blockIndex)
 			writeMigrationResult(stateMetadata, blockIndex)
 		}
+		if blockIndex%inMemoryStatesSevingPeriodBlocks == 0 {
+			cli.Logf("Pre-saving in-memory states at block index %v", blockIndex)
+			saveInMemoryStates(oldStateStore, newState, blockIndex, srcChainDBDir)
+		}
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
@@ -413,13 +423,38 @@ func migrateAllStates(c *cmd.Context) error {
 		writeMigrationResult(stateMetadata, lastProcessedBlockIndex)
 	}
 
+	saveInMemoryStates(oldStateStore, newState, lastProcessedBlockIndex, srcChainDBDir)
+
 	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", recentlyBlocksProcessed))
 
 	return nil
 }
 
-func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, startBlockIndex uint32, skipLoad, continueMigration bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore) {
+func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, srcChainDBDir string, startBlockIndex uint32, skipLoad, continueMigration bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, uint32) {
 	defer cli.UpdateStatusBarf("")
+
+	if continueMigration {
+		startBlockIndex = lo.Must(destStore.LatestBlockIndex()) + 1
+		cli.Logf("Continuing migration from block index %v", startBlockIndex)
+	}
+
+	if startBlockIndex != 0 {
+		savedSrcStateStore, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1)
+		if loaded {
+			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", startBlockIndex-1)
+			return savedSrcStateStore, initSrcState(savedSrcStateStore, true), savedDestState, startBlockIndex
+		}
+
+		cli.Logf("In-memory states not found on disk for block %v", startBlockIndex-1)
+
+		closestAutoSavedBlockIndex := (startBlockIndex - 2) - (startBlockIndex-2)%inMemoryStatesSevingPeriodBlocks
+		cli.Logf("Trying to load auto-saved in-memory states from disk for block %v", closestAutoSavedBlockIndex)
+		savedSrcStateStore, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex)
+		if loaded {
+			cli.Logf("Loaded auto-saved in-memory states from disk: blockIndex = %v", closestAutoSavedBlockIndex)
+			return savedSrcStateStore, initSrcState(savedSrcStateStore, true), savedDestState, closestAutoSavedBlockIndex + 1
+		}
+	}
 
 	// // Trie-based state
 	// oldStateStore := old_trietest.NewInMemoryKVStore()
@@ -432,41 +467,10 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 
 	// // Hybrid-KV-based state
 	oldStateStore := old_dict.New()
-	oldState := NewPrefixKVStore(oldStateStore, func(key old_kv.Key) [][]byte {
-		return utils.GetMapElemPrefixes([]byte(key))
-	})
-
-	oldState.RegisterPrefix(old_accounts.PrefixBaseTokens, old_accounts.Contract.Hname())
-	oldState.RegisterPrefix(old_accounts.PrefixNativeTokens, old_accounts.Contract.Hname())
-	oldState.RegisterPrefix(old_accounts.PrefixFoundries, old_accounts.Contract.Hname())
-	oldState.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
-
+	oldState := initSrcState(oldStateStore, startBlockIndex != 0)
 	newState := NewInMemoryKVStore(false)
 
-	if continueMigration {
-		startBlockIndex = lo.Must(destStore.LatestBlockIndex()) + 1
-		cli.Logf("Continuing migration from block index %v", startBlockIndex)
-
-		cli.Logf("Loading destination state at block index %v", startBlockIndex-1)
-		count := 0
-		latestDestState := lo.Must(destStore.LatestState())
-		latestDestState.Iterate("", func(k kv.Key, v []byte) bool {
-			newState.Set(k, v)
-			count++
-			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
-			return ctx.Err() == nil
-		})
-
-		cli.Logf("Loaded %v entries into in-memory destination state", count)
-	}
-
 	if startBlockIndex != 0 {
-		// these are needed only when initial state is non-empty and only on that first block
-		oldState.RegisterPrefix(old_evmimpl.PrefixPrivileged, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
-		oldState.RegisterPrefix(old_evmimpl.PrefixAllowance, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
-		oldState.RegisterPrefix(old_evmimpl.PrefixERC20ExternalNativeTokens, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
-		oldState.RegisterPrefix("", old_evm.Contract.Hname(), old_evm.KeyEmulatorState)
-
 		cli.Logf("Real from-index: %d", startBlockIndex)
 
 		var preloadStateIdx uint32
@@ -492,7 +496,110 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 		cli.Logf("Loaded %v entries into in-memory source state", count)
 	}
 
-	return oldStateStore, oldState, newState
+	if continueMigration {
+		cli.Logf("Loading destination state at block index %v", startBlockIndex-1)
+		count := 0
+		latestDestState := lo.Must(destStore.LatestState())
+		latestDestState.Iterate("", func(k kv.Key, v []byte) bool {
+			newState.Set(k, v)
+			count++
+			cli.UpdateStatusBarf("Loading entries: %v loaded", count)
+			return ctx.Err() == nil
+		})
+
+		cli.Logf("Loaded %v entries into in-memory destination state", count)
+	}
+
+	return oldStateStore, oldState, newState, startBlockIndex
+}
+
+func saveInMemoryStates(oldState old_dict.Dict, newState *InMemoryKVStore, lastProcessedBlockIndex uint32, srcChainDBDir string) {
+	cli.Logf("Saving in-memory states to disk: blockIndex = %v, srcChainDBDir = %v", lastProcessedBlockIndex, srcChainDBDir)
+	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, lastProcessedBlockIndex)
+
+	// Doing this in separate steps to avoid too high memory usage (maybe its too naive, but won't hurt)
+	cli.Logf("Marshaling old in-memory state: size = %v", len(oldState))
+	oldStateBytes := bcs.MustMarshal(&oldState)
+
+	cli.Logf("Writing old in-memory state to disk: path = %v, size = %v", oldStateFilePath, len(oldStateBytes))
+	lo.Must0(os.WriteFile(oldStateFilePath, oldStateBytes, os.ModePerm))
+	oldStateBytes = nil
+
+	cli.Logf("Marshaling new in-memory state: size = %v", newState.Len())
+	s := newState.CommittedState()
+	newStateBytes := bcs.MustMarshal(&s)
+
+	cli.Logf("Writing new in-memory state to disk: path = %v, size = %v", newStateFilePath, len(newStateBytes))
+	lo.Must0(os.WriteFile(newStateFilePath, newStateBytes, os.ModePerm))
+}
+
+func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Dict, *InMemoryKVStore, bool) {
+	cli.Logf("Trying to load in-memory states from disk: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
+	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
+
+	cli.Logf("Read old in-memory state from disk: path = %v", oldStateFilePath)
+	oldStateBytes, err := os.ReadFile(oldStateFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			cli.Logf("Old in-memory state file not found: path = %v", oldStateFilePath)
+			return nil, nil, false
+		}
+		panic(err)
+	}
+
+	cli.Logf("Unmarshaling old in-memory state: size = %v", len(oldStateBytes))
+	oldState := old_dict.New()
+	bcs.MustUnmarshalInto(oldStateBytes, &oldState)
+	oldStateBytes = nil
+	cli.Logf("Old in-memory state loaded: size = %v", len(oldState))
+
+	cli.Logf("Read new in-memory state from disk: path = %v", newStateFilePath)
+	newStateBytes, err := os.ReadFile(newStateFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			cli.Logf("New in-memory state file not found: path = %v", newStateFilePath)
+			return nil, nil, false
+		}
+		panic(err)
+	}
+
+	cli.Logf("Unmarshaling new in-memory state: size = %v", len(newStateBytes))
+	newState := NewInMemoryKVStore(false)
+	s := newState.CommittedState()
+	bcs.MustUnmarshalInto(newStateBytes, &s)
+	cli.Logf("New in-memory state loaded: size = %v", newState.Len())
+
+	return oldState, newState, true
+}
+
+func initSrcState(store old_dict.Dict, willBePrefilled bool) *PrefixKVStore {
+	state := NewPrefixKVStore(store, func(key old_kv.Key) [][]byte {
+		return utils.GetMapElemPrefixes([]byte(key))
+	})
+
+	state.RegisterPrefix(old_accounts.PrefixBaseTokens, old_accounts.Contract.Hname())
+	state.RegisterPrefix(old_accounts.PrefixNativeTokens, old_accounts.Contract.Hname())
+	state.RegisterPrefix(old_accounts.PrefixFoundries, old_accounts.Contract.Hname())
+	state.RegisterPrefix(old_errors.PrefixErrorTemplateMap, old_errors.Contract.Hname())
+
+	if willBePrefilled {
+		// These are needed only when initial state is non-empty and only on that first block (when full state is used instead of mutations).
+		state.RegisterPrefix(old_evmimpl.PrefixPrivileged, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
+		state.RegisterPrefix(old_evmimpl.PrefixAllowance, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
+		state.RegisterPrefix(old_evmimpl.PrefixERC20ExternalNativeTokens, old_evm.Contract.Hname(), old_evm.KeyISCMagic)
+		state.RegisterPrefix("", old_evm.Contract.Hname(), old_evm.KeyEmulatorState)
+	}
+
+	return state
+}
+
+func getInMemoryStateFilePaths(srcChainDBDir string, blockIndex uint32) (string, string) {
+	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
+	fileNameHash := hashing.HashStrings(srcChainDBDir)
+	oldStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_old_state_%v.bin", os.TempDir(), blockIndex, fileNameHash.Hex())
+	newStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_new_state_%v.bin", os.TempDir(), blockIndex, fileNameHash.Hex())
+
+	return oldStateFilePath, newStateFilePath
 }
 
 // forEachBlock iterates over all blocks.

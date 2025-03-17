@@ -5,10 +5,11 @@ import (
 
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
 func NewInMemoryKVStore(readOnlyUncommitted bool) *InMemoryKVStore {
-	committed := buffered.NewBufferedKVStore(NoopKVStoreReader[kv.Key]{})
+	committed := dict.New()
 
 	var uncommitted *buffered.BufferedKVStore
 	if readOnlyUncommitted {
@@ -26,7 +27,7 @@ func NewInMemoryKVStore(readOnlyUncommitted bool) *InMemoryKVStore {
 }
 
 type InMemoryKVStore struct {
-	committed        *buffered.BufferedKVStore
+	committed        dict.Dict
 	uncommitted      *buffered.BufferedKVStore
 	marking          bool
 	uncommitedMarked map[kv.Key]struct{}
@@ -37,8 +38,20 @@ type InMemoryKVStore struct {
 var _ kv.KVStoreReader = &InMemoryKVStore{}
 var _ kv.KVStore = &InMemoryKVStore{}
 
+func (b *InMemoryKVStore) Len() int {
+	return b.CommittedSize()
+}
+
 func (b *InMemoryKVStore) CommittedSize() int {
-	return len(b.committed.Mutations().Sets)
+	return len(b.committed)
+}
+
+func (b *InMemoryKVStore) CommittedState() map[kv.Key][]byte {
+	return b.committed
+}
+
+func (b *InMemoryKVStore) SetCommittedState(s map[kv.Key][]byte) {
+	b.committed = s
 }
 
 func (b *InMemoryKVStore) Mutations() *buffered.Mutations {
@@ -79,7 +92,7 @@ func (b *InMemoryKVStore) DeleteMarkedIfNotSet() {
 func (b *InMemoryKVStore) DeleteIfNotSet() {
 	uncommittedSets := b.uncommitted.Mutations().Sets
 
-	for key := range b.committed.Mutations().Sets {
+	for key := range b.committed {
 		if _, isSet := uncommittedSets[key]; !isSet {
 			b.uncommitted.Del(key)
 		}
@@ -88,7 +101,7 @@ func (b *InMemoryKVStore) DeleteIfNotSet() {
 
 // RemoveRedundantMutations removes mutations that have no effect
 func (b *InMemoryKVStore) RemoveRedundantMutations() {
-	committedSets := b.committed.Mutations().Sets
+	committedSets := b.committed
 	uncommittedSets := b.uncommitted.Mutations().Sets
 
 	for key, value := range uncommittedSets {
