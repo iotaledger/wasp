@@ -118,6 +118,10 @@ func main() {
 								Usage:   "Continue migration from the last block in the destination database.",
 							},
 							&cmd.BoolFlag{
+								Name:  "no-cache",
+								Usage: "Disable reading pre-saved in-memory states from files. This forces loading entire latest state from DB (may take a lot of time).",
+							},
+							&cmd.BoolFlag{
 								Name:    "dry-run",
 								Aliases: []string{"d"},
 								Usage:   "Do not write destination database.",

@@ -275,6 +275,7 @@ func migrateAllStates(c *cmd.Context) error {
 	overrideNewChainID := c.String("new-chain-id")
 	skipLoad := c.Bool("skip-load")
 	continueMigration := c.Bool("continue")
+	disableCache := c.Bool("no-cache")
 	dryRun := c.Bool("dry-run")
 
 	if continueMigration {
@@ -291,7 +292,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration)
+	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration, disableCache)
 	if c.Err() != nil {
 		cli.Logf("Interrupted before migration started")
 		return nil
@@ -447,7 +448,7 @@ func migrateAllStates(c *cmd.Context) error {
 	return nil
 }
 
-func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, srcChainDBDir string, startBlockIndex uint32, skipLoad, continueMigration bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, uint32) {
+func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore, destStore indexedstore.IndexedStore, srcChainDBDir string, startBlockIndex uint32, skipLoad, continueMigration, disableCache bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, uint32) {
 	defer cli.UpdateStatusBarf("")
 
 	if continueMigration {
@@ -455,7 +456,7 @@ func initInMemoryStates(ctx *cmd.Context, srcStore old_indexedstore.IndexedStore
 		cli.Logf("Continuing migration from block index %v", startBlockIndex)
 	}
 
-	if startBlockIndex != 0 {
+	if startBlockIndex != 0 && !disableCache {
 		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1)
 		if loaded {
 			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", startBlockIndex-1)
