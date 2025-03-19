@@ -148,24 +148,35 @@ func newBaseTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.Chain
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
 	contractState.Iterate(kv.Key(accounts.PrefixAccountCoinBalances), func(balanceKey kv.Key, v []byte) bool {
-		accKey, coinTypeBytes := utils.MustSplitMapKey(balanceKey, 0, accounts.PrefixAccountCoinBalances)
-		if coinTypeBytes == "" {
-			// not a map entry
+		accKey, accStr, _, coinType, isMapElem := utils.MustSplitParseMapKeyAny(balanceKey, accounts.PrefixAccountCoinBalances, func(accKey, coinTypeBytes kv.Key) (string, coin.Type, error) {
+			// Unfortunatelly sometimes accKey or coinTypeBytes contains map separator (dot - .)
+			// And as both accKey and coinTypeBytes hae dynamic size, we cannot expected the separator at some specific position.
+			// So what we do is just try to parse all variants.
+
+			var accStr string
+			if accKey == accounts.L2TotalsAccount {
+				accStr = "L2TotalsAccount"
+			} else {
+				agentID, err := accounts.AgentIDFromKey(kv.Key(accKey), chainID)
+				if err != nil {
+					return "", coin.Type{}, fmt.Errorf("failed to parse agent ID: %v", err)
+				}
+				accStr = newAgentIDToStr(agentID)
+			}
+
+			coinType, err := coin.TypeFromBytes([]byte(coinTypeBytes))
+			if err != nil {
+				return "", coin.Type{}, fmt.Errorf("failed to parse coin type: %v: coinTypeBytes = %x / %v", err, coinTypeBytes, string(coinTypeBytes))
+			}
+
+			return accStr, coinType, nil
+		})
+		if !isMapElem {
 			return true
 		}
-
-		coinType := lo.Must(coin.TypeFromBytes([]byte(coinTypeBytes)))
 		if coinType != coin.BaseTokenType {
 			// Native token - ignoring
 			return true
-		}
-
-		var accStr string
-		if accKey == accounts.L2TotalsAccount {
-			accStr = "L2TotalsAccount"
-		} else {
-			agentID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey), chainID))
-			accStr = newAgentIDToStr(agentID)
 		}
 
 		balance := codec.MustDecode[coin.Value](v)

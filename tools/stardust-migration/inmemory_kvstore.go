@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/dict"
 )
 
-func NewInMemoryKVStore(readOnlyUncommitted bool, keyValidator func(k kv.Key)) *InMemoryKVStore {
+func NewInMemoryKVStore(readOnlyUncommitted bool) *InMemoryKVStore {
 	committed := dict.New()
 
 	var uncommitted *buffered.BufferedKVStore
@@ -24,7 +24,6 @@ func NewInMemoryKVStore(readOnlyUncommitted bool, keyValidator func(k kv.Key)) *
 		committedMarked:     make(map[kv.Key]struct{}),
 		uncommitedMarked:    make(map[kv.Key]struct{}),
 		readOnlyUncommitted: readOnlyUncommitted,
-		keyValidator:        keyValidator,
 	}
 }
 
@@ -36,7 +35,7 @@ type InMemoryKVStore struct {
 	committedMarked     map[kv.Key]struct{}
 	prevMutsCount       int
 	readOnlyUncommitted bool
-	keyValidator        func(k kv.Key)
+	keyValidator        func(k kv.Key, v []byte)
 }
 
 var _ kv.KVStoreReader = &InMemoryKVStore{}
@@ -69,7 +68,7 @@ func (b *InMemoryKVStore) SetCommittedState(state map[kv.Key][]byte, marks map[k
 	}
 }
 
-func (b *InMemoryKVStore) SetKeyValidator(keyValidator func(k kv.Key)) {
+func (b *InMemoryKVStore) SetKeyValidator(keyValidator func(k kv.Key, v []byte)) {
 	b.keyValidator = keyValidator
 }
 
@@ -162,7 +161,7 @@ func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) *buffered.Mutation
 
 func (b *InMemoryKVStore) Set(key kv.Key, value []byte) {
 	if b.keyValidator != nil {
-		b.keyValidator(key)
+		b.keyValidator(key, value)
 	}
 
 	if value == nil {

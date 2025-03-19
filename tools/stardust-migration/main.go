@@ -133,7 +133,11 @@ func main() {
 							},
 							&cmd.StringFlag{
 								Name:  "panic-dest-key-suffix",
-								Usage: "Panic if destination db key suffix ends with given hex string.",
+								Usage: "Panic if destination db key ends with given hex string (works as AND with --panic-dest-value-prefix).",
+							},
+							&cmd.StringFlag{
+								Name:  "panic-dest-value-prefix",
+								Usage: "Panic if destination db value starts with given hex string (works as AND with --panic-dest-key-suffix).",
 							},
 						},
 						Before: processCommonFlags,

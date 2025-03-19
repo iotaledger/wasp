@@ -278,6 +278,7 @@ func migrateAllStates(c *cmd.Context) error {
 	disableCache := c.Bool("no-cache")
 	dryRun := c.Bool("dry-run")
 	panicDestKeySuffix := c.String("panic-dest-key-suffix")
+	panicDestValuePrefix := c.String("panic-dest-value-prefix")
 
 	if continueMigration {
 		if startBlockIndex != 0 {
@@ -293,7 +294,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration, disableCache, panicDestKeySuffix)
+	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration, disableCache, panicDestKeySuffix, panicDestValuePrefix)
 	if c.Err() != nil {
 		cli.Logf("Interrupted before migration started")
 		return nil
@@ -458,6 +459,7 @@ func initInMemoryStates(
 	startBlockIndex uint32,
 	skipLoad, continueMigration, disableCache bool,
 	panicDestKeySuffix string,
+	panicDestValuePrefix string,
 ) (
 	old_dict.Dict,
 	*RecordingKVStore[old_kv.Key, *PrefixKVStore, *PrefixKVStore],
@@ -475,7 +477,7 @@ func initInMemoryStates(
 		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1)
 		if loaded {
 			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", startBlockIndex-1)
-			setDestStateKeyValidator(savedDestState, panicDestKeySuffix)
+			setDestStateKeyValidator(savedDestState, panicDestKeySuffix, panicDestValuePrefix)
 			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), startBlockIndex
 		}
 
@@ -486,7 +488,7 @@ func initInMemoryStates(
 		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex)
 		if loaded {
 			cli.Logf("Loaded auto-saved in-memory states from disk: blockIndex = %v", closestAutoSavedBlockIndex)
-			setDestStateKeyValidator(savedDestState, panicDestKeySuffix)
+			setDestStateKeyValidator(savedDestState, panicDestKeySuffix, panicDestValuePrefix)
 			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), closestAutoSavedBlockIndex + 1
 		}
 	}
@@ -503,8 +505,8 @@ func initInMemoryStates(
 	// // Hybrid-KV-based state
 	oldStateStore := old_dict.New()
 	oldState := initSrcState(oldStateStore, startBlockIndex != 0)
-	newState := NewInMemoryKVStore(false, nil)
-	setDestStateKeyValidator(newState, panicDestKeySuffix)
+	newState := NewInMemoryKVStore(false)
+	setDestStateKeyValidator(newState, panicDestKeySuffix, panicDestValuePrefix)
 
 	if startBlockIndex != 0 {
 		cli.Logf("Real from-index: %d", startBlockIndex)
@@ -617,7 +619,7 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Di
 	r := bytes.NewReader(newStateBytes)
 	bcs.MustUnmarshalStreamInto(r, &committedState)
 	bcs.MustUnmarshalStreamInto(r, &committedMarks)
-	newState := NewInMemoryKVStore(false, nil)
+	newState := NewInMemoryKVStore(false)
 	newState.SetCommittedState(committedState, committedMarks)
 	cli.Logf("New in-memory state loaded: size = %v", newState.Len())
 
@@ -665,19 +667,34 @@ func initSrcState(store old_dict.Dict, willBePrefilled bool) *PrefixKVStore {
 	return state
 }
 
-func setDestStateKeyValidator(s *InMemoryKVStore, panicDestKeySuffix string) {
-	if panicDestKeySuffix == "" {
+func setDestStateKeyValidator(s *InMemoryKVStore, panicDestKeySuffix, panicDestValuePrefix string) {
+	if panicDestKeySuffix == "" && panicDestValuePrefix == "" {
 		return
 	}
 
-	if !strings.HasPrefix(panicDestKeySuffix, "0x") {
-		panicDestKeySuffix = "0x" + panicDestKeySuffix
+	var keySuffixBytes []byte
+	if panicDestKeySuffix != "" {
+		if !strings.HasPrefix(panicDestKeySuffix, "0x") {
+			panicDestKeySuffix = "0x" + panicDestKeySuffix
+		}
+		keySuffixBytes = lo.Must(hexutil.Decode(panicDestKeySuffix))
 	}
 
-	suffixBytes := lo.Must(hexutil.Decode(panicDestKeySuffix))
-	s.SetKeyValidator(func(k kv.Key) {
-		if bytes.HasSuffix([]byte(k), suffixBytes) {
-			panic(fmt.Sprintf("Key with suffix '%s' found in new db: %x = %v", panicDestKeySuffix, k, string(k)))
+	var valuePrefixBytes []byte
+	if panicDestValuePrefix != "" {
+		if !strings.HasPrefix(panicDestValuePrefix, "0x") {
+			panicDestValuePrefix = "0x" + panicDestValuePrefix
+		}
+		valuePrefixBytes = lo.Must(hexutil.Decode(panicDestValuePrefix))
+	}
+
+	s.SetKeyValidator(func(k kv.Key, v []byte) {
+		keyHasSuffix := keySuffixBytes == nil || bytes.HasSuffix([]byte(k), keySuffixBytes)
+		valueHasPrefix := valuePrefixBytes == nil || bytes.HasPrefix(v, valuePrefixBytes)
+
+		if keyHasSuffix && valueHasPrefix {
+			panic(fmt.Sprintf("Record has specified key suffix or value prefix: keySuffix = %v, valuePrefix = %v, key = %x / %v, value = %x / %v",
+				panicDestKeySuffix, panicDestValuePrefix, k, string(k), v, string(v)))
 		}
 	})
 }

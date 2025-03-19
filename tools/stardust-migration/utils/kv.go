@@ -16,6 +16,52 @@ func MustRemovePrefix[T ~string | ~[]byte](v T, prefix string) T {
 	return T(r)
 }
 
+// Finds all map key separators and tries to parse them.
+// If nothing parses - considered as not a map lement.
+// If multiple pairs are parseable - panics.
+func MustSplitParseMapKeyAny[T ~string | ~[]byte, P ~string | ~[]byte, MapName any, ElemKey any](key T, prefixToRemove P, f func(mapName, elemKey T) (MapName, ElemKey, error)) (T, MapName, T, ElemKey, bool) {
+	if string(prefixToRemove) != "" {
+		key = MustRemovePrefix(key, string(prefixToRemove))
+	}
+
+	var mapNameBytes, elemKeyBytes T
+	var mapName MapName
+	var elemKey ElemKey
+	foundSep := false
+	parsed := false
+	errs := make([]string, 0)
+
+	for i := 1; i < len(key)-1; i++ {
+		if key[i] != '.' {
+			continue
+		}
+
+		foundSep = true
+
+		mb, eb := key[:i], key[i+1:]
+		m, e, err := f(mb, eb)
+		if err != nil {
+			errs = append(errs, err.Error())
+			continue
+		}
+
+		if parsed {
+			panic(fmt.Sprintf("Multiple parseable map key separators found: %x / %v", key, string(key)))
+		}
+
+		mapNameBytes, elemKeyBytes = mb, eb
+		mapName, elemKey = m, e
+		parsed = true
+		// NOTE: We try parse ALL pairs to see if only one is parseable
+	}
+
+	if !foundSep || !parsed {
+		return key, lo.Empty[MapName](), T([]byte(nil)), lo.Empty[ElemKey](), false
+	}
+
+	return mapNameBytes, mapName, elemKeyBytes, elemKey, true
+}
+
 // Split map key into map name and element key
 // expectedSepPos - if 0, then separator is searched for. If > 0, then it is expected to be at this position.
 // If < 0, then it is expected to be at len(key) + expectedSepPos. If no separator found where expected, then

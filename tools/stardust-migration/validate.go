@@ -83,7 +83,7 @@ func validateMigration(c *cmd.Context) error {
 
 	defer func() {
 		if err := recover(); err != nil {
-			cli.Logf("Validation paniced")
+			cli.Logf("Validation panicked")
 			PrintLastDBOperations(oldLatestState, newLatestState)
 			panic(err)
 		}
