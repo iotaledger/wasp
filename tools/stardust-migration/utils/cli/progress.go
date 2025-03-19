@@ -71,7 +71,7 @@ func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgre
 
 			periodicAction(period, &lastEstimateUpdateTime, func() {
 				relProgress := float64(totalProcessed) / float64(totalCount)
-				estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
+				estimateRunTime = time.Duration(float64(time.Since(startTime)) * (1/relProgress - 1))
 				avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
 
 				recentlyProcessed := prevCountLeft - countLeft
