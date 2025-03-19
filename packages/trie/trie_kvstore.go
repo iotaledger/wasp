@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 )
 
-const KeyMaxLength = 256
+var KeyMaxLength = 256
 
 // Update updates TrieUpdatable with the unpackedKey/value. Reorganizes and re-calculates trie, keeps cache consistent
 func (tr *TrieUpdatable) Update(key []byte, value []byte) {
