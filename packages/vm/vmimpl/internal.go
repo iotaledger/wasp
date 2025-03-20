@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -39,19 +40,9 @@ func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, object
 	}
 }
 
-// debitFromAccount subtracts tokens from account if there are enough.
-func (reqctx *requestContext) debitFromAccount(agentID isc.AgentID, coins isc.CoinBalances, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitFromAccount(agentID, coins, reqctx.ChainID())
-}
-
 // debitFromAccountFullDecimals subtracts basetokens tokens from account if there are enough.
 func (reqctx *requestContext) debitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int, gasBurn bool) {
 	reqctx.accountsStateWriter(gasBurn).DebitFromAccountFullDecimals(agentID, amount, reqctx.ChainID())
-}
-
-// debitObjectFromAccount removes a Object from an account.
-func (reqctx *requestContext) debitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, gasBurn bool) {
-	reqctx.accountsStateWriter(gasBurn).DebitObjectFromAccount(agentID, objectID, reqctx.ChainID())
 }
 
 func (reqctx *requestContext) mustMoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, gasBurn bool) {
@@ -120,7 +111,7 @@ func (reqctx *requestContext) GetObjectBCS(objectID iotago.ObjectID) (ret []byte
 	return ret, ret != nil
 }
 
-func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *isc.IotaCoinInfo, ok bool) {
+func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *parameters.IotaCoinInfo, ok bool) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		coinInfo, ok = s.GetCoinInfo(coinType)
 	})

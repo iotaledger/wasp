@@ -7,35 +7,21 @@
 package tests
 
 import (
-	"context"
 	"testing"
-
-	"github.com/stretchr/testify/require"
-
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/state/indexedstore"
-
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
-func createChain(t *testing.T) isc.ChainID {
-	originator := cryptolib.NewKeyPair()
-	address := originator.Address()
-	layer2Client := l1.L1Client()
-	err := layer2Client.RequestFunds(context.Background(), *address)
-	require.NoError(t, err)
-
-	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(originator.Address())).Encode()
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
-	return isc.ChainID{}
-}
+//	func createChain(t *testing.T) isc.ChainID {
+//		originator := cryptolib.NewKeyPair()
+//		address := originator.Address()
+//		layer2Client := l1.L1Client()
+//		err := layer2Client.RequestFunds(context.Background(), *address)
+//		require.NoError(t, err)
+//
+//		initParams := origin.DefaultInitParams(isc.NewAddressAgentID(originator.Address())).Encode()
+//		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+//		origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, coin.BaseTokenType)
+//		return isc.ChainID{}
+//	}
 
 func TestNodeConn(t *testing.T) {
 	// if testing.Short() {

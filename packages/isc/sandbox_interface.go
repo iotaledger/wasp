@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -54,7 +55,7 @@ type SandboxBase interface {
 	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
 	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
 	// GetCoinInfo returns information about a coin known by the chain
-	GetCoinInfo(coinType coin.Type) (*IotaCoinInfo, bool)
+	GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
 	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
@@ -66,7 +67,7 @@ type SandboxBase interface {
 type SchemaVersion uint32
 
 type Helpers interface {
-	Requiref(cond bool, format string, args ...interface{})
+	Requiref(cond bool, format string, args ...any)
 	RequireNoError(err error, str ...string)
 }
 

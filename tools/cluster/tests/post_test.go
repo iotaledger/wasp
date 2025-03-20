@@ -22,7 +22,7 @@ func testPost1Request(t *testing.T, e *ChainEnv) {
 	userKeyPair, userAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient := e.Chain.Client(userKeyPair)
-	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), isc.BaseTokenCoinInfo.CoinType)
+	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
 	reqTx, err := userClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
@@ -32,7 +32,7 @@ func testPost1Request(t *testing.T, e *ChainEnv) {
 
 	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, true, 30*time.Second)
 	require.NoError(t, err)
-	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), isc.BaseTokenCoinInfo.CoinType)
+	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
 	gasFeeCharged, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func testPost3Requests(t *testing.T, e *ChainEnv) {
 	userKeyPair, userAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient := e.Chain.Client(userKeyPair)
-	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), isc.BaseTokenCoinInfo.CoinType)
+	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
 	const numRepeats int64 = 3
 	var receipts [numRepeats]*apiclient.ReceiptResponse
@@ -67,7 +67,7 @@ func testPost3Requests(t *testing.T, e *ChainEnv) {
 		gasFeeChargedSum += coin.Value(gasFeeCharged)
 	}
 
-	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), isc.BaseTokenCoinInfo.CoinType)
+	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 	require.Equal(t, balance1+3*coin.Value(10+iotaclient.DefaultGasBudget)-gasFeeChargedSum, balance2)
 }
 
@@ -76,7 +76,7 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 	userWallet, userAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient := e.Chain.Client(userWallet)
-	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), isc.BaseTokenCoinInfo.CoinType)
+	balance1 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 
 	tx := [5]*iotajsonrpc.IotaTransactionBlockResponse{}
 	gasFeeChargedSum := coin.Value(0)
@@ -99,6 +99,6 @@ func testPost5AsyncRequests(t *testing.T, e *ChainEnv) {
 		gasFeeChargedSum += coin.Value(gasFeeCharged)
 	}
 
-	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), isc.BaseTokenCoinInfo.CoinType)
+	balance2 := e.GetL2Balance(isc.NewAddressAgentID(userAddr), coin.BaseTokenType)
 	require.Equal(t, balance1+5*coin.Value(10+iotaclient.DefaultGasBudget)-gasFeeChargedSum, balance2)
 }

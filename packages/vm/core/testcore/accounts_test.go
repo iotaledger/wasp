@@ -912,7 +912,7 @@ func TestAccounts_DepositRandomContractMinFee(t *testing.T) {
 	receipt := ch.LastReceipt()
 	require.Error(t, receipt.Error)
 
-	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1Default.BaseToken.Decimals), receipt.GasFeeCharged)
+	require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals), receipt.GasFeeCharged)
 	require.EqualValues(t, sent-receipt.GasFeeCharged, ch.L2BaseTokens(agentID))
 }
 
@@ -940,7 +940,7 @@ func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
 		require.Error(t, err)
 		testmisc.RequireErrorToBe(t, err, vm.ErrNotEnoughFundsForAllowance)
 		receipt := ch.LastReceipt()
-		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.L1Default.BaseToken.Decimals), receipt.GasFeeCharged)
+		require.EqualValues(t, gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals), receipt.GasFeeCharged)
 	}
 }
 
