@@ -27,12 +27,6 @@ type block struct {
 
 var _ Block = &block{}
 
-// This needs to be public for bcs to function
-type BlockHashCreate struct {
-	Sets kv.Items
-	Dels []kv.Key
-}
-
 func NewBlock() Block {
 	return new(block)
 }

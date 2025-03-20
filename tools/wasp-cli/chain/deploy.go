@@ -5,7 +5,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
