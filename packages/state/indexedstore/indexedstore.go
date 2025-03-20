@@ -97,7 +97,6 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 	return nextBlockInfo.PreviousL1Commitment().TrieRoot(), nil
 }
 
-// TODO this can probably be removed, since we do the search on the "regular" impl
 type fakeistore struct {
 	state.Store
 }

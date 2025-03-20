@@ -239,7 +239,7 @@ func (bfT *BlockFactory) GetAnchor(commitment *state.L1Commitment) *isc.StateAnc
 	anchor, ok := bfT.anchorData[commitment.BlockHash()]
 	require.True(bfT.t, ok)
 
-	stateAnchor := isc.NewStateAnchor(&anchor, *iotago.MustAddressFromHex("0x0")) // FIXME,
+	stateAnchor := isc.NewStateAnchor(&anchor, *iotago.MustAddressFromHex("0x0"))
 
 	return &stateAnchor
 }

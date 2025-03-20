@@ -503,7 +503,6 @@ type Hashing interface {
 }
 
 type ED25519 interface {
-	// ValidSignature(data []byte, pubKey []byte, signature []byte) bool	// TODO: is it needed?
 	AddressFromPublicKey(pubKey []byte) (*cryptolib.Address, error)
 }
 
