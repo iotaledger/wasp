@@ -150,12 +150,12 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
 		if oldRecIndexBytes == "" {
 			// It's a length record
-			newBlockChain.Set(emulator.MakeTransactionsByBlockNumberKey(blockNumber), value)
+			newBlockChain.Set(emulator.MakeReceiptsByBlockNumberKey(blockNumber), value)
 			return true
 		}
 
 		recIndex := old_rwutil.NewBytesReader([]byte(oldRecIndexBytes)).Must().ReadUint32()
-		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), recIndex)
+		newKey := collections.ArrayElemKey(string(emulator.MakeReceiptsByBlockNumberKey(blockNumber)), recIndex)
 
 		// TODO: This was caught after block 10000, probably pruning in play?
 		if value == nil {

@@ -172,9 +172,13 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 	return coin.Value(u)
 }
 
+func ConvertOldCoinDecimalsToNew(from uint64) coin.Value {
+	return coin.Value(from * 1000) // Stardust 6 / Rebased 9 decimals
+}
+
 func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 	// TODO: conversion rate?
-	newBaseTokensBalance := coin.Value(oldAssets.BaseTokens)
+	newBaseTokensBalance := ConvertOldCoinDecimalsToNew(oldAssets.BaseTokens)
 	newAssets := isc.NewAssets(newBaseTokensBalance)
 
 	for _, oldToken := range oldAssets.NativeTokens {

@@ -128,7 +128,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, con
 			Bech32HRP: old_iotago.PrefixMainnet,
 		},
 		BaseToken: &old_parameters.BaseToken{
-			Decimals: 9, // TODO: 9? 6?
+			Decimals: 6,
 		},
 	})
 

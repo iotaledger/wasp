@@ -93,7 +93,7 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 	}, prepareConfig.PackageID)
 
 	newBlockInfo := blocklog.BlockInfo{
-		GasFeeCharged:         coin.Value(oldBlockInfo.GasFeeCharged),
+		GasFeeCharged:         ConvertOldCoinDecimalsToNew(oldBlockInfo.GasFeeCharged),
 		GasBurned:             oldBlockInfo.GasBurned,
 		BlockIndex:            oldBlockInfo.BlockIndex(),
 		NumOffLedgerRequests:  oldBlockInfo.NumOffLedgerRequests,
@@ -175,7 +175,7 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_i
 		Error:         receiptError,
 		GasBudget:     receipt.GasBudget,
 		GasBurned:     receipt.GasBurned,
-		GasFeeCharged: coin.Value(receipt.GasFeeCharged),
+		GasFeeCharged: ConvertOldCoinDecimalsToNew(receipt.GasFeeCharged),
 		GasBurnLog:    burnLog,
 		BlockIndex:    receipt.BlockIndex,
 		RequestIndex:  receipt.RequestIndex,
