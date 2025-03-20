@@ -548,7 +548,7 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 // Logs executes a log filter operation, blocking during execution and
 // returning all the results in one batch.
 //
-//nolint:gocyclo
+
 func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*types.Log, error) {
 	e.log.LogDebugf("Logs(q=%v)", query)
 	if query == nil {

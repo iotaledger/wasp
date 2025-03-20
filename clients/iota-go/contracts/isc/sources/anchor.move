@@ -98,7 +98,7 @@ module isc::anchor {
         while (i < receipts_len) {
             let Receipt {
                 request_id: _
-            } = receipts.pop_back(); // TODO it seems we don't need to use mut for `receipts`
+            } = receipts.pop_back();
             // here performs some cryptographic proof of inclusion with request_id and the new state root??
             i = i + 1;
         };

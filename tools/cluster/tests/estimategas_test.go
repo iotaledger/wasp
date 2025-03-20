@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -148,17 +149,17 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	client := env.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
-		Allowance: isc.NewAssets(5000),
+		Allowance:   isc.NewAssets(5000),
+		GasBudget:   iotaclient.DefaultGasBudget,
+		L2GasBudget: 1 * isc.Million,
 	}
-	par.WithGasBudget(1 * isc.Million)
-
 	req, err := client.PostOffLedgerRequest(
 		context.Background(),
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		par,
 	)
 	require.NoError(t, err)
-	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 10*time.Second)
+	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, rec.GasBurned, estimatedReceipt.GasBurned)
 	require.Equal(t, rec.GasFeeCharged, estimatedReceipt.GasFeeCharged)

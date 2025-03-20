@@ -238,7 +238,6 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 			Query:   query,
 			Cursor:  cursor,
 		})
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch requests: %w", err)
 		}

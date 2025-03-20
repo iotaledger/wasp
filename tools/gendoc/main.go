@@ -60,7 +60,6 @@ func main() {
 
 	replaceTopicNames := make(map[string]string)
 	replaceTopicNames["app"] = "Application"
-	replaceTopicNames["inx"] = "INX"
 	replaceTopicNames["log"] = "Shutdown Log"
 	replaceTopicNames["db"] = "Database"
 	replaceTopicNames["jwt"] = "JWT Auth"

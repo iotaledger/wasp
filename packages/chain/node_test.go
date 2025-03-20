@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -250,7 +250,6 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 	}
 }
 
-//nolint:revive
 func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
 	for {
 		select {
@@ -281,11 +280,6 @@ type testNodeConn struct {
 	l1Client     clients.L1Client
 	l2Client     clients.L2Client
 	iscPackageID iotago.PackageID
-}
-
-func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
-	// TODO implement me
-	panic("implement me")
 }
 
 func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
@@ -532,7 +526,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.cmtSigner = testpeers.NewTestDSSSigner(te.cmtAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.cmtSigner.Address()))
-	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()
 	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)

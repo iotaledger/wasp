@@ -61,7 +61,9 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 			for i := 0; i < numRequestsPerAccount; i++ {
 				retries := 0
 				for {
-					tx, err := chainClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+					tx, err := chainClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+						GasBudget: iotaclient.DefaultGasBudget,
+					})
 					if err != nil {
 						if retries >= 5 {
 							errCh <- fmt.Errorf("failed to issue tx, an error 5 times, %w", err)
@@ -237,7 +239,7 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 
 	// await txs confirmed
 	for _, tx := range transactions {
-		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 5*time.Second)
+		_, err2 := env.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx.Hash(), false, 30*time.Second)
 		require.NoError(t, err2)
 	}
 

@@ -99,7 +99,6 @@ func (c *Controller) getChainList(e echo.Context) error {
 		c.log.LogInfof("getchaininfo %v", err)
 
 		if errors.Is(err, interfaces.ErrChainNotFound) {
-			// TODO: Validate this logic here. Is it possible to still get more chain info?
 			chainList = append(chainList, models.ChainInfoResponse{
 				IsActive: false,
 				ChainID:  chainID.String(),

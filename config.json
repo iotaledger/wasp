@@ -22,12 +22,7 @@
       "stdout"
     ],
     "disableEvents": true
-  },
-  "inx": {
-    "address": "localhost:9029",
-    "maxConnectionAttempts": 30,
-    "targetNetworkName": ""
-  },
+  },  
   "l1": {
     "websocketURL": "wss://api.devnet.iota.cafe",
     "httpUrl": "https://api.devnet.iota.cafe",

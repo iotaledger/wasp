@@ -62,7 +62,6 @@ type Signer interface {
 // FIXME support more than ed25519
 type InMemorySigner struct {
 	ed25519Keypair *KeypairEd25519
-	// secp256k1Keypair *KeypairSecp256k1
 
 	address *iotago.Address
 }

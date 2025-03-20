@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/isc"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -155,7 +156,6 @@ func Check(err error, msg ...string) {
 	Fatalf("%v", message)
 }
 
-//nolint:govet
 func PrintTable(header []string, rows [][]string) {
 	if len(rows) == 0 {
 		return
@@ -212,6 +212,9 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		PrintTree(tree, tab, tabwidth)
 	case string:
 		fmt.Printf("%s%s\n", indent, node)
+	case isc.CallArguments:
+		fmt.Printf("%s%s\n", indent, node)
+		return
 	default:
 		panic(fmt.Sprintf("no handler of value of type %T", node))
 	}

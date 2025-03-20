@@ -21,8 +21,10 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 
 	"github.com/samber/lo"
 
@@ -67,7 +69,7 @@ type waspCmd struct {
 	logScanner sync.WaitGroup
 }
 
-func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger) *Cluster {
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger, l1PacakgeID *iotago.PackageID) *Cluster {
 	if log == nil {
 		if t == nil {
 			panic("one of t or log must be set")
@@ -77,11 +79,13 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 	evmlogger.Init(log)
 
 	config.setValidatorAddressIfNotSet() // privtangle prefix
-
+	for i := range config.Wasp {
+		config.Wasp[i].PackageID = l1PacakgeID
+	}
 	return &Cluster{
 		Name:              name,
 		Config:            config,
-		OriginatorKeyPair: cryptolib.NewKeyPair(),
+		OriginatorKeyPair: cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes(testcommon.TestSeed)), // TODO temporary use a fixed account with a lot of tokens
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
@@ -246,6 +250,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		Cluster:           clu,
 	}
 
+	l1Client := clu.L1Client()
 	address := chain.OriginatorAddress()
 
 	err := clu.RequestFunds(address)
@@ -264,23 +269,68 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
+	var blockKeepAmountVal int32
+	if len(blockKeepAmount) > 0 {
+		blockKeepAmountVal = blockKeepAmount[0]
+	}
 	encodedInitParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chain.OriginatorAddress()),
 		1074,
-		blockKeepAmount[0],
-		true,
+		blockKeepAmountVal,
+		false,
 	).Encode()
+
+	getCoinsRes, err := l1Client.GetCoins(
+		context.Background(),
+		iotaclient.GetCoinsRequest{Owner: address.AsIotaAddress()},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cant get gas coin: %w", err)
+	}
+
+	var gascoin *iotajsonrpc.Coin
+	for _, coin := range getCoinsRes.Data {
+		// dont pick a too big coin object
+		if coin.Balance.Uint64() < 3*iotaclient.FundsFromFaucetAmount &&
+			iotaclient.FundsFromFaucetAmount <= coin.Balance.Uint64() {
+			gascoin = coin
+		}
+	}
+
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	err = ptb.TransferObject(stateAddr.AsIotaAddress(), gascoin.Ref())
+	if err != nil {
+		return nil, fmt.Errorf("cant transfer gas coin: %w", err)
+	}
+	pt := ptb.Finish()
+
+	resTransferGasCoin, err := l1Client.SignAndExecuteTxWithRetry(
+		context.Background(),
+		cryptolib.SignerToIotaSigner(chain.OriginatorKeyPair),
+		pt,
+		nil,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowInput:   true,
+			ShowEffects: true,
+		},
+	)
+	if err != nil || !resTransferGasCoin.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("can't transfer GasCoin, resTransferGasCoin.Effects.Data.IsSuccess(): %v: %w", resTransferGasCoin.Effects.Data.IsSuccess(), err)
+	}
+	fmt.Printf("chosen GasCoin %s", gascoin.String())
 
 	stateMetaData := *transaction.NewStateMetadata(
 		allmigrations.DefaultScheme.LatestSchemaVersion(),
 		origin.L1Commitment(
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
-			iotago.ObjectID{},
+			*gascoin.CoinObjectID,
 			0,
-			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
+			isc.BaseTokenCoinInfo,
 		),
-		&iotago.ObjectID{},
+		gascoin.CoinObjectID,
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
 		0,
@@ -290,12 +340,13 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	chainID, err := apilib.DeployChain(
 		context.Background(),
 		apilib.CreateChainParams{
-			Layer1Client:      clu.L1Client(),
+			Layer1Client:      l1Client,
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
 			StateMetadata:     stateMetaData,
+			PackageID:         clu.Config.ISCPackageID(),
 		},
 		stateAddr,
 	)
@@ -314,7 +365,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	{
 		fmt.Printf("waiting until nodes receive the origin output..\n")
 
-		retries := 10
+		retries := 30
 		for {
 			time.Sleep(200 * time.Millisecond)
 			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
@@ -361,7 +412,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	for _, tx := range addAccessNodesTxs {
 		// ---------- wait until the requests are processed in all committee nodes
 
-		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, tx, true, 5*time.Second); err != nil {
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, tx, true, 30*time.Second); err != nil {
 			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
@@ -383,10 +434,14 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 
 		pubKeys = append(pubKeys, governance.AcceptAccessNodeAction(accessNodePubKey))
 	}
-	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
-	govClient := chain.Client(chain.OriginatorKeyPair)
+	scParams := chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 10),
+		GasBudget: 2 * iotaclient.DefaultGasBudget,
+	}
 
-	tx, err := govClient.PostRequest(context.Background(), governance.FuncChangeAccessNodes.Message(pubKeys), *scParams)
+	govClient := chain.Client(clu.OriginatorKeyPair)
+
+	tx, err := govClient.PostRequest(context.Background(), governance.FuncChangeAccessNodes.Message(pubKeys), scParams)
 	if err != nil {
 		return err
 	}
@@ -438,16 +493,20 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotajsonr
 	forCommittee := false
 
 	govClient := chain.Client(validatorKeyPair)
+	params := chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(1000),
+		GasBudget: iotaclient.DefaultGasBudget,
+	}
 	tx, err := govClient.PostRequest(
 		context.Background(),
 		governance.FuncAddCandidateNode.Message(accessNodePubKey, decodedCert, accessAPI, forCommittee),
-		*chainclient.NewPostRequestParams().WithBaseTokens(1000),
+		params,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to call FuncAddCandidateNode: %w", err)
 	}
 
-	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, digest=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
 		tx.Digest, accessNodePubKey, decodedCert, accessAPI, forCommittee)
 	return tx, nil
 }
@@ -589,7 +648,7 @@ func (clu *Cluster) Start() error {
 	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	initOk := make(chan bool, len(clu.Config.Wasp))
@@ -603,7 +662,7 @@ func (clu *Cluster) Start() error {
 	for i := 0; i < len(clu.Config.Wasp); i++ {
 		select {
 		case <-initOk:
-		case <-time.After(20 * time.Second):
+		case <-time.After(30 * time.Second):
 			return errors.New("timeout starting wasp nodes")
 		}
 	}
@@ -658,7 +717,7 @@ func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// restart nodes

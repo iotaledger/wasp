@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -156,6 +157,7 @@ func initDepositCmd() *cobra.Command {
 						chainclient.PostRequestParams{
 							Transfer:  tokens,
 							Allowance: allowance,
+							GasBudget: iotaclient.DefaultGasBudget,
 						},
 					)
 				})
@@ -171,6 +173,7 @@ func initDepositCmd() *cobra.Command {
 					chainclient.PostRequestParams{
 						Transfer:  tokens,
 						Allowance: allowance,
+						GasBudget: iotaclient.DefaultGasBudget,
 					},
 				)
 

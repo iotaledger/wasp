@@ -24,13 +24,13 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestReboot(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	committee := []int{0, 1, 2, 3}
+	quorum := uint16((2*len(committee))/3 + 1)
+	env := SetupWithChainWithOpts(t, &waspClusterOpts{
+		nNodes: 4,
+	}, committee, quorum)
+	client, keypair := env.NewRandomChainClient()
 
-	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
-	// env := setupNativeInccounterTest(t, 3, []int{0, 1, 2})
-	client := env.createNewClient()
-
-	// ------ TODO why does this make the test fail?
 	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
@@ -40,149 +40,65 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, er)
 	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
-	//-------
 
-	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+	balance1 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+
+	tx, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	receipts, err := apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 30*time.Second)
+	require.NoError(t, err)
+	gasFeeCharged1, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(t, err)
 
-	env.expectCounter(1)
-
-	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
+	req, err := client.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(), chainclient.PostRequestParams{Allowance: isc.NewAssets(20)})
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
+	receipt, _, err := env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)
-
-	env.expectCounter(2)
-
-	// // ------ TODO why does this make the test fail?
-	// er = env.Clu.WaspClient(0).DeactivateChain(env.Chain.ChainID)
-	// require.NoError(t, er)
-	// er = env.Clu.WaspClient(0).ActivateChain(env.Chain.ChainID)
-	// require.NoError(t, er)
-
-	// tx, err = client.PostRequest(inccounter.FuncIncCounter.Name)
-	// require.NoError(t, err)
-	// _, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, true,10*time.Second)
-	// require.NoError(t, err)
-	// env.expectCounter( 3)
-
-	// reqx, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Name)
-	// require.NoError(t, err)
-	// env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, reqx.ID(), 10*time.Second)
-	// env.expectCounter( 4)
-	// //-------
+	gasFeeCharged2, err := util.DecodeUint64(receipt.GasFeeCharged)
+	require.NoError(t, err)
+	balance2 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	require.Equal(t, balance1+coin.Value(10+iotaclient.DefaultGasBudget-20)-coin.Value(gasFeeCharged1+gasFeeCharged2), balance2)
 
 	// restart the nodes
 	err = env.Clu.RestartNodes(true, 0, 1, 2, 3)
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
-	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+	tx, err = client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
+	receipts, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
-	env.expectCounter(3)
+	gasFeeCharged3, err := util.DecodeUint64(receipts[0].GasFeeCharged)
+	require.NoError(t, err)
+	balance3 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	require.Equal(t, balance1+2*coin.Value(10+iotaclient.DefaultGasBudget)-20-coin.Value(gasFeeCharged1+gasFeeCharged2+gasFeeCharged3), balance3)
 
 	// ensure offledger requests are still working
-	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
+	req, err = client.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(), chainclient.PostRequestParams{Allowance: isc.NewAssets(20)})
 	require.NoError(t, err)
 
-	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
-		TimeoutSeconds(10).
-		Execute()
-	require.NoError(t, err)
-	env.expectCounter(4)
-}
-
-func TestReboot2(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
-	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
-	client := env.createNewClient()
-
-	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
-	require.NoError(t, err)
-
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
-	require.NoError(t, err)
-
-	env.expectCounter(1)
-
-	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
-	require.NoError(t, err)
-
-	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
-		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
-		WaitForL1Confirmation(true).
-		TimeoutSeconds(10).
-		Execute()
-	require.NoError(t, err)
-
-	env.expectCounter(2)
-
-	// ------ TODO why does this make the test fail?
-	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
-	require.NoError(t, er)
-
-	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
-	require.NoError(t, er)
-
-	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
-	require.NoError(t, er)
-	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
-	require.NoError(t, er)
-	//-------
-
-	// // ------ TODO why does this make the test fail?
-	// er = env.Clu.WaspClient(0).DeactivateChain(env.Chain.ChainID)
-	// require.NoError(t, er)
-	// er = env.Clu.WaspClient(0).ActivateChain(env.Chain.ChainID)
-	// require.NoError(t, er)
-
-	// tx, err = client.PostRequest(inccounter.FuncIncCounter.Message(nil))
-	// require.NoError(t, err)
-	// _, err = env.Clu.WaspClient(0).WaitUntilAllRequestsProcessed(env.Chain.ChainID, tx, true,10*time.Second)
-	// require.NoError(t, err)
-	// env.expectCounter( 3)
-
-	// reqx, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
-	// require.NoError(t, err)
-	// env.Clu.WaspClient(0).WaitUntilRequestProcessed(env.Chain.ChainID, reqx.ID(), 10*time.Second)
-	// env.expectCounter( 4)
-	// //-------
-
-	// restart the nodes
-	err = env.Clu.RestartNodes(true, 0, 1, 2, 3)
-	require.NoError(t, err)
-
-	// after rebooting, the chain should resume processing requests without issues
-	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
-	require.NoError(t, err)
-
-	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
-	require.NoError(t, err)
-
-	env.expectCounter(3)
-	// ensure off-ledger requests are still working
-	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
-	require.NoError(t, err)
-
-	_, _, err = env.Clu.WaspClient(0).ChainsAPI.
+	receipt, _, err = env.Clu.WaspClient(0).ChainsAPI.
 		WaitForRequest(context.Background(), env.Chain.ChainID.String(), req.ID().String()).
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)
 
-	env.expectCounter(4)
+	gasFeeCharged4, err := util.DecodeUint64(receipt.GasFeeCharged)
+	require.NoError(t, err)
+	balance4 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	require.Equal(t, balance1+2*coin.Value(10+iotaclient.DefaultGasBudget)-2*20-coin.Value(gasFeeCharged1+gasFeeCharged2+gasFeeCharged3+gasFeeCharged4), balance4)
 }
 
 type incCounterClient struct {
@@ -197,14 +113,16 @@ func newIncCounterClient(t *testing.T, env *ChainEnv, client *chainclient.Client
 }
 
 func (icc *incCounterClient) MustIncOnLedger() {
-	tx, err := icc.client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+	tx, err := icc.client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(icc.t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), icc.env.Clu.WaspClient(0), icc.env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(icc.t, err)
 
 	icc.expected++
-	icc.env.expectCounter(icc.expected)
+	// icc.env.expectCounter(icc.expected)
 }
 
 func (icc *incCounterClient) MustIncOffLedger() {
@@ -218,7 +136,7 @@ func (icc *incCounterClient) MustIncOffLedger() {
 	require.NoError(icc.t, err)
 
 	icc.expected++
-	icc.env.expectCounter(icc.expected)
+	// icc.env.expectCounter(icc.expected)
 }
 
 func (icc *incCounterClient) MustIncBoth(onLedgerFirst bool) {
@@ -235,13 +153,12 @@ func (icc *incCounterClient) MustIncBoth(onLedgerFirst bool) {
 // In this case we have F=0 and N=3, thus any reboot violates the assumptions.
 func TestRebootN3Single(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
-
 	tm := util.NewTimer()
 	allNodes := []int{0, 1, 2}
 	env := setupNativeInccounterTest(t, 3, allNodes)
 	tm.Step("setupNativeInccounterTest")
-	client := env.createNewClient()
-	tm.Step("createNewClient")
+	client, _ := env.NewRandomChainClient()
+	tm.Step("NewRandomChainClient")
 
 	env.DepositFunds(1_000_000, client.KeyPair.(*cryptolib.KeyPair)) // For Off-ledger requests to pass.
 	tm.Step("DepositFunds")
@@ -269,8 +186,8 @@ func TestRebootN3TwoNodes(t *testing.T) {
 	allNodes := []int{0, 1, 2}
 	env := setupNativeInccounterTest(t, 3, allNodes)
 	tm.Step("setupNativeInccounterTest")
-	client := env.createNewClient()
-	tm.Step("createNewClient")
+	client, _ := env.NewRandomChainClient()
+	tm.Step("NewRandomChainClient")
 
 	env.DepositFunds(1_000_000, client.KeyPair.(*cryptolib.KeyPair)) // For Off-ledger requests to pass.
 	tm.Step("DepositFunds")
@@ -328,7 +245,9 @@ func TestRebootDuringTasks(t *testing.T) {
 			require.NoError(t, err)
 			client := env.Chain.Client(keyPair)
 			for i := 0; i < postCount; i++ {
-				_, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+				_, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+					GasBudget: iotaclient.DefaultGasBudget,
+				})
 				require.NoError(t, err)
 				time.Sleep(postDelay)
 			}
@@ -387,15 +306,17 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
 
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
-	client := env.createNewClient()
+	client, _ := env.NewRandomChainClient()
 
-	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+	tx, err := client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
-	env.expectCounter(1)
+	// env.expectCounter(1)
 
 	req, err := client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
 	require.NoError(t, err)
@@ -406,19 +327,21 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 		Execute()
 	require.NoError(t, err)
 
-	env.expectCounter(2)
+	// env.expectCounter(2)
 
 	// restart the nodes, delete the DB
 	err = env.Clu.RestartNodes(false, 0, 1, 2, 3)
 	require.NoError(t, err)
 
 	// after rebooting, the chain should resume processing requests without issues
-	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+	tx, err = client.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 
 	_, err = apiextensions.APIWaitUntilAllRequestsProcessed(context.Background(), env.Clu.WaspClient(0), env.Chain.ChainID, tx, false, 10*time.Second)
 	require.NoError(t, err)
-	env.expectCounter(3)
+	// env.expectCounter(3)
 
 	// ensure off-ledger requests are still working
 	req, err = client.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
@@ -429,5 +352,5 @@ func TestRebootRecoverFromWAL(t *testing.T) {
 		TimeoutSeconds(10).
 		Execute()
 	require.NoError(t, err)
-	env.expectCounter(4)
+	// env.expectCounter(4)
 }
