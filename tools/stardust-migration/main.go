@@ -29,6 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/tools/stardust-migration/bot"
@@ -130,6 +131,14 @@ func main() {
 								Name:  "hm-prefixes",
 								Usage: "Replace original prefixes in new dabase with human-readable strings.",
 							},
+							&cmd.StringFlag{
+								Name:  "panic-dest-key-suffix",
+								Usage: "Panic if destination db key ends with given hex string (works as AND with --panic-dest-value-prefix).",
+							},
+							&cmd.StringFlag{
+								Name:  "panic-dest-value-prefix",
+								Usage: "Panic if destination db value starts with given hex string (works as AND with --panic-dest-key-suffix).",
+							},
 						},
 						Before: processCommonFlags,
 						Action: migrateAllStates,
@@ -163,6 +172,8 @@ func main() {
 func processCommonFlags(c *cmd.Context) error {
 	if c.Bool("hm-prefixes") {
 		cli.Logf("WARNING: Using human-readable prefixes\n")
+
+		trie.KeyMaxLength = 512
 
 		accounts.PrefixAccountCoinBalances = "<coin_balances>"
 		accounts.PrefixAccountWeiRemainder = "<wei_remainder>"

@@ -88,7 +88,7 @@ func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, old
 
 func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
 	//panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
-	return oldBalanceFullDecimals
+	return big.NewInt(0).Mul(oldBalanceFullDecimals, big.NewInt(1_000))
 }
 
 func migrateBaseTokenBalances(
