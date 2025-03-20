@@ -1,12 +1,10 @@
 package main
 
 import (
-	"os"
 	"strings"
 
 	"github.com/samber/lo"
 
-	"github.com/pmezard/go-difflib/difflib"
 	cmd "github.com/urfave/cli/v2"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
@@ -105,29 +103,9 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 	cli.DebugLogf("Replacing new chain ID with constant placeholer for comparison...")
 	newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
 
-	if oldStateContentStr != newStateContentStr {
-		diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-			A:       difflib.SplitLines(oldStateContentStr),
-			B:       difflib.SplitLines(newStateContentStr),
-			Context: 2,
-		})
+	validation.EnsureEqual("states", oldStateContentStr, newStateContentStr)
 
-		cli.DebugLogf("States diff:\n%v\n", diff)
-	}
-
-	oldStateFilePath := os.TempDir() + "/stardust-migration-old-state.txt"
-	newStateFilePath := os.TempDir() + "/stardust-migration-new-state.txt"
-	cli.DebugLogf("Writing old and new states to files %v and %v\n", oldStateFilePath, newStateFilePath)
-
-	os.WriteFile(oldStateFilePath, []byte(oldStateContentStr), 0644)
-	os.WriteFile(newStateFilePath, []byte(newStateContentStr), 0644)
-
-	if oldStateContentStr == newStateContentStr {
-		cli.DebugLogf("States are equal\n")
-	} else {
-		cli.DebugLogf("States are NOT equal\n")
-		os.Exit(1)
-	}
+	cli.DebugLogf("States are equal\n")
 }
 
 func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID) string {

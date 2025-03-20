@@ -29,10 +29,10 @@ const (
 )
 
 func OldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
-	accsStr, _ := oldAccountsListToStr(contractState, chainID)
+	accsStr, accs := oldAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("Old accounts preview:\n%v\n", utils.MultilinePreview(accsStr))
 
-	baseTokenBalancesStr := oldBaseTokenBalancesToStr(contractState, chainID)
+	baseTokenBalancesStr := oldBaseTokenBalancesToStr(contractState, chainID, accs)
 	cli.DebugLogf("Old base token balances preview:\n%v\n", utils.MultilinePreview(baseTokenBalancesStr))
 
 	return accsStr + "\n" + baseTokenBalancesStr
@@ -102,11 +102,35 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 	return res, agentIDs
 }
 
-func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
+	balancesStr, accsWithBalances := oldBaseTokenBalancesFromPrefixToStr(contractState, chainID)
+
+	for accKey, balanceAgentID := range accsWithBalances {
+		knownAgentID, ok := knownAccs[accKey]
+		if !ok {
+			panic(fmt.Errorf("account has balance, but not found in accounts list: agentID = %v, accKey = %x / %v", oldAgentIDToStr(balanceAgentID), accKey, string(accKey)))
+		}
+
+		knownAgentIDStr := oldAgentIDToStr(knownAgentID)
+		balanceAgentIDStr := oldAgentIDToStr(balanceAgentID)
+		if knownAgentIDStr != balanceAgentIDStr {
+			panic(fmt.Errorf("differnt agent ID for same acc key: knownAgentID = %v, balanceAgentID = %v, accKey = %x / %v",
+				knownAgentIDStr, balanceAgentIDStr, accKey, string(accKey)))
+		}
+	}
+
+	cli.DebugLogf("All old base token balances are consistent with known accounts list\n")
+
+	return balancesStr
+}
+
+func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) (string, map[old_kv.Key]old_isc.AgentID) {
 	cli.DebugLogf("Reading old base token balances...\n")
 	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
 	defer clearProgress()
 	var balancesStr strings.Builder
+	accs := make(map[old_kv.Key]old_isc.AgentID)
+
 	count := 0
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
@@ -119,7 +143,9 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 		} else {
 			agentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))
 			accStr = oldAgentIDToStr(agentID)
+			accs[old_kv.Key(accKey)] = agentID
 		}
+
 		// NOTE: Using other logic from the one used in migration to improve validation quality.
 		balance := old_codec.MustDecodeBigIntAbs(v, big.NewInt(0))
 		balancesStr.WriteString("\tBase balance: ")
@@ -137,10 +163,11 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 	cli.DebugLogf("Formatting lines...\n")
 	res := fmt.Sprintf("Found %v base token balances:%v", count, utils.SortLines(balancesStr.String()))
 
-	return res
+	return res, accs
 }
 
 func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {
+	// Using two different ways of getting balances and ensuring they are equal - for double safety
 	baseFromPrefix, nativeFromPrefix := newTokenBalancesFromPrefixToStr(contractState, chainID)
 	baseFromMap, nativeFromMap := newTokenBalancesFromMapToStr(contractState, chainID, accs)
 
