@@ -16,7 +16,6 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -37,6 +36,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -48,7 +48,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
-
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
@@ -113,7 +112,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	//
 	// The first AO should be reported by L1/NodeConn to the nodes.
 	for _, tnc := range te.nodeConns {
-		tnc.recvAnchor(te.anchor)
+		tnc.recvAnchor(te.anchor, parameterstest.L1Mock)
 	}
 
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
@@ -121,7 +120,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	incCount := 10
 	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
 
-	for i := 0; i < incCount; i++ {
+	for i := range incCount {
 		assets := iscmove.NewAssets(10000000)
 		allowance := iscmove.NewAssets(assets.BaseToken() / 10)
 		one := int64(1)
@@ -193,7 +192,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			//
 			// For the unreliable-network tests we have to retry the requests.
 			// That's because the gossip in the mempool is primitive for now.
-			for ii := 0; ii < incCount; ii++ {
+			for ii := range incCount {
 				scRequest := isc.NewOffLedgerRequest(
 					te.chainID,
 					inccounter.FuncIncCounter.Message(nil),
@@ -270,16 +269,21 @@ func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate fun
 // testNodeConn
 
 type testNodeConn struct {
-	t           *testing.T
-	chainID     isc.ChainID
-	published   []*iscmove.AnchorWithRef
-	recvRequest chain.RequestHandler
-	recvAnchor  chain.AnchorHandler
-	attachWG    *sync.WaitGroup
+	t               *testing.T
+	chainID         isc.ChainID
+	published       []*iscmove.AnchorWithRef
+	recvRequest     chain.RequestHandler
+	recvAnchor      chain.AnchorHandler
+	attachWG        *sync.WaitGroup
+	l1ParamsFetcher parameters.L1ParamsFetcher
 
 	l1Client     clients.L1Client
 	l2Client     clients.L2Client
 	iscPackageID iotago.PackageID
+}
+
+func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
+	return tnc.l1ParamsFetcher
 }
 
 func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
@@ -290,12 +294,13 @@ var _ chain.NodeConnection = &testNodeConn{}
 
 func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotago.PackageID) *testNodeConn {
 	tnc := &testNodeConn{
-		t:            t,
-		published:    []*iscmove.AnchorWithRef{},
-		attachWG:     &sync.WaitGroup{},
-		l1Client:     l1Client,
-		l2Client:     l1Client.L2(),
-		iscPackageID: iscPackageID,
+		t:               t,
+		published:       []*iscmove.AnchorWithRef{},
+		attachWG:        &sync.WaitGroup{},
+		l1Client:        l1Client,
+		l2Client:        l1Client.L2(),
+		iscPackageID:    iscPackageID,
+		l1ParamsFetcher: parameters.NewL1ParamsFetcher(l1Client.IotaClient(), log.EmptyLogger),
 	}
 	tnc.attachWG.Add(1)
 	return tnc
@@ -375,7 +380,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	callback(tx, &stateAnchor, nil)
 
-	tnc.recvAnchor(&stateAnchor)
+	tnc.recvAnchor(&stateAnchor, parameterstest.L1Mock)
 	return nil
 }
 
@@ -437,6 +442,11 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic("failed to decode gas coin object: " + err.Error())
 		}
 
+		l1Params, err := tnc.l1ParamsFetcher.GetOrFetchLatest(ctx)
+		if err != nil {
+			panic(err)
+		}
+
 		ref := gasCoin.Data.Ref()
 		var l1Info cons_gr.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
@@ -444,7 +454,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 				Value: coin.Value(moveBalance.Balance),
 				Ref:   &ref,
 			}},
-			l1params: parameters.L1Default,
+			l1params: l1Params,
 		}
 
 		t <- l1Info

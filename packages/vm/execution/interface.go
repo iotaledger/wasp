@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -49,5 +50,5 @@ type WaspCallContext interface {
 	GasBudgetLeft() uint64
 	GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID
 	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
-	GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool)
+	GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool)
 }

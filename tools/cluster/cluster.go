@@ -59,6 +59,7 @@ type Cluster struct {
 	DataPath          string
 	OriginatorKeyPair *cryptolib.KeyPair
 	l1                clients.L1Client
+	l1ParamsFetcher   parameters.L1ParamsFetcher
 	waspCmds          []*waspCmd
 	t                 *testing.T
 	log               log.Logger
@@ -82,6 +83,7 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 	for i := range config.Wasp {
 		config.Wasp[i].PackageID = l1PacakgeID
 	}
+	client := config.L1Client()
 	return &Cluster{
 		Name:              name,
 		Config:            config,
@@ -89,7 +91,8 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                config.L1Client(),
+		l1:                client,
+		l1ParamsFetcher:   parameters.NewL1ParamsFetcher(client.IotaClient(), log),
 		DataPath:          dataPath,
 	}
 }
@@ -321,6 +324,11 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 	fmt.Printf("chosen GasCoin %s", gascoin.String())
 
+	l1Params, err := clu.l1ParamsFetcher.GetOrFetchLatest(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cant get L1Params: %w", err)
+	}
+
 	stateMetaData := *transaction.NewStateMetadata(
 		allmigrations.DefaultScheme.LatestSchemaVersion(),
 		origin.L1Commitment(
@@ -328,7 +336,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			encodedInitParams,
 			*gascoin.CoinObjectID,
 			0,
-			isc.BaseTokenCoinInfo,
+			l1Params,
 		),
 		gascoin.CoinObjectID,
 		gas.DefaultFeePolicy(),
@@ -909,7 +917,7 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balance := isc.NewEmptyAssets()
 	for _, out := range balances {
-		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.BaseTokenDefault.CoinType) == 0 {
+		if coin.BaseTokenType.MatchesStringType(out.CoinType.String()) {
 			balance.SetBaseTokens(coin.Value(out.TotalBalance.Uint64()))
 		} else {
 			balance.AddCoin(coin.MustTypeFromString(out.CoinType.String()), coin.Value(out.TotalBalance.Uint64()))

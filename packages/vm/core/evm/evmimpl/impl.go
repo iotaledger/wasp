@@ -303,7 +303,7 @@ func AddDummyTxWithTransferEvents(
 
 	nonce := uint64(0)
 	chainInfo := ctx.ChainInfo()
-	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.

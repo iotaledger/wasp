@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -54,7 +55,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	chainID := isctest.RandomChainID()
 	chainIDObjID := chainID.AsObjectID()
 	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	originCommitment := originBlock.L1Commitment()
 	originStateMetadata := transaction.NewStateMetadata(
 		allmigrations.LatestSchemaVersion,
@@ -138,11 +139,11 @@ func (bfT *BlockFactory) GetChainInitParameters() isc.CallArguments {
 }
 
 func (bfT *BlockFactory) GetOriginAnchor() *isc.StateAnchor {
-	return bfT.GetAnchor(origin.L1Commitment(allmigrations.LatestSchemaVersion, bfT.chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo))
+	return bfT.GetAnchor(origin.L1Commitment(allmigrations.LatestSchemaVersion, bfT.chainInitParams, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 }
 
 func (bfT *BlockFactory) GetOriginBlock() state.Block {
-	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(allmigrations.LatestSchemaVersion, bfT.chainInitParams, iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo).TrieRoot())
+	block, err := bfT.store.BlockByTrieRoot(origin.L1Commitment(allmigrations.LatestSchemaVersion, bfT.chainInitParams, iotago.ObjectID{}, 0, parameterstest.L1Mock).TrieRoot())
 	require.NoError(bfT.t, err)
 	return block
 }
@@ -197,7 +198,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	} else {
 		increment = 1
 	}
-	counterBin = codec.Encode[uint64](counter + increment)
+	counterBin = codec.Encode(counter + increment)
 	stateDraft.Mutations().Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
 	newCommitment := block.L1Commitment()

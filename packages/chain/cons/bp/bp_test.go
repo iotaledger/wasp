@@ -15,9 +15,8 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -56,7 +55,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 			Value: coin.Value(100),
 			Ref:   iotatest.RandomObjectRef(),
 		}},
-		parameters.L1Default,
+		parameterstest.L1Mock,
 	)
 	bp0.Bytes()
 	abpInputs := map[gpa.NodeID][]byte{

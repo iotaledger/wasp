@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -76,7 +77,7 @@ func (s *SandboxBase) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	return s.Ctx.GetObjectBCS(id)
 }
 
-func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
+func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {
 	s.Ctx.GasBurn(gas.BurnCodeGetCoinInfo)
 	return s.Ctx.GetCoinInfo(coinType)
 }
@@ -140,7 +141,7 @@ func (s *SandboxBase) EstimateGasMode() bool {
 }
 
 // -- helper methods
-func (s *SandboxBase) Requiref(cond bool, format string, args ...interface{}) {
+func (s *SandboxBase) Requiref(cond bool, format string, args ...any) {
 	s.assert().Requiref(cond, format, args...)
 }
 

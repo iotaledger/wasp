@@ -23,7 +23,7 @@ func (s *StateReader) getBaseTokens(accountKey kv.Key) (baseTokens coin.Value, r
 
 func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
 	baseTokens, remainderWei := s.getBaseTokens(accountKey)
-	wei := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.Decimals)
+	wei := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.BaseTokenDecimals)
 	wei.Add(wei, remainderWei)
 	return wei
 }
@@ -37,7 +37,7 @@ func (s *StateWriter) setBaseTokens(accountKey kv.Key, baseTokens coin.Value, re
 }
 
 func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, wei *big.Int) {
-	baseTokens, remainderWei := util.EthereumDecimalsToBaseTokenDecimals(wei, parameters.Decimals)
+	baseTokens, remainderWei := util.EthereumDecimalsToBaseTokenDecimals(wei, parameters.BaseTokenDecimals)
 	s.setBaseTokens(accountKey, baseTokens, remainderWei)
 }
 

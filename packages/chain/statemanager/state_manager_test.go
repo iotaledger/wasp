@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -86,7 +87,7 @@ func TestCruelWorld(t *testing.T) {
 		logNode := log.NewChildLogger(peeringURLs[i])
 		stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
-		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
 			context.Background(),
@@ -115,7 +116,7 @@ func TestCruelWorld(t *testing.T) {
 
 	// Send blocks to nodes (consensus mock)
 	sendBlockResults := make([]<-chan bool, committeeSize)
-	for i := 0; i < committeeSize; i++ {
+	for i := range committeeSize {
 		ii := i
 		sendBlockResults[i] = makeNRequestsVarDelay(blockCount, func() time.Duration {
 			return time.Duration(rand.Intn(maxMinWaitsToProduceBlock)+1) * minWaitToProduceBlock
@@ -186,7 +187,7 @@ func TestCruelWorld(t *testing.T) {
 				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], expectedAddedLength, len(results.GetAdded()))
 			return false
 		}
-		for i := 0; i < len(results.GetAdded()); i++ {
+		for i := range results.GetAdded() {
 			if !results.GetAdded()[i].Equals(blocks[oldBlockIndex+i+1]) {
 				t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong %v-th element of added array: expected commitment %v, received %v",
 					newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], i, blocks[oldBlockIndex+i+1].L1Commitment(), results.GetAdded()[i].L1Commitment())
@@ -236,7 +237,7 @@ func makeNRequests(count int, delay time.Duration, makeRequestFun func(int) bool
 func makeNRequestsVarDelay(count int, getDelayFun func() time.Duration, makeRequestFun func(int) bool) <-chan bool {
 	responseCh := make(chan bool, 1)
 	go func() {
-		for i := 0; i < count; i++ {
+		for i := range count {
 			if !makeRequestFun(i) {
 				responseCh <- false
 				return

@@ -14,7 +14,6 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	hivelog "github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -27,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
@@ -136,7 +136,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, isc.BaseTokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, parameterstest.L1Mock)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
@@ -293,7 +293,7 @@ type testStateMgr struct {
 	lock       *sync.Mutex
 	chainStore state.Store
 	states     map[hashing.HashValue]state.State
-	qProposal  map[hashing.HashValue]chan interface{}
+	qProposal  map[hashing.HashValue]chan any
 	qDecided   map[hashing.HashValue]chan state.State
 }
 
@@ -303,7 +303,7 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 		lock:       &sync.Mutex{},
 		chainStore: chainStore,
 		states:     map[hashing.HashValue]state.State{},
-		qProposal:  map[hashing.HashValue]chan interface{}{},
+		qProposal:  map[hashing.HashValue]chan any{},
 		qDecided:   map[hashing.HashValue]chan state.State{},
 	}
 }
@@ -326,10 +326,10 @@ func (tsm *testStateMgr) addState(aliasOutput *isc.StateAnchor, chainState state
 	tsm.tryRespond(hash)
 }
 
-func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.StateAnchor) <-chan interface{} {
+func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.StateAnchor) <-chan any {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
-	resp := make(chan interface{}, 1)
+	resp := make(chan any, 1)
 	hash := commitmentHashFromAO(aliasOutput)
 	tsm.qProposal[hash] = resp
 	tsm.tryRespond(hash)
@@ -401,7 +401,7 @@ func (t *testNodeConn) ConsensusL1InfoProposal(ctx context.Context, anchor *isc.
 	ch := make(chan consGR.NodeConnL1Info, 1)
 	ch <- &testNodeConnL1Info{
 		gasCoins: []*coin.CoinWithRef{t.gasCoin},
-		l1params: parameters.L1Default,
+		l1params: parameterstest.L1Mock,
 	}
 	close(ch)
 	return ch
