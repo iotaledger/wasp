@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -60,7 +59,6 @@ type NodeConnection interface {
 	Run(ctx context.Context) error
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
-	GetL1Params() *parameters.L1Params
 
 	ConsensusL1InfoProposal(
 		ctx context.Context,
@@ -106,7 +104,7 @@ type ChainCore interface {
 	Log() log.Logger
 }
 
-type ConsensusPipeMetrics interface { // TODO: Review it.
+type ConsensusPipeMetrics interface {
 	GetEventStateTransitionMsgPipeSize() int
 	GetEventPeerLogIndexMsgPipeSize() int
 	GetEventACSMsgPipeSize() int
@@ -114,7 +112,7 @@ type ConsensusPipeMetrics interface { // TODO: Review it.
 	GetEventTimerMsgPipeSize() int
 }
 
-type ConsensusWorkflowStatus interface { // TODO: Review it.
+type ConsensusWorkflowStatus interface {
 	IsStateReceived() bool
 	IsBatchProposalSent() bool
 	IsConsensusBatchKnown() bool

@@ -65,7 +65,6 @@ func (c *Controller) updateUserPermissions(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	// TODO: Later on, compare the permissions with the permission Wasp actually uses.
 	if err := c.userService.UpdateUserPermissions(userName, updateUserPermissionsModel.Permissions); err != nil {
 		return apierrors.UserNotFoundError(userName)
 	}

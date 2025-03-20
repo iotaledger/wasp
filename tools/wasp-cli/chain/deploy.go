@@ -151,7 +151,6 @@ func initDeployCmd() *cobra.Command {
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 
-			// TODO: We need to decide if we want to deploy a new contract for each new chain, or use one constant for it.
 			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
 

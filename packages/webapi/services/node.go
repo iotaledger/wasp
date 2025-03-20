@@ -36,7 +36,7 @@ func NewNodeService(
 	}
 }
 
-func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error { // TODO: Check the caller for param names.
+func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string
 	return nil
 }
 
-func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error { // TODO: Check the caller for param names.
+func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err

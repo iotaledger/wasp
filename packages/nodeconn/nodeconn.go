@@ -223,7 +223,6 @@ func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID i
 	}
 }
 
-// TODO is this still needed?
 func (nc *nodeConnection) Run(ctx context.Context) error {
 	<-ctx.Done()
 	return nil
@@ -246,11 +245,6 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 			return nil
 		}
 	}
-}
-
-func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
-	panic("TODO")
-	// return nc.l1Params
 }
 
 // GetChain returns the chain if it was registered, otherwise it returns an error.

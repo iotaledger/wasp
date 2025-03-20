@@ -38,7 +38,7 @@ func (c *Controller) handleOffLedgerRequest(e echo.Context) error {
 
 	err = c.offLedgerService.EnqueueOffLedgerRequest(chainID, requestDecoded)
 	if err != nil {
-		return apierrors.ContractExecutionError(err) // TODO contract execution error? doesn't seem right...
+		return apierrors.InvalidOffLedgerRequestError(err)
 	}
 
 	return e.NoContent(http.StatusAccepted)

@@ -290,7 +290,6 @@ func TestSubscribeEvent(t *testing.T) {
 				cnt := 0
 				for results := range tt.args.resultCh {
 					fmt.Println("results: ", results)
-					// FIXME we need to check finite number request in details
 					cnt++
 					if cnt > 3 {
 						break
@@ -355,7 +354,6 @@ func TestSubscribeTransaction(t *testing.T) {
 				cnt := 0
 				for results := range tt.args.resultCh {
 					fmt.Println("results: ", results.Data.V1)
-					// FIXME we need to check finite number request in details
 					cnt++
 					if cnt > 3 {
 						break

@@ -282,11 +282,6 @@ type testNodeConn struct {
 	iscPackageID iotago.PackageID
 }
 
-func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
-	// TODO implement me
-	panic("implement me")
-}
-
 func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
 	panic("implement me")
 }

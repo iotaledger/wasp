@@ -31,7 +31,6 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []iotago.ObjectID) {
 	for _, id := range objectIDs {
 		// TODO: Try to get the Objects data, for now just storing the ID
-
 		rec := accounts.ObjectRecord{
 			ID:  id,
 			BCS: []byte{},

@@ -92,7 +92,7 @@ type Chain interface {
 	RotateTo(address *iotago.Address)
 	// Metrics and the current descriptive state.
 	GetChainMetrics() *metrics.ChainMetrics
-	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
+	GetConsensusPipeMetrics() ConsensusPipeMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 	GetMempoolContents() io.Reader
 }
@@ -396,7 +396,7 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
 	}
-	// TODO does it make sense to pass itself (own pub key) here?
+
 	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
 	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
 	stateMgr, err := statemanager.New(
