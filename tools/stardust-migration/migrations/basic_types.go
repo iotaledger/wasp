@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
-var newSchema isc.SchemaVersion = allmigrations.SchemaVersionIotaRebased
+var newSchema isc.SchemaVersion = allmigrations.SchemaVersionMigratedRebased
 
 func OldHnameToNewHname(oldHname old_isc.Hname) isc.Hname {
 	return isc.Hname(oldHname)

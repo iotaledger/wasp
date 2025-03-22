@@ -33,11 +33,24 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
+// Fakes the previous anchor id to be the state index (for debugging)
+func Uint32ToAddress(value uint32) iotago.ObjectID {
+	var addr iotago.Address
+
+	addr[0] = uint8(value >> 24)
+	addr[1] = uint8(value >> 16)
+	addr[2] = uint8(value >> 8)
+	addr[3] = uint8(value)
+
+	return addr
+}
+
 func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareConfiguration, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
+	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(blockIndex + 1)
 
-	oldBlock := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry).GetAt(blockIndex)
+	oldBlock := oldBlocks.GetAt(blockIndex)
 
 	// TODO: Find a good solution for the PreviousAnchor that we don't have. Can it just be zero'd?
 	// TODO: Find proper default values for the L1Params
@@ -72,22 +85,25 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 		panic(fmt.Errorf("blockRegistry migration error: %v", err))
 	}
 
-	// The following two structs will need some love regarding IDs, but we probably can fake most of them
-	migrationStateAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+	previousAnchorIndex := Uint32ToAddress(blockIndex - 1)
+
+	// This is a reference to the PREVIOUS anchor.
+	// Which means its state index - 1, and the past StateMetadata too!
+	// TODO: Store past StateMetadata to add it here.
+	migrationPreviousAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
 		Object: &iscmove.Anchor{
 			Assets: iscmove.Referent[iscmove.AssetsBag]{ID: *prepareConfig.AssetsBagID, Value: &iscmove.AssetsBag{
 				ID:   iotago.ObjectID{},
 				Size: 0,
 			}},
-			ID:            *prepareConfig.AnchorID,
-			StateIndex:    blockIndex,
+			ID:            previousAnchorIndex,
+			StateIndex:    blockIndex - 1,
 			StateMetadata: stateMetadata.Bytes(),
 		},
 		ObjectRef: iotago.ObjectRef{
-			ObjectID: prepareConfig.AnchorID,
-			// TODO: Fix digest
-			Digest:  iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
-			Version: 0,
+			ObjectID: &previousAnchorIndex,
+			Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
+			Version:  0,
 		},
 		Owner: prepareConfig.ChainOwner.AsIotaAddress(),
 	}, prepareConfig.PackageID)
@@ -101,7 +117,7 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 		SchemaVersion:         oldBlockInfo.SchemaVersion,
 		Timestamp:             oldBlockInfo.Timestamp,
 		TotalRequests:         oldBlockInfo.TotalRequests,
-		PreviousAnchor:        &migrationStateAnchor,
+		PreviousAnchor:        &migrationPreviousAnchor,
 		L1Params:              defaultL1Params,
 	}
 

@@ -29,7 +29,7 @@ func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
 }
 
 func (s *StateWriter) setBaseTokens(accountKey kv.Key, baseTokens coin.Value, remainderWei *big.Int) {
-	if s.v < allmigrations.SchemaVersionIotaRebased {
+	if s.v < allmigrations.SchemaVersionMigratedRebased {
 		panic("unsupported schema version")
 	}
 	s.setCoinBalance(accountKey, coin.BaseTokenType, baseTokens)
