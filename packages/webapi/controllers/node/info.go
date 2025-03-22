@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
@@ -28,12 +28,15 @@ func (c *Controller) getPublicInfo(e echo.Context) error {
 
 func (c *Controller) getInfo(e echo.Context) error {
 	identity := c.peeringService.GetIdentity()
-	l1Params := parameters.L1()
+	l1Params, err := c.nodeService.L1Params(e.Request().Context())
+	if err != nil {
+		return apierrors.NewHTTPError(http.StatusInternalServerError, err.Error(), nil)
+	}
 
 	return e.JSON(http.StatusOK, &models.InfoResponse{
 		Version:    c.waspVersion,
 		PublicKey:  identity.PublicKey.String(),
 		PeeringURL: identity.PeeringURL,
-		L1Params:   models.MapL1Params(l1Params),
+		L1Params:   l1Params,
 	})
 }

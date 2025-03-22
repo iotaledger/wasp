@@ -11,9 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
-
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -30,7 +29,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
@@ -62,14 +60,14 @@ func initDeployMoveContractCmd() *cobra.Command {
 	return cmd
 }
 
-func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
+func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID, l1Params *parameters.L1Params) *transaction.StateMetadata {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, l1Params)
 	return stateMetadata
 }
 
-func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
+func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address, l1Params *parameters.L1Params) (iotago.ObjectID, error) {
 	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, fmt.Errorf("GasCoin with targeting blanace not found: %w", err)
@@ -92,7 +90,7 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
 		uint64(isc.GasCoinTargetValue),
-		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
+		l1Params.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)
@@ -156,10 +154,13 @@ func initDeployCmd() *cobra.Command {
 
 			committeeAddr := doDKG(ctx, node, peers, quorum)
 
-			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress())
+			l1Params, err := parameters.FetchLatest(context.Background(), l1Client.IotaClient())
 			log.Check(err)
 
-			stateMetadata := initializeNewChainState(committeeAddr, gasCoin)
+			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress(), l1Params)
+			log.Check(err)
+
+			stateMetadata := initializeNewChainState(committeeAddr, gasCoin, l1Params)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,

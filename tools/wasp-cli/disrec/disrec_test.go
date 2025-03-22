@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
@@ -48,7 +49,9 @@ func TestCreateTX(t *testing.T) {
 	ptb = iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, packageID, committeeAddress)
 
 	t.Log("Creating new coin and transfer it to the Committee address")
-	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, committeeAddress.AsIotaAddress()))
+
+	l1Params := lo.Must(parameters.FetchLatest(context.Background(), client.IotaClient()))
+	newGasCoinAddress := lo.Must(chain.CreateAndSendGasCoin(context.Background(), client, wallet, committeeAddress.AsIotaAddress(), l1Params))
 
 	gasCoin := lo.Must(client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: &newGasCoinAddress,

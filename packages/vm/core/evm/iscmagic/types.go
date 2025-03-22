@@ -13,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 func init() {
@@ -244,7 +245,7 @@ type IotaCoinInfo struct {
 	TotalSupply CoinValue
 }
 
-func WrapIotaCoinInfo(info *isc.IotaCoinInfo) IotaCoinInfo {
+func WrapIotaCoinInfo(info *parameters.IotaCoinInfo) IotaCoinInfo {
 	return IotaCoinInfo{
 		CoinType:    CoinType(info.CoinType.String()),
 		Decimals:    info.Decimals,

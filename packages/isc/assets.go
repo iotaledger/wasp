@@ -87,7 +87,7 @@ func (c CoinBalances) NativeTokens() CoinBalances {
 
 	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		// Exclude BaseTokens
-		if BaseTokenCoinInfo.CoinType.MatchesStringType(t.String()) {
+		if coin.BaseTokenType.MatchesStringType(t.String()) {
 			return true
 		}
 

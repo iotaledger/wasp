@@ -306,7 +306,7 @@ func AddDummyTxWithTransferEvents(
 
 	nonce := uint64(0)
 	chainInfo := ctx.ChainInfo()
-	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
+	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 
 	if ctx.SchemaVersion() <= allmigrations.SchemaVersionMigratedRebased {
 		gasPrice.Mul(gasPrice, new(big.Int).SetUint64(uint64(1000)))

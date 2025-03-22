@@ -24,7 +24,7 @@ func TestDepositWithdraw(t *testing.T) { // passed
 	require.True(t, e.Clu.AssertAddressBalances(userAddr, isc.NewAssets(iotaclient.FundsFromFaucetAmount)))
 
 	myAgentID := isc.NewAddressAgentID(userAddr)
-	e.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, 0)
+	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, 0)
 
 	// deposit some base tokens to the chain
 	var depositBaseTokens coin.Value = 10 * isc.Million
@@ -44,7 +44,7 @@ func TestDepositWithdraw(t *testing.T) { // passed
 	require.NoError(t, err)
 
 	var onChainBalance coin.Value = depositBaseTokens - coin.Value(gasFees1)
-	e.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance)
+	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, onChainBalance)
 	require.True(t,
 		e.Clu.AssertAddressBalances(userAddr, isc.NewAssets(iotaclient.FundsFromFaucetAmount-depositBaseTokens-coin.Value(reqTx.Effects.Data.GasFee()))),
 	)
@@ -63,7 +63,7 @@ func TestDepositWithdraw(t *testing.T) { // passed
 	gasFees2, err := util.DecodeUint64(receipt.GasFeeCharged)
 	require.NoError(t, err)
 
-	e.checkBalanceOnChain(myAgentID, isc.BaseTokenCoinInfo.CoinType, onChainBalance-baseTokensToWithdraw-coin.Value(gasFees2))
+	e.checkBalanceOnChain(myAgentID, coin.BaseTokenType, onChainBalance-baseTokensToWithdraw-coin.Value(gasFees2))
 	require.True(t,
 		e.Clu.AssertAddressBalances(userAddr, isc.NewAssets(iotaclient.FundsFromFaucetAmount-depositBaseTokens+baseTokensToWithdraw-coin.Value(reqTx.Effects.Data.GasFee()))),
 	)
