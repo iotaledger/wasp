@@ -5,7 +5,6 @@ package evmimpl
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
