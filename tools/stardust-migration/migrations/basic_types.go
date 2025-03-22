@@ -10,6 +10,7 @@ import (
 	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -148,9 +149,9 @@ func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	return coin.BaseTokenType
 }
 
-func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) isc.IotaCoinInfo {
+func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
 	//panic("TODO: Not implemented")
-	return isc.IotaCoinInfo{
+	return parameters.IotaCoinInfo{
 		CoinType:    coin.BaseTokenType,
 		Decimals:    6,
 		Name:        "DUMMY",

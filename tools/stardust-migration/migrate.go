@@ -144,7 +144,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, con
 
 func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
-	_, stateMetadata := origin.InitChain(allmigrations.SchemaVersionMigratedRebased, store, initParams, gasCoinObject, isc.GasCoinTargetValue, isc.BaseTokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.SchemaVersionMigratedRebased, store, initParams, gasCoinObject, isc.GasCoinTargetValue, parameterstest.L1Mock)
 	return stateMetadata
 }
 

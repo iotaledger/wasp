@@ -6,6 +6,8 @@ import (
 	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
+	"github.com/iotaledger/wasp/packages/parameters"
+
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
@@ -227,7 +229,7 @@ func migrateFoundriesPerAccount(
 func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore) {
 	cli.DebugLogf("Migrating native token outputs...\n")
 
-	migrateEntry := func(ntID old_iotago.NativeTokenID, rec *old_accounts.NativeTokenOutputRec) (coin.Type, *isc.IotaCoinInfo) {
+	migrateEntry := func(ntID old_iotago.NativeTokenID, rec *old_accounts.NativeTokenOutputRec) (coin.Type, *parameters.IotaCoinInfo) {
 		coinType := OldNativeTokenIDtoNewCoinType(ntID)
 		if rec == nil {
 			return coinType, nil

@@ -7,6 +7,11 @@ import (
 
 	"github.com/samber/lo"
 
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -18,10 +23,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
-	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 )
 
 const (
@@ -222,7 +223,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 		var balanceStr string
 		var strBuilder *strings.Builder
 		if coinType == coin.BaseTokenType {
-			balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(balance, parameters.Decimals)
+			balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(balance, parameters.BaseTokenDecimals)
 
 			var remeinder *big.Int
 			if remeinderBytes := contractState.Get(accounts.AccountWeiRemainderKey(accKey)); remeinderBytes != nil {
@@ -277,7 +278,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 		var strBuilder *strings.Builder
 
 		if coinType == coin.BaseTokenType {
-			balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(balance, parameters.Decimals)
+			balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(balance, parameters.BaseTokenDecimals)
 
 			var remeinder *big.Int
 			if remeinderBytes := contractState.Get(accounts.AccountWeiRemainderKey(accKey)); remeinderBytes != nil {
