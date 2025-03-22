@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
 )
 
-func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address) (iotago.ObjectID, error) {
+func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet wallets.Wallet, committeeAddress *iotago.Address, l1Params *parameters.L1Params) (iotago.ObjectID, error) {
 	coins, err := client.GetCoinObjsForTargetAmount(ctx, wallet.Address().AsIotaAddress(), isc.GasCoinTargetValue, isc.GasCoinTargetValue)
 	if err != nil {
 		return iotago.ObjectID{}, err
@@ -38,7 +38,7 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
 		uint64(isc.GasCoinTargetValue),
-		parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
+		l1Params.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)

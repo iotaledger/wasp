@@ -24,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/migration"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -183,8 +184,11 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	})
 	log.Check(err)
 
+	l1Params, err := parameters.FetchLatest(context.Background(), l1Client.IotaClient())
+	log.Check(err)
+
 	fmt.Println("Creating GasCoin")
-	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, kp.Address().AsIotaAddress())
+	gasCoin, err := cliutil.CreateAndSendGasCoin(ctx, l1Client, kp, kp.Address().AsIotaAddress(), l1Params)
 
 	log.Check(err)
 

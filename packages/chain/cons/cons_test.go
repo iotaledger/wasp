@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
@@ -23,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -72,19 +71,10 @@ func testConsBasic(t *testing.T, n, f int) {
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
-	tokenCoinInfo := isc.IotaCoinInfo{
-		CoinType:    lo.Must(coin.TypeFromString("0x0000000000000000000000000000000000000000000000000000000000000002::iota::IOTA")),
-		Name:        "IOTA",
-		Decimals:    9,
-		Symbol:      "IOTA",
-		Description: "Foo",
-		IconURL:     "Foo",
-	}
-
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, &tokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 
 	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
 	stateAnchor0 := &stateAnchor0x
@@ -163,7 +153,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, &tokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, parameterstest.L1Mock)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(
 			chainID,
@@ -201,7 +191,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputMempoolProposal(reqRefs))
 		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
 		tc.WithInput(nid, cons.NewInputTimeData(now))
-		tc.WithInput(nid, cons.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameters.L1Default))
+		tc.WithInput(nid, cons.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameterstest.L1Mock))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)

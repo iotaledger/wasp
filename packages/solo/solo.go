@@ -14,12 +14,10 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
-
-	bcs "github.com/iotaledger/bcs-go"
-
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -67,6 +65,7 @@ type Solo struct {
 	publisher            *publisher.Publisher
 	ctx                  context.Context
 	mockTime             time.Time
+	l1ParamsFetcher      parameters.L1ParamsFetcher
 
 	l1Config L1Config
 }
@@ -156,11 +155,6 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		}
 	}
 
-	err := parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
-	if err != nil {
-		panic(err)
-	}
-
 	ctx, cancelCtx := context.WithCancel(context.Background())
 	t.Cleanup(cancelCtx)
 
@@ -173,6 +167,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
 		seed:                 cryptolib.NewSeed(),
 		publisher:            publisher.New(opt.Log.NewChildLogger("publisher")),
+		l1ParamsFetcher:      parameters.NewL1ParamsFetcher(l1starter.Instance().L1Client().IotaClient(), opt.Log),
 		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
@@ -296,8 +291,6 @@ func (env *Solo) deployChain(
 		true,
 	)
 
-	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
-
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
@@ -315,7 +308,7 @@ func (env *Solo) deployChain(
 		initParams.Encode(),
 		*gasCoinRef.ObjectID,
 		initCommonAccountBaseTokens,
-		baseTokenCoinInfo,
+		env.L1Params(),
 	)
 
 	var initCoin *iotago.ObjectRef
@@ -570,12 +563,12 @@ func (ch *Chain) Processors() *processors.Config {
 
 // ---------------------------------------------
 
-func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.IotaCoinInfo {
+func (env *Solo) L1CoinInfo(coinType coin.Type) *parameters.IotaCoinInfo {
 	md, err := env.L1Client().GetCoinMetadata(env.ctx, coinType.String())
 	require.NoError(env.T, err)
 	ts, err := env.L1Client().GetTotalSupply(env.ctx, coinType.String())
 	require.NoError(env.T, err)
-	return isc.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
+	return parameters.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
 
 func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
@@ -761,4 +754,10 @@ func (env *Solo) L1MintCoin(
 		treasuryCapObject,
 		mintAmount,
 	)
+}
+
+func (env *Solo) L1Params() *parameters.L1Params {
+	l1Params, err := env.l1ParamsFetcher.GetOrFetchLatest(env.ctx)
+	require.NoError(env.T, err)
+	return l1Params
 }

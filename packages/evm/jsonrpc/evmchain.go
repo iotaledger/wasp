@@ -222,7 +222,7 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, tx *typ
 			"sender doesn't have enough L2 funds to cover tx gas budget. Balance: %d (can afford %d ISC gas units), expected: %d (%d ISC gas units)",
 			balanceFullDecimals,
 			iscGasBudgetAffordable,
-			util.BaseTokensDecimalsToEthereumDecimals(gasFeePolicy.FeeFromGas(iscGasBudgetTx, tx.GasPrice(), parameters.Decimals), parameters.Decimals),
+			util.BaseTokensDecimalsToEthereumDecimals(gasFeePolicy.FeeFromGas(iscGasBudgetTx, tx.GasPrice(), parameters.BaseTokenDecimals), parameters.BaseTokenDecimals),
 			iscGasBudgetTx,
 		)
 	}
@@ -515,7 +515,7 @@ func (e *EVMChain) EstimateGas(callMsg ethereum.CallMsg, blockNumberOrHash *rpc.
 
 func (e *EVMChain) GasPrice() *big.Int {
 	e.log.LogDebugf("GasPrice()")
-	return e.GasFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
+	return e.GasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 }
 
 func (e *EVMChain) StorageAt(address common.Address, key common.Hash, blockNumberOrHash *rpc.BlockNumberOrHash) (common.Hash, error) {
@@ -639,11 +639,6 @@ func filterAndAppendToLogs(query *ethereum.FilterQuery, receipts []*types.Receip
 		}
 	}
 	return nil
-}
-
-func (e *EVMChain) BaseToken() *parameters.BaseToken {
-	e.log.LogDebugf("BaseToken()")
-	return e.backend.BaseToken()
 }
 
 func (e *EVMChain) SubscribeNewHeads(ch chan<- *types.Header) (unsubscribe func()) {

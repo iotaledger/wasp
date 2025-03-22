@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
@@ -57,7 +57,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 		txb.Finish(),
 		[]*iotago.ObjectRef{primaryCoin.Ref()},
 		iotaclient.DefaultGasBudget,
-		parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
+		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)
@@ -123,7 +123,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
 	var testCoinRef []*iotago.ObjectRef
-	for i := 0; i < 25+26; i++ {
+	for range 25 + 26 {
 		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
 		time.Sleep(3 * time.Second)
 		testCoinRef = append(testCoinRef, coinRef)
@@ -160,7 +160,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
-		for i := 0; i < 25; i++ {
+		for i := range 25 {
 			getCoinRef, err := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
@@ -226,7 +226,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
-		for i := 0; i < 26; i++ {
+		for i := range 26 {
 			getCoinRef, err := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{

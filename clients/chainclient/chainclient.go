@@ -16,7 +16,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
@@ -52,6 +51,7 @@ type PostRequestParams struct {
 	NFT         *isc.NFT
 	Allowance   *isc.Assets
 	GasBudget   uint64
+	GasPrice    uint64
 	L2GasBudget uint64
 }
 
@@ -60,6 +60,13 @@ func (par *PostRequestParams) GetGasBudget() uint64 {
 		return math.MaxUint64
 	}
 	return par.GasBudget
+}
+
+func (par *PostRequestParams) GetGasPrice() uint64 {
+	if par.GasPrice == 0 {
+		return iotaclient.DefaultGasPrice
+	}
+	return par.GasPrice
 }
 
 func (par *PostRequestParams) GetL2GasBudget() uint64 {
@@ -97,7 +104,7 @@ func (c *Client) PostMultipleRequests(
 ) ([]*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	var err error
 	txRes := make([]*iotajsonrpc.IotaTransactionBlockResponse, requestsCount)
-	for i := 0; i < requestsCount; i++ {
+	for i := range requestsCount {
 		txRes[i], err = c.postSingleRequest(ctx, msg, params[i])
 		if err != nil {
 			return nil, err
@@ -138,7 +145,7 @@ func (c *Client) postSingleRequest(
 			Message:          msg,
 			Allowance:        allowances,
 			OnchainGasBudget: params.GetL2GasBudget(),
-			GasPrice:         parameters.L1().Protocol.ReferenceGasPrice.Uint64(),
+			GasPrice:         params.GetGasPrice(),
 			GasBudget:        params.GetGasBudget(),
 		},
 	)

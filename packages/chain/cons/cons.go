@@ -18,9 +18,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	bcs "github.com/iotaledger/bcs-go"
-
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
@@ -601,11 +599,10 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	gasCoin := gasCoins[0]
 
 	c.output.NeedVMResult = &vm.VMTask{
-		Processors: c.processorCache,
-		Anchor:     &stateAnchor,
-		GasCoin:    gasCoin,
-		// FIXME pass we l1param to this func instead of calling parameters.L1()
-		L1Params:             parameters.L1(),
+		Processors:           c.processorCache,
+		Anchor:               &stateAnchor,
+		GasCoin:              gasCoin,
+		L1Params:             aggregatedProposals.AggregatedL1Params(),
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		Timestamp:            aggregatedProposals.AggregatedTime(),

@@ -59,24 +59,22 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 	// -> Same for the MaxPayloadSize
 	const MAX_PAYLOAD_SIZE = 1024
 	defaultL1Params := &parameters.L1Params{
-		BaseToken: &parameters.BaseToken{
-			Name:            isc.BaseTokenCoinInfo.Name,
-			TickerSymbol:    isc.BaseTokenCoinInfo.Symbol,
-			Unit:            "",
-			Subunit:         "",
-			Decimals:        isc.BaseTokenCoinInfo.Decimals,
-			UseMetricPrefix: false,
-			CoinType:        coin.BaseTokenType,
-			TotalSupply:     isc.BaseTokenCoinInfo.TotalSupply.Uint64(),
+		BaseToken: &parameters.IotaCoinInfo{
+			CoinType:    coin.BaseTokenType,
+			Name:        "Iota",
+			Symbol:      "IOTA",
+			Description: "IOTA",
+			IconURL:     "http://iota.org",
+			Decimals:    parameters.BaseTokenDecimals,
+			TotalSupply: 9978371123948460000,
 		},
 		Protocol: &parameters.Protocol{
-			Epoch:                 iotajsonrpc.NewBigInt(0),
-			ProtocolVersion:       iotajsonrpc.NewBigInt(0),
-			SystemStateVersion:    iotajsonrpc.NewBigInt(0),
-			IotaTotalSupply:       iotajsonrpc.NewBigInt(0),
-			ReferenceGasPrice:     iotajsonrpc.NewBigInt(0),
-			EpochStartTimestampMs: iotajsonrpc.NewBigInt(0),
-			EpochDurationMs:       iotajsonrpc.NewBigInt(0),
+			Epoch:                 iotajsonrpc.NewBigInt(100),
+			ProtocolVersion:       iotajsonrpc.NewBigInt(1),
+			SystemStateVersion:    iotajsonrpc.NewBigInt(1),
+			ReferenceGasPrice:     iotajsonrpc.NewBigInt(1000),
+			EpochStartTimestampMs: iotajsonrpc.NewBigInt(1734538812318),
+			EpochDurationMs:       iotajsonrpc.NewBigInt(86400000),
 		},
 	}
 
