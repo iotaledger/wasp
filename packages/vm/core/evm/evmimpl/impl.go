@@ -21,7 +21,6 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/solidity"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -32,6 +31,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/legacy"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -282,8 +282,9 @@ func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 func newL1Deposit(ctx isc.Sandbox, l1DepositOriginatorBytes isc.AgentID, toAddress common.Address, assets *isc.Assets) {
 	// can only be called from the accounts contract
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
+
 	// create a fake tx so that the operation is visible by the EVM
-	AddDummyTxWithTransferEvents(ctx, toAddress, assets, l1DepositOriginatorBytes.Bytes(), true)
+	AddDummyTxWithTransferEvents(ctx, toAddress, assets, legacy.ToLegacyAgentIDBytes(ctx.SchemaVersion(), l1DepositOriginatorBytes), true)
 }
 
 func AddDummyTxWithTransferEvents(
@@ -304,12 +305,12 @@ func AddDummyTxWithTransferEvents(
 	nonce := uint64(0)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
-
+	gasPrice.Mul(gasPrice, new(big.Int).SetUint64(uint64(1000)))
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
-	txData = append(txData, assets.Bytes()...)
-	txData = append(txData, codec.Encode(ctx.StateAnchor().GetStateIndex()+1)...) // +1 because "current block = anchor state index +1"
-	txData = append(txData, codec.Encode(ctx.RequestIndex())...)
+	txData = append(txData, legacy.ToLegacyAssetsBytes(ctx.SchemaVersion(), assets)...)
+	txData = append(txData, legacy.WithDummyUint32(ctx.SchemaVersion(), ctx.StateAnchor().GetStateIndex()+1)...) // +1 because "current block = anchor state index +1"
+	txData = append(txData, legacy.WithDummyUint16(ctx.SchemaVersion(), ctx.RequestIndex())...)
 
 	tx := types.NewTx(
 		&types.LegacyTx{

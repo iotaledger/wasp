@@ -5,13 +5,14 @@ import (
 )
 
 const (
-	SchemaVersionIotaRebased = 4 + iota // versions prior to 4 correspond to stardust
+	SchemaVersionMigratedRebased = 5 + iota
+	SchemaVersionIotaRebased     // versions prior to 4 correspond to stardust
 
 	LatestSchemaVersion = SchemaVersionIotaRebased
 )
 
 var DefaultScheme = &migrations.MigrationScheme{
-	BaseSchemaVersion: LatestSchemaVersion,
+	BaseSchemaVersion: SchemaVersionMigratedRebased,
 
 	// Add new migrations to the end of this list, and they will be applied before
 	// creating the next block.
