@@ -5,6 +5,7 @@ package evmimpl
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -31,6 +32,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/legacy"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -305,7 +307,11 @@ func AddDummyTxWithTransferEvents(
 	nonce := uint64(0)
 	chainInfo := ctx.ChainInfo()
 	gasPrice := chainInfo.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
-	gasPrice.Mul(gasPrice, new(big.Int).SetUint64(uint64(1000)))
+
+	if ctx.SchemaVersion() <= allmigrations.SchemaVersionMigratedRebased {
+		gasPrice.Mul(gasPrice, new(big.Int).SetUint64(uint64(1000)))
+	}
+
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
 	txData = append(txData, legacy.ToLegacyAssetsBytes(ctx.SchemaVersion(), assets)...)
