@@ -350,7 +350,7 @@ func AddDummyTxWithTransferEvents(
 				}
 			}
 			if tracer.Hooks.OnExit != nil {
-				tracer.Hooks.OnExit(0, txData, receipt.GasUsed, nil, false)
+				tracer.Hooks.OnExit(0, nil, receipt.GasUsed, nil, false)
 			}
 			if tracer.Hooks.OnTxEnd != nil {
 				tracer.Hooks.OnTxEnd(receipt, nil)
