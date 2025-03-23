@@ -342,7 +342,7 @@ func AddDummyTxWithTransferEvents(
 				tracer.Hooks.OnTxStart(nil, tx, common.Address{})
 			}
 			if tracer.Hooks.OnEnter != nil {
-				tracer.Hooks.OnEnter(0, byte(vm.CALL), common.Address{}, toAddress, make([]byte, 0), 0, wei)
+				tracer.Hooks.OnEnter(0, byte(vm.CALL), common.Address{}, toAddress, txData, 0, wei)
 			}
 			if tracer.Hooks.OnLog != nil {
 				for _, log := range logs {
