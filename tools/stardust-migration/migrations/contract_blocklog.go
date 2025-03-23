@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -52,12 +53,7 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 
 	oldBlock := oldBlocks.GetAt(blockIndex)
 
-	// TODO: Find a good solution for the PreviousAnchor that we don't have. Can it just be zero'd?
-	// TODO: Find proper default values for the L1Params
-	// Most likely want to pull the params once and use it for all blocks?
-	// Probably not super needed, but would be good to have some realistic data inside there.
-	// -> Same for the MaxPayloadSize
-	const MAX_PAYLOAD_SIZE = 1024
+	// TODO: Just poll latest L1Params once so we can save some space here and have more accurate info.
 	defaultL1Params := &parameters.L1Params{
 		BaseToken: &parameters.IotaCoinInfo{
 			CoinType:    coin.BaseTokenType,
@@ -83,28 +79,31 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 		panic(fmt.Errorf("blockRegistry migration error: %v", err))
 	}
 
-	previousAnchorIndex := Uint32ToAddress(blockIndex - 1)
-
 	// This is a reference to the PREVIOUS anchor.
 	// Which means its state index - 1, and the past StateMetadata too!
-	// TODO: Store past StateMetadata to add it here.
-	migrationPreviousAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
-		Object: &iscmove.Anchor{
-			Assets: iscmove.Referent[iscmove.AssetsBag]{ID: *prepareConfig.AssetsBagID, Value: &iscmove.AssetsBag{
-				ID:   iotago.ObjectID{},
-				Size: 0,
-			}},
-			ID:            previousAnchorIndex,
-			StateIndex:    blockIndex - 1,
-			StateMetadata: stateMetadata.Bytes(),
-		},
-		ObjectRef: iotago.ObjectRef{
-			ObjectID: &previousAnchorIndex,
-			Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
-			Version:  0,
-		},
-		Owner: prepareConfig.ChainOwner.AsIotaAddress(),
-	}, prepareConfig.PackageID)
+	var migrationPreviousAnchor *isc.StateAnchor = nil
+
+	// Block 0 has no past anchor, so that's a nil.
+	if blockIndex != 0 {
+		previousAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+			Object: &iscmove.Anchor{
+				Assets: iscmove.Referent[iscmove.AssetsBag]{ID: *prepareConfig.AssetsBagID, Value: &iscmove.AssetsBag{
+					ID:   iotago.ObjectID{},
+					Size: 0,
+				}},
+				ID:            *prepareConfig.AnchorID,
+				StateIndex:    blockIndex - 1,
+				StateMetadata: stateMetadata.Bytes(),
+			},
+			ObjectRef: iotago.ObjectRef{
+				ObjectID: prepareConfig.AnchorID,
+				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
+				Version:  iotago.SequenceNumber(blockIndex - 1),
+			},
+			Owner: prepareConfig.ChainOwner.AsIotaAddress(),
+		}, prepareConfig.PackageID)
+		migrationPreviousAnchor = &previousAnchor
+	}
 
 	newBlockInfo := blocklog.BlockInfo{
 		GasFeeCharged:         ConvertOldCoinDecimalsToNew(oldBlockInfo.GasFeeCharged),
@@ -112,10 +111,10 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 		BlockIndex:            oldBlockInfo.BlockIndex(),
 		NumOffLedgerRequests:  oldBlockInfo.NumOffLedgerRequests,
 		NumSuccessfulRequests: oldBlockInfo.NumSuccessfulRequests,
-		SchemaVersion:         oldBlockInfo.SchemaVersion,
+		SchemaVersion:         allmigrations.SchemaVersionMigratedRebased,
 		Timestamp:             oldBlockInfo.Timestamp,
 		TotalRequests:         oldBlockInfo.TotalRequests,
-		PreviousAnchor:        &migrationPreviousAnchor,
+		PreviousAnchor:        migrationPreviousAnchor,
 		L1Params:              defaultL1Params,
 	}
 

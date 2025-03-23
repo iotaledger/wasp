@@ -139,12 +139,30 @@ func executeAssetsBagMigration(ctx context.Context, packageID iotago.PackageID, 
 	return nil, nil
 }
 
-func getFirstCoin(ctx context.Context, kp wallets.Wallet, client clients.L1Client) *iotago.ObjectRef {
+func getFirstCoin(ctx context.Context, kp wallets.Wallet, client clients.L1Client, excludedCoin *iotago.ObjectID) *iotago.ObjectRef {
 	coinType := iotajsonrpc.IotaCoinType.String()
 	coins := lo.Must(client.GetCoins(ctx, iotaclient.GetCoinsRequest{
 		CoinType: &coinType,
 		Owner:    kp.Address().AsIotaAddress(),
 	}))
+
+	// This is only used for the GasCoin in the Prepare->Run transition.
+	// We don't want to accidentally use the destined GasCoin for the Committee to pay for transactions.
+	if excludedCoin != nil {
+		var selectedCoin *iotago.ObjectRef
+
+		lo.Filter(coins.Data, func(item *iotajsonrpc.Coin, index int) bool {
+			if item.CoinObjectID == excludedCoin {
+				return true
+			}
+
+			selectedCoin = item.Ref()
+			return false
+		})
+
+		return selectedCoin
+	}
+
 	return coins.Data[0].Ref()
 }
 
@@ -163,7 +181,7 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	dkgCommitteeAddress := doDKG(ctx, node, peers, quorum)
 
 	fmt.Println("Execute Asset migration")
-	assetsBagRef, err := executeAssetsBagMigration(ctx, packageID, kp, l1Client, getFirstCoin(ctx, kp, l1Client)) // The returned assetsbag ref from the executed transaction.
+	assetsBagRef, err := executeAssetsBagMigration(ctx, packageID, kp, l1Client, getFirstCoin(ctx, kp, l1Client, nil)) // The returned assetsbag ref from the executed transaction.
 	log.Check(err)
 
 	// Just used to make sure that the migration request has solidified
@@ -174,7 +192,7 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 	fmt.Println("Creating Anchor")
 	anchor, err := l1Client.L2().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
 		PackageID:         packageID,
-		GasPayments:       []*iotago.ObjectRef{getFirstCoin(ctx, kp, l1Client)},
+		GasPayments:       []*iotago.ObjectRef{getFirstCoin(ctx, kp, l1Client, nil)},
 		ChainOwnerAddress: kp.Address(),
 		Signer:            kp,
 		GasPrice:          iotaclient.DefaultGasPrice,
@@ -226,6 +244,7 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 
 	anchorRef := anchor.Data.Ref()
 
+	// Update the StateAnchor with the latest migrated block info
 	success, err := l1Client.L2().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
 		AnchorRef:     &anchorRef,
 		StateMetadata: lo.Must(hexutil.Decode(migrationResult.StateMetadataHex)),
@@ -234,6 +253,9 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 		Signer:        kp,
 		GasBudget:     iotaclient.DefaultGasBudget,
 		GasPrice:      iotaclient.DefaultGasPrice,
+		GasPayments: []*iotago.ObjectRef{
+			getFirstCoin(ctx, kp, l1Client, prepareConfig.GasCoinID),
+		},
 	})
 
 	if !success || err != nil {
@@ -241,12 +263,13 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 		panic("omg")
 	}
 
-	transfer, err := l1Client.TransferObject(ctx, iotaclient.TransferObjectRequest{
+	// Transfer the GasCoin to the Committee
+	transferGasCoin, err := l1Client.TransferObject(ctx, iotaclient.TransferObjectRequest{
 		Signer:    kp.Address().AsIotaAddress(),
-		ObjectID:  anchorRef.ObjectID,
+		ObjectID:  prepareConfig.GasCoinID,
 		Recipient: prepareConfig.DKGCommitteeAddress.AsIotaAddress(),
 		GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
-		Gas:       getFirstCoin(ctx, kp, l1Client).ObjectID,
+		Gas:       getFirstCoin(ctx, kp, l1Client, prepareConfig.GasCoinID).ObjectID,
 	})
 	if err != nil {
 		log.Printf("FAILED TO CONSTRUCT -TRANSFER ANCHOR-: err:%v", err)
@@ -255,7 +278,32 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 
 	result, err := l1Client.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
 		Signer:      cryptolib.SignerToIotaSigner(kp),
-		TxDataBytes: transfer.TxBytes,
+		TxDataBytes: transferGasCoin.TxBytes,
+		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowObjectChanges: true,
+		},
+	})
+	if err != nil {
+		log.Printf("FAILED TO EXECUTE -TRANSFER GASCOIN-: err:%v", err)
+		panic("omg")
+	}
+
+	// Transfer the Anchor to the Committee
+	transferAnchor, err := l1Client.TransferObject(ctx, iotaclient.TransferObjectRequest{
+		Signer:    kp.Address().AsIotaAddress(),
+		ObjectID:  anchorRef.ObjectID,
+		Recipient: prepareConfig.DKGCommitteeAddress.AsIotaAddress(),
+		GasBudget: iotajsonrpc.NewBigInt(iotaclient.DefaultGasBudget),
+		Gas:       getFirstCoin(ctx, kp, l1Client, prepareConfig.GasCoinID).ObjectID,
+	})
+	if err != nil {
+		log.Printf("FAILED TO CONSTRUCT -TRANSFER ANCHOR-: err:%v", err)
+		panic("omg")
+	}
+
+	result, err = l1Client.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
+		Signer:      cryptolib.SignerToIotaSigner(kp),
+		TxDataBytes: transferAnchor.TxBytes,
 		Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
 			ShowObjectChanges: true,
 		},
@@ -265,7 +313,7 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 		panic("omg")
 	}
 
-	log.Printf("\n%v\n %v\n", transfer, result)
+	log.Printf("\n%v\n %v\n", transferAnchor, result)
 
 	chainID := isc.ChainIDFromObjectID(*prepareConfig.AnchorID)
 	config.AddChain(chainName, chainID.String())
