@@ -18,7 +18,7 @@ Rebased AgentID is:
 
 Ethereum/Nil/Contract AgentIDs remain untouched.
 */
-func ToLegacyAgentIDBytes(v isc.SchemaVersion, id isc.AgentID) []byte {
+func AgentIDToBytes(v isc.SchemaVersion, id isc.AgentID) []byte {
 	if v > allmigrations.SchemaVersionMigratedRebased {
 		return id.Bytes()
 	}

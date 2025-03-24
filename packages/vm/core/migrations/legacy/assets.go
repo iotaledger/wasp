@@ -19,10 +19,9 @@ const (
 /*
 	Recreating the old Stardust assets encoding. This should only ever be needed for the internal EVM Fake Transactions.
 	This works very well for BaseToken and NFTs, not for NativeToken.
-	This needs some validation regarding the compatability between IDs.
+	This needs some validation regarding the compatibility between IDs.
 */
-
-func ToLegacyAssetsBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
+func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	if v > allmigrations.SchemaVersionMigratedRebased {
 		return assets.Bytes()
 	}

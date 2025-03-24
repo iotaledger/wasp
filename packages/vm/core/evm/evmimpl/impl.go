@@ -285,7 +285,7 @@ func newL1Deposit(ctx isc.Sandbox, l1DepositOriginatorBytes isc.AgentID, toAddre
 	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
 
 	// create a fake tx so that the operation is visible by the EVM
-	AddDummyTxWithTransferEvents(ctx, toAddress, assets, legacy.ToLegacyAgentIDBytes(ctx.SchemaVersion(), l1DepositOriginatorBytes), true)
+	AddDummyTxWithTransferEvents(ctx, toAddress, assets, legacy.AgentIDToBytes(ctx.SchemaVersion(), l1DepositOriginatorBytes), true)
 }
 
 func AddDummyTxWithTransferEvents(
@@ -313,9 +313,9 @@ func AddDummyTxWithTransferEvents(
 
 	// txData = txData+<assets>+[blockIndex + reqIndex]
 	// the last part [ ] is needed so we don't produce txs with colliding hashes in the same or different blocks.
-	txData = append(txData, legacy.ToLegacyAssetsBytes(ctx.SchemaVersion(), assets)...)
-	txData = append(txData, legacy.WithDummyUint32(ctx.SchemaVersion(), ctx.StateAnchor().GetStateIndex()+1)...) // +1 because "current block = anchor state index +1"
-	txData = append(txData, legacy.WithDummyUint16(ctx.SchemaVersion(), ctx.RequestIndex())...)
+	txData = append(txData, legacy.AssetsToBytes(ctx.SchemaVersion(), assets)...)
+	txData = append(txData, legacy.EncodeUint32ForDummyTX(ctx.SchemaVersion(), ctx.StateAnchor().GetStateIndex()+1)...) // +1 because "current block = anchor state index +1"
+	txData = append(txData, legacy.EncodeUint16ForDummyTX(ctx.SchemaVersion(), ctx.RequestIndex())...)
 
 	tx := types.NewTx(
 		&types.LegacyTx{
