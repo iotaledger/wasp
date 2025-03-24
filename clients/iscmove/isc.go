@@ -73,12 +73,10 @@ func (ab *AssetsBag) Equals(other *AssetsBag) bool {
 		ab.Size == other.Size
 }
 
-type (
-	AssetsBagWithBalances struct {
-		AssetsBag
-		Assets
-	}
-)
+type AssetsBagWithBalances struct {
+	AssetsBag
+	Assets `bcs:"optional"`
+}
 
 type Anchor struct {
 	ID            iotago.ObjectID
@@ -138,8 +136,8 @@ type Message struct {
 }
 
 type Assets struct {
-	Coins   CoinBalances
-	Objects ObjectCollection
+	Coins   CoinBalances     `bcs:"optional"`
+	Objects ObjectCollection `bcs:"optional"`
 }
 
 type (

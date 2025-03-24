@@ -2918,16 +2918,25 @@ components:
         name: EstimateGasRequestOffledger
     EstimateGasRequestOnledger:
       example:
-        outputBytes: outputBytes
+        msg: msg
+        dryRunRes: dryRunRes
       properties:
-        outputBytes:
-          description: Serialized Output (Hex)
+        dryRunRes:
+          description: The result of the DryRun encoded in BCS format and represented
+            in hexadecimal
           format: string
           type: string
           xml:
-            name: Output
+            name: DryRunRes
+        msg:
+          description: The ISC Message encoded in BCS format and represented in hexadecimal
+          format: string
+          type: string
+          xml:
+            name: Msg
       required:
-      - outputBytes
+      - dryRunRes
+      - msg
       type: object
       xml:
         name: EstimateGasRequestOnledger

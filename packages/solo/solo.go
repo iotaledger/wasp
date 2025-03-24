@@ -659,7 +659,7 @@ func (env *Solo) executePTB(
 	return execRes
 }
 
-func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
+func (env *Solo) L1DeployCoinPackage(keyPair cryptolib.Signer) (
 	packageID *iotago.PackageID,
 	treasuryCap *iotago.ObjectRef,
 ) {
@@ -672,7 +672,7 @@ func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
 }
 
 func (env *Solo) L1MintCoin(
-	keyPair *cryptolib.KeyPair,
+	keyPair cryptolib.Signer,
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,
 	typeTag iotago.Identifier,

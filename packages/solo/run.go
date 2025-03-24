@@ -5,6 +5,7 @@ package solo
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/samber/lo"
@@ -13,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
@@ -62,6 +64,21 @@ func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 	res := ch.runTaskNoLock([]isc.Request{req}, true)
 	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
 	return res.RequestResults[0]
+}
+
+// Total Gas Fee is composed of L1 gas fee (user spent on creating onledger request)
+// and L2 gas fee (wasp gas fee for proccesing request on L2)
+func (ch *Chain) EstimateGasL1(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse, msg *iscmove.Message) (result *vm.RequestResult, err error) {
+	ch.runVMMutex.Lock()
+	defer ch.runVMMutex.Unlock()
+
+	req, err := isc.FakeEstimateOnLedger(dryRunRes, msg)
+	if err != nil {
+		return nil, fmt.Errorf("cant generate fake request: %s", err)
+	}
+	res := ch.runTaskNoLock([]isc.Request{req}, true)
+	require.Len(ch.Env.T, res.RequestResults, 1, "cannot estimate gas: request was skipped")
+	return res.RequestResults[0], nil
 }
 
 func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskResult {

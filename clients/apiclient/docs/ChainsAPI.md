@@ -421,7 +421,8 @@ import (
 )
 
 func main() {
-	request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
+	chainID := "chainID_example" // string | ChainID (Hex Address)
+	request := *openapiclient.NewEstimateGasRequestOnledger("DryRunRes_example", "Msg_example") // EstimateGasRequestOnledger | Request
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)

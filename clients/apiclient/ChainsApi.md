@@ -359,7 +359,8 @@ const apiInstance = new ChainsApi(configuration);
 const request: ChainsApiEstimateGasOnledgerRequest = {
     // Request
   request: {
-    outputBytes: "outputBytes_example",
+    dryRunRes: "dryRunRes_example",
+    msg: "msg_example",
   },
 };
 

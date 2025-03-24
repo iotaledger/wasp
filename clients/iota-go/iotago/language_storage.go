@@ -1,6 +1,7 @@
 package iotago
 
 import (
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -130,6 +131,20 @@ func parseStructTypeArgs(structTypeParams string) ([]TypeTag, error) {
 		retTypeTag = append(retTypeTag, *elt)
 	}
 	return retTypeTag, nil
+}
+
+func (s *TypeTag) UnmarshalJSON(data []byte) error {
+	var str string
+	err := json.Unmarshal(data, &str)
+	if err != nil {
+		return err
+	}
+	tag, err := TypeTagFromString(str)
+	if err != nil {
+		return err
+	}
+	*s = *tag
+	return nil
 }
 
 type StructTag struct {

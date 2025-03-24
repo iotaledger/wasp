@@ -95,7 +95,7 @@ type ProgrammableMoveCall struct {
 	Package       *PackageID
 	Module        Identifier
 	Function      Identifier
-	TypeArguments []TypeTag
+	TypeArguments []TypeTag `json:"type_arguments"`
 	Arguments     []Argument
 }
 

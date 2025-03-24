@@ -124,7 +124,9 @@ func TestMoveCall(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	queryEventsResMap := queryEventsRes.Data[0].ParsedJson.(map[string]interface{})
+	var queryEventsResMap map[string]any
+	err = json.Unmarshal(queryEventsRes.Data[0].ParsedJson, &queryEventsResMap)
+	require.NoError(t, err)
 	b, err := json.Marshal(queryEventsResMap["data"])
 	require.NoError(t, err)
 	var res [][]byte
