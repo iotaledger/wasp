@@ -3,8 +3,14 @@ package validation
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+)
+
+const (
+	newSchema = allmigrations.SchemaVersionMigratedRebased
 )
 
 func oldAgentIDToStr(agentID old_isc.AgentID) string {

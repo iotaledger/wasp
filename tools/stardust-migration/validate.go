@@ -3,9 +3,17 @@ package main
 import (
 	"strings"
 
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
 	cmd "github.com/urfave/cli/v2"
+
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
+	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
+	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -13,17 +21,12 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/validation"
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
-	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
-	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
-	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 )
 
 func validateMigration(c *cmd.Context) error {
@@ -87,15 +90,15 @@ func validateMigration(c *cmd.Context) error {
 		}
 	}()
 
-	validateStatesEqual(oldLatestState, newLatestState, oldChainID, newChainID)
+	validateStatesEqual(oldLatestState, newLatestState, oldChainID, newChainID, newLatestState.R.BlockIndex())
 
 	return nil
 }
 
-func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID, index uint32) {
 	cli.DebugLogf("Validating states equality...\n")
-	oldStateContentStr := oldStateContentToStr(oldState, oldChainID)
-	newStateContentStr := newStateContentToStr(newState, newChainID)
+	oldStateContentStr := oldStateContentToStr(oldState, oldChainID, index)
+	newStateContentStr := newStateContentToStr(newState, newChainID, index)
 
 	cli.DebugLogf("Replacing old chain ID with constant placeholer for comparison...")
 	oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
@@ -108,14 +111,16 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 	cli.DebugLogf("States are equal\n")
 }
 
-func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, index uint32) string {
 	accountsContractStr := validation.OldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
+	blocklogContractStr := validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, index)
 
-	return accountsContractStr
+	return accountsContractStr + "\n" + blocklogContractStr
 }
 
-func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID) string {
+func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, index uint32) string {
 	accountsContractStr := validation.NewAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
+	blocklogContractStr := validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, index)
 
-	return accountsContractStr
+	return accountsContractStr + "\n" + blocklogContractStr
 }
