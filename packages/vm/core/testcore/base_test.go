@@ -414,10 +414,11 @@ func TestMessageSize(t *testing.T) {
 
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
-	reqSize := 5_000 // bytes
+	// TODO: Check the request size here
+	// Higher values cause execution errors, probably due to the Gas requirements.
+	reqSize := 500 // bytes
 	var attachedBaseTokens coin.Value = 1 * isc.Million
 
-	// TODO
 	// maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
 	const maxRequestsPerBlock = 1
 

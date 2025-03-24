@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
@@ -115,13 +114,15 @@ func claimAllowance(ctx isc.Sandbox) {
 }
 
 func sendLargeRequest(ctx isc.Sandbox, x uint64) {
+	buf := make([]byte, x)
+
 	req := isc.RequestParameters{
-		TargetAddress: cryptolib.NewRandomAddress(),
+		TargetAddress: ctx.ChainID().AsAddress(),
 		Metadata: &isc.SendMetadata{
 			Message: isc.NewMessage(
 				isc.Hn("foo"),
 				isc.Hn("bar"),
-				isc.NewCallArguments(codec.Encode(x)),
+				isc.NewCallArguments(codec.Encode(buf)),
 			),
 		},
 		Assets: ctx.AllowanceAvailable(),

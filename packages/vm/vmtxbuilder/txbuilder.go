@@ -94,13 +94,19 @@ func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *i
 		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
 	}
 
+	allowance := &iscmove.Assets{}
+
+	if metadata.Allowance != nil {
+		allowance = metadata.Allowance.AsISCMove()
+	}
+
 	txb.ptb = iscmoveclient.PTBCreateAndSendRequest(
 		txb.ptb,
 		txb.iscPackage,
 		*txb.anchor.GetObjectID(),
 		argAssetsBag,
 		metadata.Message.AsISCMove(),
-		metadata.Allowance.AsISCMove(),
+		allowance,
 		metadata.GasBudget,
 	)
 }
