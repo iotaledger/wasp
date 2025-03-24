@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/tools/stardust-migration/bot"
+	"golang.org/x/exp/constraints"
 )
 
 var lastNotifications map[string]time.Time = make(map[string]time.Time)
@@ -28,7 +29,7 @@ func onlyForBlockProgress(entityPluralName string, msgType string, msg string) {
 	}
 }
 
-func NewProgressPrinter(entityPluralName string, totalCount uint32) (printProgress func(), done func()) {
+func NewProgressPrinter[Count constraints.Integer](entityPluralName string, totalCount Count) (printProgress func(), done func()) {
 	const period = time.Second
 	startTime := time.Now()
 	lastEstimateUpdateTime := startTime
