@@ -20,8 +20,6 @@ import (
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/websockethub"
-	"github.com/iotaledger/wasp/packages/webapi/httpserver"
-
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -37,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/packages/webapi/httpserver"
 	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
@@ -233,6 +232,7 @@ func provide(c *dig.Container) error {
 		Node                        *dkg.Node
 		UserManager                 *users.UserManager
 		Publisher                   *publisher.Publisher
+		NodeConn                    chain.NodeConnection
 	}
 
 	type webapiServerResult struct {
@@ -297,6 +297,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.IndexDbPath,
 			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
+			deps.NodeConn.L1ParamsFetcher(),
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,
 				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,

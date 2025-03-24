@@ -114,7 +114,7 @@ func (ctx *emulatorContext) Timestamp() uint64 {
 }
 
 func (*emulatorContext) BaseTokensDecimals() uint8 {
-	return parameters.Decimals
+	return parameters.BaseTokenDecimals
 }
 
 func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {

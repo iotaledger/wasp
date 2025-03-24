@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
@@ -65,6 +66,7 @@ type NodeService interface {
 	DeleteAccessNode(chainID isc.ChainID, peer string) error
 	NodeOwnerCertificate() []byte
 	ShutdownNode()
+	L1Params(context.Context) (*parameters.L1Params, error)
 }
 
 type RegistryService interface {
@@ -100,5 +102,5 @@ type UserService interface {
 }
 
 type Mocker interface {
-	Get(i interface{}) interface{}
+	Get(i any) any
 }

@@ -57,7 +57,7 @@ func EVMEstimateGas(
 	}
 
 	if call.GasPrice == nil {
-		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
+		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	}
 
 	gasCap = hi

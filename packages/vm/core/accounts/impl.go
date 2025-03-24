@@ -5,6 +5,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -39,7 +40,7 @@ var Processor = Contract.Processor(nil,
 )
 
 // this expects the origin amount minus SD
-func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *isc.IotaCoinInfo) {
+func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *parameters.IotaCoinInfo) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption
 	s.SaveCoinInfo(baseTokenCoinInfo)
 	s.CreditToAccount(CommonAccount(), isc.NewCoinBalances().Add(coin.BaseTokenType, baseTokensOnAnchor))
@@ -107,7 +108,7 @@ func withdraw(ctx isc.Sandbox) {
 	)
 }
 
-func setCoinMetadata(ctx isc.Sandbox, coinInfo *isc.IotaCoinInfo) {
+func setCoinMetadata(ctx isc.Sandbox, coinInfo *parameters.IotaCoinInfo) {
 	ctx.RequireCallerIsChainOwner()
 	NewStateWriterFromSandbox(ctx).SaveCoinInfo(coinInfo)
 }

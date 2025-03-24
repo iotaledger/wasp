@@ -60,7 +60,7 @@ type NodeConnection interface {
 	Run(ctx context.Context) error
 	// WaitUntilInitiallySynced blocks until the connection is established.
 	WaitUntilInitiallySynced(context.Context) error
-	GetL1Params() *parameters.L1Params
+	L1ParamsFetcher() parameters.L1ParamsFetcher
 
 	ConsensusL1InfoProposal(
 		ctx context.Context,
@@ -106,7 +106,7 @@ type ChainCore interface {
 	Log() log.Logger
 }
 
-type ConsensusPipeMetrics interface { // TODO: Review it.
+type ConsensusPipeMetrics interface {
 	GetEventStateTransitionMsgPipeSize() int
 	GetEventPeerLogIndexMsgPipeSize() int
 	GetEventACSMsgPipeSize() int
@@ -114,7 +114,7 @@ type ConsensusPipeMetrics interface { // TODO: Review it.
 	GetEventTimerMsgPipeSize() int
 }
 
-type ConsensusWorkflowStatus interface { // TODO: Review it.
+type ConsensusWorkflowStatus interface {
 	IsStateReceived() bool
 	IsBatchProposalSent() bool
 	IsConsensusBatchKnown() bool

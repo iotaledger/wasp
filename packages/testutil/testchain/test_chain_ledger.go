@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -70,7 +71,7 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	originDeposit := resGetCoins.Data[1]
 	originDepositVal := coin.Value(originDeposit.Balance.Uint64())
 	gasCoin := resGetCoins.Data[0].Ref()
-	l1commitment := origin.L1Commitment(schemaVersion, initParams, *gasCoin.ObjectID, originDepositVal, isc.BaseTokenCoinInfo)
+	l1commitment := origin.L1Commitment(schemaVersion, initParams, *gasCoin.ObjectID, originDepositVal, parameterstest.L1Mock)
 	stateMetadata := transaction.NewStateMetadata(
 		schemaVersion,
 		l1commitment,

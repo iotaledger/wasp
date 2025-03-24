@@ -47,6 +47,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -92,7 +93,7 @@ type Chain interface {
 	RotateTo(address *iotago.Address)
 	// Metrics and the current descriptive state.
 	GetChainMetrics() *metrics.ChainMetrics
-	GetConsensusPipeMetrics() ConsensusPipeMetrics // TODO: Review this.
+	GetConsensusPipeMetrics() ConsensusPipeMetrics
 	GetConsensusWorkflowStatus() ConsensusWorkflowStatus
 	GetMempoolContents() io.Reader
 }
@@ -117,7 +118,7 @@ type RequestHandler = func(req isc.OnLedgerRequest)
 
 // The Anchor versions must be passed here in-order. The last one
 // is the current one.
-type AnchorHandler = func(anchor *isc.StateAnchor)
+type AnchorHandler = func(anchor *isc.StateAnchor, l1Params *parameters.L1Params)
 
 type TxPostHandler = func(tx iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error)
 
@@ -131,7 +132,7 @@ type chainNodeImpl struct {
 	tangleTime          time.Time
 	mempool             mempool.Mempool
 	stateMgr            statemanager.StateMgr
-	recvAnchorPipe      pipe.Pipe[isc.StateAnchor]
+	recvAnchorPipe      pipe.Pipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
 	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
 	// TODO: Send wantRotate to all the consInst.
@@ -285,7 +286,7 @@ func New(
 		chainStore:             chainStore,
 		nodeConn:               nodeConn,
 		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
-		recvAnchorPipe:         pipe.NewInfinitePipe[isc.StateAnchor](),
+		recvAnchorPipe:         pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
 		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
@@ -396,7 +397,7 @@ func New(
 	if err != nil {
 		return nil, fmt.Errorf("cannot create chainMgr: %w", err)
 	}
-	// TODO does it make sense to pass itself (own pub key) here?
+
 	peerPubKeys := []*cryptolib.PublicKey{nodeIdentity.GetPublicKey()}
 	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
 	stateMgr, err := statemanager.New(
@@ -460,10 +461,10 @@ func New(
 		cni.mempool.ReceiveOnLedgerRequest(req)
 	}
 	recvAnchorPipeInCh := cni.recvAnchorPipe.In()
-	recvAnchorCB := func(anchor *isc.StateAnchor) {
+	recvAnchorCB := func(anchor *isc.StateAnchor, l1Params *parameters.L1Params) {
 		log.LogDebugf("recvAnchorCB[%p], %v", cni, anchor.GetObjectID())
 		cni.chainMetrics.NodeConn.L1AnchorReceived()
-		recvAnchorPipeInCh <- *anchor
+		recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
 	}
 	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
 	if err != nil {
@@ -535,12 +536,12 @@ func (cni *chainNodeImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 				continue
 			}
 			cni.handleTxPublished(txPublishResult)
-		case aliasOutput, ok := <-recvAnchorPipeOutCh:
+		case t, ok := <-recvAnchorPipeOutCh:
 			if !ok {
 				recvAnchorPipeOutCh = nil
 				continue
 			}
-			cni.handleAliasOutput(aliasOutput)
+			cni.handleStateAnchor(t.A, t.B)
 		case timestamp := <-timestampTicker.C:
 			cni.handleMilestoneTimestamp(timestamp)
 		case recv, ok := <-netRecvPipeOutCh:
@@ -706,15 +707,15 @@ func (cni *chainNodeImpl) handleTxPublished(txPubResult *txPublished) {
 	cni.sendMessages(outMsgs)
 }
 
-func (cni *chainNodeImpl) handleAliasOutput(aliasOutput isc.StateAnchor) {
-	cni.log.LogDebugf("handleAliasOutput: %v", aliasOutput)
-	if aliasOutput.GetStateIndex() == 0 {
-		sm, err := transaction.StateMetadataFromBytes(aliasOutput.GetStateMetadata())
+func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Params *parameters.L1Params) {
+	cni.log.LogDebugf("handleStateAnchor: %v", stateAchor)
+	if stateAchor.GetStateIndex() == 0 {
+		sm, err := transaction.StateMetadataFromBytes(stateAchor.GetStateMetadata())
 		if err != nil {
 			panic(err)
 		}
 
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, &aliasOutput, sm.InitDeposit, isc.BaseTokenCoinInfo)
+		initBlock, err := origin.InitChainByAnchor(cni.chainStore, stateAchor, sm.InitDeposit, l1Params)
 		if err != nil {
 			cni.log.LogErrorf("Ignoring InitialAO for the chain: %v", err)
 			return
@@ -724,16 +725,16 @@ func (cni *chainNodeImpl) handleAliasOutput(aliasOutput isc.StateAnchor) {
 		}
 	}
 
-	cni.stateTrackerCnf.TrackAliasOutput(&aliasOutput, true)
-	cni.stateTrackerAct.TrackAliasOutput(&aliasOutput, false) // ACT state will be equal to CNF or ahead of it.
+	cni.stateTrackerCnf.TrackAliasOutput(stateAchor, true)
+	cni.stateTrackerAct.TrackAliasOutput(stateAchor, false) // ACT state will be equal to CNF or ahead of it.
 
 	cni.accessLock.Lock()
-	cni.latestConfirmedAO = &aliasOutput
-	cni.latestActiveAO = &aliasOutput
+	cni.latestConfirmedAO = stateAchor
+	cni.latestActiveAO = stateAchor
 	cni.accessLock.Unlock()
 
 	outMsgs := cni.chainMgr.Input(
-		chainmanager.NewInputAnchorConfirmed(aliasOutput.Owner(), &aliasOutput),
+		chainmanager.NewInputAnchorConfirmed(stateAchor.Owner(), stateAchor),
 	)
 	cni.sendMessages(outMsgs)
 }
@@ -876,7 +877,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	})
 
 	addLogIndex := logIndex
-	for i := 0; i < ConsensusInstsInAdvance; i++ {
+	for range ConsensusInstsInAdvance {
 		if !consensusInstances.Has(addLogIndex) {
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex

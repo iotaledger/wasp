@@ -65,8 +65,7 @@ type EventFilterMoveModule struct {
 }
 
 type EventFilterMoveEventField struct {
-	Path string `json:"path"`
-	// FIXME may need to be enum
+	Path  string      `json:"path"`
 	Value interface{} `json:"value"`
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -125,7 +126,7 @@ func (ctx *ViewContext) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("refactor me")
 }
 
-func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
+func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {
 	return ctx.accountsStateWithGasBurn().GetCoinInfo(coinType)
 }
 
@@ -187,15 +188,15 @@ func (ctx *ViewContext) GasEstimateMode() bool {
 	return false
 }
 
-func (ctx *ViewContext) Infof(format string, params ...interface{}) {
+func (ctx *ViewContext) Infof(format string, params ...any) {
 	ctx.log.LogInfof(format, params...)
 }
 
-func (ctx *ViewContext) Debugf(format string, params ...interface{}) {
+func (ctx *ViewContext) Debugf(format string, params ...any) {
 	ctx.log.LogDebugf(format, params...)
 }
 
-func (ctx *ViewContext) Panicf(format string, params ...interface{}) {
+func (ctx *ViewContext) Panicf(format string, params ...any) {
 	ctx.log.LogPanicf(format, params...)
 }
 

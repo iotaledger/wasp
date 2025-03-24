@@ -171,7 +171,6 @@ func (s *StateDB) SetNonce(addr common.Address, n uint64, r tracing.NonceChangeR
 }
 
 func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
-	// TODO cache the code hash?
 	return crypto.Keccak256Hash(s.GetCode(addr))
 }
 
@@ -198,7 +197,6 @@ func (s *StateDB) SetCode(addr common.Address, code []byte) []byte {
 }
 
 func (s *StateDB) GetCodeSize(addr common.Address) int {
-	// TODO cache the code size?
 	return len(s.GetCode(addr))
 }
 

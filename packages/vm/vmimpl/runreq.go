@@ -110,7 +110,7 @@ func (reqctx *requestContext) consumeRequest() {
 
 	senderBaseTokens := req.Assets().BaseTokens() + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
-	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.Decimals)
+	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
 	if senderBaseTokens < minReqCost {
 		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
 	}
@@ -244,7 +244,7 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 	return result, nil
 }
 
-func recoverFromExecutionError(r interface{}) *isc.VMError {
+func recoverFromExecutionError(r any) *isc.VMError {
 	switch err := r.(type) {
 	case *isc.VMError:
 		return r.(*isc.VMError)
@@ -321,7 +321,7 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget uint64, max
 		gasBudget,
 		guaranteedFeeTokens,
 		gasPrice,
-		parameters.Decimals,
+		parameters.BaseTokenDecimals,
 	)
 	maxTokensToSpendForGasFee = f1 + f2
 	// calculate affordableGas gas budget
@@ -330,7 +330,7 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget uint64, max
 		affordableGas = reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokensWithGasPrice(
 			guaranteedFeeTokens,
 			gasPrice,
-			parameters.Decimals,
+			parameters.BaseTokenDecimals,
 		)
 	} else {
 		affordableGas = reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
@@ -378,7 +378,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	if !reqctx.vm.task.EstimateGasMode && !reqctx.vm.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(
 		availableToPayFee,
 		gasPrice,
-		parameters.Decimals,
+		parameters.BaseTokenDecimals,
 	) {
 		// user didn't specify enough base tokens to cover the minimum request fee, charge whatever is present in the user's account
 		availableToPayFee = reqctx.GetSenderTokenBalanceForFees()
@@ -389,7 +389,7 @@ func (reqctx *requestContext) chargeGasFee() {
 		reqctx.GasBurned(),
 		availableToPayFee,
 		gasPrice,
-		parameters.Decimals,
+		parameters.BaseTokenDecimals,
 	)
 	reqctx.gas.feeCharged = sendToPayout + sendToValidator
 

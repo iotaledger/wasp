@@ -29,16 +29,14 @@ import (
 type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
-	baseToken  *parameters.BaseToken
 }
 
 var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
 
-func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *WaspEVMBackend {
+func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey) *WaspEVMBackend {
 	return &WaspEVMBackend{
 		chain:      ch,
 		nodePubKey: nodePubKey,
-		baseToken:  baseToken,
 	}
 }
 
@@ -129,10 +127,6 @@ func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (i
 		b.chain.Log(),
 		msg,
 	)
-}
-
-func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
-	return b.baseToken
 }
 
 func (b *WaspEVMBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {

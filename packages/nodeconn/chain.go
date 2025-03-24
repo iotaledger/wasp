@@ -9,18 +9,15 @@ import (
 	"sync"
 
 	bcs "github.com/iotaledger/bcs-go"
-
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-
-	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -169,7 +166,11 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 	}
 
 	anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
-	ncc.anchorHandler(&anchor)
+	l1Params, err := ncc.nodeConn.L1ParamsFetcher().GetOrFetchLatest(ctx)
+	if err != nil {
+		return err
+	}
+	ncc.anchorHandler(&anchor, l1Params)
 
 	ncc.LogInfof("Synchronizing chain state for %s... done", ncc.chainID)
 	return nil
@@ -189,7 +190,11 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 				return
 			case moveAnchor := <-anchorUpdates:
 				anchor := isc.NewStateAnchor(moveAnchor, ncc.feed.GetISCPackageID())
-				ncc.anchorHandler(&anchor)
+				l1Params, err := ncc.nodeConn.L1ParamsFetcher().GetOrFetchLatest(ctx)
+				if err != nil {
+					panic(err)
+				}
+				ncc.anchorHandler(&anchor, l1Params)
 			case req := <-newRequests:
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
 				if err != nil {

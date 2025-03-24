@@ -11,22 +11,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/transaction"
-
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
-
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
+	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 )
 
@@ -60,6 +58,7 @@ type nodeConnection struct {
 
 	iscPackageID        iotago.PackageID
 	httpClient          *iscmoveclient.Client
+	l1ParamsFetcher     parameters.L1ParamsFetcher
 	wsURL               string
 	httpURL             string
 	maxNumberOfRequests int
@@ -89,6 +88,7 @@ func New(
 		wsURL:               wsURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
+		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.Client, log),
 		maxNumberOfRequests: maxNumberOfRequests,
 		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
 			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
@@ -192,7 +192,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		err = parameters.InitL1(*nc.httpClient.Client, nc.Logger)
+		l1Params, err := nc.l1ParamsFetcher.GetOrFetchLatest(ctx)
 		if err != nil {
 			panic(err)
 		}
@@ -204,7 +204,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 				Value: coin.Value(gasCoin.Balance),
 				Ref:   &gasCoinRef,
 			},
-			parameters.L1(),
+			l1Params,
 		}
 
 		t <- coinInfo
@@ -223,7 +223,6 @@ func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID i
 	}
 }
 
-// TODO is this still needed?
 func (nc *nodeConnection) Run(ctx context.Context) error {
 	<-ctx.Done()
 	return nil
@@ -248,9 +247,8 @@ func (nc *nodeConnection) WaitUntilInitiallySynced(ctx context.Context) error {
 	}
 }
 
-func (nc *nodeConnection) GetL1Params() *parameters.L1Params {
-	panic("TODO")
-	// return nc.l1Params
+func (nc *nodeConnection) L1ParamsFetcher() parameters.L1ParamsFetcher {
+	return nc.l1ParamsFetcher
 }
 
 // GetChain returns the chain if it was registered, otherwise it returns an error.

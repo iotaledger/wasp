@@ -15,11 +15,10 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/chainutil"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -34,7 +33,6 @@ var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
 // initChain initializes a new chain state on the given empty store, and returns a fake L1
 // anchor with a random ObjectID and the corresponding StateMetadata.
 func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnchor {
-	baseTokenCoinInfo := &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 	// create the anchor for a new chain
 	initParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chainCreator.Address()),
@@ -50,7 +48,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		initParams,
 		iotago.ObjectID{},
 		originDeposit,
-		baseTokenCoinInfo,
+		parameterstest.L1Mock,
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
 	anchor := iscmove.Anchor{
@@ -104,7 +102,7 @@ func TestEVMCall(t *testing.T) {
 
 	logger := testlogger.NewLogger(t)
 
-	result, err := chainutil.EVMCall(anchor, parameters.L1Default, store, coreprocessors.NewConfig(), logger, msg)
+	result, err := chainutil.EVMCall(anchor, parameterstest.L1Mock, store, coreprocessors.NewConfig(), logger, msg)
 	if err != nil {
 		t.Fatalf("failed to call EVM: %v", err)
 	}

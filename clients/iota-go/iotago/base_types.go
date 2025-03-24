@@ -63,16 +63,6 @@ func (o ObjectRef) Hash() hashing.HashValue {
 	return res
 }
 
-func ObjectRefFromBytes(b []byte) *ObjectRef {
-	var ref ObjectRef
-	ref.Version = binary.LittleEndian.Uint64(b[:8])
-	var arr [AddressLen]byte
-	copy(arr[:], b[8:])
-	ref.ObjectID = AddressFromArray(arr)
-	// TODO: Why Digest is not read here?
-	return &ref
-}
-
 func (or *ObjectRef) Equals(other *ObjectRef) bool {
 	if or == nil {
 		return other == nil

@@ -41,7 +41,7 @@ func TestReboot(t *testing.T) {
 	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	balance1 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	balance1 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), coin.BaseTokenType)
 
 	tx, err := client.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
@@ -64,7 +64,7 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, err)
 	gasFeeCharged2, err := util.DecodeUint64(receipt.GasFeeCharged)
 	require.NoError(t, err)
-	balance2 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	balance2 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), coin.BaseTokenType)
 	require.Equal(t, balance1+coin.Value(10+iotaclient.DefaultGasBudget-20)-coin.Value(gasFeeCharged1+gasFeeCharged2), balance2)
 
 	// restart the nodes
@@ -82,7 +82,7 @@ func TestReboot(t *testing.T) {
 	require.NoError(t, err)
 	gasFeeCharged3, err := util.DecodeUint64(receipts[0].GasFeeCharged)
 	require.NoError(t, err)
-	balance3 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	balance3 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), coin.BaseTokenType)
 	require.Equal(t, balance1+2*coin.Value(10+iotaclient.DefaultGasBudget)-20-coin.Value(gasFeeCharged1+gasFeeCharged2+gasFeeCharged3), balance3)
 
 	// ensure offledger requests are still working
@@ -97,7 +97,7 @@ func TestReboot(t *testing.T) {
 
 	gasFeeCharged4, err := util.DecodeUint64(receipt.GasFeeCharged)
 	require.NoError(t, err)
-	balance4 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), isc.BaseTokenCoinInfo.CoinType)
+	balance4 := env.getBalanceOnChain(isc.NewAddressAgentID(keypair.Address()), coin.BaseTokenType)
 	require.Equal(t, balance1+2*coin.Value(10+iotaclient.DefaultGasBudget)-2*20-coin.Value(gasFeeCharged1+gasFeeCharged2+gasFeeCharged3+gasFeeCharged4), balance4)
 }
 

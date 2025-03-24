@@ -56,7 +56,7 @@ func testAccounts(e *ChainEnv) {
 	balance1, err := originatorClient.L1Client.GetBalance(context.TODO(), iotaclient.GetBalanceRequest{Owner: keyPair.Address().AsIotaAddress()})
 	require.NoError(e.t, err)
 
-	balance2 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
+	balance2 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), coin.BaseTokenType)
 	require.Equal(e.t, balance1.TotalBalance.Uint64(), balance2.Uint64())
 
 	_, err = originatorClient.PostOffLedgerRequest(context.Background(),
@@ -68,7 +68,7 @@ func testAccounts(e *ChainEnv) {
 	require.NoError(e.t, err)
 	time.Sleep(3 * time.Second)
 
-	balance3 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
+	balance3 := e.GetL1Balance(keyPair.Address().AsIotaAddress(), coin.BaseTokenType)
 	require.Equal(e.t, balance1.TotalBalance.Uint64()+10, balance3.Uint64())
 }
 
@@ -83,9 +83,9 @@ func testBasic2Accounts(t *testing.T, e *ChainEnv) {
 	userClient1 := e.NewChainClient(keyPairUser1)
 	userClient1.DepositFunds(10 * isc.Million)
 	time.Sleep(3 * time.Second)
-	balance1 := e.GetL1Balance(addressUser1.AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
+	balance1 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
 
-	balance2 := e.GetL1Balance(addressUser1.AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
+	balance2 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
 	require.Equal(t, balance1, balance2)
 
 	_, err = userClient1.PostOffLedgerRequest(context.Background(),
@@ -97,11 +97,11 @@ func testBasic2Accounts(t *testing.T, e *ChainEnv) {
 	require.NoError(t, err)
 	time.Sleep(3 * time.Second)
 
-	balance3 := e.GetL1Balance(addressUser1.AsIotaAddress(), isc.BaseTokenCoinInfo.CoinType)
+	balance3 := e.GetL1Balance(addressUser1.AsIotaAddress(), coin.BaseTokenType)
 	require.Equal(t, balance1+10, balance3)
 
-	user1L2Bal1 := e.GetL2Balance(isc.NewAddressAgentID(addressUser1), isc.BaseTokenCoinInfo.CoinType)
-	user2L2Bal1 := e.GetL2Balance(isc.NewAddressAgentID(addressUser2), isc.BaseTokenCoinInfo.CoinType)
+	user1L2Bal1 := e.GetL2Balance(isc.NewAddressAgentID(addressUser1), coin.BaseTokenType)
+	user2L2Bal1 := e.GetL2Balance(isc.NewAddressAgentID(addressUser2), coin.BaseTokenType)
 
 	var transferAmount coin.Value = 10
 	req, err := userClient1.PostOffLedgerRequest(context.Background(),
@@ -116,9 +116,9 @@ func testBasic2Accounts(t *testing.T, e *ChainEnv) {
 	reqceipt, err := e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 
-	user1L2Bal2 := e.GetL2Balance(isc.NewAddressAgentID(addressUser1), isc.BaseTokenCoinInfo.CoinType)
+	user1L2Bal2 := e.GetL2Balance(isc.NewAddressAgentID(addressUser1), coin.BaseTokenType)
 	require.NoError(t, err)
-	user2L2Bal2 := e.GetL2Balance(isc.NewAddressAgentID(addressUser2), isc.BaseTokenCoinInfo.CoinType)
+	user2L2Bal2 := e.GetL2Balance(isc.NewAddressAgentID(addressUser2), coin.BaseTokenType)
 	require.NoError(t, err)
 	gasFeeCharged, err := strconv.ParseUint(reqceipt.GasFeeCharged, 10, 64)
 	require.NoError(t, err)
