@@ -23,14 +23,13 @@ func (reqctx *requestContext) send(params isc.RequestParameters) {
 		reqctx.vm.txbuilder.SendAssets(params.TargetAddress.AsIotaAddress(), params.Assets)
 
 	} else {
-		panic("refactor me: send:CrossChainRequest")
-		packageID := reqctx.vm.task.Anchor.ISCPackage()
-
-		reqctx.vm.txbuilder.SendCrossChainRequest(
-			&packageID,
-			params.TargetAddress.AsIotaAddress(),
-			params.Assets,
-			params.Metadata,
-		)
+		if reqctx.ChainID().Equals(isc.ChainIDFromAddress(params.TargetAddress)) {
+			reqctx.vm.txbuilder.SendRequest(
+				params.Assets,
+				params.Metadata,
+			)
+		} else {
+			panic("Cross-chain requests are not allowed in this context")
+		}
 	}
 }

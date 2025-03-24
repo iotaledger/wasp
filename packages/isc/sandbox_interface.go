@@ -348,6 +348,14 @@ func (m Message) String() string {
 	return fmt.Sprintf("Message(%s, %s, %s)", m.Target.Contract, m.Target.EntryPoint, m.Params)
 }
 
+func (m Message) AsISCMove() *iscmove.Message {
+	return &iscmove.Message{
+		Contract: uint32(m.Target.Contract),
+		Function: uint32(m.Target.EntryPoint),
+		Args:     m.Params,
+	}
+}
+
 func NewMessageFromNames(contract string, ep string, params ...CallArguments) Message {
 	return NewMessage(Hn(contract), Hn(ep), params...)
 }

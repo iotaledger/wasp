@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -99,10 +98,6 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 
 	impRequest := isc.NewImpersonatedOffLedgerRequest(&offLedgerRequestData.OffLedgerRequestDataEssence).
 		WithSenderAddress(requestFrom)
-
-	if !impRequest.TargetAddress().Equals(ch.ID().AsAddress()) {
-		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
-	}
 
 	rec, err := common.EstimateGas(ch, impRequest)
 	if err != nil {

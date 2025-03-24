@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
@@ -18,7 +19,7 @@ import (
 
 func TestSerdeRequestReceipt(t *testing.T) {
 	nonce := uint64(time.Now().UnixNano())
-	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.Hn("0"), isc.Hn("0")), nonce, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("0"), isc.Hn("0")), nonce, gas.LimitsDefault.MaxGasPerRequest)
 	signedReq := req.Sign(cryptolib.NewKeyPair())
 	rec := &RequestReceipt{
 		Request: signedReq,

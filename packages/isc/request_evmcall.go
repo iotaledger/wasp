@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
@@ -84,10 +83,6 @@ func (req *evmOffLedgerCallRequest) String() string {
 		req.ID(),
 		data,
 	)
-}
-
-func (req *evmOffLedgerCallRequest) TargetAddress() *cryptolib.Address {
-	return cryptolib.NewEmptyAddress()
 }
 
 func (req *evmOffLedgerCallRequest) VerifySignature() error {

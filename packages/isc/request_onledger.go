@@ -139,10 +139,6 @@ func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBagWithBalances {
 	return req.assets.AsAssetsBagWithBalances(req.assetsBag)
 }
 
-func (req *OnLedgerRequestData) TargetAddress() *cryptolib.Address {
-	return req.targetAddress
-}
-
 func (req *OnLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 	return nil
 }

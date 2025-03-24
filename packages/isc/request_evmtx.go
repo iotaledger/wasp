@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	_ "github.com/iotaledger/wasp/packages/evm/evmtypes" // register BCS custom encoder for Transaction
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
@@ -103,10 +102,6 @@ func (req *evmOffLedgerTxRequest) String() string {
 		req.ID(),
 		data,
 	)
-}
-
-func (req *evmOffLedgerTxRequest) TargetAddress() *cryptolib.Address {
-	return cryptolib.NewEmptyAddress()
 }
 
 func (req *evmOffLedgerTxRequest) VerifySignature() error {

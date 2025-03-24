@@ -4,8 +4,6 @@
 package isc
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
@@ -25,8 +23,6 @@ const (
 
 	AgentIDIsNil AgentIDKind = 0x80
 )
-
-const AgentIDStringSeparator = "@"
 
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
@@ -73,9 +69,8 @@ func AgentIDFromString(s string) (AgentID, error) {
 		return &NilAgentID{}, nil
 	}
 
-	fmt.Println(len(s))
 	// TODO Use proper length validation.
-	if len(s) == 4*2 { // Hname => uint32
+	if len(s) == HnameLength*2 { // Hname => uint32
 		return contractAgentIDFromString(s)
 	}
 
