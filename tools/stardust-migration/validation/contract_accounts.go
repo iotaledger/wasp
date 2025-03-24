@@ -5,8 +5,10 @@ import (
 	"math/big"
 	"strings"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/samber/lo"
 
+	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
@@ -25,23 +27,30 @@ import (
 )
 
 func OldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+	// TODO: There will be not enought memory to store all that stringyfied data.
+	// Would need to change the flow of validation. But for current development it's fine.
+
 	accsStr, accs := oldAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("Old accounts preview:\n%v\n", utils.MultilinePreview(accsStr))
 
 	baseTokenBalancesStr := oldBaseTokenBalancesToStr(contractState, chainID, accs)
 	cli.DebugLogf("Old base token balances preview:\n%v\n", utils.MultilinePreview(baseTokenBalancesStr))
 
-	return accsStr + "\n" + baseTokenBalancesStr
+	nativeTokenBalancesStr := oldNativeTokenBalancesToStr(contractState, chainID, accs)
+	cli.DebugLogf("Old native token balances preview:\n%v\n", utils.MultilinePreview(nativeTokenBalancesStr))
+
+	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTokenBalancesStr
 }
 
 func NewAccountsContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID) string {
 	accsStr, accs := newAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("New accounts preview:\n%v\n", utils.MultilinePreview(accsStr))
 
-	baseTokenBalancesStr, _ := newTokenBalancesToStr(contractState, chainID, accs)
+	baseTokenBalancesStr, nativeTOkenBalancesStr := newTokenBalancesToStr(contractState, chainID, accs)
 	cli.DebugLogf("New base token balances preview:\n%v\n", utils.MultilinePreview(baseTokenBalancesStr))
+	cli.DebugLogf("New native token balances preview:\n%v\n", utils.MultilinePreview(nativeTOkenBalancesStr))
 
-	return accsStr + "\n" + baseTokenBalancesStr
+	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTOkenBalancesStr
 }
 
 func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) (string, map[old_kv.Key]old_isc.AgentID) {
@@ -109,15 +118,17 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 
 func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old base token balances (by prefix)...\n")
+
 	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
 	defer clearProgress()
-	var balancesStr strings.Builder
 
+	var balancesStr strings.Builder
 	count := 0
+
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
-	contractState.Iterate(old_accounts.PrefixBaseTokens, func(balanceKey old_kv.Key, v []byte) bool {
-		accKey := utils.MustRemovePrefix(balanceKey, old_accounts.PrefixBaseTokens)
+	contractState.Iterate(old_accounts.PrefixBaseTokens, func(k old_kv.Key, v []byte) bool {
+		accKey := utils.MustRemovePrefix(k, old_accounts.PrefixBaseTokens)
 
 		var accStr string
 		if strings.HasPrefix(string(accKey), old_accounts.L2TotalsAccount) {
@@ -160,8 +171,10 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 
 func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old base token balances (from map)...\n")
+
 	printProgress, clearProgress := cli.NewProgressPrinter("balances", len(knownAccs)+1)
 	defer clearProgress()
+
 	var balancesStr strings.Builder
 	count := 0
 
@@ -195,6 +208,81 @@ func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainI
 	return res
 }
 
+func oldNativeTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
+	balancesStrFromPrefix := oldNativeTokenBalancesFromPrefixToStr(contractState, chainID, knownAccs)
+
+	return balancesStrFromPrefix
+}
+
+func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
+	cli.DebugLogf("Reading old native token balances (by prefix)...\n")
+
+	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
+	defer clearProgress()
+
+	var balancesStr strings.Builder
+	count := 0
+
+	contractState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+		accKey, accStr, _, ntID, isMapElem := utils.MustSplitParseMapKeyAny(k, old_accounts.PrefixNativeTokens, func(accKey, ntIDBytes old_kv.Key) (string, old_iotago.NativeTokenID, error) {
+			var accStr string
+			if accKey == old_accounts.L2TotalsAccount {
+				accStr = "L2TotalsAccount"
+			} else {
+				agentID, err := old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID)
+				if err != nil {
+					return "", old_iotago.NativeTokenID{}, fmt.Errorf("failed to parse agent ID: %v", err)
+				}
+
+				accStr = oldAgentIDToStr(agentID)
+			}
+
+			ntID, err := old_isc.NativeTokenIDFromBytes([]byte(ntIDBytes))
+			if err != nil {
+				return "", old_iotago.NativeTokenID{}, fmt.Errorf("failed to parse native token ID: %v: ntIDBytes = %x / %v", err, ntIDBytes, string(ntIDBytes))
+			}
+
+			return accStr, ntID, nil
+		})
+		if !isMapElem {
+			return true
+		}
+
+		if accKey != old_accounts.L2TotalsAccount {
+			knownAgentID, ok := knownAccs[accKey]
+			if !ok {
+				panic(fmt.Errorf("account has balance, but not found in accounts list: agentID = %v, accKey = %x / %v", accStr, accKey, string(accKey)))
+			}
+
+			knownAgentIDStr := oldAgentIDToStr(knownAgentID)
+			if knownAgentIDStr != accStr {
+				panic(fmt.Errorf("differnt agent ID for same acc key: knownAgentID = %v, balanceAgentID = %v, accKey = %x / %v",
+					knownAgentIDStr, accStr, accKey, string(accKey)))
+			}
+		}
+
+		// NOTE: Using other logic from the one used in migration to improve validation quality.
+		balance := old_codec.MustDecodeBigIntAbs(v, big.NewInt(0))
+		balancesStr.WriteString("\tNative balance: ")
+		balancesStr.WriteString(accStr)
+		balancesStr.WriteString(": ")
+		balancesStr.WriteString(ntID.String())
+		balancesStr.WriteString(": ")
+		balancesStr.WriteString(balance.String())
+		balancesStr.WriteString("\n")
+		printProgress()
+		count++
+
+		return true
+	})
+
+	cli.DebugLogf("Found %v old native token balances\n", count)
+	cli.DebugLogf("Formatting lines...\n")
+	res := fmt.Sprintf("Found %v native token balances:%v", count, utils.SortLines(balancesStr.String()))
+
+	return res
+}
+
 func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {
 	// Using two different ways of getting balances and ensuring they are equal - for double safety
 	baseFromPrefix, nativeFromPrefix := newTokenBalancesFromPrefixToStr(contractState, chainID)
@@ -208,18 +296,19 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 
 func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (base, native string) {
 	cli.DebugLogf("Reading new token balances (using prefix iteration)...\n")
+
 	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
 	defer clearProgress()
+
 	var baseBalancesStr strings.Builder
 	var nativeBalancesStr strings.Builder
-
 	baseCount := 0
 	nativeCount := 0
 
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
-	contractState.Iterate(kv.Key(accounts.PrefixAccountCoinBalances), func(balanceKey kv.Key, v []byte) bool {
-		accKey, accStr, _, coinType, isMapElem := utils.MustSplitParseMapKeyAny(balanceKey, accounts.PrefixAccountCoinBalances, func(accKey, coinTypeBytes kv.Key) (string, coin.Type, error) {
+	contractState.Iterate(kv.Key(accounts.PrefixAccountCoinBalances), func(k kv.Key, v []byte) bool {
+		accKey, accStr, _, coinType, isMapElem := utils.MustSplitParseMapKeyAny(k, accounts.PrefixAccountCoinBalances, func(accKey, coinTypeBytes kv.Key) (string, coin.Type, error) {
 			// Unfortunatelly sometimes accKey or coinTypeBytes contains map separator (dot - .)
 			// And as both accKey and coinTypeBytes hae dynamic size, we cannot expected the separator at some specific position.
 			// So what we do is just try to parse all variants.
@@ -267,10 +356,11 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 			baseCount++
 			strBuilder.WriteString("\tBase balance: ")
 		} else {
-			balanceStr = coinType.ShortString() + ": " + balance.String()
+			ntID := coinTypeToOldNTID(coinType) // reverse conversion
+			balanceStr = ntID.ToHex() + ": " + balance.String()
 			strBuilder = &nativeBalancesStr
 			nativeCount++
-			strBuilder.WriteString("\nNative balance: ")
+			strBuilder.WriteString("\tNative balance: ")
 		}
 
 		strBuilder.WriteString(accStr)
@@ -293,11 +383,12 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 
 func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {
 	cli.DebugLogf("Reading new token balances (using accs map)...\n")
+
 	printProgress, clearProgress := cli.NewProgressPrinter("balances", uint32(len(accs)))
 	defer clearProgress()
+
 	var baseBalancesStr strings.Builder
 	var nativeBalancesStr strings.Builder
-
 	baseCount := 0
 	nativeCount := 0
 
@@ -322,10 +413,11 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 			baseCount++
 			strBuilder.WriteString("\tBase balance: ")
 		} else {
-			balanceStr = coinType.ShortString() + ": " + balance.String()
+			ntID := coinTypeToOldNTID(coinType) // reverse conversion
+			balanceStr = ntID.ToHex() + ": " + balance.String()
 			strBuilder = &nativeBalancesStr
 			nativeCount++
-			strBuilder.WriteString("\nNative balance: ")
+			strBuilder.WriteString("\tNative balance: ")
 		}
 
 		strBuilder.WriteString(agentIDStr)
@@ -357,4 +449,16 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 	resNative := fmt.Sprintf("Found %v native token balances:%v", nativeCount, utils.SortLines(nativeBalancesStr.String()))
 
 	return resBase, resNative
+}
+
+func coinTypeToOldNTID(t coin.Type) old_iotago.NativeTokenID {
+	rt := t.ResourceType()
+	if rt.Module != "nt" || !strings.HasPrefix(rt.ObjectName, "NT") {
+		// Yes, raw comparison with magic strings. Intended - to make validation less dependant on bugs of the migration code.
+		panic(fmt.Errorf("unexpected native token type: %v: %v, %v", t, rt.Module, rt.ObjectName))
+	}
+
+	addr := rt.Address.Bytes()
+	foundrySerialNo := lo.Must(hexutil.Decode("0x" + strings.TrimPrefix(rt.ObjectName, "NT"))) // will be wrong if zero-padded
+	return old_iotago.NativeTokenID(append(addr, foundrySerialNo...))
 }
