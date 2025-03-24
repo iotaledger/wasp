@@ -132,12 +132,12 @@ func main() {
 								Usage: "Replace original prefixes in new dabase with human-readable strings.",
 							},
 							&cmd.StringFlag{
-								Name:  "panic-dest-key-suffix",
-								Usage: "Panic if destination db key ends with given hex string (works as AND with --panic-dest-value-prefix).",
+								Name:  "debug-dest-key",
+								Usage: "Print stack when destination db key CONTAIN given hex string (works as AND with --debug-dest-value).",
 							},
 							&cmd.StringFlag{
-								Name:  "panic-dest-value-prefix",
-								Usage: "Panic if destination db value starts with given hex string (works as AND with --panic-dest-key-suffix).",
+								Name:  "debug-dest-value",
+								Usage: "Print stack when destination db value CONTAIN given hex string (works as AND with --debug-dest-key).",
 							},
 						},
 						Before: processCommonFlags,

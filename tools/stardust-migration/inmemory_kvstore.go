@@ -160,13 +160,13 @@ func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) *buffered.Mutation
 }
 
 func (b *InMemoryKVStore) Set(key kv.Key, value []byte) {
-	if b.keyValidator != nil {
-		b.keyValidator(key, value)
-	}
-
 	if value == nil {
 		b.Del(key)
 		return
+	}
+
+	if b.keyValidator != nil {
+		b.keyValidator(key, value)
 	}
 
 	if b.marking {
@@ -177,6 +177,10 @@ func (b *InMemoryKVStore) Set(key kv.Key, value []byte) {
 }
 
 func (b *InMemoryKVStore) Del(key kv.Key) {
+	if b.keyValidator != nil {
+		b.keyValidator(key, nil)
+	}
+
 	if b.marking {
 		delete(b.uncommitedMarked, key)
 	}

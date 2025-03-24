@@ -241,7 +241,7 @@ func newStatsPrinter(totalBlocksCount uint32) func(getBlockIndex func() uint32) 
 
 			totalBlocksProcessed := totalBlocksCount - blocksLeft
 			relProgress := float64(totalBlocksProcessed) / float64(totalBlocksCount)
-			estimateRunTime = time.Duration(float64(time.Since(startTime)) / relProgress)
+			estimateRunTime = time.Duration(float64(time.Since(startTime)) * (1/relProgress - 1))
 			avgSpeed = int(float64(totalBlocksProcessed) / time.Since(startTime).Seconds())
 
 			recentBlocksProcessed := prevBlocksLeft - blocksLeft
