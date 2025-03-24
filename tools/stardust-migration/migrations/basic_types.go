@@ -146,7 +146,7 @@ func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	// TODO: Implement
 	// Temporary implementaion needed to fix base tokens migration, becase right now native token balances override base token balances
-	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::dummy::TOKEN", tokenID.ToHex()[:64])))
+	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nt::NT", tokenID.ToHex()[:64])))
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
