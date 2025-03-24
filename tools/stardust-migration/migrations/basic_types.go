@@ -144,9 +144,9 @@ func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
 // }
 
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
-	//panic("TODO: Not implemented")
-
-	return coin.BaseTokenType
+	// TODO: Implement
+	// Temporary implementaion needed to fix base tokens migration, becase right now native token balances override base token balances
+	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::dummy::TOKEN", tokenID.ToHex()[:64])))
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
@@ -171,6 +171,11 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 
 	u := uint64(18446744073709551615)
 	return coin.Value(u)
+}
+
+func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
+	//panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
+	return big.NewInt(0).Mul(oldBalanceFullDecimals, big.NewInt(1_000))
 }
 
 func ConvertOldCoinDecimalsToNew(from uint64) coin.Value {

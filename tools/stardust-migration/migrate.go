@@ -42,6 +42,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	isc_migration "github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/transaction"
@@ -280,6 +281,7 @@ func migrateAllStates(c *cmd.Context) error {
 	dryRun := c.Bool("dry-run")
 	debugDestKey := c.String("debug-dest-key")
 	debugDestValue := c.String("debug-dest-value")
+	printBlockIdx := c.Bool("print-block-idx")
 
 	if continueMigration {
 		if startBlockIndex != 0 {
@@ -325,6 +327,10 @@ func migrateAllStates(c *cmd.Context) error {
 				panic(err)
 			}
 		}()
+
+		if printBlockIdx {
+			cli.Logf("Block Index: %d\n", blockIndex)
+		}
 
 		oldMuts := block.Mutations()
 		// for k, v := range oldMuts.Sets {
