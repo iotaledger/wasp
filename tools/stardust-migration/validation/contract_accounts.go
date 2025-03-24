@@ -99,33 +99,19 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 }
 
 func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
-	balancesStr, accsWithBalances := oldBaseTokenBalancesFromPrefixToStr(contractState, chainID)
+	balancesStrFromPrefix := oldBaseTokenBalancesFromPrefixToStr(contractState, chainID, knownAccs)
+	balancesStrFromMap := oldBaseTokenBalancesFromMapToStr(contractState, chainID, knownAccs)
 
-	for accKey, balanceAgentID := range accsWithBalances {
-		knownAgentID, ok := knownAccs[accKey]
-		if !ok {
-			panic(fmt.Errorf("account has balance, but not found in accounts list: agentID = %v, accKey = %x / %v", oldAgentIDToStr(balanceAgentID), accKey, string(accKey)))
-		}
+	EnsureEqual("old base token balances (prefix vs map)", balancesStrFromPrefix, balancesStrFromMap)
 
-		knownAgentIDStr := oldAgentIDToStr(knownAgentID)
-		balanceAgentIDStr := oldAgentIDToStr(balanceAgentID)
-		if knownAgentIDStr != balanceAgentIDStr {
-			panic(fmt.Errorf("differnt agent ID for same acc key: knownAgentID = %v, balanceAgentID = %v, accKey = %x / %v",
-				knownAgentIDStr, balanceAgentIDStr, accKey, string(accKey)))
-		}
-	}
-
-	cli.DebugLogf("All old base token balances are consistent with known accounts list\n")
-
-	return balancesStr
+	return balancesStrFromPrefix
 }
 
-func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) (string, map[old_kv.Key]old_isc.AgentID) {
-	cli.DebugLogf("Reading old base token balances...\n")
+func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
+	cli.DebugLogf("Reading old base token balances (by prefix)...\n")
 	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
 	defer clearProgress()
 	var balancesStr strings.Builder
-	accs := make(map[old_kv.Key]old_isc.AgentID)
 
 	count := 0
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
@@ -139,7 +125,17 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 		} else {
 			agentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))
 			accStr = oldAgentIDToStr(agentID)
-			accs[old_kv.Key(accKey)] = agentID
+
+			knownAgentID, ok := knownAccs[accKey]
+			if !ok {
+				panic(fmt.Errorf("account has balance, but not found in accounts list: agentID = %v, accKey = %x / %v", accStr, accKey, string(accKey)))
+			}
+
+			knownAgentIDStr := oldAgentIDToStr(knownAgentID)
+			if knownAgentIDStr != accStr {
+				panic(fmt.Errorf("differnt agent ID for same acc key: knownAgentID = %v, balanceAgentID = %v, accKey = %x / %v",
+					knownAgentIDStr, accStr, accKey, string(accKey)))
+			}
 		}
 
 		// NOTE: Using other logic from the one used in migration to improve validation quality.
@@ -159,7 +155,44 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 	cli.DebugLogf("Formatting lines...\n")
 	res := fmt.Sprintf("Found %v base token balances:%v", count, utils.SortLines(balancesStr.String()))
 
-	return res, accs
+	return res
+}
+
+func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
+	cli.DebugLogf("Reading old base token balances (from map)...\n")
+	printProgress, clearProgress := cli.NewProgressPrinter("balances", len(knownAccs)+1)
+	defer clearProgress()
+	var balancesStr strings.Builder
+	count := 0
+
+	stringifyBalance := func(accKey old_kv.Key, accStr string, balance *big.Int) {
+		if balance.Sign() == 0 {
+			return
+		}
+
+		balancesStr.WriteString("\tBase balance: ")
+		balancesStr.WriteString(accStr)
+		balancesStr.WriteString(": ")
+		balancesStr.WriteString(balance.String())
+		balancesStr.WriteString("\n")
+		printProgress()
+		count++
+	}
+
+	for accKey, agentID := range knownAccs {
+		balance := old_accounts.GetBaseTokensFullDecimals(newSchema)(contractState, accKey)
+		accStr := oldAgentIDToStr(agentID)
+		stringifyBalance(accKey, accStr, balance)
+	}
+
+	totalsBalance := old_accounts.GetBaseTokensFullDecimals(newSchema)(contractState, old_kv.Key(old_accounts.L2TotalsAccount))
+	stringifyBalance(old_kv.Key(old_accounts.L2TotalsAccount), "L2TotalsAccount", totalsBalance)
+
+	cli.DebugLogf("Found %v old base token balances\n", count)
+	cli.DebugLogf("Formatting lines...\n")
+	res := fmt.Sprintf("Found %v base token balances:%v", count, utils.SortLines(balancesStr.String()))
+
+	return res
 }
 
 func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {

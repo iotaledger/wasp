@@ -18,6 +18,7 @@ require (
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/google/go-cmp v0.6.0
 	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
+	github.com/iotaledger/hive.go/core v1.0.0-rc.3
 	github.com/iotaledger/hive.go/db v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/hive.go/kvstore v0.0.0-20240520064018-c635e5900894
 	github.com/iotaledger/iota.go/v3 v3.0.0-rc.3
@@ -26,12 +27,11 @@ require (
 	github.com/nnikolash/wasp-types-exported v0.0.0-20250314175114-2d93844858c8
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/r3labs/diff v1.1.0
 	github.com/samber/lo v1.49.1
-	github.com/sergi/go-diff v1.3.1
 	github.com/slack-go/slack v0.16.0
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 )
 
 require github.com/google/uuid v1.6.0 // indirect
