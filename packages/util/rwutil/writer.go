@@ -69,19 +69,6 @@ func (ww *Writer) WriteN(val []byte) *Writer {
 	return ww
 }
 
-func (ww *Writer) WriteUint256(val *big.Int) *Writer {
-	if ww.Err == nil {
-		if val == nil {
-			val = new(big.Int)
-		}
-		if val.Sign() >= 0 {
-			return ww.WriteBytes(val.Bytes())
-		}
-		ww.Err = errors.New("negative uint256")
-	}
-	return ww
-}
-
 // WriteAmount16 writes a variable-length encoded amount.
 func (ww *Writer) WriteAmount16(val uint16) *Writer {
 	if ww.Err == nil {
