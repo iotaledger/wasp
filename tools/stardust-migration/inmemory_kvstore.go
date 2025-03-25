@@ -122,13 +122,15 @@ func (b *InMemoryKVStore) DeleteIfNotSet() {
 }
 
 // RemoveRedundantMutations removes mutations that have no effect
-func (b *InMemoryKVStore) RemoveRedundantMutations() {
+func (b *InMemoryKVStore) RemoveRedundantMutations() int {
 	committedSets := b.committed
 	uncommittedSets := b.uncommitted.Mutations().Sets
+	removedCount := 0
 
 	for key, value := range uncommittedSets {
 		committed, ok := committedSets[key]
 		if ok && bytes.Equal(committed, value) {
+			removedCount++
 			delete(uncommittedSets, key)
 		}
 	}
@@ -138,14 +140,18 @@ func (b *InMemoryKVStore) RemoveRedundantMutations() {
 	for key := range uncommittedDels {
 		_, ok := committedSets[key]
 		if !ok {
+			removedCount++
 			delete(uncommittedDels, key)
 		}
 	}
+
+	return removedCount
 }
 
-func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) *buffered.Mutations {
+func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) (*buffered.Mutations, int) {
+	var ineffectiveRemoved int
 	if onlyEffectiveMutations {
-		b.RemoveRedundantMutations()
+		ineffectiveRemoved = b.RemoveRedundantMutations()
 	}
 
 	muts := b.uncommitted.Mutations()
@@ -156,7 +162,7 @@ func (b *InMemoryKVStore) Commit(onlyEffectiveMutations bool) *buffered.Mutation
 
 	b.prevMutsCount = 0
 
-	return muts
+	return muts, ineffectiveRemoved
 }
 
 func (b *InMemoryKVStore) Set(key kv.Key, value []byte) {

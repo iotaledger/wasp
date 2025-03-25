@@ -146,7 +146,8 @@ func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	// TODO: Implement
 	// Temporary implementaion needed to fix base tokens migration, becase right now native token balances override base token balances
-	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nt::NT", tokenID.ToHex()[:64])))
+	h := tokenID.ToHex()
+	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nt::NT%v", h[:66], h[66:])))
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
@@ -169,13 +170,13 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 		fmt.Println(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
 	}
 
-	u := uint64(18446744073709551615)
-	return coin.Value(u)
+	return coin.Value(oldNativeTokenAmount.Uint64())
 }
 
-func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
-	//panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
-	return big.NewInt(0).Mul(oldBalanceFullDecimals, big.NewInt(1_000))
+func convertBaseTokensFullDecimal(oldBalanceFullDecimals *big.Int) *big.Int {
+	// NOTE: We do NOT need to apply conversion here - full decimal value stays same,
+	// because number of digits has changes for internal representation, but not for ethereum.
+	return oldBalanceFullDecimals
 }
 
 func ConvertOldCoinDecimalsToNew(from uint64) coin.Value {

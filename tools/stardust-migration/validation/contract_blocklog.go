@@ -14,15 +14,15 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
-func OldBlocklogContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, index uint32) string {
-	return OldReceiptsContentToStr(contractState, index)
+func OldBlocklogContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
+	return OldReceiptsContentToStr(contractState, firstIndex, lastIndex)
 }
 
-func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, index uint32) string {
+func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
 	var requestStr strings.Builder
 
-	for blockIndex := 1; blockIndex < int(index); blockIndex++ {
-		_, requests, err := old_blocklog.GetRequestsInBlock(contractState, uint32(blockIndex))
+	for blockIndex := max(firstIndex, 1); blockIndex < lastIndex; blockIndex++ {
+		_, requests, err := old_blocklog.GetRequestsInBlock(contractState, blockIndex)
 		if err != nil {
 			panic(err)
 		}
@@ -37,15 +37,15 @@ func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, index uint32) s
 	return requestStr.String()
 }
 
-func NewBlocklogContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID, index uint32) string {
-	return NewReceiptsContentToStr(contractState, index)
+func NewBlocklogContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
+	return NewReceiptsContentToStr(contractState, firstIndex, lastIndex)
 }
 
-func NewReceiptsContentToStr(contractState kv.KVStoreReader, index uint32) string {
+func NewReceiptsContentToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
 	var requestStr strings.Builder
 
-	for blockIndex := 1; blockIndex < int(index); blockIndex++ {
-		_, requests, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(uint32(blockIndex))
+	for blockIndex := max(firstIndex, 1); blockIndex < lastIndex; blockIndex++ {
+		_, requests, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(blockIndex)
 		if err != nil {
 			panic(err)
 		}

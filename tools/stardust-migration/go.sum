@@ -195,8 +195,6 @@ github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 h1:dTrD7X2PT
 github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7/go.mod h1:ZRdPu684P0fQ1z8sXz4dj9H5LWHhz4a9oCtvjunkSrw=
 github.com/iotaledger/hive.go/constraints v0.0.0-20240520064018-c635e5900894 h1:T8Ajx7h46fbyrd+G8aJZdHJkX2S7Rc/fNe5yXtGB1mQ=
 github.com/iotaledger/hive.go/constraints v0.0.0-20240520064018-c635e5900894/go.mod h1:JF7jjkL6tSUOXm23SWadBzBrl7eJk1DQRLc/fNoVZ+o=
-github.com/iotaledger/hive.go/core v1.0.0-rc.3 h1:gMQsVHY1LHlGNOcmrSO6mq/Za+WjRwB4y71BFHIgXAU=
-github.com/iotaledger/hive.go/core v1.0.0-rc.3/go.mod h1:cnX6n4vl7xfP9e8i7oGPTnOlS9vRnMbNklYOcUzLs4M=
 github.com/iotaledger/hive.go/crypto v0.0.0-20240520064018-c635e5900894 h1:ZmsMyEVYAbrjfz2A2EBwfn1nWZxw9wNrFdjyDrwsIMc=
 github.com/iotaledger/hive.go/crypto v0.0.0-20240520064018-c635e5900894/go.mod h1:cyNxLUHCftR3MQvaFZgCHfkD+xmSUayt6d/v6osFSw4=
 github.com/iotaledger/hive.go/db v0.0.0-20240520064018-c635e5900894 h1:MxBt/PnWIGG8zZgaNye+LYs7dGkVYCRcOVNCQklMZpY=
@@ -284,8 +282,8 @@ github.com/mr-tron/base58 v1.2.0/go.mod h1:BinMc/sQntlIE1frQmRFPUoPA1Zkr8VRgBdjW
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
 github.com/nbio/st v0.0.0-20140626010706-e9e8d9816f32/go.mod h1:9wM+0iRr9ahx58uYLpLIr5fm8diHn0JbqRycJi6w0Ms=
-github.com/nnikolash/wasp-types-exported v0.0.0-20250314175114-2d93844858c8 h1:DyDliThFVtx38Iqf1U+d0bI1twsSgJge2m/nPnMpfZg=
-github.com/nnikolash/wasp-types-exported v0.0.0-20250314175114-2d93844858c8/go.mod h1:BTEIT5dG9oNih8xT3j2/mBsek9nzYzge7rDFKyaOxjI=
+github.com/nnikolash/wasp-types-exported v0.0.0-20250325123101-1a307a9ac1b8 h1:sZdGTM3u4yjMZ2Owg81Ue30x54se1KAhcQ4pdzvh8/g=
+github.com/nnikolash/wasp-types-exported v0.0.0-20250325123101-1a307a9ac1b8/go.mod h1:BTEIT5dG9oNih8xT3j2/mBsek9nzYzge7rDFKyaOxjI=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=

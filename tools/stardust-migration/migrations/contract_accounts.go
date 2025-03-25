@@ -124,7 +124,7 @@ func migrateBaseTokenBalances(
 				oldBalance = old_codec.MustDecodeBigIntAbs(oldBalanceBytes, big.NewInt(0))
 			}
 
-			newBalance = convertBaseTokens(oldBalance)
+			newBalance = convertBaseTokensFullDecimal(oldBalance)
 		}
 
 		w.UnsafeSetBaseTokensFullDecimals(newAccKey, newBalance)

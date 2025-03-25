@@ -36,6 +36,10 @@ var _ old_kv.KVStoreReader = &PrefixKVStore{}
 
 // Needs to be ran after all prefixes are registered when using non-empty store
 func (s *PrefixKVStore) IndexRecords() {
+	for prefix := range s.recordsByPrefix {
+		s.recordsByPrefix[prefix] = map[string][]byte{}
+	}
+
 	s.s.Iterate("", func(key old_kv.Key, value []byte) bool {
 		s.addToIndex(key, value)
 		return true
@@ -90,13 +94,11 @@ func (s *PrefixKVStore) Set(key old_kv.Key, value []byte) {
 func (s *PrefixKVStore) addToIndex(key old_kv.Key, value []byte) {
 	if s.prefixesFromKey != nil {
 		prefixesFromKey := s.prefixesFromKey(key)
-		if prefixesFromKey != nil {
+		if len(prefixesFromKey) != 0 {
 			for _, prefixFromKey := range prefixesFromKey {
 				prefixRecords := s.registerPrefix(string(prefixFromKey))
 				prefixRecords[string(key)] = value
 			}
-			// ignoring other keys for performance
-			return
 		}
 	}
 
@@ -146,6 +148,11 @@ func (s *PrefixKVStore) Has(key old_kv.Key) bool {
 }
 
 func (s *PrefixKVStore) Iterate(prefix old_kv.Key, f func(key old_kv.Key, value []byte) bool) {
+	if prefix == "" {
+		s.s.Iterate("", f)
+		return
+	}
+
 	prefixRecords, prefixKnown := s.recordsByPrefix[string(prefix)]
 	if !prefixKnown {
 		if s.prefixesFromKey != nil {
@@ -169,6 +176,11 @@ func (s *PrefixKVStore) Iterate(prefix old_kv.Key, f func(key old_kv.Key, value 
 }
 
 func (s *PrefixKVStore) IterateKeys(prefix old_kv.Key, f func(key old_kv.Key) bool) {
+	if prefix == "" {
+		s.s.IterateKeys("", f)
+		return
+	}
+
 	prefixRecords, prefixKnown := s.recordsByPrefix[string(prefix)]
 	if !prefixKnown {
 		if s.prefixesFromKey != nil {

@@ -9,23 +9,66 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-func EnsureEqual(name, oldStr, newStr string) {
-	if oldStr != newStr {
-		diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-			A:       difflib.SplitLines(oldStr),
-			B:       difflib.SplitLines(newStr),
-			Context: 2,
-		})
-
-		cli.DebugLogf("%v diff:\n%v", strings.Title(name), diff)
-
-		oldStateFilePath := os.TempDir() + "/stardust-migration-old-state.txt"
-		newStateFilePath := os.TempDir() + "/stardust-migration-new-state.txt"
-		cli.DebugLogf("Writing old and new states to files %v and %v\n", oldStateFilePath, newStateFilePath)
-
-		os.WriteFile(oldStateFilePath, []byte(oldStr), 0644)
-		os.WriteFile(newStateFilePath, []byte(newStr), 0644)
-
-		panic(fmt.Errorf("%v are NOT equal", strings.Title(name)))
+func EnsureEqual(comparisonName, leftStr, rightStr string) {
+	if leftStr == rightStr {
+		return
 	}
+
+	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:       difflib.SplitLines(leftStr),
+		B:       difflib.SplitLines(rightStr),
+		Context: 2,
+	})
+
+	cli.DebugLogf("%v diff:\n%v", strings.Title(comparisonName), diff)
+
+	r := strings.NewReplacer(
+		" ", "-",
+		"(", "",
+		")", "",
+		",", "",
+		".", "",
+		":", "",
+		";", "",
+		"!", "",
+		"?", "",
+		"\"", "",
+		"'", "",
+		"`", "",
+		"\\", "",
+		"/", "",
+		"|", "",
+		"<", "",
+		">", "",
+		"[", "",
+		"]", "",
+		"{", "",
+		"}", "",
+		"=", "",
+		"+", "",
+		"-", "",
+		"*", "",
+		"/", "",
+		"%", "",
+		"^", "",
+		"&", "",
+		"$", "",
+		"#", "",
+		"@", "",
+		"~", "",
+	)
+	nameForFilePath := r.Replace(comparisonName)
+	leftStateFilePath := fmt.Sprintf("%v/stardust-migration-%v-1.txt", os.TempDir(), nameForFilePath)
+	rightStateFilePath := fmt.Sprintf("%v/stardust-migration-%v-2.txt", os.TempDir(), nameForFilePath)
+	cli.DebugLogf("Writing compared strings to files %v and %v\n", leftStateFilePath, rightStateFilePath)
+
+	if err := os.WriteFile(leftStateFilePath, []byte(leftStr), 0644); err != nil {
+		cli.Logf("ERROR writing left string to file: %v: %v", leftStateFilePath, err)
+	}
+
+	if err := os.WriteFile(rightStateFilePath, []byte(rightStr), 0644); err != nil {
+		cli.Logf("ERROR writing right string to file: %v: %v", rightStateFilePath, err)
+	}
+
+	panic(fmt.Errorf("%v are NOT equal", strings.Title(comparisonName)))
 }
