@@ -7,6 +7,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
@@ -15,7 +16,6 @@ var (
 	// Funcs
 	FuncDeposit = coreutil.NewEP0(Contract, "deposit")
 	// TODO: adapt to iotago-rebased
-	//   FuncFoundryCreateNew
 	//   FuncCoinCreate
 	//   FuncCoinModifySupply
 	//   FuncCoinDestroy
@@ -28,7 +28,7 @@ var (
 	)
 	FuncWithdraw    = coreutil.NewEP0(Contract, "withdraw")
 	SetCoinMetadata = coreutil.NewEP1(Contract, "setCoinMetadata",
-		coreutil.Field[*isc.IotaCoinInfo]("coinInfo"),
+		coreutil.Field[*parameters.IotaCoinInfo]("coinInfo"),
 	)
 	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
 		coreutil.Field[coin.Type]("coinType"),

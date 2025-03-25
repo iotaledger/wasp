@@ -36,7 +36,6 @@ type ChainBackend interface {
 	ISCLatestState() (state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
-	BaseToken() *parameters.BaseToken
 	TakeSnapshot() (int, error)
 	RevertToSnapshot(int) error
 }

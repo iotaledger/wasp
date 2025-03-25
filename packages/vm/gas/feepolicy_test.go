@@ -56,7 +56,7 @@ func TestFeePolicyAffordableGas(t *testing.T) {
 	for tokens, expected := range cases2 {
 		require.EqualValues(t, expected, feePolicy.FeeFromGas(
 			feePolicy.GasBudgetFromTokens(tokens),
-			nil, parameters.Decimals,
+			nil, parameters.BaseTokenDecimals,
 		))
 	}
 }

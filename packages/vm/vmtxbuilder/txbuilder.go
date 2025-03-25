@@ -64,8 +64,6 @@ func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
 // All explicitly consumed inputs will hold fixed index in the transaction
 // Returns  the amount of baseTokens needed to cover SD costs for the NTs/NFT contained by the request output
 func (txb *AnchorTransactionBuilder) ConsumeRequest(req isc.OnLedgerRequest) {
-	// TODO we may need to assert the maximum size of the request we can consume here
-
 	txb.consumed = append(txb.consumed, req)
 }
 

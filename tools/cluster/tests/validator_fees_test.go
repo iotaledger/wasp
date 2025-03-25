@@ -8,19 +8,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
-func TestValidatorFees(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestValidatorFees(t *testing.T) { // passed
 	validatorKps := []*cryptolib.KeyPair{
 		cryptolib.NewKeyPair(),
 		cryptolib.NewKeyPair(),
@@ -65,7 +64,10 @@ func TestValidatorFees(t *testing.T) {
 	require.NoError(t, err)
 	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, clu.Config.ISCPackageID(), userWallet)
 	for i := 0; i < 20; i++ {
-		reqTx, err := scClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+		reqTx, err := scClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+			Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 100),
+			GasBudget: iotaclient.DefaultGasBudget,
+		})
 		require.NoError(t, err)
 		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chainID, reqTx, false, 30*time.Second)
 		require.NoError(t, err)

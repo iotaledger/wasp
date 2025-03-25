@@ -57,7 +57,6 @@ func ValueFromString(s string) (Value, error) {
 	return Value(value), nil
 }
 
-// TODO: maybe it is not ok to consider this constant?
 var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`

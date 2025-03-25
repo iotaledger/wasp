@@ -75,7 +75,7 @@ func TestPeeringNetUnreliable(t *testing.T) {
 		require.Less(t, len(durations), 900)
 	}
 	{ // Average should be between the specified boundaries.
-		var avgDuration int64 = 0 //nolint:revive
+		var avgDuration int64 = 0
 		for _, d := range durations {
 			avgDuration += d.Milliseconds()
 		}
@@ -124,7 +124,7 @@ func TestPeeringNetGoodQuality(t *testing.T) {
 		require.Equal(t, 1000, len(durations))
 	}
 	{ // Average should be small enough.
-		var avgDuration int64 = 0 //nolint:revive
+		var avgDuration int64 = 0
 		for _, d := range durations {
 			avgDuration += d.Milliseconds()
 		}

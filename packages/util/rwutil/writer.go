@@ -56,11 +56,6 @@ func (ww *Writer) Skip() *Reader {
 }
 
 func (ww *Writer) Write(obj IoWriter) *Writer {
-	// TODO: obj can be nil when obj.Write() can handle that.
-	// We don't want this. So find those instances and activate this code.
-	//if obj == nil {
-	//	panic("nil writer")
-	//}
 	if ww.Err == nil {
 		ww.Err = obj.Write(ww.w)
 	}
@@ -192,7 +187,7 @@ func (ww *Writer) WriteSizeWithLimit(val int, limit uint32) *Writer {
 			return ww.WriteN(size64Encode(uint64(val)))
 		}
 		debug.PrintStack()
-		ww.Err = errors.New(fmt.Sprintf("invalid write size limit (val: %d, limit: %d)", val, limit))
+		ww.Err = fmt.Errorf("invalid write size limit (val: %d, limit: %d)", val, limit)
 	}
 	return ww
 }

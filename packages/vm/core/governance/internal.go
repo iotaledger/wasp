@@ -102,7 +102,7 @@ func (s *StateWriter) SetGasFeePolicy(fp *gas.FeePolicy) {
 }
 
 func (s *StateReader) GetDefaultGasPrice() *big.Int {
-	return s.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
+	return s.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 }
 
 func (s *StateReader) GetGasLimits() *gas.Limits {

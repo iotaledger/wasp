@@ -10,17 +10,19 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 // executed in cluster_test.go
-func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
+func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// deposit funds for offledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(iotaclient.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(iotaclient.DefaultGasBudget, keyPair)
 
 	// spin a new node
 	clu2 := newCluster(t, waspClusterOpts{
@@ -73,7 +75,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 		}).Execute()
 	require.NoError(t, err)
 
-	// add node 0 from cluster 2 as a *permitionless* access node
+	// add node 0 from cluster 2 as a *permissionless* access node
 	_, err = nodeClient.ChainsAPI.AddAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
 
@@ -88,7 +90,11 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 		env.Clu.Config.ISCPackageID(),
 		keyPair,
 	)
-	req, err := myClient.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
+	req, err := myClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
+		chainclient.PostRequestParams{
+			Allowance: isc.NewAssets(10),
+		},
+	)
 	require.NoError(t, err)
 
 	// request has been processed

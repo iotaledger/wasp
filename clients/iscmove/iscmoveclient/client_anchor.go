@@ -25,7 +25,7 @@ type StartNewChainRequest struct {
 	GasBudget         uint64
 }
 
-// the only excpetion which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// the only exception which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
 // this func automatically pick a coin
 type CreateAnchorWithAssetsBagRefRequest struct {
 	Signer            cryptolib.Signer
@@ -136,7 +136,6 @@ func (c *Client) StartNewChain(
 	argInitCoin = ptb.LastCommandResultArg()
 
 	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
-
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
 		req.Signer,

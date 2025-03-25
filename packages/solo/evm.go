@@ -28,12 +28,11 @@ import (
 // tests.
 type jsonRPCSoloBackend struct {
 	Chain     *Chain
-	baseToken *parameters.BaseToken
 	snapshots []*Snapshot
 }
 
-func newJSONRPCSoloBackend(chain *Chain, baseToken *parameters.BaseToken) jsonrpc.ChainBackend {
-	return &jsonRPCSoloBackend{Chain: chain, baseToken: baseToken}
+func newJSONRPCSoloBackend(chain *Chain) jsonrpc.ChainBackend {
+	return &jsonRPCSoloBackend{Chain: chain}
 }
 
 func (b *jsonRPCSoloBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error) {
@@ -115,10 +114,6 @@ func (b *jsonRPCSoloBackend) ISCStateByTrieRoot(trieRoot trie.Hash) (state.State
 	return b.Chain.store.StateByTrieRoot(trieRoot)
 }
 
-func (b *jsonRPCSoloBackend) BaseToken() *parameters.BaseToken {
-	return b.baseToken
-}
-
 func (b *jsonRPCSoloBackend) ISCChainID() *isc.ChainID {
 	return &b.Chain.ChainID
 }
@@ -139,7 +134,7 @@ func (b *jsonRPCSoloBackend) TakeSnapshot() (int, error) {
 
 func (ch *Chain) EVM() *jsonrpc.EVMChain {
 	return jsonrpc.NewEVMChain(
-		newJSONRPCSoloBackend(ch, parameters.BaseTokenDefault),
+		newJSONRPCSoloBackend(ch),
 		ch.Env.publisher,
 		true,
 		hivedb.EngineMapDB,
@@ -160,8 +155,8 @@ func (ch *Chain) PostEthereumTransaction(tx *types.Transaction) (isc.CallArgumen
 var EthereumAccounts [10]*ecdsa.PrivateKey
 
 func init() {
-	for i := 0; i < len(EthereumAccounts); i++ {
-		seed := crypto.Keccak256([]byte(fmt.Sprintf("seed %d", i)))
+	for i := range len(EthereumAccounts) {
+		seed := crypto.Keccak256(fmt.Appendf(nil, "seed %d", i))
 		key, err := crypto.ToECDSA(seed)
 		if err != nil {
 			panic(err)

@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
@@ -54,12 +55,15 @@ func initRotateCmd() *cobra.Command {
 	return cmd
 }
 
+//lint:ignore U1000 Ignore unused function temporarily for debugging
 func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chain string, status bool, offledger bool) {
 	msg := governance.FuncStartMaintenance.Message()
 	if !status {
 		msg = governance.FuncStopMaintenance.Message()
 	}
-	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{}, offledger, true)
+	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	}, offledger, true)
 }
 
 func initChangeGovControllerCmd() *cobra.Command {

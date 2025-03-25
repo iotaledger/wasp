@@ -49,6 +49,5 @@ var (
 )
 
 const (
-	// TODO shouldn't this be different between chain, to prevent replay attacks? (maybe derived from ISC ChainID)
 	DefaultChainID = uint16(1074) // IOTA -- get it?
 )

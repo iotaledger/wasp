@@ -391,7 +391,7 @@ func TestRPCGetTxReceipt(t *testing.T) {
 	require.EqualValues(t, env.BlockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
 	require.EqualValues(t, 0, receipt.TransactionIndex)
 
-	expectedGasPrice := env.soloChain.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
+	expectedGasPrice := env.soloChain.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	require.EqualValues(t, expectedGasPrice, receipt.EffectiveGasPrice)
 }
 
@@ -828,7 +828,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 
 func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAddress common.Address, contractABI abi.ABI, contractAddress common.Address) {
 	rqs := make([]isc.Request, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
 			&types.LegacyTx{
 				Nonce:    env.NonceAt(creatorAddress) + uint64(i),
@@ -1057,10 +1057,10 @@ func TestRPCTraceBlock(t *testing.T) {
 		call21 := result.Result[traceTx2Index]
 		call22 := result.Result[traceTx2Index+1]
 
-		call11Action := call11.Action.(map[string]interface{})
-		call12Action := call12.Action.(map[string]interface{})
-		call21Action := call21.Action.(map[string]interface{})
-		call22Action := call22.Action.(map[string]interface{})
+		call11Action := call11.Action.(map[string]any)
+		call12Action := call12.Action.(map[string]any)
+		call21Action := call21.Action.(map[string]any)
+		call22Action := call22.Action.(map[string]any)
 
 		require.Equal(t, strings.ToLower(creatorAddress.String()), strings.ToLower(call11Action["from"].(string)))
 		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call11Action["to"].(string)))

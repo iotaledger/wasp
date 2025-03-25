@@ -45,7 +45,6 @@ var _ peering.PeerSender = &peer{}
 func newPeer(name, peeringURL string, remotePubKey *cryptolib.PublicKey, remoteLppID libp2ppeer.ID, n *netImpl) *peer {
 	log := n.log.NewChildLogger("peer:" + peeringURL)
 	messagePriorityFun := func(msg *peering.PeerMessageNet) bool {
-		// TODO: decide if prioritetisation is needed and implement it then.
 		return false
 	}
 	p := &peer{

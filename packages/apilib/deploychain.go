@@ -26,6 +26,7 @@ type CreateChainParams struct {
 	Textout              io.Writer
 	Prefix               string
 	StateMetadata        transaction.StateMetadata
+	GasCoinObjectID      *iotago.ObjectID
 	GovernanceController *cryptolib.Address
 	PackageID            iotago.PackageID
 }
@@ -46,7 +47,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 
 	referenceGasPrice, err := par.Layer1Client.GetReferenceGasPrice(ctx)
 	if err != nil {
-		return isc.ChainID{}, err
+		return isc.ChainID{}, fmt.Errorf("failed to get reference gas price: %w", err)
 	}
 
 	anchor, err := par.Layer1Client.L2().StartNewChain(
@@ -61,7 +62,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 		},
 	)
 	if err != nil {
-		return isc.ChainID{}, err
+		return isc.ChainID{}, fmt.Errorf("failed to call isc StartNewChain: %w", err)
 	}
 
 	fmt.Fprint(textout, par.Prefix)
@@ -70,7 +71,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 
-	return isc.ChainIDFromObjectID(*anchor.ObjectID), err
+	return isc.ChainIDFromObjectID(*anchor.ObjectID), nil
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its

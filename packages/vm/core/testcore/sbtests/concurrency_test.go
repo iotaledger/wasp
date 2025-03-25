@@ -3,6 +3,7 @@ package sbtests
 import (
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -97,6 +98,8 @@ func TestManyRequests2(t *testing.T) {
 			l1Gas[r] += coin.Value(l1Res.Effects.Data.GasFee())
 		}
 	}
+
+	time.Sleep(1 * time.Second)
 
 	const maxRequestsPerBlock = 50
 	runs := chain.RunAllReceivedRequests(maxRequestsPerBlock)

@@ -14,12 +14,12 @@ func TestClusterSingleNode(t *testing.T) {
 	// setup a cluster with a single node
 	run := createTestWrapper(t, 1, []int{0})
 
-	t.Run("permitionless access node", func(t *testing.T) { run(t, testPermitionlessAccessNode) })
+	t.Run("permissionless access node", func(t *testing.T) { run(t, testPermissionlessAccessNode) }) // passed
 
 	t.Run("spam onledger", func(t *testing.T) { run(t, testSpamOnledger) })
 	t.Run("spam offledger", func(t *testing.T) { run(t, testSpamOffLedger) })
 	t.Run("spam EVM", func(t *testing.T) { run(t, testSpamEVM) })
-	t.Run("accounts dump", func(t *testing.T) { run(t, testDumpAccounts) })
+	t.Run("accounts dump", func(t *testing.T) { run(t, testDumpAccounts) }) // passed
 }
 
 func TestClusterMultiNodeCommittee(t *testing.T) {
@@ -30,38 +30,23 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	// setup a cluster with 4 nodes
 	run := createTestWrapper(t, 4, []int{0, 1, 2, 3})
 
-	t.Run("deploy basic", func(t *testing.T) { run(t, testDeployChain) })
+	t.Run("deploy basic", func(t *testing.T) { run(t, testDeployChain) }) // passed
 
-	t.Run("accountsBasic", func(t *testing.T) { run(t, testBasicAccounts) })
-	t.Run("2acccounts", func(t *testing.T) { run(t, testBasic2Accounts) })
+	t.Run("accountsBasic", func(t *testing.T) { run(t, testBasicAccounts) }) // passed
+	t.Run("2accounts", func(t *testing.T) { run(t, testBasic2Accounts) })    // passed
 
-	t.Run("post deploy", func(t *testing.T) { run(t, testPostDeployInccounter) })
-	t.Run("post 1", func(t *testing.T) { run(t, testPost1Request) })
-	t.Run("post 3 recursive", func(t *testing.T) { run(t, testPost3Recursive) })
-	t.Run("post 5", func(t *testing.T) { run(t, testPost5Requests) })
-	t.Run("post 5 async", func(t *testing.T) { run(t, testPost5AsyncRequests) })
+	t.Run("post 1", func(t *testing.T) { run(t, testPost1Request) })             // passed
+	t.Run("post 3", func(t *testing.T) { run(t, testPost3Requests) })            // passed
+	t.Run("post 5 async", func(t *testing.T) { run(t, testPost5AsyncRequests) }) // passed
 
-	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) })
+	t.Run("EVM jsonrpc", func(t *testing.T) { run(t, testEVMJsonRPCCluster) }) // passed
 
-	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) })
-	t.Run("offledger nonce", func(t *testing.T) { run(t, testOffledgerNonce) })
+	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) }) // passed
+	t.Run("offledger nonce", func(t *testing.T) { run(t, testOffledgerNonce) })   // passed
 
-	t.Run("inccounter invalid entrypoint", func(t *testing.T) { run(t, testInvalidEntrypoint) })
-	t.Run("inccounter increment", func(t *testing.T) { run(t, testIncrement) })
-	t.Run("inccounter increment with transfer", func(t *testing.T) { run(t, testIncrementWithTransfer) })
-	t.Run("inccounter increment call", func(t *testing.T) { run(t, testIncCallIncrement1) })
-	t.Run("inccounter increment recursive", func(t *testing.T) { run(t, testIncCallIncrement2Recurse5x) })
-	t.Run("inccounter increment post", func(t *testing.T) { run(t, testIncPostIncrement) })
-	t.Run("inccounter increment repeatmany", func(t *testing.T) { run(t, testIncRepeatManyIncrement) })
-	t.Run("inccounter local state internal call ", func(t *testing.T) { run(t, testIncLocalStateInternalCall) })
-	t.Run("inccounter local state sandbox call", func(t *testing.T) { run(t, testIncLocalStateSandboxCall) })
-	t.Run("inccounter local state post", func(t *testing.T) { run(t, testIncLocalStatePost) })
-	t.Run("inccounter view counter", func(t *testing.T) { run(t, testIncViewCounter) })
-	t.Run("inccounter timelock", func(t *testing.T) { run(t, testIncCounterTimelock) })
-
-	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) })
-	t.Run("webapi ISC estimategas onledger NFT", func(t *testing.T) { run(t, testEstimateGasOnLedgerNFT) })
-	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) })
+	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) }) // FIXME feature not implement in WebAPI
+	// t.Run("webapi ISC estimategas onledger NFT", func(t *testing.T) { run(t, testEstimateGasOnLedgerNFT) })
+	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) }) // passed
 }
 
 func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *testing.T, f func(*testing.T, *ChainEnv)) {

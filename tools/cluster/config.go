@@ -3,6 +3,7 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"path"
 
@@ -64,6 +65,15 @@ func NewConfig(waspConfig WaspConfig, l1Config l1starter.IotaNodeEndpoint, modif
 		if len(modifyConfig) > 0 && modifyConfig[0] != nil {
 			nodesConfigs[i] = modifyConfig[0](i, nodesConfigs[i])
 		}
+
+		apiURL := l1Config.APIURL()
+		base, err := url.Parse(apiURL)
+		if err != nil {
+			panic(fmt.Errorf("invalid API URL: %s", apiURL))
+		}
+		// FIXME we need to handle non-SSL URLs too
+		nodesConfigs[i].L1HttpHost = "https://" + base.Host + base.Path
+		nodesConfigs[i].L1WsHost = "wss://" + base.Host + base.Path
 	}
 
 	return &ClusterConfig{

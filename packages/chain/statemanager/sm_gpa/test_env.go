@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
@@ -125,7 +126,7 @@ func (teT *testEnv) addVariedNodes(
 		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
-		origin.InitChain(allmigrations.LatestSchemaVersion, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	}
 	teT.nodeIDs = nodeIDs
 	teT.sms = sms
@@ -213,13 +214,13 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusStateProposal(commitment *sta
 	return teT.ensureCompletedConsensusStateProposal(responseCh, maxTimeIterations, timeStep)
 }
 
-func (teT *testEnv) sendConsensusStateProposal(commitment *state.L1Commitment, nodeID gpa.NodeID) <-chan interface{} {
+func (teT *testEnv) sendConsensusStateProposal(commitment *state.L1Commitment, nodeID gpa.NodeID) <-chan any {
 	input, responseCh := sm_inputs.NewConsensusStateProposal(context.Background(), teT.bf.GetAnchor(commitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
 
-func (teT *testEnv) ensureCompletedConsensusStateProposal(respChan <-chan interface{}, maxTimeIterations int, timeStep time.Duration) bool {
+func (teT *testEnv) ensureCompletedConsensusStateProposal(respChan <-chan any, maxTimeIterations int, timeStep time.Duration) bool {
 	return teT.ensureTrue("response from ConsensusStateProposal", func() bool {
 		select {
 		case result := <-respChan:

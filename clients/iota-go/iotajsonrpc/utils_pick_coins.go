@@ -127,3 +127,12 @@ func PickupCoinsWithFilter(
 	}
 	return pickedCoins, nil
 }
+
+func PickupCoinWithFilter(coins Coins, targetAmount uint64, filter func(*Coin) bool) (*Coin, error) {
+	coins, err := PickupCoinsWithFilter(coins, targetAmount, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	return coins.PickCoinNoLess(targetAmount)
+}

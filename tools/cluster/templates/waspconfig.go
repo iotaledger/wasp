@@ -3,19 +3,24 @@
 
 package templates
 
-import "github.com/iotaledger/wasp/packages/cryptolib"
+import (
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+)
 
 type ModifyNodesConfigFn = func(nodeIndex int, configParams WaspConfigParams) WaspConfigParams
 
 type WaspConfigParams struct {
 	APIPort                int
 	PeeringPort            int
-	L1INXAddress           string
 	ProfilingPort          int
 	MetricsPort            int
 	ValidatorKeyPair       *cryptolib.KeyPair
 	ValidatorAddress       string // bech32 encoded address of ValidatorKeyPair
 	PruningMinStatesToKeep int
+	PackageID              *iotago.PackageID
+	L1HttpHost             string
+	L1WsHost               string
 	AuthScheme             string
 }
 
@@ -46,10 +51,12 @@ var WaspConfig = `
     ],
     "disableEvents": true
   },
-  "inx": {
-    "address": "{{.L1INXAddress}}",
+  "l1": {
+    "httpURL": "{{.L1HttpHost}}",
+    "websocketURL": "{{.L1WsHost}}",
+    "packageID": "{{.PackageID}}",
     "maxConnectionAttempts": 30,
-    "targetNetworkName": ""
+    "targetNetworkName": "IOTA"
   },
   "db": {
     "engine": "rocksdb",
@@ -123,10 +130,8 @@ var WaspConfig = `
     "limits": {
       "timeout": "30s",
       "readTimeout": "10s",
-      "writeTimeout": "1m",
-      "maxBodyLength": "2M",
-      "maxTopicSubscriptionsPerClient": 0,
-      "confirmedStateLagThreshold": 2
+      "writeTimeout": "10s",
+      "maxBodyLength": "2M"
     },
     "debugRequestLoggerEnabled": false
   },
@@ -140,6 +145,7 @@ var WaspConfig = `
   "prometheus": {
     "enabled": true,
     "bindAddress": "0.0.0.0:{{.MetricsPort}}"
-  }
+  },
+  "debugRequestLoggerEnabled": true
 }
 `

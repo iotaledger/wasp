@@ -103,7 +103,6 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 	fakeConfigMap := make(map[string]interface{})
 	fakeConfigMap["app.checkForUpdates"] = true
 	fakeConfigMap["logger.level"] = "info"
-	fakeConfigMap["inx.maxConnectionAttempts"] = 30
 
 	adminAPI.GET("node/config", c.getConfiguration, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusOK, "Dumped configuration", fakeConfigMap, nil).

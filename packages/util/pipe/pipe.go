@@ -108,7 +108,7 @@ func (ch *InfinitePipe[E]) infiniteBuffer() {
 		case ch.length <- ch.buffer.Length():
 		case <-ch.discardCh:
 			// Close the pipe without waiting for the values to be consumed.
-			for range ch.input { //nolint:revive
+			for range ch.input {
 				// Just clear the channel, to avoid blocking the senders.
 				// The channel itself should be closed already.
 			}

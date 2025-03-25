@@ -34,7 +34,7 @@ func NewSandbox(reqctx *requestContext) isc.Sandbox {
 
 // Call calls an entry point of contract, passes parameters and funds
 func (s *contractSandbox) Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
-	s.Ctx.GasBurn(gas.BurnCodeCallContract)
+	s.Ctx.GasBurn(gas.BurnCodeCallContract) //nolint:typecheck
 	return s.Ctx.Call(msg, allowance)
 }
 

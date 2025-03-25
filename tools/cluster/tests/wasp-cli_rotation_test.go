@@ -27,7 +27,7 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 	testWaspCLIExternalRotation(t, addAccessNode)
 }
 
-func TestWaspCLIExternalRotationPermitionlessAccessNodes(t *testing.T) {
+func TestWaspCLIExternalRotationPermissionlessAccessNodes(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
 
 	addAccessNode := func(w *WaspCLITest, pubKey string) {

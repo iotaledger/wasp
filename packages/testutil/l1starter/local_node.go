@@ -21,7 +21,6 @@ var WaitUntilEffectsVisible = &iotaclient.WaitParams{
 }
 
 type LocalIotaNode struct {
-	ctx             context.Context
 	config          Config
 	iscPackageOwner iotasigner.Signer
 	iscPackageID    iotago.PackageID
@@ -40,21 +39,27 @@ func NewLocalIotaNode(iscPackageOwner iotasigner.Signer) *LocalIotaNode {
 }
 
 func (in *LocalIotaNode) start(ctx context.Context) {
-	in.ctx = ctx
+	var cancel context.CancelFunc
+	var ctxTimeout context.Context
+
+	ctxTimeout, cancel = context.WithTimeout(ctx, 4*time.Minute)
+	defer cancel()
 
 	imagePlatform := "linux/amd64"
 	if runtime.GOARCH == "arm64" {
 		imagePlatform = "linux/arm64"
 	}
 
+	portWaiter := wait.ForAll(
+		wait.ForListeningPort("9000/tcp"),
+		wait.ForListeningPort("9123/tcp"),
+	).WithDeadline(4 * time.Minute)
+
 	req := testcontainers.ContainerRequest{
-		Image:         "iotaledger/iota-tools:v0.10.0-alpha",
+		Image:         "iotaledger/iota-tools:devnet",
 		ImagePlatform: imagePlatform,
 		ExposedPorts:  []string{"9000/tcp", "9123/tcp"},
-		WaitingFor: wait.ForAll(
-			wait.ForListeningPort("9000/tcp"),
-			wait.ForListeningPort("9123/tcp"),
-		).WithDeadline(30 * time.Second),
+		WaitingFor:    portWaiter,
 		Cmd: []string{
 			"iota",
 			"start",
@@ -72,25 +77,26 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	now := time.Now()
 
 	in.logf("Starting LocalIotaNode...")
-	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+	container, err := testcontainers.GenericContainer(ctxTimeout, testcontainers.GenericContainerRequest{
 		ContainerRequest: req,
-		Started:          true,
 	})
 	if err != nil {
 		panic(fmt.Errorf("failed to start container: %w", err))
 	}
 
+	err = container.Start(ctxTimeout)
+
 	in.container = container
 
-	webAPIPort, err := container.MappedPort(ctx, "9000")
+	webAPIPort, err := container.MappedPort(ctxTimeout, "9000")
 	if err != nil {
-		container.Terminate(ctx)
+		container.Terminate(ctxTimeout)
 		panic(fmt.Errorf("failed to get web API port: %w", err))
 	}
 
-	faucetPort, err := container.MappedPort(ctx, "9123")
+	faucetPort, err := container.MappedPort(ctxTimeout, "9123")
 	if err != nil {
-		container.Terminate(ctx)
+		container.Terminate(ctxTimeout)
 		panic(fmt.Errorf("failed to get faucet port: %w", err))
 	}
 
@@ -98,10 +104,10 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.config.Ports.Faucet = faucetPort.Int()
 
 	in.logf("Starting LocalIotaNode... done! took: %v", time.Since(now).Truncate(time.Millisecond))
-	in.waitAllHealthy(5 * time.Minute)
+	in.waitAllHealthy(ctxTimeout)
 	in.logf("Deploying ISC contracts...")
 
-	packageID, err := in.L1Client().DeployISCContracts(ctx, ISCPackageOwner)
+	packageID, err := in.L1Client().DeployISCContracts(ctxTimeout, ISCPackageOwner)
 	if err != nil {
 		panic(fmt.Errorf("isc contract deployment failed: %w", err))
 	}
@@ -140,10 +146,7 @@ func (in *LocalIotaNode) IsLocal() bool {
 	return true
 }
 
-func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
-	ctx, cancel := context.WithTimeout(in.ctx, timeout)
-	defer cancel()
-
+func (in *LocalIotaNode) waitAllHealthy(ctx context.Context) {
 	ts := time.Now()
 	in.logf("Using temporary folder: %s", in.config.TempDir)
 	in.logf("Waiting for all IOTA nodes to become healthy...")
@@ -162,7 +165,7 @@ func (in *LocalIotaNode) waitAllHealthy(timeout time.Duration) {
 	}
 
 	tryLoop(func() bool {
-		res, err := in.L1Client().GetLatestIotaSystemState(in.ctx)
+		res, err := in.L1Client().GetLatestIotaSystemState(ctx)
 		if err != nil {
 			in.logf("StatusLoop: err: %s", err)
 		}

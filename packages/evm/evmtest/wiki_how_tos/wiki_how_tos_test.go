@@ -12,6 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util"
@@ -43,10 +44,9 @@ func TestBaseBalance(t *testing.T) {
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
 
 	balance, _ := env.Chain.EVM().Balance(deployer, nil)
-	decimals := env.Chain.EVM().BaseToken().Decimals
 	var value uint64
 	instance.CallFnExpectEvent(nil, "GotBaseBalance", &value, "getBalanceBaseTokens")
-	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), decimals)
+	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), parameters.BaseTokenDecimals)
 	assert.Equal(t, balance, realBalance)
 }
 

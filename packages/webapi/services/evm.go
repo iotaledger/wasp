@@ -10,12 +10,10 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
@@ -83,7 +81,7 @@ func (e *EVMService) getEVMBackend(chainID isc.ChainID) (*chainServer, error) {
 	}
 
 	nodePubKey := e.networkProvider.Self().PubKey()
-	backend := NewWaspEVMBackend(chain, nodePubKey, parameters.L1().BaseToken)
+	backend := NewWaspEVMBackend(chain, nodePubKey)
 
 	srv, err := jsonrpc.NewServer(
 		jsonrpc.NewEVMChain(

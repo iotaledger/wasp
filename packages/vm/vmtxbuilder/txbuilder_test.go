@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
 	"github.com/stretchr/testify/require"
@@ -162,6 +163,14 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 
 	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
 	txb2.ConsumeRequest(req2)
+
+	zeroAssets := iscmove.Assets{
+		Coins: map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{
+			coin.BaseTokenType.AsRPCCoinType(): iotajsonrpc.CoinValue(0),
+		},
+	}
+	req3 := createIscmoveReqWithAssets(t, client, senderSigner, iscPackage, anchor, &zeroAssets)
+	txb2.ConsumeRequest(req3)
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)
 
@@ -441,6 +450,42 @@ func createIscmoveReq(
 			Assets:           iscmove.NewAssets(111),
 			Message:          iscmovetest.RandomMessage(),
 			Allowance:        iscmove.NewAssets(100),
+			OnchainGasBudget: 100,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
+		},
+	)
+	require.NoError(t, err)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	require.NoError(t, err)
+	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
+	require.NoError(t, err)
+	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
+	require.NoError(t, err)
+
+	return req
+}
+
+func createIscmoveReqWithAssets(
+	t *testing.T,
+	client clients.L1Client,
+	signer cryptolib.Signer,
+	iscPackage iotago.Address,
+	anchor *iscmove.AnchorWithRef,
+	assets *iscmove.Assets,
+) isc.OnLedgerRequest {
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), signer.Address().AsIotaAddress(), l1starter.Instance().FaucetURL())
+	require.NoError(t, err)
+
+	createAndSendRequestRes, err := client.L2().CreateAndSendRequestWithAssets(
+		context.Background(),
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:           signer,
+			PackageID:        iscPackage,
+			AnchorAddress:    anchor.ObjectID,
+			Assets:           assets,
+			Message:          iscmovetest.RandomMessage(),
+			Allowance:        assets,
 			OnchainGasBudget: 100,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,

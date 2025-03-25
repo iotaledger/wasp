@@ -11,13 +11,13 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -121,7 +121,7 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Val
 	log.Check(err)
 
 	// assumes deposit fee == minGasPerRequest fee
-	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest, nil, parameters.Decimals)
+	return feePolicy.FeeFromGas(gasLimits.MinGasPerRequest, nil, parameters.BaseTokenDecimals)
 }
 
 func initDepositCmd() *cobra.Command {
@@ -156,6 +156,7 @@ func initDepositCmd() *cobra.Command {
 						chainclient.PostRequestParams{
 							Transfer:  tokens,
 							Allowance: allowance,
+							GasBudget: iotaclient.DefaultGasBudget,
 						},
 					)
 				})
@@ -171,6 +172,7 @@ func initDepositCmd() *cobra.Command {
 					chainclient.PostRequestParams{
 						Transfer:  tokens,
 						Allowance: allowance,
+						GasBudget: iotaclient.DefaultGasBudget,
 					},
 				)
 

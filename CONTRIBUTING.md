@@ -12,7 +12,9 @@ Before creating a pull request, ensure all tests pass locally, and the linter re
 
 ## Running Tests
 
-To run tests locally, execute one of the following commands:
+To run tests locally, Docker is required to be installed and started.
+
+Execute one of the following commands:
 
 ```shell
 go test -short -tags rocksdb ./...

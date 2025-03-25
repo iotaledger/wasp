@@ -526,7 +526,7 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 
 	// check user has on-chain balance
 	governanceState := governance.NewStateReaderFromChainState(mpi.chainHeadState)
-	minFee := governanceState.GetGasFeePolicy().MinFee(isc.RequestGasPrice(req), parameters.Decimals)
+	minFee := governanceState.GetGasFeePolicy().MinFee(isc.RequestGasPrice(req), parameters.BaseTokenDecimals)
 	balance := mpi.accountsState().GetBaseTokensBalanceDiscardExtraDecimals(req.SenderAccount(), mpi.chainID)
 	if balance < minFee {
 		// make an exception for gov calls (sender is chain owner and target is gov contract)

@@ -107,7 +107,7 @@ func verifyHash(
 	} else {
 		expected := loadHash(hashFilename)
 		if expected != hash {
-			// TODO: replace with Fatalf
+			// TODO: replace with Fatalf after tests are deterministic
 			t.Logf(
 				msg+
 					" This may be due to a BREAKING CHANGE; make sure that you add a migration "+

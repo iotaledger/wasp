@@ -10,6 +10,7 @@ issues:
       - tools/cluster
       - documentation
       - packages/isc/coreutil
+      - clients/iota-go
     exclude-use-default: false
     # Maximum issues count per one linter.
     # Set to 0 to disable.

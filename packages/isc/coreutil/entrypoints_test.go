@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 var _ isc.SandboxBase = MockSandBox{}
@@ -92,7 +93,7 @@ func (m MockSandBox) Privileged() isc.Privileged {
 	panic("implement me")
 }
 
-func (m MockSandBox) Requiref(cond bool, format string, args ...interface{}) {
+func (m MockSandBox) Requiref(cond bool, format string, args ...any) {
 	panic("implement me")
 }
 
@@ -170,7 +171,7 @@ func (m MockSandBox) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("implement me")
 }
 
-func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
+func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {
 	panic("implement me")
 }
 

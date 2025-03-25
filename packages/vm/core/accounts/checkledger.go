@@ -45,7 +45,7 @@ func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
 	// convert total remainder from 18 decimals, must be exact
 	ret.Add(
 		coin.BaseTokenType,
-		util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalWeiRemainder, parameters.Decimals),
+		util.MustEthereumDecimalsToBaseTokenDecimalsExact(totalWeiRemainder, parameters.BaseTokenDecimals),
 	)
 
 	return ret

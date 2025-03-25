@@ -55,7 +55,6 @@ func Diff(store KVStore, root1, root2 Hash) (onlyOn1, onlyOn2 map[Hash]*NodeData
 			current1 = next1(IterateSkipSubtree)
 			current2 = next2(IterateSkipSubtree)
 		} else if bytes.Compare(current1.key, current2.key) < 0 {
-			// TODO: can a node be "moved" (i.e. changed key but same commitment)?
 			onlyOn1[current1.Commitment] = current1.NodeData
 			current1 = next1(IterateContinue)
 		} else {

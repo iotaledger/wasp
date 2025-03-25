@@ -391,7 +391,6 @@ func TestSplitCoin(t *testing.T) {
 
 	// 2 mutated and 2 created (split coins)
 	require.Len(t, simulate.ObjectChanges, 4)
-	// TODO check each element ObjectChanges
 	require.Len(t, simulate.BalanceChanges, 1)
 	amt, _ := strconv.ParseInt(simulate.BalanceChanges[0].Amount, 10, 64)
 	require.Equal(t, amt, -simulate.Effects.Data.GasFee())
@@ -430,7 +429,6 @@ func TestSplitCoinEqual(t *testing.T) {
 
 	// 1 mutated and 3 created (split coins)
 	require.Len(t, simulate.ObjectChanges, 1+int(splitShares))
-	// TODO check each element ObjectChanges
 	require.Len(t, simulate.BalanceChanges, 1)
 	amt, _ := strconv.ParseInt(simulate.BalanceChanges[0].Amount, 10, 64)
 	require.Equal(t, amt, -simulate.Effects.Data.GasFee())

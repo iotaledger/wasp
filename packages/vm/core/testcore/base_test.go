@@ -25,7 +25,7 @@ import (
 
 func TestInitLoad(t *testing.T) {
 	env := solo.New(t)
-	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(12))
+	user, userAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	env.AssertL1BaseTokens(userAddr, iotaclient.FundsFromFaucetAmount)
 	var originAmount coin.Value = 10 * isc.Million
 	ch, _ := env.NewChainExt(user, originAmount, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
@@ -188,7 +188,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 			senderKeyPair, senderAddr := ch.OwnerPrivateKey, ch.OwnerAddress()
 			if !test.SenderIsOriginator {
-				senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromIndex(10))
+				senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 			}
 			senderAgentID := isc.NewAddressAgentID(senderAddr)
 
