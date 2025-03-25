@@ -195,16 +195,28 @@ func (c *Client) GetRequestFromObjectID(
 }
 
 func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
-	var req MoveRequest
-	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &req)
+	var temp_req intermediateMoveRequest
+	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &temp_req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
+	bals, err := c.GetAssetsBagWithBalances(ctx, &temp_req.AssetsBag.Value.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
-	req.AssetsBag.Value = bals
+
+	req := MoveRequest{
+		ID:     temp_req.ID,
+		Sender: temp_req.Sender,
+		AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
+			ID:    temp_req.AssetsBag.ID,
+			Value: bals,
+		},
+		Message:   temp_req.Message,
+		Allowance: temp_req.Allowance,
+		GasBudget: temp_req.GasBudget,
+	}
+
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: obj.Ref(),
 		Object:    req.ToRequest(),
