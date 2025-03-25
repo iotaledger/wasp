@@ -323,6 +323,7 @@ func migrateAllStates(c *cmd.Context) error {
 		defer func() {
 			if err := recover(); err != nil {
 				cli.Logf("Error at block index %v", blockIndex)
+				bot.Get().PostMessage(fmt.Sprintf("Error at block index %v", blockIndex))
 				PrintLastDBOperations(oldState, newState)
 				panic(err)
 			}
