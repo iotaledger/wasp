@@ -60,7 +60,7 @@ const (
 	inMemoryStatesSevingPeriodBlocks = 20000
 )
 
-func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration bool, dryRun bool) (
+func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration, dryRun bool) (
 	old_indexedstore.IndexedStore,
 	indexedstore.IndexedStore,
 	old_isc.ChainID,
@@ -346,9 +346,9 @@ func migrateAllStates(c *cmd.Context) error {
 		oldMuts.ApplyTo(oldState)
 
 		var oldStateMutsOnly old_kv.KVStoreReader
-		migrateFullState := startBlockIndex != 0 && blockIndex == startBlockIndex && newState.W.CommittedSize() == 0
+		migrateFullState := startBlockIndex != 0 && blockIndex == startBlockIndex && !continueMigration
 		if migrateFullState {
-			cli.Logf("Migrating entire state. Reason: startBlockIndex = %v, blockIndex = %v, committedSize = %v", startBlockIndex, blockIndex, newState.W.CommittedSize())
+			cli.Logf("Migrating entire state. Reason: startBlockIndex = %v, blockIndex = %v, continueMigration = %v", startBlockIndex, blockIndex, continueMigration)
 			oldStateMutsOnly = oldState
 		} else {
 			oldStateMutsOnly = dictKvFromMuts(oldMuts)
@@ -425,7 +425,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
-			cli.Logf("Blocks processed: %v", recentlyBlocksProcessed)
+			cli.Logf("Blocks processed from last print: %v", recentlyBlocksProcessed)
 			//cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
 			//cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState), newState.CommittedSize())
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.W.CommittedSize())
