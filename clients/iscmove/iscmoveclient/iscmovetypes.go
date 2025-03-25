@@ -27,7 +27,8 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 // The only difference between this and MoveRequest is the AssetsBag
 // The Balances in AssetsBagWithBalance are unavailable in the bcs encoded Request coming from L1
 // The type will get mapped into an actual MoveRequest after it has been enriched.
-// It decouples the problem that other types which depend on AssetsBagWithBalances can't properly encode Balances.
+// It decouples the problem that other types which depend on AssetsBagWithBalances can't properly encode Balances
+// as they have to be ignored. Otherwise, the moveRequest decoding will fail.
 type intermediateMoveRequest struct {
 	ID     iotago.ObjectID
 	Sender *cryptolib.Address

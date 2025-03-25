@@ -138,14 +138,16 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		return nil, fmt.Errorf("failed to find an IOTA coin with proper balance ref: %w", err)
 	}
 
-	ptb = PTBAssetsBagPlaceCoinWithAmount(
-		ptb,
-		req.PackageID,
-		argAssetsBag,
-		iotago.GetArgumentGasCoin(),
-		iotajsonrpc.CoinValue(balance),
-		iotajsonrpc.IotaCoinType,
-	)
+	if balance > 0 {
+		ptb = PTBAssetsBagPlaceCoinWithAmount(
+			ptb,
+			req.PackageID,
+			argAssetsBag,
+			iotago.GetArgumentGasCoin(),
+			iotajsonrpc.CoinValue(balance),
+			iotajsonrpc.IotaCoinType,
+		)
+	}
 
 	// Then the rest of the coins
 	for _, tuple := range placedCoins {
@@ -195,26 +197,26 @@ func (c *Client) GetRequestFromObjectID(
 }
 
 func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
-	var temp_req intermediateMoveRequest
-	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &temp_req)
+	var intermediateRequest intermediateMoveRequest
+	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &intermediateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(ctx, &temp_req.AssetsBag.Value.ID)
+	bals, err := c.GetAssetsBagWithBalances(ctx, &intermediateRequest.AssetsBag.Value.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
 
 	req := MoveRequest{
-		ID:     temp_req.ID,
-		Sender: temp_req.Sender,
+		ID:     intermediateRequest.ID,
+		Sender: intermediateRequest.Sender,
 		AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
-			ID:    temp_req.AssetsBag.ID,
+			ID:    intermediateRequest.AssetsBag.ID,
 			Value: bals,
 		},
-		Message:   temp_req.Message,
-		Allowance: temp_req.Allowance,
-		GasBudget: temp_req.GasBudget,
+		Message:   intermediateRequest.Message,
+		Allowance: intermediateRequest.Allowance,
+		GasBudget: intermediateRequest.GasBudget,
 	}
 
 	return &iscmove.RefWithObject[iscmove.Request]{
