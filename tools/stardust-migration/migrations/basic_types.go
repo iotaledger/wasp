@@ -167,7 +167,7 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 	// TODO: There is no cinversion rate, right?
 
 	if !oldNativeTokenAmount.IsUint64() {
-		panic(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
+		fmt.Println(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
 	}
 
 	return coin.Value(oldNativeTokenAmount.Uint64())
