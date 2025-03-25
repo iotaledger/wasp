@@ -77,7 +77,7 @@ type AssetsBagBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
 
 type AssetsBagWithBalances struct {
 	AssetsBag
-	Balances AssetsBagBalances `bcs:"-"`
+	Balances AssetsBagBalances
 }
 
 type Anchor struct {

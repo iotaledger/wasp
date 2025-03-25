@@ -51,6 +51,7 @@ func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
 		delete(c, coinType)
 		return c
 	}
+
 	c[coinType] = amount
 	return c
 }
