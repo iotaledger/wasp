@@ -94,7 +94,7 @@ func (s *PrefixKVStore) Set(key old_kv.Key, value []byte) {
 func (s *PrefixKVStore) addToIndex(key old_kv.Key, value []byte) {
 	if s.prefixesFromKey != nil {
 		prefixesFromKey := s.prefixesFromKey(key)
-		if prefixesFromKey != nil {
+		if len(prefixesFromKey) != 0 {
 			for _, prefixFromKey := range prefixesFromKey {
 				prefixRecords := s.registerPrefix(string(prefixFromKey))
 				prefixRecords[string(key)] = value
