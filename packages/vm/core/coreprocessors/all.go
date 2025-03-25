@@ -1,7 +1,6 @@
 package coreprocessors
 
 import (
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -47,5 +46,13 @@ func NewConfig() *processors.Config {
 }
 
 func NewConfigWithTestContracts() *processors.Config {
-	return processors.NewConfig().WithCoreContracts(lo.MergeMaps(All, Test))
+	combined := make(map[isc.Hname]isc.VMProcessor, len(All)+len(Test))
+	for k, v := range All {
+		combined[k] = v
+	}
+	for k, v := range Test {
+		combined[k] = v
+	}
+	
+	return processors.NewConfig().WithCoreContracts(combined)
 }
