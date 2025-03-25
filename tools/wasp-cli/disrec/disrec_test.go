@@ -37,6 +37,8 @@ import (
 */
 
 func TestDepositFundsToGasCoin(t *testing.T) {
+	t.Skip("you only want to call this test manually")
+
 	client := cliclients.L1Client()
 	committeeAddress := lo.Must(cryptolib.AddressFromHex("0x6e6d126fc61cbf50672f1738580c7b275e7c4727912842d71ee33e195f9879fe"))
 	gasCoinID := lo.Must(iotago.ObjectIDFromHex("0x9e274660552ed50402c8015c5388478415cde8a06d114af48fd2e3ec365c562d"))
