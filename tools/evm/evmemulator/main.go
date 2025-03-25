@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -113,6 +114,9 @@ func createAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
 }
 
 func start(cmd *cobra.Command, args []string) {
+	cancel := l1starter.TestLocal()
+	defer cancel()
+
 	ctx, chain := initSolo()
 	defer ctx.cleanupAll()
 
