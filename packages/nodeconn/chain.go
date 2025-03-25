@@ -96,9 +96,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 
 		dryRes, err := ncc.nodeConn.httpClient.DryRunTransaction(task.ctx, txBytes)
 		if err != nil {
-			resErr := fmt.Errorf("failed to dry-run Anchor transaction: %w", err)
-			ncc.LogError(resErr.Error())
-			return nil, resErr
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: %w", err)
 		}
 
 		if dryRes == nil {
@@ -106,13 +104,11 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		}
 
 		if dryRes.Effects.Data.IsFailed() {
-			resErr := fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
-			ncc.LogError(resErr.Error())
-			return nil, resErr
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
 		}
 
 		if dryRes.Effects.Data.IsSuccess() {
-			ncc.LogInfo("successfully dry-run Anchor transaction")
+			ncc.LogDebug("successfully dry-run Anchor transaction")
 		}
 
 		res, err := ncc.nodeConn.httpClient.ExecuteTransactionBlock(task.ctx, iotaclient.ExecuteTransactionBlockRequest{
