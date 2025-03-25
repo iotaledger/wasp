@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
@@ -30,6 +31,13 @@ import (
 )
 
 func validateMigration(c *cmd.Context) error {
+	go func() {
+		<-c.Done()
+		cli.Logf("Interrupted")
+		os.Exit(1)
+	}()
+
+	firstIndex := uint32(c.Uint64("from-block"))
 	cli.DebugLoggingEnabled = true
 
 	srcChainDBDir := c.Args().Get(0)
@@ -90,15 +98,15 @@ func validateMigration(c *cmd.Context) error {
 		}
 	}()
 
-	validateStatesEqual(oldLatestState, newLatestState, oldChainID, newChainID, newLatestState.R.BlockIndex())
+	validateStatesEqual(oldLatestState, newLatestState, oldChainID, newChainID, firstIndex, newLatestState.R.BlockIndex())
 
 	return nil
 }
 
-func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID, index uint32) {
+func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID, firstIndex, lastIndex uint32) {
 	cli.DebugLogf("Validating states equality...\n")
-	oldStateContentStr := oldStateContentToStr(oldState, oldChainID, index)
-	newStateContentStr := newStateContentToStr(newState, newChainID, index)
+	oldStateContentStr := oldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
+	newStateContentStr := newStateContentToStr(newState, newChainID, firstIndex, lastIndex)
 
 	cli.DebugLogf("Replacing old chain ID with constant placeholer for comparison...")
 	oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
@@ -111,16 +119,16 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 	cli.DebugLogf("States are equal\n")
 }
 
-func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, index uint32) string {
+func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
 	accountsContractStr := validation.OldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
-	blocklogContractStr := validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, index)
+	blocklogContractStr := validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
 
 	return accountsContractStr + "\n" + blocklogContractStr
 }
 
-func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, index uint32) string {
+func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
 	accountsContractStr := validation.NewAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
-	blocklogContractStr := validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, index)
+	blocklogContractStr := validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
 
 	return accountsContractStr + "\n" + blocklogContractStr
 }

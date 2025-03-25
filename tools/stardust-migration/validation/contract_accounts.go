@@ -131,7 +131,7 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 		accKey := utils.MustRemovePrefix(k, old_accounts.PrefixBaseTokens)
 
 		var accStr string
-		if strings.HasPrefix(string(accKey), old_accounts.L2TotalsAccount) {
+		if accKey == old_accounts.L2TotalsAccount {
 			accStr = "L2TotalsAccount"
 		} else {
 			agentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), chainID))

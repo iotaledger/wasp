@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -297,7 +298,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration, disableCache, debugDestKey, debugDestValue)
+	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c.Context, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration, disableCache, debugDestKey, debugDestValue)
 	if c.Err() != nil {
 		cli.Logf("Interrupted before migration started")
 		return nil
@@ -345,14 +346,15 @@ func migrateAllStates(c *cmd.Context) error {
 		oldMuts.ApplyTo(oldState)
 
 		var oldStateMutsOnly old_kv.KVStoreReader
-		if blockIndex == startBlockIndex && startBlockIndex != 0 && !continueMigration {
+		migrateFullState := startBlockIndex != 0 && blockIndex == startBlockIndex && newState.W.CommittedSize() == 0
+		if migrateFullState {
+			cli.Logf("Migrating entire state. Reason: startBlockIndex = %v, blockIndex = %v, committedSize = %v", startBlockIndex, blockIndex, newState.W.CommittedSize())
 			oldStateMutsOnly = oldState
 		} else {
 			oldStateMutsOnly = dictKvFromMuts(oldMuts)
 		}
 
 		newState.W.StartMarking()
-
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.W.MutationsCountDiff()
 
@@ -366,8 +368,11 @@ func migrateAllStates(c *cmd.Context) error {
 		errMuts := newState.W.MutationsCountDiff()
 
 		newState.W.StopMarking()
-		newState.W.DeleteMarkedIfNotSet()
-		_ = newState.W.MutationsCountDiff()
+
+		if !migrateFullState {
+			newState.W.DeleteMarkedIfNotSet()
+			_ = newState.W.MutationsCountDiff()
+		}
 
 		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID, newChainID)
 		accountsMuts += newState.W.MutationsCountDiff()
@@ -378,7 +383,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.W.MutationsCountDiff()
 
-		newMuts := newState.W.Commit(true)
+		newMuts, _ := newState.W.Commit(true)
 
 		if !dryRun {
 			nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
@@ -459,7 +464,7 @@ func migrateAllStates(c *cmd.Context) error {
 }
 
 func initInMemoryStates(
-	ctx *cmd.Context,
+	ctx context.Context,
 	srcStore old_indexedstore.IndexedStore,
 	destStore indexedstore.IndexedStore,
 	srcChainDBDir string,
@@ -481,7 +486,7 @@ func initInMemoryStates(
 	}
 
 	if startBlockIndex != 0 && !disableCache {
-		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1)
+		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1, continueMigration)
 		if loaded {
 			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", startBlockIndex-1)
 			setDestStateKeyValidator(savedDestState, debugDestKey, debugDestValue)
@@ -492,7 +497,7 @@ func initInMemoryStates(
 
 		closestAutoSavedBlockIndex := (startBlockIndex - 2) - (startBlockIndex-2)%inMemoryStatesSevingPeriodBlocks
 		cli.Logf("Trying to load auto-saved in-memory states from disk for block %v", closestAutoSavedBlockIndex)
-		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex)
+		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex, continueMigration)
 		if loaded {
 			cli.Logf("Loaded auto-saved in-memory states from disk: blockIndex = %v", closestAutoSavedBlockIndex)
 			setDestStateKeyValidator(savedDestState, debugDestKey, debugDestValue)
@@ -553,10 +558,12 @@ func initInMemoryStates(
 			return ctx.Err() == nil
 		})
 
-		_ = newState.Commit(false)
+		_, _ = newState.Commit(false)
 
 		cli.Logf("Loaded %v entries into in-memory destination state", count)
+	}
 
+	if startBlockIndex != 0 {
 		cli.Logf("Saving in-memory states to disk to avoid loading them next time")
 		saveInMemoryStates(oldStateStore, newState, startBlockIndex-1, srcChainDBDir)
 	}
@@ -576,16 +583,20 @@ func saveInMemoryStates(oldState old_dict.Dict, newState *InMemoryKVStore, lastP
 	lo.Must0(os.WriteFile(oldStateFilePath, oldStateBytes, os.ModePerm))
 	oldStateBytes = nil
 
-	cli.Logf("Marshaling new in-memory state: size = %v", newState.Len())
-	committedState, committedMarks := newState.CommittedState()
-	s := lo.T2(committedState, committedMarks)
-	newStateBytes := bcs.MustMarshal(&s)
+	if newState == nil || newState.Len() == 0 {
+		cli.Logf("Not saving new in-memory state to disk")
+	} else {
+		cli.Logf("Marshaling new in-memory state: size = %v", newState.Len())
+		committedState, committedMarks := newState.CommittedState()
+		s := lo.T2(committedState, committedMarks)
+		newStateBytes := bcs.MustMarshal(&s)
 
-	cli.Logf("Writing new in-memory state to disk: path = %v, size = %v", newStateFilePath, len(newStateBytes))
-	lo.Must0(os.WriteFile(newStateFilePath, newStateBytes, os.ModePerm))
+		cli.Logf("Writing new in-memory state to disk: path = %v, size = %v", newStateFilePath, len(newStateBytes))
+		lo.Must0(os.WriteFile(newStateFilePath, newStateBytes, os.ModePerm))
+	}
 }
 
-func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, bool) {
+func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestState bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, bool) {
 	cli.Logf("Trying to load in-memory states from disk: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
 	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
 
@@ -609,6 +620,13 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Di
 	oldState := initSrcState(oldStateStore, true)
 	oldState.IndexRecords()
 
+	newState := NewInMemoryKVStore(false)
+
+	if !loadDestState {
+		cli.Logf("Not loading destination state")
+		return oldStateStore, oldState, newState, true
+	}
+
 	cli.Logf("Read new in-memory state from disk: path = %v", newStateFilePath)
 	newStateBytes, err := os.ReadFile(newStateFilePath)
 	if err != nil {
@@ -626,7 +644,7 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32) (old_dict.Di
 	r := bytes.NewReader(newStateBytes)
 	bcs.MustUnmarshalStreamInto(r, &committedState)
 	bcs.MustUnmarshalStreamInto(r, &committedMarks)
-	newState := NewInMemoryKVStore(false)
+
 	newState.SetCommittedState(committedState, committedMarks)
 	cli.Logf("New in-memory state loaded: size = %v", newState.Len())
 

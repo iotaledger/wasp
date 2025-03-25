@@ -161,6 +161,11 @@ func main() {
 								Name:  "hm-prefixes",
 								Usage: "Replace original prefixes in new dabase with human-readable strings.",
 							},
+							&cmd.Uint64Flag{
+								Name:    "from-index",
+								Aliases: []string{"i", "f", "from-block", "from"},
+								Usage:   "Specify block index to start from. This is used as hint in blocklog migration for cases, when database was generated not from first block.",
+							},
 						},
 						Before: processCommonFlags,
 						Action: validateMigration,
