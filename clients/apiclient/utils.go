@@ -78,42 +78,6 @@ func (v *NullableBool) UnmarshalJSON(src []byte) error {
 	return json.Unmarshal(src, &v.value)
 }
 
-type nullableIntUnused struct {
-	value *int
-	isSet bool
-}
-
-func (v nullableIntUnused) Get() *int {
-	return v.value
-}
-
-func (v *nullableIntUnused) Set(val *int) {
-	v.value = val
-	v.isSet = true
-}
-
-func (v nullableIntUnused) IsSet() bool {
-	return v.isSet
-}
-
-func (v *nullableIntUnused) Unset() {
-	v.value = nil
-	v.isSet = false
-}
-
-func NewnullableIntUnused(val *int) *nullableIntUnused {
-	return &nullableIntUnused{value: val, isSet: true}
-}
-
-func (v nullableIntUnused) MarshalJSON() ([]byte, error) {
-	return json.Marshal(v.value)
-}
-
-func (v *nullableIntUnused) UnmarshalJSON(src []byte) error {
-	v.isSet = true
-	return json.Unmarshal(src, &v.value)
-}
-
 type NullableInt32 struct {
 	value *int32
 	isSet bool

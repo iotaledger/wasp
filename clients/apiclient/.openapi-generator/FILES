@@ -20,7 +20,7 @@ docs/AssetsJSON.md
 docs/AssetsResponse.md
 docs/AuthAPI.md
 docs/AuthInfoModel.md
-docs/BaseToken.md
+docs/BigInt.md
 docs/BlockInfoResponse.md
 docs/BurnRecord.md
 docs/CallTargetJSON.md
@@ -52,6 +52,8 @@ docs/GovChainInfoResponse.md
 docs/GovChainOwnerResponse.md
 docs/GovPublicChainMetadata.md
 docs/InfoResponse.md
+docs/Int.md
+docs/IotaCoinInfo.md
 docs/L1Params.md
 docs/Limits.md
 docs/LoginRequest.md
@@ -67,7 +69,7 @@ docs/OnLedgerRequestMetricItem.md
 docs/PeeringNodeIdentityResponse.md
 docs/PeeringNodeStatusResponse.md
 docs/PeeringTrustRequest.md
-docs/ProtocolParameters.md
+docs/Protocol.md
 docs/PublicChainMetadata.md
 docs/PublisherStateTransactionItem.md
 docs/Ratio32.md
@@ -98,7 +100,7 @@ model_anchor_metric_item.go
 model_assets_json.go
 model_assets_response.go
 model_auth_info_model.go
-model_base_token.go
+model_big_int.go
 model_block_info_response.go
 model_burn_record.go
 model_call_target_json.go
@@ -127,6 +129,8 @@ model_gov_chain_info_response.go
 model_gov_chain_owner_response.go
 model_gov_public_chain_metadata.go
 model_info_response.go
+model_int.go
+model_iota_coin_info.go
 model_l1_params.go
 model_limits.go
 model_login_request.go
@@ -140,7 +144,7 @@ model_on_ledger_request_metric_item.go
 model_peering_node_identity_response.go
 model_peering_node_status_response.go
 model_peering_trust_request.go
-model_protocol_parameters.go
+model_protocol.go
 model_public_chain_metadata.go
 model_publisher_state_transaction_item.go
 model_ratio32.go

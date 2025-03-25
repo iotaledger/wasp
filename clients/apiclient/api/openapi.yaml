@@ -1699,7 +1699,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "30"
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -2389,74 +2389,19 @@ components:
       type: object
       xml:
         name: AuthInfoModel
-    BaseToken:
+    BigInt:
       example:
-        coinType:
-          s: s
-        unit: unit
-        totalSupply: 6
-        decimals: 0
-        name: name
-        tickerSymbol: tickerSymbol
-        subunit: subunit
-        useMetricPrefix: true
+        Int:
+          neg: true
+          abs:
+          - 1
+          - 1
       properties:
-        coinType:
-          $ref: '#/components/schemas/Type'
-        decimals:
-          description: The token decimals
-          format: int32
-          type: integer
-          xml:
-            name: Decimals
-        name:
-          description: The base token name
-          format: string
-          type: string
-          xml:
-            name: Name
-        subunit:
-          description: The token subunit
-          format: string
-          type: string
-          xml:
-            name: Subunit
-        tickerSymbol:
-          description: The ticker symbol
-          format: string
-          type: string
-          xml:
-            name: TickerSymbol
-        totalSupply:
-          description: The total supply of BaseToken
-          format: int64
-          type: integer
-          xml:
-            name: TotalSupply
-        unit:
-          description: The token unit
-          format: string
-          type: string
-          xml:
-            name: Unit
-        useMetricPrefix:
-          description: Whether or not the token uses a metric prefix
-          format: boolean
-          type: boolean
-          xml:
-            name: UseMetricPrefix
-      required:
-      - coinType
-      - decimals
-      - name
-      - subunit
-      - tickerSymbol
-      - totalSupply
-      - unit
-      - useMetricPrefix
+        Int:
+          $ref: '#/components/schemas/Int'
       type: object
       xml:
-        name: BaseToken
+        name: BigInt
     BlockInfoResponse:
       example:
         blockIndex: 1
@@ -3586,23 +3531,51 @@ components:
         peeringURL: peeringURL
         l1Params:
           protocol:
-            protocol_version: 7
-            reference_gas_price: 9
-            iota_total_supply: 2
-            epoch: 1
-            system_state_version: 3
-            epoch_duration_ms: 5
-            epoch_start_timestamp_ms: 5
+            protocol_version:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            reference_gas_price:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            epoch:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            system_state_version:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            epoch_duration_ms:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            epoch_start_timestamp_ms:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
           baseToken:
             coinType:
               s: s
-            unit: unit
             totalSupply: 6
             decimals: 0
             name: name
+            description: description
             tickerSymbol: tickerSymbol
-            subunit: subunit
-            useMetricPrefix: true
+            iconUrl: iconUrl
         publicKey: publicKey
         version: version
       properties:
@@ -3634,31 +3607,142 @@ components:
       type: object
       xml:
         name: InfoResponse
+    Int:
+      example:
+        neg: true
+        abs:
+        - 1
+        - 1
+      properties:
+        abs:
+          items:
+            format: int32
+            type: integer
+          type: array
+          xml:
+            name: abs
+            wrapped: true
+        neg:
+          format: boolean
+          type: boolean
+          xml:
+            name: neg
+      type: object
+      xml:
+        name: Int
+    IotaCoinInfo:
+      example:
+        coinType:
+          s: s
+        totalSupply: 6
+        decimals: 0
+        name: name
+        description: description
+        tickerSymbol: tickerSymbol
+        iconUrl: iconUrl
+      properties:
+        coinType:
+          $ref: '#/components/schemas/Type'
+        decimals:
+          description: The token decimals
+          format: int32
+          type: integer
+          xml:
+            name: Decimals
+        description:
+          description: The token description
+          format: string
+          type: string
+          xml:
+            name: Description
+        iconUrl:
+          description: The icon URL
+          format: string
+          type: string
+          xml:
+            name: IconURL
+        name:
+          description: The base token name
+          format: string
+          type: string
+          xml:
+            name: Name
+        tickerSymbol:
+          description: The ticker symbol
+          format: string
+          type: string
+          xml:
+            name: Symbol
+        totalSupply:
+          description: The total supply of BaseToken
+          format: int64
+          type: integer
+          xml:
+            name: TotalSupply
+      required:
+      - coinType
+      - decimals
+      - description
+      - iconUrl
+      - name
+      - tickerSymbol
+      - totalSupply
+      type: object
+      xml:
+        name: IotaCoinInfo
     L1Params:
       example:
         protocol:
-          protocol_version: 7
-          reference_gas_price: 9
-          iota_total_supply: 2
-          epoch: 1
-          system_state_version: 3
-          epoch_duration_ms: 5
-          epoch_start_timestamp_ms: 5
+          protocol_version:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          reference_gas_price:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          epoch:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          system_state_version:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          epoch_duration_ms:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          epoch_start_timestamp_ms:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
         baseToken:
           coinType:
             s: s
-          unit: unit
           totalSupply: 6
           decimals: 0
           name: name
+          description: description
           tickerSymbol: tickerSymbol
-          subunit: subunit
-          useMetricPrefix: true
+          iconUrl: iconUrl
       properties:
         baseToken:
-          $ref: '#/components/schemas/BaseToken'
+          $ref: '#/components/schemas/IotaCoinInfo'
         protocol:
-          $ref: '#/components/schemas/ProtocolParameters'
+          $ref: '#/components/schemas/Protocol'
       required:
       - baseToken
       - protocol
@@ -4021,69 +4105,67 @@ components:
       type: object
       xml:
         name: PeeringTrustRequest
-    ProtocolParameters:
+    Protocol:
       example:
-        protocol_version: 7
-        reference_gas_price: 9
-        iota_total_supply: 2
-        epoch: 1
-        system_state_version: 3
-        epoch_duration_ms: 5
-        epoch_start_timestamp_ms: 5
+        protocol_version:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        reference_gas_price:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        epoch:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        system_state_version:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        epoch_duration_ms:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        epoch_start_timestamp_ms:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
       properties:
         epoch:
-          description: The protocol's current epoch
-          format: int64
-          type: integer
-          xml:
-            name: Epoch
+          $ref: '#/components/schemas/BigInt'
         epoch_duration_ms:
-          description: The current epoch's duration in ms
-          format: int64
-          type: integer
-          xml:
-            name: EpochDurationMs
+          $ref: '#/components/schemas/BigInt'
         epoch_start_timestamp_ms:
-          description: The current epoch's start_timestamp in ms
-          format: int64
-          type: integer
-          xml:
-            name: EpochStartTimestampMs
-        iota_total_supply:
-          description: The iota's total_supply
-          format: int64
-          type: integer
-          xml:
-            name: IotaTotalSupply
+          $ref: '#/components/schemas/BigInt'
         protocol_version:
-          description: The protocol's version
-          format: int64
-          type: integer
-          xml:
-            name: ProtocolVersion
+          $ref: '#/components/schemas/BigInt'
         reference_gas_price:
-          description: The current reference_gas_price
-          format: int64
-          type: integer
-          xml:
-            name: ReferenceGasPrice
+          $ref: '#/components/schemas/BigInt'
         system_state_version:
-          description: The protocol's system_state_version
-          format: int64
-          type: integer
-          xml:
-            name: SystemStateVersion
+          $ref: '#/components/schemas/BigInt'
       required:
       - epoch
       - epoch_duration_ms
       - epoch_start_timestamp_ms
-      - iota_total_supply
       - protocol_version
       - reference_gas_price
       - system_state_version
       type: object
       xml:
-        name: ProtocolParameters
+        name: Protocol
     PublicChainMetadata:
       example:
         website: website
