@@ -30,9 +30,8 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 // It decouples the problem that other types which depend on AssetsBagWithBalances can't properly encode Balances
 // as they have to be ignored. Otherwise, the moveRequest decoding will fail.
 type intermediateMoveRequest struct {
-	ID     iotago.ObjectID
-	Sender *cryptolib.Address
-	// XXX balances are empty if we don't fetch the dynamic fields
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
 	AssetsBag iscmove.Referent[iscmove.AssetsBag]
 	Message   iscmove.Message
 	Allowance []iscmove.CoinAllowance
@@ -40,9 +39,8 @@ type intermediateMoveRequest struct {
 }
 
 type MoveRequest struct {
-	ID     iotago.ObjectID
-	Sender *cryptolib.Address
-	// XXX balances are empty if we don't fetch the dynamic fields
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
 	AssetsBag iscmove.Referent[iscmove.AssetsBagWithBalances]
 	Message   iscmove.Message
 	Allowance []iscmove.CoinAllowance
