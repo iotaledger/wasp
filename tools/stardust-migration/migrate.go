@@ -616,7 +616,7 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestStat
 	oldStateBytes = nil
 	cli.Logf("Old in-memory state loaded: size = %v", len(oldStateStore))
 
-	cli.Logf("Indexing old state...")
+	cli.Logf("Indexing old state prefixes...")
 	oldState := initSrcState(oldStateStore, true)
 	oldState.IndexRecords()
 
