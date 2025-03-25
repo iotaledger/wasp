@@ -72,11 +72,6 @@ func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool
 	return accountAssets.Spend(assets)
 }
 
-func (s *SandboxBase) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
-	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
-	return s.Ctx.GetObjectBCS(id)
-}
-
 func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {
 	s.Ctx.GasBurn(gas.BurnCodeGetCoinInfo)
 	return s.Ctx.GetCoinInfo(coinType)

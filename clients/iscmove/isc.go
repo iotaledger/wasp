@@ -205,26 +205,3 @@ type RequestEvent struct {
 	RequestID iotago.ObjectID
 	Anchor    iotago.Address
 }
-
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-iotajsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
-type IRC27MetaData struct {
-	Version           string
-	MediaType         string
-	URI               string
-	Name              string
-	CollectionName    *string `bcs:"optional"`
-	Royalties         Table[*cryptolib.Address, uint32]
-	IssuerName        *string  `bcs:"optional"`
-	Description       *string  `bcs:"optional"`
-	Attributes        []string // This is actually of Type VecSet which guarantees no duplicates. Not sure if we want to create a separate type for it. But we need to filter it to ensure no duplicates eventually.
-	NonStandardFields Table[string, string]
-}
-
-type NFT struct {
-	ID                iotago.ObjectID
-	LegacySender      *cryptolib.Address `bcs:"optional"`
-	Metadata          *[]uint8           `bcs:"optional"`
-	Tag               *[]uint8           `bcs:"optional"`
-	ImmutableIssuer   *cryptolib.Address `bcs:"optional"`
-	ImmutableMetadata IRC27MetaData
-}

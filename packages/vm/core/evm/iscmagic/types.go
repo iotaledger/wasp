@@ -4,7 +4,6 @@
 package iscmagic
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -44,32 +43,6 @@ func WrapISCAgentID(a isc.AgentID) ISCAgentID {
 
 func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 	return isc.AgentIDFromBytes(a.Data)
-}
-
-// TokenIDFromIotaObjectID returns the uint256 tokenID for ERC721
-func TokenIDFromIotaObjectID(o iotago.ObjectID) *big.Int {
-	return new(big.Int).SetBytes(o[:])
-}
-
-// IRC27NFTMetadata matches the struct definition in ISCTypes.sol
-type IRC27NFTMetadata struct {
-	Standard    string
-	Version     string
-	MimeType    string
-	Uri         string
-	Name        string
-	Description string
-}
-
-func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
-	return IRC27NFTMetadata{
-		Standard:    m.Standard,
-		Version:     m.Version,
-		MimeType:    m.MIMEType,
-		Uri:         m.URI,
-		Name:        m.Name,
-		Description: m.Description,
-	}
 }
 
 // ISCAssets matches the struct definition in ISCTypes.sol

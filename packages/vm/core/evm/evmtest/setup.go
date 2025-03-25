@@ -13,7 +13,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -167,32 +166,6 @@ func (e *SoloChainEnv) ERC20Coin(defaultSender *ecdsa.PrivateKey, coinType coin.
 	}
 }
 
-func (e *SoloChainEnv) ERC721NFTs(defaultSender *ecdsa.PrivateKey) *IscContractInstance {
-	erc721ABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTsABI))
-	require.NoError(e.t, err)
-	return &IscContractInstance{
-		EVMContractInstance: &EVMContractInstance{
-			chain:         e,
-			defaultSender: defaultSender,
-			address:       iscmagic.ERC721NFTsAddress,
-			abi:           erc721ABI,
-		},
-	}
-}
-
-func (e *SoloChainEnv) ERC721NFTCollection(defaultSender *ecdsa.PrivateKey, collectionID iotago.ObjectID) *IscContractInstance {
-	erc721NFTCollectionABI, err := abi.JSON(strings.NewReader(iscmagic.ERC721NFTCollectionABI))
-	require.NoError(e.t, err)
-	return &IscContractInstance{
-		EVMContractInstance: &EVMContractInstance{
-			chain:         e,
-			defaultSender: defaultSender,
-			address:       iscmagic.ERC721NFTCollectionAddress(collectionID),
-			abi:           erc721NFTCollectionABI,
-		},
-	}
-}
-
 func (e *SoloChainEnv) deployISCTestContract(creator *ecdsa.PrivateKey) *iscTestContractInstance {
 	return &iscTestContractInstance{e.DeployContract(creator, evmtest.ISCTestContractABI, evmtest.ISCTestContractBytecode)}
 }
@@ -235,15 +208,6 @@ func (e *SoloChainEnv) registerERC20Coin(kp *cryptolib.KeyPair, coinType coin.Ty
 		solo.NewCallParams(evm.FuncRegisterERC20Coin.Message(coinType)).
 			WithMaxAffordableGasBudget(),
 		kp,
-	)
-	return err
-}
-
-func (e *SoloChainEnv) registerERC721NFTCollection(collectionOwner *cryptolib.KeyPair, collectionID iotago.ObjectID) error {
-	_, err := e.Chain.PostRequestOffLedger(
-		solo.NewCallParams(evm.FuncRegisterERC721NFTCollection.Message(collectionID)).
-			WithMaxAffordableGasBudget(),
-		collectionOwner,
 	)
 	return err
 }

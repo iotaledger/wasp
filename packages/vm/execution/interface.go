@@ -49,6 +49,5 @@ type WaspCallContext interface {
 	GasBurned() uint64
 	GasBudgetLeft() uint64
 	GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID
-	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
 	GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool)
 }

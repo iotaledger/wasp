@@ -31,12 +31,7 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 
 func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []iotago.ObjectID) {
 	for _, id := range objectIDs {
-		// TODO: Try to get the Objects data, for now just storing the ID
-		rec := accounts.ObjectRecord{
-			ID:  id,
-			BCS: []byte{},
-		}
-		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, &rec)
+		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, id)
 	}
 }
 
@@ -102,13 +97,6 @@ func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []iota
 		ret = s.GetAccountObjects(agentID)
 	})
 	return ret
-}
-
-func (reqctx *requestContext) GetObjectBCS(objectID iotago.ObjectID) (ret []byte, ok bool) {
-	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetObjectBCS(objectID)
-	})
-	return ret, ret != nil
 }
 
 func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *parameters.IotaCoinInfo, ok bool) {

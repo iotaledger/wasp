@@ -6,10 +6,8 @@ package evmimpl
 import (
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -21,29 +19,6 @@ func (h *magicContractHandler) GetChainID() isc.ChainID {
 // handler for ISCSandbox::getChainOwnerID
 func (h *magicContractHandler) GetChainOwnerID() iscmagic.ISCAgentID {
 	return iscmagic.WrapISCAgentID(h.ctx.ChainOwnerID())
-}
-
-// handler for ISCSandbox::getObjectBCS
-func (h *magicContractHandler) GetObjectBCS(objectID iotago.ObjectID) []byte {
-	bcs, ok := h.ctx.GetObjectBCS(objectID)
-	h.ctx.Requiref(ok, errUnknownObject.Error())
-	return bcs
-}
-
-// handler for ISCSandbox::getIRC27NFTData
-func (h *magicContractHandler) GetIRC27NFTData(nftID iotago.ObjectID) iscmagic.IRC27NFTMetadata {
-	bcs := h.GetObjectBCS(nftID)
-	metadata, err := isc.IRC27NFTMetadataFromBCS(bcs)
-	h.ctx.RequireNoError(err)
-	return iscmagic.WrapIRC27NFTMetadata(metadata)
-}
-
-// handler for ISCSandbox::getIRC27TokenURI
-func (h *magicContractHandler) GetIRC27TokenURI(nftID iotago.ObjectID) string {
-	bcs := h.GetObjectBCS(nftID)
-	metadata, err := isc.IRC27NFTMetadataFromBCS(bcs)
-	h.ctx.RequireNoError(err)
-	return evm.EncodePackedNFTURI(metadata)
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds
@@ -86,9 +61,4 @@ func (h *magicContractHandler) GetCoinInfo(coinType iscmagic.CoinType) iscmagic.
 // handler for ISCSandbox::ERC20CoinAddress
 func (h *magicContractHandler) ERC20CoinAddress(coinType iscmagic.CoinType) common.Address {
 	return iscmagic.ERC20CoinAddress(coin.MustTypeFromString(coinType))
-}
-
-// handler for ISCSandbox::erc721NFTCollectionAddress
-func (h *magicContractHandler) Erc721NFTCollectionAddress(collectionID iotago.ObjectID) common.Address {
-	return iscmagic.ERC721NFTCollectionAddress(collectionID)
 }

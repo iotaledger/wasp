@@ -5,17 +5,12 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
 
 func objectsMapKey(agentID isc.AgentID) string {
 	return prefixObjects + string(agentID.Bytes())
-}
-
-func objectsByCollectionMapKey(agentID isc.AgentID, collectionKey kv.Key) string {
-	return prefixObjectsByCollection + string(agentID.Bytes()) + string(collectionKey)
 }
 
 func (s *StateReader) accountToObjectsMapR(agentID isc.AgentID) *collections.ImmutableMap {
@@ -32,14 +27,6 @@ func (s *StateWriter) objectToOwnerMap() *collections.Map {
 
 func (s *StateReader) objectToOwnerMapR() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, keyObjectOwner)
-}
-
-func (s *StateReader) objectsByCollectionMapR(agentID isc.AgentID, collectionKey kv.Key) *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, objectsByCollectionMapKey(agentID, collectionKey))
-}
-
-func (s *StateWriter) objectsByCollectionMap(agentID isc.AgentID, collectionKey kv.Key) *collections.Map {
-	return collections.NewMap(s.state, objectsByCollectionMapKey(agentID, collectionKey))
 }
 
 func (s *StateReader) hasObject(agentID isc.AgentID, objectID iotago.ObjectID) bool {
@@ -74,47 +61,18 @@ func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, agentID isc.Agent
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
-func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, object *ObjectRecord) {
-	s.creditObjectToAccount(agentID, object)
-	s.touchAccount(agentID)
-	s.SaveObject(object)
-}
-
-func (s *StateWriter) creditObjectToAccount(agentID isc.AgentID, object *ObjectRecord) {
-	s.setObjectOwner(object.ID, agentID)
-
-	collectionKey := object.CollectionKey()
-	objectsByCollection := s.objectsByCollectionMap(agentID, collectionKey)
-	objectsByCollection.SetAt(object.ID[:], codec.Encode(true))
+func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, objectID iotago.ObjectID) {
+	s.setObjectOwner(objectID, agentID)
+	s.touchAccount(agentID, chainID)
 }
 
 // DebitObjectFromAccount removes an Object from an account.
 // If the account does not own the object, it panics.
 func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID) {
-	object := s.GetObject(objectID)
-	if object == nil {
-		panic(fmt.Errorf("cannot debit unknown Object %s", objectID.String()))
-	}
-	if !s.debitObjectFromAccount(agentID, object) {
+	if !s.removeObjectOwner(objectID, agentID) {
 		panic(fmt.Errorf("cannot debit Object %s from %s: %w", objectID.String(), agentID, ErrNotEnoughFunds))
 	}
 	s.touchAccount(agentID)
-}
-
-// DebitObjectFromAccount removes an Object from the internal map of an account
-func (s *StateWriter) debitObjectFromAccount(agentID isc.AgentID, object *ObjectRecord) bool {
-	if !s.removeObjectOwner(object.ID, agentID) {
-		return false
-	}
-
-	collectionKey := object.CollectionKey()
-	objectsByCollection := s.objectsByCollectionMap(agentID, collectionKey)
-	if !objectsByCollection.HasAt(object.ID[:]) {
-		panic("inconsistency: Object not found in collection")
-	}
-	objectsByCollection.DelAt(object.ID[:])
-
-	return true
 }
 
 func collectObjectIDs(m *collections.ImmutableMap) []iotago.ObjectID {
@@ -130,10 +88,6 @@ func collectObjectIDs(m *collections.ImmutableMap) []iotago.ObjectID {
 
 func (s *StateReader) getAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
 	return collectObjectIDs(s.accountToObjectsMapR(agentID))
-}
-
-func (s *StateReader) getAccountObjectsInCollection(agentID isc.AgentID, collectionID iotago.ObjectID) []iotago.ObjectID {
-	return collectObjectIDs(s.objectsByCollectionMapR(agentID, kv.Key(collectionID[:])))
 }
 
 func (s *StateReader) getL2TotalObjects() []iotago.ObjectID {

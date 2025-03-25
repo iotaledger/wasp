@@ -15,7 +15,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/evm/solidity"
@@ -40,7 +39,6 @@ var Processor = evm.Contract.Processor(nil,
 	evm.FuncSendTransaction.WithHandler(applyTransaction),
 	evm.FuncCallContract.WithHandler(callContract),
 	evm.FuncRegisterERC20Coin.WithHandler(registerERC20Coin),
-	evm.FuncRegisterERC721NFTCollection.WithHandler(registerERC721NFTCollection),
 	evm.FuncNewL1Deposit.WithHandler(newL1Deposit),
 
 	// views
@@ -62,14 +60,6 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 		Storage: map[common.Hash]common.Hash{},
 		Balance: nil,
 	}
-
-	// add the ERC721NFTs contract at address 0x10740300...00
-	genesisAlloc[iscmagic.ERC721NFTsAddress] = types.Account{
-		Code:    iscmagic.ERC721NFTsRuntimeBytecode,
-		Storage: map[common.Hash]common.Hash{},
-		Balance: nil,
-	}
-	addToPrivileged(evmPartition, iscmagic.ERC721NFTsAddress)
 
 	gasLimits := gas.LimitsDefault
 	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
@@ -157,10 +147,9 @@ func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {
 }
 
 var (
-	errEVMAccountAlreadyExists      = coreerrors.Register("cannot register ERC20Coin contract: EVM account already exists").Create()
-	errEVMCanNotDecodeERC27Metadata = coreerrors.Register("cannot decode IRC27 collection NFT metadata")
-	errUnknownCoin                  = coreerrors.Register("unknown coin")
-	errUnknownObject                = coreerrors.Register("unknown object")
+	errEVMAccountAlreadyExists = coreerrors.Register("cannot register ERC20Coin contract: EVM account already exists").Create()
+	errUnknownCoin             = coreerrors.Register("unknown coin")
+	errUnknownObject           = coreerrors.Register("unknown object")
 )
 
 func registerERC20Coin(ctx isc.Sandbox, coinType coin.Type) {
@@ -184,34 +173,6 @@ func registerERC20Coin(ctx isc.Sandbox, coinType coin.Type) {
 	evmState.SetState(addr, solidity.StorageSlot(1), solidity.StorageEncodeShortString(info.Name))
 	evmState.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeShortString(info.Symbol))
 	evmState.SetState(addr, solidity.StorageSlot(3), solidity.StorageEncodeUint8(info.Decimals))
-
-	addToPrivileged(ctx.State(), addr)
-}
-
-func registerERC721NFTCollection(ctx isc.Sandbox, collectionID iotago.ObjectID) {
-	// The collection NFT must be deposited into the chain before registering. Afterwards it may be
-	// withdrawn to L1.
-	bcs, ok := ctx.GetObjectBCS(collectionID)
-	if !ok {
-		panic(errUnknownObject)
-	}
-	nft, err := isc.IRC27NFTMetadataFromBCS(bcs)
-	if err != nil {
-		panic(errEVMCanNotDecodeERC27Metadata)
-	}
-	addr := iscmagic.ERC721NFTCollectionAddress(collectionID)
-	state := emulator.NewStateDBFromKVStore(evm.EmulatorStateSubrealm(ctx.State()))
-	if state.Exist(addr) {
-		panic(errEVMAccountAlreadyExists)
-	}
-
-	state.CreateAccount(addr)
-	state.SetCode(addr, iscmagic.ERC721NFTCollectionRuntimeBytecode)
-	// see ERC721NFTCollection_storage.json
-	state.SetState(addr, solidity.StorageSlot(2), solidity.StorageEncodeBytes32(collectionID[:]))
-	for k, v := range solidity.StorageEncodeString(3, nft.Name) {
-		state.SetState(addr, k, v)
-	}
 
 	addToPrivileged(ctx.State(), addr)
 }
@@ -393,25 +354,6 @@ func makeTransferEvents(
 			logs = append(logs, makeTransferEventERC20(erc20Address, fromAddress, toAddress, value))
 		}
 	}
-	for nftID := range assets.Objects {
-		// if the NFT belongs to a collection, emit a Transfer event from the corresponding ERC721NFTCollection contract
-		if bcs, ok := ctx.GetObjectBCS(nftID); ok {
-			collectionID, ok, err := isc.IRC27NFTCollectionIDFromBCS(bcs)
-			if err != nil {
-				// cannot parse IRC27 metadata; ignore
-				continue
-			}
-			if ok {
-				erc721CollectionContractAddress := iscmagic.ERC721NFTCollectionAddress(collectionID)
-				if stateDB.Exist(erc721CollectionContractAddress) {
-					logs = append(logs, makeTransferEventERC721(erc721CollectionContractAddress, fromAddress, toAddress, iscmagic.TokenIDFromIotaObjectID(nftID)))
-					continue
-				}
-			}
-		}
-		// otherwise, emit a Transfer event from the ERC721NFTs contract
-		logs = append(logs, makeTransferEventERC721(iscmagic.ERC721NFTsAddress, fromAddress, toAddress, iscmagic.TokenIDFromIotaObjectID(nftID)))
-	}
 	return logs
 }
 
@@ -426,17 +368,5 @@ func makeTransferEventERC20(contractAddress, from, to common.Address, amount coi
 			evmutil.AddressToIndexedTopic(to),
 		},
 		Data: evmutil.PackUint256(new(big.Int).SetUint64(uint64(amount))),
-	}
-}
-
-func makeTransferEventERC721(contractAddress, from, to common.Address, tokenID *big.Int) *types.Log {
-	return &types.Log{
-		Address: contractAddress,
-		Topics: []common.Hash{
-			transferEventTopic,
-			evmutil.AddressToIndexedTopic(from),
-			evmutil.AddressToIndexedTopic(to),
-			evmutil.ERC721TokenIDToIndexedTopic(tokenID),
-		},
 	}
 }

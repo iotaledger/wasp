@@ -7,7 +7,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // viewBalance returns the balances of the account belonging to the AgentID
@@ -54,20 +53,4 @@ func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []iot
 	ctx.Log().Debugf("accounts.viewAccountObjects")
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountObjects(aid)
-}
-
-func viewAccountObjectsInCollection(ctx isc.SandboxView, optionalAgentID *isc.AgentID, collectionID iotago.ObjectID) []iotago.ObjectID {
-	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
-	return NewStateReaderFromSandbox(ctx).getAccountObjectsInCollection(aid, collectionID)
-}
-
-var errObjectNotFound = coreerrors.Register("object not found").Create()
-
-// viewObjectBCS returns the Object data for a given ObjectID
-func viewObjectBCS(ctx isc.SandboxView, objectID iotago.ObjectID) []byte {
-	data := NewStateReaderFromSandbox(ctx).GetObjectBCS(objectID)
-	if data == nil {
-		panic(errObjectNotFound)
-	}
-	return data
 }

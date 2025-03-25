@@ -144,40 +144,11 @@ interface ISCSandbox {
     function getCoinInfo(string memory coinType) external view returns (IotaCoinInfo memory);
 
     /**
-     * @notice Retrieves information about an Move object in Binary Canonical Serialization (BCS) format.
-     * @param id The ID of the object to retrieve.
-     * @return A byte array containing the serialized data of the specified object.
-     */
-    function getObjectBCS(IotaObjectID id) external view returns (bytes memory);
-
-    // TODO
-    // // Get information about an on-chain IRC27 NFT
-    // // NOTE: metadata does not include attributes, use `getIRC27TokenURI` to get those attributes off-chain in JSON form
-    // function getIRC27NFTData(IotaObjectID id) external view returns (IRC27NFT memory);
-
-    // Get information about an on-chain IRC27 NFT
-    // returns a JSON file encoded with the following format:
-    // base64(jsonEncode({
-    //   "name": NFT.name,
-    //   "description": NFT.description,
-    //   "image": NFT.URI
-    // }))
-    function getIRC27TokenURI(IotaObjectID id) external view returns (string memory);
-
-    /**
      * @notice Retrieves the address of the ERC20 contract linked to the specified coin type.
      * @param coinType The type of the coin as a string.
      * @return The address of the ERC20 contract corresponding to the specified coin type.
      */
     function ERC20CoinAddress(string memory coinType) external view returns (address);
-
-    /**
-     * @notice Retrieves the address of an ERC721 NFT collection contract associated with a specific collection ID.
-     * @param collectionID The unique identifier (IotaObjectID) of the NFT collection.
-     * @return The address of the ERC721 NFT collection contract corresponding to the given collection ID.
-     */
-    function erc721NFTCollectionAddress(IotaObjectID collectionID) external view
-        returns (address);
 }
 
 ISCSandbox constant __iscSandbox = ISCSandbox(ISC_MAGIC_ADDRESS);

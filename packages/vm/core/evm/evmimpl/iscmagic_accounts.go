@@ -43,22 +43,3 @@ func (h *magicContractHandler) GetL2ObjectCount(agentID iscmagic.ISCAgentID) *bi
 	// TODO: avoid fetching the whole list of objects
 	return new(big.Int).SetUint64(uint64(len(h.GetL2Objects(agentID))))
 }
-
-// handler for ISCAccounts::getL2ObjectsInCollection
-func (h *magicContractHandler) GetL2ObjectsInCollection(
-	agentID iscmagic.ISCAgentID,
-	collectionID iotago.ObjectID,
-) []iotago.ObjectID {
-	aid := lo.Must(agentID.Unwrap())
-	r := h.callView(accounts.ViewAccountObjectsInCollection.Message(&aid, collectionID))
-	return lo.Must(accounts.ViewAccountObjectsInCollection.DecodeOutput(r))
-}
-
-// handler for ISCAccounts::getL2ObjectsCountInCollection
-func (h *magicContractHandler) GetL2ObjectsCountInCollection(
-	agentID iscmagic.ISCAgentID,
-	collectionID iotago.ObjectID,
-) *big.Int {
-	// TODO: avoid fetching the whole list of objects
-	return new(big.Int).SetUint64(uint64(len(h.GetL2ObjectsInCollection(agentID, collectionID))))
-}

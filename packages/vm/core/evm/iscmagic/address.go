@@ -10,7 +10,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 )
@@ -21,8 +20,8 @@ const (
 	addressKindISCMagic        = addressKind(iota)
 	addressKindERC20BaseTokens // deprecated
 	addressKindERC20Coin
-	addressKindERC721NFTs
-	addressKindERC721NFTCollection
+	addressKindERC721NFTs          // deprecated
+	addressKindERC721NFTCollection // deprecated
 	addressKindInvalid
 )
 
@@ -40,10 +39,6 @@ var (
 func ERC20CoinAddress(coinType coin.Type) common.Address {
 	hash := hashing.HashKeccak([]byte(coinType.String()))
 	return packMagicAddress(addressKindERC20Coin, hash[:maxPayloadLength])
-}
-
-func ERC721NFTCollectionAddress(collectionID iotago.ObjectID) common.Address {
-	return packMagicAddress(addressKindERC721NFTCollection, collectionID[:maxPayloadLength])
 }
 
 func packMagicAddress(kind addressKind, payload []byte) common.Address {

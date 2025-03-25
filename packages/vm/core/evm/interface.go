@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -34,9 +33,6 @@ var (
 
 	FuncRegisterERC20Coin = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC20Coin,
 		coreutil.Field[coin.Type]("coinType"),
-	)
-	FuncRegisterERC721NFTCollection = coreutil.NewEP1(Contract, evmnames.FuncRegisterERC721NFTCollection,
-		coreutil.Field[iotago.ObjectID]("collectionID"),
 	)
 	FuncNewL1Deposit = coreutil.NewEP3(Contract, evmnames.FuncNewL1Deposit,
 		coreutil.Field[isc.AgentID]("l1DepositOriginatorAgentID"),

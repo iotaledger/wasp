@@ -38,12 +38,6 @@ var (
 		coreutil.Field[[]iotago.ObjectID]("accountObjects"),
 	)
 	// TODO: implement pagination
-	ViewAccountObjectsInCollection = coreutil.NewViewEP21(Contract, "accountObjectsInCollection",
-		coreutil.FieldOptional[isc.AgentID]("agentID"),
-		coreutil.Field[iotago.ObjectID]("collectionID"),
-		coreutil.Field[[]iotago.ObjectID]("accountObjects"),
-	)
-	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
 		coreutil.Field[isc.CoinBalances]("coinBalances"),
@@ -65,10 +59,6 @@ var (
 	ViewGetAccountNonce = coreutil.NewViewEP11(Contract, "getAccountNonce",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
 		coreutil.Field[uint64]("nonce"),
-	)
-	ViewObjectBCS = coreutil.NewViewEP11(Contract, "objectBCS",
-		coreutil.Field[iotago.ObjectID]("objectID"),
-		coreutil.Field[[]byte]("bcsEncodedBytes"),
 	)
 	// TODO: implement pagination
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",

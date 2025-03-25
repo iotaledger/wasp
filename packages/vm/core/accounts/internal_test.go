@@ -309,21 +309,12 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	require.True(t, total.Equals(isc.NewCoinBalances()))
 
 	agentID1 := isctest.NewRandomAgentID()
-	object1 := &accounts.ObjectRecord{
-		ID:  iotago.ObjectID{123},
-		BCS: []byte("foobar"),
-	}
-	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, object1)
+	objectID1 := iotago.ObjectID{123}
+	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, objectID1, isc.ChainID{})
 	// object is credited
 	user1Objects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, user1Objects, 1)
-	require.Equal(t, user1Objects[0], object1.ID)
-
-	// object data is saved (accounts.SaveObject must be called)
-	accounts.NewStateWriter(v, state).SaveObject(object1)
-
-	objectData := accounts.NewStateReader(v, state).GetObjectBCS(object1.ID)
-	require.Equal(t, object1.BCS, objectData)
+	require.Equal(t, user1Objects[0], objectID1)
 
 	agentID2 := isctest.NewRandomAgentID()
 
@@ -331,36 +322,31 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(iotago.ObjectID{111})))
 
 	// moves successfully when the Object is owned
-	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(object1.ID))
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(objectID1), isc.ChainID{})
 	require.NoError(t, err)
 
 	user1Objects = accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, user1Objects, 0)
 	user2Objects := accounts.NewStateReader(v, state).GetAccountObjects(agentID2)
 	require.Len(t, user2Objects, 1)
-	require.Equal(t, user2Objects[0], object1.ID)
+	require.Equal(t, user2Objects[0], objectID1)
 
 	// remove the Object from the chain
-	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID2, object1.ID)
-	accounts.NewStateWriter(v, state).DeleteObject(object1.ID)
-	require.Nil(t, accounts.NewStateReader(v, state).GetObjectBCS(object1.ID))
+	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID2, objectID1, isc.ChainID{})
 }
 
 func testCreditDebitObject1(t *testing.T, v isc.SchemaVersion) {
 	state := dict.New()
 
 	agentID1 := knownAgentID(1, 2)
-	object := &accounts.ObjectRecord{
-		ID:  iotago.ObjectID{123},
-		BCS: []byte("foobar"),
-	}
-	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, object)
+	objectID := iotago.ObjectID{123}
+	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, objectID, isc.ChainID{})
 
 	accObjects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, accObjects, 1)
-	require.Equal(t, accObjects[0], object.ID)
+	require.Equal(t, accObjects[0], objectID)
 
-	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID1, object.ID)
+	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID1, objectID, isc.ChainID{})
 
 	accObjects = accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, accObjects, 0)
