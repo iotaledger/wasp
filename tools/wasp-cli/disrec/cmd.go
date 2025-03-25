@@ -108,10 +108,10 @@ func initSignAndPostCmd() *cobra.Command {
 
 			//
 			// Sign and Post the TX to the L1.
-			iotaWsUrl := args[3]
+			iotaL1ClientURL := args[3]
 			ctx := context.Background()
-			wsClient := lo.Must(iscmoveclient.NewWebsocketClient(ctx, iotaWsUrl, "", iotaclient.WaitForEffectsEnabled, log))
-			res, err := wsClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
+			httpClient := iscmoveclient.NewHTTPClient(iotaL1ClientURL, "", iotaclient.WaitForEffectsEnabled)
+			res, err := httpClient.SignAndExecuteTransaction(ctx, &iotaclient.SignAndExecuteTransactionRequest{
 				TxDataBytes: txBytes,
 				Signer:      cryptolib.SignerToIotaSigner(signer),
 				Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
