@@ -111,7 +111,7 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 	balancesStrFromPrefix := oldBaseTokenBalancesFromPrefixToStr(contractState, chainID, knownAccs)
 	balancesStrFromMap := oldBaseTokenBalancesFromMapToStr(contractState, chainID, knownAccs)
 
-	EnsureEqual("old base token balances (prefix vs map)", balancesStrFromPrefix, balancesStrFromMap)
+	EnsureEqual("old base balances (prefix vs map)", balancesStrFromPrefix, balancesStrFromMap)
 
 	return balancesStrFromPrefix
 }
@@ -288,8 +288,8 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 	baseFromPrefix, nativeFromPrefix := newTokenBalancesFromPrefixToStr(contractState, chainID)
 	baseFromMap, nativeFromMap := newTokenBalancesFromMapToStr(contractState, chainID, accs)
 
-	EnsureEqual("base token balances (prefix vs map)", baseFromPrefix, baseFromMap)
-	EnsureEqual("native token balances (prefix vs map)", nativeFromPrefix, nativeFromMap)
+	EnsureEqual("new base token balances (prefix vs map)", baseFromPrefix, baseFromMap)
+	EnsureEqual("new native token balances (prefix vs map)", nativeFromPrefix, nativeFromMap)
 
 	return baseFromPrefix, nativeFromPrefix
 }
