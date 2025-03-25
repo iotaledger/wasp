@@ -173,9 +173,10 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 	return coin.Value(oldNativeTokenAmount.Uint64())
 }
 
-func convertBaseTokens(oldBalanceFullDecimals *big.Int) *big.Int {
-	//panic("TODO: do we need to apply a conversion rate because of iota's 6 to 9 decimals change?")
-	return big.NewInt(0).Mul(oldBalanceFullDecimals, big.NewInt(1_000))
+func convertBaseTokensFullDecimal(oldBalanceFullDecimals *big.Int) *big.Int {
+	// NOTE: We do NOT need to apply conversion here - full decimal value stays same,
+	// because number of digits has changes for internal representation, but not for ethereum.
+	return oldBalanceFullDecimals
 }
 
 func ConvertOldCoinDecimalsToNew(from uint64) coin.Value {

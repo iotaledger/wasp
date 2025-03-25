@@ -348,8 +348,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 				balanceFullDecimal.Add(balanceFullDecimal, remeinder)
 			}
 
-			// Using reverse conversion - just for the sake of more diverse validation
-			balanceFullDecimal.Div(balanceFullDecimal, big.NewInt(1000))
+			// Do not need to convert anythng - full decimal form stayed same.
 
 			balanceStr = balanceFullDecimal.String()
 			strBuilder = &baseBalancesStr
@@ -405,8 +404,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 				balanceFullDecimal.Add(balanceFullDecimal, remeinder)
 			}
 
-			// Using reverse conversion - just for the sake of more diverse validation
-			balanceFullDecimal.Div(balanceFullDecimal, big.NewInt(1000))
+			// Do not need to convert anythng - full decimal form stayed same.
 
 			balanceStr = balanceFullDecimal.String()
 			strBuilder = &baseBalancesStr
