@@ -16,7 +16,7 @@ import (
 
 func (c *Controller) activateChain(e echo.Context) error {
 	controllerutils.SetOperation(e, "activate_chain")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	chainID, err := controllerutils.ChainIDFromParams(e)
 	if err != nil {
 		return err
 	}
@@ -30,12 +30,12 @@ func (c *Controller) activateChain(e echo.Context) error {
 
 func (c *Controller) deactivateChain(e echo.Context) error {
 	controllerutils.SetOperation(e, "deactivate_chain")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	chain, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
 
-	if err := c.chainService.DeactivateChain(chainID); err != nil {
+	if err := c.chainService.DeactivateChain(chain.ID()); err != nil {
 		return err
 	}
 

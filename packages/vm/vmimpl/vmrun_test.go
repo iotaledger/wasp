@@ -158,7 +158,7 @@ func transitionAnchor(
 
 	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
 	chainInfo := governance.NewStateReaderFromChainState(state).
-		GetChainInfo()
+		GetChainInfo(anchor.ChainID())
 
 	newStateMetadata := transaction.NewStateMetadata(
 		stateMetadata.SchemaVersion,

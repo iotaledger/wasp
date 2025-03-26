@@ -28,7 +28,7 @@ func EVMCall(
 	if err != nil {
 		return nil, err
 	}
-	info := getChainInfo(latestState)
+	info := getChainInfo(anchor.ChainID(), latestState)
 
 	// 0 means view call
 	gasLimit := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)

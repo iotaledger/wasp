@@ -47,7 +47,7 @@ func EVMEstimateGas(
 	if err != nil {
 		return 0, err
 	}
-	info := getChainInfo(latestState)
+	info := getChainInfo(anchor.ChainID(), latestState)
 
 	maximumPossibleGas := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
 	if call.Gas >= params.TxGas {
@@ -148,8 +148,8 @@ func EVMEstimateGas(
 	return hi, nil
 }
 
-func getChainInfo(chainState state.State) *isc.ChainInfo {
-	return governance.NewStateReaderFromChainState(chainState).GetChainInfo()
+func getChainInfo(chainID isc.ChainID, chainState state.State) *isc.ChainInfo {
+	return governance.NewStateReaderFromChainState(chainState).GetChainInfo(chainID)
 }
 
 func resolveError(chainState state.State, receiptError *isc.UnresolvedVMError) (isOutOfGas bool, resolved *isc.VMError, err error) {

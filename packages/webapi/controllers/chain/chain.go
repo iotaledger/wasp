@@ -28,17 +28,13 @@ import (
 
 func (c *Controller) getCommitteeInfo(e echo.Context) error {
 	controllerutils.SetOperation(e, "get_committee_info")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
-	if err != nil {
-		return err
-	}
 
-	chain, err := c.chainService.GetChainInfo("")
+	chain, err := c.chainService.GetChainInfo(e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return apierrors.ChainNotFoundError()
 	}
 
-	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chainID)
+	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chain.ChainID)
 	if err != nil {
 		if errors.Is(err, services.ErrNotInCommittee) {
 			return e.JSON(http.StatusOK, models.CommitteeInfoResponse{})
@@ -47,7 +43,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 	}
 
 	chainInfo := models.CommitteeInfoResponse{
-		ChainID:        chainID.String(),
+		ChainID:        chain.ChainID.String(),
 		Active:         chain.IsActive,
 		StateAddress:   chainNodeInfo.Address.String(),
 		CommitteeNodes: models.MapCommitteeNodes(chainNodeInfo.CommitteeNodes),

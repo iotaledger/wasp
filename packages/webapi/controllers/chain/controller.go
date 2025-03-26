@@ -123,8 +123,7 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetOperationId("activateChain").
 		SetSummary("Activate a chain")
 
-	adminAPI.POST("chain/deactivate/:chainID", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+	adminAPI.POST("chain/deactivate", c.deactivateChain, authentication.ValidatePermissions([]string{permissions.Write})).
 		AddResponse(http.StatusNotModified, "Chain was not deactivated", nil, nil).
 		AddResponse(http.StatusOK, "Chain was successfully deactivated", nil, nil).
 		SetOperationId("deactivateChain").
