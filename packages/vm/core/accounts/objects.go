@@ -1,7 +1,10 @@
 package accounts
 
 import (
+	"bytes"
 	"fmt"
+
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -33,46 +36,51 @@ func (s *StateReader) hasObject(agentID isc.AgentID, objectID iotago.ObjectID) b
 	return s.accountToObjectsMapR(agentID).HasAt(objectID[:])
 }
 
-func (s *StateWriter) removeObjectOwner(objectID iotago.ObjectID, agentID isc.AgentID) bool {
+func (s *StateWriter) removeObjectOwner(objectID iotago.ObjectID, agentID isc.AgentID) (iotago.ObjectType, bool) {
 	// remove the mapping of ObjectID => owner
 	objectMap := s.objectToOwnerMap()
-	if !objectMap.HasAt(objectID[:]) {
-		return false
+	if bytes.Compare(objectMap.GetAt(objectID[:]), agentID.Bytes()) != 0 {
+		return iotago.ObjectType{}, false
 	}
-	objectMap.DelAt(objectID[:])
 
-	// add to the mapping of agentID => []ObjectIDs
+	// remove the mapping of agentID => {ObjectID => ObjectType}
 	objects := s.accountToObjectsMap(agentID)
-	if !objects.HasAt(objectID[:]) {
-		return false
+	tBin := objects.GetAt(objectID[:])
+	if tBin == nil {
+		return iotago.ObjectType{}, false
 	}
+
+	t := lo.Must(iotago.ObjectTypeFromBytes(tBin))
+	objectMap.DelAt(objectID[:])
 	objects.DelAt(objectID[:])
-	return true
+	return t, true
 }
 
-func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, agentID isc.AgentID) {
+func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, t iotago.ObjectType, agentID isc.AgentID) {
 	// add to the mapping of ObjectID => owner
 	objectMap := s.objectToOwnerMap()
 	objectMap.SetAt(objectID[:], agentID.Bytes())
 
-	// add to the mapping of agentID => []ObjectIDs
+	// add to the mapping of agentID => {ObjectID => ObjectType}
 	objects := s.accountToObjectsMap(agentID)
-	objects.SetAt(objectID[:], codec.Encode(true))
+	objects.SetAt(objectID[:], codec.Encode(t))
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
-func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, objectID iotago.ObjectID) {
-	s.setObjectOwner(objectID, agentID)
+func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, objectID iotago.ObjectID, t iotago.ObjectType, chainID isc.ChainID) {
+	s.setObjectOwner(objectID, t, agentID)
 	s.touchAccount(agentID, chainID)
 }
 
 // DebitObjectFromAccount removes an Object from an account.
 // If the account does not own the object, it panics.
-func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID) {
-	if !s.removeObjectOwner(objectID, agentID) {
+func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, chainID isc.ChainID) iotago.ObjectType {
+	t, ok := s.removeObjectOwner(objectID, agentID)
+	if !ok {
 		panic(fmt.Errorf("cannot debit Object %s from %s: %w", objectID.String(), agentID, ErrNotEnoughFunds))
 	}
-	s.touchAccount(agentID)
+	s.touchAccount(agentID, chainID)
+	return t
 }
 
 func collectObjectIDs(m *collections.ImmutableMap) []iotago.ObjectID {

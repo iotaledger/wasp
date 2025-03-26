@@ -29,9 +29,9 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount)
 }
 
-func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []iotago.ObjectID) {
-	for _, id := range objectIDs {
-		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, id)
+func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []lo.Tuple2[iotago.ObjectID, iotago.ObjectType]) {
+	for _, o := range objects {
+		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o.A, o.B, reqctx.ChainID())
 	}
 }
 

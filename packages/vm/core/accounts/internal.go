@@ -3,6 +3,7 @@ package accounts
 import (
 	"errors"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -46,7 +47,7 @@ const (
 	// Covered in: TestFoundries
 	keyCoinInfo = "RC"
 
-	// prefixObjects | <agentID> stores a map of <ObjectID> => true
+	// prefixObjects | <agentID> stores a map of <ObjectID> => <ObjectType>
 	// Covered in: TestDepositNFTWithMinStorageDeposit
 	prefixObjects = "o"
 
@@ -116,11 +117,18 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 	}
 	s.creditToAccount(accountKey(toAgentID), assets.Coins)
 
-	for id := range assets.Objects {
-		if !s.removeObjectOwner(id, fromAgentID) {
-			return errors.New("MoveBetweenAccounts: NFT not found in origin account")
+	var err error
+	assets.Objects.IterateSorted(func(id iotago.ObjectID, t iotago.ObjectType) bool {
+		_, ok := s.removeObjectOwner(id, fromAgentID)
+		if !ok {
+			err = errors.New("MoveBetweenAccounts: NFT not found in origin account")
+			return false
 		}
-		s.setObjectOwner(id, toAgentID)
+		s.setObjectOwner(id, t, toAgentID)
+		return true
+	})
+	if err != nil {
+		return err
 	}
 
 	s.touchAccount(fromAgentID)

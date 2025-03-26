@@ -24,6 +24,20 @@ import (
 
 const BaseTokensDepositFee = 100
 
+func TestAccounts_Deposit(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{})
+	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	ch := env.NewChain()
+
+	err := ch.DepositBaseTokensToL2(100_000, sender)
+	require.NoError(t, err)
+
+	rec := ch.LastReceipt()
+	require.NotNil(t, rec)
+	t.Logf("========= receipt: %s", rec)
+	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
+}
+
 func TestAccounts_DepositWithObjects(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -41,20 +55,6 @@ func TestAccounts_DepositWithObjects(t *testing.T) {
 	require.NoError(t, err)
 
 	err = ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(*testAnchor.ObjectID), sender)
-	require.NoError(t, err)
-
-	rec := ch.LastReceipt()
-	require.NotNil(t, rec)
-	t.Logf("========= receipt: %s", rec)
-	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
-}
-
-func TestAccounts_Deposit(t *testing.T) {
-	env := solo.New(t, &solo.InitOptions{})
-	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	ch := env.NewChain()
-
-	err := ch.DepositBaseTokensToL2(100_000, sender)
 	require.NoError(t, err)
 
 	rec := ch.LastReceipt()

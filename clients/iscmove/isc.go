@@ -73,14 +73,12 @@ func (ab *AssetsBag) Equals(other *AssetsBag) bool {
 		ab.Size == other.Size
 }
 
-type AssetsBagBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
-type AssetsBagObjects map[iotago.ObjectIDKey]bool
-
-type AssetsBagWithBalances struct {
-	AssetsBag
-	Balances AssetsBagBalances
-	Objects  AssetsBagObjects
-}
+type (
+	AssetsBagWithBalances struct {
+		AssetsBag
+		Assets
+	}
+)
 
 type Anchor struct {
 	ID            iotago.ObjectID
@@ -149,8 +147,10 @@ type CoinAllowance struct {
 	Balance  iotajsonrpc.CoinValue
 }
 
-type CoinBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
-type ObjectCollection map[iotago.ObjectIDKey]bool
+type (
+	CoinBalances     map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
+	ObjectCollection map[iotago.ObjectID]iotago.ObjectType
+)
 
 func NewEmptyAssets() *Assets {
 	return &Assets{Coins: make(CoinBalances)}
@@ -182,9 +182,8 @@ func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinV
 	return a
 }
 
-func (a *Assets) AddObject(objectID iotago.ObjectID) {
-	key := objectID.Key()
-	a.Objects[key] = true
+func (a *Assets) AddObject(objectID iotago.ObjectID, t iotago.ObjectType) {
+	a.Objects[objectID] = t
 }
 
 func (a *Assets) BaseToken() uint64 {

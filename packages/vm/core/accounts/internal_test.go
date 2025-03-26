@@ -310,7 +310,8 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	objectID1 := iotago.ObjectID{123}
-	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, objectID1, isc.ChainID{})
+	type1 := iotago.MustTypeFromString("0x1::ABC")
+	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, objectID1, type1, isc.ChainID{})
 	// object is credited
 	user1Objects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, user1Objects, 1)
@@ -319,10 +320,10 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isctest.NewRandomAgentID()
 
 	// cannot move an Object that is not owned
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(iotago.ObjectID{111})))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(iotago.ObjectID{111}, type1), isc.ChainID{}))
 
 	// moves successfully when the Object is owned
-	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(objectID1), isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(objectID1, type1), isc.ChainID{})
 	require.NoError(t, err)
 
 	user1Objects = accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
@@ -340,7 +341,8 @@ func testCreditDebitObject1(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := knownAgentID(1, 2)
 	objectID := iotago.ObjectID{123}
-	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, objectID, isc.ChainID{})
+	objType := iotago.MustTypeFromString("0x1::ABC")
+	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, objectID, objType, isc.ChainID{})
 
 	accObjects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, accObjects, 1)
