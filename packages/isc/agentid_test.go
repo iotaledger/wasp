@@ -28,5 +28,4 @@ func TestAgentIDSerialization(t *testing.T) {
 	e := NewEthereumAddressAgentID(common.HexToAddress("1074"))
 	bcs.TestCodec(t, AgentID(e))
 	rwutil.StringTest(t, AgentID(e), AgentIDFromString)
-	rwutil.StringTest(t, AgentID(e), AgentIDFromString)
 }

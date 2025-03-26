@@ -4,6 +4,8 @@
 package isc
 
 import (
+	"fmt"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/pkg/errors"
@@ -69,19 +71,23 @@ func AgentIDFromString(s string) (AgentID, error) {
 		return &NilAgentID{}, nil
 	}
 
-	// TODO Use proper length validation.
-	if len(s) == HnameLength*2 { // Hname => uint32
+	addressAsBytes, err := hexutil.Decode(s)
+	if err != nil {
+		return nil, fmt.Errorf("malformed AgentID '%v' %w", s, err)
+	}
+
+	// HName
+	if len(addressAsBytes) == HnameLength {
 		return contractAgentIDFromString(s)
 	}
 
-	addressAsBytes := hexutil.MustDecode(s)
-
+	// EVM
 	if len(addressAsBytes) == common.AddressLength {
 		return ethAgentIDFromString(s)
 	}
 
+	// Rebased
 	if len(addressAsBytes) == iotago.AddressLen {
-		// Rebased
 		return addressAgentIDFromString(s)
 	}
 
