@@ -1,0 +1,26 @@
+package services
+
+import (
+	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/stretchr/testify/require"
+	"testing"
+)
+
+// TestWebsocketContext_RateLimitDisabled ensures no rate limiting occurs when
+// WebsocketRateLimitDisabled is set to true.
+func TestWebsocketContext_RateLimitDisabled(t *testing.T) {
+	testLogger := log.NewLogger(log.WithName("TestWebsocketContext_RateLimitDisabled"))
+	params := jsonrpc.ParametersDefault()
+	params.WebsocketRateLimitDisabled = true
+
+	wsCtx := newWebsocketContext(testLogger, params)
+
+	remoteIP := "127.0.0.1"
+	rateLimiter := wsCtx.getRateLimiter(remoteIP)
+
+	// Because the rate limiter is disabled, every call to .Allow() should return true.
+	for i := 0; i < 50; i++ {
+		require.True(t, rateLimiter.Allow(), "disabled rate limiter should always allow")
+	}
+}
