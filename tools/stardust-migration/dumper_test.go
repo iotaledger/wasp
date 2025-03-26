@@ -12,9 +12,11 @@ import (
 	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -45,8 +47,8 @@ func OpenDBs(stateIndex uint32) (old_state.State, state.State) {
 		},
 	})
 
-	srcChainDBDir := "/home/luke/dev/wasp_stardust_mainnet/chains/data/iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5"
-	destChainDBDir := "/run/media/luke/4b99a2f0-7694-4319-a5f3-aa21a3179e16/rebased_migrated_1000"
+	srcChainDBDir := "/mnt/isc/wasp_stardust_mainnet/chains/data/iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5"
+	destChainDBDir := "/tmp/isc-migration"
 
 	srcKVS := db.ConnectOld(srcChainDBDir)
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
@@ -55,9 +57,23 @@ func OpenDBs(stateIndex uint32) (old_state.State, state.State) {
 	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 
 	srcState := lo.Must(srcStore.StateByIndex(stateIndex))
-	dstState := lo.Must(destStore.StateByIndex(stateIndex))
+	dstState := lo.Must(destStore.StateByIndex(1000))
 
 	return srcState, dstState
+}
+
+func TestDumpAccountKeys(t *testing.T) {
+	srcState, _ := OpenDBs(5200000)
+
+	accountState := oldstate.GetContactStateReader(srcState, old_accounts.Contract.Hname())
+
+	old_accounts.AllAccountsMapR(accountState).Iterate(func(elemKey []byte, value []byte) bool {
+		a, err := old_accounts.AgentIDFromKey(old_kv.Key(elemKey), old_isc.ChainID{})
+		require.NoError(t, err)
+
+		fmt.Println(a)
+		return true
+	})
 }
 
 func TestGetAccountBalance(t *testing.T) {
