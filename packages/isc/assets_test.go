@@ -15,6 +15,12 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
+func TestAssetsNativeToken(t *testing.T) {
+	a := isc.NewAssets(1234)
+	a.AddCoin(coin.MustTypeFromString("0x3::testiota::TESTIOTA"), 4321)
+	require.Len(t, a.Coins.NativeTokens(), 1)
+}
+
 func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 	assetsBag := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{

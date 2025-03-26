@@ -6,7 +6,7 @@ export * from '../models/AnchorMetricItem';
 export * from '../models/AssetsJSON';
 export * from '../models/AssetsResponse';
 export * from '../models/AuthInfoModel';
-export * from '../models/BaseToken';
+export * from '../models/BigInt';
 export * from '../models/BlockInfoResponse';
 export * from '../models/BurnRecord';
 export * from '../models/CallTargetJSON';
@@ -35,6 +35,8 @@ export * from '../models/GovChainInfoResponse';
 export * from '../models/GovChainOwnerResponse';
 export * from '../models/GovPublicChainMetadata';
 export * from '../models/InfoResponse';
+export * from '../models/Int';
+export * from '../models/IotaCoinInfo';
 export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
@@ -47,7 +49,7 @@ export * from '../models/OnLedgerRequestMetricItem';
 export * from '../models/PeeringNodeIdentityResponse';
 export * from '../models/PeeringNodeStatusResponse';
 export * from '../models/PeeringTrustRequest';
-export * from '../models/ProtocolParameters';
+export * from '../models/Protocol';
 export * from '../models/PublicChainMetadata';
 export * from '../models/PublisherStateTransactionItem';
 export * from '../models/Ratio32';
@@ -75,7 +77,7 @@ import { AnchorMetricItem } from '../models/AnchorMetricItem';
 import { AssetsJSON } from '../models/AssetsJSON';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { AuthInfoModel } from '../models/AuthInfoModel';
-import { BaseToken } from '../models/BaseToken';
+import { BigInt } from '../models/BigInt';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { BurnRecord } from '../models/BurnRecord';
 import { CallTargetJSON } from '../models/CallTargetJSON';
@@ -104,6 +106,8 @@ import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
+import { Int } from '../models/Int';
+import { IotaCoinInfo } from '../models/IotaCoinInfo';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
@@ -116,7 +120,7 @@ import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
 import { PeeringNodeIdentityResponse } from '../models/PeeringNodeIdentityResponse';
 import { PeeringNodeStatusResponse } from '../models/PeeringNodeStatusResponse';
 import { PeeringTrustRequest } from '../models/PeeringTrustRequest';
-import { ProtocolParameters } from '../models/ProtocolParameters';
+import { Protocol } from '../models/Protocol';
 import { PublicChainMetadata } from '../models/PublicChainMetadata';
 import { PublisherStateTransactionItem } from '../models/PublisherStateTransactionItem';
 import { Ratio32 } from '../models/Ratio32';
@@ -160,7 +164,7 @@ let typeMap: {[index: string]: any} = {
     "AssetsJSON": AssetsJSON,
     "AssetsResponse": AssetsResponse,
     "AuthInfoModel": AuthInfoModel,
-    "BaseToken": BaseToken,
+    "BigInt": BigInt,
     "BlockInfoResponse": BlockInfoResponse,
     "BurnRecord": BurnRecord,
     "CallTargetJSON": CallTargetJSON,
@@ -189,6 +193,8 @@ let typeMap: {[index: string]: any} = {
     "GovChainOwnerResponse": GovChainOwnerResponse,
     "GovPublicChainMetadata": GovPublicChainMetadata,
     "InfoResponse": InfoResponse,
+    "Int": Int,
+    "IotaCoinInfo": IotaCoinInfo,
     "L1Params": L1Params,
     "Limits": Limits,
     "LoginRequest": LoginRequest,
@@ -201,7 +207,7 @@ let typeMap: {[index: string]: any} = {
     "PeeringNodeIdentityResponse": PeeringNodeIdentityResponse,
     "PeeringNodeStatusResponse": PeeringNodeStatusResponse,
     "PeeringTrustRequest": PeeringTrustRequest,
-    "ProtocolParameters": ProtocolParameters,
+    "Protocol": Protocol,
     "PublicChainMetadata": PublicChainMetadata,
     "PublisherStateTransactionItem": PublisherStateTransactionItem,
     "Ratio32": Ratio32,

@@ -51,6 +51,7 @@ func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
 		delete(c, coinType)
 		return c
 	}
+
 	c[coinType] = amount
 	return c
 }
@@ -88,7 +89,7 @@ func (c CoinBalances) NativeTokens() CoinBalances {
 	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
 		// Exclude BaseTokens
 		if coin.BaseTokenType.MatchesStringType(t.String()) {
-			return false
+			return true
 		}
 
 		ret[t] = v
