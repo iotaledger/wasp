@@ -10,13 +10,11 @@
  * Do not edit the class manually.
  */
 
-import { IotaCoinInfo } from '../models/IotaCoinInfo';
-import { Protocol } from '../models/Protocol';
+import { Int } from '../models/Int';
 import { HttpFile } from '../http/http';
 
-export class L1Params {
-    'baseToken': IotaCoinInfo;
-    'protocol': Protocol;
+export class BigInt {
+    '_int'?: Int;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,20 +22,14 @@ export class L1Params {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "baseToken",
-            "baseName": "baseToken",
-            "type": "IotaCoinInfo",
-            "format": ""
-        },
-        {
-            "name": "protocol",
-            "baseName": "protocol",
-            "type": "Protocol",
+            "name": "_int",
+            "baseName": "Int",
+            "type": "Int",
             "format": ""
         }    ];
 
     static getAttributeTypeMap() {
-        return L1Params.attributeTypeMap;
+        return BigInt.attributeTypeMap;
     }
 
     public constructor() {

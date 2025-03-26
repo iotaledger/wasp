@@ -76,6 +76,12 @@ func IsLocalConfigured() bool {
 	return testConfig.IsLocal
 }
 
+func TestLocal() func() {
+	node, cancel := StartNode(context.Background())
+	instance.Store(&node)
+	return cancel
+}
+
 func TestMain(m *testing.M) {
 	if instance.Load() != nil {
 		m.Run()
