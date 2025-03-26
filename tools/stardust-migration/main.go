@@ -139,6 +139,10 @@ func main() {
 								Name:  "debug-dest-value",
 								Usage: "Print stack when destination db value CONTAIN given hex string (works as AND with --debug-dest-key).",
 							},
+							&cmd.StringFlag{
+								Name:  "debug-filter-trace",
+								Usage: "Print stacktrace only if it contains given string (used with --debug-dest-key and --debug-dest-value).",
+							},
 							&cmd.BoolFlag{
 								Name:    "print-block-idx",
 								Aliases: []string{"print-block-index", "print-idx"},

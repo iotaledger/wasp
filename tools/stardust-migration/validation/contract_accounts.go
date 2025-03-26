@@ -18,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -372,6 +371,31 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 		return true
 	})
 
+	// Process balances with remainder but without coin balance part
+	contractState.Iterate(accounts.PrefixAccountWeiRemainder, func(k kv.Key, v []byte) bool {
+		accKey := utils.MustRemovePrefix(k, accounts.PrefixAccountWeiRemainder)
+		coinBalance := accounts.NewStateReader(newSchema, contractState).UnsafeGetCoinBalance(accKey, coin.BaseTokenType)
+		if coinBalance != 0 {
+			return true
+		}
+
+		agentID := lo.Must(accounts.AgentIDFromKey(accKey, chainID))
+		remainder := codec.MustDecode[*big.Int](v)
+
+		balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(0, parameters.BaseTokenDecimals)
+		balanceFullDecimal.Add(balanceFullDecimal, remainder)
+
+		baseBalancesStr.WriteString("\tBase balance: ")
+		baseBalancesStr.WriteString(newAgentIDToStr(agentID))
+		baseBalancesStr.WriteString(": ")
+		baseBalancesStr.WriteString(balanceFullDecimal.String())
+		baseBalancesStr.WriteString("\n")
+
+		baseCount++
+
+		return true
+	})
+
 	cli.DebugLogf("Found %v new base token balances, %v new native token balances\n", baseCount, nativeCount)
 	cli.DebugLogf("Formatting lines...\n")
 	resBase := fmt.Sprintf("Found %v base token balances:%v", baseCount, utils.SortLines(baseBalancesStr.String()))
@@ -391,29 +415,23 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 	baseCount := 0
 	nativeCount := 0
 
-	accBalancesToStr := func(accKey kv.Key, agentIDStr string, balance coin.Value, coinType coin.Type) {
-		var balanceStr string
+	addBalanceStr := func(accKey kv.Key, agentIDStr string, balanceStr string, coinType coin.Type) {
+		defer printProgress()
+
+		if balanceStr == "0" {
+			return
+		}
+
 		var strBuilder *strings.Builder
 
 		if coinType == coin.BaseTokenType {
-			balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(balance, parameters.BaseTokenDecimals)
-
-			var remeinder *big.Int
-			if remeinderBytes := contractState.Get(accounts.AccountWeiRemainderKey(accKey)); remeinderBytes != nil {
-				remeinder = codec.MustDecode[*big.Int](contractState.Get(accounts.AccountWeiRemainderKey(accKey)))
-				balanceFullDecimal.Add(balanceFullDecimal, remeinder)
-			}
-
-			// Do not need to convert anythng - full decimal form stayed same.
-
-			balanceStr = balanceFullDecimal.String()
 			strBuilder = &baseBalancesStr
 			baseCount++
 			strBuilder.WriteString("\tBase balance: ")
 		} else {
-			ntID := coinTypeToOldNTID(coinType) // reverse conversion
-			balanceStr = ntID.ToHex() + ": " + balance.String()
 			strBuilder = &nativeBalancesStr
+			ntID := coinTypeToOldNTID(coinType) // reverse conversion
+			balanceStr = ntID.ToHex() + ": " + balanceStr
 			nativeCount++
 			strBuilder.WriteString("\tNative balance: ")
 		}
@@ -422,23 +440,32 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 		strBuilder.WriteString(": ")
 		strBuilder.WriteString(balanceStr)
 		strBuilder.WriteString("\n")
-
-		printProgress()
 	}
+
+	r := accounts.NewStateReader(newSchema, contractState)
 
 	for accKey, agentID := range accs {
-		m := collections.NewMapReadOnly(contractState, accounts.AccountCoinBalancesKey(accKey))
-		m.Iterate(func(coinTypeBytes []byte, balanceBytes []byte) bool {
-			coinType := codec.MustDecode[coin.Type](coinTypeBytes)
-			balance := codec.MustDecode[coin.Value](balanceBytes)
-			accBalancesToStr(accKey, newAgentIDToStr(agentID), balance, coinType)
-			return true
-		})
+		baseBalance := r.GetBaseTokensBalanceFullDecimals(agentID, chainID)
+		addBalanceStr(accKey, newAgentIDToStr(agentID), baseBalance.String(), coin.BaseTokenType)
+
+		nativeTokens := r.GetTotalL2FungibleTokens().NativeTokens()
+		for coinType, ntBalance := range nativeTokens {
+			if coinType == coin.BaseTokenType {
+				continue
+			}
+			addBalanceStr(accKey, newAgentIDToStr(agentID), ntBalance.String(), coinType)
+		}
 	}
 
-	totalTokens := accounts.NewStateReader(newSchema, contractState).GetTotalL2FungibleTokens()
-	for coinType, balance := range totalTokens {
-		accBalancesToStr(accounts.L2TotalsAccount, "L2TotalsAccount", balance, coinType)
+	totalBaseTokens := r.UnsafeGetBaseTokensFullDecimals(accounts.L2TotalsAccount)
+	addBalanceStr(accounts.L2TotalsAccount, "L2TotalsAccount", totalBaseTokens.String(), coin.BaseTokenType)
+
+	totalNativeTokens := r.GetTotalL2FungibleTokens()
+	for coinType, ntBalance := range totalNativeTokens {
+		if coinType == coin.BaseTokenType {
+			continue
+		}
+		addBalanceStr(accounts.L2TotalsAccount, "L2TotalsAccount", ntBalance.String(), coinType)
 	}
 
 	cli.DebugLogf("Found %v new base token balances, %v new native token balances\n", baseCount, nativeCount)

@@ -13,7 +13,7 @@ import (
 )
 
 func (s *StateReader) getBaseTokens(accountKey kv.Key) (baseTokens coin.Value, remainderWei *big.Int) {
-	if s.v < allmigrations.SchemaVersionIotaRebased {
+	if s.v < allmigrations.SchemaVersionMigratedRebased {
 		panic("unsupported schema version")
 	}
 	baseTokens = s.getCoinBalance(accountKey, coin.BaseTokenType)
@@ -26,6 +26,10 @@ func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
 	wei := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.BaseTokenDecimals)
 	wei.Add(wei, remainderWei)
 	return wei
+}
+
+func (s *StateReader) UnsafeGetBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
+	return s.getBaseTokensFullDecimals(accountKey)
 }
 
 func (s *StateWriter) setBaseTokens(accountKey kv.Key, baseTokens coin.Value, remainderWei *big.Int) {

@@ -7,8 +7,8 @@ import (
 	"github.com/samber/lo"
 )
 
-func MustRemovePrefix[T ~string | ~[]byte](v T, prefix string) T {
-	r, found := strings.CutPrefix(string(v), prefix)
+func MustRemovePrefix[T, Prefix ~string | ~[]byte](v T, prefix Prefix) T {
+	r, found := strings.CutPrefix(string(v), string(prefix))
 	if !found {
 		panic(fmt.Sprintf("Prefix '%v' not found: %v", prefix, v))
 	}

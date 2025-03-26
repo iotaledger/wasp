@@ -25,6 +25,10 @@ func (s *StateReader) getCoinBalance(accountKey kv.Key, coinType coin.Type) coin
 	return codec.MustDecode[coin.Value](b, 0)
 }
 
+func (s *StateReader) UnsafeGetCoinBalance(accountKey kv.Key, coinType coin.Type) coin.Value {
+	return s.getCoinBalance(accountKey, coinType)
+}
+
 func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n coin.Value) {
 	if n == 0 {
 		s.accountCoinBalancesMap(accountKey).DelAt(coinType.Bytes())
