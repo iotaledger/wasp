@@ -161,13 +161,6 @@ export interface ChainsApiCallViewRequest {
 }
 
 export interface ChainsApiDeactivateChainRequest {
-    /**
-     * ChainID (Hex Address)
-     * Defaults to: undefined
-     * @type string
-     * @memberof ChainsApideactivateChain
-     */
-    chainID: string
 }
 
 export interface ChainsApiDumpAccountsRequest {
@@ -370,16 +363,16 @@ export class ObjectChainsApi {
      * Deactivate a chain
      * @param param the request object
      */
-    public deactivateChainWithHttpInfo(param: ChainsApiDeactivateChainRequest, options?: Configuration): Promise<HttpInfo<void>> {
-        return this.api.deactivateChainWithHttpInfo(param.chainID,  options).toPromise();
+    public deactivateChainWithHttpInfo(param: ChainsApiDeactivateChainRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
+        return this.api.deactivateChainWithHttpInfo( options).toPromise();
     }
 
     /**
      * Deactivate a chain
      * @param param the request object
      */
-    public deactivateChain(param: ChainsApiDeactivateChainRequest, options?: Configuration): Promise<void> {
-        return this.api.deactivateChain(param.chainID,  options).toPromise();
+    public deactivateChain(param: ChainsApiDeactivateChainRequest = {}, options?: Configuration): Promise<void> {
+        return this.api.deactivateChain( options).toPromise();
     }
 
     /**

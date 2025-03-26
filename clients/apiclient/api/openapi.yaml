@@ -1042,17 +1042,9 @@ paths:
       summary: Get the chain owner
       tags:
       - corecontracts
-  /v1/chain/deactivate/{chainID}:
+  /v1/chain/deactivate:
     post:
       operationId: deactivateChain
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content: {}
@@ -3531,14 +3523,7 @@ components:
     OffLedgerRequest:
       example:
         request: Hex string
-        chainId: chainId
       properties:
-        chainId:
-          description: The chain id
-          format: string
-          type: string
-          xml:
-            name: ChainID
         request:
           description: Offledger Request (Hex)
           example: Hex string
@@ -3547,7 +3532,6 @@ components:
           xml:
             name: Request
       required:
-      - chainId
       - request
       type: object
       xml:
@@ -3908,7 +3892,6 @@ components:
             contractHName: contractHName
             functionHName: functionHName
           gasBudget: gasBudget
-          targetAddress: targetAddress
           allowance:
             coins:
             - coinType: coinType
@@ -4040,7 +4023,6 @@ components:
           contractHName: contractHName
           functionHName: functionHName
         gasBudget: gasBudget
-        targetAddress: targetAddress
         allowance:
           coins:
           - coinType: coinType
@@ -4097,11 +4079,6 @@ components:
           type: string
           xml:
             name: SenderAccount
-        targetAddress:
-          format: string
-          type: string
-          xml:
-            name: TargetAddress
       required:
       - allowance
       - assets
@@ -4112,7 +4089,6 @@ components:
       - params
       - requestId
       - senderAccount
-      - targetAddress
       type: object
       xml:
         name: RequestJSON

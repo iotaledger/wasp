@@ -264,10 +264,9 @@ export class ObservableChainsApi {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Hex Address)
      */
-    public deactivateChainWithHttpInfo(chainID: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.deactivateChain(chainID, _options);
+    public deactivateChainWithHttpInfo(_options?: Configuration): Observable<HttpInfo<void>> {
+        const requestContextPromise = this.requestFactory.deactivateChain(_options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -287,10 +286,9 @@ export class ObservableChainsApi {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Hex Address)
      */
-    public deactivateChain(chainID: string, _options?: Configuration): Observable<void> {
-        return this.deactivateChainWithHttpInfo(chainID, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
+    public deactivateChain(_options?: Configuration): Observable<void> {
+        return this.deactivateChainWithHttpInfo(_options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
     }
 
     /**

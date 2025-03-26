@@ -196,19 +196,17 @@ export class PromiseChainsApi {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Hex Address)
      */
-    public deactivateChainWithHttpInfo(chainID: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.deactivateChainWithHttpInfo(chainID, _options);
+    public deactivateChainWithHttpInfo(_options?: Configuration): Promise<HttpInfo<void>> {
+        const result = this.api.deactivateChainWithHttpInfo(_options);
         return result.toPromise();
     }
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Hex Address)
      */
-    public deactivateChain(chainID: string, _options?: Configuration): Promise<void> {
-        const result = this.api.deactivateChain(chainID, _options);
+    public deactivateChain(_options?: Configuration): Promise<void> {
+        const result = this.api.deactivateChain(_options);
         return result.toPromise();
     }
 

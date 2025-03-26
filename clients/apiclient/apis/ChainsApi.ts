@@ -143,20 +143,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Hex Address)
      */
-    public async deactivateChain(chainID: string, _options?: Configuration): Promise<RequestContext> {
+    public async deactivateChain(_options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "deactivateChain", "chainID");
-        }
-
-
         // Path Params
-        const localVarPath = '/v1/chain/deactivate/{chainID}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/deactivate';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);

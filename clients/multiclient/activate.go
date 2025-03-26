@@ -16,9 +16,9 @@ func (m *MultiClient) ActivateChain(chainID isc.ChainID) error {
 }
 
 // DeactivateChain sends a request to deactivate a chain in all wasp nodes
-func (m *MultiClient) DeactivateChain(chainID isc.ChainID) error {
+func (m *MultiClient) DeactivateChain() error {
 	return m.Do(func(i int, w *apiclient.APIClient) error {
-		_, err := w.ChainsAPI.DeactivateChain(context.Background(), chainID.String()).Execute()
+		_, err := w.ChainsAPI.DeactivateChain(context.Background()).Execute()
 		return err
 	})
 }

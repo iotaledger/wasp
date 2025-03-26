@@ -7,7 +7,7 @@ Method | HTTP request | Description
 [**activateChain**](ChainsApi.md#activateChain) | **POST** /v1/chain/activate/{chainID} | Activate a chain
 [**addAccessNode**](ChainsApi.md#addAccessNode) | **PUT** /v1/chain/access-node/{peer} | Configure a trusted node to be an access node.
 [**callView**](ChainsApi.md#callView) | **POST** /v1/chain/callview | Call a view function on a contract by Hname
-[**deactivateChain**](ChainsApi.md#deactivateChain) | **POST** /v1/chain/deactivate/{chainID} | Deactivate a chain
+[**deactivateChain**](ChainsApi.md#deactivateChain) | **POST** /v1/chain/deactivate | Deactivate a chain
 [**dumpAccounts**](ChainsApi.md#dumpAccounts) | **POST** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
 [**estimateGasOffledger**](ChainsApi.md#estimateGasOffledger) | **POST** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**estimateGasOnledger**](ChainsApi.md#estimateGasOnledger) | **POST** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
@@ -203,15 +203,11 @@ No authorization required
 
 ```typescript
 import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiDeactivateChainRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
-const request: ChainsApiDeactivateChainRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-};
+const request = {};
 
 const data = await apiInstance.deactivateChain(request);
 console.log('API called successfully. Returned data:', data);
@@ -219,10 +215,7 @@ console.log('API called successfully. Returned data:', data);
 
 
 ### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+This endpoint does not need any parameter.
 
 
 ### Return type

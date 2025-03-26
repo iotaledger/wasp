@@ -7,7 +7,7 @@ Method | HTTP request | Description
 [**ActivateChain**](ChainsAPI.md#ActivateChain) | **Post** /v1/chain/activate/{chainID} | Activate a chain
 [**AddAccessNode**](ChainsAPI.md#AddAccessNode) | **Put** /v1/chain/access-node/{peer} | Configure a trusted node to be an access node.
 [**CallView**](ChainsAPI.md#CallView) | **Post** /v1/chain/callview | Call a view function on a contract by Hname
-[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chain/deactivate/{chainID} | Deactivate a chain
+[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chain/deactivate | Deactivate a chain
 [**DumpAccounts**](ChainsAPI.md#DumpAccounts) | **Post** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
 [**EstimateGasOffledger**](ChainsAPI.md#EstimateGasOffledger) | **Post** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**EstimateGasOnledger**](ChainsAPI.md#EstimateGasOnledger) | **Post** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
@@ -226,7 +226,7 @@ No authorization required
 
 ## DeactivateChain
 
-> DeactivateChain(ctx, chainID).Execute()
+> DeactivateChain(ctx).Execute()
 
 Deactivate a chain
 
@@ -243,11 +243,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.DeactivateChain(context.Background(), chainID).Execute()
+	r, err := apiClient.ChainsAPI.DeactivateChain(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.DeactivateChain``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -257,19 +256,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiDeactivateChainRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
 
 
 ### Return type

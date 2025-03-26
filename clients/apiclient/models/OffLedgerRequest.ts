@@ -14,10 +14,6 @@ import { HttpFile } from '../http/http';
 
 export class OffLedgerRequest {
     /**
-    * The chain id
-    */
-    'chainId': string;
-    /**
     * Offledger Request (Hex)
     */
     'request': string;
@@ -27,12 +23,6 @@ export class OffLedgerRequest {
     static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
-        {
-            "name": "chainId",
-            "baseName": "chainId",
-            "type": "string",
-            "format": "string"
-        },
         {
             "name": "request",
             "baseName": "request",

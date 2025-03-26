@@ -365,7 +365,6 @@ func (a *ChainsAPIService) CallViewExecute(r ApiCallViewRequest) ([]string, *htt
 type ApiDeactivateChainRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 }
 
 func (r ApiDeactivateChainRequest) Execute() (*http.Response, error) {
@@ -376,14 +375,12 @@ func (r ApiDeactivateChainRequest) Execute() (*http.Response, error) {
 DeactivateChain Deactivate a chain
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiDeactivateChainRequest
 */
-func (a *ChainsAPIService) DeactivateChain(ctx context.Context, chainID string) ApiDeactivateChainRequest {
+func (a *ChainsAPIService) DeactivateChain(ctx context.Context) ApiDeactivateChainRequest {
 	return ApiDeactivateChainRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -400,8 +397,7 @@ func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chain/deactivate/{chainID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/deactivate"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

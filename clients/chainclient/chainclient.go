@@ -195,7 +195,6 @@ func (c *Client) PostOffLedgerRequest(
 	request := cryptolib.EncodeHex(signed.Bytes())
 
 	offLedgerRequest := apiclient.OffLedgerRequest{
-		ChainId: c.ChainID.String(),
 		Request: request,
 	}
 	_, err := c.WaspClient.RequestsAPI.
