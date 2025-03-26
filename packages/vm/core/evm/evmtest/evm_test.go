@@ -1534,8 +1534,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    nil,
 			expectedError: "insufficient gas price: got 0, minimum is 10000000",
-			gasBurned:     168095,
-			feeCharged:    1681,
+			gasBurned:     168107,
+			feeCharged:    1682,
 		},
 		{
 			name:          "default policy, gas price too low",
@@ -1543,8 +1543,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},   // default
 			txGasPrice:    big.NewInt(9999999),
 			expectedError: "insufficient gas price: got 9999999, minimum is 10000000",
-			gasBurned:     168095,
-			feeCharged:    1681,
+			gasBurned:     168107,
+			feeCharged:    1682,
 		},
 		{
 			name:        "default policy, gas price just enough",
@@ -1576,8 +1576,8 @@ func TestEVMGasPriceMismatch(t *testing.T) {
 			evmGasRatio:   util.Ratio32{A: 1, B: 1},  // default
 			txGasPrice:    big.NewInt(19999999),
 			expectedError: "insufficient gas price: got 19999999, minimum is 20000000",
-			gasBurned:     168095,
-			feeCharged:    2 * 1681,
+			gasBurned:     168107,
+			feeCharged:    2*1682 - 1,
 		},
 		{
 			name:        "gas more expensive, gas price just enough",
