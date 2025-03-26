@@ -393,8 +393,8 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 			r.AddCoin(coinType.ToIotaJSONRPC(), iotajsonrpc.CoinValue(amount))
 		}
 	}
-	if len(a.Objects) > 0 {
-		panic("TODO")
+	for objectID := range a.Objects {
+		r.AddObject(objectID)
 	}
 	return r
 }
@@ -403,9 +403,13 @@ func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBa
 	ret := &iscmove.AssetsBagWithBalances{
 		AssetsBag: *b,
 		Balances:  make(iscmove.AssetsBagBalances),
+		Objects:   make(iscmove.AssetsBagObjects),
 	}
 	for cointype, coinval := range a.Coins {
 		ret.Balances[cointype.ToIotaJSONRPC()] = iotajsonrpc.CoinValue(coinval)
+	}
+	for objectID := range a.Objects {
+		ret.Objects[objectID.Key()] = false
 	}
 	return ret
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -21,6 +23,31 @@ import (
 )
 
 const BaseTokensDepositFee = 100
+
+func TestAccounts_DepositWithObjects(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{})
+	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	ch := env.NewChain()
+
+	testAnchor, err := env.ISCMoveClient().StartNewChain(env.Ctx(), &iscmoveclient.StartNewChainRequest{
+		GasBudget:         iotaclient.DefaultGasBudget,
+		Signer:            sender,
+		PackageID:         env.ISCPackageID(),
+		StateMetadata:     []byte{},
+		ChainOwnerAddress: sender.Address(),
+		InitCoinRef:       nil,
+		GasPrice:          iotaclient.DefaultGasPrice,
+	})
+	require.NoError(t, err)
+
+	err = ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(*testAnchor.ObjectID), sender)
+	require.NoError(t, err)
+
+	rec := ch.LastReceipt()
+	require.NotNil(t, rec)
+	t.Logf("========= receipt: %s", rec)
+	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
+}
 
 func TestAccounts_Deposit(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
