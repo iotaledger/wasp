@@ -6,6 +6,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -148,6 +149,14 @@ func initDeployCmd() *cobra.Command {
 
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
+
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+			_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
+
+			if header.StatusCode != http.StatusNotFound {
+				fmt.Println("A chain has already been deployed.")
+				return
+			}
 
 			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
