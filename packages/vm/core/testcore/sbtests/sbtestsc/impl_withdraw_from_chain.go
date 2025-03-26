@@ -30,7 +30,7 @@ func withdrawFromChain(ctx isc.Sandbox, withdrawal coin.Value, gasReserve *uint6
 		TargetAddress: ctx.ChainID().AsAddress(),
 		Assets:        isc.NewAssets(coin.Value(storageDeposit + *gasReserveTransferAccountToChain + *gasReserve)),
 		Metadata: &isc.SendMetadata{
-			Message:   accounts.FuncTransferAccountToChain.Message(gasReserve),
+			Message:   accounts.FuncTransferAllowanceTo.Message(ctx.AccountID()),
 			GasBudget: *gasReserve,
 			Allowance: isc.NewAssets(withdrawal + coin.Value(storageDeposit+*gasReserve)),
 		},

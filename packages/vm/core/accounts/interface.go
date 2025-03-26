@@ -20,9 +20,6 @@ var (
 	//   FuncCoinModifySupply
 	//   FuncCoinDestroy
 	//   FuncMintObject
-	FuncTransferAccountToChain = coreutil.NewEP1(Contract, "transferAccountToChain",
-		coreutil.FieldOptional[uint64]("optionalGasReserve"),
-	)
 	FuncTransferAllowanceTo = coreutil.NewEP1(Contract, "transferAllowanceTo",
 		coreutil.Field[isc.AgentID]("agentID"),
 	)

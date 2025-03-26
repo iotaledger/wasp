@@ -130,7 +130,6 @@ func TestDumpJson(t *testing.T) {
 
 	contractFuncs := []CoreContractFunction{
 		constructCoreContractFunction(&accounts.FuncDeposit),
-		constructCoreContractFunction(&accounts.FuncTransferAccountToChain),
 		constructCoreContractFunction(&accounts.FuncTransferAllowanceTo),
 		constructCoreContractFunction(&accounts.FuncWithdraw),
 		constructCoreContractFunction(&accounts.ViewAccountObjects),
@@ -204,7 +203,6 @@ func TestA(t *testing.T) {
 
 	contractFuncs := []CoreContractFunction{
 		constructCoreContractFunction(&accounts.FuncDeposit),
-		constructCoreContractFunction(&accounts.FuncTransferAccountToChain),
 		constructCoreContractFunction(&accounts.FuncTransferAllowanceTo),
 		constructCoreContractFunction(&accounts.FuncWithdraw),
 		constructCoreContractFunction(&accounts.ViewAccountObjects),
