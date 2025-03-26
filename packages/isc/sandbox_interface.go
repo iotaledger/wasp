@@ -377,10 +377,6 @@ type RequestParameters struct {
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	Assets *Assets
-	// Metadata is a request metadata. It may be nil if the request is just sending assets to L1 address
-	Metadata *SendMetadata
-	// SendOptions includes options of the request, such as time lock or expiry parameters
-	Options SendOptions
 }
 
 type Gas interface {

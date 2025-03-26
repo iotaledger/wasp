@@ -63,7 +63,7 @@ func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *
 		env := newChainEnv(t, clu, chain)
 
 		t.Cleanup(func() {
-			clu.MultiClient().DeactivateChain(chain.ChainID)
+			clu.MultiClient().DeactivateChain()
 		})
 		f(t, env)
 	}

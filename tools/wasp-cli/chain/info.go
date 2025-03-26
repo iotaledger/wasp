@@ -5,6 +5,8 @@ package chain
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -30,9 +32,15 @@ func initInfoCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			chainInfo, _, err := client.ChainsAPI.
+			chainInfo, res, err := client.ChainsAPI.
 				GetChainInfo(ctx).
 				Execute() //nolint:bodyclose // false positive
+
+			if res.StatusCode == http.StatusNotFound {
+				fmt.Print("No chain info available. Is the chain deployed and activated?\n")
+				return
+			}
+
 			log.Check(err)
 
 			committeeInfo, _, err := client.ChainsAPI.

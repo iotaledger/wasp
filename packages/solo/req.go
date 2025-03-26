@@ -282,8 +282,7 @@ func (env *Solo) makeBaseTokenCoin(
 	}
 }
 
-// SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
-func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (ch *Chain) SendRequestWithL1GasBudget(req *CallParams, keyPair *cryptolib.KeyPair, l1GasBudget uint64) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
 		keyPair = ch.OwnerPrivateKey
 	}
@@ -302,7 +301,7 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 			Allowance:        req.allowance.AsISCMove(),
 			OnchainGasBudget: req.gasBudget,
 			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasBudget:        l1GasBudget,
 		},
 	)
 	if err != nil {
@@ -318,6 +317,11 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 	r, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
 	require.NoError(ch.Env.T, err)
 	return r, res, nil
+}
+
+// SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
+func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return ch.SendRequestWithL1GasBudget(req, keyPair, iotaclient.DefaultGasBudget)
 }
 
 // PostRequestSync posts a request synchronously sent by the test program to

@@ -31,12 +31,12 @@ func TestReboot(t *testing.T) {
 	}, committee, quorum)
 	client, keypair := env.NewRandomChainClient()
 
-	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er := env.Clu.WaspClient(0).ChainsAPI.DeactivateChain(context.Background()).Execute()
 	require.NoError(t, er)
 	_, er = env.Clu.WaspClient(0).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)
 
-	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
+	_, er = env.Clu.WaspClient(1).ChainsAPI.DeactivateChain(context.Background()).Execute()
 	require.NoError(t, er)
 	_, er = env.Clu.WaspClient(1).ChainsAPI.ActivateChain(context.Background(), env.Chain.ChainID.String()).Execute()
 	require.NoError(t, er)

@@ -58,7 +58,7 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 	}
 }
 
-var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
+var errMetadataUnsupported = coreerrors.Register("metadata is unsupported")
 
 func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Value {
 	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.BaseTokenDecimals)
@@ -80,14 +80,14 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 func (h *magicContractHandler) Send(
 	targetAddress iotago.Address,
 	assets iscmagic.ISCAssets,
+	// For now both args are kept for legacy reasons. Removing those would be the "right choice", but will break tracing
+	// for migrated blocks. We need to estimate how many requests would be affected and assess if we can remove those.
 	metadata iscmagic.ISCSendMetadata,
 	sendOptions iscmagic.ISCSendOptions,
 ) {
 	req := isc.RequestParameters{
 		TargetAddress: cryptolib.NewAddressFromIota(&targetAddress),
 		Assets:        assets.Unwrap(),
-		Metadata:      metadata.Unwrap(),
-		Options:       sendOptions.Unwrap(),
 	}
 
 	if h.callValue.BitLen() > 0 {
@@ -97,8 +97,8 @@ func (h *magicContractHandler) Send(
 
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
-	if req.Metadata != nil && !req.Assets.Clone().Spend(req.Metadata.Allowance) {
-		panic(errInvalidAllowance)
+	if metadata.Unwrap() != nil {
+		panic(errMetadataUnsupported)
 	}
 
 	h.moveAssetsToCommonAccount(req.Assets)
@@ -107,6 +107,7 @@ func (h *magicContractHandler) Send(
 	for _, log := range makeTransferEvents(h.ctx, h.caller, common.Address{}, req.Assets) {
 		h.evm.StateDB.AddLog(log)
 	}
+
 	h.ctx.Privileged().SendOnBehalfOf(
 		isc.ContractIdentityFromEVMAddress(h.caller),
 		req,

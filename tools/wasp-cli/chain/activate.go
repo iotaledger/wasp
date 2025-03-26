@@ -74,13 +74,12 @@ func initDeactivateCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			chainName = defaultChainFallback(chainName)
 
-			chainID := config.GetChain(chainName)
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
-			_, err := client.ChainsAPI.DeactivateChain(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
+			_, err := client.ChainsAPI.DeactivateChain(ctx).Execute() //nolint:bodyclose // false positive
 			log.Check(err)
-			log.Printf("Chain: %v (%v)\nDeactivated.\n", chainID, chainName)
+			log.Printf("Chain: %v \nDeactivated.\n", chainName)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)

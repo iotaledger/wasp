@@ -1366,49 +1366,6 @@ func TestISCPanic(t *testing.T) {
 	require.Contains(t, err.Error(), "not delegated to another chain owner")
 }
 
-func TestISCSendWithArgs(t *testing.T) {
-	env := InitEVM(t)
-
-	checkCounter := func(c int) {
-		ret, err2 := env.Chain.CallView(inccounter.ViewGetCounter.Message())
-		require.NoError(t, err2)
-		counter := lo.Must(inccounter.ViewGetCounter.DecodeOutput(ret))
-		require.EqualValues(t, c, counter)
-	}
-	checkCounter(0)
-
-	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
-	senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(ethAddr))
-
-	const sendBaseTokens = 1 * isc.Million
-
-	blockIndex := env.Chain.LatestBlockIndex()
-
-	ret, err := env.ISCMagicSandbox(ethKey).CallFn(
-		nil,
-		"send",
-		env.Chain.ChainID.AsAddress(),
-		iscmagic.WrapISCAssets(isc.NewAssets(sendBaseTokens)),
-		iscmagic.WrapISCSendMetadata(&isc.SendMetadata{
-			Message:   inccounter.FuncIncCounter.Message(nil),
-			Allowance: isc.NewEmptyAssets(),
-			GasBudget: math.MaxUint64,
-		}),
-		iscmagic.WrapISCSendOptions(nil),
-	)
-	require.NoError(t, err)
-	require.Nil(t, ret.ISCReceipt.Error)
-
-	// wait a bit for the request going out of EVM to be processed by ISC
-	env.Chain.RunAllReceivedRequests(5)
-
-	// assert inc counter was incremented
-	checkCounter(1)
-
-	senderBalanceAfterSend := env.Chain.L2BaseTokensAtStateIndex(isc.NewEthereumAddressAgentID(ethAddr), blockIndex+1)
-	require.Less(t, senderBalanceAfterSend, senderInitialBalance-sendBaseTokens)
-}
-
 func TestERC20BaseTokens(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()

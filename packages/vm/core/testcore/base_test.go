@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
@@ -404,6 +405,8 @@ func TestBurnLog(t *testing.T) {
 }
 
 func TestMessageSize(t *testing.T) {
+	//t.Skipf("This test needs to be properly validated and fixed. Its only temporarily deactivated.")
+
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
@@ -414,24 +417,25 @@ func TestMessageSize(t *testing.T) {
 
 	initialBlockIndex := ch.GetLatestBlockInfo().BlockIndex
 
-	// TODO: Check the request size here
 	// Higher values cause execution errors, probably due to the Gas requirements.
-	reqSize := 500 // bytes
-	var attachedBaseTokens coin.Value = 1 * isc.Million
+	reqSize := 128                      // bytes
+	MaxPayloadSize := 128 * 1024 * 1024 // 120kB
+	var attachedBaseTokens coin.Value = 1
 
-	// maxRequestsPerBlock := parameters.L1().MaxPayloadSize / reqSize
-	const maxRequestsPerBlock = 1
+	maxRequestsPerBlock := MaxPayloadSize / reqSize
 
 	reqs := make([]isc.Request, maxRequestsPerBlock+1)
+
 	for i := range reqs {
 		req, _, err := ch.SendRequest(
-			solo.NewCallParams(sbtestsc.FuncSendLargeRequest.Message(uint64(reqSize))).
+			solo.NewCallParams(errors.FuncRegisterError.Message(string(rune(i)))).
 				AddBaseTokens(attachedBaseTokens).
 				AddAllowanceBaseTokens(attachedBaseTokens).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
 		require.NoError(t, err)
+
 		reqs[i] = req
 	}
 

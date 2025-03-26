@@ -97,10 +97,12 @@ func (c *Client) SignAndExecuteTransaction(
 			return resp, fmt.Errorf("failed to execute transaction: %s", resp.Digest)
 		}
 
-		resp, err = c.GetTransactionBlock(ctx, GetTransactionBlockRequest{
-			Digest:  &resp.Digest,
-			Options: req.Options,
-		})
+		resp, err = c.GetTransactionBlock(
+			ctx, GetTransactionBlockRequest{
+				Digest:  &resp.Digest,
+				Options: req.Options,
+			},
+		)
 		if err != nil {
 			return nil, fmt.Errorf("GetTransactionBlock failed: %w", err)
 		}
@@ -179,16 +181,21 @@ func (c *Client) MintToken(
 	options *iotajsonrpc.IotaTransactionBlockResponseOptions,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb.Command(iotago.Command{MoveCall: &iotago.ProgrammableMoveCall{
-		Package:       packageID,
-		Module:        tokenName,
-		Function:      "mint",
-		TypeArguments: []iotago.TypeTag{},
-		Arguments: []iotago.Argument{
-			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
-			ptb.MustForceSeparatePure(mintAmount),
-			ptb.MustForceSeparatePure(signer.Address()),
-		}}})
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       packageID,
+				Module:        tokenName,
+				Function:      "mint",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: treasuryCap}),
+					ptb.MustForceSeparatePure(mintAmount),
+					ptb.MustForceSeparatePure(signer.Address()),
+				},
+			},
+		},
+	)
 	pt := ptb.Finish()
 
 	return c.SignAndExecuteTxWithRetry(ctx, signer, pt, nil, DefaultGasBudget, DefaultGasPrice, options)
@@ -316,7 +323,7 @@ func (c *Client) MergeCoinsAndExecute(
 		ctx, &SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      owner,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true},
+			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
 		},
 	)
 	if err != nil {

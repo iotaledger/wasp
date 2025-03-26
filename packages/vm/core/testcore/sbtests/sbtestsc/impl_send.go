@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller
@@ -89,9 +88,6 @@ func sendNFTsBack(ctx isc.Sandbox) {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
 			Assets:        isc.NewEmptyAssets().AddObject(nftID),
-
-			Metadata: &isc.SendMetadata{},
-			Options:  isc.SendOptions{},
 		})
 	}
 }
@@ -111,21 +107,4 @@ func claimAllowance(ctx isc.Sandbox) {
 		// ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
 		// ctx.Requiref(nftData.Issuer != nil, "must have issuer")
 	}
-}
-
-func sendLargeRequest(ctx isc.Sandbox, x uint64) {
-	buf := make([]byte, x)
-
-	req := isc.RequestParameters{
-		TargetAddress: ctx.ChainID().AsAddress(),
-		Metadata: &isc.SendMetadata{
-			Message: isc.NewMessage(
-				isc.Hn("foo"),
-				isc.Hn("bar"),
-				isc.NewCallArguments(codec.Encode(buf)),
-			),
-		},
-		Assets: ctx.AllowanceAvailable(),
-	}
-	ctx.Send(req)
 }

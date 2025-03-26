@@ -2,7 +2,6 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
@@ -27,7 +26,6 @@ var Processor = Contract.Processor(nil,
 	FuncDoNothing.WithHandler(doNothing),
 	// FuncSendToAddress.WithHandler(sendToAddress),
 
-	FuncWithdrawFromChain.WithHandler(withdrawFromChain),
 	FuncCallOnChain.WithHandler(callOnChain),
 	FuncSetInt.WithHandler(setInt),
 	FuncGetInt.WithHandler(getInt),
@@ -47,7 +45,6 @@ var Processor = Contract.Processor(nil,
 	FuncSplitFunds.WithHandler(testSplitFunds),
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
-	FuncSendLargeRequest.WithHandler(sendLargeRequest),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
 	FuncSendNFTsBack.WithHandler(sendNFTsBack),
@@ -89,12 +86,6 @@ var (
 	FuncCallPanicViewEPFromFull = Contract.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = Contract.ViewFunc("testCallPanicViewEPFromView")
 
-	FuncWithdrawFromChain = coreutil.NewEP3(Contract, "withdrawFromChain",
-		coreutil.Field[coin.Value](""),
-		coreutil.FieldOptional[uint64](""),
-		coreutil.FieldOptional[uint64](""),
-	)
-
 	FuncDoNothing = coreutil.NewEP0(Contract, "doNothing")
 	// FuncSendToAddress = coreutil.NewEP(Contract,"sendToAddress")
 	FuncJustView = coreutil.NewViewEP0(Contract, "justView")
@@ -131,9 +122,7 @@ var (
 	FuncSplitFunds             = coreutil.NewEP0(Contract, "splitFunds")
 	FuncSplitFundsNativeTokens = coreutil.NewEP0(Contract, "splitFundsNativeTokens")
 	FuncPingAllowanceBack      = coreutil.NewEP0(Contract, "pingAllowanceBack")
-	FuncSendLargeRequest       = coreutil.NewEP1(Contract, "sendLargeRequest",
-		coreutil.Field[uint64](""),
-	)
+
 	FuncInfiniteLoop     = coreutil.NewEP0(Contract, "infiniteLoop")
 	FuncInfiniteLoopView = coreutil.NewViewEP0(Contract, "infiniteLoopView")
 	FuncSendNFTsBack     = coreutil.NewEP0(Contract, "sendNFTsBack")
