@@ -60,11 +60,10 @@ const (
 	inMemoryStatesSevingPeriodBlocks = 20000
 )
 
-func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, continueMigration, dryRun bool) (
+func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryRun bool) (
 	old_indexedstore.IndexedStore,
 	indexedstore.IndexedStore,
 	old_isc.ChainID,
-	isc.ChainID,
 	*isc_migration.PrepareConfiguration,
 	*transaction.StateMetadata,
 	func(),
@@ -125,7 +124,6 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, con
 	}
 
 	migrationConfig := readMigrationConfiguration()
-	newChainID := isc.ChainIDFromObjectID(*migrationConfig.AnchorID)
 
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
@@ -143,7 +141,7 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, con
 		stateMetadata = initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
 	}
 
-	return srcStore, destStore, oldChainID, newChainID, migrationConfig, stateMetadata, close
+	return srcStore, destStore, oldChainID, migrationConfig, stateMetadata, close
 }
 
 func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
@@ -229,10 +227,9 @@ func migrateSingleState(c *cmd.Context) error {
 	srcChainDBDir := c.Args().Get(0)
 	destChainDBDir := c.Args().Get(1)
 	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
-	overrideNewChainID := c.String("new-chain-id")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, oldChainID, newChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, false, dryRun)
+	srcStore, destStore, oldChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, false, dryRun)
 	defer flush()
 
 	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"), slack.MsgOptionIconEmoji(":running:"))
@@ -282,7 +279,6 @@ func migrateAllStates(c *cmd.Context) error {
 	destChainDBDir := c.Args().Get(1)
 	startBlockIndex := uint32(c.Uint64("from-index"))
 	endBlockIndex := uint32(c.Uint64("to-index"))
-	overrideNewChainID := c.String("new-chain-id")
 	skipLoad := c.Bool("skip-load")
 	continueMigration := c.Bool("continue")
 	disableCache := c.Bool("no-cache")
@@ -303,7 +299,7 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 	}
 
-	srcStore, destStore, oldChainID, newChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID, continueMigration, dryRun)
+	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, continueMigration, dryRun)
 	defer flush()
 
 	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
@@ -388,7 +384,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID)
 		accountsMuts += newState.W.MutationsCountDiff()
 
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata, prepareConfig)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, prepareConfig)
 		blocklogMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateEVMContract(oldStateMutsOnly, newState)

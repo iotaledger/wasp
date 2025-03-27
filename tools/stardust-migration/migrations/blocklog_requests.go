@@ -82,7 +82,7 @@ func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.Ch
 			txValue.Set(reqTxField)
 		}
 
-		return lo.Must(isc.NewEVMOffLedgerTxRequest(tx))
+		return lo.Must(isc.NewEVMOffLedgerTxRequest(isc.ChainID{}, tx))
 	} else {
 		message := migrateContractCall(oldChainID, req.CallTarget().Contract, req.CallTarget().EntryPoint, req.Params())
 		nonce := req.Nonce()
@@ -102,6 +102,7 @@ func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.Ch
 		}
 		newRequest := isc.NewOffLedgerRequestsRaw(
 			allowance,
+			isc.ChainID{},
 			message,
 			gasbudget,
 			nonce,
