@@ -4,26 +4,25 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**ActivateChain**](ChainsAPI.md#ActivateChain) | **Post** /v1/chains/{chainID}/activate | Activate a chain
-[**AddAccessNode**](ChainsAPI.md#AddAccessNode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
-[**CallView**](ChainsAPI.md#CallView) | **Post** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
-[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
-[**DumpAccounts**](ChainsAPI.md#DumpAccounts) | **Post** /v1/chains/{chainID}/dump-accounts | dump accounts information into a humanly-readable format
-[**EstimateGasOffledger**](ChainsAPI.md#EstimateGasOffledger) | **Post** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
-[**EstimateGasOnledger**](ChainsAPI.md#EstimateGasOnledger) | **Post** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
-[**GetChainInfo**](ChainsAPI.md#GetChainInfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
-[**GetChains**](ChainsAPI.md#GetChains) | **Get** /v1/chains | Get a list of all chains
-[**GetCommitteeInfo**](ChainsAPI.md#GetCommitteeInfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
-[**GetContracts**](ChainsAPI.md#GetContracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
-[**GetMempoolContents**](ChainsAPI.md#GetMempoolContents) | **Get** /v1/chains/{chainID}/mempool | Get the contents of the mempool.
-[**GetReceipt**](ChainsAPI.md#GetReceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
-[**GetStateValue**](ChainsAPI.md#GetStateValue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
-[**RemoveAccessNode**](ChainsAPI.md#RemoveAccessNode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
-[**RotateChain**](ChainsAPI.md#RotateChain) | **Post** /v1/chains/{chainID}/rotate | Rotate a chain
-[**SetChainRecord**](ChainsAPI.md#SetChainRecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
-[**V1ChainsChainIDEvmPost**](ChainsAPI.md#V1ChainsChainIDEvmPost) | **Post** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
-[**V1ChainsChainIDEvmWsGet**](ChainsAPI.md#V1ChainsChainIDEvmWsGet) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
-[**WaitForRequest**](ChainsAPI.md#WaitForRequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+[**ActivateChain**](ChainsAPI.md#ActivateChain) | **Post** /v1/chain/activate/{chainID} | Activate a chain
+[**AddAccessNode**](ChainsAPI.md#AddAccessNode) | **Put** /v1/chain/access-node/{peer} | Configure a trusted node to be an access node.
+[**CallView**](ChainsAPI.md#CallView) | **Post** /v1/chain/callview | Call a view function on a contract by Hname
+[**DeactivateChain**](ChainsAPI.md#DeactivateChain) | **Post** /v1/chain/deactivate | Deactivate a chain
+[**DumpAccounts**](ChainsAPI.md#DumpAccounts) | **Post** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
+[**EstimateGasOffledger**](ChainsAPI.md#EstimateGasOffledger) | **Post** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
+[**EstimateGasOnledger**](ChainsAPI.md#EstimateGasOnledger) | **Post** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
+[**GetChainInfo**](ChainsAPI.md#GetChainInfo) | **Get** /v1/chain | Get information about a specific chain
+[**GetCommitteeInfo**](ChainsAPI.md#GetCommitteeInfo) | **Get** /v1/chain/committee | Get information about the deployed committee
+[**GetContracts**](ChainsAPI.md#GetContracts) | **Get** /v1/chain/contracts | Get all available chain contracts
+[**GetMempoolContents**](ChainsAPI.md#GetMempoolContents) | **Get** /v1/chain/mempool | Get the contents of the mempool.
+[**GetReceipt**](ChainsAPI.md#GetReceipt) | **Get** /v1/chain/receipts/{requestID} | Get a receipt from a request ID
+[**GetStateValue**](ChainsAPI.md#GetStateValue) | **Get** /v1/chain/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
+[**RemoveAccessNode**](ChainsAPI.md#RemoveAccessNode) | **Delete** /v1/chain/access-node/{peer} | Remove an access node.
+[**RotateChain**](ChainsAPI.md#RotateChain) | **Post** /v1/chain/rotate | Rotate a chain
+[**SetChainRecord**](ChainsAPI.md#SetChainRecord) | **Post** /v1/chain/chainrecord/{chainID} | Sets the chain record.
+[**V1ChainEvmPost**](ChainsAPI.md#V1ChainEvmPost) | **Post** /v1/chain/evm | Ethereum JSON-RPC
+[**V1ChainEvmWsGet**](ChainsAPI.md#V1ChainEvmWsGet) | **Get** /v1/chain/evm/ws | Ethereum JSON-RPC (Websocket transport)
+[**WaitForRequest**](ChainsAPI.md#WaitForRequest) | **Get** /v1/chain/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 
@@ -95,7 +94,7 @@ Name | Type | Description  | Notes
 
 ## AddAccessNode
 
-> AddAccessNode(ctx, chainID, peer).Execute()
+> AddAccessNode(ctx, peer).Execute()
 
 Configure a trusted node to be an access node.
 
@@ -112,12 +111,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.AddAccessNode(context.Background(), chainID, peer).Execute()
+	r, err := apiClient.ChainsAPI.AddAccessNode(context.Background(), peer).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.AddAccessNode``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -131,7 +129,6 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 **peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
@@ -141,7 +138,6 @@ Other parameters are passed through a pointer to a apiAddAccessNodeRequest struc
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
 
 
 ### Return type
@@ -164,7 +160,7 @@ Name | Type | Description  | Notes
 
 ## CallView
 
-> []string CallView(ctx, chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+> []string CallView(ctx).ContractCallViewRequest(contractCallViewRequest).Execute()
 
 Call a view function on a contract by Hname
 
@@ -183,12 +179,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	contractCallViewRequest := *openapiclient.NewContractCallViewRequest([]string{"Arguments_example"}, "ContractHName_example", "ContractName_example", "FunctionHName_example", "FunctionName_example") // ContractCallViewRequest | Parameters
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.CallView(context.Background(), chainID).ContractCallViewRequest(contractCallViewRequest).Execute()
+	resp, r, err := apiClient.ChainsAPI.CallView(context.Background()).ContractCallViewRequest(contractCallViewRequest).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.CallView``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -201,10 +196,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -213,7 +204,6 @@ Other parameters are passed through a pointer to a apiCallViewRequest struct via
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **contractCallViewRequest** | [**ContractCallViewRequest**](ContractCallViewRequest.md) | Parameters | 
 
 ### Return type
@@ -236,7 +226,7 @@ No authorization required
 
 ## DeactivateChain
 
-> DeactivateChain(ctx, chainID).Execute()
+> DeactivateChain(ctx).Execute()
 
 Deactivate a chain
 
@@ -253,11 +243,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.DeactivateChain(context.Background(), chainID).Execute()
+	r, err := apiClient.ChainsAPI.DeactivateChain(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.DeactivateChain``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -267,19 +256,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiDeactivateChainRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -302,7 +283,7 @@ Name | Type | Description  | Notes
 
 ## DumpAccounts
 
-> DumpAccounts(ctx, chainID).Execute()
+> DumpAccounts(ctx).Execute()
 
 dump accounts information into a humanly-readable format
 
@@ -319,11 +300,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.DumpAccounts(context.Background(), chainID).Execute()
+	r, err := apiClient.ChainsAPI.DumpAccounts(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.DumpAccounts``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -333,19 +313,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiDumpAccountsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -368,7 +340,7 @@ Name | Type | Description  | Notes
 
 ## EstimateGasOffledger
 
-> ReceiptResponse EstimateGasOffledger(ctx, chainID).Request(request).Execute()
+> ReceiptResponse EstimateGasOffledger(ctx).Request(request).Execute()
 
 Estimates gas for a given off-ledger ISC request
 
@@ -385,12 +357,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	request := *openapiclient.NewEstimateGasRequestOffledger("FromAddress_example", "RequestBytes_example") // EstimateGasRequestOffledger | Request
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.EstimateGasOffledger(context.Background(), chainID).Request(request).Execute()
+	resp, r, err := apiClient.ChainsAPI.EstimateGasOffledger(context.Background()).Request(request).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.EstimateGasOffledger``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -403,10 +374,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -415,7 +382,6 @@ Other parameters are passed through a pointer to a apiEstimateGasOffledgerReques
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **request** | [**EstimateGasRequestOffledger**](EstimateGasRequestOffledger.md) | Request | 
 
 ### Return type
@@ -438,7 +404,7 @@ No authorization required
 
 ## EstimateGasOnledger
 
-> ReceiptResponse EstimateGasOnledger(ctx, chainID).Request(request).Execute()
+> ReceiptResponse EstimateGasOnledger(ctx).Request(request).Execute()
 
 Estimates gas for a given on-ledger ISC request
 
@@ -455,12 +421,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.EstimateGasOnledger(context.Background(), chainID).Request(request).Execute()
+	resp, r, err := apiClient.ChainsAPI.EstimateGasOnledger(context.Background()).Request(request).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.EstimateGasOnledger``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -473,10 +438,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -485,7 +446,6 @@ Other parameters are passed through a pointer to a apiEstimateGasOnledgerRequest
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **request** | [**EstimateGasRequestOnledger**](EstimateGasRequestOnledger.md) | Request | 
 
 ### Return type
@@ -508,7 +468,7 @@ No authorization required
 
 ## GetChainInfo
 
-> ChainInfoResponse GetChainInfo(ctx, chainID).Block(block).Execute()
+> ChainInfoResponse GetChainInfo(ctx).Block(block).Execute()
 
 Get information about a specific chain
 
@@ -525,12 +485,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetChainInfo(context.Background(), chainID).Block(block).Execute()
+	resp, r, err := apiClient.ChainsAPI.GetChainInfo(context.Background()).Block(block).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetChainInfo``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -543,10 +502,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -555,7 +510,6 @@ Other parameters are passed through a pointer to a apiGetChainInfoRequest struct
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **block** | **string** | Block index or trie root | 
 
 ### Return type
@@ -576,68 +530,9 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## GetChains
-
-> []ChainInfoResponse GetChains(ctx).Execute()
-
-Get a list of all chains
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetChains(context.Background()).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetChains``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `GetChains`: []ChainInfoResponse
-	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetChains`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetChainsRequest struct via the builder pattern
-
-
-### Return type
-
-[**[]ChainInfoResponse**](ChainInfoResponse.md)
-
-### Authorization
-
-[Authorization](../README.md#Authorization)
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
 ## GetCommitteeInfo
 
-> CommitteeInfoResponse GetCommitteeInfo(ctx, chainID).Block(block).Execute()
+> CommitteeInfoResponse GetCommitteeInfo(ctx).Block(block).Execute()
 
 Get information about the deployed committee
 
@@ -654,12 +549,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetCommitteeInfo(context.Background(), chainID).Block(block).Execute()
+	resp, r, err := apiClient.ChainsAPI.GetCommitteeInfo(context.Background()).Block(block).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetCommitteeInfo``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -672,10 +566,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -684,7 +574,6 @@ Other parameters are passed through a pointer to a apiGetCommitteeInfoRequest st
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **block** | **string** | Block index or trie root | 
 
 ### Return type
@@ -707,7 +596,7 @@ Name | Type | Description  | Notes
 
 ## GetContracts
 
-> []ContractInfoResponse GetContracts(ctx, chainID).Block(block).Execute()
+> []ContractInfoResponse GetContracts(ctx).Block(block).Execute()
 
 Get all available chain contracts
 
@@ -724,12 +613,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetContracts(context.Background(), chainID).Block(block).Execute()
+	resp, r, err := apiClient.ChainsAPI.GetContracts(context.Background()).Block(block).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetContracts``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -742,10 +630,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -754,7 +638,6 @@ Other parameters are passed through a pointer to a apiGetContractsRequest struct
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **block** | **string** | Block index or trie root | 
 
 ### Return type
@@ -777,7 +660,7 @@ Name | Type | Description  | Notes
 
 ## GetMempoolContents
 
-> []int32 GetMempoolContents(ctx, chainID).Execute()
+> []int32 GetMempoolContents(ctx).Execute()
 
 Get the contents of the mempool.
 
@@ -794,11 +677,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetMempoolContents(context.Background(), chainID).Execute()
+	resp, r, err := apiClient.ChainsAPI.GetMempoolContents(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetMempoolContents``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -810,19 +692,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetMempoolContentsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -845,7 +719,7 @@ Name | Type | Description  | Notes
 
 ## GetReceipt
 
-> ReceiptResponse GetReceipt(ctx, chainID, requestID).Execute()
+> ReceiptResponse GetReceipt(ctx, requestID).Execute()
 
 Get a receipt from a request ID
 
@@ -862,12 +736,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	requestID := "requestID_example" // string | RequestID (Hex)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetReceipt(context.Background(), chainID, requestID).Execute()
+	resp, r, err := apiClient.ChainsAPI.GetReceipt(context.Background(), requestID).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetReceipt``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -883,7 +756,6 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -893,7 +765,6 @@ Other parameters are passed through a pointer to a apiGetReceiptRequest struct v
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
 
 
 ### Return type
@@ -916,7 +787,7 @@ No authorization required
 
 ## GetStateValue
 
-> StateResponse GetStateValue(ctx, chainID, stateKey).Execute()
+> StateResponse GetStateValue(ctx, stateKey).Execute()
 
 Fetch the raw value associated with the given key in the chain state
 
@@ -933,12 +804,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	stateKey := "stateKey_example" // string | State Key (Hex)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetStateValue(context.Background(), chainID, stateKey).Execute()
+	resp, r, err := apiClient.ChainsAPI.GetStateValue(context.Background(), stateKey).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetStateValue``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -954,7 +824,6 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 **stateKey** | **string** | State Key (Hex) | 
 
 ### Other Parameters
@@ -964,7 +833,6 @@ Other parameters are passed through a pointer to a apiGetStateValueRequest struc
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
 
 
 ### Return type
@@ -987,7 +855,7 @@ No authorization required
 
 ## RemoveAccessNode
 
-> RemoveAccessNode(ctx, chainID, peer).Execute()
+> RemoveAccessNode(ctx, peer).Execute()
 
 Remove an access node.
 
@@ -1004,12 +872,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	peer := "peer_example" // string | Name or PubKey (hex) of the trusted peer
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.RemoveAccessNode(context.Background(), chainID, peer).Execute()
+	r, err := apiClient.ChainsAPI.RemoveAccessNode(context.Background(), peer).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.RemoveAccessNode``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -1023,7 +890,6 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 **peer** | **string** | Name or PubKey (hex) of the trusted peer | 
 
 ### Other Parameters
@@ -1033,7 +899,6 @@ Other parameters are passed through a pointer to a apiRemoveAccessNodeRequest st
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
 
 
 ### Return type
@@ -1056,7 +921,7 @@ Name | Type | Description  | Notes
 
 ## RotateChain
 
-> RotateChain(ctx, chainID).RotateRequest(rotateRequest).Execute()
+> RotateChain(ctx).RotateRequest(rotateRequest).Execute()
 
 Rotate a chain
 
@@ -1073,12 +938,11 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	rotateRequest := *openapiclient.NewRotateChainRequest() // RotateChainRequest | RotateRequest (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.RotateChain(context.Background(), chainID).RotateRequest(rotateRequest).Execute()
+	r, err := apiClient.ChainsAPI.RotateChain(context.Background()).RotateRequest(rotateRequest).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.RotateChain``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -1089,10 +953,6 @@ func main() {
 ### Path Parameters
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 
 ### Other Parameters
 
@@ -1101,7 +961,6 @@ Other parameters are passed through a pointer to a apiRotateChainRequest struct 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
  **rotateRequest** | [**RotateChainRequest**](RotateChainRequest.md) | RotateRequest | 
 
 ### Return type
@@ -1190,9 +1049,9 @@ Name | Type | Description  | Notes
 [[Back to README]](../README.md)
 
 
-## V1ChainsChainIDEvmPost
+## V1ChainEvmPost
 
-> V1ChainsChainIDEvmPost(ctx, chainID).Execute()
+> V1ChainEvmPost(ctx).Execute()
 
 Ethereum JSON-RPC
 
@@ -1209,13 +1068,12 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.V1ChainsChainIDEvmPost(context.Background(), chainID).Execute()
+	r, err := apiClient.ChainsAPI.V1ChainEvmPost(context.Background()).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.V1ChainsChainIDEvmPost``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.V1ChainEvmPost``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
 }
@@ -1223,19 +1081,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiV1ChainsChainIDEvmPostRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
+Other parameters are passed through a pointer to a apiV1ChainEvmPostRequest struct via the builder pattern
 
 
 ### Return type
@@ -1256,9 +1106,9 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## V1ChainsChainIDEvmWsGet
+## V1ChainEvmWsGet
 
-> V1ChainsChainIDEvmWsGet(ctx, chainID).Execute()
+> V1ChainEvmWsGet(ctx).Execute()
 
 Ethereum JSON-RPC (Websocket transport)
 
@@ -1275,13 +1125,12 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.ChainsAPI.V1ChainsChainIDEvmWsGet(context.Background(), chainID).Execute()
+	r, err := apiClient.ChainsAPI.V1ChainEvmWsGet(context.Background()).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.V1ChainsChainIDEvmWsGet``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.V1ChainEvmWsGet``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
 }
@@ -1289,19 +1138,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiV1ChainsChainIDEvmWsGetRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
+Other parameters are passed through a pointer to a apiV1ChainEvmWsGetRequest struct via the builder pattern
 
 
 ### Return type
@@ -1324,7 +1165,7 @@ No authorization required
 
 ## WaitForRequest
 
-> ReceiptResponse WaitForRequest(ctx, chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+> ReceiptResponse WaitForRequest(ctx, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
 
 Wait until the given request has been processed by the node
 
@@ -1341,14 +1182,13 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 	requestID := "requestID_example" // string | RequestID (Hex)
 	timeoutSeconds := int32(56) // int32 | The timeout in seconds, maximum 60s (optional)
 	waitForL1Confirmation := true // bool | Wait for the block to be confirmed on L1 (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.WaitForRequest(context.Background(), chainID, requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
+	resp, r, err := apiClient.ChainsAPI.WaitForRequest(context.Background(), requestID).TimeoutSeconds(timeoutSeconds).WaitForL1Confirmation(waitForL1Confirmation).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.WaitForRequest``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -1364,7 +1204,6 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
 **requestID** | **string** | RequestID (Hex) | 
 
 ### Other Parameters
@@ -1374,7 +1213,6 @@ Other parameters are passed through a pointer to a apiWaitForRequestRequest stru
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
-
 
  **timeoutSeconds** | **int32** | The timeout in seconds, maximum 60s | 
  **waitForL1Confirmation** | **bool** | Wait for the block to be confirmed on L1 | 

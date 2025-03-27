@@ -348,6 +348,14 @@ func (m Message) String() string {
 	return fmt.Sprintf("Message(%s, %s, %s)", m.Target.Contract, m.Target.EntryPoint, m.Params)
 }
 
+func (m Message) AsISCMove() *iscmove.Message {
+	return &iscmove.Message{
+		Contract: uint32(m.Target.Contract),
+		Function: uint32(m.Target.EntryPoint),
+		Args:     m.Params,
+	}
+}
+
 func NewMessageFromNames(contract string, ep string, params ...CallArguments) Message {
 	return NewMessage(Hn(contract), Hn(ep), params...)
 }
@@ -369,10 +377,6 @@ type RequestParameters struct {
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	Assets *Assets
-	// Metadata is a request metadata. It may be nil if the request is just sending assets to L1 address
-	Metadata *SendMetadata
-	// SendOptions includes options of the request, such as time lock or expiry parameters
-	Options SendOptions
 }
 
 type Gas interface {

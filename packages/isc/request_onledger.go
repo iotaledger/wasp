@@ -12,12 +12,12 @@ import (
 )
 
 type OnLedgerRequestData struct {
-	requestRef      iotago.ObjectRef   `bcs:"export"`
-	senderAddress   *cryptolib.Address `bcs:"export"`
-	targetAddress   *cryptolib.Address `bcs:"export"`
-	assets          *Assets            `bcs:"export"`
-	assetsBag       *iscmove.AssetsBag `bcs:"export"`
-	requestMetadata *RequestMetadata   `bcs:"export"`
+	requestRef      iotago.ObjectRef               `bcs:"export"`
+	senderAddress   *cryptolib.Address             `bcs:"export"`
+	targetAddress   *cryptolib.Address             `bcs:"export"`
+	assets          *Assets                        `bcs:"export"`
+	assetsBag       *iscmove.AssetsBagWithBalances `bcs:"export"`
+	requestMetadata *RequestMetadata               `bcs:"export"`
 }
 
 var (
@@ -26,7 +26,7 @@ var (
 	_ Calldata        = new(OnLedgerRequestData)
 )
 
-func NewOnLedgerRequestData(requestRef iotago.ObjectRef, senderAddress *cryptolib.Address, targetAddress *cryptolib.Address, assets *Assets, assetsBag *iscmove.AssetsBag, requestMetadata *RequestMetadata) *OnLedgerRequestData {
+func NewOnLedgerRequestData(requestRef iotago.ObjectRef, senderAddress *cryptolib.Address, targetAddress *cryptolib.Address, assets *Assets, assetsBag *iscmove.AssetsBagWithBalances, requestMetadata *RequestMetadata) *OnLedgerRequestData {
 	return &OnLedgerRequestData{
 		requestRef:      requestRef,
 		senderAddress:   senderAddress,
@@ -46,12 +46,13 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse allowance: %w", err)
 	}
+
 	r := &OnLedgerRequestData{
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
 		assets:        assets,
-		assetsBag:     &request.Object.AssetsBag.AssetsBag,
+		assetsBag:     &request.Object.AssetsBag,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
@@ -131,6 +132,7 @@ func (req *OnLedgerRequestData) String() string {
 	if metadata == nil {
 		return "onledger request without metadata"
 	}
+
 	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, Assets: %v, GasBudget: %d }",
 		req.ID().String(),
 		req.SenderAddress().String(),
@@ -147,11 +149,7 @@ func (req *OnLedgerRequestData) RequestRef() iotago.ObjectRef {
 }
 
 func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBagWithBalances {
-	return req.assets.AsAssetsBagWithBalances(req.assetsBag)
-}
-
-func (req *OnLedgerRequestData) TargetAddress() *cryptolib.Address {
-	return req.targetAddress
+	return req.assetsBag
 }
 
 func (req *OnLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {

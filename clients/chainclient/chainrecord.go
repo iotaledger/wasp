@@ -8,6 +8,6 @@ import (
 
 // GetChainRecord fetches the chain's Record
 func (c *Client) GetChainRecord(ctx context.Context) (*apiclient.ChainInfoResponse, error) {
-	chainInfo, _, err := c.WaspClient.ChainsAPI.GetChainInfo(ctx, c.ChainID.String()).Execute()
+	chainInfo, _, err := c.WaspClient.ChainsAPI.GetChainInfo(ctx).Execute()
 	return chainInfo, err
 }

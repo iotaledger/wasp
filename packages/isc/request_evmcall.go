@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
@@ -73,7 +72,7 @@ func (req *evmOffLedgerCallRequest) Nonce() uint64 {
 }
 
 func (req *evmOffLedgerCallRequest) SenderAccount() AgentID {
-	return NewEthereumAddressAgentID(req.chainID, req.callMsg.From)
+	return NewEthereumAddressAgentID(req.callMsg.From)
 }
 
 func (req *evmOffLedgerCallRequest) String() string {
@@ -84,10 +83,6 @@ func (req *evmOffLedgerCallRequest) String() string {
 		req.ID(),
 		data,
 	)
-}
-
-func (req *evmOffLedgerCallRequest) TargetAddress() *cryptolib.Address {
-	return req.chainID.AsAddress()
 }
 
 func (req *evmOffLedgerCallRequest) VerifySignature() error {

@@ -23,7 +23,7 @@ import (
 func TestReceiptCodec(t *testing.T) {
 	bcs.TestCodec(t, blocklog.RequestReceipt{
 		Request: isc.NewOffLedgerRequest(
-			isctest.RandomChainID(),
+			isc.EmptyChainID(),
 			isc.NewMessage(isc.Hn("0"), isc.Hn("0")),
 			123,
 			gas.LimitsDefault.MaxGasPerRequest,

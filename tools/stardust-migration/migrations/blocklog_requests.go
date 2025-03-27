@@ -10,6 +10,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -67,7 +68,7 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 		GasBudget:      gasBudget,
 	}
 
-	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, fakeAssetsBag, requestMetadata)
+	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, &iscmove.AssetsBagWithBalances{AssetsBag: *fakeAssetsBag, Balances: map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{}}, requestMetadata)
 }
 
 func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {

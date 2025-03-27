@@ -12,8 +12,9 @@ type TransactionBuilder interface {
 
 	// pt command will be appended into ptb
 	SendAssets(target *iotago.Address, assets *isc.Assets)
+
 	// pt command will be appended into ptb
-	SendCrossChainRequest(targetPackage *iotago.Address, targetAnchor *iotago.Address, assets *isc.Assets, metadata *isc.SendMetadata)
+	SendRequest(assets *isc.Assets, metadata *isc.SendMetadata)
 
 	// this will be appended RotationTransaction PTB in the end of 'BuildTransactionEssence()'
 	RotationTransaction(rotationAddress *iotago.Address)

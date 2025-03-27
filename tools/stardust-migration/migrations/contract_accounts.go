@@ -81,7 +81,7 @@ func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, old
 		func(oldAccountKey old_kv.Key, v *bool) (kv.Key, *bool) {
 			oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChID))
 			newAgentID := OldAgentIDtoNewAgentID(oldAgentID, oldChID, newChID)
-			return accounts.AccountKey(newAgentID, newChID), v
+			return accounts.AccountKey(newAgentID), v
 		},
 	)
 
@@ -110,7 +110,7 @@ func migrateBaseTokenBalances(
 		} else {
 			oldAgentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(oldAccKey), oldChainID))
 			newAgentID := OldAgentIDtoNewAgentID(oldAgentID, oldChainID, newChainID)
-			newAccKey = accounts.AccountKey(newAgentID, newChainID)
+			newAccKey = accounts.AccountKey(newAgentID)
 		}
 
 		var newBalance *big.Int
@@ -162,7 +162,7 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 
 			oldAgentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(oldAccKey), oldChainID))
 			newAgentID := OldAgentIDtoNewAgentID(oldAgentID, oldChainID, newChainID)
-			newAccKey = accounts.AccountKey(newAgentID, newChainID)
+			newAccKey = accounts.AccountKey(newAgentID)
 		}
 
 		oldNtID := old_isc.MustNativeTokenIDFromBytes([]byte(oldNtIDBytes))
@@ -264,7 +264,7 @@ func migrateNFTs(
 		oldNFT := old_accounts.GetNFTData(oldState, nftID)
 		owner := OldAgentIDtoNewAgentID(oldNFT.Owner, oldChainID, newChainID)
 		newObjectRecord := OldNFTIDtoNewObjectRecord(nftID)
-		w.CreditObjectToAccount(owner, newObjectRecord, newChainID)
+		w.CreditObjectToAccount(owner, newObjectRecord)
 		count++
 		return true
 	})

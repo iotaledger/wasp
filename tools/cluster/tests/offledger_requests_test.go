@@ -99,7 +99,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 
 	// try replaying an older nonce
 	_, err = chClient.PostOffLedgerRequest(context.Background(),
-		accounts.FuncTransferAccountToChain.Message(nil),
+		accounts.FuncTransferAllowanceTo.Message(nil),
 		chainclient.PostRequestParams{
 			Nonce: 1,
 		},

@@ -8,11 +8,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/samber/lo"
 
-	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+
+	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -91,7 +92,7 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 	var accsStr strings.Builder
 	agentIDs := make(map[kv.Key]isc.AgentID)
 	accs.Iterate("", func(accKey kv.Key, accValue []byte) bool { // NOTE: using Iterate instead of IterateSorted because lines will be sorted anyway
-		accID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey), chainID))
+		accID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey)))
 		accsStr.WriteString("\tAcc: ")
 		accsStr.WriteString(newAgentIDToStr(accID))
 		accsStr.WriteString("\n")
@@ -316,7 +317,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 			if accKey == accounts.L2TotalsAccount {
 				accStr = "L2TotalsAccount"
 			} else {
-				agentID, err := accounts.AgentIDFromKey(kv.Key(accKey), chainID)
+				agentID, err := accounts.AgentIDFromKey(kv.Key(accKey))
 				if err != nil {
 					return "", coin.Type{}, fmt.Errorf("failed to parse agent ID: %v", err)
 				}
@@ -379,7 +380,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 			return true
 		}
 
-		agentID := lo.Must(accounts.AgentIDFromKey(accKey, chainID))
+		agentID := lo.Must(accounts.AgentIDFromKey(accKey))
 		remainder := codec.MustDecode[*big.Int](v)
 
 		balanceFullDecimal := util.BaseTokensDecimalsToEthereumDecimals(0, parameters.BaseTokenDecimals)
@@ -445,7 +446,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 	r := accounts.NewStateReader(newSchema, contractState)
 
 	for accKey, agentID := range accs {
-		baseBalance := r.GetBaseTokensBalanceFullDecimals(agentID, chainID)
+		baseBalance := r.GetBaseTokensBalanceFullDecimals(agentID)
 		addBalanceStr(accKey, newAgentIDToStr(agentID), baseBalance.String(), coin.BaseTokenType)
 
 		nativeTokens := r.GetTotalL2FungibleTokens().NativeTokens()

@@ -62,7 +62,7 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 			//panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID.ChainID().AsAddress().Bech32(old_iotago.PrefixMainnet)))
 		}
 		hname := OldHnameToNewHname(oldAgentID.Hname())
-		return isc.NewContractAgentID(newChainID, hname)
+		return isc.NewContractAgentID(hname)
 
 	case old_isc.AgentIDKindEthereumAddress:
 		oldAgentID := oldAgentID.(*old_isc.EthereumAddressAgentID)
@@ -71,7 +71,7 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 			//panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
 		}
 		ethAddr := oldAgentID.EthAddress()
-		return isc.NewEthereumAddressAgentID(newChainID, ethAddr)
+		return isc.NewEthereumAddressAgentID(ethAddr)
 
 	case old_isc.AgentIDIsNil:
 		panic(fmt.Sprintf("Found agent ID with kind = AgentIDIsNil: %v", oldAgentID))

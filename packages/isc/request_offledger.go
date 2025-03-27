@@ -184,10 +184,6 @@ func (req *OffLedgerRequestData) String() string {
 	)
 }
 
-func (req *OffLedgerRequestData) TargetAddress() *cryptolib.Address {
-	return req.chainID.AsAddress()
-}
-
 func (req *OffLedgerRequestData) TimeLock() time.Time {
 	return time.Time{}
 }

@@ -49,26 +49,26 @@ func (s *StateWriter) UnsafeSetBaseTokensFullDecimals(accKey kv.Key, wei *big.In
 	s.setBaseTokensFullDecimals(accKey, wei)
 }
 
-func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value, chainID isc.ChainID) {
+func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value) {
 	b := isc.NewCoinBalances().AddBaseTokens(adjustment)
 	switch {
 	case adjustment > 0:
-		s.CreditToAccount(account, b, chainID)
+		s.CreditToAccount(account, b)
 	case adjustment < 0:
-		s.DebitFromAccount(account, b, chainID)
+		s.DebitFromAccount(account, b)
 	}
 }
 
-func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts coin.Value, remainder *big.Int) {
-	return s.getBaseTokens(AccountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID) (bts coin.Value, remainder *big.Int) {
+	return s.getBaseTokens(AccountKey(agentID))
 }
 
-func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID, chainID isc.ChainID) *big.Int {
-	return s.getBaseTokensFullDecimals(AccountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID) *big.Int {
+	return s.getBaseTokensFullDecimals(AccountKey(agentID))
 }
 
-func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) coin.Value {
-	bts, _ := s.getBaseTokens(AccountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID) coin.Value {
+	bts, _ := s.getBaseTokens(AccountKey(agentID))
 	return bts
 }
 

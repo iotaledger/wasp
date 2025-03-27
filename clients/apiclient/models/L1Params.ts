@@ -10,13 +10,13 @@
  * Do not edit the class manually.
  */
 
-import { BaseToken } from '../models/BaseToken';
-import { ProtocolParameters } from '../models/ProtocolParameters';
+import { IotaCoinInfo } from '../models/IotaCoinInfo';
+import { Protocol } from '../models/Protocol';
 import { HttpFile } from '../http/http';
 
 export class L1Params {
-    'baseToken': BaseToken;
-    'protocol': ProtocolParameters;
+    'baseToken': IotaCoinInfo;
+    'protocol': Protocol;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -26,13 +26,13 @@ export class L1Params {
         {
             "name": "baseToken",
             "baseName": "baseToken",
-            "type": "BaseToken",
+            "type": "IotaCoinInfo",
             "format": ""
         },
         {
             "name": "protocol",
             "baseName": "protocol",
-            "type": "ProtocolParameters",
+            "type": "Protocol",
             "format": ""
         }    ];
 

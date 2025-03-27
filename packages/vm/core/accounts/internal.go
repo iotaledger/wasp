@@ -69,11 +69,7 @@ var (
 	KeyObjectOwner = "W"
 )
 
-func AccountKey(agentID isc.AgentID, chainID isc.ChainID) kv.Key {
-	if agentID.BelongsToChain(chainID) {
-		// save bytes by skipping the chainID bytes on agentIDs for this chain
-		return kv.Key(agentID.BytesWithoutChainID())
-	}
+func AccountKey(agentID isc.AgentID) kv.Key {
 	return kv.Key(agentID.Bytes())
 }
 
@@ -85,8 +81,8 @@ func (s *StateReader) allAccountsMapR() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, KeyAllAccounts)
 }
 
-func (s *StateReader) AccountExists(agentID isc.AgentID, chainID isc.ChainID) bool {
-	return s.allAccountsMapR().HasAt([]byte(AccountKey(agentID, chainID)))
+func (s *StateReader) AccountExists(agentID isc.AgentID) bool {
+	return s.allAccountsMapR().HasAt([]byte(AccountKey(agentID)))
 }
 
 func (s *StateReader) AllAccountsAsDict() dict.Dict {
@@ -103,16 +99,16 @@ func (s *StateReader) IterateAllAccounts(f func(accKey []byte) bool) {
 }
 
 // touchAccount ensures the account is in the list of all accounts
-func (s *StateWriter) touchAccount(agentID isc.AgentID, chainID isc.ChainID) {
-	s.allAccountsMap().SetAt([]byte(AccountKey(agentID, chainID)), codec.Encode(true))
+func (s *StateWriter) touchAccount(agentID isc.AgentID) {
+	s.allAccountsMap().SetAt([]byte(AccountKey(agentID)), codec.Encode(true))
 }
 
 // HasEnoughForAllowance checks whether an account has enough balance to cover for the allowance
-func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets, chainID isc.ChainID) bool {
+func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.Assets) bool {
 	if allowance == nil || allowance.IsEmpty() {
 		return true
 	}
-	accountKey := AccountKey(agentID, chainID)
+	accountKey := AccountKey(agentID)
 	for coinType, amount := range allowance.Coins {
 		if s.getCoinBalance(accountKey, coinType) < amount {
 			return false
@@ -127,16 +123,16 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 }
 
 // MoveBetweenAccounts moves assets between on-chain accounts
-func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets, chainID isc.ChainID) error {
+func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, assets *isc.Assets) error {
 	if fromAgentID.Equals(toAgentID) {
 		// no need to move
 		return nil
 	}
 
-	if !s.debitFromAccount(AccountKey(fromAgentID, chainID), assets.Coins) {
+	if !s.debitFromAccount(AccountKey(fromAgentID), assets.Coins) {
 		return errors.New("MoveBetweenAccounts: not enough funds")
 	}
-	s.creditToAccount(AccountKey(toAgentID, chainID), assets.Coins)
+	s.creditToAccount(AccountKey(toAgentID), assets.Coins)
 
 	for id := range assets.Objects {
 		obj := s.GetObject(id)
@@ -149,18 +145,18 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 		s.creditObjectToAccount(toAgentID, obj)
 	}
 
-	s.touchAccount(fromAgentID, chainID)
-	s.touchAccount(toAgentID, chainID)
+	s.touchAccount(fromAgentID)
+	s.touchAccount(toAgentID)
 	return nil
 }
 
 // debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
 // It takes base tokens from allowance to the common account and then removes them from the L2 ledger
-func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount coin.Value, chainID isc.ChainID) {
+func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount coin.Value) {
 	if amount == 0 {
 		return
 	}
 	storageDepositAssets := isc.NewAssets(amount)
 	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
-	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets.Coins, chainID)
+	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets.Coins)
 }

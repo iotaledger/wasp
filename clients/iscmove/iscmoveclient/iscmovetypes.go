@@ -24,9 +24,8 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 }
 
 type MoveRequest struct {
-	ID     iotago.ObjectID
-	Sender *cryptolib.Address
-	// XXX balances are empty if we don't fetch the dynamic fields
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
 	AssetsBag iscmove.Referent[iscmove.AssetsBagWithBalances]
 	Message   iscmove.Message
 	Allowance []iscmove.CoinAllowance

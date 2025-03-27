@@ -84,9 +84,9 @@ func (c *ContractIdentity) UnmarshalBCS(d *bcs.Decoder) error {
 func (c *ContractIdentity) AgentID(chainID ChainID) AgentID {
 	switch c.kind {
 	case contractIdentityKindHname:
-		return NewContractAgentID(chainID, c.hname)
+		return NewContractAgentID(c.hname)
 	case contractIdentityKindEthereum:
-		return NewEthereumAddressAgentID(chainID, c.evmAddr)
+		return NewEthereumAddressAgentID(c.evmAddr)
 	}
 	return &NilAgentID{}
 }

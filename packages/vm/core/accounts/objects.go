@@ -74,9 +74,9 @@ func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, agentID isc.Agent
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
-func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, object *ObjectRecord, chainID isc.ChainID) {
+func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, object *ObjectRecord) {
 	s.creditObjectToAccount(agentID, object)
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 	s.SaveObject(object)
 }
 
@@ -90,7 +90,7 @@ func (s *StateWriter) creditObjectToAccount(agentID isc.AgentID, object *ObjectR
 
 // DebitObjectFromAccount removes an Object from an account.
 // If the account does not own the object, it panics.
-func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, chainID isc.ChainID) {
+func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID) {
 	object := s.GetObject(objectID)
 	if object == nil {
 		panic(fmt.Errorf("cannot debit unknown Object %s", objectID.String()))
@@ -98,7 +98,7 @@ func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotag
 	if !s.debitObjectFromAccount(agentID, object) {
 		panic(fmt.Errorf("cannot debit Object %s from %s: %w", objectID.String(), agentID, ErrNotEnoughFunds))
 	}
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 }
 
 // DebitObjectFromAccount removes an Object from the internal map of an account

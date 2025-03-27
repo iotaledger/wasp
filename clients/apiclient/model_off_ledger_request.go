@@ -21,8 +21,6 @@ var _ MappedNullable = &OffLedgerRequest{}
 
 // OffLedgerRequest struct for OffLedgerRequest
 type OffLedgerRequest struct {
-	// The chain id
-	ChainId string `json:"chainId"`
 	// Offledger Request (Hex)
 	Request string `json:"request"`
 }
@@ -33,9 +31,8 @@ type _OffLedgerRequest OffLedgerRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOffLedgerRequest(chainId string, request string) *OffLedgerRequest {
+func NewOffLedgerRequest(request string) *OffLedgerRequest {
 	this := OffLedgerRequest{}
-	this.ChainId = chainId
 	this.Request = request
 	return &this
 }
@@ -46,30 +43,6 @@ func NewOffLedgerRequest(chainId string, request string) *OffLedgerRequest {
 func NewOffLedgerRequestWithDefaults() *OffLedgerRequest {
 	this := OffLedgerRequest{}
 	return &this
-}
-
-// GetChainId returns the ChainId field value
-func (o *OffLedgerRequest) GetChainId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ChainId
-}
-
-// GetChainIdOk returns a tuple with the ChainId field value
-// and a boolean to check if the value has been set.
-func (o *OffLedgerRequest) GetChainIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ChainId, true
-}
-
-// SetChainId sets field value
-func (o *OffLedgerRequest) SetChainId(v string) {
-	o.ChainId = v
 }
 
 // GetRequest returns the Request field value
@@ -106,7 +79,6 @@ func (o OffLedgerRequest) MarshalJSON() ([]byte, error) {
 
 func (o OffLedgerRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["chainId"] = o.ChainId
 	toSerialize["request"] = o.Request
 	return toSerialize, nil
 }
@@ -116,7 +88,6 @@ func (o *OffLedgerRequest) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"chainId",
 		"request",
 	}
 

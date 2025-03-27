@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	offLedgerRequest := *openapiclient.NewOffLedgerRequest("ChainId_example", "Hex string") // OffLedgerRequest | Offledger request as JSON. Request encoded in Hex
+	offLedgerRequest := *openapiclient.NewOffLedgerRequest("Hex string") // OffLedgerRequest | Offledger request as JSON. Request encoded in Hex
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)

@@ -198,7 +198,7 @@ func (e *ChainEnv) NewTestContractEnv(t *testing.T) *TestContractEnv {
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
-	evmAgentID := isc.NewEthereumAddressAgentID(e.Chain.ChainID, evmAddr)
+	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
 	e.TransferFundsTo(isc.NewAssets(1*isc.Million), nil, keyPair, evmAgentID)
 	contractAddr, contractABI := e.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))
 	return &TestContractEnv{

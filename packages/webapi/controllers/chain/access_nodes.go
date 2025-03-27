@@ -14,7 +14,7 @@ import (
 
 func (c *Controller) addAccessNode(e echo.Context) error {
 	controllerutils.SetOperation(e, "add_access_node")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	chainID, err := controllerutils.ChainIDFromParams(e)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 
 func (c *Controller) removeAccessNode(e echo.Context) error {
 	controllerutils.SetOperation(e, "remove_access_node")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	chainID, err := controllerutils.ChainIDFromParams(e)
 	if err != nil {
 		return err
 	}

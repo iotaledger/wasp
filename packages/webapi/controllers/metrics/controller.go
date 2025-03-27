@@ -9,7 +9,6 @@ import (
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
-	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 type Controller struct {
@@ -32,27 +31,19 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
-	adminAPI.GET("metrics/node/messages", c.getNodeMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddResponse(http.StatusOK, "A list of all available metrics.", models.NodeMessageMetrics{}, nil).
-		SetOperationId("getNodeMessageMetrics").
-		SetSummary("Get accumulated message metrics.")
-
-	adminAPI.GET("metrics/chain/:chainID/messages", c.getChainMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+	adminAPI.GET("metrics/chain/messages", c.getChainMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusNotFound, "Chain not found", nil, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMessageMetrics{}, nil).
 		SetOperationId("getChainMessageMetrics").
 		SetSummary("Get chain specific message metrics.")
 
-	adminAPI.GET("metrics/chain/:chainID/workflow", c.getChainWorkflowMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+	adminAPI.GET("metrics/chain/workflow", c.getChainWorkflowMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusNotFound, "Chain not found", nil, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(models.ConsensusWorkflowMetrics{}), nil).
 		SetOperationId("getChainWorkflowMetrics").
 		SetSummary("Get chain workflow metrics.")
 
-	adminAPI.GET("metrics/chain/:chainID/pipe", c.getChainPipeMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
-		AddParamPath("", params.ParamChainID, params.DescriptionChainID).
+	adminAPI.GET("metrics/chain/pipe", c.getChainPipeMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
 		AddResponse(http.StatusNotFound, "Chain not found", nil, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", mocker.Get(models.ConsensusPipeMetrics{}), nil).
 		SetOperationId("getChainPipeMetrics").

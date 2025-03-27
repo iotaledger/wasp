@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/common"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -19,10 +18,7 @@ import (
 )
 
 func (c *Controller) getControlAddresses(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
+	ch, err := c.chainService.GetChain()
 	controlAddresses, err := corecontracts.GetControlAddresses(ch)
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -38,10 +34,7 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 }
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
+	ch, err := c.chainService.GetChain()
 	var blockInfo *blocklog.BlockInfo
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -66,10 +59,7 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 }
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
+	ch, err := c.chainService.GetChain()
 	var requestIDs []isc.RequestID
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -101,11 +91,13 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 }
 
 func GetRequestReceipt(e echo.Context, c interfaces.ChainService) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c)
+	ch, err := c.GetChain()
+
 	if err != nil {
 		return err
 	}
 	requestID, err := params.DecodeRequestID(e)
+
 	if err != nil {
 		return err
 	}
@@ -131,10 +123,7 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 }
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
+	ch, err := c.chainService.GetChain()
 	var blocklogReceipts *blocklog.RequestReceiptsResponse
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -174,7 +163,8 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 }
 
 func (c *Controller) getIsRequestProcessed(e echo.Context) error {
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
+
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -189,7 +179,7 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 	}
 
 	requestProcessedResponse := models.RequestProcessedResponse{
-		ChainID:     chainID.String(),
+		ChainID:     ch.ID().String(),
 		RequestID:   requestID.String(),
 		IsProcessed: requestProcessed,
 	}
@@ -208,10 +198,11 @@ func eventsResponse(e echo.Context, events []*isc.Event) error {
 }
 
 func (c *Controller) getBlockEvents(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
-		return c.handleViewCallError(err)
+		return err
 	}
+	
 	var events []*isc.Event
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -240,10 +231,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 }
 
 func (c *Controller) getRequestEvents(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
+	ch, err := c.chainService.GetChain()
 	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
 		return err

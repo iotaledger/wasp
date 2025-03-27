@@ -63,7 +63,7 @@ func TestManyRequests(t *testing.T) {
 	gasCoinValueAfter := coin.Value(chain.GetLatestGasCoin().Value)
 	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 
-	contractAgentID := isc.NewContractAgentID(chain.ChainID, HScName) // SC has no funds (because it never claims funds from allowance)
+	contractAgentID := isc.NewContractAgentID(HScName) // SC has no funds (because it never claims funds from allowance)
 	chain.AssertL2BaseTokens(contractAgentID, 0)
 }
 

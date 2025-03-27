@@ -18,9 +18,9 @@ func oldAgentIDToStr(agentID old_isc.AgentID) string {
 	case *old_isc.AddressAgentID:
 		return fmt.Sprintf("AddressAgentID(%v)", agentID.Address().String())
 	case *old_isc.ContractAgentID:
-		return fmt.Sprintf("ContractAgentID(%v, %v)", agentID.ChainID().String(), agentID.Hname())
+		return fmt.Sprintf("ContractAgentID(%v)", agentID.Hname())
 	case *old_isc.EthereumAddressAgentID:
-		return fmt.Sprintf("EthereumAddressAgentID(%v, %v)", agentID.ChainID().String(), agentID.EthAddress().String())
+		return fmt.Sprintf("EthereumAddressAgentID(%v)", agentID.EthAddress().String())
 	case *old_isc.NilAgentID:
 		panic(fmt.Sprintf("Found agent ID with kind = AgentIDIsNil: %v", agentID))
 	default:
@@ -33,9 +33,9 @@ func newAgentIDToStr(agentID isc.AgentID) string {
 	case *isc.AddressAgentID:
 		return fmt.Sprintf("AddressAgentID(%v)", agentID.Address().String())
 	case *isc.ContractAgentID:
-		return fmt.Sprintf("ContractAgentID(%v, %v)", agentID.ChainID().String(), agentID.Hname())
+		return fmt.Sprintf("ContractAgentID(%v)", agentID.Hname())
 	case *isc.EthereumAddressAgentID:
-		return fmt.Sprintf("EthereumAddressAgentID(%v, %v)", agentID.ChainID().String(), agentID.EthAddress().String())
+		return fmt.Sprintf("EthereumAddressAgentID(%v)", agentID.EthAddress().String())
 	case *isc.NilAgentID:
 		panic(fmt.Sprintf("Found agent ID with kind = AgentIDIsNil: %v", agentID))
 	default:

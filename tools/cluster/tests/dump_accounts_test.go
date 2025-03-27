@@ -30,7 +30,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		_, evmAddr := solo.NewEthereumAccount()
 		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
-		evmAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, evmAddr)
+		evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
 		env.TransferFundsTo(isc.NewAssets(iotaclient.DefaultGasBudget-1*isc.Million), nil, keyPair, evmAgentID)
 		accs = append(accs, evmAgentID.String())
 	}
@@ -38,7 +38,6 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 	client, _ := env.NewRandomChainClient()
 	resp, err := client.WaspClient.ChainsAPI.DumpAccounts(
 		context.Background(),
-		env.Chain.ChainID.String(),
 	).Execute()
 	require.NoError(t, err)
 	require.Equal(t, 202, resp.StatusCode)

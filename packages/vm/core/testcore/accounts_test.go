@@ -591,7 +591,7 @@ func TestAccounts_WithdrawDepositCoins(t *testing.T) {
 
 		// sent the last 50 tokens to an evm account
 		_, someEthereumAddr := solo.NewEthereumAccount()
-		someEthereumAgentID := isc.NewEthereumAddressAgentID(v.ch.ChainID, someEthereumAddr)
+		someEthereumAgentID := isc.NewEthereumAddressAgentID(someEthereumAddr)
 
 		err = v.ch.TransferAllowanceTo(isc.NewEmptyAssets().AddCoin(v.coinType, coin.Value(50)),
 			someEthereumAgentID,

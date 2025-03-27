@@ -4,26 +4,25 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**activateChain**](ChainsApi.md#activateChain) | **POST** /v1/chains/{chainID}/activate | Activate a chain
-[**addAccessNode**](ChainsApi.md#addAccessNode) | **PUT** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
-[**callView**](ChainsApi.md#callView) | **POST** /v1/chains/{chainID}/callview | Call a view function on a contract by Hname
-[**deactivateChain**](ChainsApi.md#deactivateChain) | **POST** /v1/chains/{chainID}/deactivate | Deactivate a chain
-[**dumpAccounts**](ChainsApi.md#dumpAccounts) | **POST** /v1/chains/{chainID}/dump-accounts | dump accounts information into a humanly-readable format
-[**estimateGasOffledger**](ChainsApi.md#estimateGasOffledger) | **POST** /v1/chains/{chainID}/estimategas-offledger | Estimates gas for a given off-ledger ISC request
-[**estimateGasOnledger**](ChainsApi.md#estimateGasOnledger) | **POST** /v1/chains/{chainID}/estimategas-onledger | Estimates gas for a given on-ledger ISC request
-[**getChainInfo**](ChainsApi.md#getChainInfo) | **GET** /v1/chains/{chainID} | Get information about a specific chain
-[**getChains**](ChainsApi.md#getChains) | **GET** /v1/chains | Get a list of all chains
-[**getCommitteeInfo**](ChainsApi.md#getCommitteeInfo) | **GET** /v1/chains/{chainID}/committee | Get information about the deployed committee
-[**getContracts**](ChainsApi.md#getContracts) | **GET** /v1/chains/{chainID}/contracts | Get all available chain contracts
-[**getMempoolContents**](ChainsApi.md#getMempoolContents) | **GET** /v1/chains/{chainID}/mempool | Get the contents of the mempool.
-[**getReceipt**](ChainsApi.md#getReceipt) | **GET** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
-[**getStateValue**](ChainsApi.md#getStateValue) | **GET** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
-[**removeAccessNode**](ChainsApi.md#removeAccessNode) | **DELETE** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
-[**rotateChain**](ChainsApi.md#rotateChain) | **POST** /v1/chains/{chainID}/rotate | Rotate a chain
-[**setChainRecord**](ChainsApi.md#setChainRecord) | **POST** /v1/chains/{chainID}/chainrecord | Sets the chain record.
-[**v1ChainsChainIDEvmPost**](ChainsApi.md#v1ChainsChainIDEvmPost) | **POST** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
-[**v1ChainsChainIDEvmWsGet**](ChainsApi.md#v1ChainsChainIDEvmWsGet) | **GET** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
-[**waitForRequest**](ChainsApi.md#waitForRequest) | **GET** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+[**activateChain**](ChainsApi.md#activateChain) | **POST** /v1/chain/activate/{chainID} | Activate a chain
+[**addAccessNode**](ChainsApi.md#addAccessNode) | **PUT** /v1/chain/access-node/{peer} | Configure a trusted node to be an access node.
+[**callView**](ChainsApi.md#callView) | **POST** /v1/chain/callview | Call a view function on a contract by Hname
+[**deactivateChain**](ChainsApi.md#deactivateChain) | **POST** /v1/chain/deactivate | Deactivate a chain
+[**dumpAccounts**](ChainsApi.md#dumpAccounts) | **POST** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
+[**estimateGasOffledger**](ChainsApi.md#estimateGasOffledger) | **POST** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
+[**estimateGasOnledger**](ChainsApi.md#estimateGasOnledger) | **POST** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
+[**getChainInfo**](ChainsApi.md#getChainInfo) | **GET** /v1/chain | Get information about a specific chain
+[**getCommitteeInfo**](ChainsApi.md#getCommitteeInfo) | **GET** /v1/chain/committee | Get information about the deployed committee
+[**getContracts**](ChainsApi.md#getContracts) | **GET** /v1/chain/contracts | Get all available chain contracts
+[**getMempoolContents**](ChainsApi.md#getMempoolContents) | **GET** /v1/chain/mempool | Get the contents of the mempool.
+[**getReceipt**](ChainsApi.md#getReceipt) | **GET** /v1/chain/receipts/{requestID} | Get a receipt from a request ID
+[**getStateValue**](ChainsApi.md#getStateValue) | **GET** /v1/chain/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
+[**removeAccessNode**](ChainsApi.md#removeAccessNode) | **DELETE** /v1/chain/access-node/{peer} | Remove an access node.
+[**rotateChain**](ChainsApi.md#rotateChain) | **POST** /v1/chain/rotate | Rotate a chain
+[**setChainRecord**](ChainsApi.md#setChainRecord) | **POST** /v1/chain/chainrecord/{chainID} | Sets the chain record.
+[**v1ChainEvmPost**](ChainsApi.md#v1ChainEvmPost) | **POST** /v1/chain/evm | Ethereum JSON-RPC
+[**v1ChainEvmWsGet**](ChainsApi.md#v1ChainEvmWsGet) | **GET** /v1/chain/evm/ws | Ethereum JSON-RPC (Websocket transport)
+[**waitForRequest**](ChainsApi.md#waitForRequest) | **GET** /v1/chain/requests/{requestID}/wait | Wait until the given request has been processed by the node
 
 
 # **activateChain**
@@ -95,8 +94,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiAddAccessNodeRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
 };
@@ -110,7 +107,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **peer** | [**string**] | Name or PubKey (hex) of the trusted peer | defaults to undefined
 
 
@@ -152,8 +148,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiCallViewRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Parameters
   contractCallViewRequest: {
     arguments: [
@@ -177,7 +171,6 @@ console.log('API called successfully. Returned data:', data);
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **contractCallViewRequest** | **ContractCallViewRequest**| Parameters |
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -210,15 +203,11 @@ No authorization required
 
 ```typescript
 import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiDeactivateChainRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
-const request: ChainsApiDeactivateChainRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-};
+const request = {};
 
 const data = await apiInstance.deactivateChain(request);
 console.log('API called successfully. Returned data:', data);
@@ -226,10 +215,7 @@ console.log('API called successfully. Returned data:', data);
 
 
 ### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+This endpoint does not need any parameter.
 
 
 ### Return type
@@ -264,15 +250,11 @@ Name | Type | Description  | Notes
 
 ```typescript
 import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiDumpAccountsRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
-const request: ChainsApiDumpAccountsRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-};
+const request = {};
 
 const data = await apiInstance.dumpAccounts(request);
 console.log('API called successfully. Returned data:', data);
@@ -280,10 +262,7 @@ console.log('API called successfully. Returned data:', data);
 
 
 ### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+This endpoint does not need any parameter.
 
 
 ### Return type
@@ -323,8 +302,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiEstimateGasOffledgerRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Request
   request: {
     fromAddress: "fromAddress_example",
@@ -342,7 +319,6 @@ console.log('API called successfully. Returned data:', data);
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **request** | **EstimateGasRequestOffledger**| Request |
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -381,8 +357,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiEstimateGasOnledgerRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Request
   request: {
     outputBytes: "outputBytes_example",
@@ -399,7 +373,6 @@ console.log('API called successfully. Returned data:', data);
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **request** | **EstimateGasRequestOnledger**| Request |
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -438,8 +411,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiGetChainInfoRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -453,7 +424,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -478,52 +448,6 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **getChains**
-> Array<ChainInfoResponse> getChains()
-
-
-### Example
-
-
-```typescript
-import { createConfiguration, ChainsApi } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new ChainsApi(configuration);
-
-const request = {};
-
-const data = await apiInstance.getChains(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-This endpoint does not need any parameter.
-
-
-### Return type
-
-**Array<ChainInfoResponse>**
-
-### Authorization
-
-[Authorization](README.md#Authorization)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | A list of all available chains |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
 # **getCommitteeInfo**
 > CommitteeInfoResponse getCommitteeInfo()
 
@@ -539,8 +463,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiGetCommitteeInfoRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -554,7 +476,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -595,8 +516,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiGetContractsRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -610,7 +529,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -645,15 +563,11 @@ Name | Type | Description  | Notes
 
 ```typescript
 import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiGetMempoolContentsRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
-const request: ChainsApiGetMempoolContentsRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-};
+const request = {};
 
 const data = await apiInstance.getMempoolContents(request);
 console.log('API called successfully. Returned data:', data);
@@ -661,10 +575,7 @@ console.log('API called successfully. Returned data:', data);
 
 
 ### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+This endpoint does not need any parameter.
 
 
 ### Return type
@@ -704,8 +615,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiGetReceiptRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // RequestID (Hex)
   requestID: "requestID_example",
 };
@@ -719,7 +628,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
 
 
@@ -760,8 +668,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiGetStateValueRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // State Key (Hex)
   stateKey: "stateKey_example",
 };
@@ -775,7 +681,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **stateKey** | [**string**] | State Key (Hex) | defaults to undefined
 
 
@@ -815,8 +720,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiRemoveAccessNodeRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Name or PubKey (hex) of the trusted peer
   peer: "peer_example",
 };
@@ -830,7 +733,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **peer** | [**string**] | Name or PubKey (hex) of the trusted peer | defaults to undefined
 
 
@@ -871,8 +773,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiRotateChainRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // RotateRequest (optional)
   rotateRequest: {
     rotateToAddress: "rotateToAddress_example",
@@ -889,7 +789,6 @@ console.log('API called successfully. Returned data:', data);
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **rotateRequest** | **RotateChainRequest**| RotateRequest |
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
 
 
 ### Return type
@@ -975,8 +874,8 @@ Name | Type | Description  | Notes
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **v1ChainsChainIDEvmPost**
-> v1ChainsChainIDEvmPost()
+# **v1ChainEvmPost**
+> v1ChainEvmPost()
 
 
 ### Example
@@ -984,26 +883,19 @@ Name | Type | Description  | Notes
 
 ```typescript
 import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiV1ChainsChainIDEvmPostRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
-const request: ChainsApiV1ChainsChainIDEvmPostRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-};
+const request = {};
 
-const data = await apiInstance.v1ChainsChainIDEvmPost(request);
+const data = await apiInstance.v1ChainEvmPost(request);
 console.log('API called successfully. Returned data:', data);
 ```
 
 
 ### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+This endpoint does not need any parameter.
 
 
 ### Return type
@@ -1027,8 +919,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **v1ChainsChainIDEvmWsGet**
-> v1ChainsChainIDEvmWsGet()
+# **v1ChainEvmWsGet**
+> v1ChainEvmWsGet()
 
 
 ### Example
@@ -1036,26 +928,19 @@ No authorization required
 
 ```typescript
 import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiV1ChainsChainIDEvmWsGetRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
-const request: ChainsApiV1ChainsChainIDEvmWsGetRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-};
+const request = {};
 
-const data = await apiInstance.v1ChainsChainIDEvmWsGet(request);
+const data = await apiInstance.v1ChainEvmWsGet(request);
 console.log('API called successfully. Returned data:', data);
 ```
 
 
 ### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
+This endpoint does not need any parameter.
 
 
 ### Return type
@@ -1094,8 +979,6 @@ const configuration = createConfiguration();
 const apiInstance = new ChainsApi(configuration);
 
 const request: ChainsApiWaitForRequestRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // RequestID (Hex)
   requestID: "requestID_example",
     // The timeout in seconds, maximum 60s (optional)
@@ -1113,7 +996,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **timeoutSeconds** | [**number**] | The timeout in seconds, maximum 60s | (optional) defaults to undefined
  **waitForL1Confirmation** | [**boolean**] | Wait for the block to be confirmed on L1 | (optional) defaults to undefined

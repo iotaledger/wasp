@@ -1,7 +1,10 @@
 package allmigrations
 
 import (
+	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
 const (
@@ -26,6 +29,11 @@ var DefaultScheme = &migrations.MigrationScheme{
 	Migrations: []migrations.Migration{
 		// This adds a NOOP migration, enabling the proper handling of migrated blocks (legacy encoding, mostly)
 		// and making sure that new blocks are created with SchemaVersionIotaRebased.
-		{},
+		{
+			Apply: func(contractState kv.KVStore, log log.Logger) error {
+				return nil
+			},
+			Contract: root.Contract,
+		},
 	},
 }

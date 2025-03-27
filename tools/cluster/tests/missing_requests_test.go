@@ -40,7 +40,6 @@ func TestMissingRequests(t *testing.T) {
 	req := isc.NewOffLedgerRequest(chainID, inccounter.FuncIncCounter.Message(nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
 	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
-		ChainId: chainID.String(),
 		Request: cryptolib.EncodeHex(req.Bytes()),
 	}).Execute()
 	require.NoError(t, err)
@@ -50,7 +49,6 @@ func TestMissingRequests(t *testing.T) {
 	req2 := isc.NewOffLedgerRequest(chainID, isc.NewMessageFromNames("foo", "bar"), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
 	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
-		ChainId: chainID.String(),
 		Request: cryptolib.EncodeHex(req2.Bytes()),
 	}).Execute()
 	require.NoError(t, err)

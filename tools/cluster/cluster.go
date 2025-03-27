@@ -378,7 +378,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			time.Sleep(200 * time.Millisecond)
 			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
 				func(_ int, a *apiclient.APIClient) error {
-					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background()).Execute() //nolint:bodyclose // false positive
 					return err2
 				})
 			if err != nil {

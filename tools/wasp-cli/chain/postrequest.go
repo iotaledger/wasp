@@ -23,7 +23,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	chainClient := cliclients.ChainClient(client, chainID)
 
 	if offLedger {
-		util.WithOffLedgerRequest(ctx, client, chainID, func() (isc.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(ctx, client, func() (isc.OffLedgerRequest, error) {
 			return chainClient.PostOffLedgerRequest(ctx, msg, params)
 		})
 		return
@@ -32,7 +32,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 		return chainClient.PostRequest(ctx, msg, params)
 	})
 }
@@ -52,13 +52,12 @@ func initPostRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			cname := args[0]
 			fname := args[1]
-			params := util.EncodeParams(args[2:], chainID)
+			params := util.EncodeParams(args[2:])
 			msg := isc.NewMessage(isc.Hn(cname), isc.Hn(fname), params)
 
 			// allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)

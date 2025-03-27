@@ -80,29 +80,33 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 	)
 }
 
-func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *iotago.Address, targetAnchor *iotago.Address, assets *isc.Assets, metadata *isc.SendMetadata) {
+func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *isc.SendMetadata) {
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
+
 	txb.ptb = iscmoveclient.PTBAssetsBagNew(txb.ptb, txb.iscPackage, txb.ownerAddr)
+
 	argAssetsBag := txb.ptb.LastCommandResultArg()
 	argAnchor := txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()})
+
 	for coinType, coinBalance := range assets.Coins {
 		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
 	}
-	// TODO set allowance
-	allowanceCointypes := txb.ptb.MustForceSeparatePure(&bcs.Option[[]string]{None: true})
-	allowanceBalances := txb.ptb.MustForceSeparatePure(&bcs.Option[[]uint64]{None: true})
-	txb.ptb = iscmoveclient.PTBCreateAndSendCrossRequest(
+
+	allowance := &iscmove.Assets{}
+
+	if metadata.Allowance != nil {
+		allowance = metadata.Allowance.AsISCMove()
+	}
+
+	txb.ptb = iscmoveclient.PTBCreateAndSendRequest(
 		txb.ptb,
 		txb.iscPackage,
-		*targetAnchor,
+		*txb.anchor.GetObjectID(),
 		argAssetsBag,
-		uint32(metadata.Message.Target.Contract),
-		uint32(metadata.Message.Target.EntryPoint),
-		metadata.Message.Params,
-		allowanceCointypes,
-		allowanceBalances,
+		metadata.Message.AsISCMove(),
+		allowance,
 		metadata.GasBudget,
 	)
 }

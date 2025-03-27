@@ -23,7 +23,7 @@ import (
 func TestImpersonatedOffLedgerRequest(t *testing.T) {
 	requestFrom := cryptolib.NewRandomAddress()
 
-	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0).
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0).
 		WithAllowance(isc.NewAssets(1074)).
 		WithNonce(1074).
 		WithGasBudget(1074)

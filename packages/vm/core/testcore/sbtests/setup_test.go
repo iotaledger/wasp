@@ -48,7 +48,7 @@ func setupDeployer(t *testing.T, ch *solo.Chain) (*cryptolib.KeyPair, isc.AgentI
 }
 
 func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair) isc.AgentID {
-	deployed := isc.NewContractAgentID(chain.ChainID, HScName)
+	deployed := isc.NewContractAgentID(HScName)
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncDoNothing.Name).
 		WithGasBudget(100_000)
 	_, err := chain.PostRequestSync(req, user)
