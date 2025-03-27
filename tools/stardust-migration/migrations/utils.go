@@ -359,7 +359,7 @@ func IterateAccountMaps(
 	oldContractState.Iterate(prefix, func(k old_kv.Key, v []byte) bool {
 		agentIDBytes := k[:len(k)-sizeOfMapKeys-1]
 		agentID := codec.MustDecodeAgentID([]byte(agentIDBytes))
-		newAgentID := OldAgentIDtoNewAgentID(agentID, oldChainID, newChainID)
+		newAgentID := OldAgentIDtoNewAgentID(agentID, oldChainID)
 		mapKey := k[len(k)-sizeOfMapKeys:]
 		f(newAgentID, []byte(mapKey), v)
 		count++

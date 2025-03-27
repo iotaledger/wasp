@@ -44,7 +44,7 @@ func OldIotaGoAddressToCryptoLibAddress(address old_iotago.Address) *cryptolib.A
 	return lo.Must(cryptolib.NewAddressFromHexString(address.String()))
 }
 
-func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.AgentID {
+func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.ChainID) isc.AgentID {
 	switch oldAgentID.Kind() {
 	case old_isc.AgentIDKindAddress:
 		// TODO: I think we need to remove the first byte from the byte array
@@ -85,15 +85,13 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 }
 
 func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
-	//panic("TODO: Not implemented")
-	return iotago.ObjectID{}
+	return iotago.ObjectID(nftID[:])
 }
 
 func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
-	//panic("TODO: Not implemented")
 	return &accounts.ObjectRecord{
-		ID:  iotago.ObjectID{},
-		BCS: []byte{1, 2, 3, 4, 5},
+		ID:  OldNFTIDtoNewObjectID(nftID),
+		BCS: []byte{},
 	}
 }
 
@@ -203,9 +201,5 @@ func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 }
 
 func IsValidOldAccountKeyBytesLen(n int) bool {
-	if n > old_isc.ChainIDLength {
-		return true
-	}
-
-	return n == 4 || n == common.AddressLength
+	return n == isc.HnameLength || n == common.AddressLength || n == iotago.AddressLen
 }

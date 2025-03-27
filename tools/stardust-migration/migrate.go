@@ -101,7 +101,8 @@ func initMigration(srcChainDBDir, destChainDBDir, overrideNewChainID string, con
 			entries := lo.Must(os.ReadDir(destChainDBDir))
 
 			if len(entries) > 0 {
-				log.Fatalf("destination directory is not empty - cannot create new db: %v", destChainDBDir)
+				os.RemoveAll(destChainDBDir)
+				//log.Fatalf("destination directory is not empty - cannot create new db: %v", destChainDBDir)
 			}
 		}
 	} else if continueMigration {
@@ -255,10 +256,10 @@ func migrateSingleState(c *cmd.Context) error {
 	cli.DebugLoggingEnabled = true
 
 	v := migrations.MigrateRootContract(srcState, stateDraft)
-	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID, newChainID)
-	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID, newChainID)
-	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, newChainID, stateMetadata, prepConfig)
-	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, newChainID)
+	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID)
+	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID)
+	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, prepConfig)
+	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID)
 	migrations.MigrateEVMContract(srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
@@ -368,10 +369,10 @@ func migrateAllStates(c *cmd.Context) error {
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID, newChainID)
+		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID)
 		accountsMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, newChainID)
+		migrations.MigrateGovernanceContract(oldState, newState, oldChainID)
 		governanceMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateErrorsContract(oldState, newState)
@@ -384,7 +385,7 @@ func migrateAllStates(c *cmd.Context) error {
 			_ = newState.W.MutationsCountDiff()
 		}
 
-		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID, newChainID)
+		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID)
 		accountsMuts += newState.W.MutationsCountDiff()
 
 		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, newChainID, stateMetadata, prepareConfig)

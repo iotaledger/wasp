@@ -44,12 +44,12 @@ func migrateEVMSendTransaction(args old_kv.Dict) new_isc.Message {
 	return new_evm.FuncSendTransaction.Message(oldTransaction)
 }
 
-func migrateAccountsTransferAllowanceTo(oldChainID old_isc.ChainID, newChainID new_isc.ChainID, args old_kv.Dict) new_isc.Message {
+func migrateAccountsTransferAllowanceTo(oldChainID old_isc.ChainID, args old_kv.Dict) new_isc.Message {
 	agentID := lo.Must(old_isc.AgentIDFromBytes(args.Get(old_accounts.ParamAgentID)))
-	return accounts.FuncTransferAllowanceTo.Message(OldAgentIDtoNewAgentID(agentID, oldChainID, newChainID))
+	return accounts.FuncTransferAllowanceTo.Message(OldAgentIDtoNewAgentID(agentID, oldChainID))
 }
 
-func migrateContractCall(oldChainID old_isc.ChainID, newChainID new_isc.ChainID, contract old_isc.Hname, entrypoint old_isc.Hname, args old_kv.Dict) new_isc.Message {
+func migrateContractCall(oldChainID old_isc.ChainID, contract old_isc.Hname, entrypoint old_isc.Hname, args old_kv.Dict) new_isc.Message {
 	if contract == old_governance.Contract.Hname() && entrypoint == old_governance.FuncSetFeePolicy.Hname() {
 		return migrateGovernanceSetFeePolicy(args)
 	}
@@ -59,7 +59,7 @@ func migrateContractCall(oldChainID old_isc.ChainID, newChainID new_isc.ChainID,
 	}
 
 	if contract == old_accounts.Contract.Hname() && entrypoint == old_accounts.FuncTransferAllowanceTo.Hname() {
-		return migrateAccountsTransferAllowanceTo(oldChainID, newChainID, args)
+		return migrateAccountsTransferAllowanceTo(oldChainID, args)
 	}
 
 	panic(fmt.Sprintf("failed to migrate contract call. Contract: %s, Entrypoint: %s unsupported!", contract, entrypoint))

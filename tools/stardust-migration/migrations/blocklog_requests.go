@@ -42,7 +42,7 @@ func migrateOnLedgerContractIdentity(request old_isc.OnLedgerRequest) isc.Contra
 	return newContractIdentity
 }
 
-func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {
+func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.ChainID) isc.Request {
 	requestRef := iotago.ObjectRef{
 		ObjectID: (*iotago.ObjectID)(request.ID().Bytes()),
 		Version:  0,
@@ -63,7 +63,7 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 
 	requestMetadata := &isc.RequestMetadata{
 		SenderContract: migrateOnLedgerContractIdentity(request),
-		Message:        migrateContractCall(oldChainID, newChainID, request.CallTarget().Contract, request.CallTarget().EntryPoint, request.Params()),
+		Message:        migrateContractCall(oldChainID, request.CallTarget().Contract, request.CallTarget().EntryPoint, request.Params()),
 		Allowance:      OldAssetsToNewAssets(request.Allowance()),
 		GasBudget:      gasBudget,
 	}
@@ -71,7 +71,7 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, &iscmove.AssetsBagWithBalances{AssetsBag: *fakeAssetsBag, Balances: map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{}}, requestMetadata)
 }
 
-func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {
+func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.ChainID) isc.Request {
 	if evmCallMsg := req.EVMCallMsg(); evmCallMsg != nil {
 		// read unexported tx field of evmOffLedgerTxRequest struct
 		var tx *types.Transaction
@@ -82,9 +82,9 @@ func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.Ch
 			txValue.Set(reqTxField)
 		}
 
-		return lo.Must(isc.NewEVMOffLedgerTxRequest(newChainID, tx))
+		return lo.Must(isc.NewEVMOffLedgerTxRequest(tx))
 	} else {
-		message := migrateContractCall(oldChainID, newChainID, req.CallTarget().Contract, req.CallTarget().EntryPoint, req.Params())
+		message := migrateContractCall(oldChainID, req.CallTarget().Contract, req.CallTarget().EntryPoint, req.Params())
 		nonce := req.Nonce()
 		gasbudget, _ := req.GasBudget()
 		allowance := OldAssetsToNewAssets(req.Allowance())
@@ -102,7 +102,6 @@ func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.Ch
 		}
 		newRequest := isc.NewOffLedgerRequestsRaw(
 			allowance,
-			newChainID,
 			message,
 			gasbudget,
 			nonce,
@@ -112,13 +111,13 @@ func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.Ch
 	}
 }
 
-func MigrateSingleRequest(req old_isc.Request, oldChainID old_isc.ChainID, newChainID isc.ChainID) isc.Request {
+func MigrateSingleRequest(req old_isc.Request, oldChainID old_isc.ChainID) isc.Request {
 	switch req.(type) {
 	case old_isc.OnLedgerRequest:
-		return migrateOnLedgerRequest(req.(old_isc.OnLedgerRequest), oldChainID, newChainID)
+		return migrateOnLedgerRequest(req.(old_isc.OnLedgerRequest), oldChainID)
 
 	case old_isc.OffLedgerRequest:
-		return migrateOffLedgerRequest(req.(old_isc.OffLedgerRequest), oldChainID, newChainID)
+		return migrateOffLedgerRequest(req.(old_isc.OffLedgerRequest), oldChainID)
 
 	case old_isc.UnsignedOffLedgerRequest:
 		panic(fmt.Errorf("migrateSingleRequest: invalid request type: %T", req))

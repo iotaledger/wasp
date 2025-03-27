@@ -152,7 +152,7 @@ func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStor
 	})
 }
 
-func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_isc.ChainID, newChainID isc.ChainID) blocklog.RequestReceipt {
+func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_isc.ChainID) blocklog.RequestReceipt {
 	var burnLog *gas.BurnLog
 
 	if receipt.GasBurnLog != nil {
@@ -184,7 +184,7 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_i
 	}
 
 	return blocklog.RequestReceipt{
-		Request:       MigrateSingleRequest(receipt.Request, oldChainID, newChainID),
+		Request:       MigrateSingleRequest(receipt.Request, oldChainID),
 		Error:         receiptError,
 		GasBudget:     receipt.GasBudget,
 		GasBurned:     receipt.GasBurned,
@@ -195,7 +195,7 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_i
 	}
 }
 
-func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID) {
+func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
 	newRequests := collections.NewMap(newState, blocklog.PrefixRequestReceipts)
 
@@ -215,7 +215,7 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, 
 				panic(fmt.Errorf("requestReceipt migration error: %v", err))
 			}
 
-			newReceipt := migrateSingleReceipt(oldReceipt, oldChainID, newChainID)
+			newReceipt := migrateSingleReceipt(oldReceipt, oldChainID)
 			newRequests.SetAt(elemKey, newReceipt.Bytes())
 		}
 
@@ -250,7 +250,7 @@ func migrateGlobalVars(oldState old_kv.KVStoreReader, newState kv.KVStore) uint3
 	return oldBlockIndex
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, newChainID isc.ChainID, stateMetadata *transaction.StateMetadata, prepareConfig *migration.PrepareConfiguration) blocklog.BlockInfo {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, prepareConfig *migration.PrepareConfiguration) blocklog.BlockInfo {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
@@ -258,7 +258,7 @@ func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState k
 	blockIndex := migrateGlobalVars(oldChainState, newChainState)
 	blockInfo := migrateBlockRegistry(blockIndex, prepareConfig, stateMetadata, oldContractState, newContractState)
 	migrateRequestLookupIndex(oldContractState, newContractState)
-	migrateRequestReceipts(oldContractState, newContractState, oldChainID, newChainID)
+	migrateRequestReceipts(oldContractState, newContractState, oldChainID)
 
 	return blockInfo
 }

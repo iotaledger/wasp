@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -98,7 +97,7 @@ func TestGetAccountBalance(t *testing.T) {
 	fmt.Printf("Allowance:%v\nAssets:%v\nCallTarget:%v\nTarget:%s\n", newRequests[0].Allowance(), newRequests[0].Assets(), newRequests[0].Message(), a.String())
 
 	newAccountsState := newstate.GetContactStateReader(dstState, accounts.Contract.Hname())
-	baseTokenNew, remainder := accounts.NewStateReader(5, newAccountsState).GetBaseTokensBalance(migrations.OldAgentIDtoNewAgentID(targetAddress, old_isc.ChainID{}, isc.ChainID{}), isc.ChainID{})
+	baseTokenNew, remainder := accounts.NewStateReader(5, newAccountsState).GetBaseTokensBalance(migrations.OldAgentIDtoNewAgentID(targetAddress, old_isc.ChainID{}))
 	fmt.Printf("%d / %d\n", baseTokenNew, remainder)
 
 }

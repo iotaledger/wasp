@@ -1,13 +1,14 @@
 package migrations
 
 import (
-	"github.com/iotaledger/bcs-go"
 	old_cryptolib "github.com/nnikolash/wasp-types-exported/packages/cryptolib"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/bcs-go"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -25,7 +26,6 @@ func MigrateGovernanceContract(
 	oldChainState old_kv.KVStoreReader,
 	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
-	newChainID isc.ChainID,
 ) {
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
@@ -33,9 +33,9 @@ func MigrateGovernanceContract(
 
 	cli.DebugLog("Migrating governance contract\n")
 
-	migrateChainOwnerID(oldChainState, newContractState, oldChainID, newChainID) // WARNING: oldChainState is specifically used here
-	migrateChainOwnerIDDelegetaed(oldContractState, newContractState, oldChainID, newChainID)
-	migratePayoutAgent(oldContractState, newContractState, oldChainID, newChainID)
+	migrateChainOwnerID(oldChainState, newContractState, oldChainID) // WARNING: oldChainState is specifically used here
+	migrateChainOwnerIDDelegetaed(oldContractState, newContractState, oldChainID)
+	migratePayoutAgent(oldContractState, newContractState, oldChainID)
 	migrateGasFeePolicy(oldContractState, newContractState)
 	migrateGasLimits(oldContractState, newContractState)
 	migrateAccessNodes(oldContractState, newContractState)
@@ -56,12 +56,11 @@ func migrateChainOwnerID(
 	oldChainState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 	oldChainID old_isc.ChainID,
-	newChainID isc.ChainID,
 ) {
 	cli.DebugLog("Migrating chain owner...\n")
 
 	oldChainOwnerID := old_governance.NewStateAccess(oldChainState).ChainOwnerID()
-	newChainOwnerID := OldAgentIDtoNewAgentID(oldChainOwnerID, oldChainID, newChainID)
+	newChainOwnerID := OldAgentIDtoNewAgentID(oldChainOwnerID, oldChainID)
 	governance.NewStateWriter(newContractState).SetChainOwnerID(newChainOwnerID)
 
 	cli.DebugLog("Migrated chain owner\n")
@@ -71,14 +70,13 @@ func migrateChainOwnerIDDelegetaed(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 	oldChainID old_isc.ChainID,
-	newChainID isc.ChainID,
 ) {
 	cli.DebugLog("Migrating chain owner delegated...\n")
 
 	oldChainOwnerDelegatedIDBytes := oldContractState.Get(old_governance.VarChainOwnerIDDelegated)
 	if len(oldChainOwnerDelegatedIDBytes) != 0 {
 		oldChainOwnerDelegatedID := lo.Must(old_codec.DecodeAgentID(oldChainOwnerDelegatedIDBytes))
-		newChainIDOwnerDelegatedID := OldAgentIDtoNewAgentID(oldChainOwnerDelegatedID, oldChainID, newChainID)
+		newChainIDOwnerDelegatedID := OldAgentIDtoNewAgentID(oldChainOwnerDelegatedID, oldChainID)
 		governance.NewStateWriter(newContractState).SetChainOwnerIDDelegated(newChainIDOwnerDelegatedID)
 	}
 
@@ -89,12 +87,11 @@ func migratePayoutAgent(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
 	oldChainID old_isc.ChainID,
-	newChainID isc.ChainID,
 ) {
 	cli.DebugLogf("Migrating Payout agent...\n")
 
 	oldPayoudAgentID := old_governance.MustGetPayoutAgentID(oldContractState)
-	newPayoutAgentID := OldAgentIDtoNewAgentID(oldPayoudAgentID, oldChainID, newChainID)
+	newPayoutAgentID := OldAgentIDtoNewAgentID(oldPayoudAgentID, oldChainID)
 
 	governance.NewStateWriter(newContractState).SetPayoutAgentID(newPayoutAgentID)
 
