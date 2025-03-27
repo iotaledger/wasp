@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	old_evm_types "github.com/nnikolash/wasp-types-exported/packages/evm/evmtypes"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_rwutil "github.com/nnikolash/wasp-types-exported/packages/util/rwutil"
 	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
@@ -32,7 +33,18 @@ Keys to Migrate
   - keyBlockIndexByTxHash     = "th:i"		(X)
 */
 
-func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulatorStateRealm kv.KVStore) {
+func containsDeletedKey(muts *old_buffered.Mutations, key kv.Key) bool {
+	buf := []byte{193, 2, 203, 7, 115, 98}
+	buf = append(buf, key...)
+
+	del := muts.Contains(old_kv.Key(buf))
+	if del {
+		//	//fmt.Printf("Found deleted key %v %v\n", key, []byte(key))
+	}
+	return del
+}
+
+func migrateBlockchainDB(muts *old_buffered.Mutations, oldEmulatorStateRealm old_kv.KVStoreReader, newEmulatorStateRealm kv.KVStore) {
 	oldBlockChain := old_emulator.BlockchainDBSubrealmR(oldEmulatorStateRealm)
 	newBlockChain := emulator.BlockchainDBSubrealm(newEmulatorStateRealm)
 
@@ -90,10 +102,14 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	oldBlockChain.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		const blockNumberLen = 8
 		oldBlockNumberBytes, oldTxIndexBytes := utils.MustSplitArrayKey(key, blockNumberLen, old_emulator.KeyTransactionsByBlockNumber)
-
+		////fmt.Printf("blockNumber: %v, txIndex: %v (INDEX:%v), key: %v (%s)\n", []byte(oldBlockNumberBytes), []byte(oldTxIndexBytes), []byte(key), string(key), len(oldTxIndexBytes) == 0)
 		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
 		if oldTxIndexBytes == "" {
 			// It's a length record
+			if containsDeletedKey(muts, kv.Key(key[:])) {
+				return true
+			}
+
 			newBlockChain.Set(emulator.MakeTransactionsByBlockNumberKey(blockNumber), value)
 			return true
 		}
@@ -101,9 +117,7 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		txIndex := old_rwutil.NewBytesReader([]byte(oldTxIndexBytes)).Must().ReadUint32()
 		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), txIndex)
 
-		// TODO: This was caught after block 10000, probably pruning in play?
-		if value == nil {
-			newBlockChain.Del(newKey)
+		if containsDeletedKey(muts, newKey) {
 			return true
 		}
 
@@ -116,9 +130,13 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	// Migrate KeyBlockHeaderByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		blockNumber := old_codec.MustDecodeUint64([]byte(key[len(old_emulator.KeyBlockHeaderByBlockNumber):]))
+		//fmt.Printf("blockNumber: %v, key: %v (%s)\n", blockNumber, []byte(key), string(key))
 
-		// TODO: This was caught after block 10000, probably pruning in play?
 		if len(value) == 0 {
+			if containsDeletedKey(muts, kv.Key(key[:])) {
+				return true
+			}
+
 			newBlockChain.Set(kv.Key(key), value)
 			return true
 		}
@@ -146,10 +164,15 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 	oldBlockChain.IterateSorted(old_emulator.KeyReceiptsByBlockNumber, func(key old_kv.Key, value []byte) bool {
 		const blockNumberLen = 8
 		oldBlockNumberBytes, oldRecIndexBytes := utils.MustSplitArrayKey(key, blockNumberLen, old_emulator.KeyReceiptsByBlockNumber)
+		//fmt.Printf("blockNumber: %v, rec: %v, key: %v (%s)\n", []byte(oldBlockNumberBytes), []byte(oldRecIndexBytes), []byte(key), string(key))
 
 		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
 		if oldRecIndexBytes == "" {
 			// It's a length record
+			if containsDeletedKey(muts, kv.Key(key[:])) {
+				return true
+			}
+
 			newBlockChain.Set(emulator.MakeReceiptsByBlockNumberKey(blockNumber), value)
 			return true
 		}
@@ -158,8 +181,7 @@ func migrateBlockchainDB(oldEmulatorStateRealm old_kv.KVStoreReader, newEmulator
 		newKey := collections.ArrayElemKey(string(emulator.MakeReceiptsByBlockNumberKey(blockNumber)), recIndex)
 
 		// TODO: This was caught after block 10000, probably pruning in play?
-		if value == nil {
-			newBlockChain.Del(newKey)
+		if containsDeletedKey(muts, kv.Key(key[:])) {
 			return true
 		}
 

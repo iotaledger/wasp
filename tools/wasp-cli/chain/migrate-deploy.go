@@ -25,6 +25,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -152,7 +153,7 @@ func getFirstCoin(ctx context.Context, kp wallets.Wallet, client clients.L1Clien
 		var selectedCoin *iotago.ObjectRef
 
 		lo.Filter(coins.Data, func(item *iotajsonrpc.Coin, index int) bool {
-			if item.CoinObjectID == excludedCoin {
+			if bytes.Equal(item.CoinObjectID.Bytes(), excludedCoin.Bytes()) {
 				return true
 			}
 
@@ -244,10 +245,14 @@ func migrationRun(ctx context.Context, node string, chainName string, packageID 
 
 	anchorRef := anchor.Data.Ref()
 
+	stateMetadata, err := transaction.StateMetadataFromBytes(hexutil.MustDecode(migrationResult.StateMetadataHex))
+	log.Check(err)
+	stateMetadata.GasCoinObjectID = prepareConfig.GasCoinID
+
 	// Update the StateAnchor with the latest migrated block info
 	success, err := l1Client.L2().UpdateAnchorStateMetadata(ctx, &iscmoveclient.UpdateAnchorStateMetadataRequest{
 		AnchorRef:     &anchorRef,
-		StateMetadata: lo.Must(hexutil.Decode(migrationResult.StateMetadataHex)),
+		StateMetadata: stateMetadata.Bytes(),
 		StateIndex:    migrationResult.StateIndex,
 		PackageID:     packageID,
 		Signer:        kp,

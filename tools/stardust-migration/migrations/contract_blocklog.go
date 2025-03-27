@@ -83,25 +83,27 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 	// Which means its state index - 1, and the past StateMetadata too!
 	var migrationPreviousAnchor *isc.StateAnchor = nil
 
+	iotaObjectID := iotago.ObjectID{1, 0, 7, 4}
+
 	// Block 0 has no past anchor, so that's a nil.
 	if blockIndex != 0 {
 		previousAnchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
 			Object: &iscmove.Anchor{
-				Assets: iscmove.Referent[iscmove.AssetsBag]{ID: *prepareConfig.AssetsBagID, Value: &iscmove.AssetsBag{
+				Assets: iscmove.Referent[iscmove.AssetsBag]{ID: iotaObjectID, Value: &iscmove.AssetsBag{
 					ID:   iotago.ObjectID{},
 					Size: 0,
 				}},
-				ID:            *prepareConfig.AnchorID,
+				ID:            iotaObjectID,
 				StateIndex:    blockIndex - 1,
 				StateMetadata: stateMetadata.Bytes(),
 			},
 			ObjectRef: iotago.ObjectRef{
-				ObjectID: prepareConfig.AnchorID,
+				ObjectID: &iotaObjectID,
 				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
 				Version:  iotago.SequenceNumber(blockIndex - 1),
 			},
 			Owner: prepareConfig.ChainOwner.AsIotaAddress(),
-		}, prepareConfig.PackageID)
+		}, iotaObjectID)
 		migrationPreviousAnchor = &previousAnchor
 	}
 

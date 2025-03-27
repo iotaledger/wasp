@@ -387,7 +387,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, prepareConfig)
 		blocklogMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
+		migrations.MigrateEVMContract(oldMuts, oldStateMutsOnly, newState)
 		evmMuts := newState.W.MutationsCountDiff()
 
 		newMuts, _ := newState.W.Commit(true)
