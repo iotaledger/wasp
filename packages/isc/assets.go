@@ -167,6 +167,8 @@ func (c CoinBalances) Clone() CoinBalances {
 	return r
 }
 
+type L1Object = lo.Tuple2[iotago.ObjectID, iotago.ObjectType]
+
 type ObjectSet map[iotago.ObjectID]iotago.ObjectType
 
 func NewObjectSet() ObjectSet {
@@ -188,8 +190,8 @@ func (o ObjectSet) KeysSorted() []iotago.ObjectID {
 	return ids
 }
 
-func (o ObjectSet) Sorted() []lo.Tuple2[iotago.ObjectID, iotago.ObjectType] {
-	var ret []lo.Tuple2[iotago.ObjectID, iotago.ObjectType]
+func (o ObjectSet) Sorted() []L1Object {
+	var ret []L1Object
 	for _, id := range o.KeysSorted() {
 		ret = append(ret, lo.T2(id, o[id]))
 	}

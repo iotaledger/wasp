@@ -8,9 +8,8 @@ import (
 
 const MaxPostedOutputsInOneRequest = 4
 
-func (vmctx *vmContext) getNFTData(chainState kv.KVStore, nftID iotago.ObjectID) *isc.NFT {
-	panic("refactor me: getNFTData vm.send")
-	// return vmctx.accountsStateWriterFromChainState(chainState).GetNFTData(nftID)
+func (vmctx *vmContext) getObject(chainState kv.KVStore, id iotago.ObjectID) (isc.L1Object, bool) {
+	return vmctx.accountsStateWriterFromChainState(chainState).GetObject(id, vmctx.ChainID())
 }
 
 func (reqctx *requestContext) send(params isc.RequestParameters) {

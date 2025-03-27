@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
 	"github.com/stretchr/testify/require"
@@ -164,12 +163,8 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
 	txb2.ConsumeRequest(req2)
 
-	zeroAssets := iscmove.Assets{
-		Coins: map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{
-			coin.BaseTokenType.AsRPCCoinType(): iotajsonrpc.CoinValue(0),
-		},
-	}
-	req3 := createIscmoveReqWithAssets(t, client, senderSigner, iscPackage, anchor, &zeroAssets)
+	zeroAssets := iscmove.NewEmptyAssets()
+	req3 := createIscmoveReqWithAssets(t, client, senderSigner, iscPackage, anchor, zeroAssets)
 	txb2.ConsumeRequest(req3)
 	stateMetadata2 := []byte("dummy stateMetadata2")
 	pt2 := txb2.BuildTransactionEssence(stateMetadata2, 123)

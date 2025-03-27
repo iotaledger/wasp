@@ -153,7 +153,7 @@ type (
 )
 
 func NewEmptyAssets() *Assets {
-	return &Assets{Coins: make(CoinBalances)}
+	return &Assets{Coins: make(CoinBalances), Objects: make(ObjectCollection)}
 }
 
 func NewAssets(baseTokens uint64) *Assets {

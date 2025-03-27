@@ -67,7 +67,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 		return err
 	}
 
-	nfts, err := corecontracts.GetAccountNFTs(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	nfts, err := corecontracts.GetAccountObjects(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err)
 	}

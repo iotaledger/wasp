@@ -2,13 +2,11 @@ package wiki_how_tos_test
 
 import (
 	_ "embed"
-	"math/big"
 	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -52,6 +50,7 @@ func TestBaseBalance(t *testing.T) {
 
 func TestNFTBalance(t *testing.T) {
 	t.Skip("TODO")
+	/*
 	env := evmtest.InitEVMWithSolo(t, solo.New(t))
 	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
 
@@ -78,6 +77,7 @@ func TestNFTBalance(t *testing.T) {
 	nftBalance := new(big.Int)
 	instance.CallFnExpectEvent(nil, "GotNFTIDs", &nftBalance, "getBalanceNFTs")
 	assert.Equal(t, int64(1), nftBalance.Int64())
+	*/
 }
 
 func TestAgentID(t *testing.T) {

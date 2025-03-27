@@ -83,30 +83,40 @@ func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotag
 	return t
 }
 
-func collectObjectIDs(m *collections.ImmutableMap) []iotago.ObjectID {
-	var ret []iotago.ObjectID
-	m.Iterate(func(idBytes []byte, val []byte) bool {
-		id := iotago.ObjectID{}
-		copy(id[:], idBytes)
-		ret = append(ret, id)
+func collectObjects(m *collections.ImmutableMap) []isc.L1Object {
+	var ret []isc.L1Object
+	m.Iterate(func(idBytes []byte, tBytes []byte) bool {
+		id := lo.Must(codec.Decode[iotago.ObjectID](idBytes))
+		t := lo.Must(codec.Decode[iotago.ObjectType](tBytes))
+		ret = append(ret, lo.T2(id, t))
 		return true
 	})
 	return ret
 }
 
-func (s *StateReader) getAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
-	return collectObjectIDs(s.accountToObjectsMapR(agentID))
+func (s *StateReader) getAccountObjects(agentID isc.AgentID) []isc.L1Object {
+	return collectObjects(s.accountToObjectsMapR(agentID))
 }
 
-func (s *StateReader) getL2TotalObjects() []iotago.ObjectID {
-	return collectObjectIDs(s.objectToOwnerMapR())
+func (s *StateReader) getL2TotalObjects() []isc.L1Object {
+	return collectObjects(s.objectToOwnerMapR())
 }
 
 // GetAccountObjects returns all Objects belonging to the agentID on the state
-func (s *StateReader) GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
+func (s *StateReader) GetAccountObjects(agentID isc.AgentID) []isc.L1Object {
 	return s.getAccountObjects(agentID)
 }
 
-func (s *StateReader) GetTotalL2Objects() []iotago.ObjectID {
+func (s *StateReader) GetTotalL2Objects() []isc.L1Object {
 	return s.getL2TotalObjects()
+}
+
+func (s *StateReader) GetObject(id iotago.ObjectID, chID isc.ChainID) (isc.L1Object, bool) {
+	owner := s.objectToOwnerMapR().GetAt(id[:])
+	if owner == nil {
+		return isc.L1Object{}, false
+	}
+	aid := lo.Must(codec.Decode[isc.AgentID](owner))
+	t := lo.Must(iotago.ObjectTypeFromBytes(s.accountCoinBalancesMapR(accountKey(aid, chID)).GetAt(id[:])))
+	return lo.T2(id, t), true
 }

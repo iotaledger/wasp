@@ -84,10 +84,10 @@ func sendNFTsBack(ctx isc.Sandbox) {
 
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	for nftID := range allowance.Objects {
+	for nftID, t := range allowance.Objects {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
-			Assets:        isc.NewEmptyAssets().AddObject(nftID),
+			Assets:        isc.NewEmptyAssets().AddObject(nftID, t),
 		})
 	}
 }
@@ -99,12 +99,4 @@ func claimAllowance(ctx isc.Sandbox) {
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
 	ctx.Requiref(len(ctx.OwnedObjects())-len(initialNFTset) == len(allowance.Objects), "must get all NFTs from allowance")
-	for _, id := range allowance.Objects {
-		panic("TODO: fix GetNFTData")
-		_ = id
-		// nftData := ctx.GetNFTData(id)
-		// ctx.Requiref(!nftData.ID.Empty(), "must have NFTID")
-		// ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
-		// ctx.Requiref(nftData.Issuer != nil, "must have issuer")
-	}
 }

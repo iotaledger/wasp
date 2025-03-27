@@ -4,7 +4,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -48,6 +47,6 @@ type WaspCallContext interface {
 	SchemaVersion() isc.SchemaVersion
 	GasBurned() uint64
 	GasBudgetLeft() uint64
-	GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID
+	GetAccountObjects(agentID isc.AgentID) []isc.L1Object
 	GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool)
 }

@@ -27,24 +27,30 @@ func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 			ID:   *iotago.MustAddressFromHex("0x123"),
 			Size: 2,
 		},
-		Balances: iscmove.AssetsBagBalances{
-			iotajsonrpc.IotaCoinType:                         33,
-			iotajsonrpc.MustCoinTypeFromString("0xa1::a::A"): 11,
-			iotajsonrpc.MustCoinTypeFromString("0xa2::b::B"): 22,
+		Assets: iscmove.Assets{
+			Coins: iscmove.CoinBalances{
+				iotajsonrpc.IotaCoinType:                         33,
+				iotajsonrpc.MustCoinTypeFromString("0xa1::a::A"): 11,
+				iotajsonrpc.MustCoinTypeFromString("0xa2::b::B"): 22,
+			},
+			Objects: iscmove.ObjectCollection{
+				iotago.Address{1, 2, 3}: iotago.MustTypeFromString("0xa1::c::C"),
+			},
 		},
 	}
 	assets, err := isc.AssetsFromAssetsBagWithBalances(&assetsBag)
 	require.NoError(t, err)
-	require.Equal(t, assetsBag.Balances[iotajsonrpc.IotaCoinType], iotajsonrpc.CoinValue(assets.BaseTokens()))
-	require.Equal(t, assetsBag.Balances[iotajsonrpc.MustCoinTypeFromString("0xa1::a::A")], iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
-	require.Equal(t, assetsBag.Balances[iotajsonrpc.MustCoinTypeFromString("0xa2::b::B")], iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
+	require.Equal(t, assetsBag.Coins[iotajsonrpc.IotaCoinType], iotajsonrpc.CoinValue(assets.BaseTokens()))
+	require.Equal(t, assetsBag.Coins[iotajsonrpc.MustCoinTypeFromString("0xa1::a::A")], iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa1::a::A"))))
+	require.Equal(t, assetsBag.Coins[iotajsonrpc.MustCoinTypeFromString("0xa2::b::B")], iotajsonrpc.CoinValue(assets.CoinBalance(coin.MustTypeFromString("0xa2::b::B"))))
+	require.Equal(t, assetsBag.Objects[iotago.Address{1, 2, 3}], iotago.MustTypeFromString("0xa1::c::C"))
 }
 
 func TestAssetsSerialization(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
-		AddObject(iotago.ObjectID{})
+		AddObject(iotago.ObjectID{1, 2, 3}, iotago.MustTypeFromString("0xa1::c::C"))
 	bcs.TestCodec(t, assets)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
@@ -109,7 +115,7 @@ func TestAssetsCodec(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
-		AddObject(*iotatest.RandomAddress())
+		AddObject(*iotatest.RandomAddress(), iotago.MustTypeFromString("0xa1::c::C"))
 	bcs.TestCodec(t, assets)
 }
 

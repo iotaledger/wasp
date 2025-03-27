@@ -842,7 +842,7 @@ func TestAccounts_NFTAccount(t *testing.T) {
 	// ch.Env.AssertL1BaseTokens(nftAddress, baseTokensToWithdrawal)
 }
 
-func checkChainNFTData(t *testing.T, ch *solo.Chain, nft *isc.NFT, owner isc.AgentID) {
+func checkChainNFTData(t *testing.T, ch *solo.Chain, nft isc.L1Object, owner isc.AgentID) {
 	panic("TODO")
 	// args, err := ch.CallView(accounts.ViewAccountObjects.Message(&owner))
 	// require.NoError(t, err)

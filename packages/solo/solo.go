@@ -623,69 +623,6 @@ func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	return cb
 }
 
-// MintNFTL1 mints a single NFT with the `issuer` account and sends it to a `target` account.
-// Base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, immutableMetadata []byte) (*isc.NFT, error) {
-	nfts, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
-	if err != nil {
-		return nil, err
-	}
-	return nfts[0], nil
-}
-
-// MintNFTsL1 mints len(metadata) NFTs with the `issuer` account and sends them
-// to a `target` account.
-//
-// If collectionID is not nil, it must be the ID of an NFT owned by the issuer.
-// All minted NFTs will belong to the given collection.
-// See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
-//
-// Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTsL1(
-	issuer *cryptolib.KeyPair,
-	target *cryptolib.Address,
-	collectionID *iotago.ObjectID,
-	metadata [][]byte,
-) ([]*isc.NFT, error) {
-	panic("TODO")
-	/*
-		err := errors.New("refactor me: MintNFTsL1")
-		if err != nil {
-			return nil, nil, err
-		}
-		err = env.AddToLedger(tx)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		outSet, err := tx.OutputsSet()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		var nfts []*isc.NFT
-		var infos []*NFTMintedInfo
-		for id, out := range outSet {
-			if out, ok := out.(*iotago.NFTOutput); ok { //nolint:gocritic // false positive
-				nftID := util.NFTIDFromNFTOutput(out, id)
-				info := &NFTMintedInfo{
-					OutputID: id,
-					Output:   out,
-					NFTID:    nftID,
-				}
-				nft := &isc.NFT{
-					ID:       info.NFTID,
-					Issuer:   cryptolib.NewAddressFromIotago(out.ImmutableFeatureSet().IssuerFeature().Address),
-					Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
-				}
-				nfts = append(nfts, nft)
-				infos = append(infos, info)
-			}
-		}
-		return nfts, infos, nil
-	*/
-}
-
 func (env *Solo) executePTB(
 	ptb iotago.ProgrammableTransaction,
 	wallet *cryptolib.KeyPair,

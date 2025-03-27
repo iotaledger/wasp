@@ -267,7 +267,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, *assetsBagMainRef.ObjectID, assetsBag.ID)
 	require.Equal(t, uint64(1), assetsBag.Size)
-	bal, ok := assetsBag.Balances[testCointype]
+	bal, ok := assetsBag.Coins[testCointype]
 	require.True(t, ok)
 	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
@@ -306,7 +306,7 @@ func TestGetAssetsBagFromAnchorID(t *testing.T) {
 	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &anchor.Object.Assets.Value.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(2), assetsBag.Size)
-	bal, ok := assetsBag.Balances[testCointype]
+	bal, ok := assetsBag.Coins[testCointype]
 	require.True(t, ok)
 	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }
@@ -477,7 +477,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	assetsBag, err := client.GetAssetsBagWithBalances(context.Background(), &reqWithObj.Object.AssetsBag.ID)
 	require.NoError(t, err)
 	require.Equal(t, uint64(1), assetsBag.Size)
-	bal, ok := assetsBag.Balances[testCointype]
+	bal, ok := assetsBag.Coins[testCointype]
 	require.True(t, ok)
 	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 }

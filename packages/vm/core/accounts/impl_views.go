@@ -3,7 +3,6 @@ package accounts
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -49,7 +48,7 @@ func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint
 }
 
 // viewAccountObjects returns the ObjectIDs of Objects owned by an account
-func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []iotago.ObjectID {
+func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []isc.L1Object {
 	ctx.Log().Debugf("accounts.viewAccountObjects")
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountObjects(aid)

@@ -100,15 +100,11 @@ func (r *CallParams) AddAllowanceCoins(coinType coin.Type, amount coin.Value) *C
 	return r
 }
 
-func (r *CallParams) AddAllowanceNFTs(nftIDs ...iotago.ObjectID) *CallParams {
+func (r *CallParams) AddAllowanceObject(id iotago.ObjectID, t iotago.ObjectType) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
-
-	for _, nftId := range nftIDs {
-		r.allowance.AddObject(nftId)
-	}
-
+	r.allowance.AddObject(id, t)
 	return r
 }
 
@@ -138,8 +134,8 @@ func (r *CallParams) AddCoin(coinType coin.Type, amount coin.Value) *CallParams 
 }
 
 // Adds an nft to be sent (only applicable when the call is made via on-ledger request)
-func (r *CallParams) WithObject(objectID iotago.ObjectID) *CallParams {
-	r.assets.AddObject(objectID)
+func (r *CallParams) WithObject(objectID iotago.ObjectID, t iotago.ObjectType) *CallParams {
+	r.assets.AddObject(objectID, t)
 	return r
 }
 

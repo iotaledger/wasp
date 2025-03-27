@@ -8,8 +8,8 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -32,7 +32,7 @@ func (h *magicContractHandler) GetL2BalanceCoin(
 }
 
 // handler for ISCAccounts::getL2Objects
-func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []iotago.ObjectID {
+func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []isc.L1Object {
 	aid := lo.Must(agentID.Unwrap())
 	r := h.callView(accounts.ViewAccountObjects.Message(&aid))
 	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(r))

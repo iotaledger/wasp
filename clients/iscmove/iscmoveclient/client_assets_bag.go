@@ -25,9 +25,13 @@ func (c *Client) GetAssetsBagWithBalances(
 			ID:   *assetsBagID,
 			Size: uint64(len(fields.Data)),
 		},
-		Balances: make(iscmove.AssetsBagBalances),
+		Assets: iscmove.Assets{
+			Coins:   make(iscmove.CoinBalances),
+			Objects: make(iscmove.ObjectCollection),
+		},
 	}
 	for _, data := range fields.Data {
+		panic("TODO: handle non-coin objects")
 		resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: &data.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
@@ -51,7 +55,7 @@ func (c *Client) GetAssetsBagWithBalances(
 			return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
 		}
 
-		bag.Balances[cointype] = iotajsonrpc.CoinValue(moveBalance.Value.Uint64())
+		bag.Coins[cointype] = iotajsonrpc.CoinValue(moveBalance.Value.Uint64())
 	}
 
 	return &bag, nil

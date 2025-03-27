@@ -83,7 +83,7 @@ type Balance interface {
 	// CoinBalances returns the balance of all coins owned by the smart contract
 	CoinBalances() CoinBalances
 	// OwnedObjects returns the ids of objects owned by the smart contract
-	OwnedObjects() []iotago.ObjectID
+	OwnedObjects() []L1Object
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }

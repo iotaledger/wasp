@@ -4,8 +4,6 @@
 package solo
 
 import (
-	"bytes"
-
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -88,10 +86,9 @@ func (ch *Chain) AssertL2TotalBaseTokens(bal coin.Value) {
 	require.EqualValues(ch.Env.T, bal, baseTokens)
 }
 
-func (ch *Chain) HasL2NFT(agentID isc.AgentID, nftID iotago.ObjectID) bool {
-	accNFTIDs := ch.L2NFTs(agentID)
-	for _, id := range accNFTIDs {
-		if bytes.Equal(id[:], nftID[:]) {
+func (ch *Chain) HasL2Object(agentID isc.AgentID, nftID iotago.ObjectID) bool {
+	for _, o := range ch.L2Objects(agentID) {
+		if o.A == nftID {
 			return true
 		}
 	}

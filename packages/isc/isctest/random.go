@@ -109,9 +109,12 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 	ref := iotatest.RandomObjectRef()
 	a := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Balances:  make(iscmove.AssetsBagBalances),
+		Assets: iscmove.Assets{
+			Coins:   make(iscmove.CoinBalances),
+			Objects: make(iscmove.ObjectCollection),
+		},
 	}
-	a.Balances[iotajsonrpc.IotaCoinType] = 1000
+	a.Coins[iotajsonrpc.IotaCoinType] = 1000
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{
@@ -149,9 +152,12 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 	ref := iotatest.RandomObjectRef()
 	a := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Balances:  make(iscmove.AssetsBagBalances),
+		Assets: iscmove.Assets{
+			Coins:   make(iscmove.CoinBalances),
+			Objects: make(iscmove.ObjectCollection),
+		},
 	}
-	a.Balances[iotajsonrpc.IotaCoinType] = 1000
+	a.Coins[iotajsonrpc.IotaCoinType] = 1000
 	req := iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{

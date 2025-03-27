@@ -34,7 +34,6 @@ func TestImpersonatedOffLedgerRequest(t *testing.T) {
 	require.NotNil(t, impRequest)
 	require.NotNil(t, impRequest.SenderAccount())
 	require.Equal(t, impRequest.SenderAccount().String(), requestFrom.String())
-
 }
 
 func TestRequestToJSONObject(t *testing.T) {
@@ -104,7 +103,10 @@ func TestRequestDataSerialization(t *testing.T) {
 						ID:   *iotatest.RandomAddress(),
 						Size: 1,
 					},
-					Balances: iscmove.AssetsBagBalances{iotajsonrpc.IotaCoinType: 200},
+					Assets: iscmove.Assets{
+						Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 200},
+						Objects: iscmove.ObjectCollection{},
+					},
 				},
 				Message: iscmove.Message{
 					Contract: uint32(isc.Hn("target_contract")),

@@ -52,7 +52,10 @@ func TestUnmarshalBCS(t *testing.T) {
 			ID: *iotatest.RandomAddress(),
 			Value: &iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmovetest.RandomAssetsBag(),
-				Balances:  iscmove.AssetsBagBalances{},
+				Assets: iscmove.Assets{
+					Coins:   make(iscmove.CoinBalances),
+					Objects: make(iscmove.ObjectCollection),
+				},
 			},
 		},
 		Message: *iscmovetest.RandomMessage(),

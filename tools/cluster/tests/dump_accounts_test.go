@@ -31,7 +31,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
-		env.TransferFundsTo(isc.NewAssets(iotaclient.DefaultGasBudget-1*isc.Million), nil, keyPair, evmAgentID)
+		env.TransferFundsTo(isc.NewAssets(iotaclient.DefaultGasBudget-1*isc.Million), keyPair, evmAgentID)
 		accs = append(accs, evmAgentID.String())
 	}
 

@@ -272,14 +272,13 @@ func PTBReceiveRequestsAndTransition(
 				return bytes.Compare(a[:], b[:])
 			},
 		) {
-			typeTag := assetsBag.Objects[id]
 			obj := ptb.Command(
 				iotago.Command{
 					MoveCall: &iotago.ProgrammableMoveCall{
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "take_asset",
-						TypeArguments: []iotago.TypeTag{{Struct: &typeTag}},
+						TypeArguments: []iotago.TypeTag{assetsBag.Objects[id].TypeTag()},
 						Arguments:     []iotago.Argument{argAssetsBag},
 					},
 				},
@@ -290,7 +289,7 @@ func PTBReceiveRequestsAndTransition(
 						Package:       &packageID,
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "place_asset",
-						TypeArguments: []iotago.TypeTag{{Struct: &typeTag}},
+						TypeArguments: []iotago.TypeTag{assetsBag.Objects[id].TypeTag()},
 						Arguments:     []iotago.Argument{argAnchorAssets, obj},
 					},
 				},

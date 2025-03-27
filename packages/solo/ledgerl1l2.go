@@ -7,7 +7,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -84,10 +83,9 @@ func (ch *Chain) L2BaseTokensAtStateIndex(agentID isc.AgentID, stateIndex uint32
 	return ch.L2AssetsAtStateIndex(agentID, stateIndex).BaseTokens()
 }
 
-func (ch *Chain) L2NFTs(agentID isc.AgentID) []iotago.ObjectID {
+func (ch *Chain) L2Objects(agentID isc.AgentID) []isc.L1Object {
 	res, err := ch.CallView(accounts.ViewAccountObjects.Message(&agentID))
 	require.NoError(ch.Env.T, err)
-
 	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(res))
 }
 
@@ -236,7 +234,6 @@ func (ch *Chain) TransferAllowanceTo(
 	allowance *isc.Assets,
 	targetAccount isc.AgentID,
 	wallet *cryptolib.KeyPair,
-	nft ...*isc.NFT,
 ) error {
 	callParams := NewCallParams(accounts.FuncTransferAllowanceTo.Message(targetAccount)).
 		WithAllowance(allowance).
@@ -253,20 +250,6 @@ func (ch *Chain) DepositBaseTokensToL2(amount coin.Value, user *cryptolib.KeyPai
 
 func (ch *Chain) MustDepositBaseTokensToL2(amount coin.Value, user *cryptolib.KeyPair) {
 	err := ch.DepositBaseTokensToL2(amount, user)
-	require.NoError(ch.Env.T, err)
-}
-
-func (ch *Chain) DepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPair) error {
-	return ch.TransferAllowanceTo(
-		isc.NewEmptyAssets().AddObject(nft.ID),
-		to,
-		owner,
-		nft,
-	)
-}
-
-func (ch *Chain) MustDepositNFT(nft *isc.NFT, to isc.AgentID, owner *cryptolib.KeyPair) {
-	err := ch.DepositNFT(nft, to, owner)
 	require.NoError(ch.Env.T, err)
 }
 

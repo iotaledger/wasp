@@ -45,10 +45,15 @@ func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 	return isc.AgentIDFromBytes(a.Data)
 }
 
+type L1Object struct {
+	ID   iotago.ObjectID
+	Type string
+}
+
 // ISCAssets matches the struct definition in ISCTypes.sol
 type ISCAssets struct {
 	Coins   []CoinBalance
-	Objects []iotago.ObjectID
+	Objects []L1Object
 }
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
@@ -60,8 +65,11 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 		})
 		return true
 	})
-	a.Objects.IterateSorted(func(id iotago.ObjectID) bool {
-		ret.Objects = append(ret.Objects, id)
+	a.Objects.IterateSorted(func(id iotago.ObjectID, t iotago.ObjectType) bool {
+		ret.Objects = append(ret.Objects, L1Object{
+			ID:   id,
+			Type: t.String(),
+		})
 		return true
 	})
 	return ret
@@ -72,8 +80,8 @@ func (a ISCAssets) Unwrap() *isc.Assets {
 	for _, b := range a.Coins {
 		assets.AddCoin(coin.MustTypeFromString(string(b.CoinType)), coin.Value(b.Amount))
 	}
-	for _, id := range a.Objects {
-		assets.AddObject(id)
+	for _, o := range a.Objects {
+		assets.AddObject(o.ID, iotago.MustTypeFromString(o.Type))
 	}
 	return assets
 }

@@ -6,7 +6,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -29,7 +28,7 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount)
 }
 
-func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []lo.Tuple2[iotago.ObjectID, iotago.ObjectType]) {
+func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []isc.L1Object) {
 	for _, o := range objects {
 		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o.A, o.B, reqctx.ChainID())
 	}
@@ -92,7 +91,7 @@ func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalan
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []iotago.ObjectID) {
+func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []isc.L1Object) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetAccountObjects(agentID)
 	})

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
@@ -179,13 +178,6 @@ func TestPingBaseTokens1(t *testing.T) {
 	t.Logf("------ AFTER ------\nReceipt: %s\nUser funds left: %s\nCommon account: %s", receipt, userFundsAfter, commonAfter)
 
 	require.Zero(t, userFundsAfter.L2.BaseTokens())
-}
-
-func mintDummyNFT(t *testing.T, ch *solo.Chain, issuer *cryptolib.KeyPair, owner *cryptolib.Address) *isc.NFT {
-	nftMetadata := []byte("foobar")
-	nft, err := ch.Env.MintNFTL1(issuer, owner, nftMetadata)
-	require.NoError(t, err)
-	return nft
 }
 
 func TestSendNFTsBack(t *testing.T) {
