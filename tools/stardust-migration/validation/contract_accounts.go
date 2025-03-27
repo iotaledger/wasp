@@ -449,7 +449,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 		baseBalance := r.GetBaseTokensBalanceFullDecimals(agentID)
 		addBalanceStr(accKey, newAgentIDToStr(agentID), baseBalance.String(), coin.BaseTokenType)
 
-		nativeTokens := r.GetTotalL2FungibleTokens().NativeTokens()
+		nativeTokens := r.GetAccountFungibleTokens(agentID).NativeTokens()
 		for coinType, ntBalance := range nativeTokens {
 			if coinType == coin.BaseTokenType {
 				continue
