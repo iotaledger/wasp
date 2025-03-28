@@ -9,6 +9,7 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/packages/migration"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -26,6 +27,7 @@ func MigrateGovernanceContract(
 	oldChainState old_kv.KVStoreReader,
 	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
+	prepareConfig *migration.PrepareConfiguration,
 ) {
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
@@ -33,7 +35,7 @@ func MigrateGovernanceContract(
 
 	cli.DebugLog("Migrating governance contract\n")
 
-	migrateChainOwnerID(oldChainState, newContractState, oldChainID) // WARNING: oldChainState is specifically used here
+	migrateChainOwnerID(oldChainState, newContractState, oldChainID, prepareConfig) // WARNING: oldChainState is specifically used here
 	migrateChainOwnerIDDelegetaed(oldContractState, newContractState, oldChainID)
 	migratePayoutAgent(oldContractState, newContractState, oldChainID)
 	migrateGasFeePolicy(oldContractState, newContractState)
@@ -52,25 +54,15 @@ func MigrateGovernanceContract(
 	cli.DebugLog("Migrated governance contract\n")
 }
 
-func migrateChainOwnerID(
-	oldChainState old_kv.KVStoreReader,
-	newContractState kv.KVStore,
-	oldChainID old_isc.ChainID,
-) {
+func migrateChainOwnerID(oldChainState old_kv.KVStoreReader, newContractState kv.KVStore, oldChainID old_isc.ChainID, config *migration.PrepareConfiguration) {
 	cli.DebugLog("Migrating chain owner...\n")
 
-	oldChainOwnerID := old_governance.NewStateAccess(oldChainState).ChainOwnerID()
-	newChainOwnerID := OldAgentIDtoNewAgentID(oldChainOwnerID, oldChainID)
-	governance.NewStateWriter(newContractState).SetChainOwnerID(newChainOwnerID)
+	governance.NewStateWriter(newContractState).SetChainOwnerID(isc.NewAddressAgentID(config.ChainOwner))
 
 	cli.DebugLog("Migrated chain owner\n")
 }
 
-func migrateChainOwnerIDDelegetaed(
-	oldContractState old_kv.KVStoreReader,
-	newContractState kv.KVStore,
-	oldChainID old_isc.ChainID,
-) {
+func migrateChainOwnerIDDelegetaed(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore, oldChainID old_isc.ChainID) {
 	cli.DebugLog("Migrating chain owner delegated...\n")
 
 	oldChainOwnerDelegatedIDBytes := oldContractState.Get(old_governance.VarChainOwnerIDDelegated)

@@ -256,8 +256,8 @@ func migrateSingleState(c *cmd.Context) error {
 	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID)
 	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID)
 	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, prepConfig)
-	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID)
-	migrations.MigrateEVMContract(srcState, stateDraft)
+	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, prepConfig)
+	migrations.MigrateEVMContract(nil, srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
@@ -271,6 +271,22 @@ type debugOptions struct {
 	DestKeyMustContain    string
 	DestValueMustContain  string
 	StackTraceMustContain string
+}
+
+func dumpMuts(m *old_buffered.Mutations) {
+	return
+	fmt.Println("")
+	for d, _ := range m.Dels {
+		if strings.Contains(string(d), emulator.KeyTransactionsByBlockNumber) || strings.Contains(string(d), emulator.KeyReceiptsByBlockNumber) || strings.Contains(string(d), emulator.KeyBlockIndexByTxHash) {
+			fmt.Printf("DEL: %s: %v - %v\n", d, d.Hex(), []byte(d))
+		}
+	}
+
+	for d, _ := range m.Sets {
+		if strings.Contains(string(d), emulator.KeyTransactionsByBlockNumber) || strings.Contains(string(d), emulator.KeyReceiptsByBlockNumber) || strings.Contains(string(d), emulator.KeyBlockIndexByTxHash) {
+			fmt.Printf("SET: %s: %v - %v\n", d, d.Hex(), []byte(d))
+		}
+	}
 }
 
 // migrateAllBlocks calls migration functions for all mutations of each block.
@@ -361,6 +377,10 @@ func migrateAllStates(c *cmd.Context) error {
 			oldStateMutsOnly = dictKvFromMuts(oldMuts)
 		}
 
+		if blockIndex >= 9999 {
+			dumpMuts(oldMuts)
+		}
+
 		newState.W.StartMarking()
 		v := migrations.MigrateRootContract(oldState, newState)
 		rootMuts := newState.W.MutationsCountDiff()
@@ -368,7 +388,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID)
 		accountsMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateGovernanceContract(oldState, newState, oldChainID)
+		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, prepareConfig)
 		governanceMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateErrorsContract(oldState, newState)
