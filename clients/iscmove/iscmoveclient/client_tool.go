@@ -13,7 +13,7 @@ func (c *Client) GetCoin(
 	ctx context.Context,
 	coinID *iotago.ObjectID,
 ) (*MoveCoin, error) {
-	getCoinRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getCoinRes, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: coinID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 	})

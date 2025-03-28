@@ -4,11 +4,20 @@ import (
 	"os"
 	"testing"
 
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
 )
+
+func TestSimple(t *testing.T) {
+	l1starter.StartInMemoryNode(t.Context())
+
+	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
+	ch := env.NewChain()
+	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.OwnerPrivateKey)
+}
 
 // This test is an example of how to generate a snapshot from a Solo chain.
 // The snapshot is especially useful to test migrations.

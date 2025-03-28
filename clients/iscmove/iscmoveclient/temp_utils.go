@@ -43,7 +43,7 @@ func (c *Client) WaitForNextVersionForTesting(ctx context.Context, timeout time.
 			return nil, fmt.Errorf("WaitForNextVersionForTesting: context deadline exceeded while waiting for object version change: %v", currentRef)
 		case <-ticker.C:
 			// Poll for object update
-			newRef, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
+			newRef, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: currentRef.ObjectID})
 			if err != nil {
 				if logger != nil {
 					logger.LogInfof("WaitForNextVersionForTesting: error getting object: %v, retrying...", err)

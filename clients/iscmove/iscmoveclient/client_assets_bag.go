@@ -15,7 +15,7 @@ func (c *Client) GetAssetsBagWithBalances(
 	ctx context.Context,
 	assetsBagID *iotago.ObjectID,
 ) (*iscmove.AssetsBagWithBalances, error) {
-	fields, err := c.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
+	fields, err := c.client.GetDynamicFields(ctx, iotaclient.GetDynamicFieldsRequest{ParentObjectID: assetsBagID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DynamicFields in AssetsBag: %w", err)
 	}
@@ -28,7 +28,7 @@ func (c *Client) GetAssetsBagWithBalances(
 		Balances: make(iscmove.AssetsBagBalances),
 	}
 	for _, data := range fields.Data {
-		resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+		resGetObject, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: &data.ObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
 		})

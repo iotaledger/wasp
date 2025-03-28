@@ -18,7 +18,7 @@ func TestStart(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	t.Cleanup(cancel)
 
-	iotaNode, destruct := l1starter.StartNode(context.Background())
+	iotaNode, destruct := l1starter.StartLocalNode(context.Background())
 	defer destruct()
 
 	client := iotaNode.L1Client()

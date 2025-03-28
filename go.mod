@@ -1,11 +1,10 @@
 module github.com/iotaledger/wasp
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.24.1
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1
+	github.com/lmoe/iota-simulator => D:/Coding/iota/iota-simulator/lib
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
@@ -41,6 +40,7 @@ require (
 	github.com/labstack/echo-jwt/v4 v4.3.0
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/libp2p/go-libp2p v0.41.0
+	github.com/lmoe/iota-simulator v0.0.0-20240520064018-c635e5900894
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
 	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/multiformats/go-multiaddr v0.15.0

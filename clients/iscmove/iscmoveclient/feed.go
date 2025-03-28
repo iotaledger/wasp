@@ -48,7 +48,7 @@ func NewChainFeed(
 }
 
 func (f *ChainFeed) WaitUntilStopped() {
-	f.wsClient.WaitUntilStopped()
+	f.wsClient.client.WaitUntilStopped()
 }
 
 func (f *ChainFeed) GetCurrentAnchor(ctx context.Context) (*iscmove.AnchorWithRef, error) {
@@ -95,7 +95,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 ) {
 	for {
 		events := make(chan *iotajsonrpc.IotaEvent)
-		err := f.wsClient.SubscribeEvent(
+		err := f.wsClient.client.SubscribeEvent(
 			ctx,
 			&iotajsonrpc.EventFilter{
 				And: &iotajsonrpc.AndOrEventFilter{
@@ -168,7 +168,7 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 ) {
 	for {
 		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
-		err := f.wsClient.SubscribeTransaction(
+		err := f.wsClient.client.SubscribeTransaction(
 			ctx,
 			&iotajsonrpc.TransactionFilter{
 				ChangedObject: &f.anchorAddress,
@@ -212,7 +212,7 @@ func (f *ChainFeed) consumeAnchorUpdates(
 
 				f.log.LogDebugf("POLLING ANCHOR %s, %s", f.anchorAddress, time.Now().String())
 
-				r, err := f.httpClient.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+				r, err := f.httpClient.client.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 					ObjectID: &f.anchorAddress,
 					Version:  obj.Reference.Version,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true, ShowContent: true},
@@ -258,7 +258,7 @@ func (f *ChainFeed) GetChainGasCoin(ctx context.Context) (*iotago.ObjectRef, uin
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to fetch anchor: %w", err)
 	}
-	getObjRes, err := f.httpClient.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjRes, err := f.httpClient.client.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: metadata.GasCoinObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 	})

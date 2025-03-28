@@ -7,7 +7,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -16,13 +16,13 @@ import (
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
 type Client struct {
-	*iotaclient.Client
+	client    *iotaclient.Client
 	faucetURL string
 }
 
 func NewClient(client *iotaclient.Client, faucetURL string) *Client {
 	return &Client{
-		Client:    client,
+		client:    client,
 		faucetURL: faucetURL,
 	}
 }
@@ -55,7 +55,7 @@ func (c *Client) RequestFunds(ctx context.Context, address cryptolib.Address) er
 }
 
 func (c *Client) Health(ctx context.Context) error {
-	_, err := c.GetLatestIotaSystemState(ctx)
+	_, err := c.client.GetLatestIotaSystemState(ctx)
 	return err
 }
 
@@ -70,7 +70,7 @@ func (c *Client) SignAndExecutePTB(
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	var err error
 	if len(gasPayments) == 0 {
-		gasPayments, err = c.FindCoinsForGasPayment(
+		gasPayments, err = c.client.FindCoinsForGasPayment(
 			ctx,
 			signer.Address(),
 			pt,
@@ -97,7 +97,7 @@ func (c *Client) SignAndExecutePTB(
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-	txnResponse, err := c.SignAndExecuteTransaction(
+	txnResponse, err := c.client.SignAndExecuteTransaction(
 		ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
@@ -129,7 +129,7 @@ func (c *Client) DevInspectPTB(
 	signer := cryptolib.SignerToIotaSigner(cryptolibSigner)
 	var err error
 	if len(gasPayments) == 0 {
-		gasPayments, err = c.FindCoinsForGasPayment(
+		gasPayments, err = c.client.FindCoinsForGasPayment(
 			ctx,
 			signer.Address(),
 			pt,
@@ -153,7 +153,7 @@ func (c *Client) DevInspectPTB(
 	if err != nil {
 		return nil, fmt.Errorf("can't marshal transaction into BCS encoding: %w", err)
 	}
-	txnResponse, err := c.DevInspectTransactionBlock(
+	txnResponse, err := c.client.DevInspectTransactionBlock(
 		ctx,
 		iotaclient.DevInspectTransactionBlockRequest{
 			SenderAddress: signer.Address(),

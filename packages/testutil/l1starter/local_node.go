@@ -142,6 +142,10 @@ func (in *LocalIotaNode) L1Client() clients.L1Client {
 	}, WaitUntilEffectsVisible)
 }
 
+func (in *LocalIotaNode) L2Client() clients.L2Client {
+	return in.L1Client().L2()
+}
+
 func (in *LocalIotaNode) IsLocal() bool {
 	return true
 }

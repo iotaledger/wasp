@@ -14,7 +14,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
@@ -67,7 +67,7 @@ type Solo struct {
 	mockTime             time.Time
 	l1ParamsFetcher      parameters.L1ParamsFetcher
 
-	l1Config L1Config
+	nodeEndpoint l1starter.IotaNodeEndpoint
 }
 
 // data to be persisted in the snapshot
@@ -110,7 +110,7 @@ type Chain struct {
 }
 
 type InitOptions struct {
-	L1Config          *L1Config
+	NodeEndpoint      l1starter.IotaNodeEndpoint
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
@@ -147,12 +147,8 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	}
 	evmlogger.Init(opt.Log)
 
-	if opt.L1Config == nil {
-		opt.L1Config = &L1Config{
-			IotaRPCURL:    l1starter.Instance().APIURL(),
-			IotaFaucetURL: l1starter.Instance().FaucetURL(),
-			ISCPackageID:  l1starter.Instance().ISCPackageID(),
-		}
+	if opt.NodeEndpoint == nil {
+		opt.NodeEndpoint = l1starter.Instance()
 	}
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -161,7 +157,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	ret := &Solo{
 		T:                    t,
 		logger:               opt.Log,
-		l1Config:             *opt.L1Config,
+		nodeEndpoint:         opt.NodeEndpoint,
 		chains:               make(map[isc.ChainID]*Chain),
 		processorConfig:      coreprocessors.NewConfigWithTestContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
@@ -250,7 +246,7 @@ func (env *Solo) NewChain(depositFundsForOwner ...bool) *Chain {
 }
 
 func (env *Solo) ISCPackageID() iotago.PackageID {
-	return env.l1Config.ISCPackageID
+	return env.nodeEndpoint.ISCPackageID()
 }
 
 // MustWithWaitForNextVersion waits for an object to change its version and panics on timeouts
@@ -428,10 +424,6 @@ func (env *Solo) Ctx() context.Context {
 	return env.ctx
 }
 
-func (env *Solo) IotaFaucetURL() string {
-	return env.l1Config.IotaFaucetURL
-}
-
 func (ch *Chain) GetAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
 	anchor, err := ch.Env.ISCMoveClient().GetPastAnchorFromObjectID(
 		ch.Env.ctx,
@@ -458,7 +450,7 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 }
 
 func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
-	getObjRes, err := env.ISCMoveClient().GetObject(
+	getObjRes, err := env.L1Client().GetObject(
 		env.ctx,
 		iotaclient.GetObjectRequest{
 			ObjectID: id,

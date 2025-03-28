@@ -55,6 +55,7 @@ type IotaNodeEndpoint interface {
 	APIURL() string
 	FaucetURL() string
 	L1Client() clients.L1Client
+	L2Client() clients.L2Client
 	IsLocal() bool
 }
 
@@ -77,7 +78,7 @@ func IsLocalConfigured() bool {
 }
 
 func TestLocal() func() {
-	node, cancel := StartNode(context.Background())
+	node, cancel := StartLocalNode(context.Background())
 	instance.Store(&node)
 	return cancel
 }
@@ -88,22 +89,26 @@ func TestMain(m *testing.M) {
 		return
 	}
 
-	testConfig := LoadConfig()
 	var node IotaNodeEndpoint
 
-	if !testConfig.IsLocal {
-		iotaNode := NewRemoteIotaNode(testConfig.APIURL, testConfig.FaucetURL, ISCPackageOwner)
-		iotaNode.start(context.Background())
+	iotaNode := NewInMemory(ISCPackageOwner)
+	iotaNode.start(context.Background())
+	node = iotaNode
+	instance.Store(&node)
+	/*
+		if !testConfig.IsLocal {
+			iotaNode := NewRemoteIotaNode(testConfig.APIURL, testConfig.FaucetURL, ISCPackageOwner)
+			iotaNode.start(context.Background())
 
-		node = iotaNode
-		instance.Store(&node)
-	} else {
-		var cancel func()
-		node, cancel = StartNode(context.Background())
-		defer cancel()
+			node = iotaNode
+			instance.Store(&node)
+		} else {
+			var cancel func()
+			node, cancel = StartLocalNode(context.Background())
+			defer cancel()
 
-		instance.Store(&node)
-	}
+			instance.Store(&node)
+		}*/
 
 	rebasedExplorerUrl := "https://explorer.rebased.iota.org"
 	explorerUrl := rebasedExplorerUrl + "?network=" + url.QueryEscape(node.APIURL())
@@ -121,7 +126,7 @@ func ClusterStart(config L1EndpointConfig) IotaNodeEndpoint {
 		var iotaNodeEndpoint IotaNodeEndpoint = iotaNode
 		instance.Store(&iotaNodeEndpoint)
 	} else {
-		node, cancel := StartNode(context.Background())
+		node, cancel := StartLocalNode(context.Background())
 		panic("handle clean up properly")
 		defer cancel()
 
@@ -135,7 +140,17 @@ func ISCPackageID() iotago.PackageID {
 	return Instance().ISCPackageID()
 }
 
-func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
+func StartInMemoryNode(ctx context.Context) (IotaNodeEndpoint, func()) {
+	in := NewInMemory(ISCPackageOwner)
+
+	in.start(ctx)
+
+	return in, func() {
+		in.stop()
+	}
+}
+
+func StartLocalNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 	in := NewLocalIotaNode(ISCPackageOwner)
 
 	in.start(ctx)

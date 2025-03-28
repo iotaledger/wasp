@@ -1,8 +1,6 @@
 module github.com/iotaledger/wasp/tools/wasp-cli
 
-go 1.23.0
-
-toolchain go1.24.0
+go 1.24.1
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1

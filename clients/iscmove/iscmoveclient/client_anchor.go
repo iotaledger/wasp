@@ -111,7 +111,7 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
@@ -133,7 +133,7 @@ func (c *Client) GetPastAnchorFromObjectID(
 	anchorObjectID *iotago.ObjectID,
 	version uint64,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
+	getObjectResponse, err := c.client.TryGetPastObject(ctx, iotaclient.TryGetPastObjectRequest{
 		ObjectID: anchorObjectID,
 		Version:  version,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},

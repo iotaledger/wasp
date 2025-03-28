@@ -1,6 +1,7 @@
 package solo
 
 import (
+	"context"
 	"hash/fnv"
 	"math"
 	"time"
@@ -9,26 +10,17 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 )
 
 func (env *Solo) L1Client() clients.L1Client {
-	return clients.NewL1Client(clients.L1Config{
-		APIURL:    env.l1Config.IotaRPCURL,
-		FaucetURL: env.l1Config.IotaFaucetURL,
-	}, iotaclient.WaitForEffectsEnabled)
+	return env.nodeEndpoint.L1Client()
 }
 
-func (env *Solo) ISCMoveClient() *iscmoveclient.Client {
-	return iscmoveclient.NewHTTPClient(
-		env.l1Config.IotaRPCURL,
-		env.l1Config.IotaFaucetURL,
-		l1starter.WaitUntilEffectsVisible,
-	)
+func (env *Solo) ISCMoveClient() clients.L2Client {
+	return env.nodeEndpoint.L2Client()
 }
 
 func (env *Solo) NewKeyPairFromIndex(index int) *cryptolib.KeyPair {
@@ -97,7 +89,7 @@ func (env *Solo) NewKeyPairWithFunds(seed ...*cryptolib.Seed) (*cryptolib.KeyPai
 
 func (env *Solo) GetFundsFromFaucet(target *cryptolib.Address) {
 	currentBalance := env.L1BaseTokens(target)
-	err := iotaclient.RequestFundsFromFaucet(env.ctx, target.AsIotaAddress(), env.l1Config.IotaFaucetURL)
+	err := env.L1Client().RequestFunds(context.Background(), *target)
 	env.WaitForNewBalance(target, currentBalance)
 	require.NoError(env.T, err)
 	require.GreaterOrEqual(env.T, env.L1BaseTokens(target), coin.Value(iotaclient.FundsFromFaucetAmount))

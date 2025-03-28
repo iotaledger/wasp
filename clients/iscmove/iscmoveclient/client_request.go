@@ -33,7 +33,7 @@ func (c *Client) CreateAndSendRequest(
 	ctx context.Context,
 	req *CreateAndSendRequestRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
+	anchorRes, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
@@ -77,7 +77,7 @@ type CreateAndSendRequestWithAssetsRequest struct {
 func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (*iotajsonrpc.Coin, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
-	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance, iotaclient.DefaultGasBudget)
+	coinOptions, err := c.client.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance, iotaclient.DefaultGasBudget)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -94,13 +94,13 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	ctx context.Context,
 	req *CreateAndSendRequestWithAssetsRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	anchorRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
+	anchorRes, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: req.AnchorAddress})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
 	anchorRef := anchorRes.Data.Ref()
 
-	allCoins, err := c.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
+	allCoins, err := c.client.GetAllCoins(ctx, iotaclient.GetAllCoinsRequest{Owner: req.Signer.Address().AsIotaAddress()})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor ref: %w", err)
 	}
@@ -183,7 +183,7 @@ func (c *Client) GetRequestFromObjectID(
 	ctx context.Context,
 	reqID *iotago.ObjectID,
 ) (*iscmove.RefWithObject[iscmove.Request], error) {
-	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.client.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: reqID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
@@ -260,7 +260,7 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 
 	var cursor *iotago.ObjectID
 	for len(pulledRequests) < maxAmountOfRequests {
-		objs, err := c.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
+		objs, err := c.client.GetOwnedObjects(ctx, iotaclient.GetOwnedObjectsRequest{
 			Address: anchorAddress,
 			Query:   query,
 			Cursor:  cursor,

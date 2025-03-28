@@ -44,6 +44,10 @@ func (r *RemoteIotaNode) L1Client() clients.L1Client {
 	}, WaitUntilEffectsVisible)
 }
 
+func (r *RemoteIotaNode) L2Client() clients.L2Client {
+	return r.L1Client().L2()
+}
+
 func (in *RemoteIotaNode) IsLocal() bool {
 	return false
 }
