@@ -7,12 +7,12 @@ import "./ISCTypes.sol";
 
 /**
  * @title ISCPrivileged
- * @dev The ISCPrivileged interface represents a contract that has some extra methods not included in the standard ISC interface.
+ * @notice The ISCPrivileged interface represents a contract that has some extra methods not included in the standard ISC interface.
  * These methods can only be called from privileged contracts.
  */
 interface ISCPrivileged {
     /**
-     * @dev This function allows privileged contracts to move assets between accounts.
+     * @notice This function allows privileged contracts to move assets between accounts.
      * @param sender The address of the sender account
      * @param receiver The address of the receiver account
      * @param allowance The assets to be moved from the sender to the receiver
@@ -24,7 +24,7 @@ interface ISCPrivileged {
     ) external;
 
     /**
-     * @dev This function allows privileged contracts to set the allowance of base tokens from one account to another.
+     * @notice This function allows privileged contracts to set the allowance of base tokens from one account to another.
      * @param from The address of the account from which tokens are allowed
      * @param to The address of the account to which tokens are allowed
      * @param amount The number of base tokens to be allowed
@@ -36,7 +36,7 @@ interface ISCPrivileged {
     ) external;
 
     /**
-     * @dev This function allows privileged contracts to set the allowance of a
+     * @notice This function allows privileged contracts to set the allowance of a
      *      given coin from one account to another.
      * @param from The address of the account from which tokens are allowed
      * @param to The address of the account to which tokens are allowed
@@ -51,7 +51,7 @@ interface ISCPrivileged {
     ) external;
 
     /**
-     * @dev This function allows privileged contracts to move allowed funds from one account to another.
+     * @notice This function allows privileged contracts to move allowed funds from one account to another.
      * @param from The address of the account from which funds are allowed
      * @param to The address of the account to which funds are allowed
      * @param allowance The assets to be moved from the sender to the receiver
