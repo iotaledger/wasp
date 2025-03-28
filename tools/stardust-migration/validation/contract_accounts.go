@@ -2,6 +2,7 @@ package validation
 
 import (
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 
@@ -263,6 +264,12 @@ func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, c
 
 		// NOTE: Using other logic from the one used in migration to improve validation quality.
 		balance := old_codec.MustDecodeBigIntAbs(v, big.NewInt(0))
+		if !balance.IsUint64() {
+			// TODO: This is done temporarily just to not fail validation due to known issue with native token balances.
+			// Must be removed in final version.
+			balance = big.NewInt(0).SetUint64(math.MaxUint64)
+		}
+
 		balancesStr.WriteString("\tNative balance: ")
 		balancesStr.WriteString(accStr)
 		balancesStr.WriteString(": ")

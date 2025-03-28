@@ -3,6 +3,7 @@ package migrations
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -165,7 +166,8 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 	// TODO: There is no cinversion rate, right?
 
 	if !oldNativeTokenAmount.IsUint64() {
-		fmt.Println(fmt.Errorf("old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
+		fmt.Println(fmt.Errorf("\n** ERROR old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
+		return coin.Value(math.MaxUint64)
 	}
 
 	return coin.Value(oldNativeTokenAmount.Uint64())
