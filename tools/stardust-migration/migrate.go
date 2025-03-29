@@ -138,6 +138,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryR
 	var stateMetadata *transaction.StateMetadata
 	if continueMigration {
 		stateMetadata = getStateMetadataByIndex(destStore, lo.Must(destStore.LatestBlockIndex()))
+		stateMetadata.GasCoinObjectID = migrationConfig.GasCoinID
 	} else {
 		stateMetadata = initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
 	}
