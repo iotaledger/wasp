@@ -167,7 +167,7 @@ func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
 	// For testing, this is not of much relevance but for the real deployment we need real values.
 	// So for now return a more or less random configuration
 
-	const debug = true
+	const debug = false
 
 	if debug {
 		config := "{\n  \"DKGCommitteeAddress\": \"0xa9e6c46acc90beec5c5ebe6c7273517861b399496c38d748cd84957eb551515b\",\n  \"ChainOwner\": \"0xf186fb4a9c807311d08b20621c77ae471117f4f4c4ebfd403405c604beafa08e\",\n  \"AssetsBagID\": \"0x564653223f41f7a7a00c56e35cad24c2fb66466b7cdd38d53fd3e58fc53e4e3c\",\n  \"GasCoinID\": \"0xd30c7853ec8486671153bd9f6a3c4c2cfa9a6d88b50018ff73f665876404d809\",\n  \"AnchorID\": \"0x2bc9ef026dfd9536880aace330f0f2c4bd5c7f37bef4b4483ab9ec611f013efb\",\n  \"PackageID\": \"0x7b117bb7cf4f77f33ec527d682647cc0c050de48ce2bbd66f332394bdffcd099\"\n}"
