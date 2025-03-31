@@ -9,7 +9,14 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@iota/iota-sdk": "^0.4.1"
+    "@inquirer/prompts": "^7.4.0",
+    "@iota/iota-sdk": "^0.4.1",
+    "@iota/ledgerjs-hw-app-iota": "^0.2.1",
+    "@ledgerhq/hw-transport": "^6.31.4",
+    "@ledgerhq/hw-transport-node-hid": "^6.29.5",
+    "chalk": "^5.4.1",
+    "cli-spinners": "^3.2.0",
+    "ora": "^8.2.0"
   },
   "devDependencies": {
     "prettier": "3.4.2"

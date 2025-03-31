@@ -9,7 +9,7 @@ import { BasicMigration } from './basic_migration';
 import { BagMigration } from './bag_migration';
 import { FoundryMigration } from './foundry_migration';
 
-export async function executeMigration(client: IotaClient, iscPackageId: string, governorAddress: string, aliasId: string, anchorId: string) {
+export async function createMigrationTransaction(client: IotaClient, iscPackageId: string, governorAddress: string, aliasId: string, anchorId: string): Promise<[tx: Transaction, migratedObjects: { nativeToken: {}; NFTs: {}; Foundries: {}; } ]> {
   const aliasOutputId = await AliasMigration.getAliasOutputId(client, aliasId);
 
   if (!aliasOutputId) {
@@ -28,6 +28,11 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
 
   let tx = new Transaction();
 
+  let migratedObjects = {
+    nativeToken: {},
+    NFTs: {},
+    Foundries: {}
+  }
 
   const [baseTokens, nativeTokensBag, alias] = AliasMigration.extractAssetsFromAlias(tx, aliasId);
   const aliasBaseCoin = CoinMigration.fromBalance(tx, baseTokens);
@@ -53,6 +58,8 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
 
       ISCMove.addBalanceToAssetsBag(iscPackageId, tx, anchorId, typeArguments, balance);
       BagMigration.destroyEmpty(tx, bag);
+
+      migratedObjects.nativeToken[typeArguments] = 1;
     }
 
     //BagMigration.destroyEmpty(tx, nativeTokensBag);
@@ -69,6 +76,9 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
 
     ISCMove.addCoinToAssetsBag(iscPackageId, tx, anchorId, gasTypeTag, nftBaseCoin);
     ISCMove.addObjectToAssetsBag(iscPackageId, tx, anchorId, nftObjectTypeTag, nftAsset);
+
+    migratedObjects.NFTs[nft.objectId] = 1;
+
   }
   
   for (let foundry of assets.foundries) {
@@ -76,9 +86,11 @@ export async function executeMigration(client: IotaClient, iscPackageId: string,
     const foundryTypeArg = foundry.type!.split("<")[1].split(">")[0] || "";
     const foundryOutput = FoundryMigration.unlockFoundry(tx, foundryTypeArg, alias, foundryOutputArg);
     ISCMove.addObjectToAssetsBag(iscPackageId, tx, anchorId, foundry.type!, foundryOutput);
+
+    migratedObjects.Foundries[foundry.type!] = 1;
   }
 
   tx.transferObjects([anchorId, alias], governorAddress);
 
-  return tx;
+  return [tx, migratedObjects];
 }
