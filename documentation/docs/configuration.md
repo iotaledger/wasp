@@ -470,7 +470,7 @@ Example:
 | maxLogsInResult                     | Maximum amount of logs in eth_getLogs result                   | int     | 10000         |
 | websocketRateLimitMessagesPerSecond | The websocket rate limit (messages per second)                 | int     | 20            |
 | websocketRateLimitBurst             | The websocket burst limit                                      | int     | 5             |
-| websocketRateLimitDisabled          | Disable rate limiting on the websocket                         | boolean | false         |
+| websocketRateLimitEnabled           | Enable rate limiting on the websocket                          | boolean | true          |
 | websocketConnectionCleanupDuration  | Defines in which interval stale connections will be cleaned up | string  | "5m"          |
 | websocketClientBlockDuration        | The duration a misbehaving client will be blocked              | string  | "5m"          |
 
@@ -501,7 +501,7 @@ Example:
           "maxLogsInResult": 10000,
           "websocketRateLimitMessagesPerSecond": 20,
           "websocketRateLimitBurst": 5,
-          "websocketRateLimitDisabled": false,
+          "websocketRateLimitEnabled": true,
           "websocketConnectionCleanupDuration": "5m",
           "websocketClientBlockDuration": "5m"
         }
