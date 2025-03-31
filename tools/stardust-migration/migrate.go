@@ -63,10 +63,10 @@ const (
 )
 
 type migrationOptions struct {
-	ReadPrepConfigFromFile bool
-	DisableRefCountCache   bool
-	ContinueMigration      bool
-	DryRun                 bool
+	UseDummyPrepConfig   bool
+	DisableRefCountCache bool
+	ContinueMigration    bool
+	DryRun               bool
 }
 
 func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
@@ -153,7 +153,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 		}
 	}
 
-	migrationConfig := readMigrationConfiguration(!o.ReadPrepConfigFromFile)
+	migrationConfig := readMigrationConfiguration(o.UseDummyPrepConfig)
 
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
@@ -331,7 +331,7 @@ func migrateAllStates(c *cmd.Context) error {
 	continueMigration := c.Bool("continue")
 	disableStateCache := c.Bool("no-state-cache")
 	disableRefcountCache := c.Bool("no-refcount-cache")
-	readPrepConfigFromFile := c.Bool("read-prep-config")
+	useDummyPrepConfig := c.Bool("dummy-prep-config")
 	dryRun := c.Bool("dry-run")
 	printBlockIdx := c.Bool("print-block-idx")
 	debugOpts := debugOptions{
@@ -350,10 +350,10 @@ func migrateAllStates(c *cmd.Context) error {
 	}
 
 	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
-		ReadPrepConfigFromFile: readPrepConfigFromFile,
-		ContinueMigration:      continueMigration,
-		DryRun:                 dryRun,
-		DisableRefCountCache:   disableRefcountCache,
+		UseDummyPrepConfig:   useDummyPrepConfig,
+		ContinueMigration:    continueMigration,
+		DryRun:               dryRun,
+		DisableRefCountCache: disableRefcountCache,
 	})
 	defer flush()
 
