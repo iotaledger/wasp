@@ -4,7 +4,6 @@ import (
 	"os"
 	"strings"
 
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
 	cmd "github.com/urfave/cli/v2"
@@ -15,6 +14,7 @@ import (
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"

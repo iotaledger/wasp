@@ -33,6 +33,7 @@ import (
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
 
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
@@ -61,7 +62,14 @@ const (
 	inMemoryStatesSevingPeriodBlocks = 20000
 )
 
-func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryRun bool) (
+type migrationOptions struct {
+	ReadPrepConfigFromFile bool
+	DisableRefCountCache   bool
+	ContinueMigration      bool
+	DryRun                 bool
+}
+
+func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 	old_indexedstore.IndexedStore,
 	indexedstore.IndexedStore,
 	old_isc.ChainID,
@@ -76,7 +84,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryR
 
 	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
 
-	if !dryRun {
+	if !o.DryRun {
 		if destChainDBDir == "" {
 			log.Fatalf("destination chain database directories must be specified")
 		}
@@ -87,7 +95,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryR
 			log.Fatalf("destination database cannot reside inside source database folder")
 		}
 
-		if continueMigration {
+		if o.ContinueMigration {
 			if _, err := os.Stat(destChainDBDir); os.IsNotExist(err) {
 				log.Fatalf("destination directory does not exist - cannot continue migration: %v", destChainDBDir)
 			}
@@ -105,7 +113,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryR
 				//log.Fatalf("destination directory is not empty - cannot create new db: %v", destChainDBDir)
 			}
 		}
-	} else if continueMigration {
+	} else if o.ContinueMigration {
 		log.Fatalf("cannot continue migration in dry-run mode")
 	}
 
@@ -115,16 +123,37 @@ func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryR
 
 	var destStore indexedstore.IndexedStore
 	var close func()
-	if dryRun {
+	if o.DryRun {
 		destStore = indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 		close = func() {}
-	} else {
+	} else if o.DisableRefCountCache {
 		destKVS := db.Create(destChainDBDir)
 		destStore = indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 		close = func() { destKVS.Close() }
+	} else {
+		destKVS := db.Create(destChainDBDir)
+
+		refCountsStore := mapdb.NewMapDB()
+		hybridStore := NewHybridKVStore(destKVS, map[string]kvstore.KVStore{
+			string([]byte{1, 2}): refCountsStore,
+			string([]byte{1, 3}): refCountsStore,
+		})
+
+		cli.Logf("Loading all refCount data into memory...")
+		n := lo.Must(hybridStore.LoadAllFromDefault())
+		cli.Logf("Loaded %v refCount entries", n)
+
+		destStore = indexedstore.New(state.NewStoreWithUniqueWriteMutex(hybridStore))
+
+		close = func() {
+			cli.Logf("Flushing all refCount data from memory into db...")
+			n := lo.Must(hybridStore.CopyAllToDefault())
+			cli.Logf("Flushed %v refCount entries", n)
+			destKVS.Close()
+		}
 	}
 
-	migrationConfig := readMigrationConfiguration()
+	migrationConfig := readMigrationConfiguration(!o.ReadPrepConfigFromFile)
 
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
@@ -136,7 +165,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, continueMigration, dryR
 	})
 
 	var stateMetadata *transaction.StateMetadata
-	if continueMigration {
+	if o.ContinueMigration {
 		stateMetadata = getStateMetadataByIndex(destStore, lo.Must(destStore.LatestBlockIndex()))
 		stateMetadata.GasCoinObjectID = migrationConfig.GasCoinID
 	} else {
@@ -163,14 +192,12 @@ func getStateMetadataByIndex(store indexedstore.IndexedStore, stateIndex uint32)
 	return stateMetadata
 }
 
-func readMigrationConfiguration() *isc_migration.PrepareConfiguration {
+func readMigrationConfiguration(useDummyMigrationConfig bool) *isc_migration.PrepareConfiguration {
 	// The wasp-cli migration will have two stages, in which it will write a configuration file once. This needs to be loaded here.
 	// For testing, this is not of much relevance but for the real deployment we need real values.
 	// So for now return a more or less random configuration
 
-	const debug = false
-
-	if debug {
+	if useDummyMigrationConfig {
 		config := "{\n  \"DKGCommitteeAddress\": \"0xa9e6c46acc90beec5c5ebe6c7273517861b399496c38d748cd84957eb551515b\",\n  \"ChainOwner\": \"0xf186fb4a9c807311d08b20621c77ae471117f4f4c4ebfd403405c604beafa08e\",\n  \"AssetsBagID\": \"0x564653223f41f7a7a00c56e35cad24c2fb66466b7cdd38d53fd3e58fc53e4e3c\",\n  \"GasCoinID\": \"0xd30c7853ec8486671153bd9f6a3c4c2cfa9a6d88b50018ff73f665876404d809\",\n  \"AnchorID\": \"0x2bc9ef026dfd9536880aace330f0f2c4bd5c7f37bef4b4483ab9ec611f013efb\",\n  \"PackageID\": \"0x7b117bb7cf4f77f33ec527d682647cc0c050de48ce2bbd66f332394bdffcd099\"\n}"
 		var prepareConfig isc_migration.PrepareConfiguration
 		if err := json.Unmarshal([]byte(config), &prepareConfig); err != nil {
@@ -231,7 +258,10 @@ func migrateSingleState(c *cmd.Context) error {
 	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
 	dryRun := c.Bool("dry-run")
 
-	srcStore, destStore, oldChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, false, dryRun)
+	srcStore, destStore, oldChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
+		DryRun:               dryRun,
+		DisableRefCountCache: true,
+	})
 	defer flush()
 
 	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"), slack.MsgOptionIconEmoji(":running:"))
@@ -299,7 +329,9 @@ func migrateAllStates(c *cmd.Context) error {
 	endBlockIndex := uint32(c.Uint64("to-index"))
 	skipLoad := c.Bool("skip-load")
 	continueMigration := c.Bool("continue")
-	disableCache := c.Bool("no-cache")
+	disableStateCache := c.Bool("no-state-cache")
+	disableRefcountCache := c.Bool("no-refcount-cache")
+	readPrepConfigFromFile := c.Bool("read-prep-config")
 	dryRun := c.Bool("dry-run")
 	printBlockIdx := c.Bool("print-block-idx")
 	debugOpts := debugOptions{
@@ -317,12 +349,23 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 	}
 
-	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, continueMigration, dryRun)
+	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
+		ReadPrepConfigFromFile: readPrepConfigFromFile,
+		ContinueMigration:      continueMigration,
+		DryRun:                 dryRun,
+		DisableRefCountCache:   disableRefcountCache,
+	})
 	defer flush()
 
 	bot.Get().PostMessage(":running: *Executing All-States Migration*", slack.MsgOptionIconEmoji(":running:"))
 
-	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c.Context, srcStore, destStore, srcChainDBDir, startBlockIndex, skipLoad, continueMigration, disableCache, debugOpts)
+	oldStateStore, oldState, newState, startBlockIndex := initInMemoryStates(c.Context, srcStore, destStore, srcChainDBDir, inMemoryStatesOptions{
+		StartBlockIndex:   startBlockIndex,
+		SkipLoad:          skipLoad,
+		ContinueMigration: continueMigration,
+		DisableCache:      disableStateCache,
+		Debug:             debugOpts,
+	})
 	if c.Err() != nil {
 		cli.Logf("Interrupted before migration started")
 		return nil
@@ -492,14 +535,20 @@ func migrateAllStates(c *cmd.Context) error {
 	return nil
 }
 
+type inMemoryStatesOptions struct {
+	StartBlockIndex   uint32
+	SkipLoad          bool
+	ContinueMigration bool
+	DisableCache      bool
+	Debug             debugOptions
+}
+
 func initInMemoryStates(
 	ctx context.Context,
 	srcStore old_indexedstore.IndexedStore,
 	destStore indexedstore.IndexedStore,
 	srcChainDBDir string,
-	startBlockIndex uint32,
-	skipLoad, continueMigration, disableCache bool,
-	debugOpts debugOptions,
+	o inMemoryStatesOptions,
 ) (
 	old_dict.Dict,
 	*RecordingKVStore[old_kv.Key, *PrefixKVStore, *PrefixKVStore],
@@ -508,27 +557,27 @@ func initInMemoryStates(
 ) {
 	defer cli.UpdateStatusBarf("")
 
-	if continueMigration {
-		startBlockIndex = lo.Must(destStore.LatestBlockIndex()) + 1
-		cli.Logf("Continuing migration from block index %v", startBlockIndex)
+	if o.ContinueMigration {
+		o.StartBlockIndex = lo.Must(destStore.LatestBlockIndex()) + 1
+		cli.Logf("Continuing migration from block index %v", o.StartBlockIndex)
 	}
 
-	if startBlockIndex != 0 && !disableCache {
-		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, startBlockIndex-1, continueMigration)
+	if o.StartBlockIndex != 0 && !o.DisableCache {
+		savedSrcStateStore, saverSrcState, savedDestState, loaded := tryLoadInMemoryStates(srcChainDBDir, o.StartBlockIndex-1, o.ContinueMigration)
 		if loaded {
-			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", startBlockIndex-1)
-			setDestStateKeyValidator(savedDestState, debugOpts)
-			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), startBlockIndex
+			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", o.StartBlockIndex-1)
+			setDestStateKeyValidator(savedDestState, o.Debug)
+			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), o.StartBlockIndex
 		}
 
-		cli.Logf("In-memory states not found on disk for block %v", startBlockIndex-1)
+		cli.Logf("In-memory states not found on disk for block %v", o.StartBlockIndex-1)
 
-		closestAutoSavedBlockIndex := (startBlockIndex - 2) - (startBlockIndex-2)%inMemoryStatesSevingPeriodBlocks
+		closestAutoSavedBlockIndex := (o.StartBlockIndex - 2) - (o.StartBlockIndex-2)%inMemoryStatesSevingPeriodBlocks
 		cli.Logf("Trying to load auto-saved in-memory states from disk for block %v", closestAutoSavedBlockIndex)
-		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex, continueMigration)
+		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex, o.ContinueMigration)
 		if loaded {
 			cli.Logf("Loaded auto-saved in-memory states from disk: blockIndex = %v", closestAutoSavedBlockIndex)
-			setDestStateKeyValidator(savedDestState, debugOpts)
+			setDestStateKeyValidator(savedDestState, o.Debug)
 			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), closestAutoSavedBlockIndex + 1
 		}
 	}
@@ -544,19 +593,19 @@ func initInMemoryStates(
 
 	// // Hybrid-KV-based state
 	oldStateStore := old_dict.New()
-	oldState := initSrcState(oldStateStore, startBlockIndex != 0)
+	oldState := initSrcState(oldStateStore, o.StartBlockIndex != 0)
 	newState := NewInMemoryKVStore(false)
-	setDestStateKeyValidator(newState, debugOpts)
+	setDestStateKeyValidator(newState, o.Debug)
 
-	if startBlockIndex != 0 {
-		cli.Logf("Real from-index: %d", startBlockIndex)
+	if o.StartBlockIndex != 0 {
+		cli.Logf("Real from-index: %d", o.StartBlockIndex)
 
 		var preloadStateIdx uint32
-		if skipLoad {
+		if o.SkipLoad {
 			cli.Logf("Loading of source state is SKIPPED - resulting database will be INVALID")
 			// Still preloading at least block 0, because it has old initial state.
 		} else {
-			preloadStateIdx = startBlockIndex - 1
+			preloadStateIdx = o.StartBlockIndex - 1
 		}
 
 		cli.Logf("Loading source state at block index %v", preloadStateIdx)
@@ -574,8 +623,8 @@ func initInMemoryStates(
 		cli.Logf("Loaded %v entries into in-memory source state", count)
 	}
 
-	if continueMigration {
-		cli.Logf("Loading destination state at block index %v", startBlockIndex-1)
+	if o.ContinueMigration {
+		cli.Logf("Loading destination state at block index %v", o.StartBlockIndex-1)
 		count := 0
 
 		latestDestState := lo.Must(destStore.LatestState())
@@ -591,12 +640,12 @@ func initInMemoryStates(
 		cli.Logf("Loaded %v entries into in-memory destination state", count)
 	}
 
-	if startBlockIndex != 0 {
+	if o.StartBlockIndex != 0 {
 		cli.Logf("Saving in-memory states to disk to avoid loading them next time")
-		saveInMemoryStates(oldStateStore, newState, startBlockIndex-1, srcChainDBDir)
+		saveInMemoryStates(oldStateStore, newState, o.StartBlockIndex-1, srcChainDBDir)
 	}
 
-	return oldStateStore, NewRecordingKVStore(oldState), NewRecordingKVStore(newState), startBlockIndex
+	return oldStateStore, NewRecordingKVStore(oldState), NewRecordingKVStore(newState), o.StartBlockIndex
 }
 
 func saveInMemoryStates(oldState old_dict.Dict, newState *InMemoryKVStore, lastProcessedBlockIndex uint32, srcChainDBDir string) {

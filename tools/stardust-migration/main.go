@@ -119,8 +119,17 @@ func main() {
 								Usage:   "Continue migration from the last block in the destination database.",
 							},
 							&cmd.BoolFlag{
-								Name:  "no-cache",
+								Name:    "read-prep-config",
+								Aliases: []string{"p"},
+								Usage:   "Read migration preparation config from file. If not set, dummy config is used.",
+							},
+							&cmd.BoolFlag{
+								Name:  "no-state-cache",
 								Usage: "Disable reading pre-saved in-memory states from files. This forces loading entire latest state from DB (may take a lot of time).",
+							},
+							&cmd.BoolFlag{
+								Name:  "no-refcount-cache",
+								Usage: "Disable storing refcounts in memory - they will always diretly written to DB. This may slow down migration.",
 							},
 							&cmd.BoolFlag{
 								Name:    "dry-run",
