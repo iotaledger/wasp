@@ -119,9 +119,9 @@ func main() {
 								Usage:   "Continue migration from the last block in the destination database.",
 							},
 							&cmd.BoolFlag{
-								Name:    "read-prep-config",
+								Name:    "dummy-prep-config",
 								Aliases: []string{"p"},
-								Usage:   "Read migration preparation config from file. If not set, dummy config is used.",
+								Usage:   "Disables reading preparation config from file and instead uses dummy config.",
 							},
 							&cmd.BoolFlag{
 								Name:  "no-state-cache",

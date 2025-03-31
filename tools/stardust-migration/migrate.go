@@ -528,7 +528,7 @@ func migrateAllStates(c *cmd.Context) error {
 		writeMigrationResult(stateMetadata, lastProcessedBlockIndex)
 	}
 
-	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", recentlyBlocksProcessed))
+	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", lastProcessedBlockIndex))
 
 	saveInMemoryStates(oldStateStore, newState.W, lastProcessedBlockIndex, srcChainDBDir)
 
