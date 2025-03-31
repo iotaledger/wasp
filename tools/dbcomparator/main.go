@@ -5,12 +5,14 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"github.com/iotaledger/hive.go/kvstore"
 	hivedb "github.com/iotaledger/hive.go/kvstore/database"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 	"github.com/samber/lo"
@@ -41,10 +43,13 @@ func main() {
 		count++
 		printProgress.Print()
 
-		value2 := lo.Must(db2KVS.Get(key))
-		if value2 == nil {
-			log.Printf("Key %x not found in DB2\n", key)
-			return true
+		value2, err := db2KVS.Get(key)
+		if err != nil {
+			if errors.Is(err, kvstore.ErrKeyNotFound) {
+				log.Printf("Key %x not found in DB2\n", key)
+				return true
+			}
+			panic(err)
 		}
 		if !bytes.Equal(value1, value2) {
 			log.Printf("Key %x has different values in DB1 and DB2: %x != %x", key, value1, value2)
@@ -64,10 +69,13 @@ func main() {
 		count++
 		printProgress.Print()
 
-		value1 := lo.Must(db1KVS.Get(key))
-		if value1 == nil {
-			log.Printf("Key %x not found in DB1\n", key)
-			return true
+		value1, err := db1KVS.Get(key)
+		if err != nil {
+			if errors.Is(err, kvstore.ErrKeyNotFound) {
+				log.Printf("Key %x not found in DB1\n", key)
+				return true
+			}
+			panic(err)
 		}
 		if !bytes.Equal(value1, value2) {
 			log.Printf("Key %x has different values in DB1 and DB2: %x != %x", key, value1, value2)
