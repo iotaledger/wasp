@@ -153,10 +153,12 @@ func initDeployCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
 
-			if header.StatusCode != http.StatusNotFound {
+			if header != nil && header.StatusCode != http.StatusNotFound {
 				fmt.Println("A chain has already been deployed.")
 				return
 			}
+			
+			log.Check(err)
 
 			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
 			packageID := config.GetPackageID()
