@@ -13,23 +13,35 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
 const blockRetentionPeriod = 10000
 
 func OldBlocklogContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
-	return OldReceiptsContentToStr(contractState, firstIndex, lastIndex)
+	receiptsStr := OldReceiptsContentToStr(contractState, firstIndex, lastIndex)
+	cli.DebugLogf("Old receipts preview:\n%v\n", utils.MultilinePreview(receiptsStr))
+
+	return receiptsStr
 }
 
 func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
-	var requestStr strings.Builder
 	var firstAvailableBlockIndex = getFirstAvailableBlockIndex(firstIndex, lastIndex)
-	cli.Logf("Retrieving old receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
+
+	cli.DebugLogf("Retrieving old receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
+	var requestStr strings.Builder
+	reqCount := 0
+	printProgress, done := cli.NewProgressPrinter("receipts", lastIndex-firstAvailableBlockIndex)
+	defer done()
 
 	for blockIndex := firstAvailableBlockIndex; blockIndex < lastIndex; blockIndex++ {
 		_, requests, err := old_blocklog.GetRequestsInBlock(contractState, blockIndex)
 		if err != nil {
+			if strings.Contains(err.Error(), "request not found") {
+				requestStr.WriteString(fmt.Sprintf("Req in block: %v: MISSING\n", blockIndex))
+				continue
+			}
 			panic(err)
 		}
 
@@ -37,8 +49,13 @@ func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, las
 			// 																						^ There is no concept of RequestIndexes anymore, snip it.
 			str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID().OutputID().TransactionID().ToHex(), req.Assets().BaseTokens)
 			requestStr.WriteString(str)
+			reqCount++
 		}
+
+		printProgress()
 	}
+
+	cli.DebugLogf("Retrieved %v requests", reqCount)
 
 	if firstAvailableBlockIndex > 0 {
 		firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
@@ -51,17 +68,28 @@ func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, las
 }
 
 func NewBlocklogContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
-	return NewReceiptsContentToStr(contractState, firstIndex, lastIndex)
+	receiptsPreview := NewReceiptsContentToStr(contractState, firstIndex, lastIndex)
+	cli.DebugLogf("New receipts preview:\n%v\n", utils.MultilinePreview(receiptsPreview))
+
+	return receiptsPreview
 }
 
 func NewReceiptsContentToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
-	var requestStr strings.Builder
 	var firstAvailableBlockIndex = getFirstAvailableBlockIndex(firstIndex, lastIndex)
-	cli.Logf("Retrieving new receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
+
+	cli.DebugLogf("Retrieving new receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
+	var requestStr strings.Builder
+	reqCount := 0
+	printProgress, done := cli.NewProgressPrinter("receipts", lastIndex-firstAvailableBlockIndex)
+	defer done()
 
 	for blockIndex := firstAvailableBlockIndex; blockIndex < lastIndex; blockIndex++ {
 		_, requests, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(blockIndex)
 		if err != nil {
+			if strings.Contains(err.Error(), "request not found") {
+				requestStr.WriteString(fmt.Sprintf("Req in block: %v: MISSING\n", blockIndex))
+				continue
+			}
 			panic(err)
 		}
 
@@ -69,7 +97,11 @@ func NewReceiptsContentToStr(contractState kv.KVStoreReader, firstIndex, lastInd
 			str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID(), req.Assets().BaseTokens()/1000) // Base token conversion 9=>6
 			requestStr.WriteString(str)
 		}
+
+		printProgress()
 	}
+
+	cli.DebugLogf("Retrieved %v requests", reqCount)
 
 	if firstAvailableBlockIndex > 0 {
 		firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
