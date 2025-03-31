@@ -8,11 +8,11 @@ import (
 )
 
 // TestWebsocketContext_RateLimitDisabled ensures no rate limiting occurs when
-// WebsocketRateLimitDisabled is set to true.
+// WebsocketRateLimitEnabled is set to false.
 func TestWebsocketContext_RateLimitDisabled(t *testing.T) {
 	testLogger := log.NewLogger(log.WithName("TestWebsocketContext_RateLimitDisabled"))
 	params := jsonrpc.ParametersDefault()
-	params.WebsocketRateLimitDisabled = true
+	params.WebsocketRateLimitEnabled = false
 
 	wsCtx := newWebsocketContext(testLogger, params)
 

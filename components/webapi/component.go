@@ -303,7 +303,7 @@ func provide(c *dig.Container) error {
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitBurst,
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketConnectionCleanupDuration,
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketClientBlockDuration,
-				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitDisabled,
+				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitEnabled,
 			),
 		)
 
