@@ -8,6 +8,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -43,6 +45,7 @@ func TestAccounts_DepositWithObjects(t *testing.T) {
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
 
+	// Create a 2nd chain just to have a L1 object that we can deposit (the anchor)
 	testAnchor, err := env.ISCMoveClient().StartNewChain(env.Ctx(), &iscmoveclient.StartNewChainRequest{
 		GasBudget:         iotaclient.DefaultGasBudget,
 		Signer:            sender,
@@ -54,13 +57,23 @@ func TestAccounts_DepositWithObjects(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(*testAnchor.ObjectID), sender)
+	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{
+		ObjectID: testAnchor.ObjectID,
+		Options: &iotajsonrpc.IotaObjectDataOptions{
+			ShowType: true,
+		},
+	})
+	require.NoError(t, err)
+	typ, err := iotago.ObjectTypeFromString(*o.Data.Type)
 	require.NoError(t, err)
 
-	rec := ch.LastReceipt()
-	require.NotNil(t, rec)
-	t.Logf("========= receipt: %s", rec)
-	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
+	err = ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(*testAnchor.ObjectID, typ), sender)
+	require.NoError(t, err)
+
+	l2Objsecs := ch.L2Objects(isc.NewAddressAgentID(sender.Address()))
+	require.Len(t, l2Objsecs, 1)
+	require.EqualValues(t, *testAnchor.ObjectID, l2Objsecs[0].A)
+	require.EqualValues(t, typ.String(), l2Objsecs[0].B.String())
 }
 
 // allowance shouldn't allow you to bypass gas fees.

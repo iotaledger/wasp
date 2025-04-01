@@ -279,7 +279,7 @@ func PTBReceiveRequestsAndTransition(
 						Module:        iscmove.AssetsBagModuleName,
 						Function:      "take_asset",
 						TypeArguments: []iotago.TypeTag{assetsBag.Objects[id].TypeTag()},
-						Arguments:     []iotago.Argument{argAssetsBag},
+						Arguments:     []iotago.Argument{argAssetsBag, ptb.MustPure(id)},
 					},
 				},
 			)

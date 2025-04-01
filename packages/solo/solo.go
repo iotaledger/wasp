@@ -657,7 +657,9 @@ func (env *Solo) executePTB(
 		},
 	)
 	require.NoError(env.T, err)
-	require.True(env.T, execRes.Effects.Data.IsSuccess())
+	if !execRes.Effects.Data.IsSuccess() {
+		env.T.Fatalf("PTB failed: %s", execRes.Effects.Data.V1.Status.Error)
+	}
 	return execRes
 }
 

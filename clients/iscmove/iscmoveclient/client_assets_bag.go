@@ -25,37 +25,53 @@ func (c *Client) GetAssetsBagWithBalances(
 			ID:   *assetsBagID,
 			Size: uint64(len(fields.Data)),
 		},
-		Assets: iscmove.Assets{
-			Coins:   make(iscmove.CoinBalances),
-			Objects: make(iscmove.ObjectCollection),
-		},
+		Assets: *iscmove.NewEmptyAssets(),
 	}
 	for _, data := range fields.Data {
-		panic("TODO: handle non-coin objects")
-		resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
-			ObjectID: &data.ObjectID,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
-		})
+		// for coins the "field name" is of type 0x1::ascii::String
+		// for non-coins it's 0x2::object::ID
+		isCoin, err := iotago.IsSameResource(data.Name.Type, "0x1::ascii::String")
 		if err != nil {
-			return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)
+			return nil, fmt.Errorf("failed to check if resource is coin: %w", err)
 		}
 
-		if resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
-			return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
-		}
+		if isCoin {
+			resGetObject, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
+				ObjectID: &data.ObjectID,
+				Options:  &iotajsonrpc.IotaObjectDataOptions{ShowContent: true},
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to call GetObject for Balance: %w", err)
+			}
 
-		var moveBalance iotajsonrpc.MoveBalance
-		err = json.Unmarshal(resGetObject.Data.Content.Data.MoveObject.Fields, &moveBalance)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal fields in Balance: %w", err)
-		}
+			if resGetObject.Data.Content == nil || resGetObject.Data.Content.Data.MoveObject == nil {
+				return nil, fmt.Errorf("content data of AssetBag nil! (%s)", assetsBagID)
+			}
+			var coinBalance struct {
+				ID    *iotajsonrpc.MoveUID
+				Name  *iotago.ResourceType
+				Value *iotajsonrpc.BigInt
+			}
 
-		cointype, err := iotajsonrpc.CoinTypeFromString("0x" + data.Name.Value.(string))
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
-		}
+			err = json.Unmarshal(resGetObject.Data.Content.Data.MoveObject.Fields, &coinBalance)
+			if err != nil {
+				return nil, fmt.Errorf("failed to unmarshal fields in Balance: %w", err)
+			}
 
-		bag.Coins[cointype] = iotajsonrpc.CoinValue(moveBalance.Value.Uint64())
+			cointype, err := iotajsonrpc.CoinTypeFromString("0x" + data.Name.Value.(string))
+			if err != nil {
+				return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
+			}
+
+			bag.Coins[cointype] = iotajsonrpc.CoinValue(coinBalance.Value.Uint64())
+		} else {
+			// non-coin asset (i.e. an "object", nft, etc)
+			typ, err := iotago.ObjectTypeFromString(data.ObjectType)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse ObjectType: %w", err)
+			}
+			bag.Objects[data.ObjectID] = typ
+		}
 	}
 
 	return &bag, nil

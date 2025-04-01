@@ -99,12 +99,6 @@ type Balance struct {
 	LockedBalance   map[EpochId]Uint128 `json:"lockedBalance"`
 }
 
-type MoveBalance struct {
-	ID    *MoveUID
-	Name  *iotago.ResourceType
-	Value *BigInt
-}
-
 type MoveUID struct {
 	ID *iotago.ObjectID `json:"id"`
 }

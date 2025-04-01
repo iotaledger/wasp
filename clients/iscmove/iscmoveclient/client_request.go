@@ -160,6 +160,23 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			tuple.A.CoinType,
 		)
 	}
+
+	// Place the non-coin objects
+	for id, t := range req.Assets.Objects {
+		objRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &id})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get object %s: %w", id, err)
+		}
+		ref := objRes.Data.Ref()
+		ptb = PTBAssetsBagPlaceObject(
+			ptb,
+			req.PackageID,
+			argAssetsBag,
+			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
+			t,
+		)
+	}
+
 	ptb = PTBCreateAndSendRequest(
 		ptb,
 		req.PackageID,
