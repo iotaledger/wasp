@@ -119,8 +119,8 @@ func main() {
 								Usage:   "Continue migration from the last block in the destination database.",
 							},
 							&cmd.BoolFlag{
-								Name:    "dummy-prep-config",
-								Aliases: []string{"p"},
+								Name:    "dummy-chain-owner",
+								Aliases: []string{"o"},
 								Usage:   "Disables reading preparation config from file and instead uses dummy config.",
 							},
 							&cmd.BoolFlag{
@@ -143,6 +143,10 @@ func main() {
 							&cmd.StringFlag{
 								Name:  "debug-dest-key",
 								Usage: "Print stack when destination db key CONTAIN given hex string (works as AND with --debug-dest-value).",
+							},
+							&cmd.StringFlag{
+								Name:  "chain-owner",
+								Usage: "Sets the chain owner address of the to-be migrated chain",
 							},
 							&cmd.StringFlag{
 								Name:  "debug-dest-value",

@@ -67,13 +67,13 @@ type migrationOptions struct {
 	DisableRefCountCache bool
 	ContinueMigration    bool
 	DryRun               bool
+	ChainOwner           *cryptolib.Address
 }
 
 func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 	old_indexedstore.IndexedStore,
 	indexedstore.IndexedStore,
 	old_isc.ChainID,
-	*isc_migration.PrepareConfiguration,
 	*transaction.StateMetadata,
 	func(),
 ) {
@@ -153,8 +153,6 @@ func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 		}
 	}
 
-	migrationConfig := readMigrationConfiguration(o.UseDummyPrepConfig)
-
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
 			Bech32HRP: old_iotago.PrefixMainnet,
@@ -167,12 +165,11 @@ func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 	var stateMetadata *transaction.StateMetadata
 	if o.ContinueMigration {
 		stateMetadata = getStateMetadataByIndex(destStore, lo.Must(destStore.LatestBlockIndex()))
-		stateMetadata.GasCoinObjectID = migrationConfig.GasCoinID
 	} else {
-		stateMetadata = initializeMigrateChainState(destStore, migrationConfig.ChainOwner, *migrationConfig.GasCoinID)
+		stateMetadata = initializeMigrateChainState(destStore, o.ChainOwner, iotago.ObjectID{})
 	}
 
-	return srcStore, destStore, oldChainID, migrationConfig, stateMetadata, close
+	return srcStore, destStore, oldChainID, stateMetadata, close
 }
 
 func initializeMigrateChainState(store indexedstore.IndexedStore, stateController *cryptolib.Address, gasCoinObject iotago.ObjectID) *transaction.StateMetadata {
@@ -190,52 +187,6 @@ func getStateMetadataByIndex(store indexedstore.IndexedStore, stateIndex uint32)
 	stateMetadata.L1Commitment = block.L1Commitment()
 
 	return stateMetadata
-}
-
-func readMigrationConfiguration(useDummyMigrationConfig bool) *isc_migration.PrepareConfiguration {
-	// The wasp-cli migration will have two stages, in which it will write a configuration file once. This needs to be loaded here.
-	// For testing, this is not of much relevance but for the real deployment we need real values.
-	// So for now return a more or less random configuration
-
-	if useDummyMigrationConfig {
-		config := "{\n  \"DKGCommitteeAddress\": \"0xa9e6c46acc90beec5c5ebe6c7273517861b399496c38d748cd84957eb551515b\",\n  \"ChainOwner\": \"0xf186fb4a9c807311d08b20621c77ae471117f4f4c4ebfd403405c604beafa08e\",\n  \"AssetsBagID\": \"0x564653223f41f7a7a00c56e35cad24c2fb66466b7cdd38d53fd3e58fc53e4e3c\",\n  \"GasCoinID\": \"0xd30c7853ec8486671153bd9f6a3c4c2cfa9a6d88b50018ff73f665876404d809\",\n  \"AnchorID\": \"0x2bc9ef026dfd9536880aace330f0f2c4bd5c7f37bef4b4483ab9ec611f013efb\",\n  \"PackageID\": \"0x7b117bb7cf4f77f33ec527d682647cc0c050de48ce2bbd66f332394bdffcd099\"\n}"
-		var prepareConfig isc_migration.PrepareConfiguration
-		if err := json.Unmarshal([]byte(config), &prepareConfig); err != nil {
-			panic(fmt.Errorf("error parsing migration_preparation.json: %v", err))
-		}
-		return &prepareConfig
-
-		// This comes from the default InitChain init params.
-		committeeAddress := lo.Must(cryptolib.AddressFromHex("0x91ac9fb46a35b87a71067f3feb7e227d216ce8fc31e1943fe0a9ba2361df9221"))
-		chainOwnerAddress := lo.Must(cryptolib.AddressFromHex("0xfa82a632d8cd8a36d1c639cedba7104486ab9b340c8e61636c7c00637324358e"))
-
-		// ChainID == AnchorID (This ID is an existing object on Alphanet)
-		chainID := lo.Must(iotago.ObjectIDFromHex("0x6513b7653d9f9dd752c9f9b04bc4cf59561731cafd9414ebaf7d261a8259a01d"))
-		assetsBagID := lo.Must(iotago.ObjectIDFromHex("0x5eb6f701906db963ad697fa34b486470e56f7dadb585cf1f087dacd81c8cc4f8"))
-		gasCoinObjectID := lo.Must(iotago.ObjectIDFromHex("0x54021a41a13efec24b39a237f9f9abe9dd7a334b363e767dd0fc83455e449c02"))
-		packageID := lo.Must(iotago.PackageIDFromHex("0x28076f17da77e3cc7a0a8d5746b3480204fb0aa20afa00f7275bee88fb83eb89"))
-
-		return &isc_migration.PrepareConfiguration{
-			ChainOwner:          chainOwnerAddress,
-			DKGCommitteeAddress: committeeAddress,
-			AnchorID:            chainID,
-			GasCoinID:           gasCoinObjectID,
-			AssetsBagID:         assetsBagID,
-			PackageID:           *packageID,
-		}
-	}
-
-	configBytes, err := os.ReadFile("migration_preparation.json")
-	if err != nil {
-		panic(fmt.Errorf("error reading migration_preparation.json: %v", err))
-	}
-
-	var prepareConfig isc_migration.PrepareConfiguration
-	if err := json.Unmarshal(configBytes, &prepareConfig); err != nil {
-		panic(fmt.Errorf("error parsing migration_preparation.json: %v", err))
-	}
-
-	return &prepareConfig
 }
 
 func writeMigrationResult(metadata *transaction.StateMetadata, stateIndex uint32) error {
@@ -257,10 +208,12 @@ func migrateSingleState(c *cmd.Context) error {
 	destChainDBDir := c.Args().Get(1)
 	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
 	dryRun := c.Bool("dry-run")
+	chainOwner := cryptolib.NewEmptyAddress()
 
-	srcStore, destStore, oldChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
+	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
 		DryRun:               dryRun,
 		DisableRefCountCache: true,
+		ChainOwner:           chainOwner,
 	})
 	defer flush()
 
@@ -287,8 +240,8 @@ func migrateSingleState(c *cmd.Context) error {
 	v := migrations.MigrateRootContract(srcState, stateDraft)
 	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID)
 	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID)
-	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, prepConfig)
-	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, prepConfig)
+	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, chainOwner)
+	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, chainOwner)
 	migrations.MigrateEVMContract(nil, srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
@@ -331,7 +284,7 @@ func migrateAllStates(c *cmd.Context) error {
 	continueMigration := c.Bool("continue")
 	disableStateCache := c.Bool("no-state-cache")
 	disableRefcountCache := c.Bool("no-refcount-cache")
-	useDummyPrepConfig := c.Bool("dummy-prep-config")
+	useDummyChainOwner := c.Bool("dummy-chain-owner")
 	dryRun := c.Bool("dry-run")
 	printBlockIdx := c.Bool("print-block-idx")
 	debugOpts := debugOptions{
@@ -339,6 +292,21 @@ func migrateAllStates(c *cmd.Context) error {
 		DestValueMustContain:  c.String("debug-dest-value"),
 		StackTraceMustContain: c.String("debug-filter-trace"),
 	}
+
+	var chainOwner *cryptolib.Address
+
+	if useDummyChainOwner {
+		chainOwner = cryptolib.NewEmptyAddress()
+	} else {
+		chainOwnerStr := c.String("chain-owner")
+		if chainOwnerStr == "" {
+			panic("--chain-owner is unset! Either set a chain owner or use --dummy-chain-owner")
+		}
+
+		chainOwner = lo.Must(cryptolib.NewAddressFromHexString(chainOwnerStr))
+	}
+
+	cli.Logf("Setting %s as the chain owner of the whole chain!", chainOwner.String())
 
 	if continueMigration {
 		if startBlockIndex != 0 {
@@ -349,11 +317,11 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 	}
 
-	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
-		UseDummyPrepConfig:   useDummyPrepConfig,
+	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
 		ContinueMigration:    continueMigration,
 		DryRun:               dryRun,
 		DisableRefCountCache: disableRefcountCache,
+		ChainOwner:           chainOwner,
 	})
 	defer flush()
 
@@ -433,7 +401,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID)
 		accountsMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, prepareConfig)
+		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, chainOwner)
 		governanceMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateErrorsContract(oldState, newState)
@@ -449,7 +417,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID)
 		accountsMuts += newState.W.MutationsCountDiff()
 
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, prepareConfig)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, chainOwner)
 		blocklogMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateEVMContract(oldMuts, oldStateMutsOnly, newState)

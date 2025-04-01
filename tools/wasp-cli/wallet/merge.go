@@ -18,7 +18,7 @@ func initMergeCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second*1000)
 			defer cancel()
 
-			util.TryMergeAllCoins(ctx)
+			util.MergeAllCoins(ctx, 2)
 		},
 	}
 }

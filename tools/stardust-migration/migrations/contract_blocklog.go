@@ -15,10 +15,10 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/migration"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -46,7 +46,7 @@ func Uint32ToAddress(value uint32) iotago.ObjectID {
 	return addr
 }
 
-func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareConfiguration, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
+func migrateBlockRegistry(blockIndex uint32, chainOwner *cryptolib.Address, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
 	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(blockIndex + 1)
@@ -102,7 +102,7 @@ func migrateBlockRegistry(blockIndex uint32, prepareConfig *migration.PrepareCon
 				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
 				Version:  iotago.SequenceNumber(blockIndex - 1),
 			},
-			Owner: prepareConfig.ChainOwner.AsIotaAddress(),
+			Owner: chainOwner.AsIotaAddress(),
 		}, iotaObjectID)
 		migrationPreviousAnchor = &previousAnchor
 	}
@@ -252,13 +252,13 @@ func migrateGlobalVars(oldState old_kv.KVStoreReader, newState kv.KVStore) uint3
 	return oldBlockIndex
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, prepareConfig *migration.PrepareConfiguration) blocklog.BlockInfo {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, chainOwner *cryptolib.Address) blocklog.BlockInfo {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
 	//printWarningsForUnprocessableRequests(oldContractState)
 	blockIndex := migrateGlobalVars(oldChainState, newChainState)
-	blockInfo := migrateBlockRegistry(blockIndex, prepareConfig, stateMetadata, oldContractState, newContractState)
+	blockInfo := migrateBlockRegistry(blockIndex, chainOwner, stateMetadata, oldContractState, newContractState)
 	migrateRequestLookupIndex(oldContractState, newContractState)
 	migrateRequestReceipts(oldContractState, newContractState, oldChainID)
 

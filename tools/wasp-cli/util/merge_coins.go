@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func TryMergeAllCoins(ctx context.Context) {
+func MergeAllCoins(ctx context.Context, limit int) {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
@@ -30,19 +30,23 @@ func TryMergeAllCoins(ctx context.Context) {
 	})
 
 	// For now a hard coded limit where it would start to make sense to merge the coins again.
-	if len(baseCoins) < 5 {
+	if len(baseCoins) < limit {
 		return
 	}
 
 	fmt.Println("Doing automatic merge of coin objects..")
 
-	// Merge all coins from the cursor except the first two, to have two coins ready (moving funds and gas)
-	coinsToMerge := make([]*iotago.ObjectRef, len(baseCoins)-2)
+	// Merge all coins except the 0th one, to have one as the destination.
+	coinsToMerge := make([]*iotago.ObjectRef, len(baseCoins)-1)
 
-	for i := 2; i < len(baseCoins); i++ {
-		coinsToMerge[i-2] = baseCoins[i].Ref()
+	for i := 1; i < len(baseCoins); i++ {
+		coinsToMerge[i-1] = baseCoins[i].Ref()
 	}
 
 	_, err = client.MergeCoinsAndExecute(ctx, cryptolib.SignerToIotaSigner(w), baseCoins[0].Ref(), coinsToMerge, iotaclient.DefaultGasBudget)
 	log.Check(err)
+}
+
+func TryMergeAllCoins(ctx context.Context) {
+	MergeAllCoins(ctx, 5)
 }

@@ -9,8 +9,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/migration"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -27,7 +25,7 @@ func MigrateGovernanceContract(
 	oldChainState old_kv.KVStoreReader,
 	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
-	prepareConfig *migration.PrepareConfiguration,
+	chainOwner *cryptolib.Address,
 ) {
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
@@ -35,7 +33,7 @@ func MigrateGovernanceContract(
 
 	cli.DebugLog("Migrating governance contract\n")
 
-	migrateChainOwnerID(oldChainState, newContractState, oldChainID, prepareConfig) // WARNING: oldChainState is specifically used here
+	migrateChainOwnerID(oldChainState, newContractState, oldChainID, chainOwner) // WARNING: oldChainState is specifically used here
 	migrateChainOwnerIDDelegetaed(oldContractState, newContractState, oldChainID)
 	migratePayoutAgent(oldContractState, newContractState, oldChainID)
 	migrateGasFeePolicy(oldContractState, newContractState)
@@ -54,10 +52,10 @@ func MigrateGovernanceContract(
 	cli.DebugLog("Migrated governance contract\n")
 }
 
-func migrateChainOwnerID(oldChainState old_kv.KVStoreReader, newContractState kv.KVStore, oldChainID old_isc.ChainID, config *migration.PrepareConfiguration) {
+func migrateChainOwnerID(oldChainState old_kv.KVStoreReader, newContractState kv.KVStore, oldChainID old_isc.ChainID, chainOwner *cryptolib.Address) {
 	cli.DebugLog("Migrating chain owner...\n")
 
-	governance.NewStateWriter(newContractState).SetChainOwnerID(isc.NewAddressAgentID(config.ChainOwner))
+	governance.NewStateWriter(newContractState).SetChainOwnerID(isc.NewAddressAgentID(chainOwner))
 
 	cli.DebugLog("Migrated chain owner\n")
 }
