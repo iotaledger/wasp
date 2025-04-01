@@ -128,8 +128,8 @@ func main() {
 								Usage: "Disable reading pre-saved in-memory states from files. This forces loading entire latest state from DB (may take a lot of time).",
 							},
 							&cmd.BoolFlag{
-								Name:  "no-refcount-cache",
-								Usage: "Disable storing refcounts in memory - they will always diretly written to DB. This may slow down migration.",
+								Name:  "refcount-cache",
+								Usage: "Enable storing refcounts in memory. Otherwise they will always be directly written to DB. This will speed up the migration, but will use huge amount of memory.",
 							},
 							&cmd.BoolFlag{
 								Name:    "dry-run",

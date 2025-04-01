@@ -126,7 +126,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 	if o.DryRun {
 		destStore = indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 		close = func() {}
-	} else if o.DisableRefCountCache {
+	} else if !o.EnableRefCountCache {
 		destKVS := db.Create(destChainDBDir)
 		destStore = indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
 		close = func() { destKVS.Close() }
@@ -210,9 +210,9 @@ func migrateSingleState(c *cmd.Context) error {
 	dryRun := c.Bool("dry-run")
 	chainOwner := cryptolib.NewEmptyAddress()
 
-	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
-		DryRun:               dryRun,
-		DisableRefCountCache: true,
+	srcStore, destStore, oldChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
+		DryRun:              dryRun,
+		EnableRefCountCache: true,
 		ChainOwner:           chainOwner,
 	})
 	defer flush()
@@ -283,7 +283,7 @@ func migrateAllStates(c *cmd.Context) error {
 	skipLoad := c.Bool("skip-load")
 	continueMigration := c.Bool("continue")
 	disableStateCache := c.Bool("no-state-cache")
-	disableRefcountCache := c.Bool("no-refcount-cache")
+	enableRefcountCache := c.Bool("refcount-cache")
 	useDummyChainOwner := c.Bool("dummy-chain-owner")
 	dryRun := c.Bool("dry-run")
 	printBlockIdx := c.Bool("print-block-idx")
@@ -317,10 +317,11 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 	}
 
-	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
-		ContinueMigration:    continueMigration,
-		DryRun:               dryRun,
-		DisableRefCountCache: disableRefcountCache,
+	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
+		UseDummyPrepConfig:  useDummyPrepConfig,
+		ContinueMigration:   continueMigration,
+		DryRun:              dryRun,
+		EnableRefCountCache: enableRefcountCache,
 		ChainOwner:           chainOwner,
 	})
 	defer flush()
