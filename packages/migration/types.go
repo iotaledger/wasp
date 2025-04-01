@@ -11,8 +11,6 @@ import (
 type PrepareConfiguration struct {
 	DKGCommitteeAddress *cryptolib.Address
 	ChainOwner          *cryptolib.Address
-	AssetsBagID         *iotago.ObjectID
-	GasCoinID           *iotago.ObjectID
 	AnchorID            *iotago.ObjectID
 	PackageID           iotago.PackageID
 	L1ApiUrl            string

@@ -146,7 +146,6 @@ func (l *HWLedger) SignTransaction(path string, txDataBytes []byte) (*SignTransa
 
 	// Combine hash size and raw transaction
 	payloadTxn := slices.Concat(hashSize, txDataBytes)
-	l.log("Payload Txn", payloadTxn)
 
 	// Send chunks and get signature
 	signature, err := l.sendChunks(cla, ins, p1, p2, [][]byte{payloadTxn, bip32KeyPayload})

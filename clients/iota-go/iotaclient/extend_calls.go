@@ -298,20 +298,17 @@ func (c *Client) MergeCoinsAndExecute(
 	ptb.Command(
 		iotago.Command{
 			MergeCoins: &iotago.ProgrammableMergeCoins{
-				Destination: ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: destinationCoin}),
+				Destination: iotago.GetArgumentGasCoin(),
 				Sources:     argCoins,
 			},
 		},
 	)
 	pt := ptb.Finish()
-	gasPayments, err := c.FindCoinsForGasPayment(ctx, owner.Address(), pt, DefaultGasPrice, DefaultGasBudget)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find gas payment: %w", err)
-	}
+
 	tx := iotago.NewProgrammable(
 		owner.Address(),
 		pt,
-		gasPayments,
+		[]*iotago.ObjectRef{destinationCoin},
 		DefaultGasBudget,
 		DefaultGasPrice,
 	)
