@@ -15,6 +15,7 @@ require (
 	github.com/Yiling-J/theine-go v0.6.1
 	github.com/btcsuite/btcd/btcutil v1.1.6
 	github.com/bygui86/multi-profile/v2 v2.1.0
+	github.com/coder/websocket v1.8.12
 	github.com/dgraph-io/ristretto v0.2.0
 	github.com/dgryski/go-clockpro v0.0.0-20140817124034-edc6d3eeb96e
 	github.com/dustin/go-humanize v1.0.1
@@ -65,7 +66,6 @@ require (
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	golang.org/x/net v0.37.0
 	golang.org/x/time v0.11.0
-	nhooyr.io/websocket v1.8.17
 	pgregory.net/rapid v1.2.0
 )
 
@@ -259,5 +259,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.4.0 // indirect
+	nhooyr.io/websocket v1.8.17 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )

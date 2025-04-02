@@ -42,6 +42,7 @@ require (
 	github.com/btcsuite/btcd/btcutil v1.1.6 // indirect
 	github.com/bygui86/multi-profile/v2 v2.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/coder/websocket v1.8.12 // indirect
 	github.com/consensys/bavard v0.1.30 // indirect
 	github.com/consensys/gnark-crypto v0.16.0 // indirect
 	github.com/containerd/cgroups v1.1.0 // indirect
@@ -230,6 +231,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.4.0 // indirect
-	nhooyr.io/websocket v1.8.17 // indirect
 	rsc.io/tmplfunc v0.0.3 // indirect
 )
