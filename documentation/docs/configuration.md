@@ -464,14 +464,15 @@ Example:
 
 ### <a id="webapi_limits_jsonrpc"></a> Jsonrpc
 
-| Name                                | Description                                                    | Type   | Default value |
-| ----------------------------------- | -------------------------------------------------------------- | ------ | ------------- |
-| maxBlocksInLogsFilterRange          | Maximum amount of blocks in eth_getLogs filter range           | int    | 1000          |
-| maxLogsInResult                     | Maximum amount of logs in eth_getLogs result                   | int    | 10000         |
-| websocketRateLimitMessagesPerSecond | The websocket rate limit (messages per second)                 | int    | 20            |
-| websocketRateLimitBurst             | The websocket burst limit                                      | int    | 5             |
-| websocketConnectionCleanupDuration  | Defines in which interval stale connections will be cleaned up | string | "5m"          |
-| websocketClientBlockDuration        | The duration a misbehaving client will be blocked              | string | "5m"          |
+| Name                                | Description                                                    | Type    | Default value |
+| ----------------------------------- | -------------------------------------------------------------- | ------- | ------------- |
+| maxBlocksInLogsFilterRange          | Maximum amount of blocks in eth_getLogs filter range           | int     | 1000          |
+| maxLogsInResult                     | Maximum amount of logs in eth_getLogs result                   | int     | 10000         |
+| websocketRateLimitMessagesPerSecond | The websocket rate limit (messages per second)                 | int     | 20            |
+| websocketRateLimitBurst             | The websocket burst limit                                      | int     | 5             |
+| websocketRateLimitEnabled           | Enable rate limiting on the websocket                          | boolean | true          |
+| websocketConnectionCleanupDuration  | Defines in which interval stale connections will be cleaned up | string  | "5m"          |
+| websocketClientBlockDuration        | The duration a misbehaving client will be blocked              | string  | "5m"          |
 
 Example:
 
@@ -500,6 +501,7 @@ Example:
           "maxLogsInResult": 10000,
           "websocketRateLimitMessagesPerSecond": 20,
           "websocketRateLimitBurst": 5,
+          "websocketRateLimitEnabled": true,
           "websocketConnectionCleanupDuration": "5m",
           "websocketClientBlockDuration": "5m"
         }
