@@ -7,6 +7,7 @@ import (
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
@@ -23,7 +24,10 @@ func OldBlocklogContractContentToStr(contractState old_kv.KVStoreReader, chainID
 	receiptsStr := OldReceiptsContentToStr(contractState, firstIndex, lastIndex)
 	cli.DebugLogf("Old receipts preview:\n%v\n", utils.MultilinePreview(receiptsStr))
 
-	return receiptsStr
+	blockRegistryStr := oldBlockRegistryToStr(contractState, firstIndex, lastIndex)
+	cli.DebugLogf("Old block registry preview:\n%v\n", utils.MultilinePreview(blockRegistryStr))
+
+	return receiptsStr + "\n" + blockRegistryStr
 }
 
 func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
@@ -60,18 +64,27 @@ func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, las
 	if firstAvailableBlockIndex > 0 {
 		firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
 		_, _, err := old_blocklog.GetRequestsInBlock(contractState, firstUnavailableBlockIndex)
-		requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): %v\n",
-			firstUnavailableBlockIndex, lo.Ternary(err == nil, "AVAILABLE", "unavailable")))
+		if err == nil {
+			panic(fmt.Sprintf("Block %v should be unavailable, but it is available", firstUnavailableBlockIndex))
+		}
+		if !strings.Contains(err.Error(), "request not found") {
+			panic(err)
+		}
+
+		requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): unavailable\n", firstUnavailableBlockIndex))
 	}
 
 	return requestStr.String()
 }
 
 func NewBlocklogContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
-	receiptsPreview := NewReceiptsContentToStr(contractState, firstIndex, lastIndex)
-	cli.DebugLogf("New receipts preview:\n%v\n", utils.MultilinePreview(receiptsPreview))
+	receiptsStr := NewReceiptsContentToStr(contractState, firstIndex, lastIndex)
+	cli.DebugLogf("New receipts preview:\n%v\n", utils.MultilinePreview(receiptsStr))
 
-	return receiptsPreview
+	blockRegistryStr := newBlockRegistryToStr(contractState, firstIndex, lastIndex)
+	cli.DebugLogf("New block registry preview:\n%v\n", utils.MultilinePreview(blockRegistryStr))
+
+	return receiptsStr + "\n" + blockRegistryStr
 }
 
 func NewReceiptsContentToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
@@ -96,6 +109,7 @@ func NewReceiptsContentToStr(contractState kv.KVStoreReader, firstIndex, lastInd
 		for _, req := range requests {
 			str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID(), req.Assets().BaseTokens()/1000) // Base token conversion 9=>6
 			requestStr.WriteString(str)
+			reqCount++
 		}
 
 		printProgress()
@@ -119,4 +133,74 @@ func getFirstAvailableBlockIndex(firstIndexHint uint32, lastIndex uint32) uint32
 		return 0
 	}
 	return max(lastIndex-blockRetentionPeriod+1, firstIndexHint)
+}
+
+func oldBlockRegistryToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
+	firstAvailBlockIndex := getFirstAvailableBlockIndex(firstIndex, lastIndex)
+
+	cli.DebugLogf("Retrieving old blocks: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
+	blocks := old_collections.NewArrayReadOnly(contractState, old_blocklog.PrefixBlockRegistry)
+	var blocksStr strings.Builder
+	printProgress, done := cli.NewProgressPrinter("blocks", lastIndex-firstAvailBlockIndex)
+	defer done()
+
+	blocksStr.WriteString(fmt.Sprintf("Block registry virtual len: %v\n", blocks.Len()))
+
+	for blockIndex := firstAvailBlockIndex; blockIndex < lastIndex; blockIndex++ {
+		blockBytes := blocks.GetAt(blockIndex)
+		if blockBytes == nil {
+			blocksStr.WriteString(fmt.Sprintf("Block %v: MISSING\n", blockIndex))
+			continue
+		}
+
+		block := lo.Must(old_blocklog.BlockInfoFromBytes(blockBytes))
+		blocksStr.WriteString(fmt.Sprintf("Block %v: %s\n", blockIndex, oldBlockToStr(block)))
+		printProgress()
+	}
+
+	cli.DebugLogf("Retrieved %v blocks", lastIndex-firstAvailBlockIndex)
+	if firstAvailBlockIndex > 0 {
+		firstUnavailableBlockIndex := firstAvailBlockIndex - 1
+		blockBytes := blocks.GetAt(firstUnavailableBlockIndex)
+		if blockBytes != nil {
+			panic(fmt.Sprintf("Block %v should be unavailable, but it is available", firstUnavailableBlockIndex))
+		}
+		blocksStr.WriteString(fmt.Sprintf("Block (last pruned): %v: unavailable\n", firstUnavailableBlockIndex))
+	}
+
+	return blocksStr.String()
+}
+
+func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
+	firstAvailBlockIndex := getFirstAvailableBlockIndex(firstIndex, lastIndex)
+
+	cli.DebugLogf("Retrieving new blocks: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
+	blocks := blocklog.NewStateReader(contractState).GetBlockRegistry()
+	var blocksStr strings.Builder
+	printProgress, done := cli.NewProgressPrinter("blocks", lastIndex-firstAvailBlockIndex)
+	defer done()
+
+	blocksStr.WriteString(fmt.Sprintf("Block registry virtual len: %v\n", blocks.Len()))
+
+	for blockIndex := firstAvailBlockIndex; blockIndex < lastIndex; blockIndex++ {
+		blockBytes := blocks.GetAt(blockIndex)
+		if blockBytes == nil {
+			blocksStr.WriteString(fmt.Sprintf("Block %v: MISSING\n", blockIndex))
+			continue
+		}
+
+		block := lo.Must(blocklog.BlockInfoFromBytes(blockBytes))
+		blocksStr.WriteString(fmt.Sprintf("Block %v: %s\n", blockIndex, newBlockToStr(block)))
+		printProgress()
+	}
+
+	cli.DebugLogf("Retrieved %v blocks", lastIndex-firstAvailBlockIndex)
+	if firstAvailBlockIndex > 0 {
+		firstUnavailableBlockIndex := firstAvailBlockIndex - 1
+		blockBytes := blocks.GetAt(firstUnavailableBlockIndex)
+		blocksStr.WriteString(fmt.Sprintf("Block (last pruned): %v: %v\n",
+			firstUnavailableBlockIndex, lo.Ternary(blockBytes == nil, "unavailable", "AVAILABLE")))
+	}
+
+	return blocksStr.String()
 }

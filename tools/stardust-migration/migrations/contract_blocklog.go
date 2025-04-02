@@ -99,7 +99,7 @@ func migrateBlockRegistry(blockIndex uint32, chainOwner *cryptolib.Address, stat
 			},
 			ObjectRef: iotago.ObjectRef{
 				ObjectID: &iotaObjectID,
-				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
+				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")), // TODO: fix this dummy ID
 				Version:  iotago.SequenceNumber(blockIndex - 1),
 			},
 			Owner: chainOwner.AsIotaAddress(),

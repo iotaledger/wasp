@@ -4,8 +4,12 @@ import (
 	"fmt"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
@@ -41,4 +45,47 @@ func newAgentIDToStr(agentID isc.AgentID) string {
 	default:
 		panic(fmt.Sprintf("Unknown agent ID kind: %v/%T = %v", agentID.Kind(), agentID, agentID))
 	}
+}
+
+func oldBlockToStr(block *old_blocklog.BlockInfo) string {
+	anchorPresent := block.PreviousAliasOutput != nil &&
+		block.PreviousAliasOutput.GetAliasOutput() != nil
+
+	return fmt.Sprintf("v=%v, i=%v, t=%v, tr=%v, sr=%v, or=%v, an=%v, gb=%v, gfc=%v",
+		allmigrations.SchemaVersionMigratedRebased, // Version is not migrated, so we just set here expected new value
+		block.BlockIndex(),
+		block.Timestamp.Unix(),
+		block.TotalRequests,
+		block.NumSuccessfulRequests,
+		block.NumOffLedgerRequests,
+		lo.Ternary(anchorPresent, "present", "missing"),
+		block.GasBurned,
+		block.GasFeeCharged,
+	)
+}
+
+func newBlockToStr(block *blocklog.BlockInfo) string {
+	// TODO: We do not validate actual values of the anchor here. Should we?
+	anchorPresent := block.PreviousAnchor != nil &&
+		block.PreviousAnchor.Anchor() != nil &&
+		block.PreviousAnchor.Anchor().ObjectID != nil &&
+		block.PreviousAnchor.Anchor().Digest != nil
+
+	return fmt.Sprintf("v=%v, i=%v, t=%v, tr=%v, sr=%v, or=%v, an=%v, gb=%v, gfc=%v",
+		block.SchemaVersion,
+		block.BlockIndex,
+		block.Timestamp.Unix(),
+		block.TotalRequests,
+		block.NumSuccessfulRequests,
+		block.NumOffLedgerRequests,
+		lo.Ternary(anchorPresent, "present", "missing"),
+		// Not adding L1 params here although they are part of new block.
+		// TODO: Should we add it here?
+		block.GasBurned,
+		convertNewBaseBalanceToOldBaseBalance(block.GasFeeCharged), // reverse conversion
+	)
+}
+
+func convertNewBaseBalanceToOldBaseBalance(v coin.Value) uint64 {
+	return uint64(v) / 1000
 }
