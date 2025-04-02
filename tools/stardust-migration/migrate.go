@@ -63,11 +63,10 @@ const (
 )
 
 type migrationOptions struct {
-	UseDummyPrepConfig   bool
-	DisableRefCountCache bool
-	ContinueMigration    bool
-	DryRun               bool
-	ChainOwner           *cryptolib.Address
+	EnableRefCountCache bool
+	ContinueMigration   bool
+	DryRun              bool
+	ChainOwner          *cryptolib.Address
 }
 
 func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
@@ -210,10 +209,10 @@ func migrateSingleState(c *cmd.Context) error {
 	dryRun := c.Bool("dry-run")
 	chainOwner := cryptolib.NewEmptyAddress()
 
-	srcStore, destStore, oldChainID, prepConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
+	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
 		DryRun:              dryRun,
 		EnableRefCountCache: true,
-		ChainOwner:           chainOwner,
+		ChainOwner:          chainOwner,
 	})
 	defer flush()
 
@@ -317,12 +316,11 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 	}
 
-	srcStore, destStore, oldChainID, prepareConfig, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
-		UseDummyPrepConfig:  useDummyPrepConfig,
+	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
 		ContinueMigration:   continueMigration,
 		DryRun:              dryRun,
 		EnableRefCountCache: enableRefcountCache,
-		ChainOwner:           chainOwner,
+		ChainOwner:          chainOwner,
 	})
 	defer flush()
 
