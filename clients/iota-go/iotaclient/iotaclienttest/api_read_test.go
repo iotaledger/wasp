@@ -2,10 +2,10 @@ package iotaclienttest
 
 import (
 	"context"
+	"encoding/base64"
 	"strconv"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients"
@@ -152,8 +152,12 @@ func TestGetEvents(t *testing.T) {
 		require.Equal(t, targetStructTag.TypeParams[1].Struct.Module, event.Type.TypeParams[1].Struct.Module)
 		require.Equal(t, targetStructTag.TypeParams[1].Struct.Name, event.Type.TypeParams[1].Struct.Name)
 		require.Equal(t, targetStructTag.TypeParams[1].Struct.TypeParams, event.Type.TypeParams[1].Struct.TypeParams)
-		targetBcsBase85 := base58.Decode("yNS5iDS3Gvdo3DhXdtFpuTS12RrSiNkrvjcm2rejntCuqWjF1DdwnHgjowdczAkR18LQHcBqbX2tWL76rys9rTCzG6vm7Tg34yqUkpFSMqNkcS6cfWbN8SdVsxn5g4ZEQotdBgEFn8yN7hVZ7P1MKvMwWf")
-		require.Equal(t, targetBcsBase85, event.Bcs.Data())
+		targetBcsBase64, err := base64.StdEncoding.DecodeString(
+			"RAW1DXkf0zRnVOgXGqq2vC7SbCxG790DPBSzCuUHrDObF2oAAAAAgDaEAkYyhy8PAPR7xPX" +
+				"+lV7LBzuZSXWnlDlx1Jfi/kERQQnEXcSfTZAuAHT+QdwAAAAAdP5B3AAAALycEAAAAAAAqXmyiI8BAAA=",
+		)
+		require.NoError(t, err)
+		require.Equal(t, targetBcsBase64, event.Bcs.Data())
 	}
 }
 
