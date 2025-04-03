@@ -120,7 +120,7 @@ func PTBTakeAndTransferAssets(
 					TypeArguments: []iotago.TypeTag{assets.Objects[id].TypeTag()},
 					Arguments: []iotago.Argument{
 						argAssets,
-						ptb.MustPure(id),
+						ptb.MustForceSeparatePure(id),
 					},
 				},
 			},

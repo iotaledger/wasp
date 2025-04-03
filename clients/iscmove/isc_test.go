@@ -83,10 +83,7 @@ func TestUnmarshalInvalidRequestBCS(t *testing.T) {
 			ID: *iotatest.RandomAddress(),
 			Value: &iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmovetest.RandomAssetsBag(),
-				Assets: iscmove.Assets{
-					Coins:   make(iscmove.CoinBalances),
-					Objects: map[iotago.ObjectID]iotago.ObjectType{},
-				},
+				Assets:    *iscmove.NewEmptyAssets(),
 			},
 		},
 		Message: *iscmovetest.RandomMessage(),

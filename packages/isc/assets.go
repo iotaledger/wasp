@@ -428,10 +428,7 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBagWithBalances {
 	ret := &iscmove.AssetsBagWithBalances{
 		AssetsBag: *b,
-		Assets: iscmove.Assets{
-			Coins:   make(iscmove.CoinBalances),
-			Objects: make(iscmove.ObjectCollection),
-		},
+		Assets:    *iscmove.NewEmptyAssets(),
 	}
 	for cointype, coinval := range a.Coins {
 		ret.Coins[iotajsonrpc.CoinType(cointype.String())] = iotajsonrpc.CoinValue(coinval)

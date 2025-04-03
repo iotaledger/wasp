@@ -111,10 +111,7 @@ func makeOnLedgerRequest(
 				Function: uint32(msg.Target.EntryPoint),
 				Args:     msg.Params,
 			},
-			Allowance: iscmove.Assets{
-				Coins:   make(iscmove.CoinBalances),
-				Objects: make(iscmove.ObjectCollection),
-			},
+			Allowance: *iscmove.NewEmptyAssets(),
 			GasBudget: 1000,
 		},
 	}
