@@ -10,7 +10,7 @@ import "./ISCPrivileged.sol";
 
 /**
  * @title ERC721NFTs
- * @dev This contract represents the ERC721 contract for the "global" collection of native NFTs on the chains L1 account.
+ * @notice This contract represents the ERC721 contract for the "global" collection of native NFTs on the chains L1 account.
  */
 contract ERC721NFTs {
     // is IERC721Metadata, IERC721, IERC165
@@ -23,7 +23,7 @@ contract ERC721NFTs {
     mapping(address => mapping(address => bool)) private _operatorApprovals;
 
     /**
-     * @dev Emitted when a token is transferred from one address to another.
+     * @notice Emitted when a token is transferred from one address to another.
      *
      * @param from The address transferring the token.
      * @param to The address receiving the token.
@@ -36,7 +36,7 @@ contract ERC721NFTs {
     );
 
     /**
-     * @dev Emitted when the approval of a token is changed or reaffirmed.
+     * @notice Emitted when the approval of a token is changed or reaffirmed.
      *
      * @param owner The owner of the token.
      * @param approved The new approved address.
@@ -49,7 +49,7 @@ contract ERC721NFTs {
     );
 
     /**
-     * @dev Emitted when operator gets the allowance from owner.
+     * @notice Emitted when operator gets the allowance from owner.
      *
      * @param owner The owner of the token.
      * @param operator The operator to get the approval.
@@ -77,7 +77,7 @@ contract ERC721NFTs {
     // }
 
     /**
-     * @dev Returns the number of tokens owned by a specific address.
+     * @notice Returns the number of tokens owned by a specific address.
      * @param owner The address to query the balance of.
      * @return The balance of the specified address.
      */
@@ -86,7 +86,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Returns the owner of the specified token ID.
+     * @notice Returns the owner of the specified token ID.
      * @param tokenId The ID of the token to query the owner for.
      * @return The address of the owner of the token.
      */
@@ -107,7 +107,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Safely transfers an ERC721 token from one address to another.
+     * @notice Safely transfers an ERC721 token from one address to another.
      *
      * Emits a `Transfer` event.
      *
@@ -133,7 +133,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Safely transfers an ERC721 token from one address to another.
+     * @notice Safely transfers an ERC721 token from one address to another.
      *
      * Emits a `Transfer` event.
      *
@@ -155,7 +155,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Transfers an ERC721 token from one address to another.
+     * @notice Transfers an ERC721 token from one address to another.
      * Emits a {Transfer} event.
      *
      * Requirements:
@@ -175,7 +175,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Approves another address to transfer the ownership of a specific token.
+     * @notice Approves another address to transfer the ownership of a specific token.
      * @param approved The address to be approved for token transfer.
      * @param tokenId The ID of the token to be approved for transfer.
      * @notice Only the owner of the token or an approved operator can call this function.
@@ -190,7 +190,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Sets or revokes approval for the given operator to manage all of the caller's tokens.
+     * @notice Sets or revokes approval for the given operator to manage all of the caller's tokens.
      * @param operator The address of the operator to set approval for.
      * @param approved A boolean indicating whether to approve or revoke the operator's approval.
      */
@@ -201,7 +201,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Returns the address that has been approved to transfer the ownership of the specified token.
+     * @notice Returns the address that has been approved to transfer the ownership of the specified token.
      * @param tokenId The ID of the token.
      * @return The address approved to transfer the ownership of the token.
      */
@@ -211,7 +211,7 @@ contract ERC721NFTs {
     }
 
     /**
-     * @dev Checks if an operator is approved to manage all of the owner's tokens.
+     * @notice Checks if an operator is approved to manage all of the owner's tokens.
      * @param owner The address of the token owner.
      * @param operator The address of the operator.
      * @return A boolean value indicating whether the operator is approved for all tokens of the owner.
@@ -260,7 +260,7 @@ contract ERC721NFTs {
     bytes4 private constant _INTERFACE_ID_ERC165 = 0x01ffc9a7;
 
     /**
-     * @dev Checks if a contract supports a given interface.
+     * @notice Checks if a contract supports a given interface.
      * @param interfaceID The interface identifier.
      * @return A boolean value indicating whether the contract supports the interface.
      */
