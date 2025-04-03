@@ -126,10 +126,12 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{
-				iotajsonrpc.IotaCoinType:                                111,
-				iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"): 222,
-			}},
+			Allowance: iscmove.Assets{
+				Coins: iscmove.CoinBalances{
+					iotajsonrpc.IotaCoinType:                                111,
+					iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"): 222,
+				},
+				Objects: make(iscmove.ObjectCollection)},
 			GasBudget: 1000,
 		},
 	}
@@ -168,7 +170,10 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000}},
+			Allowance: iscmove.Assets{
+				Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000},
+				Objects: make(iscmove.ObjectCollection),
+			},
 			GasBudget: 100000,
 		},
 	}

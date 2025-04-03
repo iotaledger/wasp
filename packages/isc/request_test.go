@@ -114,7 +114,8 @@ func TestRequestDataSerialization(t *testing.T) {
 					Args:     [][]byte{},
 				},
 				Allowance: iscmove.Assets{
-					Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
+					Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
+					Objects: make(iscmove.ObjectCollection),
 				},
 				GasBudget: 1000,
 			},

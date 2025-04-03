@@ -89,7 +89,8 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 				},
 			},
 			Allowance: iscmove.Assets{
-				Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 1},
+				Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 1},
+				Objects: make(iscmove.ObjectCollection),
 			},
 			GasBudget: 1000,
 		},

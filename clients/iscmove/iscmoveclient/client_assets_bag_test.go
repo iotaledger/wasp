@@ -461,6 +461,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 					iotajsonrpc.CoinType("0x1::iota::IOTA"):    11,
 					iotajsonrpc.CoinType("0xa::testa::TEST_A"): 12,
 				},
+				Objects: make(iscmove.ObjectCollection),
 			},
 			GasPrice:  iotaclient.DefaultGasPrice,
 			GasBudget: iotaclient.DefaultGasBudget,

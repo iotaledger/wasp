@@ -309,7 +309,7 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	require.True(t, total.Equals(isc.NewCoinBalances()))
 
 	agentID1 := isctest.NewRandomAgentID()
-	obj1 := isc.NewIotaObject(iotago.ObjectID{123}, iotago.MustTypeFromString("0x1::ABC"))
+	obj1 := isc.NewIotaObject(iotago.ObjectID{123}, iotago.MustTypeFromString("0x1::abc::ABC"))
 	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, obj1)
 	// object is credited
 	user1Objects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
@@ -339,7 +339,7 @@ func testCreditDebitObject1(t *testing.T, v isc.SchemaVersion) {
 	state := dict.New()
 
 	agentID1 := knownAgentID(1, 2)
-	obj := isc.NewIotaObject(iotago.ObjectID{123}, iotago.MustTypeFromString("0x1::ABC"))
+	obj := isc.NewIotaObject(iotago.ObjectID{123}, iotago.MustTypeFromString("0x1::abc::ABC"))
 	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, obj)
 
 	accObjects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
