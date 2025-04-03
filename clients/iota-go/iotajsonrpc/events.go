@@ -23,9 +23,9 @@ type IotaEvent struct {
 	Type *iotago.StructTag `json:"type"`
 	// Parsed json value of the event
 	ParsedJson interface{} `json:"parsedJson,omitempty"`
-	// Base 58 encoded bcs bytes of the move event
-	Bcs         iotago.Base58 `json:"bcs"`
-	TimestampMs *BigInt       `json:"timestampMs,omitempty"`
+	// Base 64 encoded bcs bytes of the move event
+	Bcs         iotago.Base64Data `json:"bcs"`
+	TimestampMs *BigInt           `json:"timestampMs,omitempty"`
 }
 
 type EventPage = Page[IotaEvent, EventId]
