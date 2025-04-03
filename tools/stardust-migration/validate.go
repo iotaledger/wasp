@@ -38,6 +38,7 @@ func validateMigration(c *cmd.Context) error {
 	}()
 
 	firstIndex := uint32(c.Uint64("from-block"))
+	validation.ConcurrentValidation = !c.Bool("no-parallel")
 	cli.DebugLoggingEnabled = true
 
 	srcChainDBDir := c.Args().Get(0)
@@ -105,14 +106,17 @@ func validateMigration(c *cmd.Context) error {
 
 func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID, firstIndex, lastIndex uint32) {
 	cli.DebugLogf("Validating states equality...\n")
-	oldStateContentStr := oldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
-	newStateContentStr := newStateContentToStr(newState, newChainID, firstIndex, lastIndex)
+	var oldStateContentStr, newStateContentStr string
+	validation.GoAllAndWait(func() {
+		oldStateContentStr = oldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
+		cli.DebugLogf("Replacing old chain ID with constant placeholer for comparison...")
+		oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
 
-	cli.DebugLogf("Replacing old chain ID with constant placeholer for comparison...")
-	oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
-
-	cli.DebugLogf("Replacing new chain ID with constant placeholer for comparison...")
-	newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
+	}, func() {
+		newStateContentStr = newStateContentToStr(newState, newChainID, firstIndex, lastIndex)
+		cli.DebugLogf("Replacing new chain ID with constant placeholer for comparison...")
+		newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
+	})
 
 	validation.EnsureEqual("states", oldStateContentStr, newStateContentStr)
 
@@ -120,15 +124,24 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 }
 
 func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
-	accountsContractStr := validation.OldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
-	blocklogContractStr := validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+	var accountsContractStr, blocklogContractStr string
+
+	validation.GoAllAndWait(func() {
+		accountsContractStr = validation.OldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
+	}, func() {
+		blocklogContractStr = validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+	})
 
 	return accountsContractStr + "\n" + blocklogContractStr
 }
 
 func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
-	accountsContractStr := validation.NewAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
-	blocklogContractStr := validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+	var accountsContractStr, blocklogContractStr string
+	validation.GoAllAndWait(func() {
+		accountsContractStr = validation.NewAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
+	}, func() {
+		blocklogContractStr = validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+	})
 
 	return accountsContractStr + "\n" + blocklogContractStr
 }

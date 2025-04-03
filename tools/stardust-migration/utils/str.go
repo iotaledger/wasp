@@ -13,7 +13,7 @@ func SortLines(s string) string {
 
 func MultilinePreview(text string) string {
 	// TODO: This action might take huge amount of time for big texts. Maybe just dont do it.
-	return MultilinePreviewWithOpts(text, 5, 4, "\t...")
+	return MultilinePreviewWithOpts(text, 6, 5, "\t...")
 }
 
 func MultilinePreviewWithOpts(text string, linesAtStart, linesAtEnd int, sep string) string {

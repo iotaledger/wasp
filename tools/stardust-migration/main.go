@@ -175,6 +175,11 @@ func main() {
 						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
 						Flags: []cmd.Flag{
 							&cmd.BoolFlag{
+								Name:    "no-parallel",
+								Aliases: []string{"p"},
+								Usage:   "Do not run validation in parallel.",
+							},
+							&cmd.BoolFlag{
 								Name:  "hm-prefixes",
 								Usage: "Replace original prefixes in new dabase with human-readable strings.",
 							},

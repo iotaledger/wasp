@@ -34,11 +34,14 @@ func OldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID
 	accsStr, accs := oldAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("Old accounts preview:\n%v\n", utils.MultilinePreview(accsStr))
 
-	baseTokenBalancesStr := oldBaseTokenBalancesToStr(contractState, chainID, accs)
-	cli.DebugLogf("Old base token balances preview:\n%v\n", utils.MultilinePreview(baseTokenBalancesStr))
-
-	nativeTokenBalancesStr := oldNativeTokenBalancesToStr(contractState, chainID, accs)
-	cli.DebugLogf("Old native token balances preview:\n%v\n", utils.MultilinePreview(nativeTokenBalancesStr))
+	var baseTokenBalancesStr, nativeTokenBalancesStr string
+	GoAllAndWait(func() {
+		baseTokenBalancesStr = oldBaseTokenBalancesToStr(contractState, chainID, accs)
+		cli.DebugLogf("Old base token balances preview:\n%v\n", utils.MultilinePreview(baseTokenBalancesStr))
+	}, func() {
+		nativeTokenBalancesStr = oldNativeTokenBalancesToStr(contractState, chainID, accs)
+		cli.DebugLogf("Old native token balances preview:\n%v\n", utils.MultilinePreview(nativeTokenBalancesStr))
+	})
 
 	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTokenBalancesStr
 }
@@ -60,7 +63,7 @@ func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.Ch
 
 	cli.DebugLogf("Found %v accounts\n", accs.Len())
 	cli.DebugLogf("Reading accounts...\n")
-	printProgress, clearProgress := cli.NewProgressPrinter("accounts", accs.Len())
+	printProgress, clearProgress := NewProgressPrinter("old_accounts", "acc list", "accounts", accs.Len())
 	defer clearProgress()
 
 	var accsStr strings.Builder
@@ -87,7 +90,7 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 
 	cli.DebugLogf("Found %v accounts\n", len(accs))
 	cli.DebugLogf("Reading accounts...\n")
-	printProgress, clearProgress := cli.NewProgressPrinter("accounts", uint32(len(accs)))
+	printProgress, clearProgress := NewProgressPrinter("new_accounts", "acc list", "accounts", uint32(len(accs)))
 	defer clearProgress()
 
 	var accsStr strings.Builder
@@ -109,8 +112,12 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 }
 
 func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
-	balancesStrFromPrefix := oldBaseTokenBalancesFromPrefixToStr(contractState, chainID, knownAccs)
-	balancesStrFromMap := oldBaseTokenBalancesFromMapToStr(contractState, chainID, knownAccs)
+	var balancesStrFromPrefix, balancesStrFromMap string
+	GoAllAndWait(func() {
+		balancesStrFromPrefix = oldBaseTokenBalancesFromPrefixToStr(contractState, chainID, knownAccs)
+	}, func() {
+		balancesStrFromMap = oldBaseTokenBalancesFromMapToStr(contractState, chainID, knownAccs)
+	})
 
 	EnsureEqual("old base balances (prefix vs map)", balancesStrFromPrefix, balancesStrFromMap)
 
@@ -120,7 +127,7 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old base token balances (by prefix)...\n")
 
-	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
+	printProgress, clearProgress := NewProgressPrinter("old_accounts", "base balances (prefix)", "balances", 0)
 	defer clearProgress()
 
 	var balancesStr strings.Builder
@@ -173,7 +180,7 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old base token balances (from map)...\n")
 
-	printProgress, clearProgress := cli.NewProgressPrinter("balances", len(knownAccs)+1)
+	printProgress, clearProgress := NewProgressPrinter("old_accounts", "base balances (map)", "balances", len(knownAccs)+1)
 	defer clearProgress()
 
 	var balancesStr strings.Builder
@@ -218,7 +225,7 @@ func oldNativeTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old
 func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old native token balances (by prefix)...\n")
 
-	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
+	printProgress, clearProgress := NewProgressPrinter("old_accounts", "native balances (prefix)", "balances", 0)
 	defer clearProgress()
 
 	var balancesStr strings.Builder
@@ -292,11 +299,19 @@ func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, c
 
 func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {
 	// Using two different ways of getting balances and ensuring they are equal - for double safety
-	baseFromPrefix, nativeFromPrefix := newTokenBalancesFromPrefixToStr(contractState, chainID)
-	baseFromMap, nativeFromMap := newTokenBalancesFromMapToStr(contractState, chainID, accs)
+	var baseFromPrefix, nativeFromPrefix string
+	var baseFromMap, nativeFromMap string
+	GoAllAndWait(func() {
+		baseFromPrefix, nativeFromPrefix = newTokenBalancesFromPrefixToStr(contractState, chainID)
+	}, func() {
+		baseFromMap, nativeFromMap = newTokenBalancesFromMapToStr(contractState, chainID, accs)
+	})
 
-	EnsureEqual("new base token balances (prefix vs map)", baseFromPrefix, baseFromMap)
-	EnsureEqual("new native token balances (prefix vs map)", nativeFromPrefix, nativeFromMap)
+	GoAllAndWait(func() {
+		EnsureEqual("new base token balances (prefix vs map)", baseFromPrefix, baseFromMap)
+	}, func() {
+		EnsureEqual("new native token balances (prefix vs map)", nativeFromPrefix, nativeFromMap)
+	})
 
 	return baseFromPrefix, nativeFromPrefix
 }
@@ -304,7 +319,7 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (base, native string) {
 	cli.DebugLogf("Reading new token balances (using prefix iteration)...\n")
 
-	printProgress, clearProgress := cli.NewProgressPrinter("balances", 0)
+	printProgress, clearProgress := NewProgressPrinter("new_accounts", "balances (prefix)", "balances", 0)
 	defer clearProgress()
 
 	var baseBalancesStr strings.Builder
@@ -415,7 +430,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {
 	cli.DebugLogf("Reading new token balances (using accs map)...\n")
 
-	printProgress, clearProgress := cli.NewProgressPrinter("balances", uint32(len(accs)))
+	printProgress, clearProgress := NewProgressPrinter("new_accounts", "balances (map)", "balances", uint32(len(accs)))
 	defer clearProgress()
 
 	var baseBalancesStr strings.Builder
