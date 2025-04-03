@@ -67,7 +67,7 @@ func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, las
 		if err == nil {
 			panic(fmt.Sprintf("Block %v should be unavailable, but it is available", firstUnavailableBlockIndex))
 		}
-		if !strings.Contains(err.Error(), "request not found") {
+		if !strings.Contains(err.Error(), "block not found") {
 			panic(err)
 		}
 
