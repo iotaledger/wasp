@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -44,8 +43,7 @@ func TestIscCodec(t *testing.T) {
 }
 
 func TestUnmarshalBCS(t *testing.T) {
-	var targetReq iscmoveclient.MoveRequest
-	req := iscmoveclient.MoveRequest{
+	targetReq := iscmoveclient.MoveRequest{
 		ID:     *iotatest.RandomAddress(),
 		Sender: cryptolib.NewAddressFromIota(iotatest.RandomAddress()),
 		AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
@@ -58,12 +56,13 @@ func TestUnmarshalBCS(t *testing.T) {
 		Message: *iscmovetest.RandomMessage(),
 		Allowance: []iscmove.CoinAllowance{
 			{CoinType: iotajsonrpc.IotaCoinType, Balance: 100},
-			{CoinType: "0x1:AB:ab", Balance: 200},
+			{CoinType: "0x0000000000000000000000000000000000000000000000000000000000000001::AB::ab", Balance: 200},
 		},
 		GasBudget: 100,
 	}
-	b, err := bcs.Marshal(&req)
+	b, err := bcs.Marshal(&targetReq)
 	require.NoError(t, err)
-	err = iotaclient.UnmarshalBCS(b, &targetReq)
-	require.NotNil(t, err)
+	decodeReq, err := bcs.Unmarshal[iscmoveclient.MoveRequest](b)
+	require.NoError(t, err)
+	require.Equal(t, decodeReq, targetReq)
 }
