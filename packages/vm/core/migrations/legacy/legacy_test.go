@@ -36,12 +36,12 @@ func TestLegacyAssetsBaseTokenWithNFT(t *testing.T) {
 	// Stardust isc.Assets encoded bytes for NewAssets(123123) (123123 base token is)
 	stardustEncodedAssetsForBaseToken := []byte{0xA0, 0xF3, 0xC1, 0x7, 0x1, 0xff, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}
 	a := isc.NewAssets(123123 * 1000) // * 1000 for 6=>9 decimals conversion
-	a.AddObject(iotago.ObjectID{0xff, 0xff}, iotago.MustTypeFromString("0x1::a::A"))
+	a.AddObject(isc.NewIotaObject(iotago.ObjectID{0xff, 0xff}, iotago.MustTypeFromString("0x1::a::A")))
 	require.Equal(t, AssetsToBytes(allmigrations.SchemaVersionMigratedRebased, a), stardustEncodedAssetsForBaseToken)
 }
 
 func TestLegacyAssetsBaseTokenWithNewSchemaVersion(t *testing.T) {
 	a := isc.NewAssets(123123 * 1000) // * 1000 for 6=>9 decimals conversion
-	a.AddObject(iotago.ObjectID{0xff, 0xff}, iotago.MustTypeFromString("0x1::a::A"))
+	a.AddObject(isc.NewIotaObject(iotago.ObjectID{0xff, 0xff}, iotago.MustTypeFromString("0x1::a::A")))
 	require.Equal(t, AssetsToBytes(allmigrations.LatestSchemaVersion, a), a.Bytes())
 }

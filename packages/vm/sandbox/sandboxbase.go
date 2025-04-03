@@ -58,7 +58,7 @@ func (s *SandboxBase) CoinBalances() isc.CoinBalances {
 	return s.Ctx.GetCoinBalances(s.AccountID())
 }
 
-func (s *SandboxBase) OwnedObjects() []isc.L1Object {
+func (s *SandboxBase) OwnedObjects() []isc.IotaObject {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAccountObjects(s.AccountID())
 }
@@ -67,8 +67,8 @@ func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
 		Coins: s.Ctx.GetCoinBalances(agentID),
-		Objects: lo.SliceToMap(s.Ctx.GetAccountObjects(agentID), func(o isc.L1Object) (iotago.ObjectID, iotago.ObjectType) {
-			return o.A, o.B
+		Objects: lo.SliceToMap(s.Ctx.GetAccountObjects(agentID), func(o isc.IotaObject) (iotago.ObjectID, iotago.ObjectType) {
+			return o.ID, o.Type
 		}),
 	}
 	tokenBalance, _ := s.Ctx.GetBaseTokensBalance(agentID)

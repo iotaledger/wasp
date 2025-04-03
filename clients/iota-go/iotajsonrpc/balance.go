@@ -32,6 +32,16 @@ func (t CoinType) String() string {
 	return string(t)
 }
 
+func (t *CoinType) MarshalBCS(e *bcs.Encoder) error {
+	rt, err := iotago.NewResourceType(t.String())
+	if err != nil {
+		return err
+	}
+	// use ShortString to save space
+	e.WriteString(rt.ShortString())
+	return nil
+}
+
 func (t *CoinType) UnmarshalBCS(d *bcs.Decoder) error {
 	var err error
 	s := bcs.Decode[string](d)

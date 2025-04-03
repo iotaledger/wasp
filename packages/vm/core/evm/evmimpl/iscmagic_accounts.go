@@ -32,7 +32,7 @@ func (h *magicContractHandler) GetL2BalanceCoin(
 }
 
 // handler for ISCAccounts::getL2Objects
-func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []isc.L1Object {
+func (h *magicContractHandler) GetL2Objects(agentID iscmagic.ISCAgentID) []isc.IotaObject {
 	aid := lo.Must(agentID.Unwrap())
 	r := h.callView(accounts.ViewAccountObjects.Message(&aid))
 	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(r))

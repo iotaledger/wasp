@@ -56,19 +56,19 @@ func (s *StateWriter) removeObjectOwner(objectID iotago.ObjectID, agentID isc.Ag
 	return t, true
 }
 
-func (s *StateWriter) setObjectOwner(objectID iotago.ObjectID, t iotago.ObjectType, agentID isc.AgentID) {
+func (s *StateWriter) setObjectOwner(obj isc.IotaObject, agentID isc.AgentID) {
 	// add to the mapping of ObjectID => owner
 	objectMap := s.objectToOwnerMap()
-	objectMap.SetAt(objectID[:], agentID.Bytes())
+	objectMap.SetAt(obj.ID[:], agentID.Bytes())
 
 	// add to the mapping of agentID => {ObjectID => ObjectType}
 	objects := s.accountToObjectsMap(agentID)
-	objects.SetAt(objectID[:], codec.Encode(t))
+	objects.SetAt(obj.ID[:], codec.Encode(obj.Type))
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
-func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, objectID iotago.ObjectID, t iotago.ObjectType, chainID isc.ChainID) {
-	s.setObjectOwner(objectID, t, agentID)
+func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, obj isc.IotaObject, chainID isc.ChainID) {
+	s.setObjectOwner(obj, agentID)
 	s.touchAccount(agentID, chainID)
 }
 
@@ -83,40 +83,40 @@ func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotag
 	return t
 }
 
-func collectObjects(m *collections.ImmutableMap) []isc.L1Object {
-	var ret []isc.L1Object
+func collectObjects(m *collections.ImmutableMap) []isc.IotaObject {
+	var ret []isc.IotaObject
 	m.Iterate(func(idBytes []byte, tBytes []byte) bool {
 		id := lo.Must(codec.Decode[iotago.ObjectID](idBytes))
 		t := lo.Must(codec.Decode[iotago.ObjectType](tBytes))
-		ret = append(ret, lo.T2(id, t))
+		ret = append(ret, isc.NewIotaObject(id, t))
 		return true
 	})
 	return ret
 }
 
-func (s *StateReader) getAccountObjects(agentID isc.AgentID) []isc.L1Object {
+func (s *StateReader) getAccountObjects(agentID isc.AgentID) []isc.IotaObject {
 	return collectObjects(s.accountToObjectsMapR(agentID))
 }
 
-func (s *StateReader) getL2TotalObjects() []isc.L1Object {
+func (s *StateReader) getL2TotalObjects() []isc.IotaObject {
 	return collectObjects(s.objectToOwnerMapR())
 }
 
 // GetAccountObjects returns all Objects belonging to the agentID on the state
-func (s *StateReader) GetAccountObjects(agentID isc.AgentID) []isc.L1Object {
+func (s *StateReader) GetAccountObjects(agentID isc.AgentID) []isc.IotaObject {
 	return s.getAccountObjects(agentID)
 }
 
-func (s *StateReader) GetTotalL2Objects() []isc.L1Object {
+func (s *StateReader) GetTotalL2Objects() []isc.IotaObject {
 	return s.getL2TotalObjects()
 }
 
-func (s *StateReader) GetObject(id iotago.ObjectID, chID isc.ChainID) (isc.L1Object, bool) {
+func (s *StateReader) GetObject(id iotago.ObjectID, chID isc.ChainID) (isc.IotaObject, bool) {
 	owner := s.objectToOwnerMapR().GetAt(id[:])
 	if owner == nil {
-		return isc.L1Object{}, false
+		return isc.IotaObject{}, false
 	}
 	aid := lo.Must(codec.Decode[isc.AgentID](owner))
 	t := lo.Must(iotago.ObjectTypeFromBytes(s.accountCoinBalancesMapR(accountKey(aid, chID)).GetAt(id[:])))
-	return lo.T2(id, t), true
+	return isc.NewIotaObject(id, t), true
 }

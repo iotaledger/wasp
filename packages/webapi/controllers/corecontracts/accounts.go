@@ -77,7 +77,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 	}
 
 	for k, v := range nfts {
-		nftsResponse.NFTIDs[k] = v.A.String()
+		nftsResponse.NFTIDs[k] = v.ID.String()
 	}
 
 	return e.JSON(http.StatusOK, nftsResponse)

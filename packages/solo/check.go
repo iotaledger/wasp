@@ -4,7 +4,6 @@
 package solo
 
 import (
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -86,9 +85,9 @@ func (ch *Chain) AssertL2TotalBaseTokens(bal coin.Value) {
 	require.EqualValues(ch.Env.T, bal, baseTokens)
 }
 
-func (ch *Chain) HasL2Object(agentID isc.AgentID, nftID iotago.ObjectID) bool {
+func (ch *Chain) HasL2Object(agentID isc.AgentID, objID iotago.ObjectID) bool {
 	for _, o := range ch.L2Objects(agentID) {
-		if o.A == nftID {
+		if o.ID == objID {
 			return true
 		}
 	}
@@ -107,9 +106,4 @@ func (env *Solo) AssertL1Coins(addr *cryptolib.Address, coinType coin.Type, expe
 		h.Helper()
 	}
 	require.Equal(env.T, expected, env.L1CoinBalance(addr, coinType))
-}
-
-func (env *Solo) HasL1NFT(addr *cryptolib.Address, id iotago.ObjectID) bool {
-	accountNFTs := env.L1NFTs(addr)
-	return lo.Contains(accountNFTs, id)
 }

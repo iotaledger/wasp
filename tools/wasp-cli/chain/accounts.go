@@ -58,12 +58,12 @@ func initBalanceCmd() *cobra.Command {
 	return cmd
 }
 
-func initAccountNFTsCmd() *cobra.Command {
+func initAccountObjectsCmd() *cobra.Command {
 	var node string
 	var chain string
 	cmd := &cobra.Command{
-		Use:   "nfts [<agentid>|common]",
-		Short: "Show NFTs owned by a given account (default: own account, `common`: chain common account)",
+		Use:   "objects [<agentid>|common]",
+		Short: "Show non-coin objects owned by a given account (default: own account, `common`: chain common account)",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)

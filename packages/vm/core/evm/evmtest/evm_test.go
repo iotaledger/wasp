@@ -469,31 +469,6 @@ func TestISCCallView(t *testing.T) {
 	require.NotEmpty(t, ret)
 }
 
-func TestISCNFTData(t *testing.T) {
-	t.Skip("TODO")
-	// env := InitEVM(t)
-	// ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
-	//
-	// // mint an NFT and send it to the chain
-	// issuerWallet, issuerAddress := env.solo.NewKeyPairWithFunds()
-	// metadata := []byte("foobar")
-	// nft, err := env.solo.MintNFTL1(issuerWallet, issuerAddress, metadata)
-	// require.NoError(t, err)
-	// _, err = env.Chain.PostRequestSync(
-	// 	solo.NewCallParams(accounts.FuncDeposit.Message()).
-	// 		AddBaseTokens(100000).
-	// 		WithObject(nft.ID).
-	// 		WithMaxAffordableGasBudget().
-	// 		WithSender(cryptolib.NewAddressFromIota(&nft.ID)),
-	// 	issuerWallet,
-	// )
-	// require.NoError(t, err)
-	//
-	// var ret []byte
-	// env.ISCMagicSandbox(ethKey).callView("getObjectBCS", []interface{}{nft.ID}, &ret)
-	// require.EqualValues(t, metadata, ret)
-}
-
 func TestISCTriggerEvent(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
@@ -2309,7 +2284,7 @@ func TestPreEIP155Transaction(t *testing.T) {
 }
 
 func TestEVMEventOnFailedL1Deposit(t *testing.T) {
-	t.Skip("TODO")
+	t.Skip("!!! TODO")
 	// env := InitEVM(t)
 	// _, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	//

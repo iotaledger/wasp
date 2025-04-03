@@ -167,7 +167,15 @@ func (c CoinBalances) Clone() CoinBalances {
 	return r
 }
 
-type L1Object = lo.Tuple2[iotago.ObjectID, iotago.ObjectType]
+// IotaObject represents a non-coin object originally created on L1
+type IotaObject struct {
+	ID   iotago.ObjectID   `json:"id" swagger:"required"`
+	Type iotago.ObjectType `json:"type" swagger:"required"`
+}
+
+func NewIotaObject(id iotago.ObjectID, t iotago.ObjectType) IotaObject {
+	return IotaObject{id, t}
+}
 
 type ObjectSet map[iotago.ObjectID]iotago.ObjectType
 
@@ -175,8 +183,8 @@ func NewObjectSet() ObjectSet {
 	return make(ObjectSet)
 }
 
-func (o ObjectSet) Add(id iotago.ObjectID, t iotago.ObjectType) {
-	o[id] = t
+func (o ObjectSet) Add(obj IotaObject) {
+	o[obj.ID] = obj.Type
 }
 
 func (o ObjectSet) Has(id iotago.ObjectID) bool {
@@ -190,45 +198,40 @@ func (o ObjectSet) KeysSorted() []iotago.ObjectID {
 	return ids
 }
 
-func (o ObjectSet) Sorted() []L1Object {
-	var ret []L1Object
+func (o ObjectSet) Sorted() []IotaObject {
+	var ret []IotaObject
 	for _, id := range o.KeysSorted() {
-		ret = append(ret, lo.T2(id, o[id]))
+		ret = append(ret, NewIotaObject(id, o[id]))
 	}
 	return ret
 }
 
-func (o ObjectSet) IterateSorted(f func(iotago.ObjectID, iotago.ObjectType) bool) {
+func (o ObjectSet) IterateSorted(f func(IotaObject) bool) {
 	for _, id := range o.KeysSorted() {
-		if !f(id, o[id]) {
+		if !f(NewIotaObject(id, o[id])) {
 			return
 		}
 	}
 }
 
-type ObjectJSON struct {
-	ObjectID iotago.ObjectID   `json:"objectId" swagger:"required"`
-	Type     iotago.ObjectType `json:"type" swagger:"required"`
-}
-
-func (o *ObjectSet) JSON() []ObjectJSON {
-	var objs []ObjectJSON
-	o.IterateSorted(func(id iotago.ObjectID, t iotago.ObjectType) bool {
-		objs = append(objs, ObjectJSON{id, t})
+func (o *ObjectSet) JSON() []IotaObject {
+	var objs []IotaObject
+	o.IterateSorted(func(obj IotaObject) bool {
+		objs = append(objs, obj)
 		return true
 	})
 	return objs
 }
 
 func (o *ObjectSet) UnmarshalJSON(b []byte) error {
-	var objs []ObjectJSON
+	var objs []IotaObject
 	err := json.Unmarshal(b, &objs)
 	if err != nil {
 		return err
 	}
 	*o = NewObjectSet()
 	for _, obj := range objs {
-		o.Add(obj.ObjectID, obj.Type)
+		o.Add(NewIotaObject(obj.ID, obj.Type))
 	}
 	return nil
 }
@@ -274,7 +277,7 @@ func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (
 		assets.Coins.Add(coin.MustTypeFromString(cointype.String()), coin.Value(coinval))
 	}
 	for objectID, t := range assetsBag.Objects {
-		assets.Objects.Add(objectID, t)
+		assets.Objects.Add(NewIotaObject(objectID, t))
 	}
 	return assets, nil
 }
@@ -289,7 +292,7 @@ func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
 		ret.Coins.Add(coinType, coin.Value(v))
 	}
 	for id, t := range assets.Objects {
-		ret.Objects.Add(id, t)
+		ret.Objects.Add(NewIotaObject(id, t))
 	}
 	return ret, nil
 }
@@ -313,8 +316,8 @@ func (a *Assets) AddCoin(coinType coin.Type, amount coin.Value) *Assets {
 	return a
 }
 
-func (a *Assets) AddObject(id iotago.ObjectID, t iotago.ObjectType) *Assets {
-	a.Objects.Add(id, t)
+func (a *Assets) AddObject(obj IotaObject) *Assets {
+	a.Objects.Add(obj)
 	return a
 }
 
@@ -380,7 +383,7 @@ func (a *Assets) Add(b *Assets) *Assets {
 		a.Coins.Add(coinType, amount)
 	}
 	for id, t := range b.Objects {
-		a.Objects.Add(id, t)
+		a.Objects.Add(NewIotaObject(id, t))
 	}
 	return a
 }

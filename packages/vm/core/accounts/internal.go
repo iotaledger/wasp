@@ -3,7 +3,6 @@ package accounts
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -19,7 +18,6 @@ var (
 	ErrDuplicateTreasuryCap = coreerrors.Register("duplicate TreasuryCap").Create()
 	ErrTreasuryCapNotFound  = coreerrors.Register("TreasuryCap not found").Create()
 	ErrOverflow             = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrNFTIDNotFound        = coreerrors.Register("NFTID not found").Create()
 )
 
 const (
@@ -40,7 +38,7 @@ const (
 	L2TotalsAccount = "*"
 
 	// keyNonce stores a map of <agentID> => nonce (uint64)
-	// Covered in: TestNFTMint
+	// Covered in: TODO
 	keyNonce = "m"
 
 	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
@@ -48,11 +46,11 @@ const (
 	keyCoinInfo = "RC"
 
 	// prefixObjects | <agentID> stores a map of <ObjectID> => <ObjectType>
-	// Covered in: TestDepositNFTWithMinStorageDeposit
+	// Covered in: TODO
 	prefixObjects = "o"
 
 	// keyObjectOwner stores a map of <ObjectID> => isc.AgentID
-	// Covered in: TestDepositNFTWithMinStorageDeposit
+	// Covered in: TODO
 	keyObjectOwner = "W"
 )
 
@@ -118,13 +116,13 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 	s.creditToAccount(accountKey(toAgentID), assets.Coins)
 
 	var err error
-	assets.Objects.IterateSorted(func(id iotago.ObjectID, t iotago.ObjectType) bool {
-		_, ok := s.removeObjectOwner(id, fromAgentID)
+	assets.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+		_, ok := s.removeObjectOwner(obj.ID, fromAgentID)
 		if !ok {
-			err = errors.New("MoveBetweenAccounts: NFT not found in origin account")
+			err = errors.New("MoveBetweenAccounts: object not found in origin account")
 			return false
 		}
-		s.setObjectOwner(id, t, toAgentID)
+		s.setObjectOwner(obj, toAgentID)
 		return true
 	})
 	if err != nil {

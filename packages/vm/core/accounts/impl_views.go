@@ -48,7 +48,7 @@ func viewGetAccountNonce(ctx isc.SandboxView, optionalAgentID *isc.AgentID) uint
 }
 
 // viewAccountObjects returns the ObjectIDs of Objects owned by an account
-func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []isc.L1Object {
+func viewAccountObjects(ctx isc.SandboxView, optionalAgentID *isc.AgentID) []isc.IotaObject {
 	ctx.Log().Debugf("accounts.viewAccountObjects")
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	return NewStateReaderFromSandbox(ctx).getAccountObjects(aid)

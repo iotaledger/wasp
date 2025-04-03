@@ -47,7 +47,7 @@ var Processor = Contract.Processor(nil,
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
-	FuncSendNFTsBack.WithHandler(sendNFTsBack),
+	FuncSendObjectsBack.WithHandler(sendObjectsBack),
 	FuncClaimAllowance.WithHandler(claimAllowance),
 	FuncStackOverflow.WithHandler(stackOverflow),
 )
@@ -125,7 +125,7 @@ var (
 
 	FuncInfiniteLoop     = coreutil.NewEP0(Contract, "infiniteLoop")
 	FuncInfiniteLoopView = coreutil.NewViewEP0(Contract, "infiniteLoopView")
-	FuncSendNFTsBack     = coreutil.NewEP0(Contract, "sendNFTsBack")
+	FuncSendObjectsBack  = coreutil.NewEP0(Contract, "sendObjectsBack")
 	FuncClaimAllowance   = coreutil.NewEP0(Contract, "claimAllowance")
 	FuncStackOverflow    = coreutil.NewEP0(Contract, "stackOverflow")
 )

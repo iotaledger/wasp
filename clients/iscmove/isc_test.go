@@ -59,9 +59,9 @@ func TestUnmarshalBCS(t *testing.T) {
 			},
 		},
 		Message: *iscmovetest.RandomMessage(),
-		Allowance: []iscmove.CoinAllowance{
-			{CoinType: iotajsonrpc.IotaCoinType, Balance: 100},
-			{CoinType: "0x1:AB:ab", Balance: 200},
+		Allowance: iscmove.Assets{
+			Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
+			Objects: iscmove.ObjectCollection{iotago.ObjectID{}: iotago.MustTypeFromString("0x1::a::A")},
 		},
 		GasBudget: 100,
 	}

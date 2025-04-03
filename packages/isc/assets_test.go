@@ -50,7 +50,7 @@ func TestAssetsSerialization(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
-		AddObject(iotago.ObjectID{1, 2, 3}, iotago.MustTypeFromString("0xa1::c::C"))
+		AddObject(isc.NewIotaObject(iotago.ObjectID{1, 2, 3}, iotago.MustTypeFromString("0xa1::c::C")))
 	bcs.TestCodec(t, assets)
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
@@ -115,7 +115,7 @@ func TestAssetsCodec(t *testing.T) {
 	assets := isc.NewEmptyAssets().
 		AddBaseTokens(42).
 		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
-		AddObject(*iotatest.RandomAddress(), iotago.MustTypeFromString("0xa1::c::C"))
+		AddObject(isc.NewIotaObject(*iotatest.RandomAddress(), iotago.MustTypeFromString("0xa1::c::C")))
 	bcs.TestCodec(t, assets)
 }
 

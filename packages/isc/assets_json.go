@@ -4,7 +4,7 @@ type AssetsJSON struct {
 	// Coins is a set of coin balances
 	Coins []CoinJSON `json:"coins" swagger:"required"`
 	// Objects is a set of non-Coin object IDs (e.g. NFTs)
-	Objects []ObjectJSON `json:"objects" swagger:"required"`
+	Objects []IotaObject `json:"objects" swagger:"required"`
 }
 
 func AssetsToAssetsJSON(a *Assets) AssetsJSON {

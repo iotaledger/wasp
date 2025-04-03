@@ -7,10 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -40,40 +36,19 @@ func TestAccounts_Deposit(t *testing.T) {
 	t.Logf("========= burn log:\n%s", rec.GasBurnLog)
 }
 
-func TestAccounts_DepositWithObjects(t *testing.T) {
+func TestAccounts_DepositWithObject(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{})
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
 
-	// Create a 2nd chain just to have a L1 object that we can deposit (the anchor)
-	testAnchor, err := env.ISCMoveClient().StartNewChain(env.Ctx(), &iscmoveclient.StartNewChainRequest{
-		GasBudget:         iotaclient.DefaultGasBudget,
-		Signer:            sender,
-		PackageID:         env.ISCPackageID(),
-		StateMetadata:     []byte{},
-		ChainOwnerAddress: sender.Address(),
-		InitCoinRef:       nil,
-		GasPrice:          iotaclient.DefaultGasPrice,
-	})
-	require.NoError(t, err)
+	obj := env.L1MintObject(sender)
 
-	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{
-		ObjectID: testAnchor.ObjectID,
-		Options: &iotajsonrpc.IotaObjectDataOptions{
-			ShowType: true,
-		},
-	})
-	require.NoError(t, err)
-	typ, err := iotago.ObjectTypeFromString(*o.Data.Type)
-	require.NoError(t, err)
-
-	err = ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(*testAnchor.ObjectID, typ), sender)
+	err := ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(obj), sender)
 	require.NoError(t, err)
 
 	l2Objsecs := ch.L2Objects(isc.NewAddressAgentID(sender.Address()))
 	require.Len(t, l2Objsecs, 1)
-	require.EqualValues(t, *testAnchor.ObjectID, l2Objsecs[0].A)
-	require.EqualValues(t, typ.String(), l2Objsecs[0].B.String())
+	require.EqualValues(t, obj, l2Objsecs[0])
 }
 
 // allowance shouldn't allow you to bypass gas fees.
@@ -807,7 +782,7 @@ func TestAccounts_TransferPartialAssets(t *testing.T) {
 }
 
 func TestAccounts_NFTAccount(t *testing.T) {
-	t.Skip("TODO")
+	t.Skip("!!! TODO")
 	// env := solo.New(t, &solo.InitOptions{})
 	// ch := env.NewChain()
 	//
@@ -855,8 +830,8 @@ func TestAccounts_NFTAccount(t *testing.T) {
 	// ch.Env.AssertL1BaseTokens(nftAddress, baseTokensToWithdrawal)
 }
 
-func checkChainNFTData(t *testing.T, ch *solo.Chain, nft isc.L1Object, owner isc.AgentID) {
-	panic("TODO")
+func checkChainNFTData(t *testing.T, ch *solo.Chain, obj isc.IotaObject, owner isc.AgentID) {
+	panic("!!! TODO")
 	// args, err := ch.CallView(accounts.ViewAccountObjects.Message(&owner))
 	// require.NoError(t, err)
 	// nftIDs, err := accounts.ViewAccountObjects.DecodeOutput(args)
@@ -868,7 +843,7 @@ func checkChainNFTData(t *testing.T, ch *solo.Chain, nft isc.L1Object, owner isc
 }
 
 func TestAccounts_TransferNFTAllowance(t *testing.T) {
-	t.Skip("TODO")
+	t.Skip("!!! TODO")
 	// env := solo.New(t, &solo.InitOptions{})
 	// ch := env.NewChain()
 	//
@@ -922,7 +897,7 @@ func TestAccounts_TransferNFTAllowance(t *testing.T) {
 }
 
 func TestAccounts_DepositNFTWithMinStorageDeposit(t *testing.T) {
-	t.Skip("TODO")
+	t.Skip("!!! TODO")
 	// env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	// ch := env.NewChain()
 	//
@@ -967,7 +942,7 @@ func TestAccounts_AllowanceNotEnoughFunds(t *testing.T) {
 		// test coins
 		isc.NewEmptyAssets().AddCoin(coin.MustTypeFromString("0x2::foo::bar"), coin.Value(10)),
 		// test NFTs
-		// TODO
+		// !!! TODO
 		// isc.NewEmptyAssets().AddObject(iotago.Address{1, 2, 3}),
 	}
 	for _, a := range allowances {

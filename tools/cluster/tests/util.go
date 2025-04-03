@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
@@ -102,23 +101,6 @@ func (e *ChainEnv) getBalanceOnChain(agentID isc.AgentID, coinType coin.Type, no
 func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, coinType coin.Type, expected coin.Value) {
 	actual := e.getBalanceOnChain(agentID, coinType)
 	require.EqualValues(e.t, expected, actual)
-}
-
-func (e *ChainEnv) getAccountNFTs(agentID isc.AgentID) []iotago.ObjectID {
-	nftsResp, _, err := e.Chain.Cluster.WaspClient().CorecontractsAPI.
-		AccountsGetAccountNFTIDs(context.Background(), agentID.String()).
-		Execute()
-	require.NoError(e.t, err)
-
-	ret := make([]iotago.ObjectID, len(nftsResp.NftIds))
-	for i, nftIDStr := range nftsResp.NftIds {
-		nftIDBytes, err := cryptolib.DecodeHex(nftIDStr)
-		require.NoError(e.t, err)
-		ret[i] = iotago.ObjectID{}
-		copy(ret[i][:], nftIDBytes)
-	}
-
-	return ret
 }
 
 func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {

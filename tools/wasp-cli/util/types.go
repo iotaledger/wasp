@@ -81,16 +81,14 @@ func ValueFromString(vtype, s string) []byte {
 		n, err := strconv.ParseInt(s, 10, 64)
 		log.Check(err)
 		return codec.Encode[int64](n)
-	case "nftid":
+	case "objectid":
 		nidBytes, err := cryptolib.DecodeHex(s)
 		log.Check(err)
 		if len(nidBytes) != iotago.AddressLen {
-			log.Fatal("invalid nftid length")
+			log.Fatal("invalid objectid length")
 		}
-
 		nid := [iotago.AddressLen]byte(nidBytes)
-
-		return codec.Encode(nid)
+		return codec.Encode[iotago.ObjectID](nid)
 	case "requestid":
 		rid, err := isc.RequestIDFromString(s)
 		log.Check(err)
@@ -188,7 +186,7 @@ func ValueToString(vtype string, v []byte) string {
 		n, err := codec.Decode[int64](v)
 		log.Check(err)
 		return fmt.Sprintf("%d", n)
-	case "nftid":
+	case "objectid":
 		nid, err := codec.Decode[iotago.ObjectID](v)
 		log.Check(err)
 		return nid.String()

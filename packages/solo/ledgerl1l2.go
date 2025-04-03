@@ -83,7 +83,7 @@ func (ch *Chain) L2BaseTokensAtStateIndex(agentID isc.AgentID, stateIndex uint32
 	return ch.L2AssetsAtStateIndex(agentID, stateIndex).BaseTokens()
 }
 
-func (ch *Chain) L2Objects(agentID isc.AgentID) []isc.L1Object {
+func (ch *Chain) L2Objects(agentID isc.AgentID) []isc.IotaObject {
 	res, err := ch.CallView(accounts.ViewAccountObjects.Message(&agentID))
 	require.NoError(ch.Env.T, err)
 	return lo.Must(accounts.ViewAccountObjects.DecodeOutput(res))

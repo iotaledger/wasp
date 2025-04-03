@@ -34,7 +34,7 @@ var (
 	// TODO: implement pagination
 	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
-		coreutil.Field[[]isc.L1Object]("accountObjects"),
+		coreutil.Field[[]isc.IotaObject]("accountObjects"),
 	)
 	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",

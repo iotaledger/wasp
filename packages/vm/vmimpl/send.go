@@ -8,7 +8,7 @@ import (
 
 const MaxPostedOutputsInOneRequest = 4
 
-func (vmctx *vmContext) getObject(chainState kv.KVStore, id iotago.ObjectID) (isc.L1Object, bool) {
+func (vmctx *vmContext) getObject(chainState kv.KVStore, id iotago.ObjectID) (isc.IotaObject, bool) {
 	return vmctx.accountsStateWriterFromChainState(chainState).GetObject(id, vmctx.ChainID())
 }
 

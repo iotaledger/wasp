@@ -28,9 +28,9 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount)
 }
 
-func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []isc.L1Object) {
+func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []isc.IotaObject) {
 	for _, o := range objects {
-		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o.A, o.B, reqctx.ChainID())
+		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o, reqctx.ChainID())
 	}
 }
 
@@ -91,7 +91,7 @@ func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalan
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []isc.L1Object) {
+func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []isc.IotaObject) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetAccountObjects(agentID)
 	})

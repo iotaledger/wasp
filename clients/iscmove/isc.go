@@ -142,11 +142,6 @@ type Assets struct {
 	Objects ObjectCollection
 }
 
-type CoinAllowance struct {
-	CoinType iotajsonrpc.CoinType
-	Balance  iotajsonrpc.CoinValue
-}
-
 type (
 	CoinBalances     map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
 	ObjectCollection map[iotago.ObjectID]iotago.ObjectType

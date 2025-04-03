@@ -24,7 +24,7 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	return accounts.ViewBalance.DecodeOutput(ret)
 }
 
-func GetAccountObjects(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]isc.L1Object, error) {
+func GetAccountObjects(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]isc.IotaObject, error) {
 	ret, err := common.CallView(ch, accounts.ViewAccountObjects.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err

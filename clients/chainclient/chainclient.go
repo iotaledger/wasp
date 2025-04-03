@@ -133,6 +133,9 @@ func (c *Client) postSingleRequest(
 		for coinType, coinBalance := range params.Allowance.Coins {
 			allowances.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinBalance.Uint64()))
 		}
+		for objectID, objectType := range params.Allowance.Objects {
+			allowances.AddObject(iotago.ObjectID(objectID), iotago.ObjectType(objectType))
+		}
 	}
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(
 		ctx,

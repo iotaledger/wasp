@@ -3,7 +3,6 @@ package legacy
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -66,8 +65,8 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 
 	if (flags & assetFlagHasNFTs) != 0 {
 		w.WriteSize16(len(assets.Objects))
-		assets.Objects.IterateSorted(func(id iotago.ObjectID, _ iotago.ObjectType) bool {
-			w.WriteN(id[:])
+		assets.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+			w.WriteN(obj.ID[:])
 			return true
 		})
 	}

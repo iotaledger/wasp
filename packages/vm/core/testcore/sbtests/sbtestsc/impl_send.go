@@ -77,26 +77,25 @@ func pingAllowanceBack(ctx isc.Sandbox) {
 	)
 }
 
-// tries to sendback whaever NFTs are specified in allowance
-func sendNFTsBack(ctx isc.Sandbox) {
+// tries to sendback whatever objectss are specified in allowance
+func sendObjectsBack(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	for nftID, t := range allowance.Objects {
+	for objID, t := range allowance.Objects {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
-			Assets:        isc.NewEmptyAssets().AddObject(nftID, t),
+			Assets:        isc.NewEmptyAssets().AddObject(isc.NewIotaObject(objID, t)),
 		})
 	}
 }
 
 // just claims everything from allowance and does nothing with it
-// tests the "getData" sandbox call for every NFT sent in allowance
 func claimAllowance(ctx isc.Sandbox) {
-	initialNFTset := ctx.OwnedObjects()
+	initialObjects := ctx.OwnedObjects()
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	ctx.Requiref(len(ctx.OwnedObjects())-len(initialNFTset) == len(allowance.Objects), "must get all NFTs from allowance")
+	ctx.Requiref(len(ctx.OwnedObjects())-len(initialObjects) == len(allowance.Objects), "must get all objects from allowance")
 }

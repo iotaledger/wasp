@@ -608,10 +608,6 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 	return coin.Value(r.TotalBalance.Uint64())
 }
 
-func (env *Solo) L1NFTs(addr *cryptolib.Address) []iotago.ObjectID {
-	panic("TODO")
-}
-
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
@@ -693,6 +689,31 @@ func (env *Solo) L1MintCoin(
 		treasuryCapObject,
 		mintAmount,
 	)
+}
+
+func (env *Solo) L1MintObject(owner *cryptolib.KeyPair) isc.IotaObject {
+	// Create a 2nd chain just to have a L1 object that we can deposit (the anchor)
+	testAnchor, err := env.ISCMoveClient().StartNewChain(env.Ctx(), &iscmoveclient.StartNewChainRequest{
+		GasBudget:         iotaclient.DefaultGasBudget,
+		Signer:            owner,
+		PackageID:         env.ISCPackageID(),
+		StateMetadata:     []byte{},
+		ChainOwnerAddress: owner.Address(),
+		InitCoinRef:       nil,
+		GasPrice:          iotaclient.DefaultGasPrice,
+	})
+	require.NoError(env.T, err)
+
+	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{
+		ObjectID: testAnchor.ObjectID,
+		Options: &iotajsonrpc.IotaObjectDataOptions{
+			ShowType: true,
+		},
+	})
+	require.NoError(env.T, err)
+	typ, err := iotago.ObjectTypeFromString(*o.Data.Type)
+	require.NoError(env.T, err)
+	return isc.NewIotaObject(*testAnchor.ObjectID, typ)
 }
 
 func (env *Solo) L1Params() *parameters.L1Params {

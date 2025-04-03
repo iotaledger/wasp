@@ -6,11 +6,8 @@ module isc::request {
         borrow::{Self, Referent},
         event::Self,
     };
-    use std::string::String;
     use isc::assets_bag::AssetsBag;
 
-    // The allowance coin_types vector and balances vector are not in the same size
-    const EAllowanceVecUnequal: u64 = 0;
     // The size of the assets bag of a request exceeds the size limit
     const EAssetsBagSizeExceedLmit: u64 = 1;
 
@@ -28,11 +25,6 @@ module isc::request {
         args: vector<vector<u8>>,
     }
 
-    public struct CoinAllowance has drop, store {
-        coin_type: String,
-        balance: u64,
-    }
-
     /// Represents a request object
     public struct Request has key {
         id: UID,
@@ -42,8 +34,8 @@ module isc::request {
         assets_bag: Referent<AssetsBag>,
         /// The target contract, entry point and arguments
         message: Message,
-        /// The gas_budget of the request on L2
-        allowance: vector<CoinAllowance>,
+        /// The BCS-encoded allowance
+        allowance: vector<u8>,
         /// The gas_budget of the request on L2
         gas_budget: u64,
     }
@@ -67,25 +59,11 @@ module isc::request {
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
-        mut allowance_cointypes: vector<String>,
-        mut allowance_balances: vector<u64>,
+        allowance: vector<u8>,
         gas_budget: u64,
         ctx: &mut TxContext,
-    ) {        
+    ) {
         assert!(assets_bag.get_size() <= ReqAssetsBagSizeLimit as u64, EAssetsBagSizeExceedLmit);
-
-        let mut allowance_cointypes_len = vector::length<String>(&allowance_cointypes);
-        assert!(allowance_cointypes_len == vector::length<u64>(&allowance_balances), EAllowanceVecUnequal);
-
-        let mut allowance = vector::empty();
-        while (allowance_cointypes_len > 0) {
-            let allowance_elt = CoinAllowance {
-                coin_type: allowance_cointypes.pop_back(),
-                balance: allowance_balances.pop_back(),
-            };
-            allowance.push_back(allowance_elt);
-            allowance_cointypes_len = allowance_cointypes_len - 1;
-        };
 
         send(Request{
             id: object::new(ctx),
@@ -139,24 +117,10 @@ module isc::request {
         contract: u32,
         function: u32,
         args: vector<vector<u8>>,
-        mut allowance_cointypes: vector<String>,
-        mut allowance_balances: vector<u64>,
+        allowance: vector<u8>,
         gas_budget: u64,
         ctx: &mut TxContext,
     ): Request {
-        let mut allowance_cointypes_len = vector::length<String>(&allowance_cointypes);
-        assert!(allowance_cointypes_len == vector::length<u64>(&allowance_balances), EAllowanceVecUnequal);
-
-        let mut allowance = vector::empty();
-        while (allowance_cointypes_len > 0) {
-            let allowance_elt = CoinAllowance {
-                coin_type: allowance_cointypes.pop_back(),
-                balance: allowance_balances.pop_back(),
-            };
-            allowance.push_back(allowance_elt);
-            allowance_cointypes_len = allowance_cointypes_len - 1;
-        };
-
         Request{
             id: object::new(ctx),
             sender: ctx.sender(),

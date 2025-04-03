@@ -7,8 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
@@ -180,106 +182,63 @@ func TestPingBaseTokens1(t *testing.T) {
 	require.Zero(t, userFundsAfter.L2.BaseTokens())
 }
 
-func TestSendNFTsBack(t *testing.T) {
-	t.Skip("TODO")
-	// // Send NFT and receive it back (on-ledger request)
-	// _, ch := setupChain(t, nil)
-	// setupTestSandboxSC(t, ch, nil)
-	//
-	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	//
-	// nft := mintDummyNFT(t, ch, wallet, addr)
-	//
-	// var baseTokensToSend coin.Value = 300_000
-	// var baseTokensForGas coin.Value = 100_000
-	// assetsToSend := isc.NewAssets(baseTokensToSend)
-	// assetsToAllow := isc.NewAssets(baseTokensToSend - baseTokensForGas)
-	//
-	// // receive an NFT back that is sent in the same request
-	// req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSendNFTsBack.Name).
-	// 	AddFungibleTokens(assetsToSend.Coins).
-	// 	WithObject(nft.ID).
-	// 	AddAllowance(assetsToAllow.AddObject(nft.ID)).
-	// 	WithMaxAffordableGasBudget()
-	//
-	// _, err := ch.PostRequestSync(req, wallet)
-	// require.NoError(t, err)
-	// require.True(t, ch.Env.HasL1NFT(addr, nft.ID))
+func TestSendObjectsBack(t *testing.T) {
+	// Send object and receive it back (on-ledger request)
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil)
+
+	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
+
+	obj := ch.Env.L1MintObject(wallet)
+
+	const baseTokensToSend = iotaclient.DefaultGasBudget
+	assetsToSend := isc.NewAssets(baseTokensToSend)
+	assetsToAllow := isc.NewEmptyAssets().AddObject(obj)
+
+	// receive the object back that is sent in the same request
+	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncSendObjectsBack.Name).
+		AddFungibleTokens(assetsToSend.Coins).
+		AddObject(obj).
+		AddAllowance(assetsToAllow).
+		WithMaxAffordableGasBudget()
+
+	_, err := ch.PostRequestSync(req, wallet)
+	require.NoError(t, err)
+
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
+		ObjectID: &obj.ID,
+		Options: &iotajsonrpc.IotaObjectDataOptions{
+			ShowOwner: true,
+		},
+	})
+	require.NoError(t, err)
+	require.EqualValues(ch.Env.T, *objRes.Data.Owner.ObjectOwner, *wallet.Address().AsIotaAddress())
 }
 
 func TestNFTOffledgerWithdraw(t *testing.T) {
-	t.Skip("TODO")
-	// // Deposit an NFT, then claim it back via offleger-request
-	// _, ch := setupChain(t, nil)
-	// setupTestSandboxSC(t, ch, nil)
-	//
-	// wallet, issuerAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	//
-	// nft := mintDummyNFT(t, ch, wallet, issuerAddr)
-	//
-	// require.True(t, ch.Env.HasL1NFT(issuerAddr, nft.ID))
-	// require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), nft.ID))
-	// require.False(t, ch.HasL2NFT(isc.NewAddressAgentID(issuerAddr), nft.ID))
-	//
-	// req := solo.NewCallParams(accounts.FuncDeposit.Message()).
-	// 	AddFungibleTokens(isc.NewAssets(1_000_000).Coins).
-	// 	WithObject(nft.ID).
-	// 	WithMaxAffordableGasBudget()
-	//
-	// _, err := ch.PostRequestSync(req, wallet)
-	// require.NoError(t, err)
-	//
-	// require.False(t, ch.Env.HasL1NFT(issuerAddr, nft.ID))
-	// require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), nft.ID))
-	// require.True(t, ch.HasL2NFT(isc.NewAddressAgentID(issuerAddr), nft.ID))
-	//
-	// wdReq := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-	// 	WithAllowance(isc.NewAssets(10_000).AddObject(nft.ID)).
-	// 	WithMaxAffordableGasBudget()
-	//
-	// _, err = ch.PostRequestOffLedger(wdReq, wallet)
-	// require.NoError(t, err)
-	//
-	// require.True(t, ch.Env.HasL1NFT(issuerAddr, nft.ID))
-	// require.False(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), nft.ID))
-	// require.False(t, ch.HasL2NFT(isc.NewAddressAgentID(issuerAddr), nft.ID))
-}
+	// Deposit an NFT, then claim it back via offleger-request
+	_, ch := setupChain(t, nil)
+	setupTestSandboxSC(t, ch, nil)
 
-func TestNFTMintToChain(t *testing.T) {
-	t.Skip("TODO")
-	// // Mints an NFT as a request
-	// _, ch := setupChain(t, nil)
-	// setupTestSandboxSC(t, ch, nil)
-	//
-	// wallet, addr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	//
-	// nftToBeMinted := &isc.NFT{
-	// 	ID:       iotago.ObjectID{},
-	// 	Issuer:   addr,
-	// 	Metadata: []byte("foobar"),
-	// }
-	//
-	// var baseTokensToSend coin.Value = 300_000
-	// var baseTokensForGas coin.Value = 100_000
-	// assetsToSend := isc.NewAssets(baseTokensToSend)
-	// assetsToAllow := isc.NewAssets(baseTokensToSend - baseTokensForGas)
-	//
-	// // receive an NFT back that is sent in the same request
-	// req := solo.NewCallParamsEx(ScName, sbtestsc.FuncClaimAllowance.Name).
-	// 	AddFungibleTokens(assetsToSend.Coins).
-	// 	WithObject(nftToBeMinted.ID).
-	// 	AddAllowance(assetsToAllow.AddObject(iotago.Address{})). // empty NFTID
-	// 	WithMaxAffordableGasBudget()
-	//
-	// _, err := ch.PostRequestSync(req, wallet)
-	// require.NoError(t, err)
-	// // find out the NFTID
-	// receipt := ch.LastReceipt()
-	// nftID := isc.NFTIDFromOutputID(receipt.DeserializedRequest().ID().OutputID())
-	//
-	// // - Chain owns the NFT on L1
-	// require.True(t, ch.Env.HasL1NFT(ch.ChainID.AsAddress(), &nftID))
-	// // - The target contract owns the NFT on L2
-	// contractAgentID := isc.NewContractAgentID(ch.ChainID, sbtestsc.Contract.Hname())
-	// require.True(t, ch.HasL2NFT(contractAgentID, &nftID))
+	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
+
+	obj := ch.Env.L1MintObject(wallet)
+	err := ch.DepositAssetsToL2(isc.NewAssets(100_000).AddObject(obj), wallet)
+	require.NoError(t, err)
+
+	wdReq := solo.NewCallParams(accounts.FuncWithdraw.Message()).
+		WithAllowance(isc.NewAssets(10_000).AddObject(obj)).
+		WithMaxAffordableGasBudget()
+
+	_, err = ch.PostRequestOffLedger(wdReq, wallet)
+	require.NoError(t, err)
+
+	objRes, err := ch.Env.L1Client().GetObject(ch.Env.Ctx(), iotaclient.GetObjectRequest{
+		ObjectID: &obj.ID,
+		Options: &iotajsonrpc.IotaObjectDataOptions{
+			ShowOwner: true,
+		},
+	})
+	require.NoError(t, err)
+	require.EqualValues(ch.Env.T, *objRes.Data.Owner.ObjectOwner, *wallet.Address().AsIotaAddress())
 }
