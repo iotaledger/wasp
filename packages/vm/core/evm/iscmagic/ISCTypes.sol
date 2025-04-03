@@ -93,13 +93,19 @@ struct ISCExpiration {
 /// A collection of coins and object IDs
 struct ISCAssets {
     CoinBalance[] coins;
-    IotaObjectID[] objects;
+    IotaObject[] objects;
 }
 
 /// An amount of some IOTA coin
 struct CoinBalance {
     string coinType;
     uint64 amount;
+}
+
+/// An IOTA object
+struct IotaObject {
+    IotaObjectID id;
+    string objectType;
 }
 
 /**

@@ -46,8 +46,8 @@ func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 }
 
 type IotaObject struct {
-	ID   iotago.ObjectID
-	Type string
+	ID         iotago.ObjectID
+	ObjectType string
 }
 
 // ISCAssets matches the struct definition in ISCTypes.sol
@@ -67,8 +67,8 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 	})
 	a.Objects.IterateSorted(func(obj isc.IotaObject) bool {
 		ret.Objects = append(ret.Objects, IotaObject{
-			ID:   obj.ID,
-			Type: obj.Type.String(),
+			ID:         obj.ID,
+			ObjectType: obj.Type.String(),
 		})
 		return true
 	})
@@ -81,7 +81,7 @@ func (a ISCAssets) Unwrap() *isc.Assets {
 		assets.AddCoin(coin.MustTypeFromString(string(b.CoinType)), coin.Value(b.Amount))
 	}
 	for _, o := range a.Objects {
-		assets.AddObject(isc.NewIotaObject(o.ID, iotago.MustTypeFromString(o.Type)))
+		assets.AddObject(isc.NewIotaObject(o.ID, iotago.MustTypeFromString(o.ObjectType)))
 	}
 	return assets
 }
