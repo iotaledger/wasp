@@ -4,14 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ChainId** | **string** | The chain id | 
 **Request** | **string** | Offledger Request (Hex) | 
 
 ## Methods
 
 ### NewOffLedgerRequest
 
-`func NewOffLedgerRequest(chainId string, request string, ) *OffLedgerRequest`
+`func NewOffLedgerRequest(request string, ) *OffLedgerRequest`
 
 NewOffLedgerRequest instantiates a new OffLedgerRequest object
 This constructor will assign default values to properties that have it defined,
@@ -25,26 +24,6 @@ will change when the set of required properties is changed
 NewOffLedgerRequestWithDefaults instantiates a new OffLedgerRequest object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
-
-### GetChainId
-
-`func (o *OffLedgerRequest) GetChainId() string`
-
-GetChainId returns the ChainId field if non-nil, zero value otherwise.
-
-### GetChainIdOk
-
-`func (o *OffLedgerRequest) GetChainIdOk() (*string, bool)`
-
-GetChainIdOk returns a tuple with the ChainId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetChainId
-
-`func (o *OffLedgerRequest) SetChainId(v string)`
-
-SetChainId sets ChainId field to given value.
-
 
 ### GetRequest
 

@@ -65,40 +65,10 @@ paths:
           content: {}
           description: The node is healthy.
       summary: Returns 200 if the node is healthy.
-  /v1/chains:
-    get:
-      operationId: getChains
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ChainInfoResponse'
-                type: array
-          description: A list of all available chains
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
-      summary: Get a list of all chains
-      tags:
-      - chains
-  /v1/chains/{chainID}:
+  /v1/chain:
     get:
       operationId: getChainInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -115,17 +85,10 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /v1/chains/{chainID}/access-node/{peer}:
+  /v1/chain/access-node/{peer}:
     delete:
       operationId: removeAccessNode
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Name or PubKey (hex) of the trusted peer
         in: path
         name: peer
@@ -151,13 +114,6 @@ paths:
     put:
       operationId: addAccessNode
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Name or PubKey (hex) of the trusted peer
         in: path
         name: peer
@@ -180,7 +136,7 @@ paths:
       summary: Configure a trusted node to be an access node.
       tags:
       - chains
-  /v1/chains/{chainID}/activate:
+  /v1/chain/activate/{chainID}:
     post:
       operationId: activateChain
       parameters:
@@ -209,19 +165,11 @@ paths:
       summary: Activate a chain
       tags:
       - chains
-  /v1/chains/{chainID}/callview:
+  /v1/chain/callview:
     post:
       description: "Execute a view call. Either use HName or Name properties. If both\
         \ are supplied, HName are used."
       operationId: callView
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -244,7 +192,7 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: ""
-  /v1/chains/{chainID}/chainrecord:
+  /v1/chain/chainrecord/{chainID}:
     post:
       operationId: setChainRecord
       parameters:
@@ -278,17 +226,10 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: ChainRecord
-  /v1/chains/{chainID}/committee:
+  /v1/chain/committee:
     get:
       operationId: getCommitteeInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -313,17 +254,10 @@ paths:
       summary: Get information about the deployed committee
       tags:
       - chains
-  /v1/chains/{chainID}/contracts:
+  /v1/chain/contracts:
     get:
       operationId: getContracts
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -350,17 +284,10 @@ paths:
       summary: Get all available chain contracts
       tags:
       - chains
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/balance:
+  /v1/chain/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
@@ -390,7 +317,7 @@ paths:
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries:
+  /v1/chain/core/accounts/account/{agentID}/foundries:
     get:
       operationId: accountsGetAccountFoundries
       parameters:
@@ -430,17 +357,10 @@ paths:
       summary: Get all foundries owned by an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts:
+  /v1/chain/core/accounts/account/{agentID}/nfts:
     get:
       operationId: accountsGetAccountNFTIDs
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
@@ -470,17 +390,10 @@ paths:
       summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce:
+  /v1/chain/core/accounts/account/{agentID}/nonce:
     get:
       operationId: accountsGetAccountNonce
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
@@ -510,7 +423,7 @@ paths:
       summary: Get the current nonce of an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber}:
+  /v1/chain/core/accounts/foundry_output/{serialNumber}:
     get:
       operationId: accountsGetFoundryOutput
       parameters:
@@ -551,17 +464,10 @@ paths:
       summary: Get the foundry output
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/nftdata/{nftID}:
+  /v1/chain/core/accounts/nftdata/{nftID}:
     get:
       operationId: accountsGetNFTData
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: NFT ID (Hex)
         in: path
         name: nftID
@@ -585,17 +491,10 @@ paths:
       summary: Get the NFT data by an ID
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/token_registry:
+  /v1/chain/core/accounts/token_registry:
     get:
       operationId: accountsGetNativeTokenIDRegistry
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -618,17 +517,10 @@ paths:
       summary: Get a list of all registries
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/total_assets:
+  /v1/chain/core/accounts/total_assets:
     get:
       operationId: accountsGetTotalAssets
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -651,17 +543,10 @@ paths:
       summary: Get all stored assets
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/latest:
+  /v1/chain/core/blocklog/blocks/latest:
     get:
       operationId: blocklogGetLatestBlockInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -684,17 +569,10 @@ paths:
       summary: Get the block info of the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts:
+  /v1/chain/core/blocklog/blocks/latest/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfLatestBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -719,17 +597,10 @@ paths:
       summary: Get all receipts of the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids:
+  /v1/chain/core/blocklog/blocks/latest/requestids:
     get:
       operationId: blocklogGetRequestIDsForLatestBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -752,17 +623,10 @@ paths:
       summary: Get the request ids for the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}:
+  /v1/chain/core/blocklog/blocks/{blockIndex}:
     get:
       operationId: blocklogGetBlockInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -793,17 +657,10 @@ paths:
       summary: Get the block info of a certain block index
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
+  /v1/chain/core/blocklog/blocks/{blockIndex}/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -836,17 +693,10 @@ paths:
       summary: Get all receipts of a certain block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
+  /v1/chain/core/blocklog/blocks/{blockIndex}/requestids:
     get:
       operationId: blocklogGetRequestIDsForBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -877,17 +727,10 @@ paths:
       summary: Get the request ids for a certain block index
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/controladdresses:
+  /v1/chain/core/blocklog/controladdresses:
     get:
       operationId: blocklogGetControlAddresses
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -910,17 +753,10 @@ paths:
       summary: Get the control addresses
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/block/latest:
+  /v1/chain/core/blocklog/events/block/latest:
     get:
       operationId: blocklogGetEventsOfLatestBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -943,17 +779,10 @@ paths:
       summary: Get events of the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex}:
+  /v1/chain/core/blocklog/events/block/{blockIndex}:
     get:
       operationId: blocklogGetEventsOfBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -984,17 +813,10 @@ paths:
       summary: Get events of a block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/request/{requestID}:
+  /v1/chain/core/blocklog/events/request/{requestID}:
     get:
       operationId: blocklogGetEventsOfRequest
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1024,17 +846,10 @@ paths:
       summary: Get events of a request
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/requests/{requestID}:
+  /v1/chain/core/blocklog/requests/{requestID}:
     get:
       operationId: blocklogGetRequestReceipt
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1064,17 +879,10 @@ paths:
       summary: Get the receipt of a certain request id
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
+  /v1/chain/core/blocklog/requests/{requestID}/is_processed:
     get:
       operationId: blocklogGetRequestIsProcessed
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1104,7 +912,7 @@ paths:
       summary: Get the request processing status
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
+  /v1/chain/core/errors/{contractHname}/message/{errorID}:
     get:
       operationId: errorsGetErrorMessageFormat
       parameters:
@@ -1152,18 +960,11 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/governance/allowedstatecontrollers:
+  /v1/chain/core/governance/allowedstatecontrollers:
     get:
       description: Returns the allowed state controller addresses
       operationId: governanceGetAllowedStateControllerAddresses
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -1186,19 +987,12 @@ paths:
       summary: Get the allowed state controller addresses
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/governance/chaininfo:
+  /v1/chain/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
         \ want to use '/v1/chains/:chainID' to get information about a chain."
       operationId: governanceGetChainInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -1221,18 +1015,11 @@ paths:
       summary: Get the chain info
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/governance/chainowner:
+  /v1/chain/core/governance/chainowner:
     get:
       description: Returns the chain owner
       operationId: governanceGetChainOwner
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -1255,17 +1042,9 @@ paths:
       summary: Get the chain owner
       tags:
       - corecontracts
-  /v1/chains/{chainID}/deactivate:
+  /v1/chain/deactivate:
     post:
       operationId: deactivateChain
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content: {}
@@ -1284,17 +1063,9 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
-  /v1/chains/{chainID}/dump-accounts:
+  /v1/chain/dump-accounts:
     post:
       operationId: dump-accounts
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content: {}
@@ -1310,17 +1081,9 @@ paths:
       summary: dump accounts information into a humanly-readable format
       tags:
       - chains
-  /v1/chains/{chainID}/estimategas-offledger:
+  /v1/chain/estimategas-offledger:
     post:
       operationId: estimateGasOffledger
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -1339,17 +1102,9 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: Request
-  /v1/chains/{chainID}/estimategas-onledger:
+  /v1/chain/estimategas-onledger:
     post:
       operationId: estimateGasOnledger
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -1368,16 +1123,8 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: Request
-  /v1/chains/{chainID}/evm:
+  /v1/chain/evm:
     post:
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         default:
           content: {}
@@ -1385,16 +1132,8 @@ paths:
       summary: Ethereum JSON-RPC
       tags:
       - chains
-  /v1/chains/{chainID}/evm/ws:
+  /v1/chain/evm/ws:
     get:
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         default:
           content: {}
@@ -1402,17 +1141,9 @@ paths:
       summary: Ethereum JSON-RPC (Websocket transport)
       tags:
       - chains
-  /v1/chains/{chainID}/mempool:
+  /v1/chain/mempool:
     get:
       operationId: getMempoolContents
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1434,17 +1165,10 @@ paths:
       summary: Get the contents of the mempool.
       tags:
       - chains
-  /v1/chains/{chainID}/receipts/{requestID}:
+  /v1/chain/receipts/{requestID}:
     get:
       operationId: getReceipt
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1465,17 +1189,10 @@ paths:
       summary: Get a receipt from a request ID
       tags:
       - chains
-  /v1/chains/{chainID}/requests/{requestID}/wait:
+  /v1/chain/requests/{requestID}/wait:
     get:
       operationId: waitForRequest
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1511,17 +1228,9 @@ paths:
       summary: Wait until the given request has been processed by the node
       tags:
       - chains
-  /v1/chains/{chainID}/rotate:
+  /v1/chain/rotate:
     post:
       operationId: rotateChain
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -1545,17 +1254,10 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: RotateRequest
-  /v1/chains/{chainID}/state/{stateKey}:
+  /v1/chain/state/{stateKey}:
     get:
       operationId: getStateValue
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: State Key (Hex)
         in: path
         name: stateKey
@@ -1573,17 +1275,9 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /v1/metrics/chain/{chainID}/messages:
+  /v1/metrics/chain/messages:
     get:
       operationId: getChainMessageMetrics
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1605,17 +1299,9 @@ paths:
       summary: Get chain specific message metrics.
       tags:
       - metrics
-  /v1/metrics/chain/{chainID}/pipe:
+  /v1/metrics/chain/pipe:
     get:
       operationId: getChainPipeMetrics
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1637,17 +1323,9 @@ paths:
       summary: Get chain pipe event metrics.
       tags:
       - metrics
-  /v1/metrics/chain/{chainID}/workflow:
+  /v1/metrics/chain/workflow:
     get:
       operationId: getChainWorkflowMetrics
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1667,27 +1345,6 @@ paths:
       security:
       - Authorization: []
       summary: Get chain workflow metrics.
-      tags:
-      - metrics
-  /v1/metrics/node/messages:
-    get:
-      operationId: getNodeMessageMetrics
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NodeMessageMetrics'
-          description: A list of all available metrics.
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
-      summary: Get accumulated message metrics.
       tags:
       - metrics
   /v1/node/config:
@@ -3848,53 +3505,6 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
-    NodeMessageMetrics:
-      example:
-        outPublisherStateTransaction:
-          lastMessage:
-            stateIndex: 1
-            txDigest: txDigest
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inOnLedgerRequest:
-          lastMessage:
-            raw: raw
-            id: id
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inAnchor:
-          lastMessage:
-            stateMetadata: stateMetadata
-            stateIndex: 1
-            raw: raw
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        registeredChainIDs:
-        - registeredChainIDs
-        - registeredChainIDs
-      properties:
-        inAnchor:
-          $ref: '#/components/schemas/AnchorMetricItem'
-        inOnLedgerRequest:
-          $ref: '#/components/schemas/OnLedgerRequestMetricItem'
-        outPublisherStateTransaction:
-          $ref: '#/components/schemas/PublisherStateTransactionItem'
-        registeredChainIDs:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RegisteredChainIDs
-            wrapped: true
-      required:
-      - inAnchor
-      - inOnLedgerRequest
-      - outPublisherStateTransaction
-      - registeredChainIDs
-      type: object
-      xml:
-        name: NodeMessageMetrics
     NodeOwnerCertificateResponse:
       example:
         certificate: certificate
@@ -3913,14 +3523,7 @@ components:
     OffLedgerRequest:
       example:
         request: Hex string
-        chainId: chainId
       properties:
-        chainId:
-          description: The chain id
-          format: string
-          type: string
-          xml:
-            name: ChainID
         request:
           description: Offledger Request (Hex)
           example: Hex string
@@ -3929,7 +3532,6 @@ components:
           xml:
             name: Request
       required:
-      - chainId
       - request
       type: object
       xml:
@@ -4290,7 +3892,6 @@ components:
             contractHName: contractHName
             functionHName: functionHName
           gasBudget: gasBudget
-          targetAddress: targetAddress
           allowance:
             coins:
             - coinType: coinType
@@ -4422,7 +4023,6 @@ components:
           contractHName: contractHName
           functionHName: functionHName
         gasBudget: gasBudget
-        targetAddress: targetAddress
         allowance:
           coins:
           - coinType: coinType
@@ -4479,11 +4079,6 @@ components:
           type: string
           xml:
             name: SenderAccount
-        targetAddress:
-          format: string
-          type: string
-          xml:
-            name: TargetAddress
       required:
       - allowance
       - assets
@@ -4494,7 +4089,6 @@ components:
       - params
       - requestId
       - senderAccount
-      - targetAddress
       type: object
       xml:
         name: RequestJSON

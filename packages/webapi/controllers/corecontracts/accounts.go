@@ -6,14 +6,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
 	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/packages/webapi/params"
 )
 
 func (c *Controller) getTotalAssets(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -33,7 +32,7 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 }
 
 func (c *Controller) getAccountBalance(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -58,7 +57,7 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 }
 
 func (c *Controller) getAccountNFTs(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -86,7 +85,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 
 func (c *Controller) getAccountFoundries(e echo.Context) error {
 	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	// ch,  err := c.chainService.GetChain()
 	// if err != nil {
 	// 	return c.handleViewCallError(err)
 	// }
@@ -106,7 +105,7 @@ func (c *Controller) getAccountFoundries(e echo.Context) error {
 }
 
 func (c *Controller) getAccountNonce(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -130,7 +129,7 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 
 func (c *Controller) getNFTData(e echo.Context) error {
 	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	// ch,  err := c.chainService.GetChain()
 	// if err != nil {
 	// 	return c.handleViewCallError(err)
 	// }
@@ -151,7 +150,7 @@ func (c *Controller) getNFTData(e echo.Context) error {
 }
 
 func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -174,7 +173,7 @@ func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
 
 func (c *Controller) getFoundryOutput(e echo.Context) error {
 	panic("TODO")
-	// ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	// ch,  err := c.chainService.GetChain()
 	// if err != nil {
 	// 	return c.handleViewCallError(err)
 	// }

@@ -24,7 +24,6 @@ const apiInstance = new RequestsApi(configuration);
 const request: RequestsApiOffLedgerRequest = {
     // Offledger request as JSON. Request encoded in Hex
   offLedgerRequest: {
-    chainId: "chainId_example",
     request: "Hex string",
   },
 };

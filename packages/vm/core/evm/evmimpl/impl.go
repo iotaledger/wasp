@@ -96,7 +96,7 @@ func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
 
-	ctx.RequireCaller(isc.NewEthereumAddressAgentID(ctx.ChainID(), evmutil.MustGetSender(tx)))
+	ctx.RequireCaller(isc.NewEthereumAddressAgentID(evmutil.MustGetSender(tx)))
 
 	emu := createEmulator(ctx)
 
@@ -248,7 +248,7 @@ func callContract(ctx isc.Sandbox, callMsg ethereum.CallMsg) []byte {
 	ctx.Privileged().GasBurnEnable(false)
 	defer ctx.Privileged().GasBurnEnable(true)
 
-	ctx.RequireCaller(isc.NewEthereumAddressAgentID(ctx.ChainID(), callMsg.From))
+	ctx.RequireCaller(isc.NewEthereumAddressAgentID(callMsg.From))
 
 	emu := createEmulator(ctx)
 	res, err := emu.CallContract(callMsg, ctx.Gas().EstimateGasMode())
@@ -282,8 +282,7 @@ func getEVMGasRatio(ctx isc.SandboxBase) util.Ratio32 {
 
 func newL1Deposit(ctx isc.Sandbox, l1DepositOriginatorBytes isc.AgentID, toAddress common.Address, assets *isc.Assets) {
 	// can only be called from the accounts contract
-	ctx.RequireCaller(isc.NewContractAgentID(ctx.ChainID(), accounts.Contract.Hname()))
-
+	ctx.RequireCaller(isc.NewContractAgentID(accounts.Contract.Hname()))
 	// create a fake tx so that the operation is visible by the EVM
 	AddDummyTxWithTransferEvents(ctx, toAddress, assets, legacy.AgentIDToBytes(ctx.SchemaVersion(), l1DepositOriginatorBytes), true)
 }

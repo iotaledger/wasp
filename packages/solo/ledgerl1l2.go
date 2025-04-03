@@ -23,7 +23,7 @@ func (ch *Chain) L2Accounts() []isc.AgentID {
 	keys := d.KeysSorted()
 	ret := make([]isc.AgentID, 0, len(keys))
 	for _, key := range keys {
-		aid, err := accounts.AgentIDFromKey(key, ch.ChainID)
+		aid, err := accounts.AgentIDFromKey(key)
 		require.NoError(ch.Env.T, err)
 		ret = append(ret, aid)
 	}

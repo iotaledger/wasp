@@ -45,7 +45,7 @@ func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestE
 		c := env.Chain.Client(nil, nodeIndex)
 		reqID := isc.RequestIDFromEVMTxHash(txHash)
 		receipt, _, err := c.WaspClient.ChainsAPI.
-			WaitForRequest(context.Background(), env.Chain.ChainID.String(), reqID.String()).
+			WaitForRequest(context.Background(), reqID.String()).
 			TimeoutSeconds(10).
 			Execute()
 		if err != nil {
@@ -88,7 +88,7 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 	}
 	tx, err := e.Chain.Client(walletKey).PostRequest(
 		context.Background(),
-		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(e.Chain.ChainID, ethAddr)),
+		accounts.FuncTransferAllowanceTo.Message(isc.NewEthereumAddressAgentID(ethAddr)),
 		chainclient.PostRequestParams{
 			Transfer:  isc.NewAssets(amount + transferAllowanceToGasBudgetBaseTokens),
 			Allowance: isc.NewAssets(amount),

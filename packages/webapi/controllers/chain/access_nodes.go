@@ -14,7 +14,7 @@ import (
 
 func (c *Controller) addAccessNode(e echo.Context) error {
 	controllerutils.SetOperation(e, "add_access_node")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	chain, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
@@ -24,7 +24,7 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 		return errors.New("no peer provided")
 	}
 
-	if err := c.nodeService.AddAccessNode(chainID, peer); err != nil {
+	if err := c.nodeService.AddAccessNode(chain.ID(), peer); err != nil {
 		if errors.Is(err, interfaces.ErrPeerNotFound) {
 			return apierrors.PeerNameNotFoundError(peer)
 		}
@@ -37,7 +37,7 @@ func (c *Controller) addAccessNode(e echo.Context) error {
 
 func (c *Controller) removeAccessNode(e echo.Context) error {
 	controllerutils.SetOperation(e, "remove_access_node")
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
+	chain, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (c *Controller) removeAccessNode(e echo.Context) error {
 		return errors.New("no peer provided")
 	}
 
-	if err := c.nodeService.DeleteAccessNode(chainID, peer); err != nil {
+	if err := c.nodeService.DeleteAccessNode(chain.ID(), peer); err != nil {
 		return err
 	}
 

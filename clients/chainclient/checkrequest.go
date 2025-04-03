@@ -11,7 +11,7 @@ import (
 // CheckRequestResult fetches the receipt for the given request ID, and returns
 // an error indicating whether the request was processed successfully.
 func (c *Client) CheckRequestResult(ctx context.Context, reqID isc.RequestID) error {
-	receipt, _, err := c.WaspClient.CorecontractsAPI.BlocklogGetRequestReceipt(ctx, c.ChainID.String(), reqID.String()).Execute()
+	receipt, _, err := c.WaspClient.CorecontractsAPI.BlocklogGetRequestReceipt(ctx, reqID.String()).Execute()
 	if err != nil {
 		return errors.New("could not fetch receipt for request: not found in blocklog")
 	}

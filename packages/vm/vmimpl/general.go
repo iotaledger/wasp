@@ -37,7 +37,7 @@ func (vmctx *vmContext) ChainOwnerID() isc.AgentID {
 }
 
 func (reqctx *requestContext) CurrentContractAgentID() isc.AgentID {
-	return isc.NewContractAgentID(reqctx.vm.ChainID(), reqctx.CurrentContractHname())
+	return isc.NewContractAgentID(reqctx.CurrentContractHname())
 }
 
 func (reqctx *requestContext) CurrentContractHname() isc.Hname {
@@ -61,7 +61,7 @@ func (reqctx *requestContext) CurrentContractAccountID() isc.AgentID {
 	if corecontracts.IsCoreHname(hname) {
 		return accounts.CommonAccount()
 	}
-	return isc.NewContractAgentID(reqctx.vm.ChainID(), hname)
+	return isc.NewContractAgentID(hname)
 }
 
 func (reqctx *requestContext) allowanceAvailable() *isc.Assets {
@@ -77,7 +77,7 @@ func (vmctx *vmContext) isCoreAccount(agentID isc.AgentID) bool {
 	if !ok {
 		return false
 	}
-	return contract.ChainID().Equals(vmctx.ChainID()) && corecontracts.IsCoreHname(contract.Hname())
+	return corecontracts.IsCoreHname(contract.Hname())
 }
 
 func (reqctx *requestContext) spendAllowedBudget(toSpend *isc.Assets) {
@@ -109,7 +109,7 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 		caller = accounts.CommonAccount()
 	}
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		if err := s.MoveBetweenAccounts(caller, target, toMove, reqctx.ChainID()); err != nil {
+		if err := s.MoveBetweenAccounts(caller, target, toMove); err != nil {
 			panic(vm.ErrNotEnoughFundsForAllowance)
 		}
 	})

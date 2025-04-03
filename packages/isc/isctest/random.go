@@ -1,6 +1,8 @@
 package isctest
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -173,5 +175,5 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() isc.AgentID {
-	return isc.NewContractAgentID(RandomChainID(), isc.Hn("testName"))
+	return isc.NewContractAgentID(isc.Hn(time.Now().String()))
 }

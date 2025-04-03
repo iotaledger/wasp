@@ -9,45 +9,31 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-// ContractAgentID is an AgentID formed by a ChainID and a contract Hname.
+// ContractAgentID is an AgentID formed by a contract Hname.
 type ContractAgentID struct {
-	chainID ChainID `bcs:"export"`
-	hname   Hname   `bcs:"export"`
+	hname Hname `bcs:"export"`
 }
 
 var _ AgentIDWithL1Address = &ContractAgentID{}
 
-func NewContractAgentID(chainID ChainID, hname Hname) *ContractAgentID {
-	return &ContractAgentID{chainID: chainID, hname: hname}
+func NewContractAgentID(hname Hname) *ContractAgentID {
+	return &ContractAgentID{hname: hname}
 }
 
-func contractAgentIDFromString(hnamePart, addrPart string) (AgentID, error) {
-	chainID, err := ChainIDFromString(addrPart)
-	if err != nil {
-		return nil, fmt.Errorf("AgentIDFromString: %w", err)
-	}
-
+func contractAgentIDFromString(hnamePart string) (AgentID, error) {
 	h, err := HnameFromString(hnamePart)
 	if err != nil {
 		return nil, fmt.Errorf("AgentIDFromString: %w", err)
 	}
-	return NewContractAgentID(chainID, h), nil
+	return NewContractAgentID(h), nil
 }
 
 func (a *ContractAgentID) Address() *cryptolib.Address {
-	return a.chainID.AsAddress()
+	return cryptolib.NewEmptyAddress()
 }
 
 func (a *ContractAgentID) Bytes() []byte {
 	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
-}
-
-func (a *ContractAgentID) ChainID() ChainID {
-	return a.chainID
-}
-
-func (a *ContractAgentID) BelongsToChain(cID ChainID) bool {
-	return a.chainID.Equals(cID)
 }
 
 func (a *ContractAgentID) BytesWithoutChainID() []byte {
@@ -62,7 +48,7 @@ func (a *ContractAgentID) Equals(other AgentID) bool {
 		return false
 	}
 	o := other.(*ContractAgentID)
-	return o.chainID.Equals(a.chainID) && o.hname == a.hname
+	return o.hname == a.hname
 }
 
 func (a *ContractAgentID) Hname() Hname {
@@ -74,5 +60,6 @@ func (a *ContractAgentID) Kind() AgentIDKind {
 }
 
 func (a *ContractAgentID) String() string {
-	return a.hname.String() + AgentIDStringSeparator + a.chainID.String()
+	k := a.hname.String()
+	return k
 }

@@ -4,16 +4,15 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**GetChainMessageMetrics**](MetricsAPI.md#GetChainMessageMetrics) | **Get** /v1/metrics/chain/{chainID}/messages | Get chain specific message metrics.
-[**GetChainPipeMetrics**](MetricsAPI.md#GetChainPipeMetrics) | **Get** /v1/metrics/chain/{chainID}/pipe | Get chain pipe event metrics.
-[**GetChainWorkflowMetrics**](MetricsAPI.md#GetChainWorkflowMetrics) | **Get** /v1/metrics/chain/{chainID}/workflow | Get chain workflow metrics.
-[**GetNodeMessageMetrics**](MetricsAPI.md#GetNodeMessageMetrics) | **Get** /v1/metrics/node/messages | Get accumulated message metrics.
+[**GetChainMessageMetrics**](MetricsAPI.md#GetChainMessageMetrics) | **Get** /v1/metrics/chain/messages | Get chain specific message metrics.
+[**GetChainPipeMetrics**](MetricsAPI.md#GetChainPipeMetrics) | **Get** /v1/metrics/chain/pipe | Get chain pipe event metrics.
+[**GetChainWorkflowMetrics**](MetricsAPI.md#GetChainWorkflowMetrics) | **Get** /v1/metrics/chain/workflow | Get chain workflow metrics.
 
 
 
 ## GetChainMessageMetrics
 
-> ChainMessageMetrics GetChainMessageMetrics(ctx, chainID).Execute()
+> ChainMessageMetrics GetChainMessageMetrics(ctx).Execute()
 
 Get chain specific message metrics.
 
@@ -30,11 +29,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.MetricsAPI.GetChainMessageMetrics(context.Background(), chainID).Execute()
+	resp, r, err := apiClient.MetricsAPI.GetChainMessageMetrics(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetChainMessageMetrics``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -46,19 +44,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetChainMessageMetricsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -81,7 +71,7 @@ Name | Type | Description  | Notes
 
 ## GetChainPipeMetrics
 
-> ConsensusPipeMetrics GetChainPipeMetrics(ctx, chainID).Execute()
+> ConsensusPipeMetrics GetChainPipeMetrics(ctx).Execute()
 
 Get chain pipe event metrics.
 
@@ -98,11 +88,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.MetricsAPI.GetChainPipeMetrics(context.Background(), chainID).Execute()
+	resp, r, err := apiClient.MetricsAPI.GetChainPipeMetrics(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetChainPipeMetrics``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -114,19 +103,11 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetChainPipeMetricsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
 
 
 ### Return type
@@ -149,7 +130,7 @@ Name | Type | Description  | Notes
 
 ## GetChainWorkflowMetrics
 
-> ConsensusWorkflowMetrics GetChainWorkflowMetrics(ctx, chainID).Execute()
+> ConsensusWorkflowMetrics GetChainWorkflowMetrics(ctx).Execute()
 
 Get chain workflow metrics.
 
@@ -166,11 +147,10 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.MetricsAPI.GetChainWorkflowMetrics(context.Background(), chainID).Execute()
+	resp, r, err := apiClient.MetricsAPI.GetChainWorkflowMetrics(context.Background()).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetChainWorkflowMetrics``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -182,83 +162,16 @@ func main() {
 
 ### Path Parameters
 
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
+This endpoint does not need any parameter.
 
 ### Other Parameters
 
 Other parameters are passed through a pointer to a apiGetChainWorkflowMetricsRequest struct via the builder pattern
 
 
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
 ### Return type
 
 [**ConsensusWorkflowMetrics**](ConsensusWorkflowMetrics.md)
-
-### Authorization
-
-[Authorization](../README.md#Authorization)
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## GetNodeMessageMetrics
-
-> NodeMessageMetrics GetNodeMessageMetrics(ctx).Execute()
-
-Get accumulated message metrics.
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.MetricsAPI.GetNodeMessageMetrics(context.Background()).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `MetricsAPI.GetNodeMessageMetrics``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `GetNodeMessageMetrics`: NodeMessageMetrics
-	fmt.Fprintf(os.Stdout, "Response from `MetricsAPI.GetNodeMessageMetrics`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-This endpoint does not need any parameter.
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetNodeMessageMetricsRequest struct via the builder pattern
-
-
-### Return type
-
-[**NodeMessageMetrics**](NodeMessageMetrics.md)
 
 ### Authorization
 

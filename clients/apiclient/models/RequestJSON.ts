@@ -27,7 +27,6 @@ export class RequestJSON {
     'params': Array<string>;
     'requestId': string;
     'senderAccount': string;
-    'targetAddress': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -85,12 +84,6 @@ export class RequestJSON {
         {
             "name": "senderAccount",
             "baseName": "senderAccount",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "targetAddress",
-            "baseName": "targetAddress",
             "type": "string",
             "format": "string"
         }    ];

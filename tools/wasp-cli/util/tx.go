@@ -14,13 +14,13 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
 
-func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, chainID isc.ChainID, f func() (isc.OffLedgerRequest, error)) {
+func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f func() (isc.OffLedgerRequest, error)) {
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
 	if config.WaitForCompletion {
 		receipt, _, err := client.ChainsAPI.
-			WaitForRequest(ctx, chainID.String(), req.ID().String()).
+			WaitForRequest(ctx, req.ID().String()).
 			WaitForL1Confirmation(true).
 			TimeoutSeconds(60).
 			Execute()
@@ -30,7 +30,7 @@ func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, chai
 	}
 }
 
-func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, chainID isc.ChainID, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...bool) *iotajsonrpc.IotaTransactionBlockResponse {
+func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...bool) *iotajsonrpc.IotaTransactionBlockResponse {
 	tx, err := f()
 	log.Check(err)
 	log.Printf("Posted on-ledger transaction %s\n", tx.Digest)
@@ -41,7 +41,7 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, chainID
 
 	if config.WaitForCompletion || len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, chainID, tx, true, 1*time.Minute)
+		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, 1*time.Minute)
 		log.Check(err2)
 	}
 

@@ -63,7 +63,7 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 	if evmAgentID, ok := senderAccount.(*isc.EthereumAddressAgentID); ok {
 		expectedNonce = evmimpl.Nonce(evm.Contract.StateSubrealm(reqctx.uncommittedState), evmAgentID.EthAddress())
 	} else {
-		expectedNonce = reqctx.accountsStateWriter(false).AccountNonce(senderAccount, reqctx.ChainID())
+		expectedNonce = reqctx.accountsStateWriter(false).AccountNonce(senderAccount)
 	}
 	if reqNonce != expectedNonce {
 		return fmt.Errorf(

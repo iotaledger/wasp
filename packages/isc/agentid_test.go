@@ -20,13 +20,12 @@ func TestAgentIDSerialization(t *testing.T) {
 	rwutil.StringTest(t, AgentID(a), AgentIDFromString)
 	rwutil.StringTest(t, a, addressAgentIDFromString)
 
-	chainID := ChainIDFromAddress(cryptolib.NewRandomAddress())
-	c := NewContractAgentID(chainID, 42)
+	ChainIDFromAddress(cryptolib.NewRandomAddress())
+	c := NewContractAgentID(42)
 	bcs.TestCodec(t, AgentID(c))
 	rwutil.StringTest(t, AgentID(c), AgentIDFromString)
 
-	e := NewEthereumAddressAgentID(chainID, common.HexToAddress("1074"))
+	e := NewEthereumAddressAgentID(common.HexToAddress("1074"))
 	bcs.TestCodec(t, AgentID(e))
-	rwutil.StringTest(t, AgentID(e), AgentIDFromString)
 	rwutil.StringTest(t, AgentID(e), AgentIDFromString)
 }

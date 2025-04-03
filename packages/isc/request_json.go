@@ -15,7 +15,6 @@ type RequestJSON struct {
 	Params        CallArgumentsJSON `json:"params" swagger:"required"`
 	RequestID     string            `json:"requestId" swagger:"required"`
 	SenderAccount string            `json:"senderAccount" swagger:"required"`
-	TargetAddress string            `json:"targetAddress" swagger:"required"`
 }
 
 func RequestToJSONObject(request Request) RequestJSON {
@@ -32,7 +31,6 @@ func RequestToJSONObject(request Request) RequestJSON {
 		Params:        msg.Params.ToCallArgumentsJSON(),
 		RequestID:     request.ID().String(),
 		SenderAccount: request.SenderAccount().String(),
-		TargetAddress: request.TargetAddress().String(),
 	}
 }
 

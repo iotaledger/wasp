@@ -24,13 +24,11 @@ func EVMCall(
 	log log.Logger,
 	call ethereum.CallMsg,
 ) ([]byte, error) {
-	chainID := anchor.ChainID()
-
 	latestState, err := store.LatestState()
 	if err != nil {
 		return nil, err
 	}
-	info := getChainInfo(chainID, latestState)
+	info := getChainInfo(anchor.ChainID(), latestState)
 
 	// 0 means view call
 	gasLimit := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
@@ -42,7 +40,7 @@ func EVMCall(
 		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	}
 
-	iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
+	iscReq := isc.NewEVMOffLedgerCallRequest(info.ChainID, call)
 	res, err := runISCRequest(
 		anchor,
 		l1Params,
