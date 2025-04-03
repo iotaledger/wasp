@@ -61,7 +61,7 @@ func (a *ChainsAPIService) ActivateChainExecute(r ApiActivateChainRequest) (*htt
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/activate"
+	localVarPath := localBasePath + "/v1/chain/activate/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -140,7 +140,6 @@ func (a *ChainsAPIService) ActivateChainExecute(r ApiActivateChainRequest) (*htt
 type ApiAddAccessNodeRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	peer string
 }
 
@@ -152,15 +151,13 @@ func (r ApiAddAccessNodeRequest) Execute() (*http.Response, error) {
 AddAccessNode Configure a trusted node to be an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param peer Name or PubKey (hex) of the trusted peer
  @return ApiAddAccessNodeRequest
 */
-func (a *ChainsAPIService) AddAccessNode(ctx context.Context, chainID string, peer string) ApiAddAccessNodeRequest {
+func (a *ChainsAPIService) AddAccessNode(ctx context.Context, peer string) ApiAddAccessNodeRequest {
 	return ApiAddAccessNodeRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		peer: peer,
 	}
 }
@@ -178,8 +175,7 @@ func (a *ChainsAPIService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/access-node/{peer}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/access-node/{peer}"
 	localVarPath = strings.Replace(localVarPath, "{"+"peer"+"}", url.PathEscape(parameterValueToString(r.peer, "peer")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -258,7 +254,6 @@ func (a *ChainsAPIService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 type ApiCallViewRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	contractCallViewRequest *ContractCallViewRequest
 }
 
@@ -278,14 +273,12 @@ CallView Call a view function on a contract by Hname
 Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiCallViewRequest
 */
-func (a *ChainsAPIService) CallView(ctx context.Context, chainID string) ApiCallViewRequest {
+func (a *ChainsAPIService) CallView(ctx context.Context) ApiCallViewRequest {
 	return ApiCallViewRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -304,8 +297,7 @@ func (a *ChainsAPIService) CallViewExecute(r ApiCallViewRequest) ([]string, *htt
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/callview"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/callview"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -373,7 +365,6 @@ func (a *ChainsAPIService) CallViewExecute(r ApiCallViewRequest) ([]string, *htt
 type ApiDeactivateChainRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 }
 
 func (r ApiDeactivateChainRequest) Execute() (*http.Response, error) {
@@ -384,14 +375,12 @@ func (r ApiDeactivateChainRequest) Execute() (*http.Response, error) {
 DeactivateChain Deactivate a chain
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiDeactivateChainRequest
 */
-func (a *ChainsAPIService) DeactivateChain(ctx context.Context, chainID string) ApiDeactivateChainRequest {
+func (a *ChainsAPIService) DeactivateChain(ctx context.Context) ApiDeactivateChainRequest {
 	return ApiDeactivateChainRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -408,8 +397,7 @@ func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/deactivate"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/deactivate"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -487,7 +475,6 @@ func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 type ApiDumpAccountsRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 }
 
 func (r ApiDumpAccountsRequest) Execute() (*http.Response, error) {
@@ -498,14 +485,12 @@ func (r ApiDumpAccountsRequest) Execute() (*http.Response, error) {
 DumpAccounts dump accounts information into a humanly-readable format
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiDumpAccountsRequest
 */
-func (a *ChainsAPIService) DumpAccounts(ctx context.Context, chainID string) ApiDumpAccountsRequest {
+func (a *ChainsAPIService) DumpAccounts(ctx context.Context) ApiDumpAccountsRequest {
 	return ApiDumpAccountsRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -522,8 +507,7 @@ func (a *ChainsAPIService) DumpAccountsExecute(r ApiDumpAccountsRequest) (*http.
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/dump-accounts"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/dump-accounts"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -601,7 +585,6 @@ func (a *ChainsAPIService) DumpAccountsExecute(r ApiDumpAccountsRequest) (*http.
 type ApiEstimateGasOffledgerRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	request *EstimateGasRequestOffledger
 }
 
@@ -619,14 +602,12 @@ func (r ApiEstimateGasOffledgerRequest) Execute() (*ReceiptResponse, *http.Respo
 EstimateGasOffledger Estimates gas for a given off-ledger ISC request
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiEstimateGasOffledgerRequest
 */
-func (a *ChainsAPIService) EstimateGasOffledger(ctx context.Context, chainID string) ApiEstimateGasOffledgerRequest {
+func (a *ChainsAPIService) EstimateGasOffledger(ctx context.Context) ApiEstimateGasOffledgerRequest {
 	return ApiEstimateGasOffledgerRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -645,8 +626,7 @@ func (a *ChainsAPIService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/estimategas-offledger"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/estimategas-offledger"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -714,7 +694,6 @@ func (a *ChainsAPIService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 type ApiEstimateGasOnledgerRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	request *EstimateGasRequestOnledger
 }
 
@@ -732,14 +711,12 @@ func (r ApiEstimateGasOnledgerRequest) Execute() (*ReceiptResponse, *http.Respon
 EstimateGasOnledger Estimates gas for a given on-ledger ISC request
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiEstimateGasOnledgerRequest
 */
-func (a *ChainsAPIService) EstimateGasOnledger(ctx context.Context, chainID string) ApiEstimateGasOnledgerRequest {
+func (a *ChainsAPIService) EstimateGasOnledger(ctx context.Context) ApiEstimateGasOnledgerRequest {
 	return ApiEstimateGasOnledgerRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -758,8 +735,7 @@ func (a *ChainsAPIService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/estimategas-onledger"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/estimategas-onledger"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -827,7 +803,6 @@ func (a *ChainsAPIService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 type ApiGetChainInfoRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	block *string
 }
 
@@ -845,14 +820,12 @@ func (r ApiGetChainInfoRequest) Execute() (*ChainInfoResponse, *http.Response, e
 GetChainInfo Get information about a specific chain
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGetChainInfoRequest
 */
-func (a *ChainsAPIService) GetChainInfo(ctx context.Context, chainID string) ApiGetChainInfoRequest {
+func (a *ChainsAPIService) GetChainInfo(ctx context.Context) ApiGetChainInfoRequest {
 	return ApiGetChainInfoRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -871,8 +844,7 @@ func (a *ChainsAPIService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -935,131 +907,9 @@ func (a *ChainsAPIService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-type ApiGetChainsRequest struct {
-	ctx context.Context
-	ApiService *ChainsAPIService
-}
-
-func (r ApiGetChainsRequest) Execute() ([]ChainInfoResponse, *http.Response, error) {
-	return r.ApiService.GetChainsExecute(r)
-}
-
-/*
-GetChains Get a list of all chains
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGetChainsRequest
-*/
-func (a *ChainsAPIService) GetChains(ctx context.Context) ApiGetChainsRequest {
-	return ApiGetChainsRequest{
-		ApiService: a,
-		ctx: ctx,
-	}
-}
-
-// Execute executes the request
-//  @return []ChainInfoResponse
-func (a *ChainsAPIService) GetChainsExecute(r ApiGetChainsRequest) ([]ChainInfoResponse, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  []ChainInfoResponse
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetChains")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chains"
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	if r.ctx != nil {
-		// API Key Authentication
-		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
-			if apiKey, ok := auth["Authorization"]; ok {
-				var key string
-				if apiKey.Prefix != "" {
-					key = apiKey.Prefix + " " + apiKey.Key
-				} else {
-					key = apiKey.Key
-				}
-				localVarHeaderParams["Authorization"] = key
-			}
-		}
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
-}
-
 type ApiGetCommitteeInfoRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	block *string
 }
 
@@ -1077,14 +927,12 @@ func (r ApiGetCommitteeInfoRequest) Execute() (*CommitteeInfoResponse, *http.Res
 GetCommitteeInfo Get information about the deployed committee
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGetCommitteeInfoRequest
 */
-func (a *ChainsAPIService) GetCommitteeInfo(ctx context.Context, chainID string) ApiGetCommitteeInfoRequest {
+func (a *ChainsAPIService) GetCommitteeInfo(ctx context.Context) ApiGetCommitteeInfoRequest {
 	return ApiGetCommitteeInfoRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1103,8 +951,7 @@ func (a *ChainsAPIService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest)
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/committee"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/committee"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1194,7 +1041,6 @@ func (a *ChainsAPIService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest)
 type ApiGetContractsRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	block *string
 }
 
@@ -1212,14 +1058,12 @@ func (r ApiGetContractsRequest) Execute() ([]ContractInfoResponse, *http.Respons
 GetContracts Get all available chain contracts
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGetContractsRequest
 */
-func (a *ChainsAPIService) GetContracts(ctx context.Context, chainID string) ApiGetContractsRequest {
+func (a *ChainsAPIService) GetContracts(ctx context.Context) ApiGetContractsRequest {
 	return ApiGetContractsRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1238,8 +1082,7 @@ func (a *ChainsAPIService) GetContractsExecute(r ApiGetContractsRequest) ([]Cont
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/contracts"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/contracts"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1329,7 +1172,6 @@ func (a *ChainsAPIService) GetContractsExecute(r ApiGetContractsRequest) ([]Cont
 type ApiGetMempoolContentsRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 }
 
 func (r ApiGetMempoolContentsRequest) Execute() ([]int32, *http.Response, error) {
@@ -1340,14 +1182,12 @@ func (r ApiGetMempoolContentsRequest) Execute() ([]int32, *http.Response, error)
 GetMempoolContents Get the contents of the mempool.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGetMempoolContentsRequest
 */
-func (a *ChainsAPIService) GetMempoolContents(ctx context.Context, chainID string) ApiGetMempoolContentsRequest {
+func (a *ChainsAPIService) GetMempoolContents(ctx context.Context) ApiGetMempoolContentsRequest {
 	return ApiGetMempoolContentsRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1366,8 +1206,7 @@ func (a *ChainsAPIService) GetMempoolContentsExecute(r ApiGetMempoolContentsRequ
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/mempool"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/mempool"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1454,7 +1293,6 @@ func (a *ChainsAPIService) GetMempoolContentsExecute(r ApiGetMempoolContentsRequ
 type ApiGetReceiptRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	requestID string
 }
 
@@ -1466,15 +1304,13 @@ func (r ApiGetReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error
 GetReceipt Get a receipt from a request ID
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiGetReceiptRequest
 */
-func (a *ChainsAPIService) GetReceipt(ctx context.Context, chainID string, requestID string) ApiGetReceiptRequest {
+func (a *ChainsAPIService) GetReceipt(ctx context.Context, requestID string) ApiGetReceiptRequest {
 	return ApiGetReceiptRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		requestID: requestID,
 	}
 }
@@ -1494,8 +1330,7 @@ func (a *ChainsAPIService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptRe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/receipts/{requestID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/receipts/{requestID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1559,7 +1394,6 @@ func (a *ChainsAPIService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptRe
 type ApiGetStateValueRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	stateKey string
 }
 
@@ -1571,15 +1405,13 @@ func (r ApiGetStateValueRequest) Execute() (*StateResponse, *http.Response, erro
 GetStateValue Fetch the raw value associated with the given key in the chain state
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param stateKey State Key (Hex)
  @return ApiGetStateValueRequest
 */
-func (a *ChainsAPIService) GetStateValue(ctx context.Context, chainID string, stateKey string) ApiGetStateValueRequest {
+func (a *ChainsAPIService) GetStateValue(ctx context.Context, stateKey string) ApiGetStateValueRequest {
 	return ApiGetStateValueRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		stateKey: stateKey,
 	}
 }
@@ -1599,8 +1431,7 @@ func (a *ChainsAPIService) GetStateValueExecute(r ApiGetStateValueRequest) (*Sta
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/state/{stateKey}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/state/{stateKey}"
 	localVarPath = strings.Replace(localVarPath, "{"+"stateKey"+"}", url.PathEscape(parameterValueToString(r.stateKey, "stateKey")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1664,7 +1495,6 @@ func (a *ChainsAPIService) GetStateValueExecute(r ApiGetStateValueRequest) (*Sta
 type ApiRemoveAccessNodeRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	peer string
 }
 
@@ -1676,15 +1506,13 @@ func (r ApiRemoveAccessNodeRequest) Execute() (*http.Response, error) {
 RemoveAccessNode Remove an access node.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param peer Name or PubKey (hex) of the trusted peer
  @return ApiRemoveAccessNodeRequest
 */
-func (a *ChainsAPIService) RemoveAccessNode(ctx context.Context, chainID string, peer string) ApiRemoveAccessNodeRequest {
+func (a *ChainsAPIService) RemoveAccessNode(ctx context.Context, peer string) ApiRemoveAccessNodeRequest {
 	return ApiRemoveAccessNodeRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		peer: peer,
 	}
 }
@@ -1702,8 +1530,7 @@ func (a *ChainsAPIService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest)
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/access-node/{peer}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/access-node/{peer}"
 	localVarPath = strings.Replace(localVarPath, "{"+"peer"+"}", url.PathEscape(parameterValueToString(r.peer, "peer")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1727,6 +1554,125 @@ func (a *ChainsAPIService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest)
 	if localVarHTTPHeaderAccept != "" {
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
+	if r.ctx != nil {
+		// API Key Authentication
+		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
+			if apiKey, ok := auth["Authorization"]; ok {
+				var key string
+				if apiKey.Prefix != "" {
+					key = apiKey.Prefix + " " + apiKey.Key
+				} else {
+					key = apiKey.Key
+				}
+				localVarHeaderParams["Authorization"] = key
+			}
+		}
+	}
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		if localVarHTTPResponse.StatusCode == 401 {
+			var v ValidationError
+			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
+			if err != nil {
+				newErr.error = err.Error()
+				return localVarHTTPResponse, newErr
+			}
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
+
+type ApiRotateChainRequest struct {
+	ctx context.Context
+	ApiService *ChainsAPIService
+	rotateRequest *RotateChainRequest
+}
+
+// RotateRequest
+func (r ApiRotateChainRequest) RotateRequest(rotateRequest RotateChainRequest) ApiRotateChainRequest {
+	r.rotateRequest = &rotateRequest
+	return r
+}
+
+func (r ApiRotateChainRequest) Execute() (*http.Response, error) {
+	return r.ApiService.RotateChainExecute(r)
+}
+
+/*
+RotateChain Rotate a chain
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiRotateChainRequest
+*/
+func (a *ChainsAPIService) RotateChain(ctx context.Context) ApiRotateChainRequest {
+	return ApiRotateChainRequest{
+		ApiService: a,
+		ctx: ctx,
+	}
+}
+
+// Execute executes the request
+func (a *ChainsAPIService) RotateChainExecute(r ApiRotateChainRequest) (*http.Response, error) {
+	var (
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.RotateChain")
+	if err != nil {
+		return nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/v1/chain/rotate"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{"application/json"}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{"application/json"}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	// body params
+	localVarPostBody = r.rotateRequest
 	if r.ctx != nil {
 		// API Key Authentication
 		if auth, ok := r.ctx.Value(ContextAPIKeys).(map[string]APIKey); ok {
@@ -1824,7 +1770,7 @@ func (a *ChainsAPIService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/chainrecord"
+	localVarPath := localBasePath + "/v1/chain/chainrecord/{chainID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1905,46 +1851,42 @@ func (a *ChainsAPIService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 	return localVarHTTPResponse, nil
 }
 
-type ApiV1ChainsChainIDEvmPostRequest struct {
+type ApiV1ChainEvmPostRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 }
 
-func (r ApiV1ChainsChainIDEvmPostRequest) Execute() (*http.Response, error) {
-	return r.ApiService.V1ChainsChainIDEvmPostExecute(r)
+func (r ApiV1ChainEvmPostRequest) Execute() (*http.Response, error) {
+	return r.ApiService.V1ChainEvmPostExecute(r)
 }
 
 /*
-V1ChainsChainIDEvmPost Ethereum JSON-RPC
+V1ChainEvmPost Ethereum JSON-RPC
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
- @return ApiV1ChainsChainIDEvmPostRequest
+ @return ApiV1ChainEvmPostRequest
 */
-func (a *ChainsAPIService) V1ChainsChainIDEvmPost(ctx context.Context, chainID string) ApiV1ChainsChainIDEvmPostRequest {
-	return ApiV1ChainsChainIDEvmPostRequest{
+func (a *ChainsAPIService) V1ChainEvmPost(ctx context.Context) ApiV1ChainEvmPostRequest {
+	return ApiV1ChainEvmPostRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
 // Execute executes the request
-func (a *ChainsAPIService) V1ChainsChainIDEvmPostExecute(r ApiV1ChainsChainIDEvmPostRequest) (*http.Response, error) {
+func (a *ChainsAPIService) V1ChainEvmPostExecute(r ApiV1ChainEvmPostRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.V1ChainsChainIDEvmPost")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.V1ChainEvmPost")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/evm"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/evm"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1995,46 +1937,42 @@ func (a *ChainsAPIService) V1ChainsChainIDEvmPostExecute(r ApiV1ChainsChainIDEvm
 	return localVarHTTPResponse, nil
 }
 
-type ApiV1ChainsChainIDEvmWsGetRequest struct {
+type ApiV1ChainEvmWsGetRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 }
 
-func (r ApiV1ChainsChainIDEvmWsGetRequest) Execute() (*http.Response, error) {
-	return r.ApiService.V1ChainsChainIDEvmWsGetExecute(r)
+func (r ApiV1ChainEvmWsGetRequest) Execute() (*http.Response, error) {
+	return r.ApiService.V1ChainEvmWsGetExecute(r)
 }
 
 /*
-V1ChainsChainIDEvmWsGet Ethereum JSON-RPC (Websocket transport)
+V1ChainEvmWsGet Ethereum JSON-RPC (Websocket transport)
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
- @return ApiV1ChainsChainIDEvmWsGetRequest
+ @return ApiV1ChainEvmWsGetRequest
 */
-func (a *ChainsAPIService) V1ChainsChainIDEvmWsGet(ctx context.Context, chainID string) ApiV1ChainsChainIDEvmWsGetRequest {
-	return ApiV1ChainsChainIDEvmWsGetRequest{
+func (a *ChainsAPIService) V1ChainEvmWsGet(ctx context.Context) ApiV1ChainEvmWsGetRequest {
+	return ApiV1ChainEvmWsGetRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
 // Execute executes the request
-func (a *ChainsAPIService) V1ChainsChainIDEvmWsGetExecute(r ApiV1ChainsChainIDEvmWsGetRequest) (*http.Response, error) {
+func (a *ChainsAPIService) V1ChainEvmWsGetExecute(r ApiV1ChainEvmWsGetRequest) (*http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.V1ChainsChainIDEvmWsGet")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.V1ChainEvmWsGet")
 	if err != nil {
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/evm/ws"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/evm/ws"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -2088,7 +2026,6 @@ func (a *ChainsAPIService) V1ChainsChainIDEvmWsGetExecute(r ApiV1ChainsChainIDEv
 type ApiWaitForRequestRequest struct {
 	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID string
 	requestID string
 	timeoutSeconds *int32
 	waitForL1Confirmation *bool
@@ -2114,15 +2051,13 @@ func (r ApiWaitForRequestRequest) Execute() (*ReceiptResponse, *http.Response, e
 WaitForRequest Wait until the given request has been processed by the node
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiWaitForRequestRequest
 */
-func (a *ChainsAPIService) WaitForRequest(ctx context.Context, chainID string, requestID string) ApiWaitForRequestRequest {
+func (a *ChainsAPIService) WaitForRequest(ctx context.Context, requestID string) ApiWaitForRequestRequest {
 	return ApiWaitForRequestRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		requestID: requestID,
 	}
 }
@@ -2142,8 +2077,7 @@ func (a *ChainsAPIService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*R
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/requests/{requestID}/wait"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/requests/{requestID}/wait"
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
 	localVarHeaderParams := make(map[string]string)

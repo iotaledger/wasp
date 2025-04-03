@@ -5,12 +5,13 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/samber/lo"
+
 	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/samber/lo"
 )
 
 func Decode[Res any](b []byte) (Res, error) {

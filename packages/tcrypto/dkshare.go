@@ -533,7 +533,7 @@ func (s *dkShareImpl) BLSRecoverMasterSignature(sigShares [][]byte, data []byte)
 		singleSigShare := tbls.SigShare(sigShares[0])
 		recoveredSignatureBin = singleSigShare.Value()
 	}
-	sig, _, err := bls.SignatureFromBytes(recoveredSignatureBin)
+	sig, err := bls.SignatureFromBytes(recoveredSignatureBin)
 	if err != nil {
 		return nil, err
 	}

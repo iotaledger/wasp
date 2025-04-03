@@ -33,6 +33,7 @@ type ParametersJSONRPC struct {
 
 	WebsocketRateLimitMessagesPerSecond int           `default:"20" usage:"the websocket rate limit (messages per second)"`
 	WebsocketRateLimitBurst             int           `default:"5" usage:"the websocket burst limit"`
+	WebsocketRateLimitEnabled           bool          `default:"true" usage:"enable rate limiting on the websocket"`
 	WebsocketConnectionCleanupDuration  time.Duration `default:"5m" usage:"defines in which interval stale connections will be cleaned up"`
 	WebsocketClientBlockDuration        time.Duration `default:"5m" usage:"the duration a misbehaving client will be blocked"`
 }

@@ -9,12 +9,12 @@ import (
 )
 
 type ChainMempoolMetricsProvider struct {
-	blocksTotalPerChain       *prometheus.CounterVec // TODO: Outdated and should be removed?
-	requestsReceivedOffLedger *prometheus.CounterVec // TODO: Outdated and should be removed?
-	requestsReceivedOnLedger  *prometheus.CounterVec // TODO: Outdated and should be removed?
-	requestsProcessed         *prometheus.CounterVec // TODO: Outdated and should be removed?
-	requestsAckMessages       *prometheus.CounterVec // TODO: Outdated and should be removed?
-	requestsProcessingTime    *prometheus.GaugeVec   // TODO: Outdated and should be removed?
+	blocksTotalPerChain       *prometheus.CounterVec
+	requestsReceivedOffLedger *prometheus.CounterVec
+	requestsReceivedOnLedger  *prometheus.CounterVec
+	requestsProcessed         *prometheus.CounterVec
+	requestsAckMessages       *prometheus.CounterVec
+	requestsProcessingTime    *prometheus.GaugeVec
 
 	timePoolSize      *prometheus.GaugeVec
 	onLedgerPoolSize  *prometheus.GaugeVec
@@ -180,10 +180,6 @@ func (m *ChainMempoolMetrics) IncRequestsReceived(request isc.Request) {
 
 func (m *ChainMempoolMetrics) IncRequestsProcessed() {
 	m.collectors.requestsProcessed.With(m.labels).Inc()
-}
-
-func (m *ChainMempoolMetrics) IncRequestsAckMessages() {
-	m.collectors.requestsAckMessages.With(m.labels).Inc()
 }
 
 func (m *ChainMempoolMetrics) SetRequestProcessingTime(duration time.Duration) {

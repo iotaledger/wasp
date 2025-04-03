@@ -2,9 +2,7 @@ package iscmoveclient
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -25,32 +23,8 @@ type StartNewChainRequest struct {
 	GasBudget         uint64
 }
 
-func (c *Client) GetObjectWithRetry(ctx context.Context, req iotaclient.GetObjectRequest) (*iotajsonrpc.IotaObjectResponse, error) {
-	obj, err := c.Client.GetObject(ctx, req)
-
-	counter := 0
-	for {
-		if counter >= c.WaitUntilEffectsVisible.Attempts {
-			return nil, errors.New("could not get object in time")
-		}
-
-		if obj != nil && obj.Error == nil {
-			return obj, err
-		}
-
-		if obj != nil && obj.Error.Data.NotExists == nil {
-			return obj, err
-		}
-
-		time.Sleep(c.WaitUntilEffectsVisible.DelayBetweenAttempts)
-
-		obj, err = c.Client.GetObject(ctx, req)
-		counter++
-	}
-
-	return nil, errors.New("could not get object in time")
-}
-
+// the only exception which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// this func automatically pick a coin
 func (c *Client) StartNewChain(
 	ctx context.Context,
 	req *StartNewChainRequest,
@@ -65,7 +39,6 @@ func (c *Client) StartNewChain(
 	argInitCoin = ptb.LastCommandResultArg()
 
 	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
-
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
 		req.Signer,
@@ -138,12 +111,15 @@ func (c *Client) GetAnchorFromObjectID(
 	ctx context.Context,
 	anchorObjectID *iotago.ObjectID,
 ) (*iscmove.AnchorWithRef, error) {
-	getObjectResponse, err := c.GetObjectWithRetry(ctx, iotaclient.GetObjectRequest{
+	getObjectResponse, err := c.GetObject(ctx, iotaclient.GetObjectRequest{
 		ObjectID: anchorObjectID,
 		Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true, ShowOwner: true},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get anchor content: %w", err)
+	}
+	if getObjectResponse.Error != nil {
+		return nil, fmt.Errorf("failed to get anchor content: %s", getObjectResponse.Error.Data.String())
 	}
 	return decodeAnchorBCS(
 		getObjectResponse.Data.Bcs.Data.MoveObject.BcsBytes,

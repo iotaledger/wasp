@@ -13,14 +13,15 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -54,7 +55,7 @@ func TestChainMgrBasic(t *testing.T) {
 
 func testChainMgrBasic(t *testing.T, n, f int) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	//
 	// Node identities and DKG.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -81,7 +82,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAnchor(stores[nid], anchor, deposit, isc.BaseTokenCoinInfo)
+		_, err := origin.InitChainByAnchor(stores[nid], anchor, deposit, parameterstest.L1Mock)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}
@@ -116,7 +117,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 			-1,   // pipeliningLimit
 			1,    // postponeRecoveryMilestones
 			nil,  // metrics
-			log.Named(nid.ShortString()),
+			log.NewChildLogger(nid.ShortString()),
 		)
 		require.NoError(t, err)
 		nodes[nid] = cm.AsGPA()
@@ -182,7 +183,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	//
 	// Now we model the situation where the consensus for LI=2 produced a TX,
 	// it was posted to the L1 and now we sending a response to the chain manager.
-	tx1Hash := hashing.PseudoRandomHash(nil)
+	tx1Digest := iotatest.RandomDigest()
 	tx1OutSI := anchor.Anchor().Object.StateIndex + uint32(1)
 	tx1OutAO := isctest.RandomStateAnchor(isctest.RandomAnchorOption{
 		ID:         anchor.GetObjectID(),
@@ -192,7 +193,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 		return nid, chainmanager.NewInputChainTxPublishResult(
 			*cmtAddrA,
 			cmt_log.LogIndex(2),
-			tx1Hash,
+			*tx1Digest,
 			&tx1OutAO,
 			true,
 		)

@@ -22,12 +22,7 @@
       "stdout"
     ],
     "disableEvents": true
-  },
-  "inx": {
-    "address": "localhost:9029",
-    "maxConnectionAttempts": 30,
-    "targetNetworkName": ""
-  },
+  },  
   "l1": {
     "httpURL": "https://api.iota-rebased-alphanet.iota.cafe",
     "websocketURL": "wss://api.iota-rebased-alphanet.iota.cafe",

@@ -8,7 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/components/webapi"
 	"github.com/iotaledger/wasp/packages/authentication"
@@ -28,7 +29,7 @@ func (n *NodeIdentityProviderMock) NodePublicKey() *cryptolib.PublicKey {
 }
 
 func main() {
-	mockLog := logger.NewNopLogger()
+	mockLog := log.NewLogger()
 	e := echo.New()
 
 	if app.Version == "" {
@@ -56,6 +57,7 @@ func main() {
 		nil,
 		"",
 		"",
+		nil,
 		nil,
 		jsonrpc.ParametersDefault(),
 	)

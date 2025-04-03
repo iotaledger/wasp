@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -21,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -54,7 +55,7 @@ type SandboxBase interface {
 	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
 	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
 	// GetCoinInfo returns information about a coin known by the chain
-	GetCoinInfo(coinType coin.Type) (*IotaCoinInfo, bool)
+	GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
 	CallView(Message) CallArguments
 	// StateR returns the immutable k/v store of the current call (in the context of the smart contract)
@@ -66,7 +67,7 @@ type SandboxBase interface {
 type SchemaVersion uint32
 
 type Helpers interface {
-	Requiref(cond bool, format string, args ...interface{})
+	Requiref(cond bool, format string, args ...any)
 	RequireNoError(err error, str ...string)
 }
 
@@ -347,6 +348,14 @@ func (m Message) String() string {
 	return fmt.Sprintf("Message(%s, %s, %s)", m.Target.Contract, m.Target.EntryPoint, m.Params)
 }
 
+func (m Message) AsISCMove() *iscmove.Message {
+	return &iscmove.Message{
+		Contract: uint32(m.Target.Contract),
+		Function: uint32(m.Target.EntryPoint),
+		Args:     m.Params,
+	}
+}
+
 func NewMessageFromNames(contract string, ep string, params ...CallArguments) Message {
 	return NewMessage(Hn(contract), Hn(ep), params...)
 }
@@ -368,10 +377,6 @@ type RequestParameters struct {
 	// It expected to contain base tokens at least the amount required for storage deposit
 	// It depends on the context how it is handled when base tokens are not enough for storage deposit
 	Assets *Assets
-	// Metadata is a request metadata. It may be nil if the request is just sending assets to L1 address
-	Metadata *SendMetadata
-	// SendOptions includes options of the request, such as time lock or expiry parameters
-	Options SendOptions
 }
 
 type Gas interface {
@@ -503,7 +508,6 @@ type Hashing interface {
 }
 
 type ED25519 interface {
-	// ValidSignature(data []byte, pubKey []byte, signature []byte) bool	// TODO: is it needed?
 	AddressFromPublicKey(pubKey []byte) (*cryptolib.Address, error)
 }
 

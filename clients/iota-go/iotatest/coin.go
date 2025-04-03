@@ -6,13 +6,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 )
 
 func EnsureCoinSplitWithBalance(
@@ -56,7 +56,7 @@ func EnsureCoinSplitWithBalance(
 		txb.Finish(),
 		[]*iotago.ObjectRef{coins[0].Ref()},
 		iotaclient.DefaultGasBudget,
-		parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
+		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)

@@ -8,11 +8,13 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/samber/lo"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
-	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
@@ -23,13 +25,13 @@ import (
 type magicContractHandler struct {
 	ctx       isc.Sandbox
 	evm       *vm.EVM
-	caller    vm.ContractRef
+	caller    common.Address
 	callValue *uint256.Int
 }
 
 // callHandler finds the requested ISC magic method by reflection, and executes
 // it.
-func callHandler(ctx isc.Sandbox, evm *vm.EVM, caller vm.ContractRef, callValue *uint256.Int, method *abi.Method, args []any) []byte {
+func callHandler(ctx isc.Sandbox, evm *vm.EVM, caller common.Address, callValue *uint256.Int, method *abi.Method, args []any) []byte {
 	return reflectCall(&magicContractHandler{
 		ctx:       ctx,
 		evm:       evm,
@@ -55,7 +57,7 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 	callArgs := make([]reflect.Value, len(args))
 	if len(args) > 0 {
 		fields := make([]reflect.StructField, len(args))
-		for i := 0; i < len(args); i++ {
+		for i := range args {
 			field := reflect.StructField{
 				Name: titleCase(method.Inputs[i].Name),
 				Type: handlerMethodType.In(i),
@@ -67,7 +69,7 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 		if err != nil {
 			panic(err)
 		}
-		for i := 0; i < len(args); i++ {
+		for i := range args {
 			callArgs[i] = reflect.ValueOf(v).Elem().Field(i)
 		}
 	}
@@ -76,7 +78,7 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 	if len(results) == 0 {
 		return nil
 	}
-	ret, err := method.Outputs.Pack(lo.Map(results, func(v reflect.Value) any {
+	ret, err := method.Outputs.Pack(lo.Map(results, func(v reflect.Value, _ int) any {
 		return v.Interface()
 	})...)
 	if err != nil {
@@ -87,14 +89,14 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 
 func (h *magicContractHandler) call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.caller),
 		msg, allowance,
 	)
 }
 
 func (h *magicContractHandler) callView(msg isc.Message) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller.Address()),
+		isc.NewEthereumAddressAgentID(h.caller),
 		msg,
 		isc.NewEmptyAssets(),
 	)

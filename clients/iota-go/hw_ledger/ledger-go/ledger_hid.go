@@ -60,7 +60,7 @@ func NewLedgerHIDTransport() LedgerAdmin {
 }
 
 func (admin *LedgerAdminHID) ListDevices() ([]string, error) {
-	devices := hid.Enumerate(0, 0)
+	devices := hid.Enumerate(VendorLedger, 0)
 	if len(devices) == 0 {
 		log.Println("No devices. Ledger LOCKED OR Other Program/Web Browser may have control of device.")
 	}
@@ -98,7 +98,7 @@ func isLedgerDevice(d hid.DeviceInfo) bool {
 }
 
 func (admin *LedgerAdminHID) CountDevices() int {
-	devices := hid.Enumerate(0, 0)
+	devices := hid.Enumerate(VendorLedger, 0)
 
 	count := 0
 	for _, d := range devices {

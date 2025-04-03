@@ -18,10 +18,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -115,23 +114,21 @@ func getAddress(out []string) string {
 	return r[1]
 }
 
-func TestWaspCLISendFunds(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestWaspCLISendFunds(t *testing.T) { // FIXME error in wasp-cli
 	w := newWaspCLITest(t)
 
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 
-	w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
+	w.MustRun("send-funds", alternativeAddress, "base|1000000")
 	checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
 }
 
 func TestWaspCLIDeposit(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
+	// w.MustRun("request-funds")
+	// time.Sleep(3 * time.Second)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
@@ -139,7 +136,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 	w.MustRun("send-funds", "-s", alternativeAddress, "base:10000000")
 
-	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.Decimals)
+	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals)
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
@@ -233,7 +230,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 
 func findRequestIDInOutput(out []string) string {
 	for _, line := range out {
-		m := regexp.MustCompile(`(?m)\(check result with: wasp-cli chain request ([-\w]+)\)$`).FindStringSubmatch(line)
+		m := regexp.MustCompile(`Request ID:\s*(0x[a-f0-9]+)`).FindStringSubmatch(line)
 		if len(m) == 0 {
 			continue
 		}
@@ -243,15 +240,15 @@ func findRequestIDInOutput(out []string) string {
 }
 
 func TestWaspCLIBlockLog(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+	t.Skip("wasp-cli need to be fixed")
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
-	out := w.MustRun("chain", "deposit", "base:100", "--node=0")
+	w.MustRun("request-funds")
+	out := w.MustRun("chain", "deposit", "base|100", "--node=0")
 	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)
 
@@ -273,7 +270,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	t.Log(out)
 	found = false
 	for _, line := range out {
-		if strings.Contains(line, "Error: (empty)") {
+		if strings.Contains(line, "Request found in block 1") {
 			found = true
 			break
 		}
@@ -286,7 +283,6 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.NotEmpty(t, reqID)
 
 	out = w.MustRun("chain", "request", reqID, "--node=0")
-
 	found = false
 	for _, line := range out {
 		if strings.Contains(line, "Error: ") {
@@ -391,7 +387,7 @@ func TestWaspCLILongParam(t *testing.T) {
 		}
 	}()
 
-	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
+	w.CreateL2NativeToken(isc.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),
@@ -548,7 +544,7 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 	w.ActivateChainOnAllNodes("chain1", 0)
 	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
 
-	w.CreateL2NativeToken(&iotago.SimpleTokenScheme{
+	w.CreateL2NativeToken(isc.SimpleTokenScheme{
 		MaximumSupply: big.NewInt(1000000),
 		MeltedTokens:  big.NewInt(0),
 		MintedTokens:  big.NewInt(0),
@@ -579,7 +575,7 @@ func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
 }
 
 func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *types.Transaction {
-	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
+	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
 	tx, err := types.SignTx(
 		types.NewTransaction(0, common.Address{}, big.NewInt(123), 100000, gasPrice, []byte{}),
@@ -624,5 +620,4 @@ func TestChangeGovernanceController(t *testing.T) {
 	w.MustRun("chain", "change-gov-controller", newGovControllerAddr.String(), "--chain=chain1")
 
 	t.Fatalf("Implement gov controller change")
-
 }

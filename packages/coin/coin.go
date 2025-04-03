@@ -10,9 +10,9 @@ import (
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Value is the balance of a given coin
@@ -27,12 +27,12 @@ func (v Value) BigInt() *big.Int {
 }
 
 func (v *Value) MarshalBCS(e *bcs.Encoder) error {
-	e.WriteCompactUint(uint64(*v))
+	e.WriteCompactUint64(uint64(*v))
 	return nil
 }
 
 func (v *Value) UnmarshalBCS(d *bcs.Decoder) error {
-	*v = Value(d.ReadCompactUint())
+	*v = Value(d.ReadCompactUint64())
 	return nil
 }
 
@@ -57,7 +57,6 @@ func ValueFromString(s string) (Value, error) {
 	return Value(value), nil
 }
 
-// TODO: maybe it is not ok to consider this constant?
 var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`

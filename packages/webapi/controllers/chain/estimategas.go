@@ -1,9 +1,10 @@
 package chain
 
 import (
-	"errors"
+	"fmt"
 	"net/http"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -56,7 +57,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	controllerutils.SetOperation(e, "estimate_gas_offledger")
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
@@ -82,20 +83,29 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 
 	req, err := c.offLedgerService.ParseRequest(requestBytes)
 	if err != nil {
-		return apierrors.InvalidPropertyError("requestBytes", err)
+		return apierrors.InvalidPropertyError("requestBytes", fmt.Errorf("not an offledger request"))
 	}
 
-	impRequest := isc.NewImpersonatedOffLedgerRequest(&req.(*isc.OffLedgerRequestData).OffLedgerRequestDataEssence).
+	offLedgerRequest, ok := req.(isc.OffLedgerRequest)
+	if !ok {
+		return apierrors.InvalidPropertyError("requestBytes", fmt.Errorf("not an offledger request"))
+	}
+
+	offLedgerRequestData, ok := offLedgerRequest.(*isc.OffLedgerRequestData)
+	if !ok {
+		return apierrors.InvalidPropertyError("requestBytes", fmt.Errorf("not an unsigned offledger request"))
+	}
+
+	impRequest := isc.NewImpersonatedOffLedgerRequest(&offLedgerRequestData.OffLedgerRequestDataEssence).
 		WithSenderAddress(requestFrom)
-
-	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {
-		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
-	}
 
 	rec, err := common.EstimateGas(ch, impRequest)
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
 	}
 
+	res := rec.DeserializedRequest()
+	fmt.Printf("RequestBytes: %s\n", hexutil.Encode(rec.Request))
+	fmt.Printf("Request data: %v %v", res, res.Message())
 	return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
 }

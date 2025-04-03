@@ -63,7 +63,7 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 	if evmAgentID, ok := senderAccount.(*isc.EthereumAddressAgentID); ok {
 		expectedNonce = evmimpl.Nonce(evm.Contract.StateSubrealm(reqctx.uncommittedState), evmAgentID.EthAddress())
 	} else {
-		expectedNonce = reqctx.accountsStateWriter(false).AccountNonce(senderAccount, reqctx.ChainID())
+		expectedNonce = reqctx.accountsStateWriter(false).AccountNonce(senderAccount)
 	}
 	if reqNonce != expectedNonce {
 		return fmt.Errorf(
@@ -72,7 +72,7 @@ func (reqctx *requestContext) checkReasonToSkipOffLedger() error {
 		)
 	}
 
-	if gasPrice := reqctx.txGasPrice(); gasPrice != nil {
+	if gasPrice := isc.RequestGasPrice(reqctx.req); gasPrice != nil {
 		if err := evmutil.CheckGasPrice(gasPrice, reqctx.vm.chainInfo.GasFeePolicy); err != nil {
 			return err
 		}

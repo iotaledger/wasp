@@ -15,7 +15,8 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -41,7 +42,7 @@ type Node struct {
 	procLock                *sync.RWMutex                             // To guard access to the process pool.
 	initMsgQueue            chan *initiatorInitMsgIn                  // Incoming events processed async.
 	cleanupFunc             context.CancelFunc                        // Peering cleanup func
-	log                     *logger.Logger
+	log                     log.Logger
 }
 
 // Init creates new node, that can participate in the DKG procedure.
@@ -50,7 +51,7 @@ func NewNode(
 	identity *cryptolib.KeyPair,
 	netProvider peering.NetworkProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	log *logger.Logger,
+	log log.Logger,
 ) (*Node, error) {
 	kyberKeyPair, err := identity.GetPrivateKey().AsKyberKeyPair()
 	if err != nil {
@@ -85,7 +86,7 @@ func (n *Node) receiveInitMessage(peerMsg *peering.PeerMessageIn) {
 	}
 	msg := &initiatorInitMsg{}
 	if err := msgFromBytes(peerMsg.MsgData, msg); err != nil {
-		n.log.Warnf("Dropping unknown message: %v", peerMsg)
+		n.log.LogWarnf("Dropping unknown message: %v", peerMsg)
 		return
 	}
 	n.initMsgQueue <- &initiatorInitMsgIn{
@@ -110,7 +111,7 @@ func (n *Node) GenerateDistributedKey(
 	stepRetry time.Duration, // Retry for Initiator -> Peer communication.
 	timeout time.Duration, // Timeout for the entire procedure.
 ) (tcrypto.DKShare, error) {
-	n.log.Infof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().PeeringURL(), peerPubs)
+	n.log.LogInfof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().PeeringURL(), peerPubs)
 	var err error
 	peerCount := uint16(len(peerPubs))
 	//
@@ -155,7 +156,7 @@ func (n *Node) GenerateDistributedKey(
 	// Initialize the peers.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep0Initialize,
 		func(peerIdx uint16, peer peering.PeerSender) {
-			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.PeeringURL())
+			n.log.LogDebugf("Initiator sends step=%v command to %v", rabinStep0Initialize, peer.PeeringURL())
 			peer.SendMsg(makePeerMessage(initPeeringID, peering.ReceiverDkgInit, rabinStep0Initialize, &initiatorInitMsg{
 				dkgRef:       dkgID.String(), // It could be some other identifier.
 				peeringID:    dkgID,
@@ -195,7 +196,7 @@ func (n *Node) GenerateDistributedKey(
 	pubShareResponses := map[int]*initiatorPubShareMsg{}
 	if err = n.exchangeInitiatorMsgs(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep6R6SendReconstructCommits,
 		func(peerIdx uint16, peer peering.PeerSender) {
-			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.PeeringURL())
+			n.log.LogDebugf("Initiator sends step=%v command to %v", rabinStep6R6SendReconstructCommits, peer.PeeringURL())
 			peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, rabinStep6R6SendReconstructCommits, &initiatorStepMsg{}))
 		},
 		func(recv *peering.PeerMessageGroupIn, initMsg initiatorMsg) (bool, error) {
@@ -204,7 +205,7 @@ func (n *Node) GenerateDistributedKey(
 				pubShareResponses[int(recv.SenderIndex)] = msg
 				return true, nil
 			default:
-				n.log.Errorf("msgType != initiatorPubShareMsg: %v", msg)
+				n.log.LogErrorf("msgType != initiatorPubShareMsg: %v", msg)
 				return false, errors.New("msgType != initiatorPubShareMsg")
 			}
 		},
@@ -229,12 +230,12 @@ func (n *Node) GenerateDistributedKey(
 		edPublicShares[i] = pubShareResponses[i].edPublicShare
 		blsPublicShares[i] = pubShareResponses[i].blsPublicShare
 	}
-	n.log.Debugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, edSharedPublic)
+	n.log.LogDebugf("Generated SharedAddress=%v, SharedPublic=%v", sharedAddress, edSharedPublic)
 	//
 	// CommitToNode the keys to persistent storage.
 	if err = n.exchangeInitiatorAcks(netGroup, netGroup.AllNodes(), recvCh, rTimeout, gTimeout, rabinStep7CommitAndTerminate,
 		func(peerIdx uint16, peer peering.PeerSender) {
-			n.log.Debugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.PeeringURL())
+			n.log.LogDebugf("Initiator sends step=%v command to %v", rabinStep7CommitAndTerminate, peer.PeeringURL())
 			peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, rabinStep7CommitAndTerminate, &initiatorDoneMsg{
 				edPubShares:  edPublicShares,
 				blsPubShares: blsPublicShares,
@@ -346,7 +347,7 @@ func (n *Node) exchangeInitiatorStep(
 	step byte,
 ) error {
 	sendCB := func(peerIdx uint16, peer peering.PeerSender) {
-		n.log.Debugf("Initiator sends step=%v command to %v", step, peer.PeeringURL())
+		n.log.LogDebugf("Initiator sends step=%v command to %v", step, peer.PeeringURL())
 		peer.SendMsg(makePeerMessage(dkgID, peering.ReceiverDkg, step, &initiatorStepMsg{}))
 	}
 	return n.exchangeInitiatorAcks(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB)
@@ -362,7 +363,7 @@ func (n *Node) exchangeInitiatorAcks(
 	sendCB func(peerIdx uint16, peer peering.PeerSender),
 ) error {
 	recvCB := func(recv *peering.PeerMessageGroupIn, msg initiatorMsg) (bool, error) {
-		n.log.Debugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.String())
+		n.log.LogDebugf("Initiator recv. step=%v response %v from %v", step, msg, recv.SenderPubKey.String())
 		return true, nil
 	}
 	return n.exchangeInitiatorMsgs(netGroup, peers, recvCh, retryTimeout, giveUpTimeout, step, sendCB, recvCB)
@@ -381,7 +382,7 @@ func (n *Node) exchangeInitiatorMsgs(
 	recvInitCB := func(recv *peering.PeerMessageGroupIn) (bool, error) {
 		initMsg, err := readInitiatorMsg(recv.PeerMessageData, n.edSuite, n.blsSuite)
 		if err != nil {
-			n.log.Warnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
+			n.log.LogWarnf("Failed to read message from %v: %v", recv.SenderPubKey.String(), recv.PeerMessageData)
 			return false, err
 		}
 		if initMsg == nil {

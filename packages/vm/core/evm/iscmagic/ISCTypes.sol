@@ -126,29 +126,21 @@ library ISCTypes {
     /**
      * @notice Create a new Agent ID from an Ethereum address.
      * @param addr The Ethereum address.
-     * @param iscChainID The Chain ID.
-     * @return The new Agent ID.
+     * @return The new ISCAgentID.
      */
     function newEthereumAgentID(
-        address addr,
-        ISCChainID iscChainID
+        address addr
     ) internal pure returns (ISCAgentID memory) {
-        bytes memory chainIDBytes = abi.encodePacked(iscChainID);
         bytes memory addrBytes = abi.encodePacked(addr);
         ISCAgentID memory r;
-        r.data = new bytes(1 + addrBytes.length + chainIDBytes.length);
+        r.data = new bytes(1 + addrBytes.length);
 
         // write agentID kind
         r.data[0] = bytes1(ISCAgentIDKindEthereumAddress);
 
-        // write chainID
-        for (uint i = 0; i < chainIDBytes.length; i++) {
-            r.data[i + 1] = chainIDBytes[i];
-        }
-
         // write eth addr
         for (uint i = 0; i < addrBytes.length; i++) {
-            r.data[i + 1 + chainIDBytes.length] = addrBytes[i];
+            r.data[i + 1] = addrBytes[i];
         }
         return r;
     }
@@ -191,31 +183,11 @@ library ISCTypes {
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
         require(isEthereum(a));
         bytes memory b = new bytes(20);
-        // offset of 33 (kind byte + chainID)
-        for (uint i = 0; i < 20; i++) b[i] = a.data[i + 33];
+        // offset of 1 (kind byte + address)
+        for (uint i = 0; i < 20; i++) b[i] = a.data[i + 1];
         return address(uint160(bytes20(b)));
     }
 
-    /**
-     * @notice Get the chain ID from an Agent ID.
-     * @param a The Agent ID.
-     * @return The Chain ID.
-     */
-    function chainID(ISCAgentID memory a) internal pure returns (ISCChainID) {
-        require(isEthereum(a));
-        bytes32 out;
-        for (uint i = 0; i < 32; i++) {
-            // offset of 1 (kind byte)
-            out |= bytes32(a.data[1 + i] & 0xFF) >> (i * 8);
-        }
-        return ISCChainID.wrap(out);
-    }
-
-    /**
-     * @notice Convert a token ID to an Object ID.
-     * @param tokenID The token ID.
-     * @return The Object ID.
-     */
     function asObjectID(uint256 tokenID) internal pure returns (IotaObjectID) {
         return IotaObjectID.wrap(bytes32(tokenID));
     }

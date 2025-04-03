@@ -23,7 +23,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -69,7 +70,7 @@ type cmtLogImpl struct {
 	output                 Output                 // The current output.
 	first                  bool                   // A workaround to senf the first nextLI messages.
 	asGPA                  gpa.GPA                // This object, just with all the needed wrappers.
-	log                    *logger.Logger
+	log                    log.Logger
 }
 
 var _ gpa.GPA = &cmtLogImpl{}
@@ -89,7 +90,7 @@ func New(
 	deriveAOByQuorum bool,
 	pipeliningLimit int,
 	cclMetrics *metrics.ChainCmtLogMetrics,
-	log *logger.Logger,
+	log log.Logger,
 ) (CmtLog, error) {
 	cmtAddr := dkShare.GetSharedPublic().AsAddress()
 	//
@@ -117,13 +118,13 @@ func New(
 	n := len(nodeIDs)
 	f := dkShare.DSS().MaxFaulty()
 	if f > byz_quorum.MaxF(n) {
-		log.Panicf("invalid f=%v for n=%v", f, n)
+		log.LogPanicf("invalid f=%v for n=%v", f, n)
 	}
 	//
 	// Log important info.
-	log.Infof("Committee: N=%v, F=%v, address=%v, address=%v", n, f, cmtAddr.String(), cmtAddr.String())
+	log.LogInfof("Committee: N=%v, F=%v, address=%v, address=%v", n, f, cmtAddr.String(), cmtAddr.String())
 	for i := range nodePKs {
-		log.Infof("Committee node[%v]=%v", i, nodePKs[i])
+		log.LogInfof("Committee node[%v]=%v", i, nodePKs[i])
 	}
 	//
 	// Create it.
@@ -146,17 +147,17 @@ func New(
 		}
 	}
 	cl.varConsInsts = NewVarConsInsts(prevLI.Next(), persistLIFunc, func(out Output) {
-		log.Debugf("VarConsInsts: Output received, %v", out)
+		log.LogDebugf("VarConsInsts: Output received, %v", out)
 		cl.output = out
-	}, log.Named("VCI"))
+	}, log.NewChildLogger("VCI"))
 	cl.varLogIndex = NewVarLogIndex(nodeIDs, n, f, prevLI, func(li LogIndex) gpa.OutMessages {
-		log.Debugf("VarLogIndex: Output received, %v", li)
+		log.LogDebugf("VarLogIndex: Output received, %v", li)
 		return cl.varConsInsts.LatestSeenLI(li, cl.varLogIndex.ConsensusStarted)
-	}, cclMetrics, log.Named("VLI"))
+	}, cclMetrics, log.NewChildLogger("VLI"))
 	cl.varLocalView = NewVarLocalView(pipeliningLimit, func(ao *isc.StateAnchor) gpa.OutMessages {
-		log.Debugf("VarLocalView: Output received, %v", ao)
+		log.LogDebugf("VarLocalView: Output received, %v", ao)
 		return cl.varConsInsts.LatestL1AO(ao, cl.varLogIndex.ConsensusStarted)
-	}, log.Named("VLV"))
+	}, log.NewChildLogger("VLV"))
 	cl.asGPA = gpa.NewOwnHandler(me, cl)
 	return cl, nil
 }
@@ -172,7 +173,7 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputCanPropose:
 		break // Don't log, its periodic.
 	default:
-		cl.log.Debugf("Input %T: %+v", input, input)
+		cl.log.LogDebugf("Input %T: %+v", input, input)
 	}
 	switch input := input.(type) {
 	case *inputAnchorConfirmed:
@@ -198,7 +199,7 @@ func (cl *cmtLogImpl) Input(input gpa.Input) gpa.OutMessages {
 func (cl *cmtLogImpl) Message(msg gpa.Message) gpa.OutMessages {
 	msgNLI, ok := msg.(*MsgNextLogIndex)
 	if !ok {
-		cl.log.Warnf("dropping unexpected message %T: %+v", msg, msg)
+		cl.log.LogWarnf("dropping unexpected message %T: %+v", msg, msg)
 		return nil
 	}
 	return cl.handleMsgNextLogIndex(msgNLI)
@@ -231,18 +232,19 @@ func (cl *cmtLogImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) 
 }
 
 func (cl *cmtLogImpl) handleInputCanPropose() gpa.OutMessages {
+	msgs := gpa.NoMessages()
+	msgs.AddAll(cl.varConsInsts.Tick(cl.varLogIndex.ConsensusStarted))
+
 	if cl.first && cl.output != nil && len(cl.output) > 0 {
 		// This is a workaround for sending initial NextLI messages on boot.
 		cl.first = false
-		msgs := gpa.NoMessages()
 		for li := range cl.output {
-			cl.log.Debugf("Sending initial NextLI messages for LI=%v", li)
+			cl.log.LogDebugf("Sending initial NextLI messages for LI=%v", li)
 			msgs.AddAll(cl.varLogIndex.ConsensusStarted(li))
 		}
 		return msgs
 	}
-	// TODO: Is it still needed?
-	return nil
+	return msgs
 }
 
 func (cl *cmtLogImpl) handleInputSuspend() {

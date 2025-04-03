@@ -49,7 +49,7 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 	return APIArgsToCallArgs(res)
 }
 
-func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.APIClient, chainID isc.ChainID, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.APIClient, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	req, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
 		return nil, err
@@ -58,12 +58,12 @@ func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.API
 	// TODO: In theory we can pass multiple requests into a PTB call, but we don't right now.
 	// For now fake old behavior and just create an array with a length of 1
 
-	reqs := []isc.RequestID{isc.RequestID(req.ObjectID.Data())}
+	reqs := []isc.RequestID{isc.RequestID(*req.ObjectID)}
 
 	ret := make([]*apiclient.ReceiptResponse, len(reqs))
 	for i, req := range reqs {
 		receipt, _, err := client.ChainsAPI.
-			WaitForRequest(ctx, chainID.String(), req.String()).
+			WaitForRequest(ctx, req.String()).
 			TimeoutSeconds(int32(timeout.Seconds())).
 			WaitForL1Confirmation(waitForL1Confirmation).
 			Execute()

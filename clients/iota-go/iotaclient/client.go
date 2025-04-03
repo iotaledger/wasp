@@ -2,6 +2,7 @@ package iotaclient
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
@@ -35,4 +36,56 @@ type transport interface {
 
 func (c *Client) WaitUntilStopped() {
 	c.transport.WaitUntilStopped()
+}
+
+type RetryCondition[T any] func(result T, err error) bool
+
+// Retry retries a function until the condition is met or the context is cancelled
+func Retry[T any](
+	ctx context.Context,
+	f func() (T, error),
+	shouldRetry RetryCondition[T],
+	params *WaitParams,
+) (T, error) {
+	var result T
+	var err error
+
+	// If params is nil, just run once without retrying
+	if params == nil {
+		return f()
+	}
+
+	for i := range params.Attempts {
+		if ctx.Err() != nil {
+			return result, ctx.Err()
+		}
+
+		result, err = f()
+		if !shouldRetry(result, err) {
+			return result, nil
+		}
+		// no need to wait after last attempt
+		if i < params.Attempts-1 {
+			select {
+			case <-ctx.Done():
+				return result, ctx.Err()
+			case <-time.After(params.DelayBetweenAttempts):
+			}
+		}
+	}
+
+	// failed all attempts, but we still might return incomplete result
+	return result, fmt.Errorf("retry failed after %d attempts: %v", params.Attempts, err)
+}
+
+// RetryOnError retries a function until the error is nil or the context is cancelled
+func RetryOnError[T any](ctx context.Context, f func() (T, error), params *WaitParams) (T, error) {
+	return Retry(ctx, f, DefaultRetryCondition[T](), params)
+}
+
+// DefaultRetryCondition returns a RetryCondition that only retries on error
+func DefaultRetryCondition[T any]() RetryCondition[T] {
+	return func(result T, err error) bool {
+		return err != nil
+	}
 }

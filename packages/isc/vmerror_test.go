@@ -3,13 +3,13 @@ package isc_test
 import (
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
 func TestVMErrorCodeSerialization(t *testing.T) {
-	bcs.TestCodecVsRef(t, isc.VMErrorCode{
+	bcs.TestCodec(t, isc.VMErrorCode{
 		ContractID: isc.Hname(1074),
 		ID:         123,
 	})

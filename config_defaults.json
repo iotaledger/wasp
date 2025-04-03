@@ -10,22 +10,16 @@
     }
   },
   "logger": {
+    "name": "",
     "level": "info",
-    "disableCaller": true,
-    "disableStacktrace": false,
-    "stacktraceLevel": "panic",
-    "encoding": "console",
-    "encodingConfig": {
-      "timeEncoder": "rfc3339"
-    },
+    "timeFormat": "rfc3339",
     "outputPaths": [
       "stdout"
-    ],
-    "disableEvents": true
+    ]
   },
   "l1": {
-    "httpURL": "http://localhost:9000",
     "websocketURL": "ws://localhost:9000",
+    "httpURL": "http://localhost:9000",
     "packageID": "",
     "maxConnectionAttempts": 30,
     "targetNetworkName": ""
@@ -142,6 +136,7 @@
         "maxLogsInResult": 10000,
         "websocketRateLimitMessagesPerSecond": 20,
         "websocketRateLimitBurst": 5,
+        "websocketRateLimitEnabled": true,
         "websocketConnectionCleanupDuration": "5m",
         "websocketClientBlockDuration": "5m"
       }

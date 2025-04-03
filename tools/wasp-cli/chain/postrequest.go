@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -22,7 +23,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	chainClient := cliclients.ChainClient(client, chainID)
 
 	if offLedger {
-		util.WithOffLedgerRequest(ctx, client, chainID, func() (isc.OffLedgerRequest, error) {
+		util.WithOffLedgerRequest(ctx, client, func() (isc.OffLedgerRequest, error) {
 			return chainClient.PostOffLedgerRequest(ctx, msg, params)
 		})
 		return
@@ -31,7 +32,7 @@ func postRequest(ctx context.Context, client *apiclient.APIClient, chain string,
 	ctx, cancel := context.WithTimeout(ctx, time.Second*10)
 	defer cancel()
 
-	util.WithSCTransaction(ctx, client, config.GetChain(chain), func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 		return chainClient.PostRequest(ctx, msg, params)
 	})
 }
@@ -51,19 +52,20 @@ func initPostRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			cname := args[0]
 			fname := args[1]
-			params := util.EncodeParams(args[2:], chainID)
+			params := util.EncodeParams(args[2:])
 			msg := isc.NewMessage(isc.Hn(cname), isc.Hn(fname), params)
 
 			// allowanceTokens := util.ParseFungibleTokens(postRequestParams.allowance)
 			postParams := chainclient.PostRequestParams{
-				Transfer:  isc.NewAssets(100000000),
-				Allowance: isc.NewAssets(1000000),
+				Transfer:    isc.NewAssets(100000000),
+				Allowance:   isc.NewAssets(1000000),
+				GasBudget:   iotaclient.DefaultGasBudget,
+				L2GasBudget: iotaclient.DefaultGasBudget,
 			}
 			postRequest(ctx, client, chain, msg, postParams, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
 		},

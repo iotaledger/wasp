@@ -69,13 +69,6 @@ func (pkT *PublicKey) AsKey() PublicKeyKey {
 }
 
 func (pkT *PublicKey) AsAddress() *Address {
-	// TODO: Clarify the typeKey here. The SUI/IOTA Scheme does not have a typeKey, previously it was {0}
-	typeKey := []byte{}
-	typeKey = append(typeKey, pkT.key...)
-	return newAddressFromArray(blake2b.Sum256(typeKey))
-}
-
-func (pkT *PublicKey) AsAddressLegacy() *Address {
 	return newAddressFromArray(blake2b.Sum256(pkT.key))
 }
 

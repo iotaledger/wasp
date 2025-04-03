@@ -1,9 +1,9 @@
 package sm_messages
 
 import (
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BlockMessage struct {

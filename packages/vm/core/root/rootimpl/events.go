@@ -3,9 +3,9 @@ package rootimpl
 import (
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func eventDeploy(ctx isc.Sandbox, progHash hashing.HashValue, name string) {

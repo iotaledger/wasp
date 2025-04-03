@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 )
@@ -17,6 +18,7 @@ type VarConsInsts interface {
 	ConsTimeout(li LogIndex, cb onLIInc) gpa.OutMessages
 	LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMessages
 	LatestL1AO(ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages
+	Tick(cb onLIInc) gpa.OutMessages
 	StatusString() string
 }
 
@@ -31,7 +33,8 @@ type varConsInstsImpl struct {
 	hist        uint32           // How many instances to keep running.
 	persistCB   func(li LogIndex)
 	outputCB    func(lis Output)
-	log         *logger.Logger
+	delayed     []LogIndex
+	log         log.Logger
 }
 
 var _ VarConsInsts = &varConsInstsImpl{}
@@ -41,7 +44,7 @@ func NewVarConsInsts(
 	minLI LogIndex,
 	persistCB func(li LogIndex),
 	outputCB func(lis Output),
-	log *logger.Logger,
+	log log.Logger,
 ) VarConsInsts {
 	vci := &varConsInstsImpl{
 		haveConsOut: false,
@@ -55,6 +58,7 @@ func NewVarConsInsts(
 		hist:      3,
 		persistCB: persistCB,
 		outputCB:  outputCB,
+		delayed:   make([]LogIndex, 3), // Will wait for 3 time ticks before considering SeenLI.
 		log:       log,
 	}
 	vci.outputCB(maps.Clone(vci.lis))
@@ -87,9 +91,12 @@ func (vci *varConsInstsImpl) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMe
 	msgs := gpa.NoMessages()
 	msgs.AddAll(vci.trySet(seenLI.Prev(), nil, cb))
 	if !vci.haveConsOut {
-		// Still don't have the initial round succeesed,
-		// thus keep proposing the NIL.
-		msgs.AddAll(vci.trySet(seenLI, nil, cb))
+		// Still don't have the initial round succeeded, thus keep proposing the NIL.
+		// A race condition is possible between receiving the next LI from the VarLogIndex,
+		// and receiving the consensus output. While the actual convergence at runtime
+		// happens anyway, we delay reaction to the VarLogIndex output to some delay to make
+		// the test-cases more deterministic.
+		vci.delayed[0] = MaxLogIndex(vci.delayed[0], seenLI)
 	}
 	return msgs
 }
@@ -98,6 +105,19 @@ func (vci *varConsInstsImpl) LatestSeenLI(seenLI LogIndex, cb onLIInc) gpa.OutMe
 func (vci *varConsInstsImpl) LatestL1AO(ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
 	vci.lastAO = ao
 	return vci.trySet(vci.lastLI, ao, cb) // Finish ConsOutputSkipBase, if pending.
+}
+
+func (vci *varConsInstsImpl) Tick(cb onLIInc) gpa.OutMessages {
+	n := len(vci.delayed)
+	last := vci.delayed[n-1]
+	for i := n - 1; i > 0; i-- {
+		vci.delayed[i] = vci.delayed[i-1]
+	}
+	vci.delayed[0] = NilLogIndex()
+	if last.IsNil() {
+		return nil
+	}
+	return vci.trySet(last, nil, cb)
 }
 
 func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc) gpa.OutMessages {
@@ -127,7 +147,7 @@ func (vci *varConsInstsImpl) trySet(li LogIndex, ao *isc.StateAnchor, cb onLIInc
 	// Cleanup old instances.
 	for i := range vci.lis {
 		if i < vci.minLI {
-			vci.log.Debugf("Cleaning up LI=%v, minLI=%v, maxLI=%v", i, vci.minLI, vci.maxLI)
+			vci.log.LogDebugf("Cleaning up LI=%v, minLI=%v, maxLI=%v", i, vci.minLI, vci.maxLI)
 			delete(vci.lis, i)
 			continue
 		}

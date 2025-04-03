@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -64,7 +64,6 @@ var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
 // initChain initializes a new chain state on the given empty store, and returns a fake L1
 // anchor with a random ObjectID and the corresponding StateMetadata.
 func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnchor {
-	baseTokenCoinInfo := &isc.IotaCoinInfo{CoinType: coin.BaseTokenType}
 	// create the anchor for a new chain
 	initParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chainCreator.Address()),
@@ -79,7 +78,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 		initParams,
 		iotago.ObjectID{},
 		originDeposit,
-		baseTokenCoinInfo,
+		parameterstest.L1Mock,
 	)
 	stateMetadataBytes := stateMetadata.Bytes()
 	anchor := iscmove.Anchor{
@@ -191,7 +190,7 @@ func runRequestsAndTransitionAnchor(
 			Type:  coin.BaseTokenType,
 			Ref:   iotatest.RandomObjectRef(),
 		},
-		L1Params:             parameters.L1Default,
+		L1Params:             parameterstest.L1Mock,
 		Store:                store,
 		Requests:             reqs,
 		Timestamp:            time.Time{},
@@ -225,7 +224,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 	{
 		state := lo.Must(store.LatestState())
 		senderL2Balance := accounts.NewStateReaderFromChainState(schemaVersion, state).
-			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()), chainID)
+			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()))
 		require.Zero(t, senderL2Balance.BaseTokens())
 	}
 
@@ -250,7 +249,7 @@ func TestOnLedgerAccountsDeposit(t *testing.T) {
 		state := lo.Must(store.LatestState())
 		require.Equal(t, block.StateIndex(), state.BlockIndex())
 		senderL2Balance := accounts.NewStateReaderFromChainState(schemaVersion, state).
-			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()), chainID)
+			GetAccountFungibleTokens(isc.NewAddressAgentID(sender.Address()))
 		receipt := lo.Must(blocklog.NewStateReaderFromChainState(state).
 			GetRequestReceipt(req.ID()))
 		require.EqualValues(t, baseTokens-receipt.GasFeeCharged, senderL2Balance.BaseTokens())

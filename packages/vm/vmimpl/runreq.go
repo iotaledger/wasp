@@ -2,7 +2,6 @@ package vmimpl
 
 import (
 	"math"
-	"math/big"
 	"os"
 	"runtime/debug"
 	"time"
@@ -57,7 +56,7 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 
 	result, err := reqctx.callTheContract()
 	if err == nil {
-		err = vmctx.checkTransactionSize()
+		err = vmctx.txbuilder.CheckTransactionSize()
 	}
 	if err != nil {
 		// skip the request / rollback tx builder (no need to rollback the state, because the mutations will never be applied)
@@ -94,7 +93,7 @@ func (reqctx *requestContext) consumeRequest() {
 		// off ledger request does not bring any deposit
 		return
 	}
-	reqctx.vm.task.Log.Debugf("consumeRequest: %s with %s", req.ID(), req.Assets())
+	reqctx.vm.task.Log.LogDebugf("consumeRequest: %s with %s", req.ID(), req.Assets())
 	reqctx.vm.txbuilder.ConsumeRequest(req)
 
 	// if sender is specified, all assets goes to sender's sender
@@ -111,27 +110,13 @@ func (reqctx *requestContext) consumeRequest() {
 
 	senderBaseTokens := req.Assets().BaseTokens() + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
-	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(reqctx.txGasPrice(), parameters.Decimals)
+	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
 	if senderBaseTokens < minReqCost {
 		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
 	}
 
 	reqctx.creditObjectsToAccount(sender, req.Assets().Objects.Sorted())
 	reqctx.creditToAccount(sender, req.Assets().Coins)
-}
-
-// txGasPrice returns:
-// for ISC request: nil,
-// for EVM tx: the gas price set in the EVM tx (full decimals), or 0 if gas price is unset
-func (reqctx *requestContext) txGasPrice() *big.Int {
-	callMsg := reqctx.req.EVMCallMsg()
-	if callMsg == nil {
-		return nil
-	}
-	if callMsg.GasPrice == nil {
-		return big.NewInt(0)
-	}
-	return new(big.Int).Set(callMsg.GasPrice)
 }
 
 // checkAllowance ensure there are enough funds to cover the specified allowance
@@ -182,7 +167,7 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 	})
 	if err != nil {
 		// this should never happen. something is wrong here, SKIP the request
-		reqctx.vm.task.Log.Errorf("panic before request execution (reqid: %s): %v", reqctx.req.ID(), err)
+		reqctx.vm.task.Log.LogErrorf("panic before request execution (reqid: %s): %v", reqctx.req.ID(), err)
 		return nil, err
 	}
 
@@ -251,15 +236,15 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 		if executionErr != nil {
 			callErrStr = executionErr.Error()
 		}
-		reqctx.vm.task.Log.Errorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, err)
-		reqctx.vm.task.Log.Debug(string(debug.Stack()))
+		reqctx.vm.task.Log.LogErrorf("panic after request execution (reqid: %s, executionErr: %s): %v", reqctx.req.ID(), callErrStr, err)
+		reqctx.vm.task.Log.LogDebug(string(debug.Stack()))
 		return nil, err
 	}
 
 	return result, nil
 }
 
-func recoverFromExecutionError(r interface{}) *isc.VMError {
+func recoverFromExecutionError(r any) *isc.VMError {
 	switch err := r.(type) {
 	case *isc.VMError:
 		return r.(*isc.VMError)
@@ -331,20 +316,21 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget uint64, max
 	// calculate how many tokens for gas fee can be guaranteed after taking into account the allowance
 	guaranteedFeeTokens := reqctx.calcGuaranteedFeeTokens()
 	// calculate how many tokens maximum will be charged taking into account the budget
+	gasPrice := isc.RequestGasPrice(reqctx.req)
 	f1, f2 := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(
 		gasBudget,
 		guaranteedFeeTokens,
-		reqctx.txGasPrice(),
-		parameters.Decimals,
+		gasPrice,
+		parameters.BaseTokenDecimals,
 	)
 	maxTokensToSpendForGasFee = f1 + f2
 	// calculate affordableGas gas budget
 	var affordableGas uint64
-	if reqctx.txGasPrice() != nil {
+	if gasPrice != nil {
 		affordableGas = reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokensWithGasPrice(
 			guaranteedFeeTokens,
-			reqctx.txGasPrice(),
-			parameters.Decimals,
+			gasPrice,
+			parameters.BaseTokenDecimals,
 		)
 	} else {
 		affordableGas = reqctx.vm.chainInfo.GasFeePolicy.GasBudgetFromTokens(guaranteedFeeTokens)
@@ -388,10 +374,11 @@ func (reqctx *requestContext) chargeGasFee() {
 	}
 
 	availableToPayFee := reqctx.gas.maxTokensToSpendForGasFee
+	gasPrice := isc.RequestGasPrice(reqctx.req)
 	if !reqctx.vm.task.EstimateGasMode && !reqctx.vm.chainInfo.GasFeePolicy.IsEnoughForMinimumFee(
 		availableToPayFee,
-		reqctx.txGasPrice(),
-		parameters.Decimals,
+		gasPrice,
+		parameters.BaseTokenDecimals,
 	) {
 		// user didn't specify enough base tokens to cover the minimum request fee, charge whatever is present in the user's account
 		availableToPayFee = reqctx.GetSenderTokenBalanceForFees()
@@ -401,8 +388,8 @@ func (reqctx *requestContext) chargeGasFee() {
 	sendToPayout, sendToValidator := reqctx.vm.chainInfo.GasFeePolicy.FeeFromGasBurned(
 		reqctx.GasBurned(),
 		availableToPayFee,
-		reqctx.txGasPrice(),
-		parameters.Decimals,
+		gasPrice,
+		parameters.BaseTokenDecimals,
 	)
 	reqctx.gas.feeCharged = sendToPayout + sendToValidator
 
@@ -428,7 +415,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	// if the payout AgentID is not set in governance contract, then chain owner will be used
 	targetCommonAccountBalance := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetGasCoinTargetValue()
 	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
-	reqctx.vm.task.Log.Debugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)
+	reqctx.vm.task.Log.LogDebugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)
 
 	if commonAccountBal < targetCommonAccountBalance {
 		// pay to common account since the balance of common account is less than min
@@ -439,7 +426,7 @@ func (reqctx *requestContext) chargeGasFee() {
 			transferToCommonAcc -= excess
 			sendToPayout = excess
 		}
-		reqctx.vm.task.Log.Debugf("transferring %d to common account", transferToCommonAcc)
+		reqctx.vm.task.Log.LogDebugf("transferring %d to common account", transferToCommonAcc)
 		reqctx.mustMoveBetweenAccounts(
 			sender,
 			accounts.CommonAccount(),
@@ -473,15 +460,4 @@ func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *r
 
 func (vmctx *vmContext) loadChainConfig() {
 	vmctx.chainInfo = governance.NewStateReaderFromChainState(vmctx.stateDraft).GetChainInfo(vmctx.ChainID())
-}
-
-// checkTransactionSize panics with ErrMaxTransactionSizeExceeded if the estimated transaction size exceeds the limit
-func (vmctx *vmContext) checkTransactionSize() error {
-	// TODO the following requirements we need to check
-	// * The encoded bytes of ptb should be smaller than `max_tx_size_bytes`
-	// * max_size_written_objects
-	// * max_serialized_tx_effects_size_bytes
-	// * max_pure_argument_size
-	vmctx.task.Log.Info("TODO: checkTransactionSize")
-	return nil
 }

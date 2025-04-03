@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcd/btcutil/base58"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients"
@@ -154,7 +154,6 @@ func TestGetEvents(t *testing.T) {
 		require.Equal(t, targetStructTag.TypeParams[1].Struct.TypeParams, event.Type.TypeParams[1].Struct.TypeParams)
 		targetBcsBase85 := base58.Decode("yNS5iDS3Gvdo3DhXdtFpuTS12RrSiNkrvjcm2rejntCuqWjF1DdwnHgjowdczAkR18LQHcBqbX2tWL76rys9rTCzG6vm7Tg34yqUkpFSMqNkcS6cfWbN8SdVsxn5g4ZEQotdBgEFn8yN7hVZ7P1MKvMwWf")
 		require.Equal(t, targetBcsBase85, event.Bcs.Data())
-		// TODO check ParsedJson map
 	}
 }
 
@@ -323,6 +322,10 @@ func TestMultiGetTransactionBlocks(t *testing.T) {
 }
 
 func TestTryGetPastObject(t *testing.T) {
+	// This test might work in general, but can not be executed on either the L1 starter,
+	// nor on Alphanet as objects can vanish at any time
+	t.Skip()
+
 	api := l1starter.Instance().L1Client()
 	// there is no software-level guarantee/SLA that objects with past versions can be retrieved by this API
 	resp, err := api.TryGetPastObject(
@@ -340,6 +343,10 @@ func TestTryGetPastObject(t *testing.T) {
 }
 
 func TestTryMultiGetPastObjects(t *testing.T) {
+	// This test might work in general, but can not be executed on either the L1 starter,
+	// nor on Alphanet as objects can vanish at any time
+	t.Skip()
+
 	api := l1starter.Instance().L1Client()
 	req := []*iotajsonrpc.IotaGetPastObjectRequest{
 		{

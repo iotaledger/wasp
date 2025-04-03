@@ -19,10 +19,9 @@ func TestMainCallsFromFullEP(t *testing.T) {
 	setupTestSandboxSC(t, chain, user)
 
 	req := solo.NewCallParams(sbtestsc.FuncCheckContextFromFullEP.Message(
-		chain.ChainID,
-		chain.OriginatorAgentID,
+		chain.OwnerAgentID(),
 		userAgentID,
-		isc.NewContractAgentID(chain.ChainID, HScName),
+		isc.NewContractAgentID(HScName),
 	), ScName).
 		WithGasBudget(10 * gas.LimitsDefault.MinGasPerRequest)
 	_, err := chain.PostRequestSync(req, user)
@@ -37,9 +36,8 @@ func TestMainCallsFromViewEP(t *testing.T) {
 	setupTestSandboxSC(t, chain, user)
 
 	err := sbtestsc.FuncCheckContextFromViewEP.Call(
-		chain.ChainID,
-		chain.OriginatorAgentID,
-		isc.NewContractAgentID(chain.ChainID, HScName),
+		chain.OwnerAgentID(),
+		isc.NewContractAgentID(HScName),
 		func(msg isc.Message) (isc.CallArguments, error) {
 			return chain.CallViewWithContract(ScName, msg)
 		},

@@ -6,11 +6,11 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
-	"github.com/iotaledger/hive.go/logger"
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
@@ -21,16 +21,14 @@ func EVMCall(
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	call ethereum.CallMsg,
 ) ([]byte, error) {
-	chainID := anchor.ChainID()
-
 	latestState, err := store.LatestState()
 	if err != nil {
 		return nil, err
 	}
-	info := getChainInfo(chainID, latestState)
+	info := getChainInfo(anchor.ChainID(), latestState)
 
 	// 0 means view call
 	gasLimit := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
@@ -39,10 +37,10 @@ func EVMCall(
 	}
 
 	if call.GasPrice == nil {
-		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
+		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	}
 
-	iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
+	iscReq := isc.NewEVMOffLedgerCallRequest(info.ChainID, call)
 	res, err := runISCRequest(
 		anchor,
 		l1Params,

@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller
@@ -57,7 +55,7 @@ func pingAllowanceBack(ctx isc.Sandbox) {
 	caller := ctx.Caller()
 	addr, ok := isc.AddressFromAgentID(caller)
 	// assert caller is L1 address, not a SC
-	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(caller),
+	ctx.Requiref(ok,
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
 	toSend := ctx.AllowanceAvailable()
@@ -90,9 +88,6 @@ func sendNFTsBack(ctx isc.Sandbox) {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
 			Assets:        isc.NewEmptyAssets().AddObject(nftID),
-
-			Metadata: &isc.SendMetadata{},
-			Options:  isc.SendOptions{},
 		})
 	}
 }
@@ -112,19 +107,4 @@ func claimAllowance(ctx isc.Sandbox) {
 		// ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
 		// ctx.Requiref(nftData.Issuer != nil, "must have issuer")
 	}
-}
-
-func sendLargeRequest(ctx isc.Sandbox, x uint64) {
-	req := isc.RequestParameters{
-		TargetAddress: cryptolib.NewRandomAddress(),
-		Metadata: &isc.SendMetadata{
-			Message: isc.NewMessage(
-				isc.Hn("foo"),
-				isc.Hn("bar"),
-				isc.NewCallArguments(codec.Encode(x)),
-			),
-		},
-		Assets: ctx.AllowanceAvailable(),
-	}
-	ctx.Send(req)
 }

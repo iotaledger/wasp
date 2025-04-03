@@ -38,10 +38,16 @@ type Config struct {
 	TempDir string
 }
 
-type Logger struct{}
+type Logger struct {
+	Prefix string
+}
 
 func (l Logger) Printf(s string, args ...interface{}) {
-	fmt.Printf(s, args...)
+	if l.Prefix != "" {
+		fmt.Printf(l.Prefix+": "+s, args...)
+	} else {
+		fmt.Printf(s, args...)
+	}
 }
 
 type IotaNodeEndpoint interface {
@@ -68,6 +74,12 @@ func Instance() IotaNodeEndpoint {
 func IsLocalConfigured() bool {
 	testConfig := LoadConfig()
 	return testConfig.IsLocal
+}
+
+func TestLocal() func() {
+	node, cancel := StartNode(context.Background())
+	instance.Store(&node)
+	return cancel
 }
 
 func TestMain(m *testing.M) {

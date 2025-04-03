@@ -4,9 +4,9 @@
 package isc
 
 import (
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 const ChainIDLength = iotago.AddressLen
@@ -79,14 +79,6 @@ func (id ChainID) Equals(other ChainID) bool {
 
 func (id ChainID) Key() ChainIDKey {
 	return ChainIDKey(id.AsObjectID().String())
-}
-
-func (id ChainID) IsSameChain(agentID AgentID) bool {
-	contract, ok := agentID.(*ContractAgentID)
-	if !ok {
-		return false
-	}
-	return id.Equals(contract.ChainID())
 }
 
 func (id ChainID) ShortString() string {

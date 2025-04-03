@@ -8,6 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
@@ -147,7 +148,7 @@ func validateAndPushURL(target *string, urlValue nilableString) {
 }
 
 func updateMetadata(ctx context.Context, client *apiclient.APIClient, node string, chainAliasName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
-	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(ctx, chainID.String()).Execute() //nolint:bodyclose // false positive
+	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		log.Fatal("Chain not found")
 	}
@@ -156,7 +157,7 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 
 	if useCliURL {
 		apiURL := config.WaspAPIURL(node)
-		chainPath, err2 := url.JoinPath(apiURL, "/v1/chains/", chainID.String())
+		chainPath, err2 := url.JoinPath(apiURL, "/v1/chain/")
 		log.Check(err2)
 
 		publicURL = chainPath
@@ -180,5 +181,7 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 		Website:         chainInfo.Metadata.Website,
 	}
 
-	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{}, withOffLedger, true)
+	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	}, withOffLedger, true)
 }

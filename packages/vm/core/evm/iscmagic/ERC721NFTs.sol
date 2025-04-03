@@ -82,8 +82,7 @@ contract ERC721NFTs {
      * @return The balance of the specified address.
      */
     function balanceOf(address owner) public view returns (uint256) {
-        ISCChainID chainID = __iscSandbox.getChainID();
-        return _balanceOf(ISCTypes.newEthereumAgentID(owner, chainID));
+        return _balanceOf(ISCTypes.newEthereumAgentID(owner));
     }
 
     /**

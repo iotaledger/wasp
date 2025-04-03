@@ -65,40 +65,10 @@ paths:
           content: {}
           description: The node is healthy.
       summary: Returns 200 if the node is healthy.
-  /v1/chains:
-    get:
-      operationId: getChains
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ChainInfoResponse'
-                type: array
-          description: A list of all available chains
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
-      summary: Get a list of all chains
-      tags:
-      - chains
-  /v1/chains/{chainID}:
+  /v1/chain:
     get:
       operationId: getChainInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -115,17 +85,10 @@ paths:
       summary: Get information about a specific chain
       tags:
       - chains
-  /v1/chains/{chainID}/access-node/{peer}:
+  /v1/chain/access-node/{peer}:
     delete:
       operationId: removeAccessNode
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Name or PubKey (hex) of the trusted peer
         in: path
         name: peer
@@ -151,13 +114,6 @@ paths:
     put:
       operationId: addAccessNode
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Name or PubKey (hex) of the trusted peer
         in: path
         name: peer
@@ -180,7 +136,7 @@ paths:
       summary: Configure a trusted node to be an access node.
       tags:
       - chains
-  /v1/chains/{chainID}/activate:
+  /v1/chain/activate/{chainID}:
     post:
       operationId: activateChain
       parameters:
@@ -209,19 +165,11 @@ paths:
       summary: Activate a chain
       tags:
       - chains
-  /v1/chains/{chainID}/callview:
+  /v1/chain/callview:
     post:
       description: "Execute a view call. Either use HName or Name properties. If both\
         \ are supplied, HName are used."
       operationId: callView
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -244,7 +192,7 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: ""
-  /v1/chains/{chainID}/chainrecord:
+  /v1/chain/chainrecord/{chainID}:
     post:
       operationId: setChainRecord
       parameters:
@@ -278,17 +226,10 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: ChainRecord
-  /v1/chains/{chainID}/committee:
+  /v1/chain/committee:
     get:
       operationId: getCommitteeInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -313,17 +254,10 @@ paths:
       summary: Get information about the deployed committee
       tags:
       - chains
-  /v1/chains/{chainID}/contracts:
+  /v1/chain/contracts:
     get:
       operationId: getContracts
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -350,17 +284,10 @@ paths:
       summary: Get all available chain contracts
       tags:
       - chains
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/balance:
+  /v1/chain/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
@@ -390,7 +317,7 @@ paths:
       summary: Get all assets belonging to an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries:
+  /v1/chain/core/accounts/account/{agentID}/foundries:
     get:
       operationId: accountsGetAccountFoundries
       parameters:
@@ -430,17 +357,10 @@ paths:
       summary: Get all foundries owned by an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts:
+  /v1/chain/core/accounts/account/{agentID}/nfts:
     get:
       operationId: accountsGetAccountNFTIDs
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
@@ -470,17 +390,10 @@ paths:
       summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce:
+  /v1/chain/core/accounts/account/{agentID}/nonce:
     get:
       operationId: accountsGetAccountNonce
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
         name: agentID
@@ -510,7 +423,7 @@ paths:
       summary: Get the current nonce of an account
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber}:
+  /v1/chain/core/accounts/foundry_output/{serialNumber}:
     get:
       operationId: accountsGetFoundryOutput
       parameters:
@@ -551,17 +464,10 @@ paths:
       summary: Get the foundry output
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/nftdata/{nftID}:
+  /v1/chain/core/accounts/nftdata/{nftID}:
     get:
       operationId: accountsGetNFTData
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: NFT ID (Hex)
         in: path
         name: nftID
@@ -585,17 +491,10 @@ paths:
       summary: Get the NFT data by an ID
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/token_registry:
+  /v1/chain/core/accounts/token_registry:
     get:
       operationId: accountsGetNativeTokenIDRegistry
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -618,17 +517,10 @@ paths:
       summary: Get a list of all registries
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/accounts/total_assets:
+  /v1/chain/core/accounts/total_assets:
     get:
       operationId: accountsGetTotalAssets
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -651,17 +543,10 @@ paths:
       summary: Get all stored assets
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/latest:
+  /v1/chain/core/blocklog/blocks/latest:
     get:
       operationId: blocklogGetLatestBlockInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -684,17 +569,10 @@ paths:
       summary: Get the block info of the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts:
+  /v1/chain/core/blocklog/blocks/latest/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfLatestBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -719,17 +597,10 @@ paths:
       summary: Get all receipts of the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids:
+  /v1/chain/core/blocklog/blocks/latest/requestids:
     get:
       operationId: blocklogGetRequestIDsForLatestBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -752,17 +623,10 @@ paths:
       summary: Get the request ids for the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}:
+  /v1/chain/core/blocklog/blocks/{blockIndex}:
     get:
       operationId: blocklogGetBlockInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -793,17 +657,10 @@ paths:
       summary: Get the block info of a certain block index
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts:
+  /v1/chain/core/blocklog/blocks/{blockIndex}/receipts:
     get:
       operationId: blocklogGetRequestReceiptsOfBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -836,17 +693,10 @@ paths:
       summary: Get all receipts of a certain block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids:
+  /v1/chain/core/blocklog/blocks/{blockIndex}/requestids:
     get:
       operationId: blocklogGetRequestIDsForBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -877,17 +727,10 @@ paths:
       summary: Get the request ids for a certain block index
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/controladdresses:
+  /v1/chain/core/blocklog/controladdresses:
     get:
       operationId: blocklogGetControlAddresses
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -910,17 +753,10 @@ paths:
       summary: Get the control addresses
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/block/latest:
+  /v1/chain/core/blocklog/events/block/latest:
     get:
       operationId: blocklogGetEventsOfLatestBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -943,17 +779,10 @@ paths:
       summary: Get events of the latest block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex}:
+  /v1/chain/core/blocklog/events/block/{blockIndex}:
     get:
       operationId: blocklogGetEventsOfBlock
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: BlockIndex (uint32)
         in: path
         name: blockIndex
@@ -984,17 +813,10 @@ paths:
       summary: Get events of a block
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/events/request/{requestID}:
+  /v1/chain/core/blocklog/events/request/{requestID}:
     get:
       operationId: blocklogGetEventsOfRequest
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1024,17 +846,10 @@ paths:
       summary: Get events of a request
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/requests/{requestID}:
+  /v1/chain/core/blocklog/requests/{requestID}:
     get:
       operationId: blocklogGetRequestReceipt
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1064,17 +879,10 @@ paths:
       summary: Get the receipt of a certain request id
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed:
+  /v1/chain/core/blocklog/requests/{requestID}/is_processed:
     get:
       operationId: blocklogGetRequestIsProcessed
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1104,7 +912,7 @@ paths:
       summary: Get the request processing status
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID}:
+  /v1/chain/core/errors/{contractHname}/message/{errorID}:
     get:
       operationId: errorsGetErrorMessageFormat
       parameters:
@@ -1152,18 +960,11 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/governance/allowedstatecontrollers:
+  /v1/chain/core/governance/allowedstatecontrollers:
     get:
       description: Returns the allowed state controller addresses
       operationId: governanceGetAllowedStateControllerAddresses
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -1186,19 +987,12 @@ paths:
       summary: Get the allowed state controller addresses
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/governance/chaininfo:
+  /v1/chain/core/governance/chaininfo:
     get:
       description: "If you are using the common API functions, you most likely rather\
         \ want to use '/v1/chains/:chainID' to get information about a chain."
       operationId: governanceGetChainInfo
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -1221,18 +1015,11 @@ paths:
       summary: Get the chain info
       tags:
       - corecontracts
-  /v1/chains/{chainID}/core/governance/chainowner:
+  /v1/chain/core/governance/chainowner:
     get:
       description: Returns the chain owner
       operationId: governanceGetChainOwner
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: Block index or trie root
         in: query
         name: block
@@ -1255,17 +1042,9 @@ paths:
       summary: Get the chain owner
       tags:
       - corecontracts
-  /v1/chains/{chainID}/deactivate:
+  /v1/chain/deactivate:
     post:
       operationId: deactivateChain
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content: {}
@@ -1284,17 +1063,9 @@ paths:
       summary: Deactivate a chain
       tags:
       - chains
-  /v1/chains/{chainID}/dump-accounts:
+  /v1/chain/dump-accounts:
     post:
       operationId: dump-accounts
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content: {}
@@ -1310,17 +1081,9 @@ paths:
       summary: dump accounts information into a humanly-readable format
       tags:
       - chains
-  /v1/chains/{chainID}/estimategas-offledger:
+  /v1/chain/estimategas-offledger:
     post:
       operationId: estimateGasOffledger
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -1339,17 +1102,9 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: Request
-  /v1/chains/{chainID}/estimategas-onledger:
+  /v1/chain/estimategas-onledger:
     post:
       operationId: estimateGasOnledger
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       requestBody:
         content:
           application/json:
@@ -1368,16 +1123,8 @@ paths:
       tags:
       - chains
       x-codegen-request-body-name: Request
-  /v1/chains/{chainID}/evm:
+  /v1/chain/evm:
     post:
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         default:
           content: {}
@@ -1385,16 +1132,8 @@ paths:
       summary: Ethereum JSON-RPC
       tags:
       - chains
-  /v1/chains/{chainID}/evm/ws:
+  /v1/chain/evm/ws:
     get:
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         default:
           content: {}
@@ -1402,17 +1141,9 @@ paths:
       summary: Ethereum JSON-RPC (Websocket transport)
       tags:
       - chains
-  /v1/chains/{chainID}/mempool:
+  /v1/chain/mempool:
     get:
       operationId: getMempoolContents
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1434,17 +1165,10 @@ paths:
       summary: Get the contents of the mempool.
       tags:
       - chains
-  /v1/chains/{chainID}/receipts/{requestID}:
+  /v1/chain/receipts/{requestID}:
     get:
       operationId: getReceipt
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1465,17 +1189,10 @@ paths:
       summary: Get a receipt from a request ID
       tags:
       - chains
-  /v1/chains/{chainID}/requests/{requestID}/wait:
+  /v1/chain/requests/{requestID}/wait:
     get:
       operationId: waitForRequest
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: RequestID (Hex)
         in: path
         name: requestID
@@ -1511,17 +1228,36 @@ paths:
       summary: Wait until the given request has been processed by the node
       tags:
       - chains
-  /v1/chains/{chainID}/state/{stateKey}:
+  /v1/chain/rotate:
+    post:
+      operationId: rotateChain
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RotateChainRequest'
+        description: RotateRequest
+        required: false
+      responses:
+        "200":
+          content: {}
+          description: Chain rotation was requested
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: "Unauthorized (Wrong permissions, missing token)"
+      security:
+      - Authorization: []
+      summary: Rotate a chain
+      tags:
+      - chains
+      x-codegen-request-body-name: RotateRequest
+  /v1/chain/state/{stateKey}:
     get:
       operationId: getStateValue
       parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       - description: State Key (Hex)
         in: path
         name: stateKey
@@ -1539,17 +1275,9 @@ paths:
       summary: Fetch the raw value associated with the given key in the chain state
       tags:
       - chains
-  /v1/metrics/chain/{chainID}/messages:
+  /v1/metrics/chain/messages:
     get:
       operationId: getChainMessageMetrics
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1571,17 +1299,9 @@ paths:
       summary: Get chain specific message metrics.
       tags:
       - metrics
-  /v1/metrics/chain/{chainID}/pipe:
+  /v1/metrics/chain/pipe:
     get:
       operationId: getChainPipeMetrics
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1603,17 +1323,9 @@ paths:
       summary: Get chain pipe event metrics.
       tags:
       - metrics
-  /v1/metrics/chain/{chainID}/workflow:
+  /v1/metrics/chain/workflow:
     get:
       operationId: getChainWorkflowMetrics
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
       responses:
         "200":
           content:
@@ -1635,27 +1347,6 @@ paths:
       summary: Get chain workflow metrics.
       tags:
       - metrics
-  /v1/metrics/node/messages:
-    get:
-      operationId: getNodeMessageMetrics
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/NodeMessageMetrics'
-          description: A list of all available metrics.
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
-      summary: Get accumulated message metrics.
-      tags:
-      - metrics
   /v1/node/config:
     get:
       operationId: getConfiguration
@@ -1665,7 +1356,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "30"
+                  example: "true"
                   format: string
                   type: string
                 type: object
@@ -2240,16 +1931,17 @@ components:
       type: object
       xml:
         name: AddUserRequest
-    AliasOutputMetricItem:
+    AnchorMetricItem:
       example:
         lastMessage:
-          outputType: 0
+          stateMetadata: stateMetadata
+          stateIndex: 1
           raw: raw
         messages: 1
         timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
         lastMessage:
-          $ref: '#/components/schemas/Output'
+          $ref: '#/components/schemas/StateAnchor'
         messages:
           format: int32
           minimum: 1
@@ -2267,7 +1959,7 @@ components:
       - timestamp
       type: object
       xml:
-        name: AliasOutputMetricItem
+        name: AnchorMetricItem
     AssetsJSON:
       example:
         coins:
@@ -2354,74 +2046,19 @@ components:
       type: object
       xml:
         name: AuthInfoModel
-    BaseToken:
+    BigInt:
       example:
-        coinType:
-          s: s
-        unit: unit
-        totalSupply: 6
-        decimals: 0
-        name: name
-        tickerSymbol: tickerSymbol
-        subunit: subunit
-        useMetricPrefix: true
+        Int:
+          neg: true
+          abs:
+          - 1
+          - 1
       properties:
-        coinType:
-          $ref: '#/components/schemas/Type'
-        decimals:
-          description: The token decimals
-          format: int32
-          type: integer
-          xml:
-            name: Decimals
-        name:
-          description: The base token name
-          format: string
-          type: string
-          xml:
-            name: Name
-        subunit:
-          description: The token subunit
-          format: string
-          type: string
-          xml:
-            name: Subunit
-        tickerSymbol:
-          description: The ticker symbol
-          format: string
-          type: string
-          xml:
-            name: TickerSymbol
-        totalSupply:
-          description: The total supply of BaseToken
-          format: int64
-          type: integer
-          xml:
-            name: TotalSupply
-        unit:
-          description: The token unit
-          format: string
-          type: string
-          xml:
-            name: Unit
-        useMetricPrefix:
-          description: Whether or not the token uses a metric prefix
-          format: boolean
-          type: boolean
-          xml:
-            name: UseMetricPrefix
-      required:
-      - coinType
-      - decimals
-      - name
-      - subunit
-      - tickerSymbol
-      - totalSupply
-      - unit
-      - useMetricPrefix
+        Int:
+          $ref: '#/components/schemas/Int'
       type: object
       xml:
-        name: BaseToken
+        name: BigInt
     BlockInfoResponse:
       example:
         blockIndex: 1
@@ -2606,101 +2243,36 @@ components:
         name: ChainInfoResponse
     ChainMessageMetrics:
       example:
-        outPublishGovernanceTransaction:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
         outPublisherStateTransaction:
           lastMessage:
             stateIndex: 1
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inTxInclusionState:
-          lastMessage:
-            txId: txId
-            state: state
+            txDigest: txDigest
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
         inOnLedgerRequest:
           lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
             raw: raw
             id: id
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inOutput:
+        inAnchor:
           lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inAliasOutput:
-          lastMessage:
-            outputType: 0
+            stateMetadata: stateMetadata
+            stateIndex: 1
             raw: raw
           messages: 1
           timestamp: 2000-01-23T04:56:07.000+00:00
-        inStateOutput:
-          lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullTxInclusionState:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullLatestOutput:
-          lastMessage: lastMessage
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullOutputByID:
-          lastMessage:
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
-        inAliasOutput:
-          $ref: '#/components/schemas/AliasOutputMetricItem'
+        inAnchor:
+          $ref: '#/components/schemas/AnchorMetricItem'
         inOnLedgerRequest:
           $ref: '#/components/schemas/OnLedgerRequestMetricItem'
-        inOutput:
-          $ref: '#/components/schemas/InOutputMetricItem'
-        inStateOutput:
-          $ref: '#/components/schemas/InStateOutputMetricItem'
-        inTxInclusionState:
-          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
-        outPublishGovernanceTransaction:
-          $ref: '#/components/schemas/TransactionMetricItem'
         outPublisherStateTransaction:
           $ref: '#/components/schemas/PublisherStateTransactionItem'
-        outPullLatestOutput:
-          $ref: '#/components/schemas/InterfaceMetricItem'
-        outPullOutputByID:
-          $ref: '#/components/schemas/UTXOInputMetricItem'
-        outPullTxInclusionState:
-          $ref: '#/components/schemas/TransactionIDMetricItem'
       required:
-      - inAliasOutput
+      - inAnchor
       - inOnLedgerRequest
-      - inOutput
-      - inStateOutput
-      - inTxInclusionState
-      - outPublishGovernanceTransaction
       - outPublisherStateTransaction
-      - outPullLatestOutput
-      - outPullOutputByID
-      - outPullTxInclusionState
       type: object
       xml:
         name: ChainMessageMetrics
@@ -3611,133 +3183,56 @@ components:
       type: object
       xml:
         name: GovPublicChainMetadata
-    InOutput:
-      example:
-        output:
-          outputType: 0
-          raw: raw
-        outputId: outputId
-      properties:
-        output:
-          $ref: '#/components/schemas/Output'
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
-      required:
-      - output
-      - outputId
-      type: object
-      xml:
-        name: InOutput
-    InOutputMetricItem:
-      example:
-        lastMessage:
-          output:
-            outputType: 0
-            raw: raw
-          outputId: outputId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/InOutput'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: InOutputMetricItem
-    InStateOutput:
-      example:
-        output:
-          outputType: 0
-          raw: raw
-        outputId: outputId
-      properties:
-        output:
-          $ref: '#/components/schemas/Output'
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
-      required:
-      - output
-      - outputId
-      type: object
-      xml:
-        name: InStateOutput
-    InStateOutputMetricItem:
-      example:
-        lastMessage:
-          output:
-            outputType: 0
-            raw: raw
-          outputId: outputId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/InStateOutput'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: InStateOutputMetricItem
     InfoResponse:
       example:
         peeringURL: peeringURL
         l1Params:
           protocol:
-            rentStructure:
-              vByteFactorData: 7
-              vByteCost: 1
-              vByteFactorKey: 9
-            minPowScore: 1
-            tokenSupply: tokenSupply
-            networkName: networkName
-            belowMaxDepth: 1
-            version: 3
-          maxPayloadSize: 1
+            protocol_version:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            reference_gas_price:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            epoch:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            system_state_version:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            epoch_duration_ms:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
+            epoch_start_timestamp_ms:
+              Int:
+                neg: true
+                abs:
+                - 1
+                - 1
           baseToken:
             coinType:
               s: s
-            unit: unit
             totalSupply: 6
             decimals: 0
             name: name
+            description: description
             tickerSymbol: tickerSymbol
-            subunit: subunit
-            useMetricPrefix: true
+            iconUrl: iconUrl
         publicKey: publicKey
         version: version
       properties:
@@ -3769,72 +3264,144 @@ components:
       type: object
       xml:
         name: InfoResponse
-    InterfaceMetricItem:
+    Int:
       example:
-        lastMessage: lastMessage
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
+        neg: true
+        abs:
+        - 1
+        - 1
       properties:
-        lastMessage:
+        abs:
+          items:
+            format: int32
+            type: integer
+          type: array
+          xml:
+            name: abs
+            wrapped: true
+        neg:
+          format: boolean
+          type: boolean
+          xml:
+            name: neg
+      type: object
+      xml:
+        name: Int
+    IotaCoinInfo:
+      example:
+        coinType:
+          s: s
+        totalSupply: 6
+        decimals: 0
+        name: name
+        description: description
+        tickerSymbol: tickerSymbol
+        iconUrl: iconUrl
+      properties:
+        coinType:
+          $ref: '#/components/schemas/Type'
+        decimals:
+          description: The token decimals
+          format: int32
+          type: integer
+          xml:
+            name: Decimals
+        description:
+          description: The token description
           format: string
           type: string
           xml:
-            name: LastMessage
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
+            name: Description
+        iconUrl:
+          description: The icon URL
+          format: string
           type: string
           xml:
-            name: Timestamp
+            name: IconURL
+        name:
+          description: The base token name
+          format: string
+          type: string
+          xml:
+            name: Name
+        tickerSymbol:
+          description: The ticker symbol
+          format: string
+          type: string
+          xml:
+            name: Symbol
+        totalSupply:
+          description: The total supply of BaseToken
+          format: int64
+          type: integer
+          xml:
+            name: TotalSupply
       required:
-      - lastMessage
-      - messages
-      - timestamp
+      - coinType
+      - decimals
+      - description
+      - iconUrl
+      - name
+      - tickerSymbol
+      - totalSupply
       type: object
       xml:
-        name: InterfaceMetricItem
+        name: IotaCoinInfo
     L1Params:
       example:
         protocol:
-          rentStructure:
-            vByteFactorData: 7
-            vByteCost: 1
-            vByteFactorKey: 9
-          minPowScore: 1
-          tokenSupply: tokenSupply
-          networkName: networkName
-          belowMaxDepth: 1
-          version: 3
-        maxPayloadSize: 1
+          protocol_version:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          reference_gas_price:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          epoch:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          system_state_version:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          epoch_duration_ms:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
+          epoch_start_timestamp_ms:
+            Int:
+              neg: true
+              abs:
+              - 1
+              - 1
         baseToken:
           coinType:
             s: s
-          unit: unit
           totalSupply: 6
           decimals: 0
           name: name
+          description: description
           tickerSymbol: tickerSymbol
-          subunit: subunit
-          useMetricPrefix: true
+          iconUrl: iconUrl
       properties:
         baseToken:
-          $ref: '#/components/schemas/BaseToken'
-        maxPayloadSize:
-          description: The max payload size
-          format: int32
-          type: integer
-          xml:
-            name: MaxPayloadSize
+          $ref: '#/components/schemas/IotaCoinInfo'
         protocol:
-          $ref: '#/components/schemas/ProtocolParameters'
+          $ref: '#/components/schemas/Protocol'
       required:
       - baseToken
-      - maxPayloadSize
       - protocol
       type: object
       xml:
@@ -3919,61 +3486,6 @@ components:
       type: object
       xml:
         name: LoginResponse
-    MilestoneInfo:
-      example:
-        milestoneId: milestoneId
-        index: 0
-        timestamp: 0
-      properties:
-        index:
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: Index
-        milestoneId:
-          format: string
-          type: string
-          xml:
-            name: MilestoneID
-        timestamp:
-          format: int32
-          minimum: 0
-          type: integer
-          xml:
-            name: Timestamp
-      type: object
-      xml:
-        name: MilestoneInfo
-    MilestoneMetricItem:
-      example:
-        lastMessage:
-          milestoneId: milestoneId
-          index: 0
-          timestamp: 0
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/MilestoneInfo'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: MilestoneMetricItem
     NativeTokenIDRegistryResponse:
       example:
         nativeTokenRegistryIds:
@@ -3993,128 +3505,6 @@ components:
       type: object
       xml:
         name: NativeTokenIDRegistryResponse
-    NodeMessageMetrics:
-      example:
-        outPublishGovernanceTransaction:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPublisherStateTransaction:
-          lastMessage:
-            stateIndex: 1
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inTxInclusionState:
-          lastMessage:
-            txId: txId
-            state: state
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inOnLedgerRequest:
-          lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-            raw: raw
-            id: id
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inOutput:
-          lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inMilestone:
-          lastMessage:
-            milestoneId: milestoneId
-            index: 0
-            timestamp: 0
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inAliasOutput:
-          lastMessage:
-            outputType: 0
-            raw: raw
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        inStateOutput:
-          lastMessage:
-            output:
-              outputType: 0
-              raw: raw
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullTxInclusionState:
-          lastMessage:
-            txId: txId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        registeredChainIDs:
-        - registeredChainIDs
-        - registeredChainIDs
-        outPullLatestOutput:
-          lastMessage: lastMessage
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-        outPullOutputByID:
-          lastMessage:
-            outputId: outputId
-          messages: 1
-          timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        inAliasOutput:
-          $ref: '#/components/schemas/AliasOutputMetricItem'
-        inMilestone:
-          $ref: '#/components/schemas/MilestoneMetricItem'
-        inOnLedgerRequest:
-          $ref: '#/components/schemas/OnLedgerRequestMetricItem'
-        inOutput:
-          $ref: '#/components/schemas/InOutputMetricItem'
-        inStateOutput:
-          $ref: '#/components/schemas/InStateOutputMetricItem'
-        inTxInclusionState:
-          $ref: '#/components/schemas/TxInclusionStateMsgMetricItem'
-        outPublishGovernanceTransaction:
-          $ref: '#/components/schemas/TransactionMetricItem'
-        outPublisherStateTransaction:
-          $ref: '#/components/schemas/PublisherStateTransactionItem'
-        outPullLatestOutput:
-          $ref: '#/components/schemas/InterfaceMetricItem'
-        outPullOutputByID:
-          $ref: '#/components/schemas/UTXOInputMetricItem'
-        outPullTxInclusionState:
-          $ref: '#/components/schemas/TransactionIDMetricItem'
-        registeredChainIDs:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: RegisteredChainIDs
-            wrapped: true
-      required:
-      - inAliasOutput
-      - inMilestone
-      - inOnLedgerRequest
-      - inOutput
-      - inStateOutput
-      - inTxInclusionState
-      - outPublishGovernanceTransaction
-      - outPublisherStateTransaction
-      - outPullLatestOutput
-      - outPullOutputByID
-      - outPullTxInclusionState
-      - registeredChainIDs
-      type: object
-      xml:
-        name: NodeMessageMetrics
     NodeOwnerCertificateResponse:
       example:
         certificate: certificate
@@ -4133,14 +3523,7 @@ components:
     OffLedgerRequest:
       example:
         request: Hex string
-        chainId: chainId
       properties:
-        chainId:
-          description: The chain id
-          format: string
-          type: string
-          xml:
-            name: ChainID
         request:
           description: Offledger Request (Hex)
           example: Hex string
@@ -4149,17 +3532,12 @@ components:
           xml:
             name: Request
       required:
-      - chainId
       - request
       type: object
       xml:
         name: OffLedgerRequest
     OnLedgerRequest:
       example:
-        output:
-          outputType: 0
-          raw: raw
-        outputId: outputId
         raw: raw
         id: id
       properties:
@@ -4169,14 +3547,6 @@ components:
           type: string
           xml:
             name: ID
-        output:
-          $ref: '#/components/schemas/Output'
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
         raw:
           description: The raw data of the request (Hex)
           format: string
@@ -4185,8 +3555,6 @@ components:
             name: Raw
       required:
       - id
-      - output
-      - outputId
       - raw
       type: object
       xml:
@@ -4194,10 +3562,6 @@ components:
     OnLedgerRequestMetricItem:
       example:
         lastMessage:
-          output:
-            outputType: 0
-            raw: raw
-          outputId: outputId
           raw: raw
           id: id
         messages: 1
@@ -4223,44 +3587,6 @@ components:
       type: object
       xml:
         name: OnLedgerRequestMetricItem
-    Output:
-      example:
-        outputType: 0
-        raw: raw
-      properties:
-        outputType:
-          description: The output type
-          format: int32
-          type: integer
-          xml:
-            name: OutputType
-        raw:
-          description: The raw data of the output (Hex)
-          format: string
-          type: string
-          xml:
-            name: Raw
-      required:
-      - outputType
-      - raw
-      type: object
-      xml:
-        name: Output
-    OutputID:
-      example:
-        outputId: outputId
-      properties:
-        outputId:
-          description: The output ID
-          format: string
-          type: string
-          xml:
-            name: OutputID
-      required:
-      - outputId
-      type: object
-      xml:
-        name: OutputID
     PeeringNodeIdentityResponse:
       example:
         peeringURL: peeringURL
@@ -4381,62 +3707,67 @@ components:
       type: object
       xml:
         name: PeeringTrustRequest
-    ProtocolParameters:
+    Protocol:
       example:
-        rentStructure:
-          vByteFactorData: 7
-          vByteCost: 1
-          vByteFactorKey: 9
-        minPowScore: 1
-        tokenSupply: tokenSupply
-        networkName: networkName
-        belowMaxDepth: 1
-        version: 3
+        protocol_version:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        reference_gas_price:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        epoch:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        system_state_version:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        epoch_duration_ms:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
+        epoch_start_timestamp_ms:
+          Int:
+            neg: true
+            abs:
+            - 1
+            - 1
       properties:
-        belowMaxDepth:
-          description: The networks max depth
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: BelowMaxDepth
-        minPowScore:
-          description: The minimal PoW score
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: MinPoWScore
-        networkName:
-          description: The network name
-          format: string
-          type: string
-          xml:
-            name: NetworkName
-        rentStructure:
-          $ref: '#/components/schemas/RentStructure'
-        tokenSupply:
-          description: The token supply
-          format: string
-          type: string
-          xml:
-            name: TokenSupply
-        version:
-          description: The protocol version
-          format: int32
-          type: integer
-          xml:
-            name: Version
+        epoch:
+          $ref: '#/components/schemas/BigInt'
+        epoch_duration_ms:
+          $ref: '#/components/schemas/BigInt'
+        epoch_start_timestamp_ms:
+          $ref: '#/components/schemas/BigInt'
+        protocol_version:
+          $ref: '#/components/schemas/BigInt'
+        reference_gas_price:
+          $ref: '#/components/schemas/BigInt'
+        system_state_version:
+          $ref: '#/components/schemas/BigInt'
       required:
-      - belowMaxDepth
-      - minPowScore
-      - networkName
-      - rentStructure
-      - tokenSupply
-      - version
+      - epoch
+      - epoch_duration_ms
+      - epoch_start_timestamp_ms
+      - protocol_version
+      - reference_gas_price
+      - system_state_version
       type: object
       xml:
-        name: ProtocolParameters
+        name: Protocol
     PublicChainMetadata:
       example:
         website: website
@@ -4488,7 +3819,7 @@ components:
       example:
         lastMessage:
           stateIndex: 1
-          txId: txId
+          txDigest: txDigest
         messages: 1
         timestamp: 2000-01-23T04:56:07.000+00:00
       properties:
@@ -4561,7 +3892,6 @@ components:
             contractHName: contractHName
             functionHName: functionHName
           gasBudget: gasBudget
-          targetAddress: targetAddress
           allowance:
             coins:
             - coinType: coinType
@@ -4654,38 +3984,6 @@ components:
       type: object
       xml:
         name: ReceiptResponse
-    RentStructure:
-      example:
-        vByteFactorData: 7
-        vByteCost: 1
-        vByteFactorKey: 9
-      properties:
-        vByteCost:
-          description: The virtual byte cost
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: VByteCost
-        vByteFactorData:
-          description: The virtual byte factor for data fields
-          format: int32
-          type: integer
-          xml:
-            name: VBFactorData
-        vByteFactorKey:
-          description: The virtual byte factor for key/lookup generating fields
-          format: int32
-          type: integer
-          xml:
-            name: VBFactorKey
-      required:
-      - vByteCost
-      - vByteFactorData
-      - vByteFactorKey
-      type: object
-      xml:
-        name: RentStructure
     RequestIDsResponse:
       example:
         requestIds:
@@ -4725,7 +4023,6 @@ components:
           contractHName: contractHName
           functionHName: functionHName
         gasBudget: gasBudget
-        targetAddress: targetAddress
         allowance:
           coins:
           - coinType: coinType
@@ -4782,11 +4079,6 @@ components:
           type: string
           xml:
             name: SenderAccount
-        targetAddress:
-          format: string
-          type: string
-          xml:
-            name: TargetAddress
       required:
       - allowance
       - assets
@@ -4797,7 +4089,6 @@ components:
       - params
       - requestId
       - senderAccount
-      - targetAddress
       type: object
       xml:
         name: RequestJSON
@@ -4829,6 +4120,52 @@ components:
       type: object
       xml:
         name: RequestProcessedResponse
+    RotateChainRequest:
+      example:
+        rotateToAddress: rotateToAddress
+      properties:
+        rotateToAddress:
+          description: The address of the new committee or empty to cancel attempt
+            to rotate
+          format: string
+          type: string
+          xml:
+            name: RotateToAddress
+      type: object
+      xml:
+        name: RotateChainRequest
+    StateAnchor:
+      example:
+        stateMetadata: stateMetadata
+        stateIndex: 1
+        raw: raw
+      properties:
+        raw:
+          description: The raw data of the anchor (Hex)
+          format: string
+          type: string
+          xml:
+            name: Raw
+        stateIndex:
+          description: The state index
+          format: int32
+          minimum: 1
+          type: integer
+          xml:
+            name: StateIndex
+        stateMetadata:
+          description: The state metadata
+          format: string
+          type: string
+          xml:
+            name: StateMetadata
+      required:
+      - raw
+      - stateIndex
+      - stateMetadata
+      type: object
+      xml:
+        name: StateAnchor
     StateResponse:
       example:
         state: state
@@ -4847,7 +4184,7 @@ components:
     StateTransaction:
       example:
         stateIndex: 1
-        txId: txId
+        txDigest: txDigest
       properties:
         stateIndex:
           description: The state index
@@ -4856,138 +4193,18 @@ components:
           type: integer
           xml:
             name: StateIndex
-        txId:
-          description: The transaction ID
+        txDigest:
+          description: The transaction Digest
           format: string
           type: string
           xml:
-            name: TransactionID
+            name: TransactionDigest
       required:
       - stateIndex
-      - txId
+      - txDigest
       type: object
       xml:
         name: StateTransaction
-    Transaction:
-      example:
-        txId: txId
-      properties:
-        txId:
-          description: The transaction ID
-          format: string
-          type: string
-          xml:
-            name: TransactionID
-      required:
-      - txId
-      type: object
-      xml:
-        name: Transaction
-    TransactionIDMetricItem:
-      example:
-        lastMessage:
-          txId: txId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/Transaction'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: TransactionIDMetricItem
-    TransactionMetricItem:
-      example:
-        lastMessage:
-          txId: txId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/Transaction'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: TransactionMetricItem
-    TxInclusionStateMsg:
-      example:
-        txId: txId
-        state: state
-      properties:
-        state:
-          description: The inclusion state
-          format: string
-          type: string
-          xml:
-            name: State
-        txId:
-          description: The transaction ID
-          format: string
-          type: string
-          xml:
-            name: TransactionID
-      required:
-      - state
-      - txId
-      type: object
-      xml:
-        name: TxInclusionStateMsg
-    TxInclusionStateMsgMetricItem:
-      example:
-        lastMessage:
-          txId: txId
-          state: state
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/TxInclusionStateMsg'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: TxInclusionStateMsgMetricItem
     Type:
       example:
         s: s
@@ -5000,33 +4217,6 @@ components:
       type: object
       xml:
         name: Type
-    UTXOInputMetricItem:
-      example:
-        lastMessage:
-          outputId: outputId
-        messages: 1
-        timestamp: 2000-01-23T04:56:07.000+00:00
-      properties:
-        lastMessage:
-          $ref: '#/components/schemas/OutputID'
-        messages:
-          format: int32
-          minimum: 1
-          type: integer
-          xml:
-            name: Messages
-        timestamp:
-          format: date-time
-          type: string
-          xml:
-            name: Timestamp
-      required:
-      - lastMessage
-      - messages
-      - timestamp
-      type: object
-      xml:
-        name: UTXOInputMetricItem
     UnresolvedVMErrorJSON:
       example:
         code: code

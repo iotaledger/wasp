@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
@@ -22,7 +22,7 @@ type PeeringNetDynamic struct {
 	closeChs []chan bool
 	handlers []peeringNetDynamicHandlerEntry
 	mutex    sync.RWMutex
-	log      *logger.Logger
+	log      log.Logger
 }
 
 var _ PeeringNetBehavior = &PeeringNetDynamic{}
@@ -38,12 +38,12 @@ type peeringNetDynamicHandler interface {
 		dstPubKey *cryptolib.PublicKey,
 		nextHandlers []peeringNetDynamicHandlerEntry,
 		callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
-		log *logger.Logger,
+		log log.Logger,
 	)
 }
 
 // NewPeeringNetDynamic constructs the PeeringNetBehavior.
-func NewPeeringNetDynamic(log *logger.Logger) *PeeringNetDynamic {
+func NewPeeringNetDynamic(log log.Logger) *PeeringNetDynamic {
 	return &PeeringNetDynamic{
 		closeChs: make([]chan bool, 0),
 		handlers: make([]peeringNetDynamicHandlerEntry, 0),
@@ -142,7 +142,7 @@ func (pndT *PeeringNetDynamic) recvLoop(inCh, outCh chan *peeringMsg, closeCh ch
 				if len(nextHandlers) > 0 {
 					nextHandlers[0].handleSendMessage(recv, dstPubKey, nextHandlers[1:], callHandlersAndSendFun, pndT.log)
 				} else {
-					pndT.log.Debugf("Network delivers message %v -%v-> %v", recv.from.String(), recv.PeerMessageData().MsgType, dstPubKey.String())
+					pndT.log.LogDebugf("Network delivers message %v -%v-> %v", recv.from.String(), recv.PeerMessageData().MsgType, dstPubKey.String())
 					safeSendPeeringMsg(outCh, recv, pndT.log)
 				}
 			}
@@ -168,10 +168,10 @@ func (lcT *peeringNetDynamicHandlerLosingChannel) handleSendMessage(
 	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
-	log *logger.Logger,
+	log log.Logger,
 ) {
 	if rand.Intn(100) > lcT.probability {
-		log.Debugf("Network dropped message %v -%v-> %v", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String())
+		log.LogDebugf("Network dropped message %v -%v-> %v", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String())
 		return
 	}
 	callHandlersAndSendFun(nextHandlers)
@@ -186,13 +186,13 @@ func (rcT *peeringNetDynamicHandlerRepeatingChannel) handleSendMessage(
 	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
-	log *logger.Logger,
+	log log.Logger,
 ) {
 	numRepeat := 1 + rcT.probability/100
 	if rand.Intn(100) < rcT.probability%100 {
 		numRepeat++
 	}
-	log.Debugf("Network repeated message %v -%v-> %v %v times", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String(), numRepeat)
+	log.LogDebugf("Network repeated message %v -%v-> %v %v times", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String(), numRepeat)
 	for i := 0; i < numRepeat; i++ {
 		callHandlersAndSendFun(nextHandlers)
 	}
@@ -208,7 +208,7 @@ func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
-	log *logger.Logger,
+	log log.Logger,
 ) {
 	go func() {
 		fromMS := int(dcT.from.Milliseconds())
@@ -220,7 +220,7 @@ func (dcT *peeringNetDynamicHandlerDelayingChannel) handleSendMessage(
 			} else {
 				delay = time.Duration(fromMS) * time.Millisecond
 			}
-			log.Debugf("Network delayed message %v -%v-> %v for %v", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String(), delay)
+			log.LogDebugf("Network delayed message %v -%v-> %v for %v", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String(), delay)
 			<-time.After(delay)
 		}
 		callHandlersAndSendFun(nextHandlers)
@@ -236,14 +236,14 @@ func (pdT *peeringNetDynamicHandlerPeerDisconnected) handleSendMessage(
 	dstPubKey *cryptolib.PublicKey,
 	nextHandlers []peeringNetDynamicHandlerEntry,
 	callHandlersAndSendFun func(nextHandlers []peeringNetDynamicHandlerEntry),
-	log *logger.Logger,
+	log log.Logger,
 ) {
 	if dstPubKey.Equals(pdT.peerPubKey) {
-		log.Debugf("Network dropped message %v -%v-> %v, because destination is disconnected", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String())
+		log.LogDebugf("Network dropped message %v -%v-> %v, because destination is disconnected", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String())
 		return
 	}
 	if msg.from.Equals(pdT.peerPubKey) {
-		log.Debugf("Network dropped message %v -%v-> %v, because source is disconnected", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String())
+		log.LogDebugf("Network dropped message %v -%v-> %v, because source is disconnected", msg.from.String(), msg.PeerMessageData().MsgType, dstPubKey.String())
 		return
 	}
 	callHandlersAndSendFun(nextHandlers)

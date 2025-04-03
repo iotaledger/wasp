@@ -13,13 +13,12 @@ Name | Type | Description | Notes
 **Params** | **[]string** |  | 
 **RequestId** | **string** |  | 
 **SenderAccount** | **string** |  | 
-**TargetAddress** | **string** |  | 
 
 ## Methods
 
 ### NewRequestJSON
 
-`func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params []string, requestId string, senderAccount string, targetAddress string, ) *RequestJSON`
+`func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params []string, requestId string, senderAccount string, ) *RequestJSON`
 
 NewRequestJSON instantiates a new RequestJSON object
 This constructor will assign default values to properties that have it defined,
@@ -212,26 +211,6 @@ and a boolean to check if the value has been set.
 `func (o *RequestJSON) SetSenderAccount(v string)`
 
 SetSenderAccount sets SenderAccount field to given value.
-
-
-### GetTargetAddress
-
-`func (o *RequestJSON) GetTargetAddress() string`
-
-GetTargetAddress returns the TargetAddress field if non-nil, zero value otherwise.
-
-### GetTargetAddressOk
-
-`func (o *RequestJSON) GetTargetAddressOk() (*string, bool)`
-
-GetTargetAddressOk returns a tuple with the TargetAddress field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTargetAddress
-
-`func (o *RequestJSON) SetTargetAddress(v string)`
-
-SetTargetAddress sets TargetAddress field to given value.
 
 
 

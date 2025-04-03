@@ -7,9 +7,9 @@ import (
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/clients/iota-go/orderedmap"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type BuilderArg struct {
@@ -98,7 +98,15 @@ func (p *ProgrammableTransactionBuilder) Obj(objArg ObjectArg) (Argument, error)
 				},
 			}
 		} else {
-			if oldObjArg != objArg {
+			oldObjArgBytes, err := bcs.Marshal(&oldObjArg)
+			if err != nil {
+				return Argument{}, fmt.Errorf("can't marsharl oldObjArg %v: %w", oldObjArg, err)
+			}
+			objArgBytes, err := bcs.Marshal(&objArg)
+			if err != nil {
+				return Argument{}, fmt.Errorf("can't marsharl objArg %v: %w", objArg, err)
+			}
+			if !slices.Equal(oldObjArgBytes, objArgBytes) {
 				return Argument{}, fmt.Errorf(
 					"mismatched Object argument kind for object %s. "+
 						"%v is not compatible with %v", id.String(), oldValue, objArg,
@@ -166,9 +174,8 @@ func (p *ProgrammableTransactionBuilder) pureBytes(bytes []byte, forceSeparate b
 }
 
 // developers should only use `Pure()`, `MustPure()` and `Obj()` to create PTB Arguments
-// `Input()` is a function for internal usage
-// TODO add explanation for `Input()`
-func (p *ProgrammableTransactionBuilder) Input(callArg CallArg) (Argument, error) {
+// `input()` is a function for internal usage
+func (p *ProgrammableTransactionBuilder) input(callArg CallArg) (Argument, error) {
 	switch {
 	case callArg.Pure != nil:
 		return p.pureBytes(*callArg.Pure, false), nil
@@ -217,7 +224,7 @@ func (p *ProgrammableTransactionBuilder) MoveCall(
 ) error {
 	var arguments []Argument
 	for _, v := range callArgs {
-		argument, err := p.Input(v)
+		argument, err := p.input(v)
 		if err != nil {
 			return err
 		}

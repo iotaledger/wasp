@@ -4,13 +4,13 @@ import (
 	"math/big"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/hive.go/logger"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
@@ -31,7 +31,7 @@ type ViewContext struct {
 	processors            *processors.Config
 	stateReader           state.State
 	chainID               isc.ChainID
-	log                   *logger.Logger
+	log                   log.Logger
 	chainInfo             *isc.ChainInfo
 	gasBurnLog            *gas.BurnLog
 	gasBudget             uint64
@@ -47,14 +47,14 @@ func New(
 	chainID isc.ChainID,
 	stateReader state.State,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	gasBurnLoggingEnabled bool,
 ) (*ViewContext, error) {
 	return &ViewContext{
 		processors:            processors,
 		stateReader:           stateReader,
 		chainID:               chainID,
-		log:                   log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		log:                   log,
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 		schemaVersion:         stateReader.SchemaVersion(),
 	}, nil
@@ -90,7 +90,7 @@ func (ctx *ViewContext) CurrentContractAccountID() isc.AgentID {
 	if corecontracts.IsCoreHname(hname) {
 		return accounts.CommonAccount()
 	}
-	return isc.NewContractAgentID(ctx.ChainID(), hname)
+	return isc.NewContractAgentID(hname)
 }
 
 func (ctx *ViewContext) Caller() isc.AgentID {
@@ -102,7 +102,7 @@ func (ctx *ViewContext) Caller() isc.AgentID {
 		return nil
 	default:
 		callerHname := ctx.callStack[len(ctx.callStack)-1].contract
-		return isc.NewContractAgentID(ctx.chainID, callerHname)
+		return isc.NewContractAgentID(callerHname)
 	}
 }
 
@@ -115,7 +115,7 @@ func (ctx *ViewContext) accountsStateWithGasBurn() *accounts.StateReader {
 }
 
 func (ctx *ViewContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
-	return ctx.accountsStateWithGasBurn().GetCoins(agentID, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetCoins(agentID)
 }
 
 func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
@@ -126,7 +126,7 @@ func (ctx *ViewContext) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("refactor me")
 }
 
-func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
+func (ctx *ViewContext) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {
 	return ctx.accountsStateWithGasBurn().GetCoinInfo(coinType)
 }
 
@@ -135,15 +135,15 @@ func (ctx *ViewContext) Timestamp() time.Time {
 }
 
 func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (coin.Value, *big.Int) {
-	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID)
 }
 
 func (ctx *ViewContext) GetCoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
-	return ctx.accountsStateWithGasBurn().GetCoinBalance(agentID, coinType, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetCoinBalance(agentID, coinType)
 }
 
 func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) isc.CallArguments {
-	ctx.log.Debugf("Call. TargetContract: %s entry point: %s", msg.Target.Contract, msg.Target.EntryPoint)
+	ctx.log.LogDebugf("Call. TargetContract: %s entry point: %s", msg.Target.Contract, msg.Target.EntryPoint)
 	return ctx.callView(msg)
 }
 
@@ -188,16 +188,16 @@ func (ctx *ViewContext) GasEstimateMode() bool {
 	return false
 }
 
-func (ctx *ViewContext) Infof(format string, params ...interface{}) {
-	ctx.log.Infof(format, params...)
+func (ctx *ViewContext) Infof(format string, params ...any) {
+	ctx.log.LogInfof(format, params...)
 }
 
-func (ctx *ViewContext) Debugf(format string, params ...interface{}) {
-	ctx.log.Debugf(format, params...)
+func (ctx *ViewContext) Debugf(format string, params ...any) {
+	ctx.log.LogDebugf(format, params...)
 }
 
-func (ctx *ViewContext) Panicf(format string, params ...interface{}) {
-	ctx.log.Panicf(format, params...)
+func (ctx *ViewContext) Panicf(format string, params ...any) {
+	ctx.log.LogPanicf(format, params...)
 }
 
 // only for debugging

@@ -13,8 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
-
+	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -27,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
@@ -61,8 +61,6 @@ func TestGrBasic(t *testing.T) {
 		)
 	}
 
-	t.Parallel()
-
 	for _, tst := range tests {
 		t.Run(
 			fmt.Sprintf("N=%v,F=%v,Reliable=%v", tst.n, tst.f, tst.reliable),
@@ -76,7 +74,7 @@ func TestGrBasic(t *testing.T) {
 func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 
 	ctx, ctxCancel := context.WithCancel(context.Background())
 	defer ctxCancel()
@@ -100,13 +98,13 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(log)
 	} else {
-		netLogger := testlogger.WithLevel(log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(log.NewChildLogger("Network"), hivelog.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	peeringNetwork := testutil.NewPeeringNetwork(
 		peeringURL, peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(log, logger.LevelWarn, false),
+		testlogger.WithLevel(log, hivelog.LevelWarning, false),
 	)
 	defer peeringNetwork.Close()
 	networkProviders := peeringNetwork.NetworkProviders()
@@ -138,7 +136,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, isc.BaseTokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, parameterstest.L1Mock)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)
@@ -147,13 +145,14 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 			ctx, anchor.ChainID(), chainStore, dkShare, &logIndex, peerIdentities[i],
 			procConfig, mempools[i], stateMgrs[i], newTestNodeConn(gasCoin),
 			networkProviders[i],
+			nil,
 			accounts.CommonAccount(),
 			1*time.Minute, // RecoverTimeout
 			1*time.Second, // RedeliveryPeriod
 			5*time.Second, // PrintStatusPeriod
 			chainMetrics.Consensus,
 			chainMetrics.Pipe,
-			log.Named(fmt.Sprintf("N#%v", i)),
+			log.NewChildLogger(fmt.Sprintf("N#%v", i)),
 		)
 	}
 	//
@@ -164,6 +163,9 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		outputChs[i] = outputCh
 		n.Input(anchor, func(o *consGR.Output) { outputCh <- o }, func() {})
 	}
+
+	time.Sleep(1 * time.Second)
+
 	//
 	// Provide data from Mempool and StateMgr.
 	for i := range nodes {
@@ -291,7 +293,7 @@ type testStateMgr struct {
 	lock       *sync.Mutex
 	chainStore state.Store
 	states     map[hashing.HashValue]state.State
-	qProposal  map[hashing.HashValue]chan interface{}
+	qProposal  map[hashing.HashValue]chan any
 	qDecided   map[hashing.HashValue]chan state.State
 }
 
@@ -301,7 +303,7 @@ func newTestStateMgr(t *testing.T, chainStore state.Store) *testStateMgr {
 		lock:       &sync.Mutex{},
 		chainStore: chainStore,
 		states:     map[hashing.HashValue]state.State{},
-		qProposal:  map[hashing.HashValue]chan interface{}{},
+		qProposal:  map[hashing.HashValue]chan any{},
 		qDecided:   map[hashing.HashValue]chan state.State{},
 	}
 }
@@ -324,10 +326,10 @@ func (tsm *testStateMgr) addState(aliasOutput *isc.StateAnchor, chainState state
 	tsm.tryRespond(hash)
 }
 
-func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.StateAnchor) <-chan interface{} {
+func (tsm *testStateMgr) ConsensusStateProposal(ctx context.Context, aliasOutput *isc.StateAnchor) <-chan any {
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
-	resp := make(chan interface{}, 1)
+	resp := make(chan any, 1)
 	hash := commitmentHashFromAO(aliasOutput)
 	tsm.qProposal[hash] = resp
 	tsm.tryRespond(hash)
@@ -399,7 +401,7 @@ func (t *testNodeConn) ConsensusL1InfoProposal(ctx context.Context, anchor *isc.
 	ch := make(chan consGR.NodeConnL1Info, 1)
 	ch <- &testNodeConnL1Info{
 		gasCoins: []*coin.CoinWithRef{t.gasCoin},
-		l1params: parameters.L1Default,
+		l1params: parameterstest.L1Mock,
 	}
 	close(ch)
 	return ch

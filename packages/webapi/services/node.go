@@ -1,11 +1,13 @@
 package services
 
 import (
+	"context"
 	"errors"
 
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
@@ -18,6 +20,7 @@ type NodeService struct {
 	chainsProvider              chains.Provider
 	shutdownHandler             *shutdown.ShutdownHandler
 	trustedNetworkManager       peering.TrustedNetworkManager
+	l1ParamsFetcher             parameters.L1ParamsFetcher
 }
 
 func NewNodeService(
@@ -26,6 +29,7 @@ func NewNodeService(
 	chainsProvider chains.Provider,
 	shutdownHandler *shutdown.ShutdownHandler,
 	trustedNetworkManager peering.TrustedNetworkManager,
+	l1ParamsFetcher parameters.L1ParamsFetcher,
 ) interfaces.NodeService {
 	return &NodeService{
 		chainRecordRegistryProvider: chainRecordRegistryProvider,
@@ -33,10 +37,11 @@ func NewNodeService(
 		chainsProvider:              chainsProvider,
 		shutdownHandler:             shutdownHandler,
 		trustedNetworkManager:       trustedNetworkManager,
+		l1ParamsFetcher:             l1ParamsFetcher,
 	}
 }
 
-func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error { // TODO: Check the caller for param names.
+func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
@@ -51,7 +56,7 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string
 	return nil
 }
 
-func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error { // TODO: Check the caller for param names.
+func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
@@ -73,4 +78,8 @@ func (n *NodeService) NodeOwnerCertificate() []byte {
 
 func (n *NodeService) ShutdownNode() {
 	n.shutdownHandler.SelfShutdown("wasp was shutdown via API", false)
+}
+
+func (n *NodeService) L1Params(ctx context.Context) (*parameters.L1Params, error) {
+	return n.l1ParamsFetcher.GetOrFetchLatest(ctx)
 }

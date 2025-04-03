@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/params"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -29,12 +29,11 @@ func EVMEstimateGas(
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	call ethereum.CallMsg,
 ) (uint64, error) { //nolint:gocyclo,funlen
-	chainID := anchor.ChainID()
 	// Determine the lowest and highest possible gas limits to binary search in between
-	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, call.To == nil, true, true, true)
+	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, nil, call.To == nil, true, true, true)
 	if err != nil {
 		return 0, err
 	}
@@ -48,7 +47,7 @@ func EVMEstimateGas(
 	if err != nil {
 		return 0, err
 	}
-	info := getChainInfo(chainID, latestState)
+	info := getChainInfo(anchor.ChainID(), latestState)
 
 	maximumPossibleGas := gas.EVMCallGasLimit(info.GasLimits, &info.GasFeePolicy.EVMGasRatio)
 	if call.Gas >= params.TxGas {
@@ -58,7 +57,7 @@ func EVMEstimateGas(
 	}
 
 	if call.GasPrice == nil {
-		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.Decimals)
+		call.GasPrice = info.GasFeePolicy.DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	}
 
 	gasCap = hi
@@ -67,7 +66,7 @@ func EVMEstimateGas(
 	blockTime := time.Now()
 	executable := func(gas uint64) (failed bool, result *vm.RequestResult, err error) {
 		call.Gas = gas
-		iscReq := isc.NewEVMOffLedgerCallRequest(chainID, call)
+		iscReq := isc.NewEVMOffLedgerCallRequest(info.ChainID, call)
 		res, err := runISCRequest(
 			anchor,
 			l1Params,

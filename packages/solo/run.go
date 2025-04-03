@@ -9,15 +9,13 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -71,13 +69,13 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		Processors:         ch.proc,
 		Anchor:             ch.GetLatestAnchor(),
 		GasCoin:            ch.GetLatestGasCoin(),
-		L1Params:           parameters.L1(),
+		L1Params:           parameterstest.L1Mock,
 		Requests:           reqs,
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
 		Entropy:            hashing.PseudoRandomHash(nil),
-		ValidatorFeeTarget: ch.OriginatorAgentID,
-		Log:                ch.Log().Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		ValidatorFeeTarget: ch.OwnerAgentID(),
+		Log:                ch.Log().NewChildLogger("RunTask"),
 		// state baseline is always valid in Solo
 		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
 		EstimateGasMode:      estimateGas,
@@ -101,13 +99,19 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 	if os.Getenv("DEBUG") != "" {
 		res.UnsignedTransaction.Print("-- runRequestsNolock -- ")
 	}
-	ptbRes := ch.Env.executePTB(
-		res.UnsignedTransaction,
-		ch.OriginatorPrivateKey,
-		[]*iotago.ObjectRef{gasPayment.Ref},
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
-	)
+
+	var ptbRes *iotajsonrpc.IotaTransactionBlockResponse
+
+	ch.Env.MustWithWaitForNextVersion(gasPayment.Ref, func() {
+		ptbRes = ch.Env.executePTB(
+			res.UnsignedTransaction,
+			ch.OperatorPrivateKey,
+			[]*iotago.ObjectRef{gasPayment.Ref},
+			iotaclient.DefaultGasBudget,
+			iotaclient.DefaultGasPrice,
+		)
+	})
+
 	ch.settleStateTransition(res.StateDraft)
 	return ptbRes, res.RequestResults
 }
@@ -127,13 +131,13 @@ func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
 	if err != nil {
 		panic(err)
 	}
-	ch.Log().Infof("state transition --> #%d. Requests in the block: %d",
+	ch.Log().LogInfof("state transition --> #%d. Requests in the block: %d",
 		stateDraft.BlockIndex(), len(blockReceipts))
 }
 
 func (ch *Chain) logRequestLastBlock() {
 	recs := ch.GetRequestReceiptsForBlock(ch.GetLatestBlockInfo().BlockIndex)
 	for _, rec := range recs {
-		ch.Log().Infof("REQ: '%s'", rec.Short())
+		ch.Log().LogInfof("REQ: '%s'", rec.Short())
 	}
 }

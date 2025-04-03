@@ -197,16 +197,43 @@ func (c *Client) GetRequestFromObjectID(
 }
 
 func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajsonrpc.IotaObjectData) (*iscmove.RefWithObject[iscmove.Request], error) {
-	var req MoveRequest
-	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &req)
+	// intermediateMoveRequest is used to decode actual requests coming from move.
+	// The only difference between this and MoveRequest is the AssetsBag
+	// The Balances in AssetsBagWithBalance are unavailable in the bcs encoded Request coming from L1
+	// The type will get mapped into an actual MoveRequest after it has been enriched.
+	// It decouples the problem that other types which depend on AssetsBagWithBalances can't properly encode Balances
+	// as they have to be ignored. Otherwise, the moveRequest decoding will fail.
+	type intermediateMoveRequest struct {
+		ID        iotago.ObjectID
+		Sender    *cryptolib.Address
+		AssetsBag iscmove.Referent[iscmove.AssetsBag]
+		Message   iscmove.Message
+		Allowance []iscmove.CoinAllowance
+		GasBudget uint64
+	}
+
+	var intermediateRequest intermediateMoveRequest
+	err := iotaclient.UnmarshalBCS(obj.Bcs.Data.MoveObject.BcsBytes, &intermediateRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
-	bals, err := c.GetAssetsBagWithBalances(ctx, &req.AssetsBag.Value.ID)
+	bals, err := c.GetAssetsBagWithBalances(ctx, &intermediateRequest.AssetsBag.Value.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
-	req.AssetsBag.Value = bals
+
+	req := MoveRequest{
+		ID:     intermediateRequest.ID,
+		Sender: intermediateRequest.Sender,
+		AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
+			ID:    intermediateRequest.AssetsBag.ID,
+			Value: bals,
+		},
+		Message:   intermediateRequest.Message,
+		Allowance: intermediateRequest.Allowance,
+		GasBudget: intermediateRequest.GasBudget,
+	}
+
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: obj.Ref(),
 		Object:    req.ToRequest(),
@@ -238,7 +265,6 @@ func (c *Client) pullRequests(ctx context.Context, packageID iotago.Address, anc
 			Query:   query,
 			Cursor:  cursor,
 		})
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to fetch requests: %w", err)
 		}

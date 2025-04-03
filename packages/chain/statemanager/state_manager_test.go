@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -27,10 +28,9 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
-func TestCruelWorld(t *testing.T) { //nolint:gocyclo
+func TestCruelWorld(t *testing.T) {
 	t.Skip()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
 
 	nodeCount := 15
 	committeeSize := 5
@@ -59,7 +59,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	network := testutil.NewPeeringNetwork(
 		peeringURLs, peerIdentities, 10000,
 		networkBehaviour,
-		log.Named("net"),
+		log.NewChildLogger("net"),
 	)
 	netProviders := network.NetworkProviders()
 	bf := sm_gpa_utils.NewBlockFactory(t)
@@ -69,7 +69,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	parameters := sm_gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
-	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log *logger.Logger) sm_snapshots.SnapshotManager {
+	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log hivelog.Logger) sm_snapshots.SnapshotManager {
 		var createPeriod uint32
 		var delayPeriod uint32
 		if createSnapshots {
@@ -84,10 +84,10 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
 		var err error
-		logNode := log.Named(peeringURLs[i])
+		logNode := log.NewChildLogger(peeringURLs[i])
 		stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapMs[i] = NewMockedSnapshotManagerFun(i < snapshotCreateNodeCount, stores[i], logNode)
-		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+		origin.InitChain(allmigrations.LatestSchemaVersion, stores[i], bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		sms[i], err = New(
 			context.Background(),
@@ -116,7 +116,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 
 	// Send blocks to nodes (consensus mock)
 	sendBlockResults := make([]<-chan bool, committeeSize)
-	for i := 0; i < committeeSize; i++ {
+	for i := range committeeSize {
 		ii := i
 		sendBlockResults[i] = makeNRequestsVarDelay(blockCount, func() time.Duration {
 			return time.Duration(rand.Intn(maxMinWaitsToProduceBlock)+1) * minWaitToProduceBlock
@@ -187,7 +187,7 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 				newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], expectedAddedLength, len(results.GetAdded()))
 			return false
 		}
-		for i := 0; i < len(results.GetAdded()); i++ {
+		for i := range results.GetAdded() {
 			if !results.GetAdded()[i].Equals(blocks[oldBlockIndex+i+1]) {
 				t.Logf("Mempool state request for new block %v and old block %v to node %v return wrong %v-th element of added array: expected commitment %v, received %v",
 					newBlockIndex+1, oldBlockIndex+1, peeringURLs[nodeIndex], i, blocks[oldBlockIndex+i+1].L1Commitment(), results.GetAdded()[i].L1Commitment())
@@ -212,7 +212,6 @@ func TestCruelWorld(t *testing.T) { //nolint:gocyclo
 }
 
 func getRandomProducedBlockAIndex(blockProduced []*atomic.Bool) int {
-	//nolint:revive // we ignore the empty-block here because we wait for blockProduced 0 to become true
 	for !blockProduced[0].Load() {
 	}
 	var maxIndex int
@@ -238,7 +237,7 @@ func makeNRequests(count int, delay time.Duration, makeRequestFun func(int) bool
 func makeNRequestsVarDelay(count int, getDelayFun func() time.Duration, makeRequestFun func(int) bool) <-chan bool {
 	responseCh := make(chan bool, 1)
 	go func() {
-		for i := 0; i < count; i++ {
+		for i := range count {
 			if !makeRequestFun(i) {
 				responseCh <- false
 				return

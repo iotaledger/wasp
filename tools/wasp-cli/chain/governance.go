@@ -13,12 +13,12 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -68,7 +68,9 @@ func initChangeAccessNodesCmd() *cobra.Command {
 				client,
 				chain,
 				governance.FuncChangeAccessNodes.Message(pars),
-				chainclient.PostRequestParams{},
+				chainclient.PostRequestParams{
+					GasBudget: iotaclient.DefaultGasBudget,
+				},
 				offLedger,
 				true,
 			)
@@ -99,7 +101,7 @@ func initDisableFeePolicyCmd() *cobra.Command {
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
 			callGovView := func(viewName string) isc.CallResults {
-				apiResult, _, err := client.ChainsAPI.CallView(ctx, config.GetChain(chain).String()).
+				apiResult, _, err := client.ChainsAPI.CallView(ctx).
 					ContractCallViewRequest(apiclient.ContractCallViewRequest{
 						ContractName: governance.Contract.Name,
 						FunctionName: viewName,
@@ -121,7 +123,9 @@ func initDisableFeePolicyCmd() *cobra.Command {
 				client,
 				chain,
 				governance.FuncSetFeePolicy.Message(feePolicy),
-				chainclient.PostRequestParams{},
+				chainclient.PostRequestParams{
+					GasBudget: iotaclient.DefaultGasBudget,
+				},
 				offLedger,
 				true,
 			)

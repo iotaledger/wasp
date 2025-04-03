@@ -1,29 +1,28 @@
 package isc
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // EthereumAddressAgentID is an AgentID formed by an Ethereum address
 type EthereumAddressAgentID struct {
-	chainID ChainID        `bcs:"export"`
-	eth     common.Address `bcs:"export"`
+	eth common.Address `bcs:"export"`
 }
 
 var _ AgentID = &EthereumAddressAgentID{}
 
-func NewEthereumAddressAgentID(chainID ChainID, eth common.Address) *EthereumAddressAgentID {
-	return &EthereumAddressAgentID{chainID: chainID, eth: eth}
+func NewEthereumAddressAgentID(eth common.Address) *EthereumAddressAgentID {
+	return &EthereumAddressAgentID{eth: eth}
 }
 
-func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAgentID, error) {
+func ethAgentIDFromString(contractPart string) (*EthereumAddressAgentID, error) {
 	data, err := cryptolib.DecodeHex(contractPart)
 	if err != nil {
 		return nil, err
@@ -32,12 +31,7 @@ func ethAgentIDFromString(contractPart, chainIDPart string) (*EthereumAddressAge
 		return nil, errors.New("invalid ETH address string")
 	}
 
-	chainID, err := ChainIDFromString(chainIDPart)
-	if err != nil {
-		return nil, fmt.Errorf("invalid chainID: %w", err)
-	}
-
-	return &EthereumAddressAgentID{eth: common.BytesToAddress(data), chainID: chainID}, nil
+	return &EthereumAddressAgentID{eth: common.BytesToAddress(data)}, nil
 }
 
 func (a *EthereumAddressAgentID) Bytes() []byte {
@@ -52,23 +46,11 @@ func (a *EthereumAddressAgentID) Equals(other AgentID) bool {
 		return false
 	}
 	b := other.(*EthereumAddressAgentID)
-	return b.eth == a.eth && b.chainID.Equals(a.chainID)
+	return bytes.Equal(b.eth.Bytes(), a.eth.Bytes())
 }
 
 func (a *EthereumAddressAgentID) EthAddress() common.Address {
 	return a.eth
-}
-
-func (a *EthereumAddressAgentID) ChainID() ChainID {
-	return a.chainID
-}
-
-func (a *EthereumAddressAgentID) BelongsToChain(cID ChainID) bool {
-	return a.chainID.Equals(cID)
-}
-
-func (a *EthereumAddressAgentID) BytesWithoutChainID() []byte {
-	return a.eth[:]
 }
 
 func (a *EthereumAddressAgentID) Kind() AgentIDKind {
@@ -77,5 +59,5 @@ func (a *EthereumAddressAgentID) Kind() AgentIDKind {
 
 func (a *EthereumAddressAgentID) String() string {
 	// eth.String includes 0x prefix
-	return a.eth.String() + AgentIDStringSeparator + a.chainID.String()
+	return a.eth.String()
 }

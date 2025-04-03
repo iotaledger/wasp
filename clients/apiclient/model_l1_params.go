@@ -21,10 +21,8 @@ var _ MappedNullable = &L1Params{}
 
 // L1Params struct for L1Params
 type L1Params struct {
-	BaseToken BaseToken `json:"baseToken"`
-	// The max payload size
-	MaxPayloadSize int32 `json:"maxPayloadSize"`
-	Protocol ProtocolParameters `json:"protocol"`
+	BaseToken IotaCoinInfo `json:"baseToken"`
+	Protocol Protocol `json:"protocol"`
 }
 
 type _L1Params L1Params
@@ -33,10 +31,9 @@ type _L1Params L1Params
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewL1Params(baseToken BaseToken, maxPayloadSize int32, protocol ProtocolParameters) *L1Params {
+func NewL1Params(baseToken IotaCoinInfo, protocol Protocol) *L1Params {
 	this := L1Params{}
 	this.BaseToken = baseToken
-	this.MaxPayloadSize = maxPayloadSize
 	this.Protocol = protocol
 	return &this
 }
@@ -50,9 +47,9 @@ func NewL1ParamsWithDefaults() *L1Params {
 }
 
 // GetBaseToken returns the BaseToken field value
-func (o *L1Params) GetBaseToken() BaseToken {
+func (o *L1Params) GetBaseToken() IotaCoinInfo {
 	if o == nil {
-		var ret BaseToken
+		var ret IotaCoinInfo
 		return ret
 	}
 
@@ -61,7 +58,7 @@ func (o *L1Params) GetBaseToken() BaseToken {
 
 // GetBaseTokenOk returns a tuple with the BaseToken field value
 // and a boolean to check if the value has been set.
-func (o *L1Params) GetBaseTokenOk() (*BaseToken, bool) {
+func (o *L1Params) GetBaseTokenOk() (*IotaCoinInfo, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -69,38 +66,14 @@ func (o *L1Params) GetBaseTokenOk() (*BaseToken, bool) {
 }
 
 // SetBaseToken sets field value
-func (o *L1Params) SetBaseToken(v BaseToken) {
+func (o *L1Params) SetBaseToken(v IotaCoinInfo) {
 	o.BaseToken = v
 }
 
-// GetMaxPayloadSize returns the MaxPayloadSize field value
-func (o *L1Params) GetMaxPayloadSize() int32 {
-	if o == nil {
-		var ret int32
-		return ret
-	}
-
-	return o.MaxPayloadSize
-}
-
-// GetMaxPayloadSizeOk returns a tuple with the MaxPayloadSize field value
-// and a boolean to check if the value has been set.
-func (o *L1Params) GetMaxPayloadSizeOk() (*int32, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.MaxPayloadSize, true
-}
-
-// SetMaxPayloadSize sets field value
-func (o *L1Params) SetMaxPayloadSize(v int32) {
-	o.MaxPayloadSize = v
-}
-
 // GetProtocol returns the Protocol field value
-func (o *L1Params) GetProtocol() ProtocolParameters {
+func (o *L1Params) GetProtocol() Protocol {
 	if o == nil {
-		var ret ProtocolParameters
+		var ret Protocol
 		return ret
 	}
 
@@ -109,7 +82,7 @@ func (o *L1Params) GetProtocol() ProtocolParameters {
 
 // GetProtocolOk returns a tuple with the Protocol field value
 // and a boolean to check if the value has been set.
-func (o *L1Params) GetProtocolOk() (*ProtocolParameters, bool) {
+func (o *L1Params) GetProtocolOk() (*Protocol, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -117,7 +90,7 @@ func (o *L1Params) GetProtocolOk() (*ProtocolParameters, bool) {
 }
 
 // SetProtocol sets field value
-func (o *L1Params) SetProtocol(v ProtocolParameters) {
+func (o *L1Params) SetProtocol(v Protocol) {
 	o.Protocol = v
 }
 
@@ -132,7 +105,6 @@ func (o L1Params) MarshalJSON() ([]byte, error) {
 func (o L1Params) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["baseToken"] = o.BaseToken
-	toSerialize["maxPayloadSize"] = o.MaxPayloadSize
 	toSerialize["protocol"] = o.Protocol
 	return toSerialize, nil
 }
@@ -143,7 +115,6 @@ func (o *L1Params) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"baseToken",
-		"maxPayloadSize",
 		"protocol",
 	}
 

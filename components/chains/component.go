@@ -9,6 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 	hiveshutdown "github.com/iotaledger/hive.go/app/shutdown"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
@@ -57,7 +58,7 @@ func initConfigParams(c *dig.Container) error {
 			APICacheTTL: ParamsChains.APICacheTTL,
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	chain.RedeliveryPeriod = ParamsChains.RedeliveryPeriod
@@ -94,7 +95,7 @@ func provide(c *dig.Container) error {
 	if err := c.Provide(func(deps chainsDeps) chainsResult {
 		return chainsResult{
 			Chains: chains.New(
-				Component.Logger(),
+				Component.Logger,
 				deps.NodeConnection,
 				deps.ProcessorsConfig,
 				ParamsValidator.Address,
@@ -139,12 +140,12 @@ func provide(c *dig.Container) error {
 					MaxOffledgerToPropose:      ParamsChains.MempoolMaxOffledgerToPropose,
 				},
 				ParamsChains.BroadcastInterval,
-				shutdown.NewCoordinator("chains", Component.Logger().Named("Shutdown")),
+				shutdown.NewCoordinator("chains", Component.Logger.NewChildLogger("Shutdown")),
 				deps.ChainMetricsProvider,
 			),
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil
@@ -161,7 +162,7 @@ func run() error {
 		deps.Chains.Close()
 	}, daemon.PriorityChains)
 	if err != nil {
-		Component.LogError(err)
+		Component.LogError(err.Error())
 		return err
 	}
 

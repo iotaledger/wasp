@@ -114,14 +114,14 @@ func (ctx *emulatorContext) Timestamp() uint64 {
 }
 
 func (*emulatorContext) BaseTokensDecimals() uint8 {
-	return parameters.Decimals
+	return parameters.BaseTokenDecimals
 }
 
 func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {
 	ret := new(big.Int)
 	// do not charge gas for this, internal checks of the emulator require this function to run before executing the request
 	ctx.WithoutGasBurn(func() {
-		var agentID isc.AgentID = isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr)
+		var agentID isc.AgentID = isc.NewEthereumAddressAgentID(addr)
 		res := ctx.sandbox.CallView(accounts.ViewBalanceBaseTokenEVM.Message(&agentID))
 		ret = lo.Must(accounts.ViewBalanceBaseTokenEVM.DecodeOutput(res))
 	})
@@ -130,14 +130,14 @@ func (ctx *emulatorContext) GetBaseTokensBalance(addr common.Address) *big.Int {
 
 func (ctx *emulatorContext) AddBaseTokensBalance(addr common.Address, amount *big.Int) {
 	ctx.sandbox.Privileged().CreditToAccount(
-		isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr),
+		isc.NewEthereumAddressAgentID(addr),
 		amount,
 	)
 }
 
 func (ctx *emulatorContext) SubBaseTokensBalance(addr common.Address, amount *big.Int) {
 	ctx.sandbox.Privileged().DebitFromAccount(
-		isc.NewEthereumAddressAgentID(ctx.sandbox.ChainID(), addr),
+		isc.NewEthereumAddressAgentID(addr),
 		amount,
 	)
 }

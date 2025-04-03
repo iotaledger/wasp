@@ -3,8 +3,8 @@ package state
 import (
 	"fmt"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // L1Commitment represents the data stored as metadata in the anchor output

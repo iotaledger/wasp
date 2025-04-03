@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Client provides convenient methods to interact with the `isc` Move contracts.
@@ -38,7 +38,7 @@ func NewWebsocketClient(
 	ctx context.Context,
 	wsURL, faucetURL string,
 	waitUntilEffectsVisible *iotaclient.WaitParams,
-	log *logger.Logger,
+	log log.Logger,
 ) (*Client, error) {
 	ws, err := iotaclient.NewWebsocket(ctx, wsURL, waitUntilEffectsVisible, log)
 	if err != nil {
@@ -103,8 +103,9 @@ func (c *Client) SignAndExecutePTB(
 			TxDataBytes: txnBytes,
 			Signer:      signer,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowEffects:       true,
-				ShowObjectChanges: true,
+				ShowEffects:        true,
+				ShowObjectChanges:  true,
+				ShowBalanceChanges: true,
 			},
 		},
 	)

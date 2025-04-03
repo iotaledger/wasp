@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 func init() {

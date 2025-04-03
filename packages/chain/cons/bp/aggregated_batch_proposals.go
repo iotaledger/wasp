@@ -8,13 +8,15 @@ import (
 	"sort"
 	"time"
 
-	"github.com/iotaledger/hive.go/logger"
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/log"
+
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // Here we store just an aggregated info.
@@ -24,31 +26,32 @@ type AggregatedBatchProposals struct {
 	decidedIndexProposals  map[gpa.NodeID][]int
 	decidedBaseAliasOutput *isc.StateAnchor
 	decidedRequestRefs     []*isc.RequestRef
+	decidedRotateTo        *iotago.Address
 	aggregatedTime         time.Time
 	aggregatedGasCoins     []*coin.CoinWithRef
 	aggregatedL1Params     *parameters.L1Params
 }
 
-func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log *logger.Logger) *AggregatedBatchProposals {
+func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID, f int, log log.Logger) *AggregatedBatchProposals {
 	bps := batchProposalSet{}
 	//
 	// Parse and validate the batch proposals. Skip the invalid ones.
 	nilCount := 0
 	for nid := range inputs {
 		if len(inputs[nid]) == 0 {
-			log.Warnf("cannot decode empty BatchProposal from %v", nid)
+			log.LogWarnf("cannot decode empty BatchProposal from %v", nid)
 			continue
 		}
 		batchProposal, err := bcs.Unmarshal[*BatchProposal](inputs[nid])
 		if err != nil {
-			log.Warnf("cannot decode BatchProposal from %v: %v", nid, err)
+			log.LogWarnf("cannot decode BatchProposal from %v: %v", nid, err)
 			continue
 		}
 		if batchProposal.baseAliasOutput == nil {
 			nilCount++
 		}
 		if int(batchProposal.nodeIndex) >= len(nodeIDs) || nodeIDs[batchProposal.nodeIndex] != nid {
-			log.Warnf("invalid nodeIndex=%v in batchProposal from %v", batchProposal.nodeIndex, nid)
+			log.LogWarnf("invalid nodeIndex=%v in batchProposal from %v", batchProposal.nodeIndex, nid)
 			continue
 		}
 		bps[nid] = batchProposal
@@ -56,11 +59,11 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 	//
 	// Store the aggregated values.
 	if nilCount > f {
-		log.Debugf("Can't aggregate batch proposal: have >= f+1 nil proposals.")
+		log.LogDebugf("Can't aggregate batch proposal: have >= f+1 nil proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	if len(bps) == 0 {
-		log.Debugf("Can't aggregate batch proposal: have 0 batch proposals.")
+		log.LogDebugf("Can't aggregate batch proposal: have 0 batch proposals.")
 		return &AggregatedBatchProposals{shouldBeSkipped: true}
 	}
 	aggregatedTime := bps.aggregatedTime(f)
@@ -72,16 +75,18 @@ func AggregateBatchProposals(inputs map[gpa.NodeID][]byte, nodeIDs []gpa.NodeID,
 		decidedIndexProposals:  bps.decidedDSSIndexProposals(),
 		decidedBaseAliasOutput: decidedBaseAliasOutput,
 		decidedRequestRefs:     bps.decidedRequestRefs(f, decidedBaseAliasOutput),
+		decidedRotateTo:        bps.decidedRotateTo(f),
 		aggregatedTime:         aggregatedTime,
 		aggregatedGasCoins:     aggregatedGasCoins,
 		aggregatedL1Params:     aggregatedL1Params,
 	}
 	if abp.decidedBaseAliasOutput == nil ||
 		len(abp.decidedRequestRefs) == 0 ||
+		// No need to check the rotateTo field here.
 		abp.aggregatedTime.IsZero() ||
 		len(abp.aggregatedGasCoins) == 0 ||
 		abp.aggregatedL1Params == nil {
-		log.Debugf(
+		log.LogDebugf(
 			"Can't aggregate batch proposal: decidedBaseAliasOutput=%v, |decidedRequestRefs|=%v, |aggregatedGasCoins|=%v, |aggregatedL1Params|=%v , aggregatedTime=%v",
 			abp.decidedBaseAliasOutput, len(abp.decidedRequestRefs), len(abp.aggregatedGasCoins), abp.aggregatedL1Params, abp.aggregatedTime,
 		)
@@ -106,6 +111,13 @@ func (abp *AggregatedBatchProposals) DecidedBaseAliasOutput() *isc.StateAnchor {
 		panic("trying to use aggregated proposal marked to be skipped")
 	}
 	return abp.decidedBaseAliasOutput
+}
+
+func (abp *AggregatedBatchProposals) DecidedRotateTo() *iotago.Address {
+	if abp.shouldBeSkipped {
+		panic("trying to use aggregated proposal marked to be skipped")
+	}
+	return abp.decidedRotateTo
 }
 
 func (abp *AggregatedBatchProposals) AggregatedTime() time.Time {

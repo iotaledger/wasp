@@ -21,17 +21,9 @@ var _ MappedNullable = &NodeMessageMetrics{}
 
 // NodeMessageMetrics struct for NodeMessageMetrics
 type NodeMessageMetrics struct {
-	InAliasOutput AliasOutputMetricItem `json:"inAliasOutput"`
-	InMilestone MilestoneMetricItem `json:"inMilestone"`
+	InAnchor AnchorMetricItem `json:"inAnchor"`
 	InOnLedgerRequest OnLedgerRequestMetricItem `json:"inOnLedgerRequest"`
-	InOutput InOutputMetricItem `json:"inOutput"`
-	InStateOutput InStateOutputMetricItem `json:"inStateOutput"`
-	InTxInclusionState TxInclusionStateMsgMetricItem `json:"inTxInclusionState"`
-	OutPublishGovernanceTransaction TransactionMetricItem `json:"outPublishGovernanceTransaction"`
 	OutPublisherStateTransaction PublisherStateTransactionItem `json:"outPublisherStateTransaction"`
-	OutPullLatestOutput InterfaceMetricItem `json:"outPullLatestOutput"`
-	OutPullOutputByID UTXOInputMetricItem `json:"outPullOutputByID"`
-	OutPullTxInclusionState TransactionIDMetricItem `json:"outPullTxInclusionState"`
 	RegisteredChainIDs []string `json:"registeredChainIDs"`
 }
 
@@ -41,19 +33,11 @@ type _NodeMessageMetrics NodeMessageMetrics
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewNodeMessageMetrics(inAliasOutput AliasOutputMetricItem, inMilestone MilestoneMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, inOutput InOutputMetricItem, inStateOutput InStateOutputMetricItem, inTxInclusionState TxInclusionStateMsgMetricItem, outPublishGovernanceTransaction TransactionMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, outPullLatestOutput InterfaceMetricItem, outPullOutputByID UTXOInputMetricItem, outPullTxInclusionState TransactionIDMetricItem, registeredChainIDs []string) *NodeMessageMetrics {
+func NewNodeMessageMetrics(inAnchor AnchorMetricItem, inOnLedgerRequest OnLedgerRequestMetricItem, outPublisherStateTransaction PublisherStateTransactionItem, registeredChainIDs []string) *NodeMessageMetrics {
 	this := NodeMessageMetrics{}
-	this.InAliasOutput = inAliasOutput
-	this.InMilestone = inMilestone
+	this.InAnchor = inAnchor
 	this.InOnLedgerRequest = inOnLedgerRequest
-	this.InOutput = inOutput
-	this.InStateOutput = inStateOutput
-	this.InTxInclusionState = inTxInclusionState
-	this.OutPublishGovernanceTransaction = outPublishGovernanceTransaction
 	this.OutPublisherStateTransaction = outPublisherStateTransaction
-	this.OutPullLatestOutput = outPullLatestOutput
-	this.OutPullOutputByID = outPullOutputByID
-	this.OutPullTxInclusionState = outPullTxInclusionState
 	this.RegisteredChainIDs = registeredChainIDs
 	return &this
 }
@@ -66,52 +50,28 @@ func NewNodeMessageMetricsWithDefaults() *NodeMessageMetrics {
 	return &this
 }
 
-// GetInAliasOutput returns the InAliasOutput field value
-func (o *NodeMessageMetrics) GetInAliasOutput() AliasOutputMetricItem {
+// GetInAnchor returns the InAnchor field value
+func (o *NodeMessageMetrics) GetInAnchor() AnchorMetricItem {
 	if o == nil {
-		var ret AliasOutputMetricItem
+		var ret AnchorMetricItem
 		return ret
 	}
 
-	return o.InAliasOutput
+	return o.InAnchor
 }
 
-// GetInAliasOutputOk returns a tuple with the InAliasOutput field value
+// GetInAnchorOk returns a tuple with the InAnchor field value
 // and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetInAliasOutputOk() (*AliasOutputMetricItem, bool) {
+func (o *NodeMessageMetrics) GetInAnchorOk() (*AnchorMetricItem, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.InAliasOutput, true
+	return &o.InAnchor, true
 }
 
-// SetInAliasOutput sets field value
-func (o *NodeMessageMetrics) SetInAliasOutput(v AliasOutputMetricItem) {
-	o.InAliasOutput = v
-}
-
-// GetInMilestone returns the InMilestone field value
-func (o *NodeMessageMetrics) GetInMilestone() MilestoneMetricItem {
-	if o == nil {
-		var ret MilestoneMetricItem
-		return ret
-	}
-
-	return o.InMilestone
-}
-
-// GetInMilestoneOk returns a tuple with the InMilestone field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetInMilestoneOk() (*MilestoneMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.InMilestone, true
-}
-
-// SetInMilestone sets field value
-func (o *NodeMessageMetrics) SetInMilestone(v MilestoneMetricItem) {
-	o.InMilestone = v
+// SetInAnchor sets field value
+func (o *NodeMessageMetrics) SetInAnchor(v AnchorMetricItem) {
+	o.InAnchor = v
 }
 
 // GetInOnLedgerRequest returns the InOnLedgerRequest field value
@@ -138,102 +98,6 @@ func (o *NodeMessageMetrics) SetInOnLedgerRequest(v OnLedgerRequestMetricItem) {
 	o.InOnLedgerRequest = v
 }
 
-// GetInOutput returns the InOutput field value
-func (o *NodeMessageMetrics) GetInOutput() InOutputMetricItem {
-	if o == nil {
-		var ret InOutputMetricItem
-		return ret
-	}
-
-	return o.InOutput
-}
-
-// GetInOutputOk returns a tuple with the InOutput field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetInOutputOk() (*InOutputMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.InOutput, true
-}
-
-// SetInOutput sets field value
-func (o *NodeMessageMetrics) SetInOutput(v InOutputMetricItem) {
-	o.InOutput = v
-}
-
-// GetInStateOutput returns the InStateOutput field value
-func (o *NodeMessageMetrics) GetInStateOutput() InStateOutputMetricItem {
-	if o == nil {
-		var ret InStateOutputMetricItem
-		return ret
-	}
-
-	return o.InStateOutput
-}
-
-// GetInStateOutputOk returns a tuple with the InStateOutput field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetInStateOutputOk() (*InStateOutputMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.InStateOutput, true
-}
-
-// SetInStateOutput sets field value
-func (o *NodeMessageMetrics) SetInStateOutput(v InStateOutputMetricItem) {
-	o.InStateOutput = v
-}
-
-// GetInTxInclusionState returns the InTxInclusionState field value
-func (o *NodeMessageMetrics) GetInTxInclusionState() TxInclusionStateMsgMetricItem {
-	if o == nil {
-		var ret TxInclusionStateMsgMetricItem
-		return ret
-	}
-
-	return o.InTxInclusionState
-}
-
-// GetInTxInclusionStateOk returns a tuple with the InTxInclusionState field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetInTxInclusionStateOk() (*TxInclusionStateMsgMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.InTxInclusionState, true
-}
-
-// SetInTxInclusionState sets field value
-func (o *NodeMessageMetrics) SetInTxInclusionState(v TxInclusionStateMsgMetricItem) {
-	o.InTxInclusionState = v
-}
-
-// GetOutPublishGovernanceTransaction returns the OutPublishGovernanceTransaction field value
-func (o *NodeMessageMetrics) GetOutPublishGovernanceTransaction() TransactionMetricItem {
-	if o == nil {
-		var ret TransactionMetricItem
-		return ret
-	}
-
-	return o.OutPublishGovernanceTransaction
-}
-
-// GetOutPublishGovernanceTransactionOk returns a tuple with the OutPublishGovernanceTransaction field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetOutPublishGovernanceTransactionOk() (*TransactionMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.OutPublishGovernanceTransaction, true
-}
-
-// SetOutPublishGovernanceTransaction sets field value
-func (o *NodeMessageMetrics) SetOutPublishGovernanceTransaction(v TransactionMetricItem) {
-	o.OutPublishGovernanceTransaction = v
-}
-
 // GetOutPublisherStateTransaction returns the OutPublisherStateTransaction field value
 func (o *NodeMessageMetrics) GetOutPublisherStateTransaction() PublisherStateTransactionItem {
 	if o == nil {
@@ -256,78 +120,6 @@ func (o *NodeMessageMetrics) GetOutPublisherStateTransactionOk() (*PublisherStat
 // SetOutPublisherStateTransaction sets field value
 func (o *NodeMessageMetrics) SetOutPublisherStateTransaction(v PublisherStateTransactionItem) {
 	o.OutPublisherStateTransaction = v
-}
-
-// GetOutPullLatestOutput returns the OutPullLatestOutput field value
-func (o *NodeMessageMetrics) GetOutPullLatestOutput() InterfaceMetricItem {
-	if o == nil {
-		var ret InterfaceMetricItem
-		return ret
-	}
-
-	return o.OutPullLatestOutput
-}
-
-// GetOutPullLatestOutputOk returns a tuple with the OutPullLatestOutput field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetOutPullLatestOutputOk() (*InterfaceMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.OutPullLatestOutput, true
-}
-
-// SetOutPullLatestOutput sets field value
-func (o *NodeMessageMetrics) SetOutPullLatestOutput(v InterfaceMetricItem) {
-	o.OutPullLatestOutput = v
-}
-
-// GetOutPullOutputByID returns the OutPullOutputByID field value
-func (o *NodeMessageMetrics) GetOutPullOutputByID() UTXOInputMetricItem {
-	if o == nil {
-		var ret UTXOInputMetricItem
-		return ret
-	}
-
-	return o.OutPullOutputByID
-}
-
-// GetOutPullOutputByIDOk returns a tuple with the OutPullOutputByID field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetOutPullOutputByIDOk() (*UTXOInputMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.OutPullOutputByID, true
-}
-
-// SetOutPullOutputByID sets field value
-func (o *NodeMessageMetrics) SetOutPullOutputByID(v UTXOInputMetricItem) {
-	o.OutPullOutputByID = v
-}
-
-// GetOutPullTxInclusionState returns the OutPullTxInclusionState field value
-func (o *NodeMessageMetrics) GetOutPullTxInclusionState() TransactionIDMetricItem {
-	if o == nil {
-		var ret TransactionIDMetricItem
-		return ret
-	}
-
-	return o.OutPullTxInclusionState
-}
-
-// GetOutPullTxInclusionStateOk returns a tuple with the OutPullTxInclusionState field value
-// and a boolean to check if the value has been set.
-func (o *NodeMessageMetrics) GetOutPullTxInclusionStateOk() (*TransactionIDMetricItem, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.OutPullTxInclusionState, true
-}
-
-// SetOutPullTxInclusionState sets field value
-func (o *NodeMessageMetrics) SetOutPullTxInclusionState(v TransactionIDMetricItem) {
-	o.OutPullTxInclusionState = v
 }
 
 // GetRegisteredChainIDs returns the RegisteredChainIDs field value
@@ -364,17 +156,9 @@ func (o NodeMessageMetrics) MarshalJSON() ([]byte, error) {
 
 func (o NodeMessageMetrics) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["inAliasOutput"] = o.InAliasOutput
-	toSerialize["inMilestone"] = o.InMilestone
+	toSerialize["inAnchor"] = o.InAnchor
 	toSerialize["inOnLedgerRequest"] = o.InOnLedgerRequest
-	toSerialize["inOutput"] = o.InOutput
-	toSerialize["inStateOutput"] = o.InStateOutput
-	toSerialize["inTxInclusionState"] = o.InTxInclusionState
-	toSerialize["outPublishGovernanceTransaction"] = o.OutPublishGovernanceTransaction
 	toSerialize["outPublisherStateTransaction"] = o.OutPublisherStateTransaction
-	toSerialize["outPullLatestOutput"] = o.OutPullLatestOutput
-	toSerialize["outPullOutputByID"] = o.OutPullOutputByID
-	toSerialize["outPullTxInclusionState"] = o.OutPullTxInclusionState
 	toSerialize["registeredChainIDs"] = o.RegisteredChainIDs
 	return toSerialize, nil
 }
@@ -384,17 +168,9 @@ func (o *NodeMessageMetrics) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"inAliasOutput",
-		"inMilestone",
+		"inAnchor",
 		"inOnLedgerRequest",
-		"inOutput",
-		"inStateOutput",
-		"inTxInclusionState",
-		"outPublishGovernanceTransaction",
 		"outPublisherStateTransaction",
-		"outPullLatestOutput",
-		"outPullOutputByID",
-		"outPullTxInclusionState",
 		"registeredChainIDs",
 	}
 

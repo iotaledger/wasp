@@ -7,13 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
-
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 // A + B
-const RatioByteSize = serializer.UInt32ByteSize + serializer.UInt32ByteSize
+const RatioByteSize = 4 + 4 // (2 x uint32)
 
 // Ratio32 represents a ratio (a:b) between two quantities, expressed as two uint32 values.
 type Ratio32 struct {

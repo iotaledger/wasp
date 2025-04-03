@@ -9,6 +9,6 @@ func NewPanicLogger() Logger {
 	return &panicLogger{}
 }
 
-func (*panicLogger) Warnf(msg string, args ...any) {
+func (*panicLogger) LogWarnf(msg string, args ...any) {
 	panic(fmt.Errorf(msg, args...))
 }

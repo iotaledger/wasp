@@ -21,7 +21,6 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd := initChainCmd()
 	rootCmd.AddCommand(chainCmd)
 
-	chainCmd.AddCommand(initListCmd())
 	chainCmd.AddCommand(initDeployCmd())
 	chainCmd.AddCommand(initInfoCmd())
 	chainCmd.AddCommand(initListContractsCmd())
@@ -37,14 +36,12 @@ func Init(rootCmd *cobra.Command) {
 	chainCmd.AddCommand(initDeactivateCmd())
 	chainCmd.AddCommand(initRunDKGCmd())
 	chainCmd.AddCommand(initRotateCmd())
-	chainCmd.AddCommand(initRotateWithDKGCmd())
 	chainCmd.AddCommand(initChangeGovControllerCmd())
 	chainCmd.AddCommand(initChangeAccessNodesCmd())
 	chainCmd.AddCommand(initDisableFeePolicyCmd())
 	chainCmd.AddCommand(initPermissionlessAccessNodesCmd())
 	chainCmd.AddCommand(initAddChainCmd())
 	chainCmd.AddCommand(initRegisterERC20NativeTokenCmd())
-	chainCmd.AddCommand(initRegisterERC20NativeTokenOnRemoteChainCmd())
 	// chainCmd.AddCommand(initCreateNativeTokenCmd())
 	chainCmd.AddCommand(initMetadataCmd())
 }

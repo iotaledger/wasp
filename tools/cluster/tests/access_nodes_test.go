@@ -10,17 +10,19 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 // executed in cluster_test.go
-func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
+func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// deposit funds for offledger requests
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 
-	env.DepositFunds(iotaclient.FundsFromFaucetAmount, keyPair)
+	env.DepositFunds(iotaclient.DefaultGasBudget, keyPair)
 
 	// spin a new node
 	clu2 := newCluster(t, waspClusterOpts{
@@ -73,8 +75,8 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 		}).Execute()
 	require.NoError(t, err)
 
-	// add node 0 from cluster 2 as a *permitionless* access node
-	_, err = nodeClient.ChainsAPI.AddAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
+	// add node 0 from cluster 2 as a *permissionless* access node
+	_, err = nodeClient.ChainsAPI.AddAccessNode(context.Background(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
 
 	// give some time for the access node to sync
@@ -88,7 +90,11 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 		env.Clu.Config.ISCPackageID(),
 		keyPair,
 	)
-	req, err := myClient.PostOffLedgerRequest(context.Background(), inccounter.FuncIncCounter.Message(nil))
+	req, err := myClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
+		chainclient.PostRequestParams{
+			Allowance: isc.NewAssets(10),
+		},
+	)
 	require.NoError(t, err)
 
 	// request has been processed
@@ -96,7 +102,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// remove the access node from cluster1 node 0
-	_, err = nodeClient.ChainsAPI.RemoveAccessNode(context.Background(), env.Chain.ChainID.String(), accessNodePeerInfo.PublicKey).Execute()
+	_, err = nodeClient.ChainsAPI.RemoveAccessNode(context.Background(), accessNodePeerInfo.PublicKey).Execute()
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second) // Access/Server node info is exchanged asynchronously.
@@ -107,7 +113,7 @@ func testPermitionlessAccessNode(t *testing.T, env *ChainEnv) {
 
 	// request is not processed after a while
 	time.Sleep(2 * time.Second)
-	receipt, _, err := nodeClient.ChainsAPI.GetReceipt(context.Background(), env.Chain.ChainID.String(), req.ID().String()).Execute()
+	receipt, _, err := nodeClient.ChainsAPI.GetReceipt(context.Background(), req.ID().String()).Execute()
 
 	require.Error(t, err)
 	require.Regexp(t, `404`, err.Error())

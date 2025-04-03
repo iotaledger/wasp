@@ -13,14 +13,15 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	iotatest2 "github.com/iotaledger/wasp/clients/iota-go/iotatest"
+	"github.com/iotaledger/wasp/clients/iota-go/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -35,6 +36,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/shutdown"
@@ -46,8 +48,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util/bcs"
-
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
@@ -98,11 +98,11 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	ctxTimeout, ctxTimeoutCancel := context.WithTimeout(te.ctx, timeout)
 	defer ctxTimeoutCancel()
 
-	te.log.Debugf("All started.")
+	te.log.LogDebugf("All started.")
 	for _, tnc := range te.nodeConns {
 		tnc.waitAttached()
 	}
-	te.log.Debugf("All attached to node conns.")
+	te.log.LogDebugf("All attached to node conns.")
 
 	// Create SC L1Client account with some deposit
 	scClient := cryptolib.NewKeyPair()
@@ -112,7 +112,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	//
 	// The first AO should be reported by L1/NodeConn to the nodes.
 	for _, tnc := range te.nodeConns {
-		tnc.recvAnchor(te.anchor)
+		tnc.recvAnchor(te.anchor, parameterstest.L1Mock)
 	}
 
 	// Invoke off-ledger requests on the contract, wait for the counter to reach the expected value.
@@ -120,7 +120,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	incCount := 10
 	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
 
-	for i := 0; i < incCount; i++ {
+	for i := range incCount {
 		assets := iscmove.NewAssets(10000000)
 		allowance := iscmove.NewAssets(assets.BaseToken() / 10)
 		one := int64(1)
@@ -135,12 +135,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				Function: uint32(mmm.Target.EntryPoint),
 				Args:     mmm.Params,
 			},
-			// inccounter.FuncIncCounter.Message(nil),
-			// &iscmove.Message{
-			// 	Contract: uint32(inccounter.Contract.Hname()),
-			// 	Function: uint32(inccounter.FuncIncCounter.Hname()),
-			// 	Args:     inccounter.FuncIncCounter.Message(nil).Params.Clone(),
-			// },
 			Allowance:        allowance,
 			OnchainGasBudget: 100000,
 			GasPrice:         iotaclient.DefaultGasPrice,
@@ -151,8 +145,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 		require.NoError(t, err)
 		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 		require.NoError(t, err)
-		//		onLedgerReq, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(te.anchor.GetObjectID()))
-		//		require.NoError(t, err)
 
 		incRequests[i] = *reqWithObj
 	}
@@ -177,7 +169,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			latestState, err := node.LatestState(chain.ActiveOrCommittedState)
 			require.NoError(t, err)
 			cnt := inccounter.NewStateAccess(latestState).GetCounter()
-			te.log.Debugf("Counter[node=%v]=%v", i, cnt)
+			te.log.LogDebugf("Counter[node=%v]=%v", i, cnt)
 			if cnt >= int64(incCount) {
 				// TODO: Double-check with the published TX.
 				/*
@@ -200,7 +192,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			//
 			// For the unreliable-network tests we have to retry the requests.
 			// That's because the gossip in the mempool is primitive for now.
-			for ii := 0; ii < incCount; ii++ {
+			for ii := range incCount {
 				scRequest := isc.NewOffLedgerRequest(
 					te.chainID,
 					inccounter.FuncIncCounter.Message(nil),
@@ -219,11 +211,11 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			lastPublishedTX := te.nodeConns[i].published[len(te.nodeConns[i].published)-1]
 			lastPublishedAO := isc.NewStateAnchor(lastPublishedTX, te.iscPackageID)
 			if !lastPublishedAO.Equals(confirmedAO) { // In this test we confirm outputs immediately.
-				te.log.Debugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
+				te.log.LogDebugf("lastPublishedAO(%v) != confirmedAO(%v)", lastPublishedAO, confirmedAO)
 				return false
 			}
 			if !lastPublishedAO.Equals(activeAO) {
-				te.log.Debugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
+				te.log.LogDebugf("lastPublishedAO(%v) != activeAO(%v)", lastPublishedAO, activeAO)
 				return false
 			}
 			return true
@@ -235,7 +227,7 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 	reqRefs := isc.RequestRefsFromRequests(requests)
 	for i, node := range te.nodes {
 		for reqNum, reqRef := range reqRefs {
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
+			te.log.LogDebugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...", desc, i, reqNum, reqRef.ID.String())
 
 			await := func(confirmed bool) {
 				select {
@@ -252,12 +244,11 @@ func awaitRequestsProcessed(ctx context.Context, te *testEnv, requests []isc.Req
 
 			await(false)
 			// await(true)
-			te.log.Debugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
+			te.log.LogDebugf("Going to AwaitRequestProcessed %v at node=%v, req[%v]=%v...Done", desc, i, reqNum, reqRef.ID.String())
 		}
 	}
 }
 
-//nolint:revive
 func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate func() bool) {
 	for {
 		select {
@@ -265,10 +256,10 @@ func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate fun
 			require.FailNowf(te.t, "awaitPredicate failed: %s", desc)
 		default:
 			if predicate() {
-				te.log.Debugf("Predicate %v become true.", desc)
+				te.log.LogDebugf("Predicate %v become true.", desc)
 				return
 			}
-			te.log.Debugf("Predicate %v still false, will retry.", desc)
+			te.log.LogDebugf("Predicate %v still false, will retry.", desc)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
@@ -278,21 +269,21 @@ func awaitPredicate(te *testEnv, ctx context.Context, desc string, predicate fun
 // testNodeConn
 
 type testNodeConn struct {
-	t           *testing.T
-	chainID     isc.ChainID
-	published   []*iscmove.AnchorWithRef
-	recvRequest chain.RequestHandler
-	recvAnchor  chain.AnchorHandler
-	attachWG    *sync.WaitGroup
+	t               *testing.T
+	chainID         isc.ChainID
+	published       []*iscmove.AnchorWithRef
+	recvRequest     chain.RequestHandler
+	recvAnchor      chain.AnchorHandler
+	attachWG        *sync.WaitGroup
+	l1ParamsFetcher parameters.L1ParamsFetcher
 
 	l1Client     clients.L1Client
 	l2Client     clients.L2Client
 	iscPackageID iotago.PackageID
 }
 
-func (tnc *testNodeConn) GetL1Params() *parameters.L1Params {
-	// TODO implement me
-	panic("implement me")
+func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
+	return tnc.l1ParamsFetcher
 }
 
 func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
@@ -303,12 +294,13 @@ var _ chain.NodeConnection = &testNodeConn{}
 
 func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotago.PackageID) *testNodeConn {
 	tnc := &testNodeConn{
-		t:            t,
-		published:    []*iscmove.AnchorWithRef{},
-		attachWG:     &sync.WaitGroup{},
-		l1Client:     l1Client,
-		l2Client:     l1Client.L2(),
-		iscPackageID: iscPackageID,
+		t:               t,
+		published:       []*iscmove.AnchorWithRef{},
+		attachWG:        &sync.WaitGroup{},
+		l1Client:        l1Client,
+		l2Client:        l1Client.L2(),
+		iscPackageID:    iscPackageID,
+		l1ParamsFetcher: parameters.NewL1ParamsFetcher(l1Client.IotaClient(), log.EmptyLogger),
 	}
 	tnc.attachWG.Add(1)
 	return tnc
@@ -388,7 +380,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	callback(tx, &stateAnchor, nil)
 
-	tnc.recvAnchor(&stateAnchor)
+	tnc.recvAnchor(&stateAnchor, parameterstest.L1Mock)
 	return nil
 }
 
@@ -450,6 +442,11 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic("failed to decode gas coin object: " + err.Error())
 		}
 
+		l1Params, err := tnc.l1ParamsFetcher.GetOrFetchLatest(ctx)
+		if err != nil {
+			panic(err)
+		}
+
 		ref := gasCoin.Data.Ref()
 		var l1Info cons_gr.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
@@ -457,7 +454,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 				Value: coin.Value(moveBalance.Balance),
 				Ref:   &ref,
 			}},
-			l1params: parameters.L1Default,
+			l1params: l1Params,
 		}
 
 		t <- l1Info
@@ -486,7 +483,7 @@ type testEnv struct {
 	t                *testing.T
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
-	log              *logger.Logger
+	log              log.Logger
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
 	peerPubKeys      []*cryptolib.PublicKey
@@ -508,7 +505,7 @@ type testEnv struct {
 func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoint) *testEnv {
 	te := &testEnv{t: t}
 	te.ctx, te.ctxCancel = context.WithCancel(context.Background())
-	te.log = testlogger.NewLogger(t).Named(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
+	te.log = testlogger.NewLogger(t).NewChildLogger(fmt.Sprintf("%04d", rand.Intn(10000))) // For test instance ID.
 
 	te.iscPackageID = node.ISCPackageID()
 	te.l1Client = node.L1Client()
@@ -525,13 +522,13 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(te.log)
 	} else {
-		netLogger := testlogger.WithLevel(te.log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(te.log.NewChildLogger("Network"), log.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	te.peeringNetwork = testutil.NewPeeringNetwork(
 		te.peeringURLs, te.peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(te.log, logger.LevelWarn, false),
+		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	var dkShareProviders []registry.DKShareRegistryProvider
@@ -539,7 +536,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 	te.cmtSigner = testpeers.NewTestDSSSigner(te.cmtAddress, dkShareProviders, gpa.MakeTestNodeIDs(n), te.peerIdentities, te.log)
 
 	require.NoError(t, node.L1Client().RequestFunds(context.Background(), *te.cmtSigner.Address()))
-	iotatest2.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
+	iotatest.EnsureCoinSplitWithBalance(t, cryptolib.SignerToIotaSigner(te.cmtSigner), node.L1Client(), isc.GasCoinTargetValue*10)
 
 	iscPackageID := node.ISCPackageID()
 	te.tcl = testchain.NewTestChainLedger(t, te.cmtSigner, &iscPackageID, te.l1Client)
@@ -555,7 +552,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 
 	for i := range te.peerIdentities {
 		te.nodeConns[i] = newTestNodeConn(t, te.l1Client, te.iscPackageID)
-		log := te.log.Named(fmt.Sprintf("N#%v", i))
+		log := te.log.NewChildLogger(fmt.Sprintf("N#%v", i))
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.nodes[i], err = chain.New(
 			te.ctx,
@@ -598,12 +595,12 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 		require.NoError(t, err)
 		te.nodes[i].ServersUpdated(te.peerPubKeys)
 	}
-	te.log = te.log.Named("TC")
+	te.log = te.log.NewChildLogger("TC")
 	return te
 }
 
 func (te *testEnv) close() {
 	te.ctxCancel()
 	te.peeringNetwork.Close()
-	te.log.Sync()
+	te.log.Shutdown()
 }

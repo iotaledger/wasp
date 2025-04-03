@@ -11,12 +11,12 @@ import (
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type block struct {
@@ -26,6 +26,12 @@ type block struct {
 }
 
 var _ Block = &block{}
+
+// This needs to be public for bcs to function
+type BlockHashCreate struct {
+	Sets kv.Items
+	Dels []kv.Key
+}
 
 func NewBlock() Block {
 	return new(block)
@@ -45,7 +51,14 @@ func (b *block) Equals(other Block) bool {
 
 // Hash calculates a hash from the mutations and previousL1Commitment
 func (b *block) Hash() (ret BlockHash) {
-	data := bcs.MustMarshal(&b)
+	// TODO: The hash should be calculated by bcs.MustMarshal(b.Mutations()), but it currently does not get properly sorted
+	// TODO: Once the bcs ordering is fixed, remove the Create struct + MustMarshal here and Marshal(b.Mutations()) instead.
+	bb := BlockHashCreate{
+		Sets: b.mutations.Clone().SetsSorted(),
+		Dels: b.mutations.Clone().DelsSorted(),
+	}
+
+	data := bcs.MustMarshal[BlockHashCreate](&bb)
 
 	if b.previousL1Commitment != nil {
 		data = append(data, bcs.MustMarshal(b.previousL1Commitment)...)

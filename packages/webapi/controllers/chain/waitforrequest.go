@@ -19,11 +19,6 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	const maximumTimeoutSeconds = 60
 	const defaultTimeoutSeconds = 30
 
-	chainID, err := controllerutils.ChainIDFromParams(e, c.chainService)
-	if err != nil {
-		return err
-	}
-
 	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
 		return err
@@ -48,13 +43,12 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	var waitForL1Confirmation bool
 	echo.QueryParamsBinder(e).Bool("waitForL1Confirmation", &waitForL1Confirmation)
 
-	receipt, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), chainID, requestID, waitForL1Confirmation, timeout)
+	receipt, err := c.chainService.WaitForRequestProcessed(e.Request().Context(), requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return err
 	}
 
 	if receipt == nil {
-		// unprocessable request just return empty receipt (TODO maybe we need a better way to communicate this, but its good enough for now)
 		return e.JSON(http.StatusOK, models.ReceiptResponse{
 			RawError:      &isc.UnresolvedVMErrorJSON{},
 			ErrorMessage:  "",

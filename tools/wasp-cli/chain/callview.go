@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -31,12 +30,11 @@ func initCallViewCmd() *cobra.Command {
 
 			contractName := args[0]
 			funcName := args[1]
-			chainID := config.GetChain(chain)
-			params := util.EncodeParams(args[2:], chainID)
+			params := util.EncodeParams(args[2:])
 
 			msg := isc.NewMessage(isc.Hn(contractName), isc.Hn(funcName), params)
 
-			result, _, err := client.ChainsAPI.CallView(ctx, config.GetChain(chain).String()).
+			result, _, err := client.ChainsAPI.CallView(ctx).
 				ContractCallViewRequest(apiextensions.CallViewReq(msg)).Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)

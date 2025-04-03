@@ -10,9 +10,11 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/webapi/dto"
@@ -35,18 +37,18 @@ type ChainService interface {
 	SetChainRecord(chainRecord *registry.ChainRecord) error
 	DeactivateChain(chainID isc.ChainID) error
 	GetAllChainIDs() ([]isc.ChainID, error)
-	HasChain(chainID isc.ChainID) bool
-	GetChainByID(chainID isc.ChainID) (chain.Chain, error)
-	GetChainInfoByChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
-	GetContracts(chainID isc.ChainID, blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error)
-	GetEVMChainID(chainID isc.ChainID, blockIndexOrTrieRoot string) (uint16, error)
-	GetState(chainID isc.ChainID, stateKey []byte) (state []byte, err error)
-	WaitForRequestProcessed(ctx context.Context, chainID isc.ChainID, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
+	GetChain() (chain.Chain, error)
+	GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
+	GetContracts(blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error)
+	GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error)
+	GetState(stateKey []byte) (state []byte, err error)
+	WaitForRequestProcessed(ctx context.Context, requestID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*isc.Receipt, error)
+	RotateTo(ctx context.Context, rotateToAddress *iotago.Address) error
 }
 
 type EVMService interface {
-	HandleJSONRPC(chainID isc.ChainID, request *http.Request, response *echo.Response) error
-	HandleWebsocket(ctx context.Context, chainID isc.ChainID, echoCtx echo.Context) error
+	HandleJSONRPC(request *http.Request, response *echo.Response) error
+	HandleWebsocket(ctx context.Context, echoCtx echo.Context) error
 }
 
 type MetricsService interface {
@@ -64,6 +66,7 @@ type NodeService interface {
 	DeleteAccessNode(chainID isc.ChainID, peer string) error
 	NodeOwnerCertificate() []byte
 	ShutdownNode()
+	L1Params(context.Context) (*parameters.L1Params, error)
 }
 
 type RegistryService interface {
@@ -86,7 +89,7 @@ type PeeringService interface {
 
 type OffLedgerService interface {
 	EnqueueOffLedgerRequest(chainID isc.ChainID, request []byte) error
-	ParseRequest(payload []byte) (isc.OffLedgerRequest, error)
+	ParseRequest(payload []byte) (isc.Request, error)
 }
 
 type UserService interface {
@@ -99,5 +102,5 @@ type UserService interface {
 }
 
 type Mocker interface {
-	Get(i interface{}) interface{}
+	Get(i any) any
 }

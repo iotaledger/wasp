@@ -4,15 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BaseToken** | [**BaseToken**](BaseToken.md) |  | 
-**MaxPayloadSize** | **int32** | The max payload size | 
-**Protocol** | [**ProtocolParameters**](ProtocolParameters.md) |  | 
+**BaseToken** | [**IotaCoinInfo**](IotaCoinInfo.md) |  | 
+**Protocol** | [**Protocol**](Protocol.md) |  | 
 
 ## Methods
 
 ### NewL1Params
 
-`func NewL1Params(baseToken BaseToken, maxPayloadSize int32, protocol ProtocolParameters, ) *L1Params`
+`func NewL1Params(baseToken IotaCoinInfo, protocol Protocol, ) *L1Params`
 
 NewL1Params instantiates a new L1Params object
 This constructor will assign default values to properties that have it defined,
@@ -29,60 +28,40 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetBaseToken
 
-`func (o *L1Params) GetBaseToken() BaseToken`
+`func (o *L1Params) GetBaseToken() IotaCoinInfo`
 
 GetBaseToken returns the BaseToken field if non-nil, zero value otherwise.
 
 ### GetBaseTokenOk
 
-`func (o *L1Params) GetBaseTokenOk() (*BaseToken, bool)`
+`func (o *L1Params) GetBaseTokenOk() (*IotaCoinInfo, bool)`
 
 GetBaseTokenOk returns a tuple with the BaseToken field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetBaseToken
 
-`func (o *L1Params) SetBaseToken(v BaseToken)`
+`func (o *L1Params) SetBaseToken(v IotaCoinInfo)`
 
 SetBaseToken sets BaseToken field to given value.
 
 
-### GetMaxPayloadSize
-
-`func (o *L1Params) GetMaxPayloadSize() int32`
-
-GetMaxPayloadSize returns the MaxPayloadSize field if non-nil, zero value otherwise.
-
-### GetMaxPayloadSizeOk
-
-`func (o *L1Params) GetMaxPayloadSizeOk() (*int32, bool)`
-
-GetMaxPayloadSizeOk returns a tuple with the MaxPayloadSize field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetMaxPayloadSize
-
-`func (o *L1Params) SetMaxPayloadSize(v int32)`
-
-SetMaxPayloadSize sets MaxPayloadSize field to given value.
-
-
 ### GetProtocol
 
-`func (o *L1Params) GetProtocol() ProtocolParameters`
+`func (o *L1Params) GetProtocol() Protocol`
 
 GetProtocol returns the Protocol field if non-nil, zero value otherwise.
 
 ### GetProtocolOk
 
-`func (o *L1Params) GetProtocolOk() (*ProtocolParameters, bool)`
+`func (o *L1Params) GetProtocolOk() (*Protocol, bool)`
 
 GetProtocolOk returns a tuple with the Protocol field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetProtocol
 
-`func (o *L1Params) SetProtocol(v ProtocolParameters)`
+`func (o *L1Params) SetProtocol(v Protocol)`
 
 SetProtocol sets Protocol field to given value.
 

@@ -22,7 +22,7 @@ import (
 )
 
 //nolint:funlen,gocyclo
-func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
+func ValueFromString(vtype, s string) []byte {
 	switch strings.ToLower(vtype) {
 	case "address":
 		addr, err := cryptolib.NewAddressFromHexString(s)
@@ -30,7 +30,7 @@ func ValueFromString(vtype, s string, chainID isc.ChainID) []byte {
 
 		return codec.Encode(addr)
 	case "agentid":
-		return codec.Encode(AgentIDFromString(s, chainID))
+		return codec.Encode(AgentIDFromString(s))
 	case "bigint":
 		n, ok := new(big.Int).SetString(s, 10)
 		if !ok {
@@ -224,7 +224,7 @@ func ValueToString(vtype string, v []byte) string {
 	return ""
 }
 
-func EncodeParams(params []string, chainID isc.ChainID) isc.CallArguments {
+func EncodeParams(params []string) isc.CallArguments {
 	if len(params)%2 != 0 {
 		log.Fatal("Params format: <type> <value> ...")
 	}
@@ -235,7 +235,7 @@ func EncodeParams(params []string, chainID isc.ChainID) isc.CallArguments {
 		vtype := params[i*2]
 		v := params[i*2+1]
 
-		val := ValueFromString(vtype, v, chainID)
+		val := ValueFromString(vtype, v)
 		encodedParams = append(encodedParams, val)
 	}
 
@@ -252,21 +252,18 @@ func ReadCallResultsAsJSON() isc.CallArguments {
 	return args
 }
 
-func AgentIDFromArgs(args []string, chainID isc.ChainID) isc.AgentID {
+func AgentIDFromArgs(args []string) isc.AgentID {
 	if len(args) == 0 {
 		return isc.NewAddressAgentID(wallet.Load().Address())
 	}
-	return AgentIDFromString(args[0], chainID)
+	return AgentIDFromString(args[0])
 }
 
-func AgentIDFromString(s string, chainID isc.ChainID) isc.AgentID {
+func AgentIDFromString(s string) isc.AgentID {
 	if s == "common" {
 		return accounts.CommonAccount()
 	}
-	// allow EVM addresses as AgentIDs without the chain specified
-	if strings.HasPrefix(s, "0x") && !strings.Contains(s, isc.AgentIDStringSeparator) {
-		s = s + isc.AgentIDStringSeparator + chainID.String()
-	}
+
 	agentID, err := isc.AgentIDFromString(s)
 	log.Check(err, "cannot parse AgentID")
 	return agentID

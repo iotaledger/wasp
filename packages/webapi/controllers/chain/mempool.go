@@ -10,7 +10,7 @@ import (
 
 func (c *Controller) getMempoolContents(e echo.Context) error {
 	controllerutils.SetOperation(e, "get_mempool_contents")
-	ch, _, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}

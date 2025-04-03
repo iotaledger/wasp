@@ -14,7 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain"
@@ -26,7 +27,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -321,6 +322,24 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// ask for proposal, assert 4,5,6 are proposed
 	askProposalExpectReqs(te.anchor, reqNonce4, reqNonce5, offLedgerReqs[3])
 	// nonce 10 was never proposed
+
+	t.Run("request with old nonce is rejected", func(t *testing.T) {
+		reqNonce0 := createReqWithNonce(0)
+		err = te.mempools[chosenMempool].ReceiveOffLedgerRequest(reqNonce0)
+		require.ErrorContains(t, err, "bad nonce")
+	})
+
+	t.Run("request with not enough funds is rejected", func(t *testing.T) {
+		kp := cryptolib.NewKeyPair()
+		req := isc.NewOffLedgerRequest(
+			te.chainID,
+			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
+			0,
+			gas.LimitsDefault.MaxGasPerRequest,
+		).Sign(kp)
+		err = te.mempools[chosenMempool].ReceiveOffLedgerRequest(req)
+		require.ErrorContains(t, err, "not enough funds")
+	})
 }
 
 func TestMempoolChainOwner(t *testing.T) {
@@ -416,7 +435,7 @@ func TestTTL(t *testing.T) {
 		te.chainID,
 		te.peerIdentities[0],
 		te.networkProviders[0],
-		te.log.Named(fmt.Sprintf("N#%v", 0)),
+		te.log.NewChildLogger(fmt.Sprintf("N#%v", 0)),
 		chainMetrics.Mempool,
 		chainMetrics.Pipe,
 		chain.NewEmptyChainListener(),
@@ -489,10 +508,10 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 		Timestamp:            tangleTime,
 		Entropy:              hashing.HashDataBlake2b([]byte{2, 1, 7}),
 		ValidatorFeeTarget:   accounts.CommonAccount(),
-		L1Params:             parameters.L1Default,
+		L1Params:             parameterstest.L1Mock,
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
-		Log:                  te.log.Named("VM"),
+		Log:                  te.log.NewChildLogger("VM"),
 		Migrations:           allmigrations.DefaultScheme,
 	}
 	vmResult, err := vmimpl.Run(vmTask)
@@ -536,7 +555,7 @@ type testEnv struct {
 	t                *testing.T
 	ctx              context.Context
 	ctxCancel        context.CancelFunc
-	log              *logger.Logger
+	log              log.Logger
 	chainOwner       *cryptolib.KeyPair
 	peeringURLs      []string
 	peerIdentities   []*cryptolib.KeyPair
@@ -571,13 +590,13 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	if reliable {
 		networkBehaviour = testutil.NewPeeringNetReliable(te.log)
 	} else {
-		netLogger := testlogger.WithLevel(te.log.Named("Network"), logger.LevelInfo, false)
+		netLogger := testlogger.WithLevel(te.log.NewChildLogger("Network"), log.LevelInfo, false)
 		networkBehaviour = testutil.NewPeeringNetUnreliable(80, 20, 10*time.Millisecond, 200*time.Millisecond, netLogger)
 	}
 	te.peeringNetwork = testutil.NewPeeringNetwork(
 		te.peeringURLs, te.peerIdentities, 10000,
 		networkBehaviour,
-		testlogger.WithLevel(te.log, logger.LevelWarn, false),
+		testlogger.WithLevel(te.log, log.LevelWarning, false),
 	)
 	te.networkProviders = te.peeringNetwork.NetworkProviders()
 	te.cmtAddress, _ = testpeers.SetupDkgTrivial(t, n, f, te.peerIdentities, nil)
@@ -603,7 +622,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAnchor(te.stores[i], te.anchor, originDepositVal, isc.BaseTokenCoinInfo)
+		origin.InitChainByAnchor(te.stores[i], te.anchor, originDepositVal, parameterstest.L1Mock)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(
@@ -611,7 +630,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.chainID,
 			te.peerIdentities[i],
 			te.networkProviders[i],
-			te.log.Named(fmt.Sprintf("N#%v", i)),
+			te.log.NewChildLogger(fmt.Sprintf("N#%v", i)),
 			chainMetrics.Mempool,
 			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),
@@ -641,5 +660,5 @@ func (te *testEnv) stateForAnchor(i int, anchor *isc.StateAnchor) state.State {
 func (te *testEnv) close() {
 	te.ctxCancel()
 	te.peeringNetwork.Close()
-	te.log.Sync()
+	te.log.Shutdown()
 }

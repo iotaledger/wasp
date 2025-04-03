@@ -253,6 +253,12 @@ func (p *ChainRecordRegistryImpl) ForEachActiveChainRecord(consumer func(*ChainR
 }
 
 func (p *ChainRecordRegistryImpl) AddChainRecord(chainRecord *ChainRecord) error {
+	chains := len(p.onChangeMap.All())
+	// Only allow a single chain
+	if chains != 0 {
+		return fmt.Errorf("too many active chain records")
+	}
+
 	return p.onChangeMap.Add(chainRecord)
 }
 

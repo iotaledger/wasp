@@ -16,9 +16,10 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
@@ -48,15 +49,17 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("wallet-provider", "unsafe_inmemory_testing_seed")
 	w.MustRun("init")
 
-	w.MustRun("set", "l1.apiAddress", clu.Config.L1.APIURL())
-	w.MustRun("set", "l1.faucetAddress", clu.Config.L1.FaucetURL())
+	// FIXME make them into parameters
+	w.MustRun("set", "l1.apiAddress", clu.Config.L1APIAddress())
+	w.MustRun("set", "l1.faucetAddress", clu.Config.L1FaucetAddress())
+	w.MustRun("set", "l1.packageId", clu.Config.ISCPackageID().String())
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}
 
 	requestFundstext := w.MustRun("request-funds")
 	// regex example: Request funds for address atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx: success
-	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*([a-z]{1,4}1[a-z0-9]{59}).*(?i:success)`)
+	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*(0x[a-fA-F0-9]{40}).*(?i:success)`)
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
 	require.Len(t, rs, 2)
 	addr, err := cryptolib.AddressFromHex(rs[1])
@@ -183,9 +186,9 @@ func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 func (w *WaspCLITest) Address() iotago.Address {
 	out := w.MustRun("address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
-	_, addr, err := iotago.ParseBech32(s)
+	addr, err := iotago.AddressFromHex(s)
 	require.NoError(w.T, err)
-	return addr
+	return *addr
 }
 
 // TODO there is a small issue if we try to activate the chain twice (deploy command also activates the chain)
@@ -199,14 +202,10 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	}
 
 	// Hack to get the chainID that was deployed
-	data, err := os.ReadFile(w.dir + "/wasp-cli.json")
-	require.NoError(w.T, err)
-	chainIDStr := regexp.MustCompile(fmt.Sprintf(`%q:\s?"(.*)"`, chainName)).
-		FindStringSubmatch(string(data))[1]
 
 	chainIsUpAndRunning := func(t *testing.T, nodeIndex int) bool {
 		_, _, err := w.Cluster.WaspClient(nodeIndex).ChainsAPI.
-			CallView(context.Background(), chainIDStr).
+			CallView(context.Background()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
 				ContractHName: governance.Contract.Hname().String(),
 				FunctionHName: governance.ViewGetChainInfo.Hname().String(),
@@ -218,7 +217,7 @@ func (w *WaspCLITest) ActivateChainOnAllNodes(chainName string, skipOnNodes ...i
 	waitUntil(w.T, chainIsUpAndRunning, w.Cluster.AllNodes(), 30*time.Second)
 }
 
-func (w *WaspCLITest) CreateL2NativeToken(tokenScheme iotago.TokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
+func (w *WaspCLITest) CreateL2NativeToken(tokenScheme isc.SimpleTokenScheme, tokenName string, tokenSymbol string, tokenDecimals uint8) {
 	panic("refactor me: support native token creation")
 }
 

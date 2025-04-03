@@ -18,9 +18,8 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/websockethub"
-	"github.com/iotaledger/inx-app/pkg/httpserver"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chains"
@@ -36,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/packages/webapi/httpserver"
 	"github.com/iotaledger/wasp/packages/webapi/websocket"
 )
 
@@ -82,19 +82,20 @@ func initConfigParams(c *dig.Container) error {
 			WebAPIBindAddress: ParamsWebAPI.BindAddress,
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil
 }
 
-//nolint:funlen
-func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, log *logger.Logger) *echo.Echo {
+func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, log log.Logger) *echo.Echo {
 	e := httpserver.NewEcho(
 		log,
 		nil,
 		ParamsWebAPI.DebugRequestLoggerEnabled,
 	)
+
+	e.HideBanner = true
 
 	e.Server.ReadTimeout = params.Limits.ReadTimeout
 	e.Server.WriteTimeout = params.Limits.WriteTimeout
@@ -126,19 +127,21 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 				if status == 0 || status == http.StatusOK {
 					status = http.StatusInternalServerError
 				}
+
+				return err
 			}
 
 			chainID, ok := c.Get(controllerutils.EchoContextKeyChainID).(isc.ChainID)
 			if !ok {
-				return err
+				return nil
 			}
 
 			operation, ok := c.Get(controllerutils.EchoContextKeyOperation).(string)
 			if !ok {
-				return err
+				return nil
 			}
 			metrics.GetChainMetrics(chainID).WebAPI.WebAPIRequest(operation, status, time.Since(start))
-			return err
+			return nil
 		}
 	})
 
@@ -211,7 +214,6 @@ func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	return echoSwagger
 }
 
-//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
@@ -230,6 +232,7 @@ func provide(c *dig.Container) error {
 		Node                        *dkg.Node
 		UserManager                 *users.UserManager
 		Publisher                   *publisher.Publisher
+		NodeConn                    chain.NodeConnection
 	}
 
 	type webapiServerResult struct {
@@ -242,7 +245,7 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func(deps webapiServerDeps) webapiServerResult {
-		e := NewEcho(ParamsWebAPI, deps.ChainMetricsProvider, Component.Logger())
+		e := NewEcho(ParamsWebAPI, deps.ChainMetricsProvider, Component.Logger)
 
 		echoSwagger := CreateEchoSwagger(e, deps.AppInfo.Version)
 		websocketOptions := websocketserver.AcceptOptions{
@@ -252,9 +255,9 @@ func provide(c *dig.Container) error {
 			CompressionMode: websocketserver.CompressionDisabled,
 		}
 
-		logger := Component.App().NewLogger("WebAPI/v2")
+		logger := Component.App().NewChildLogger("WebAPI/v2")
 
-		hub := websockethub.NewHub(Component.Logger(), &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
+		hub := websockethub.NewHub(Component.Logger, &websocketOptions, broadcastQueueSize, clientSendChannelSize, maxWebsocketMessageSize)
 
 		websocketService := websocket.NewWebsocketService(logger, hub, []publisher.ISCEventType{
 			publisher.ISCEventKindNewBlock,
@@ -265,7 +268,7 @@ func provide(c *dig.Container) error {
 
 		if ParamsWebAPI.DebugRequestLoggerEnabled {
 			echoSwagger.Echo().Use(middleware.BodyDump(func(c echo.Context, reqBody, resBody []byte) {
-				logger.Debugf("API Dump: Request=%q, Response=%q", reqBody, resBody)
+				logger.LogDebugf("API Dump: Request=%q, Response=%q", reqBody, resBody)
 			}))
 		}
 
@@ -294,6 +297,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.IndexDbPath,
 			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
+			deps.NodeConn.L1ParamsFetcher(),
 			jsonrpc.NewParameters(
 				ParamsWebAPI.Limits.Jsonrpc.MaxBlocksInLogsFilterRange,
 				ParamsWebAPI.Limits.Jsonrpc.MaxLogsInResult,
@@ -301,6 +305,7 @@ func provide(c *dig.Container) error {
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitBurst,
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketConnectionCleanupDuration,
 				ParamsWebAPI.Limits.Jsonrpc.WebsocketClientBlockDuration,
+				ParamsWebAPI.Limits.Jsonrpc.WebsocketRateLimitEnabled,
 			),
 		)
 
@@ -310,7 +315,7 @@ func provide(c *dig.Container) error {
 			WebsocketPublisher: websocketService,
 		}
 	}); err != nil {
-		Component.LogPanic(err)
+		Component.LogPanic(err.Error())
 	}
 
 	return nil
@@ -348,7 +353,7 @@ func run() error {
 
 		//nolint:contextcheck // false positive
 		if err := deps.EchoSwagger.Echo().Shutdown(shutdownCtx); err != nil {
-			Component.LogWarn(err)
+			Component.LogWarn(err.Error())
 		}
 
 		Component.LogInfof("Stopping %s server ... done", Component.Name)

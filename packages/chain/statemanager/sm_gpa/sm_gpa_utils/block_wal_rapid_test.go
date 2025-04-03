@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
@@ -23,7 +23,7 @@ type blockWALTestSM struct { // State machine for block WAL property based Rapid
 	blocks              map[state.BlockHash]state.Block
 	blocksMoved         []state.BlockHash
 	blocksDamaged       []state.BlockHash
-	log                 *logger.Logger
+	log                 log.Logger
 }
 
 var _ rapid.StateMachine = &blockWALTestSM{}
@@ -43,7 +43,7 @@ func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
 }
 
 func (bwtsmT *blockWALTestSM) cleanup() {
-	bwtsmT.log.Sync()
+	bwtsmT.log.Shutdown()
 	os.RemoveAll(constTestFolder)
 }
 

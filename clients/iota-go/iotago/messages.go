@@ -3,9 +3,9 @@ package iotago
 import (
 	"fmt"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type TransactionData struct {
@@ -15,7 +15,7 @@ type TransactionData struct {
 func (t TransactionData) IsBcsEnum() {}
 
 // Generates the transaction digest of the current TransactionData
-func (t TransactionData) Digest() (Digest, error) {
+func (t TransactionData) Digest() (*Digest, error) {
 	buf := []byte("TransactionData::")
 	txnBytes, err := bcs.Marshal(&t)
 	if err != nil {
@@ -23,7 +23,7 @@ func (t TransactionData) Digest() (Digest, error) {
 	}
 	buf = append(buf, txnBytes...)
 	h := hashing.HashDataBlake2b(buf)
-	return Digest(h.Bytes()), nil
+	return DigestFromBytes(h.Bytes()), nil
 }
 
 type TransactionDataV1 struct {

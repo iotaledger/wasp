@@ -42,7 +42,7 @@ func testBasic(t *testing.T, n int) {
 				servers[nidCopy] = pks
 			},
 			func(pk *cryptolib.PublicKey) {},
-			log.Named(fmt.Sprintf("N%v", i)),
+			log.NewChildLogger(fmt.Sprintf("N%v", i)),
 		).AsGPA()
 	}
 

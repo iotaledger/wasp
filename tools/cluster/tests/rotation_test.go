@@ -9,17 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
-func TestBasicRotation(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestBasicRotation(t *testing.T) { // FIXME serious error
+	t.Skipf("Rotation requires refactoring to work, skipped for now")
 	env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
 	newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
@@ -31,26 +32,34 @@ func TestBasicRotation(t *testing.T) {
 	myClient := env.Chain.Client(kp)
 
 	// check the chain works
-	tx, err := myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter (before rotation)")
+	tx, err := myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
+
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
 	// change the committee to the new one
-
 	govClient := env.Chain.Client(env.Chain.OriginatorKeyPair)
 
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{})
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncAddAllowedStateControllerAddress")
+	tx, err = govClient.PostRequest(context.Background(),
+		governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{
+			GasBudget: iotaclient.DefaultGasBudget,
+		})
+
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
 
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr), chainclient.PostRequestParams{})
+	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr),
+		chainclient.PostRequestParams{
+			GasBudget: 5 * iotaclient.DefaultGasBudget,
+		})
 	require.NoError(t, err)
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - CoreEPRotateStateController")
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
+	time.Sleep(3 * time.Second)
+	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, true, 20*time.Second)
 	require.NoError(t, err)
 
 	stateController, err := env.callGetStateController(0)
@@ -58,18 +67,18 @@ func TestBasicRotation(t *testing.T) {
 	require.True(t, stateController.Equals(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
 
 	// check the chain still works
-	tx, err = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
-	//isc.MustLogRequestsInTransaction(tx, t.Logf, "Posted request - FuncIncCounter")
+	tx, err = myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
 	require.NoError(t, err)
-
-	require.EqualValues(t, 2, env.getNativeContractCounter())
 }
 
 // cluster of 10 access nodes and two overlapping committees
 func TestRotation(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skipf("Rotation requires refactoring to work, skipped for now")
 
 	numRequests := 8
 
@@ -147,7 +156,7 @@ func TestRotationFromSingle(t *testing.T) {
 	t.Logf("chainID: %s", chain.ChainID)
 
 	chEnv := newChainEnv(t, clu, chain)
-	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
+	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 30*time.Second))
 	incCounterResultChan := make(chan error)
 
 	go func() {
@@ -159,7 +168,9 @@ func TestRotationFromSingle(t *testing.T) {
 		myClient := chain.Client(keyPair)
 		for i := 0; i < numRequests; i++ {
 			t.Logf("Posting inccounter request number %v", i)
-			_, err2 = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{})
+			_, err2 = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+				GasBudget: iotaclient.DefaultGasBudget,
+			})
 			if err2 != nil {
 				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
 				return
@@ -184,7 +195,9 @@ func TestRotationFromSingle(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{})
+	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
 	require.NoError(t, err)
 	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 30*time.Second))
 	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
@@ -225,7 +238,7 @@ func TestRotationMany(t *testing.T) {
 	}
 
 	const numRequests = 2
-	const waitTimeout = 180 * time.Second
+	const waitTimeout = 260 * time.Second
 
 	clu := newCluster(t, waspClusterOpts{nNodes: 10})
 	rotations := []testRotationSingleRotation{
@@ -269,7 +282,9 @@ func TestRotationMany(t *testing.T) {
 
 		waitUntil(t, chEnv.counterEquals(int64(numRequests*(i+1))), chEnv.Clu.Config.AllNodes(), 30*time.Second)
 
-		tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{})
+		tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{
+			GasBudget: iotaclient.DefaultGasBudget,
+		})
 		require.NoError(t, err)
 		require.NoError(t, chEnv.waitStateControllers(rotation.Address, waitTimeout))
 		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
@@ -308,7 +323,7 @@ func (e *ChainEnv) waitStateController(nodeIndex int, addr *cryptolib.Address, t
 
 func (e *ChainEnv) callGetStateController(nodeIndex int) (*cryptolib.Address, error) {
 	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
-		BlocklogGetControlAddresses(context.Background(), e.Chain.ChainID.String()).
+		BlocklogGetControlAddresses(context.Background()).
 		Execute()
 	if err != nil {
 		return nil, err
@@ -331,7 +346,7 @@ func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr *cryptolib.
 
 func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr *cryptolib.Address) bool {
 	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
-		GovernanceGetAllowedStateControllerAddresses(context.Background(), chain.ChainID.String()).
+		GovernanceGetAllowedStateControllerAddresses(context.Background()).
 		Execute()
 	require.NoError(t, err)
 

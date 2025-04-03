@@ -21,12 +21,14 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -57,9 +59,10 @@ type Cluster struct {
 	DataPath          string
 	OriginatorKeyPair *cryptolib.KeyPair
 	l1                clients.L1Client
+	l1ParamsFetcher   parameters.L1ParamsFetcher
 	waspCmds          []*waspCmd
 	t                 *testing.T
-	log               *logger.Logger
+	log               log.Logger
 }
 
 type waspCmd struct {
@@ -67,7 +70,7 @@ type waspCmd struct {
 	logScanner sync.WaitGroup
 }
 
-func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log *logger.Logger) *Cluster {
+func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log log.Logger, l1PacakgeID *iotago.PackageID) *Cluster {
 	if log == nil {
 		if t == nil {
 			panic("one of t or log must be set")
@@ -77,15 +80,19 @@ func New(name string, config *ClusterConfig, dataPath string, t *testing.T, log 
 	evmlogger.Init(log)
 
 	config.setValidatorAddressIfNotSet() // privtangle prefix
-
+	for i := range config.Wasp {
+		config.Wasp[i].PackageID = l1PacakgeID
+	}
+	client := config.L1Client()
 	return &Cluster{
 		Name:              name,
 		Config:            config,
-		OriginatorKeyPair: cryptolib.NewKeyPair(),
+		OriginatorKeyPair: cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes(testcommon.TestSeed)), // TODO temporary use a fixed account with a lot of tokens
 		waspCmds:          make([]*waspCmd, len(config.Wasp)),
 		t:                 t,
 		log:               log,
-		l1:                config.L1Client(),
+		l1:                client,
+		l1ParamsFetcher:   parameters.NewL1ParamsFetcher(client.IotaClient(), log),
 		DataPath:          dataPath,
 	}
 }
@@ -95,7 +102,7 @@ func (clu *Cluster) Logf(format string, args ...any) {
 		clu.t.Logf(format, args...)
 		return
 	}
-	clu.log.Infof(format, args...)
+	clu.log.LogInfof(format, args...)
 }
 
 func (clu *Cluster) NewKeyPairWithFunds() (*cryptolib.KeyPair, *cryptolib.Address, error) {
@@ -246,6 +253,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		Cluster:           clu,
 	}
 
+	l1Client := clu.L1Client()
 	address := chain.OriginatorAddress()
 
 	err := clu.RequestFunds(address)
@@ -264,23 +272,73 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		committeePubKeys[i] = peeringNode.PublicKey
 	}
 
+	var blockKeepAmountVal int32
+	if len(blockKeepAmount) > 0 {
+		blockKeepAmountVal = blockKeepAmount[0]
+	}
 	encodedInitParams := origin.NewInitParams(
 		isc.NewAddressAgentID(chain.OriginatorAddress()),
 		1074,
-		blockKeepAmount[0],
-		true,
+		blockKeepAmountVal,
+		false,
 	).Encode()
+
+	getCoinsRes, err := l1Client.GetCoins(
+		context.Background(),
+		iotaclient.GetCoinsRequest{Owner: address.AsIotaAddress()},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("cant get gas coin: %w", err)
+	}
+
+	var gascoin *iotajsonrpc.Coin
+	for _, coin := range getCoinsRes.Data {
+		// dont pick a too big coin object
+		if coin.Balance.Uint64() < 3*iotaclient.FundsFromFaucetAmount &&
+			iotaclient.FundsFromFaucetAmount <= coin.Balance.Uint64() {
+			gascoin = coin
+		}
+	}
+
+	ptb := iotago.NewProgrammableTransactionBuilder()
+	err = ptb.TransferObject(stateAddr.AsIotaAddress(), gascoin.Ref())
+	if err != nil {
+		return nil, fmt.Errorf("cant transfer gas coin: %w", err)
+	}
+	pt := ptb.Finish()
+
+	resTransferGasCoin, err := l1Client.SignAndExecuteTxWithRetry(
+		context.Background(),
+		cryptolib.SignerToIotaSigner(chain.OriginatorKeyPair),
+		pt,
+		nil,
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+		&iotajsonrpc.IotaTransactionBlockResponseOptions{
+			ShowInput:   true,
+			ShowEffects: true,
+		},
+	)
+	if err != nil || !resTransferGasCoin.Effects.Data.IsSuccess() {
+		return nil, fmt.Errorf("can't transfer GasCoin, resTransferGasCoin.Effects.Data.IsSuccess(): %v: %w", resTransferGasCoin.Effects.Data.IsSuccess(), err)
+	}
+	fmt.Printf("chosen GasCoin %s", gascoin.String())
+
+	l1Params, err := clu.l1ParamsFetcher.GetOrFetchLatest(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("cant get L1Params: %w", err)
+	}
 
 	stateMetaData := *transaction.NewStateMetadata(
 		allmigrations.DefaultScheme.LatestSchemaVersion(),
 		origin.L1Commitment(
 			allmigrations.DefaultScheme.LatestSchemaVersion(),
 			encodedInitParams,
-			iotago.ObjectID{},
+			*gascoin.CoinObjectID,
 			0,
-			&isc.IotaCoinInfo{CoinType: coin.BaseTokenType},
+			l1Params,
 		),
-		&iotago.ObjectID{},
+		gascoin.CoinObjectID,
 		gas.DefaultFeePolicy(),
 		encodedInitParams,
 		0,
@@ -290,14 +348,13 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	chainID, err := apilib.DeployChain(
 		context.Background(),
 		apilib.CreateChainParams{
-			Layer1Client:      clu.L1Client(),
+			Layer1Client:      l1Client,
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
-			N:                 uint16(len(committeeNodes)),
-			T:                 quorum,
 			OriginatorKeyPair: chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
 			StateMetadata:     stateMetaData,
+			PackageID:         clu.Config.ISCPackageID(),
 		},
 		stateAddr,
 	)
@@ -316,12 +373,12 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	{
 		fmt.Printf("waiting until nodes receive the origin output..\n")
 
-		retries := 10
+		retries := 30
 		for {
 			time.Sleep(200 * time.Millisecond)
 			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
 				func(_ int, a *apiclient.APIClient) error {
-					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background()).Execute() //nolint:bodyclose // false positive
 					return err2
 				})
 			if err != nil {
@@ -363,7 +420,7 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 	for _, tx := range addAccessNodesTxs {
 		// ---------- wait until the requests are processed in all committee nodes
 
-		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, tx, true, 5*time.Second); err != nil {
+		if _, err := peers.WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chain.ChainID, tx, true, 30*time.Second); err != nil {
 			return fmt.Errorf("WaitAddAccessNode: %w", err)
 		}
 	}
@@ -385,10 +442,14 @@ func (clu *Cluster) addAllAccessNodes(chain *Chain, accessNodes []int) error {
 
 		pubKeys = append(pubKeys, governance.AcceptAccessNodeAction(accessNodePubKey))
 	}
-	scParams := chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million)
-	govClient := chain.Client(chain.OriginatorKeyPair)
+	scParams := chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 10),
+		GasBudget: 2 * iotaclient.DefaultGasBudget,
+	}
 
-	tx, err := govClient.PostRequest(context.Background(), governance.FuncChangeAccessNodes.Message(pubKeys), *scParams)
+	govClient := chain.Client(clu.OriginatorKeyPair)
+
+	tx, err := govClient.PostRequest(context.Background(), governance.FuncChangeAccessNodes.Message(pubKeys), scParams)
 	if err != nil {
 		return err
 	}
@@ -440,16 +501,20 @@ func (clu *Cluster) addAccessNode(accessNodeIndex int, chain *Chain) (*iotajsonr
 	forCommittee := false
 
 	govClient := chain.Client(validatorKeyPair)
+	params := chainclient.PostRequestParams{
+		Transfer:  isc.NewAssets(1000),
+		GasBudget: iotaclient.DefaultGasBudget,
+	}
 	tx, err := govClient.PostRequest(
 		context.Background(),
 		governance.FuncAddCandidateNode.Message(accessNodePubKey, decodedCert, accessAPI, forCommittee),
-		*chainclient.NewPostRequestParams().WithBaseTokens(1000),
+		params,
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to call FuncAddCandidateNode: %w", err)
 	}
 
-	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, id=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
+	fmt.Printf("[cluster] Governance::AddCandidateNode, Posted TX, digest=%v, NodePubKey=%v, Certificate=%x, accessAPI=%v, forCommittee=%v\n",
 		tx.Digest, accessNodePubKey, decodedCert, accessAPI, forCommittee)
 	return tx, nil
 }
@@ -591,7 +656,7 @@ func (clu *Cluster) Start() error {
 	start := time.Now()
 	fmt.Printf("[cluster] starting %d Wasp nodes...\n", len(clu.Config.Wasp))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	initOk := make(chan bool, len(clu.Config.Wasp))
@@ -605,7 +670,7 @@ func (clu *Cluster) Start() error {
 	for i := 0; i < len(clu.Config.Wasp); i++ {
 		select {
 		case <-initOk:
-		case <-time.After(20 * time.Second):
+		case <-time.After(30 * time.Second):
 			return errors.New("timeout starting wasp nodes")
 		}
 	}
@@ -653,14 +718,14 @@ func (clu *Cluster) RestartNodes(keepDB bool, nodeIndexes ...int) error {
 		clu.stopNode(i)
 		if !keepDB {
 			dbPath := clu.NodeDataPath(i) + "/waspdb/chains/data/"
-			clu.log.Infof("Deleting DB from %v", dbPath)
+			clu.log.LogInfof("Deleting DB from %v", dbPath)
 			if err := os.RemoveAll(dbPath); err != nil {
 				return fmt.Errorf("cannot remove the node=%v DB at %v: %w", i, dbPath, err)
 			}
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	// restart nodes
@@ -846,13 +911,13 @@ func (clu *Cluster) AddressBalances(addr *cryptolib.Address) *isc.Assets {
 
 	balances, err := clu.l1.GetAllBalances(context.Background(), addr.AsIotaAddress())
 	if err != nil {
-		clu.log.Panicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
+		clu.log.LogPanicf("[cluster] failed to GetAllBalances for address[%v]", addr.String())
 		return nil
 	}
 
 	balance := isc.NewEmptyAssets()
 	for _, out := range balances {
-		if coin.CompareTypes(coin.MustTypeFromString(out.CoinType.String()), parameters.BaseTokenDefault.CoinType) == 0 {
+		if coin.BaseTokenType.MatchesStringType(out.CoinType.String()) {
 			balance.SetBaseTokens(coin.Value(out.TotalBalance.Uint64()))
 		} else {
 			balance.AddCoin(coin.MustTypeFromString(out.CoinType.String()), coin.Value(out.TotalBalance.Uint64()))

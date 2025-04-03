@@ -5,17 +5,14 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/iotaledger/hive.go/serializer/v2"
+	bcs "github.com/iotaledger/bcs-go"
+
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // By default each token pays for 100 units of gas
 var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
-
-// GasPerToken + ValidatorFeeShare + EVMGasRatio
-const FeePolicyByteSize = util.RatioByteSize + serializer.OneByte + util.RatioByteSize
 
 type FeePolicy struct {
 	// EVMGasRatio expresses the ratio at which EVM gas is converted to ISC gas

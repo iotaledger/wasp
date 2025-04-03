@@ -10,12 +10,12 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -23,7 +23,7 @@ import (
 func TestReceiptCodec(t *testing.T) {
 	bcs.TestCodec(t, blocklog.RequestReceipt{
 		Request: isc.NewOffLedgerRequest(
-			isctest.RandomChainID(),
+			isc.EmptyChainID(),
 			isc.NewMessage(isc.Hn("0"), isc.Hn("0")),
 			123,
 			gas.LimitsDefault.MaxGasPerRequest,

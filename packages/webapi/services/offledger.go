@@ -25,7 +25,7 @@ func NewOffLedgerService(chainService interfaces.ChainService, networkProvider p
 	}
 }
 
-func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequest, error) {
+func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.Request, error) {
 	// check offledger kind (avoid deserialization otherwise)
 	if !isc.IsOffledgerKind(binaryRequest[0]) {
 		return nil, errors.New("error parsing request: off-ledger request expected")
@@ -35,12 +35,7 @@ func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.OffLedgerRequ
 		return nil, errors.New("error parsing request from payload")
 	}
 
-	req, ok := request.(isc.OffLedgerRequest)
-	if !ok {
-		return nil, errors.New("error parsing request: off-ledger request expected")
-	}
-
-	return req, nil
+	return request, nil
 }
 
 func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRequest []byte) error {
@@ -55,24 +50,29 @@ func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRe
 		return errors.New("request already processed")
 	}
 
+	asOffLedgerRequest, ok := request.(isc.OffLedgerRequest)
+	if !ok {
+		return errors.New("error parsing request: off-ledger request expected")
+	}
+
 	// check req signature
-	if err2 := request.VerifySignature(); err2 != nil {
+	if err2 := asOffLedgerRequest.VerifySignature(); err2 != nil {
 		return fmt.Errorf("could not verify: %w", err2)
 	}
 
-	// check req is for the correct chain
-	if !request.ChainID().Equals(chainID) {
-		// do not add to cache, it can still be sent to the correct chain
-		return errors.New("request is for a different chain")
-	}
-
 	// check chain exists
-	chain, err := c.chainService.GetChainByID(chainID)
+	chain, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
 
-	if err := chain.ReceiveOffLedgerRequest(request, c.networkProvider.Self().PubKey()); err != nil {
+	// check req is for the correct chain
+	if !asOffLedgerRequest.ChainID().Equals(chainID) {
+		// do not add to cache, it can still be sent to the correct chain
+		return errors.New("request is for a different chain")
+	}
+
+	if err := chain.ReceiveOffLedgerRequest(asOffLedgerRequest, c.networkProvider.Self().PubKey()); err != nil {
 		return fmt.Errorf("tx not added to the mempool: %v", err.Error())
 	}
 

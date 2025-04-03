@@ -8,6 +8,8 @@ import (
 	"slices"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/state"
+	"github.com/ethereum/go-ethereum/core/stateless"
 	"github.com/ethereum/go-ethereum/core/tracing"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -111,24 +113,28 @@ func (s *StateDB) PointCache() *utils.PointCache {
 	panic("unimplemented")
 }
 
-func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
+func (s *StateDB) SubBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) uint256.Int {
+	prev := uint256.MustFromBig(s.ctx.GetBaseTokensBalance(addr))
 	if amount.Sign() == 0 {
-		return
+		return *prev
 	}
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
 	s.ctx.SubBaseTokensBalance(addr, amount.ToBig())
+	return *prev
 }
 
-func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) {
+func (s *StateDB) AddBalance(addr common.Address, amount *uint256.Int, _ tracing.BalanceChangeReason) uint256.Int {
+	prev := uint256.MustFromBig(s.ctx.GetBaseTokensBalance(addr))
 	if amount.Sign() == 0 {
-		return
+		return *prev
 	}
 	if amount.Sign() == -1 {
 		panic("unexpected negative amount")
 	}
 	s.ctx.AddBaseTokensBalance(addr, amount.ToBig())
+	return *prev
 }
 
 func (s *StateDB) GetBalance(addr common.Address) *uint256.Int {
@@ -157,15 +163,14 @@ func (s *StateDB) IncNonce(addr common.Address) {
 }
 
 func SetNonce(kv kv.KVStore, addr common.Address, n uint64) {
-	kv.Set(accountNonceKey(addr), codec.Encode[uint64](n))
+	kv.Set(accountNonceKey(addr), codec.Encode(n))
 }
 
-func (s *StateDB) SetNonce(addr common.Address, n uint64) {
+func (s *StateDB) SetNonce(addr common.Address, n uint64, r tracing.NonceChangeReason) {
 	SetNonce(s.kv, addr, n)
 }
 
 func (s *StateDB) GetCodeHash(addr common.Address) common.Hash {
-	// TODO cache the code hash?
 	return crypto.Keccak256Hash(s.GetCode(addr))
 }
 
@@ -185,12 +190,13 @@ func SetCode(kv kv.KVStore, addr common.Address, code []byte) {
 	}
 }
 
-func (s *StateDB) SetCode(addr common.Address, code []byte) {
+func (s *StateDB) SetCode(addr common.Address, code []byte) []byte {
+	prev := s.GetCode(addr)
 	SetCode(s.kv, addr, code)
+	return prev
 }
 
 func (s *StateDB) GetCodeSize(addr common.Address) int {
-	// TODO cache the code size?
 	return len(s.GetCode(addr))
 }
 
@@ -225,13 +231,18 @@ func SetState(kv kv.KVStore, addr common.Address, key, value common.Hash) {
 	kv.Set(accountStateKey(addr, key), value.Bytes())
 }
 
-func (s *StateDB) SetState(addr common.Address, key, value common.Hash) {
+func (s *StateDB) SetState(addr common.Address, key, value common.Hash) common.Hash {
+	prev := s.GetState(addr, key)
+	if prev == value {
+		return prev
+	}
 	SetState(s.kv, addr, key, value)
+	return prev
 }
 
-func (s *StateDB) SelfDestruct(addr common.Address) {
+func (s *StateDB) SelfDestruct(addr common.Address) uint256.Int {
 	if !s.Exist(addr) {
-		return
+		return *uint256.NewInt(0)
 	}
 
 	s.kv.Del(accountNonceKey(addr))
@@ -248,16 +259,23 @@ func (s *StateDB) SelfDestruct(addr common.Address) {
 
 	// for some reason the EVM engine calls AddBalance to the beneficiary address,
 	// but not SubBalance for the self-destructed address.
-	s.ctx.SubBaseTokensBalance(addr, s.ctx.GetBaseTokensBalance(addr))
+	prevBalance := s.ctx.GetBaseTokensBalance(addr)
+	if prevBalance.Sign() > 0 {
+		s.ctx.SubBaseTokensBalance(addr, prevBalance)
+	}
 
 	s.kv.Set(accountSelfDestructedKey(addr), []byte{1})
+
+	return *uint256.MustFromBig(prevBalance)
 }
 
-func (s *StateDB) Selfdestruct6780(addr common.Address) {
+func (s *StateDB) SelfDestruct6780(addr common.Address) (uint256.Int, bool) {
 	// only allow selfdestruct if within the creation tx (as per EIP-6780)
 	if s.newContracts[addr] {
-		s.SelfDestruct(addr)
+		return s.SelfDestruct(addr), true
 	}
+	prevBalance := s.ctx.GetBaseTokensBalance(addr)
+	return *uint256.MustFromBig(prevBalance), false
 }
 
 func (s *StateDB) HasSelfDestructed(addr common.Address) bool {
@@ -353,4 +371,18 @@ func (s *StateDB) Prepare(rules params.Rules, sender common.Address, coinbase co
 	s.transientStorage = newTransientStorage()
 	// reset "newContract" flags
 	s.newContracts = make(map[common.Address]bool)
+}
+
+func (s *StateDB) AccessEvents() *state.AccessEvents {
+	panic("should not be called")
+}
+
+func (s *StateDB) Finalise(deleteEmptyObjects bool) {
+	panic("should not be called")
+	// TODO: maybe we should "burn" any assets sent to self-destructed accounts
+	// here
+}
+
+func (s *StateDB) Witness() *stateless.Witness {
+	panic("should not be called")
 }

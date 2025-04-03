@@ -4,11 +4,15 @@
 package isc
 
 import (
-	"errors"
-	"strings"
+	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/pkg/errors"
+
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type AgentIDKind byte
@@ -22,13 +26,9 @@ const (
 	AgentIDIsNil AgentIDKind = 0x80
 )
 
-const AgentIDStringSeparator = "@"
-
 // AgentID represents any entity that can hold assets on L2 and/or call contracts.
 type AgentID interface {
 	Bytes() []byte
-	BelongsToChain(ChainID) bool
-	BytesWithoutChainID() []byte
 	Equals(other AgentID) bool
 	Kind() AgentIDKind
 	String() string
@@ -70,26 +70,26 @@ func AgentIDFromString(s string) (AgentID, error) {
 	if s == nilAgentIDString {
 		return &NilAgentID{}, nil
 	}
-	var contractPart, addrPart string
-	{
-		parts := strings.Split(s, AgentIDStringSeparator)
-		switch len(parts) {
-		case 1:
-			addrPart = parts[0]
-		case 2:
-			addrPart = parts[1]
-			contractPart = parts[0]
-		default:
-			return nil, errors.New("invalid AgentID format")
-		}
+
+	addressAsBytes, err := hexutil.Decode(s)
+	if err != nil {
+		return nil, fmt.Errorf("malformed AgentID '%v' %w", s, err)
 	}
 
-	if contractPart != "" {
-		if strings.HasPrefix(contractPart, "0x") {
-			return ethAgentIDFromString(contractPart, addrPart)
-		}
-		return contractAgentIDFromString(contractPart, addrPart)
+	// HName
+	if len(addressAsBytes) == HnameLength {
+		return contractAgentIDFromString(s)
 	}
 
-	return addressAgentIDFromString(s)
+	// EVM
+	if len(addressAsBytes) == common.AddressLength {
+		return ethAgentIDFromString(s)
+	}
+
+	// Rebased
+	if len(addressAsBytes) == iotago.AddressLen {
+		return addressAgentIDFromString(s)
+	}
+
+	return nil, errors.Errorf("AgentIDFromString: invalid address length %d", len(addressAsBytes))
 }

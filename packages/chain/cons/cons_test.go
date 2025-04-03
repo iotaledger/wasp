@@ -6,12 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
+	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -24,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -66,26 +64,17 @@ func TestConsBasic(t *testing.T) {
 func testConsBasic(t *testing.T, n, f int) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	//
 	// Node Identities and shared key.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
 	committeeAddress, dkShareProviders := testpeers.SetupDkgTrivial(t, n, f, peerIdentities, nil)
 	var chainID isc.ChainID
 
-	tokenCoinInfo := isc.IotaCoinInfo{
-		CoinType:    lo.Must(coin.TypeFromString("0x0000000000000000000000000000000000000000000000000000000000000002::iota::IOTA")),
-		Name:        "IOTA",
-		Decimals:    9,
-		Symbol:      "IOTA",
-		Description: "Foo",
-		IconURL:     "Foo",
-	}
-
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, &tokenCoinInfo)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 
 	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
 	stateAnchor0 := &stateAnchor0x
@@ -159,14 +148,26 @@ func testConsBasic(t *testing.T, n, f int) {
 	nodeIDs := gpa.NodeIDsFromPublicKeys(testpeers.PublicKeys(peerIdentities))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		nodeLog := log.Named(nid.ShortString())
+		nodeLog := log.NewChildLogger(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, &tokenCoinInfo)
+		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, parameterstest.L1Mock)
 		require.NoError(t, err)
-		nodes[nid] = cons.New(chainID, chainStates[nid], nid, nodeSK, nodeDKShare, procConfig, consInstID, gpa.NodeIDFromPublicKey, accounts.CommonAccount(), nodeLog).AsGPA()
+		nodes[nid] = cons.New(
+			chainID,
+			chainStates[nid],
+			nid,
+			nodeSK,
+			nodeDKShare,
+			nil, // rotateTo
+			procConfig,
+			consInstID,
+			gpa.NodeIDFromPublicKey,
+			accounts.CommonAccount(),
+			nodeLog,
+		).AsGPA()
 	}
 	tc := gpa.NewTestContext(nodes)
 	//
@@ -190,7 +191,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		tc.WithInput(nid, cons.NewInputMempoolProposal(reqRefs))
 		tc.WithInput(nid, cons.NewInputStateMgrProposalConfirmed())
 		tc.WithInput(nid, cons.NewInputTimeData(now))
-		tc.WithInput(nid, cons.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameters.L1Default))
+		tc.WithInput(nid, cons.NewInputL1Info([]*coin.CoinWithRef{&gasCoin}, parameterstest.L1Mock))
 	}
 	tc.RunAll()
 	tc.PrintAllStatusStrings("After MP/SM proposals", t.Logf)
@@ -224,7 +225,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedMempoolRequests)
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.NotNil(t, out.NeedVMResult)
-		out.NeedVMResult.Log = out.NeedVMResult.Log.Desugar().WithOptions(zap.IncreaseLevel(logger.LevelError)).Sugar() // Decrease VM logging.
+		out.NeedVMResult.Log = hivelog.NewLogger(hivelog.WithLevel(hivelog.LevelError)) // Decrease VM logging.
 		vmResult, err := vmimpl.Run(out.NeedVMResult)
 		require.NoError(t, err)
 		tc.WithInput(nid, cons.NewInputVMResult(vmResult))
@@ -311,7 +312,7 @@ func TestChained(t *testing.T) {
 func testChained(t *testing.T, n, f, b int) {
 	t.Parallel()
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	//
 	// Node Identities, shared key and ledger.
 	_, peerIdentities := testpeers.SetupKeys(uint16(n))
@@ -466,12 +467,12 @@ func newTestConsInst(
 	dkShareRegistryProviders []registry.DKShareRegistryProvider,
 	requests []isc.Request,
 	doneCB func(nextInput *testInstInput),
-	log *logger.Logger,
+	log log.Logger,
 ) *testConsInst {
 	consInstID := []byte(fmt.Sprintf("testConsInst-%v", stateIndex))
 	nodes := map[gpa.NodeID]gpa.GPA{}
 	for i, nid := range nodeIDs {
-		nodeLog := log.Named(nid.ShortString())
+		nodeLog := log.NewChildLogger(nid.ShortString())
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareRegistryProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)

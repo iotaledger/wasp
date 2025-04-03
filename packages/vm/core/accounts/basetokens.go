@@ -13,7 +13,7 @@ import (
 )
 
 func (s *StateReader) getBaseTokens(accountKey kv.Key) (baseTokens coin.Value, remainderWei *big.Int) {
-	if s.v < allmigrations.SchemaVersionIotaRebased {
+	if s.v < allmigrations.SchemaVersionMigratedRebased {
 		panic("unsupported schema version")
 	}
 	baseTokens = s.getCoinBalance(accountKey, coin.BaseTokenType)
@@ -23,13 +23,13 @@ func (s *StateReader) getBaseTokens(accountKey kv.Key) (baseTokens coin.Value, r
 
 func (s *StateReader) getBaseTokensFullDecimals(accountKey kv.Key) *big.Int {
 	baseTokens, remainderWei := s.getBaseTokens(accountKey)
-	wei := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.Decimals)
+	wei := util.BaseTokensDecimalsToEthereumDecimals(baseTokens, parameters.BaseTokenDecimals)
 	wei.Add(wei, remainderWei)
 	return wei
 }
 
 func (s *StateWriter) setBaseTokens(accountKey kv.Key, baseTokens coin.Value, remainderWei *big.Int) {
-	if s.v < allmigrations.SchemaVersionIotaRebased {
+	if s.v < allmigrations.SchemaVersionMigratedRebased {
 		panic("unsupported schema version")
 	}
 	s.setCoinBalance(accountKey, coin.BaseTokenType, baseTokens)
@@ -37,30 +37,30 @@ func (s *StateWriter) setBaseTokens(accountKey kv.Key, baseTokens coin.Value, re
 }
 
 func (s *StateWriter) setBaseTokensFullDecimals(accountKey kv.Key, wei *big.Int) {
-	baseTokens, remainderWei := util.EthereumDecimalsToBaseTokenDecimals(wei, parameters.Decimals)
+	baseTokens, remainderWei := util.EthereumDecimalsToBaseTokenDecimals(wei, parameters.BaseTokenDecimals)
 	s.setBaseTokens(accountKey, baseTokens, remainderWei)
 }
 
-func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value, chainID isc.ChainID) {
+func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value) {
 	b := isc.NewCoinBalances().AddBaseTokens(adjustment)
 	switch {
 	case adjustment > 0:
-		s.CreditToAccount(account, b, chainID)
+		s.CreditToAccount(account, b)
 	case adjustment < 0:
-		s.DebitFromAccount(account, b, chainID)
+		s.DebitFromAccount(account, b)
 	}
 }
 
-func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID, chainID isc.ChainID) (bts coin.Value, remainder *big.Int) {
-	return s.getBaseTokens(accountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalance(agentID isc.AgentID) (bts coin.Value, remainder *big.Int) {
+	return s.getBaseTokens(accountKey(agentID))
 }
 
-func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID, chainID isc.ChainID) *big.Int {
-	return s.getBaseTokensFullDecimals(accountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalanceFullDecimals(agentID isc.AgentID) *big.Int {
+	return s.getBaseTokensFullDecimals(accountKey(agentID))
 }
 
-func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID, chainID isc.ChainID) coin.Value {
-	bts, _ := s.getBaseTokens(accountKey(agentID, chainID))
+func (s *StateReader) GetBaseTokensBalanceDiscardExtraDecimals(agentID isc.AgentID) coin.Value {
+	bts, _ := s.getBaseTokens(accountKey(agentID))
 	return bts
 }
 
@@ -77,5 +77,9 @@ func (s *StateReader) getWeiRemainder(accountKey kv.Key) *big.Int {
 }
 
 func (s *StateWriter) setWeiRemainder(accountKey kv.Key, v *big.Int) {
-	s.state.Set(accountWeiRemainderKey(accountKey), codec.Encode(v))
+	if v.Sign() == 0 {
+		s.state.Del(accountWeiRemainderKey(accountKey))
+	} else {
+		s.state.Set(accountWeiRemainderKey(accountKey), codec.Encode(v))
+	}
 }

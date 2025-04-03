@@ -29,16 +29,14 @@ import (
 type WaspEVMBackend struct {
 	chain      chain.Chain
 	nodePubKey *cryptolib.PublicKey
-	baseToken  *parameters.BaseToken
 }
 
 var _ jsonrpc.ChainBackend = &WaspEVMBackend{}
 
-func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey, baseToken *parameters.BaseToken) *WaspEVMBackend {
+func NewWaspEVMBackend(ch chain.Chain, nodePubKey *cryptolib.PublicKey) *WaspEVMBackend {
 	return &WaspEVMBackend{
 		chain:      ch,
 		nodePubKey: nodePubKey,
-		baseToken:  baseToken,
 	}
 }
 
@@ -56,7 +54,7 @@ func (b *WaspEVMBackend) FeePolicy(blockIndex uint32) (*gas.FeePolicy, error) {
 
 func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	// Ensure the transaction has more gas than the basic Ethereum tx fee.
-	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true, true)
+	intrinsicGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), nil, tx.To() == nil, true, true, true)
 	if err != nil {
 		return err
 	}
@@ -68,7 +66,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 	if err != nil {
 		return err
 	}
-	b.chain.Log().Debugf("EVMSendTransaction, evm.tx.nonce=%v, evm.tx.hash=%v => isc.req.id=%v", tx.Nonce(), tx.Hash().Hex(), req.ID())
+	b.chain.Log().LogDebugf("EVMSendTransaction, evm.tx.nonce=%v, evm.tx.hash=%v => isc.req.id=%v", tx.Nonce(), tx.Hash().Hex(), req.ID())
 	if err := b.chain.ReceiveOffLedgerRequest(req, b.nodePubKey); err != nil {
 		return fmt.Errorf("tx not added to the mempool: %v", err.Error())
 	}
@@ -129,10 +127,6 @@ func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (i
 		b.chain.Log(),
 		msg,
 	)
-}
-
-func (b *WaspEVMBackend) BaseToken() *parameters.BaseToken {
-	return b.baseToken
 }
 
 func (b *WaspEVMBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {

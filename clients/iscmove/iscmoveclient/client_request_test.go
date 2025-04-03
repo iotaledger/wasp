@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -17,9 +19,8 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client clients.L1Client) {
@@ -56,7 +57,7 @@ func ensureSingleCoin(t *testing.T, cryptolibSigner cryptolib.Signer, client cli
 		txb.Finish(),
 		[]*iotago.ObjectRef{primaryCoin.Ref()},
 		iotaclient.DefaultGasBudget,
-		parameters.L1Default.Protocol.ReferenceGasPrice.Uint64(),
+		parameterstest.L1Mock.Protocol.ReferenceGasPrice.Uint64(),
 	)
 
 	txnBytes, err := bcs.Marshal(&txData)
@@ -121,7 +122,13 @@ func TestCreateAndSendRequest(t *testing.T) {
 	anchor := startNewChain(t, client, anchorSigner)
 
 	cryptolibSigner := iscmoveclienttest.NewRandomSignerWithFunds(t, 1)
-	ensureSingleCoin(t, cryptolibSigner, l1starter.Instance().L1Client())
+	var testCoinRef []*iotago.ObjectRef
+	for range 25 + 26 {
+		coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+		time.Sleep(3 * time.Second)
+		testCoinRef = append(testCoinRef, coinRef)
+	}
+
 	t.Run("success", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
@@ -153,12 +160,11 @@ func TestCreateAndSendRequest(t *testing.T) {
 		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
-		for i := 0; i < 25; i++ {
-			coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+		for i := range 25 {
 			getCoinRef, err := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
-					ObjectID: coinRef.ObjectID,
+					ObjectID: testCoinRef[i].ObjectID,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 				},
 			)
@@ -169,7 +175,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, err)
-
+			ref := getCoinRef.Data.Ref()
 			_, err = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
@@ -183,7 +189,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 						ptb,
 						l1starter.ISCPackageID(),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
 						iotajsonrpc.CoinValue(100),
 						testCointype,
 					)
@@ -220,12 +226,11 @@ func TestCreateAndSendRequest(t *testing.T) {
 		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
-		for i := 0; i < 26; i++ {
-			coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
+		for i := range 26 {
 			getCoinRef, err := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
-					ObjectID: coinRef.ObjectID,
+					ObjectID: testCoinRef[i+25].ObjectID,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 				},
 			)
@@ -236,7 +241,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 
 			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, err)
-
+			ref := getCoinRef.Data.Ref()
 			_, err = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
@@ -250,7 +255,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 						ptb,
 						l1starter.ISCPackageID(),
 						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: assetsBagRef}),
-						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coinRef}),
+						ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
 						iotajsonrpc.CoinValue(100),
 						testCointype,
 					)

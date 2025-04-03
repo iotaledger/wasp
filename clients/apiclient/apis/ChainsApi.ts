@@ -16,6 +16,7 @@ import { ContractInfoResponse } from '../models/ContractInfoResponse';
 import { EstimateGasRequestOffledger } from '../models/EstimateGasRequestOffledger';
 import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger';
 import { ReceiptResponse } from '../models/ReceiptResponse';
+import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
 import { ValidationError } from '../models/ValidationError';
 
@@ -38,7 +39,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/activate'
+        const localVarPath = '/v1/chain/activate/{chainID}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
 
         // Make Request Context
@@ -63,17 +64,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Configure a trusted node to be an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public async addAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<RequestContext> {
+    public async addAccessNode(peer: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "addAccessNode", "chainID");
-        }
-
 
         // verify required parameter 'peer' is not null or undefined
         if (peer === null || peer === undefined) {
@@ -82,8 +76,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/access-node/{peer}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/access-node/{peer}'
             .replace('{' + 'peer' + '}', encodeURIComponent(String(peer)));
 
         // Make Request Context
@@ -109,17 +102,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
     /**
      * Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
      * Call a view function on a contract by Hname
-     * @param chainID ChainID (Hex Address)
      * @param contractCallViewRequest Parameters
      */
-    public async callView(chainID: string, contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<RequestContext> {
+    public async callView(contractCallViewRequest: ContractCallViewRequest, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "callView", "chainID");
-        }
-
 
         // verify required parameter 'contractCallViewRequest' is not null or undefined
         if (contractCallViewRequest === null || contractCallViewRequest === undefined) {
@@ -128,8 +114,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/callview'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/callview';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
@@ -158,20 +143,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Deactivate a chain
-     * @param chainID ChainID (Hex Address)
      */
-    public async deactivateChain(chainID: string, _options?: Configuration): Promise<RequestContext> {
+    public async deactivateChain(_options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "deactivateChain", "chainID");
-        }
-
-
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/deactivate'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/deactivate';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
@@ -195,20 +172,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * dump accounts information into a humanly-readable format
-     * @param chainID ChainID (Hex Address)
      */
-    public async dumpAccounts(chainID: string, _options?: Configuration): Promise<RequestContext> {
+    public async dumpAccounts(_options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "dumpAccounts", "chainID");
-        }
-
-
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/dump-accounts'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/dump-accounts';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
@@ -232,17 +201,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Estimates gas for a given off-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public async estimateGasOffledger(chainID: string, request: EstimateGasRequestOffledger, _options?: Configuration): Promise<RequestContext> {
+    public async estimateGasOffledger(request: EstimateGasRequestOffledger, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "estimateGasOffledger", "chainID");
-        }
-
 
         // verify required parameter 'request' is not null or undefined
         if (request === null || request === undefined) {
@@ -251,8 +213,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/estimategas-offledger'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/estimategas-offledger';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
@@ -281,17 +242,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Estimates gas for a given on-ledger ISC request
-     * @param chainID ChainID (Hex Address)
      * @param request Request
      */
-    public async estimateGasOnledger(chainID: string, request: EstimateGasRequestOnledger, _options?: Configuration): Promise<RequestContext> {
+    public async estimateGasOnledger(request: EstimateGasRequestOnledger, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "estimateGasOnledger", "chainID");
-        }
-
 
         // verify required parameter 'request' is not null or undefined
         if (request === null || request === undefined) {
@@ -300,8 +254,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/estimategas-onledger'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/estimategas-onledger';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
@@ -330,22 +283,14 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get information about a specific chain
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async getChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async getChainInfo(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "getChainInfo", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -367,52 +312,15 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * Get a list of all chains
-     */
-    public async getChains(_options?: Configuration): Promise<RequestContext> {
-        let _config = _options || this.configuration;
-
-        // Path Params
-        const localVarPath = '/v1/chains';
-
-        // Make Request Context
-        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
-        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
-
-
-        let authMethod: SecurityAuthentication | undefined;
-        // Apply auth methods
-        authMethod = _config.authMethods["Authorization"]
-        if (authMethod?.applySecurityAuthentication) {
-            await authMethod?.applySecurityAuthentication(requestContext);
-        }
-        
-        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
-        if (defaultAuth?.applySecurityAuthentication) {
-            await defaultAuth?.applySecurityAuthentication(requestContext);
-        }
-
-        return requestContext;
-    }
-
-    /**
      * Get information about the deployed committee
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async getCommitteeInfo(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async getCommitteeInfo(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "getCommitteeInfo", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/committee'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/committee';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -441,22 +349,14 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all available chain contracts
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async getContracts(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async getContracts(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "getContracts", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/contracts'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/contracts';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -485,20 +385,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the contents of the mempool.
-     * @param chainID ChainID (Hex Address)
      */
-    public async getMempoolContents(chainID: string, _options?: Configuration): Promise<RequestContext> {
+    public async getMempoolContents(_options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "getMempoolContents", "chainID");
-        }
-
-
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/mempool'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/mempool';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -522,17 +414,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get a receipt from a request ID
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      */
-    public async getReceipt(chainID: string, requestID: string, _options?: Configuration): Promise<RequestContext> {
+    public async getReceipt(requestID: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "getReceipt", "chainID");
-        }
-
 
         // verify required parameter 'requestID' is not null or undefined
         if (requestID === null || requestID === undefined) {
@@ -541,8 +426,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/receipts/{requestID}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/receipts/{requestID}'
             .replace('{' + 'requestID' + '}', encodeURIComponent(String(requestID)));
 
         // Make Request Context
@@ -561,17 +445,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Fetch the raw value associated with the given key in the chain state
-     * @param chainID ChainID (Hex Address)
      * @param stateKey State Key (Hex)
      */
-    public async getStateValue(chainID: string, stateKey: string, _options?: Configuration): Promise<RequestContext> {
+    public async getStateValue(stateKey: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "getStateValue", "chainID");
-        }
-
 
         // verify required parameter 'stateKey' is not null or undefined
         if (stateKey === null || stateKey === undefined) {
@@ -580,8 +457,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/state/{stateKey}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/state/{stateKey}'
             .replace('{' + 'stateKey' + '}', encodeURIComponent(String(stateKey)));
 
         // Make Request Context
@@ -600,17 +476,10 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Remove an access node.
-     * @param chainID ChainID (Hex Address)
      * @param peer Name or PubKey (hex) of the trusted peer
      */
-    public async removeAccessNode(chainID: string, peer: string, _options?: Configuration): Promise<RequestContext> {
+    public async removeAccessNode(peer: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "removeAccessNode", "chainID");
-        }
-
 
         // verify required parameter 'peer' is not null or undefined
         if (peer === null || peer === undefined) {
@@ -619,14 +488,55 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/access-node/{peer}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/access-node/{peer}'
             .replace('{' + 'peer' + '}', encodeURIComponent(String(peer)));
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.DELETE);
         requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
 
+
+        let authMethod: SecurityAuthentication | undefined;
+        // Apply auth methods
+        authMethod = _config.authMethods["Authorization"]
+        if (authMethod?.applySecurityAuthentication) {
+            await authMethod?.applySecurityAuthentication(requestContext);
+        }
+        
+        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
+        if (defaultAuth?.applySecurityAuthentication) {
+            await defaultAuth?.applySecurityAuthentication(requestContext);
+        }
+
+        return requestContext;
+    }
+
+    /**
+     * Rotate a chain
+     * @param rotateRequest RotateRequest
+     */
+    public async rotateChain(rotateRequest?: RotateChainRequest, _options?: Configuration): Promise<RequestContext> {
+        let _config = _options || this.configuration;
+
+
+        // Path Params
+        const localVarPath = '/v1/chain/rotate';
+
+        // Make Request Context
+        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
+        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
+
+
+        // Body Params
+        const contentType = ObjectSerializer.getPreferredMediaType([
+            "application/json"
+        ]);
+        requestContext.setHeaderParam("Content-Type", contentType);
+        const serializedBody = ObjectSerializer.stringify(
+            ObjectSerializer.serialize(rotateRequest, "RotateChainRequest", ""),
+            contentType
+        );
+        requestContext.setBody(serializedBody);
 
         let authMethod: SecurityAuthentication | undefined;
         // Apply auth methods
@@ -664,7 +574,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/chainrecord'
+        const localVarPath = '/v1/chain/chainrecord/{chainID}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
 
         // Make Request Context
@@ -700,20 +610,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Ethereum JSON-RPC
-     * @param chainID ChainID (Hex Address)
      */
-    public async v1ChainsChainIDEvmPost(chainID: string, _options?: Configuration): Promise<RequestContext> {
+    public async v1ChainEvmPost(_options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "v1ChainsChainIDEvmPost", "chainID");
-        }
-
-
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/evm'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/evm';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.POST);
@@ -731,20 +633,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Ethereum JSON-RPC (Websocket transport)
-     * @param chainID ChainID (Hex Address)
      */
-    public async v1ChainsChainIDEvmWsGet(chainID: string, _options?: Configuration): Promise<RequestContext> {
+    public async v1ChainEvmWsGet(_options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "v1ChainsChainIDEvmWsGet", "chainID");
-        }
-
-
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/evm/ws'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/evm/ws';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -762,19 +656,12 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Wait until the given request has been processed by the node
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param timeoutSeconds The timeout in seconds, maximum 60s
      * @param waitForL1Confirmation Wait for the block to be confirmed on L1
      */
-    public async waitForRequest(chainID: string, requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<RequestContext> {
+    public async waitForRequest(requestID: string, timeoutSeconds?: number, waitForL1Confirmation?: boolean, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("ChainsApi", "waitForRequest", "chainID");
-        }
-
 
         // verify required parameter 'requestID' is not null or undefined
         if (requestID === null || requestID === undefined) {
@@ -785,8 +672,7 @@ export class ChainsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/requests/{requestID}/wait'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/requests/{requestID}/wait'
             .replace('{' + 'requestID' + '}', encodeURIComponent(String(requestID)));
 
         // Make Request Context
@@ -1071,42 +957,6 @@ export class ChainsApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
-     * @params response Response returned by the server for a request to getChains
-     * @throws ApiException if the response code was not in [200, 299]
-     */
-     public async getChainsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<Array<ChainInfoResponse> >> {
-        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: Array<ChainInfoResponse> = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "Array<ChainInfoResponse>", ""
-            ) as Array<ChainInfoResponse>;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-        if (isCodeInRange("401", response.httpStatusCode)) {
-            const body: ValidationError = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ValidationError", ""
-            ) as ValidationError;
-            throw new ApiException<ValidationError>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", body, response.headers);
-        }
-
-        // Work around for missing responses in specification, e.g. for petstore.yaml
-        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: Array<ChainInfoResponse> = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "Array<ChainInfoResponse>", ""
-            ) as Array<ChainInfoResponse>;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-
-        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
-    }
-
-    /**
-     * Unwraps the actual response sent by the server from the response context and deserializes the response content
-     * to the expected objects
-     *
      * @params response Response returned by the server for a request to getCommitteeInfo
      * @throws ApiException if the response code was not in [200, 299]
      */
@@ -1308,6 +1158,38 @@ export class ChainsApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
+     * @params response Response returned by the server for a request to rotateChain
+     * @throws ApiException if the response code was not in [200, 299]
+     */
+     public async rotateChainWithHttpInfo(response: ResponseContext): Promise<HttpInfo<void >> {
+        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
+        if (isCodeInRange("200", response.httpStatusCode)) {
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
+        }
+        if (isCodeInRange("401", response.httpStatusCode)) {
+            const body: ValidationError = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "ValidationError", ""
+            ) as ValidationError;
+            throw new ApiException<ValidationError>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", body, response.headers);
+        }
+
+        // Work around for missing responses in specification, e.g. for petstore.yaml
+        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
+            const body: void = ObjectSerializer.deserialize(
+                ObjectSerializer.parse(await response.body.text(), contentType),
+                "void", ""
+            ) as void;
+            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
+        }
+
+        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
+    }
+
+    /**
+     * Unwraps the actual response sent by the server from the response context and deserializes the response content
+     * to the expected objects
+     *
      * @params response Response returned by the server for a request to setChainRecord
      * @throws ApiException if the response code was not in [200, 299]
      */
@@ -1340,10 +1222,10 @@ export class ChainsApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
-     * @params response Response returned by the server for a request to v1ChainsChainIDEvmPost
+     * @params response Response returned by the server for a request to v1ChainEvmPost
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async v1ChainsChainIDEvmPostWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
+     public async v1ChainEvmPostWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("0", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);
@@ -1361,10 +1243,10 @@ export class ChainsApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
-     * @params response Response returned by the server for a request to v1ChainsChainIDEvmWsGet
+     * @params response Response returned by the server for a request to v1ChainEvmWsGet
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async v1ChainsChainIDEvmWsGetWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
+     public async v1ChainEvmWsGetWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("0", response.httpStatusCode)) {
             throw new ApiException<undefined>(response.httpStatusCode, "successful operation", undefined, response.headers);

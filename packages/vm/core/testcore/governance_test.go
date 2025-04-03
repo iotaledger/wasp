@@ -39,7 +39,7 @@ func TestGovernance1(t *testing.T) {
 		env := solo.New(t)
 		chain := env.NewChain()
 
-		_, addr1 := env.NewKeyPair(env.NewSeedFromIndex(1))
+		_, addr1 := env.NewKeyPair(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 		err := chain.AddAllowedStateController(addr1, nil)
 		require.NoError(t, err)
 		res := chain.GetAllowedStateControllerAddresses()
@@ -126,9 +126,9 @@ func TestGovernanceRotate(t *testing.T) {
 func TestGovernanceAccessNodes(t *testing.T) {
 	t.Skip("TODO")
 	env := solo.New(t)
-	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
-	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
-	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(3))
+	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	chainKP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	chain, _ := env.NewChainExt(chainKP, 0, "chain1", 0, 0)
 
 	//
@@ -206,11 +206,11 @@ func TestMaintenanceMode(t *testing.T) {
 	env := solo.New(t)
 	ch := env.NewChain()
 
-	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromIndex(1))
+	ownerWallet, ownerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ownerAgentID := isc.NewAddressAgentID(ownerAddr)
 	ch.DepositBaseTokensToL2(10*isc.Million, ownerWallet)
 
-	userWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromIndex(2))
+	userWallet, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch.DepositBaseTokensToL2(10*isc.Million, userWallet)
 
 	// set owner of the chain
@@ -736,7 +736,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	user1AgentID := isc.NewAddressAgentID(user1Addr)
 
 	// transfer some tokens from a new account (user1)
-	ownerBal1 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal1 := ch.L2Assets(ch.OwnerAgentID())
 	commonBal1 := ch.L2CommonAccountAssets()
 	user1Bal1 := ch.L2Assets(user1AgentID)
 	transferAmt := coin.Value(2000)
@@ -753,7 +753,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal1.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal2 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal2 := ch.L2Assets(ch.OwnerAgentID())
 	user1Bal2 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal1.BaseTokens()+gasFees-addedToCommonAccount1, ownerBal2.BaseTokens())
 	require.Equal(t, user1Bal1.BaseTokens()+transferAmt-gasFees, user1Bal2.BaseTokens())
@@ -768,7 +768,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	require.NoError(t, err)
 
 	// no balance changes (owner calls to gov contract don't pay fees)
-	ownerBal3 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal3 := ch.L2Assets(ch.OwnerAgentID())
 	commonBal3 := ch.L2CommonAccountAssets()
 	user1Bal3 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal2.BaseTokens(), ownerBal3.BaseTokens())
@@ -788,13 +788,15 @@ func TestGovernanceGasPayout(t *testing.T) {
 		user1,
 	)
 	require.NoError(t, err)
+
 	addedToCommonAccount3 := min(
 		isc.GasCoinTargetValue-commonBal3.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal4 := ch.L2Assets(ch.OriginatorAgentID)
+	ownerBal4 := ch.L2Assets(ch.OwnerAgentID())
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
+
 	require.Equal(t, ownerBal3.BaseTokens(), ownerBal4.BaseTokens())
 	require.Equal(t, commonBal3.BaseTokens()+addedToCommonAccount3, commonBal4.BaseTokens())
 	require.Equal(t, user1Bal3.BaseTokens()+transferAmt-addedToCommonAccount3, user1Bal4.BaseTokens())

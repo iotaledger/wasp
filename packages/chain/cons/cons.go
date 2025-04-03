@@ -17,11 +17,10 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/hive.go/logger"
-
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-
 	"github.com/iotaledger/wasp/packages/chain/cons/bp"
 	"github.com/iotaledger/wasp/packages/chain/dss"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -36,10 +35,10 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
 type Cons interface {
@@ -93,8 +92,8 @@ type Result struct {
 
 func (r *Result) String() string {
 	return fmt.Sprintf(
-		"{cons.Result, txHash=%v, baseAO=%v, outBlockHash=%v}",
-		lo.Must(r.Transaction.Hash()).Hex(),
+		"{cons.Result, txDigest=%s, baseAO=%v, outBlockHash=%v}",
+		lo.Must(r.Transaction.Digest()),
 		r.DecidedAO,
 		r.Block.Hash(),
 	)
@@ -103,9 +102,10 @@ func (r *Result) String() string {
 type consImpl struct {
 	chainID          isc.ChainID
 	chainStore       state.Store
-	edSuite          suites.Suite // For signatures.
-	blsSuite         suites.Suite // For randomness only.
-	dkShare          tcrypto.DKShare
+	edSuite          suites.Suite    // For signatures.
+	blsSuite         suites.Suite    // For randomness only.
+	dkShare          tcrypto.DKShare // The current committee's keys.
+	rotateTo         *iotago.Address // If non-nil and differs from the dkShare, then rotation is suggested.
 	processorCache   *processors.Config
 	nodeIDs          []gpa.NodeID
 	me               gpa.NodeID
@@ -125,7 +125,7 @@ type consImpl struct {
 	msgWrapper       *gpa.MsgWrapper
 	output           *Output
 	validatorAgentID isc.AgentID
-	log              *logger.Logger
+	log              log.Logger
 }
 
 const (
@@ -144,11 +144,12 @@ func New( //nolint:funlen
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,
 	dkShare tcrypto.DKShare,
+	rotateTo *iotago.Address,
 	processorCache *processors.Config,
 	instID []byte,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	validatorAgentID isc.AgentID,
-	log *logger.Logger,
+	log log.Logger,
 ) Cons {
 	edSuite := tcrypto.DefaultEd25519Suite()
 	blsSuite := tcrypto.DefaultBLSSuite()
@@ -171,7 +172,7 @@ func New( //nolint:funlen
 		panic(fmt.Errorf("cannot convert node's SK to kyber.Scalar: %w", err))
 	}
 	longTermDKS := dkShare.DSS()
-	acsLog := log.Named("ACS")
+	acsLog := log.NewChildLogger("ACS")
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
 		binary.BigEndian.PutUint32(roundBin[:], uint32(round))
@@ -185,11 +186,12 @@ func New( //nolint:funlen
 		edSuite:          edSuite,
 		blsSuite:         blsSuite,
 		dkShare:          dkShare,
+		rotateTo:         rotateTo,
 		processorCache:   processorCache,
 		nodeIDs:          nodeIDs,
 		me:               me,
 		f:                f,
-		dss:              dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.Named("DSS")),
+		dss:              dss.New(edSuite, nodeIDs, nodePKs, f, me, myKyberKeys.Private, longTermDKS, log.NewChildLogger("DSS")),
 		acs:              acs.New(nodeIDs, me, f, acsCCInstFunc, acsLog),
 		output:           &Output{Status: Running},
 		log:              log,
@@ -270,17 +272,22 @@ func (c *consImpl) Input(input gpa.Input) gpa.OutMessages {
 	case *inputTimeData:
 		// ignore this to filter out ridiculously excessive logging
 	default:
-		c.log.Debugf("Input %T: %+v", input, input)
+		c.log.LogDebugf("Input %T: %+v", input, input)
 	}
 
 	switch input := input.(type) {
 	case *inputProposal:
-		c.log.Infof("Consensus started, received %v", input.String())
+		c.log.LogInfof("Consensus started, received %v", input.String())
 		return gpa.NoMessages().
 			AddAll(c.subNC.HaveInputAnchor(input.baseAliasOutput)).
 			AddAll(c.subMP.BaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subSM.ProposedBaseAliasOutputReceived(input.baseAliasOutput)).
 			AddAll(c.subDSS.InitialInputReceived())
+	case *inputRotateTo:
+		// We can update the rotation address while consensus is running.
+		// New value will be used, if decision has not been made yet.
+		c.rotateTo = input.address
+		return nil
 	case *inputMempoolProposal:
 		return c.subMP.ProposalReceived(input.requestRefs)
 	case *inputMempoolRequests:
@@ -310,7 +317,7 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 	case *gpa.WrappingMsg:
 		sub, subMsgs, err := c.msgWrapper.DelegateMessage(msgT)
 		if err != nil {
-			c.log.Warnf("unexpected wrapped message: %w", err)
+			c.log.LogWarnf("unexpected wrapped message: %w", err)
 			return nil
 		}
 		msgs := gpa.NoMessages().AddAll(subMsgs)
@@ -320,7 +327,7 @@ func (c *consImpl) Message(msg gpa.Message) gpa.OutMessages {
 		case subsystemTypeDSS:
 			return msgs.AddAll(c.subDSS.DSSOutputReceived(sub.Output()))
 		default:
-			c.log.Warnf("unexpected subsystem after check: %+v", msg)
+			c.log.LogWarnf("unexpected subsystem after check: %+v", msg)
 			return nil
 		}
 	}
@@ -425,7 +432,7 @@ func (c *consImpl) uponSMSaveProducedBlockDone(block state.Block) gpa.OutMessage
 
 func (c *consImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
 	if anchor == nil {
-		c.log.Debugf("ACS got ⊥ as input, no L1 info can be fetched.")
+		c.log.LogDebugf("ACS got ⊥ as input, no L1 info can be fetched.")
 		return c.subACS.L1InfoReceived([]*coin.CoinWithRef{}, nil)
 	}
 	c.output.NeedNodeConnL1Info = anchor
@@ -433,7 +440,7 @@ func (c *consImpl) uponNCInputsReady(anchor *isc.StateAnchor) gpa.OutMessages {
 }
 
 func (c *consImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, l1params *parameters.L1Params) gpa.OutMessages {
-	c.log.Debugf("L1 info received, gasCoins=%v, l1Params=%v", gasCoins, l1params)
+	c.log.LogDebugf("L1 info received, gasCoins=%v, l1Params=%v", gasCoins, l1params)
 	c.output.NeedNodeConnL1Info = nil
 	return c.subACS.L1InfoReceived(gasCoins, l1params)
 }
@@ -442,7 +449,7 @@ func (c *consImpl) uponNCOutputReady(gasCoins []*coin.CoinWithRef, l1params *par
 // DSS
 
 func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
-	c.log.Debugf("uponDSSInitialInputsReady")
+	c.log.LogDebugf("uponDSSInitialInputsReady")
 	sub, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dss.NewInputStart())
 	if err != nil {
 		panic(fmt.Errorf("cannot provide input to DSS: %w", err))
@@ -453,12 +460,12 @@ func (c *consImpl) uponDSSInitialInputsReady() gpa.OutMessages {
 }
 
 func (c *consImpl) uponDSSIndexProposalReady(indexProposal []int) gpa.OutMessages {
-	c.log.Debugf("uponDSSIndexProposalReady")
+	c.log.LogDebugf("uponDSSIndexProposalReady")
 	return c.subACS.DSSIndexProposalReceived(indexProposal)
 }
 
 func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.NodeID][]int, messageToSign []byte) gpa.OutMessages {
-	c.log.Debugf("uponDSSSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
+	c.log.LogDebugf("uponDSSSigningInputsReceived(decidedIndexProposals=%+v, H(messageToSign)=%v)", decidedIndexProposals, hashing.HashDataBlake2b(messageToSign))
 	dssDecidedInput := dss.NewInputDecided(decidedIndexProposals, messageToSign)
 	subDSS, subMsgs, err := c.msgWrapper.DelegateInput(subsystemTypeDSS, 0, dssDecidedInput)
 	if err != nil {
@@ -470,7 +477,7 @@ func (c *consImpl) uponDSSSigningInputsReceived(decidedIndexProposals map[gpa.No
 }
 
 func (c *consImpl) uponDSSOutputReady(signature []byte) gpa.OutMessages {
-	c.log.Debugf("uponDSSOutputReady")
+	c.log.LogDebugf("uponDSSOutputReady")
 	return c.subTX.SignatureReceived(signature)
 }
 
@@ -485,10 +492,16 @@ func (c *consImpl) uponACSInputsReceived(
 	gasCoins []*coin.CoinWithRef, // Can be nil.
 	l1params *parameters.L1Params, // Can be nil.
 ) gpa.OutMessages {
+	rotateTo := c.rotateTo
+	if rotateTo != nil && rotateTo.Equals(*c.dkShare.GetAddress().AsIotaAddress()) {
+		// Do not propose to rotate to the existing committee.
+		rotateTo = nil
+	}
 	batchProposal := bp.NewBatchProposal(
 		*c.dkShare.GetIndex(),
 		baseAliasOutput, // Will be NIL in the case of ⊥ proposal.
 		util.NewFixedSizeBitVector(c.dkShare.GetN()).SetBits(dssIndexProposal),
+		rotateTo,
 		timeData,
 		c.validatorAgentID,
 		requestRefs, // Will be [] in the case of ⊥ proposal.
@@ -509,7 +522,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 	if aggr.ShouldBeSkipped() {
 		// Cannot proceed with such proposals.
 		// Have to retry the consensus after some time with the next log index.
-		c.log.Infof("Terminating consensus with status=Skipped, there is no way to aggregate batch proposal.")
+		c.log.LogInfof("Terminating consensus with status=Skipped, there is no way to aggregate batch proposal.")
 		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
@@ -517,7 +530,21 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 	bao := aggr.DecidedBaseAliasOutput()
 	baoID := bao.GetObjectID()
 	reqs := aggr.DecidedRequestRefs()
-	c.log.Debugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
+	c.log.LogDebugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
+	if aggr.DecidedRotateTo() != nil {
+		c.log.LogDebugf("Will rotate to %v", aggr.DecidedRotateTo().ToHex())
+		rotationPTB := vmtxbuilder.NewAnchorTransactionBuilder(bao.ISCPackage(), bao, c.dkShare.GetAddress())
+		rotationPTB.RotationTransaction(aggr.DecidedRotateTo())
+		rotationPTX := rotationPTB.BuildTransactionEssence(bao.GetStateMetadata(), 0)
+		rotationTXD := c.makeTransactionData(&rotationPTX, aggr)
+		rotationTXB := c.makeTransactionBytes(rotationTXD)
+		return gpa.NoMessages().
+			AddAll(c.subTX.UnsignedTXReceived(rotationTXD)).
+			AddAll(c.subTX.BlockSaved(nil)).
+			AddAll(c.subTX.AnchorDecided(bao)).
+			AddAll(c.subDSS.MessageToSignReceived(rotationTXB)).
+			AddAll(c.subDSS.DecidedIndexProposalsReceived(aggr.DecidedDSSIndexProposals()))
+	}
 	return gpa.NoMessages().
 		AddAll(c.subMP.RequestsNeeded(reqs)).
 		AddAll(c.subSM.DecidedVirtualStateNeeded(bao)).
@@ -552,7 +579,7 @@ func (c *consImpl) uponRNDSigSharesReady(dataToSign []byte, partialSigs map[gpa.
 	}
 	sig, err := c.dkShare.BLSRecoverMasterSignature(partialSigArray, dataToSign)
 	if err != nil {
-		c.log.Warnf("Cannot reconstruct BLS signature from %v/%v sigShares: %v", len(partialSigs), c.dkShare.GetN(), err)
+		c.log.LogWarnf("Cannot reconstruct BLS signature from %v/%v sigShares: %v", len(partialSigs), c.dkShare.GetN(), err)
 		return false, nil // Continue to wait for other sig shares.
 	}
 	return true, c.subVM.RandomnessReceived(hashing.HashDataBlake2b(sig.Signature.Bytes()))
@@ -572,11 +599,10 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 	gasCoin := gasCoins[0]
 
 	c.output.NeedVMResult = &vm.VMTask{
-		Processors: c.processorCache,
-		Anchor:     &stateAnchor,
-		GasCoin:    gasCoin,
-		// FIXME pass we l1param to this func instead of calling parameters.L1()
-		L1Params:             parameters.L1(),
+		Processors:           c.processorCache,
+		Anchor:               &stateAnchor,
+		GasCoin:              gasCoin,
+		L1Params:             aggregatedProposals.AggregatedL1Params(),
 		Store:                c.chainStore,
 		Requests:             aggregatedProposals.OrderedRequests(requests, *randomness),
 		Timestamp:            aggregatedProposals.AggregatedTime(),
@@ -584,7 +610,7 @@ func (c *consImpl) uponVMInputsReceived(aggregatedProposals *bp.AggregatedBatchP
 		ValidatorFeeTarget:   aggregatedProposals.ValidatorFeeTarget(*randomness),
 		EstimateGasMode:      false,
 		EnableGasBurnLogging: false,
-		Log:                  c.log.Named("VM"),
+		Log:                  c.log.NewChildLogger("VM"),
 		Migrations:           allmigrations.DefaultScheme,
 	}
 	return c.subTX.AnchorDecided(decidedBaseAliasOutput)
@@ -595,7 +621,7 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 	if len(vmResult.RequestResults) == 0 {
 		// No requests were processed, don't have what to do.
 		// Will need to retry the consensus with the next log index some time later.
-		c.log.Infof("Terminating consensus with status=Skipped, 0 requests processed.")
+		c.log.LogInfof("Terminating consensus with status=Skipped, 0 requests processed.")
 		c.output.Status = Skipped
 		c.term.haveOutputProduced()
 		return nil
@@ -604,17 +630,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
 	txData := c.makeTransactionData(&unsignedTX, aggregatedProposals)
-	txnBytes, err := bcs.Marshal(txData)
-	if err != nil {
-		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
-	}
-	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
-	txnBytesHash := blake2b.Sum256(txnBytes)
-	txnBytes = txnBytesHash[:]
+	txBytes := c.makeTransactionBytes(txData)
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
 		AddAll(c.subTX.UnsignedTXReceived(txData)).
-		AddAll(c.subDSS.MessageToSignReceived(txnBytes))
+		AddAll(c.subDSS.MessageToSignReceived(txBytes))
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -635,6 +655,16 @@ func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggre
 	return &tx
 }
 
+func (c *consImpl) makeTransactionBytes(txData *iotago.TransactionData) []byte {
+	txnBytes, err := bcs.Marshal(txData)
+	if err != nil {
+		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
+	}
+	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
+	txnBytesHash := blake2b.Sum256(txnBytes)
+	return txnBytesHash[:]
+}
+
 // Everything is ready for the output TX, produce it.
 func (c *consImpl) uponTXInputsReady(decidedAO *isc.StateAnchor, unsignedTX *iotago.TransactionData, block state.Block, signature []byte) gpa.OutMessages {
 	suiSignature := cryptolib.NewSignature(c.dkShare.GetSharedPublic(), signature).AsIotaSignature()
@@ -645,7 +675,7 @@ func (c *consImpl) uponTXInputsReady(decidedAO *isc.StateAnchor, unsignedTX *iot
 		Block:       block,
 	}
 	c.output.Status = Completed
-	c.log.Infof("Terminating consensus with status=Completed")
+	c.log.LogInfof("Terminating consensus with status=Completed")
 	c.term.haveOutputProduced()
 	return nil
 }

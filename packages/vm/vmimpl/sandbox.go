@@ -9,8 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	iotago "github.com/iotaledger/iota.go/v3"
-
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -35,7 +34,7 @@ func NewSandbox(reqctx *requestContext) isc.Sandbox {
 
 // Call calls an entry point of contract, passes parameters and funds
 func (s *contractSandbox) Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
-	s.Ctx.GasBurn(gas.BurnCodeCallContract)
+	s.Ctx.GasBurn(gas.BurnCodeCallContract) //nolint:typecheck
 	return s.Ctx.Call(msg, allowance)
 }
 
@@ -126,7 +125,7 @@ func (s *contractSandbox) Privileged() isc.Privileged {
 
 // privileged methods:
 
-func (s *contractSandbox) CreateNewFoundry(scheme iotago.TokenScheme, metadata []byte) (uint32, uint64) {
+func (s *contractSandbox) CreateNewFoundry(scheme isc.SimpleTokenScheme, metadata []byte) (uint32, uint64) {
 	return s.reqctx.CreateNewFoundry(scheme, metadata)
 }
 
@@ -138,7 +137,7 @@ func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.reqctx.ModifyFoundrySupply(sn, delta)
 }
 
-func (s *contractSandbox) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, *iotago.NFTOutput) {
+func (s *contractSandbox) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, iotago.ObjectID) {
 	return s.reqctx.MintNFT(addr, immutableMetadata, issuer)
 }
 

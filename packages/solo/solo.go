@@ -13,12 +13,11 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zapcore"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
-
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient/iotaclienttest"
@@ -39,7 +38,6 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
@@ -58,7 +56,7 @@ const (
 type Solo struct {
 	// instance of the test
 	T                    Context
-	logger               *logger.Logger
+	logger               log.Logger
 	chainsMutex          sync.RWMutex
 	chains               map[isc.ChainID]*Chain
 	processorConfig      *processors.Config
@@ -67,6 +65,7 @@ type Solo struct {
 	publisher            *publisher.Publisher
 	ctx                  context.Context
 	mockTime             time.Time
+	l1ParamsFetcher      parameters.L1ParamsFetcher
 
 	l1Config L1Config
 }
@@ -79,9 +78,11 @@ type chainData struct {
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID isc.ChainID
 
-	// OriginatorPrivateKey the key pair used to create the chain (origin transaction).
-	// It is a default key pair in many of Solo calls which require private key.
-	OriginatorPrivateKey *cryptolib.KeyPair
+	// OperatorPrivateKey the key pair used to create and operate the chain.
+	OperatorPrivateKey *cryptolib.KeyPair
+
+	// OwnerPrivateKey the key pair designed as ChainOwner
+	OwnerPrivateKey *cryptolib.KeyPair
 
 	db kvstore.KVStore
 
@@ -93,16 +94,13 @@ type chainData struct {
 type Chain struct {
 	chainData
 
-	OriginatorAddress *cryptolib.Address
-	OriginatorAgentID isc.AgentID
-
 	// Env is a pointer to the global structure of the 'solo' test
 	Env *Solo
 
 	// Store is where the chain data (blocks, state) is stored
 	store indexedstore.IndexedStore
 	// Log is the named logger of the chain
-	log *logger.Logger
+	log log.Logger
 	// global processor cache
 	proc *processors.Config
 	// related to asynchronous backlog processing
@@ -116,7 +114,7 @@ type InitOptions struct {
 	Debug             bool
 	PrintStackTrace   bool
 	GasBurnLogEnabled bool
-	Log               *logger.Logger
+	Log               log.Logger
 }
 
 type L1Config struct {
@@ -144,7 +142,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 	if opt.Log == nil {
 		opt.Log = testlogger.NewNamedLogger(t.Name(), timeLayout)
 		if !opt.Debug {
-			opt.Log = testlogger.WithLevel(opt.Log, zapcore.InfoLevel, opt.PrintStackTrace)
+			opt.Log = testlogger.WithLevel(opt.Log, log.LevelInfo, opt.PrintStackTrace)
 		}
 	}
 	evmlogger.Init(opt.Log)
@@ -155,11 +153,6 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 			IotaFaucetURL: l1starter.Instance().FaucetURL(),
 			ISCPackageID:  l1starter.Instance().ISCPackageID(),
 		}
-	}
-
-	err := parameters.InitL1(*l1starter.Instance().L1Client().IotaClient(), opt.Log)
-	if err != nil {
-		panic(err)
 	}
 
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -173,11 +166,12 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		processorConfig:      coreprocessors.NewConfigWithTestContracts(),
 		enableGasBurnLogging: opt.GasBurnLogEnabled,
 		seed:                 cryptolib.NewSeed(),
-		publisher:            publisher.New(opt.Log.Named("publisher")),
+		publisher:            publisher.New(opt.Log.NewChildLogger("publisher")),
+		l1ParamsFetcher:      parameters.NewL1ParamsFetcher(l1starter.Instance().L1Client().IotaClient(), opt.Log),
 		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
-		ret.logger.Infof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
+		ret.logger.LogInfof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
 	})
 
 	go ret.publisher.Run(ctx)
@@ -225,10 +219,6 @@ func (env *Solo) IterateChainLatestStates(
 	}
 }
 
-func (env *Solo) SyncLog() {
-	_ = env.logger.Sync()
-}
-
 func (env *Solo) Publisher() *publisher.Publisher {
 	return env.publisher
 }
@@ -245,15 +235,15 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultChainOriginatorBaseTokens = 50 * isc.Million
+	DefaultChainOwnerBaseTokens = 50 * isc.Million
 )
 
 // NewChain deploys a new default chain instance.
-func (env *Solo) NewChain(depositFundsForOriginator ...bool) *Chain {
+func (env *Solo) NewChain(depositFundsForOwner ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	if len(depositFundsForOriginator) == 0 || depositFundsForOriginator[0] {
+	if len(depositFundsForOwner) == 0 || depositFundsForOwner[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositBaseTokensToL2(DefaultChainOriginatorBaseTokens, ret.OriginatorPrivateKey)
+		err := ret.DepositBaseTokensToL2(DefaultChainOwnerBaseTokens, ret.OwnerPrivateKey)
 		require.NoError(env.T, err)
 	}
 	return ret
@@ -263,84 +253,124 @@ func (env *Solo) ISCPackageID() iotago.PackageID {
 	return env.l1Config.ISCPackageID
 }
 
+// MustWithWaitForNextVersion waits for an object to change its version and panics on timeouts
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
+func (env *Solo) MustWithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) *iotago.ObjectRef {
+	return lo.Must(env.WithWaitForNextVersion(currentRef, cb))
+}
+
+// WithWaitForNextVersion waits for an object to change its version.
+// This tries to make sure that an object meant to be used multiple times, does not get referenced twice with the same ref.
+// Handle with care. Only use it on objects that are expected to be used again, like a GasCoin/Generic coin/Requests
+func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func()) (*iotago.ObjectRef, error) {
+	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
+}
+
 func (env *Solo) deployChain(
-	chainOriginator *cryptolib.KeyPair,
+	chainOwner *cryptolib.KeyPair,
 	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (chainData, *isc.StateAnchor) {
-	env.logger.Debugf("deploying new chain '%s'", name)
+	env.logger.LogDebugf("deploying new chain '%s'", name)
 
-	if chainOriginator == nil {
-		chainOriginator = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
-		originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-		env.GetFundsFromFaucet(originatorAddr)
+	if chainOwner == nil {
+		chainOwner = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
+		env.GetFundsFromFaucet(chainOwner.Address())
 	}
 
+	chainOperator := env.NewKeyPairFromIndex(-2000 + len(env.chains))
+	env.GetFundsFromFaucet(chainOperator.Address())
+
 	initParams := origin.NewInitParams(
-		isc.NewAddressAgentID(chainOriginator.Address()),
+		isc.NewAddressAgentID(chainOwner.Address()),
 		evmChainID,
 		blockKeepAmount,
 		true,
 	)
 
-	originatorAddr := chainOriginator.GetPublicKey().AsAddress()
-
-	baseTokenCoinInfo := env.L1CoinInfo(coin.BaseTokenType)
-
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(chainOriginator, isc.GasCoinTargetValue)
+	gasCoinRef := env.makeBaseTokenCoin(chainOperator, isc.GasCoinTargetValue, nil)
+	env.logger.LogInfof("Chain Originator address: %v\n", chainOperator)
+	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
-	block, stateMetadata := origin.InitChain(
+	var block state.Block
+	var stateMetadata *transaction.StateMetadata
+
+	block, stateMetadata = origin.InitChain(
 		schemaVersion,
 		store,
 		initParams.Encode(),
 		*gasCoinRef.ObjectID,
 		initCommonAccountBaseTokens,
-		baseTokenCoinInfo,
+		env.L1Params(),
 	)
 
 	var initCoin *iotago.ObjectRef
+
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
-			chainOriginator,
+			chainOperator,
 			initCommonAccountBaseTokens,
+			func(c *iotajsonrpc.Coin) bool {
+				return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID)
+			},
 		)
 	}
 
-	anchorRef, err := env.ISCMoveClient().StartNewChain(
-		env.ctx,
-		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainOriginator,
-			ChainOwnerAddress: chainOriginator.Address(),
-			PackageID:         env.ISCPackageID(),
-			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       initCoin,
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+	gasPayment, err := iotajsonrpc.PickupCoinsWithFilter(
+		env.L1BaseTokenCoins(chainOperator.Address()),
+		uint64(iotaclient.DefaultGasBudget),
+		func(c *iotajsonrpc.Coin) bool {
+			return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID) &&
+				(initCoin == nil || !c.CoinObjectID.Equals(*initCoin.ObjectID))
 		},
 	)
 	require.NoError(env.T, err)
+
+	var anchorRef *iscmove.AnchorWithRef
+	env.MustWithWaitForNextVersion(gasPayment.CoinRefs()[0], func() {
+		env.MustWithWaitForNextVersion(initCoin, func() {
+			anchorRef, err = env.ISCMoveClient().StartNewChain(
+				env.ctx,
+				&iscmoveclient.StartNewChainRequest{
+					Signer:            chainOperator,
+					ChainOwnerAddress: chainOperator.Address(),
+					PackageID:         env.ISCPackageID(),
+					StateMetadata:     stateMetadata.Bytes(),
+					InitCoinRef:       initCoin,
+					GasPrice:          iotaclient.DefaultGasPrice,
+					GasBudget:         iotaclient.DefaultGasBudget,
+					GasPayments:       gasPayment.CoinRefs(),
+				},
+			)
+		})
+	})
+
+	require.NoError(env.T, err)
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
-	env.logger.Infof(
-		"deployed chain '%s' - ID: %s - state controller address: %s - origin trie root: %s",
+	env.logger.LogInfof(
+		"deployed chain '%s' - ID: %s - chain operator: %s - chain owner: %s - origin trie root: %s",
 		name,
 		chainID,
-		originatorAddr,
+		chainOperator.Address(),
+		chainOwner.Address(),
 		block.TrieRoot(),
 	)
 
 	return chainData{
-		Name:                 name,
-		ChainID:              chainID,
-		OriginatorPrivateKey: chainOriginator,
-		db:                   db,
-		migrationScheme:      allmigrations.DefaultScheme,
+		Name:               name,
+		ChainID:            chainID,
+		OperatorPrivateKey: chainOperator,
+		OwnerPrivateKey:    chainOwner,
+		db:                 db,
+		migrationScheme:    allmigrations.DefaultScheme,
 	}, nil
 }
 
@@ -377,20 +407,18 @@ func (env *Solo) NewChainExt(
 	defer env.chainsMutex.Unlock()
 	ch := env.addChain(chData)
 
-	ch.log.Infof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
+	ch.log.LogInfof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
 	return ch, anchorRef
 }
 
 func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
-		chainData:         chData,
-		OriginatorAddress: chData.OriginatorPrivateKey.GetPublicKey().AsAddress(),
-		OriginatorAgentID: isc.NewAddressAgentID(chData.OriginatorPrivateKey.GetPublicKey().AsAddress()),
-		Env:               env,
-		store:             indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
-		proc:              env.processorConfig,
-		log:               env.logger.Named(chData.Name),
-		migrationScheme:   chData.migrationScheme,
+		chainData:       chData,
+		Env:             env,
+		store:           indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
+		proc:            env.processorConfig,
+		log:             env.logger.NewChildLogger(chData.Name),
+		migrationScheme: chData.migrationScheme,
 	}
 	env.chains[chData.ChainID] = ch
 	return ch
@@ -429,6 +457,27 @@ func (ch *Chain) GetLatestAnchor() *isc.StateAnchor {
 	return &stateAnchor
 }
 
+func (env *Solo) GetCoin(id *iotago.ObjectID) *coin.CoinWithRef {
+	getObjRes, err := env.ISCMoveClient().GetObject(
+		env.ctx,
+		iotaclient.GetObjectRequest{
+			ObjectID: id,
+			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
+		},
+	)
+	require.NoError(env.T, err)
+	require.Nil(env.T, getObjRes.Error)
+	var moveGasCoin iscmoveclient.MoveCoin
+	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
+	require.NoError(env.T, err)
+	gasCoinRef := getObjRes.Data.Ref()
+	return &coin.CoinWithRef{
+		Type:  coin.BaseTokenType,
+		Value: coin.Value(moveGasCoin.Balance),
+		Ref:   &gasCoinRef,
+	}
+}
+
 func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 	anchor, err := ch.Env.ISCMoveClient().GetAnchorFromObjectID(
 		ch.Env.ctx,
@@ -438,23 +487,7 @@ func (ch *Chain) GetLatestGasCoin() *coin.CoinWithRef {
 
 	metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 	require.NoError(ch.Env.T, err)
-	getObjRes, err := ch.Env.ISCMoveClient().GetObject(
-		ch.Env.ctx,
-		iotaclient.GetObjectRequest{
-			ObjectID: metadata.GasCoinObjectID,
-			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
-		},
-	)
-	require.NoError(ch.Env.T, err)
-	var moveGasCoin iscmoveclient.MoveCoin
-	err = iotaclient.UnmarshalBCS(getObjRes.Data.Bcs.Data.MoveObject.BcsBytes, &moveGasCoin)
-	require.NoError(ch.Env.T, err)
-	gasCoinRef := getObjRes.Data.Ref()
-	return &coin.CoinWithRef{
-		Type:  coin.BaseTokenType,
-		Value: coin.Value(moveGasCoin.Balance),
-		Ref:   &gasCoinRef,
-	}
+	return ch.Env.GetCoin(metadata.GasCoinObjectID)
 }
 
 func (ch *Chain) GetLatestAnchorWithBalances() (*isc.StateAnchor, *isc.Assets) {
@@ -494,7 +527,7 @@ func (ch *Chain) RunRequestBatch(maxRequestsInBlock int) (
 	ptbRes, results := ch.runRequestsNolock(batch)
 	for _, res := range results {
 		if res.Receipt.Error != nil {
-			ch.log.Errorf("runRequestsSync: %v", res.Receipt.Error)
+			ch.log.LogErrorf("runRequestsSync: %v", res.Receipt.Error)
 		}
 	}
 	return ptbRes, results
@@ -520,7 +553,7 @@ func (ch *Chain) ID() isc.ChainID {
 	return ch.ChainID
 }
 
-func (ch *Chain) Log() *logger.Logger {
+func (ch *Chain) Log() log.Logger {
 	return ch.log
 }
 
@@ -530,12 +563,12 @@ func (ch *Chain) Processors() *processors.Config {
 
 // ---------------------------------------------
 
-func (env *Solo) L1CoinInfo(coinType coin.Type) *isc.IotaCoinInfo {
-	md, err := env.IotaClient().GetCoinMetadata(env.ctx, coinType.String())
+func (env *Solo) L1CoinInfo(coinType coin.Type) *parameters.IotaCoinInfo {
+	md, err := env.L1Client().GetCoinMetadata(env.ctx, coinType.String())
 	require.NoError(env.T, err)
-	ts, err := env.IotaClient().GetTotalSupply(env.ctx, coinType.String())
+	ts, err := env.L1Client().GetTotalSupply(env.ctx, coinType.String())
 	require.NoError(env.T, err)
-	return isc.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
+	return parameters.IotaCoinInfoFromL1Metadata(coinType, md, coin.Value(ts.Value.Uint64()))
 }
 
 func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
@@ -543,7 +576,7 @@ func (env *Solo) L1BaseTokenCoins(addr *cryptolib.Address) []*iotajsonrpc.Coin {
 }
 
 func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
-	r, err := env.IotaClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
+	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner: addr.AsIotaAddress(),
 		Limit: math.MaxUint,
 	})
@@ -553,7 +586,7 @@ func (env *Solo) L1AllCoins(addr *cryptolib.Address) iotajsonrpc.Coins {
 
 func (env *Solo) L1Coins(addr *cryptolib.Address, coinType coin.Type) []*iotajsonrpc.Coin {
 	coinTypeStr := coinType.String()
-	r, err := env.IotaClient().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
+	r, err := env.L1Client().GetCoins(env.ctx, iotaclient.GetCoinsRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: &coinTypeStr,
 		Limit:    math.MaxUint,
@@ -567,7 +600,7 @@ func (env *Solo) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 }
 
 func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin.Value {
-	r, err := env.IotaClient().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
+	r, err := env.L1Client().GetBalance(env.ctx, iotaclient.GetBalanceRequest{
 		Owner:    addr.AsIotaAddress(),
 		CoinType: coinType.String(),
 	})
@@ -581,7 +614,7 @@ func (env *Solo) L1NFTs(addr *cryptolib.Address) []iotago.ObjectID {
 
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
-	r, err := env.IotaClient().GetAllBalances(env.ctx, addr.AsIotaAddress())
+	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
 	require.NoError(env.T, err)
 	cb := isc.NewCoinBalances()
 	for _, b := range r {
@@ -670,7 +703,7 @@ func (env *Solo) executePTB(
 	txnBytes, err := bcs.Marshal(&tx)
 	require.NoError(env.T, err)
 
-	execRes, err := env.IotaClient().SignAndExecuteTransaction(
+	execRes, err := env.L1Client().SignAndExecuteTransaction(
 		env.ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txnBytes,
@@ -697,7 +730,7 @@ func (env *Solo) L1DeployCoinPackage(keyPair *cryptolib.KeyPair) (
 ) {
 	return iotaclienttest.DeployCoinPackage(
 		env.T,
-		env.IotaClient(),
+		env.L1Client().IotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
 		contracts.Testcoin(),
 	)
@@ -708,17 +741,23 @@ func (env *Solo) L1MintCoin(
 	packageID *iotago.PackageID,
 	moduleName iotago.Identifier,
 	typeTag iotago.Identifier,
-	treasuryCapObjectID *iotago.ObjectID,
+	treasuryCapObject *iotago.ObjectRef,
 	mintAmount uint64,
 ) (coinRef *iotago.ObjectRef) {
 	return iotaclienttest.MintCoins(
 		env.T,
-		env.IotaClient(),
+		env.L1Client().IotaClient(),
 		cryptolib.SignerToIotaSigner(keyPair),
 		packageID,
 		moduleName,
 		typeTag,
-		treasuryCapObjectID,
+		treasuryCapObject,
 		mintAmount,
 	)
+}
+
+func (env *Solo) L1Params() *parameters.L1Params {
+	l1Params, err := env.l1ParamsFetcher.GetOrFetchLatest(env.ctx)
+	require.NoError(env.T, err)
+	return l1Params
 }

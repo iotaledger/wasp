@@ -58,12 +58,12 @@ func (h *magicContractHandler) CallView(msg iscmagic.ISCMessage) isc.CallArgumen
 
 // handler for ISCSandbox::getAllowanceFrom
 func (h *magicContractHandler) GetAllowanceFrom(addr common.Address) iscmagic.ISCAssets {
-	return iscmagic.WrapISCAssets(getAllowance(h.ctx, addr, h.caller.Address()))
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, addr, h.caller))
 }
 
 // handler for ISCSandbox::getAllowanceTo
 func (h *magicContractHandler) GetAllowanceTo(target common.Address) iscmagic.ISCAssets {
-	return iscmagic.WrapISCAssets(getAllowance(h.ctx, h.caller.Address(), target))
+	return iscmagic.WrapISCAssets(getAllowance(h.ctx, h.caller, target))
 }
 
 // handler for ISCSandbox::getAllowance

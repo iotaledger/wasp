@@ -9,10 +9,9 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	bcs "github.com/iotaledger/bcs-go"
 	_ "github.com/iotaledger/wasp/packages/evm/evmtypes" // register BCS custom encoder for Transaction
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
 )
 
@@ -33,7 +32,7 @@ func NewEVMOffLedgerTxRequest(chainID ChainID, tx *types.Transaction) (OffLedger
 	return &evmOffLedgerTxRequest{
 		chainID: chainID,
 		tx:      tx,
-		sender:  NewEthereumAddressAgentID(chainID, sender),
+		sender:  NewEthereumAddressAgentID(sender),
 	}, nil
 }
 
@@ -43,7 +42,7 @@ func (req *evmOffLedgerTxRequest) BCSInit() error {
 	if err != nil {
 		return err
 	}
-	req.sender = NewEthereumAddressAgentID(req.chainID, sender)
+	req.sender = NewEthereumAddressAgentID(sender)
 	return nil
 }
 
@@ -103,10 +102,6 @@ func (req *evmOffLedgerTxRequest) String() string {
 		req.ID(),
 		data,
 	)
-}
-
-func (req *evmOffLedgerTxRequest) TargetAddress() *cryptolib.Address {
-	return req.chainID.AsAddress()
 }
 
 func (req *evmOffLedgerTxRequest) VerifySignature() error {

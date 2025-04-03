@@ -7,8 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -26,17 +24,14 @@ func initConsensusMetricsCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
-			chainAddress, err := cryptolib.NewAddressFromHexString(chainAlias)
-			log.Check(err)
 
-			chainID := isc.ChainIDFromAddress(chainAddress)
 			workflowStatus, _, err := client.MetricsAPI.
-				GetChainWorkflowMetrics(ctx, chainID.String()).
+				GetChainWorkflowMetrics(ctx).
 				Execute()
 			log.Check(err)
 
 			pipeMetrics, _, err := client.MetricsAPI.
-				GetChainPipeMetrics(ctx, chainID.String()).
+				GetChainPipeMetrics(ctx).
 				Execute()
 			log.Check(err)
 
@@ -48,7 +43,7 @@ func initConsensusMetricsCmd() *cobra.Command {
 			table[3] = makeWorkflowTableRow("Virtual machine started", workflowStatus.FlagVMStarted, workflowStatus.TimeVMStarted)
 			table[4] = makeWorkflowTableRow("Virtual machine result signed", workflowStatus.FlagVMResultSigned, workflowStatus.TimeVMResultSigned)
 			table[5] = makeWorkflowTableRow("Transaction finalized", workflowStatus.FlagTransactionFinalized, workflowStatus.TimeTransactionFinalized)
-			table[6] = makeWorkflowTableRow("Transaction posted to L1", workflowStatus.FlagTransactionPosted, workflowStatus.TimeTransactionPosted) // TODO: is not meaningful, if I am not a contributor
+			table[6] = makeWorkflowTableRow("Transaction posted to L1", workflowStatus.FlagTransactionPosted, workflowStatus.TimeTransactionPosted)
 			table[7] = makeWorkflowTableRow("Transaction seen by L1", workflowStatus.FlagTransactionSeen, workflowStatus.TimeTransactionSeen)
 			table[8] = makeWorkflowTableRow("Consensus is completed", !(workflowStatus.FlagInProgress), workflowStatus.TimeCompleted)
 			table[9] = makeWorkflowTableRow("Current state index", workflowStatus.CurrentStateIndex, time.Time{})

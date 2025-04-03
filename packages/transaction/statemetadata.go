@@ -1,11 +1,14 @@
 package transaction
 
 import (
+	"encoding/json"
+
+	bcs "github.com/iotaledger/bcs-go"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -46,6 +49,14 @@ func StateMetadataFromBytes(data []byte) (*StateMetadata, error) {
 
 func (s *StateMetadata) Bytes() []byte {
 	return bcs.MustMarshal(s)
+}
+
+func (s *StateMetadata) String() string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }
 
 func L1CommitmentFromAnchor(anchor *isc.StateAnchor) (*state.L1Commitment, error) {

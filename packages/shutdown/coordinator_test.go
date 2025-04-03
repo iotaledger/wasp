@@ -11,7 +11,7 @@ import (
 
 func TestShutdownCoordinator(t *testing.T) {
 	log := testlogger.NewLogger(t)
-	defer log.Sync()
+	defer log.Shutdown()
 	sc := shutdown.NewCoordinator("test", log)
 	require.True(t, sc.CheckNestedDone())
 

@@ -6,9 +6,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/samber/lo"
-	"go.uber.org/zap"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -28,7 +28,7 @@ func runISCTask(
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
 	estimateGasMode bool,
@@ -51,7 +51,7 @@ func runISCTask(
 		EnableGasBurnLogging: estimateGasMode,
 		EstimateGasMode:      estimateGasMode,
 		EVMTracer:            evmTracer,
-		Log:                  log.Desugar().WithOptions(zap.AddCallerSkip(1)).Sugar(),
+		Log:                  log,
 		Migrations:           migs,
 	}
 	res, err := vmimpl.Run(task)
@@ -86,7 +86,7 @@ func runISCRequest(
 	l1Params *parameters.L1Params,
 	store indexedstore.IndexedStore,
 	processors *processors.Config,
-	log *logger.Logger,
+	log log.Logger,
 	blockTime time.Time,
 	req isc.Request,
 	estimateGasMode bool,

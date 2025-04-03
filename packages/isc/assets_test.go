@@ -5,15 +5,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
+
+func TestAssetsNativeToken(t *testing.T) {
+	a := isc.NewAssets(1234)
+	a.AddCoin(coin.MustTypeFromString("0x3::testiota::TESTIOTA"), 4321)
+	require.Len(t, a.Coins.NativeTokens(), 1)
+}
 
 func TestAssetsBagWithBalancesToAssets(t *testing.T) {
 	assetsBag := iscmove.AssetsBagWithBalances{

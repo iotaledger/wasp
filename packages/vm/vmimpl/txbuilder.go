@@ -45,11 +45,11 @@ func (vmctx *vmContext) deductTopUpFeeFromCommonAccount(fee coin.Value) {
 	bal.AddBaseTokens(fee)
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		vmctx.accountsStateWriterFromChainState(chainState).
-			DebitFromAccount(accounts.CommonAccount(), bal, vmctx.ChainID())
+			DebitFromAccount(accounts.CommonAccount(), bal)
 	})
 }
 
 func (vmctx *vmContext) commonAccountBalance() coin.Value {
 	return accounts.NewStateReaderFromChainState(vmctx.schemaVersion, vmctx.stateDraft).
-		GetBaseTokensBalanceDiscardExtraDecimals(accounts.CommonAccount(), vmctx.ChainID())
+		GetBaseTokensBalanceDiscardExtraDecimals(accounts.CommonAccount())
 }

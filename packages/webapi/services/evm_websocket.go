@@ -14,7 +14,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/time/rate"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 )
 
@@ -63,7 +64,7 @@ func (a *activityRateLimiter) Tokens() float64 {
 type websocketContext struct {
 	rateLimiterMutex sync.Mutex
 	rateLimiters     map[string]*activityRateLimiter
-	logger           *logger.Logger
+	logger           log.Logger
 	syncPool         *sync.Pool
 	jsonRPCParams    *jsonrpc.Parameters
 }
@@ -72,20 +73,20 @@ func (w *websocketContext) runCleanupTimer(ctx context.Context) {
 	t := time.NewTicker(w.jsonRPCParams.WebsocketConnectionCleanupDuration)
 	defer t.Stop()
 
-	w.logger.Infof("[EVM WS] Cleanup process started")
+	w.logger.LogInfof("[EVM WS] Cleanup process started")
 
 	for {
 		select {
 		case <-t.C:
 			w.cleanupRateLimiters()
 		case <-ctx.Done():
-			w.logger.Infof("[EVM WS] Cleanup process stopped")
+			w.logger.LogInfof("[EVM WS] Cleanup process stopped")
 			return
 		}
 	}
 }
 
-func newWebsocketContext(logger *logger.Logger, jsonrpcParameters *jsonrpc.Parameters) *websocketContext {
+func newWebsocketContext(logger log.Logger, jsonrpcParameters *jsonrpc.Parameters) *websocketContext {
 	return &websocketContext{
 		syncPool:         new(sync.Pool),
 		jsonRPCParams:    jsonrpcParameters,
@@ -103,7 +104,16 @@ func (w *websocketContext) getRateLimiter(remoteIP string) *activityRateLimiter 
 		return w.rateLimiters[remoteIP]
 	}
 
-	limiter := rate.NewLimiter(rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerSecond), w.jsonRPCParams.WebsocketRateLimitBurst)
+	limit := rate.Limit(w.jsonRPCParams.WebsocketRateLimitMessagesPerSecond)
+	burst := w.jsonRPCParams.WebsocketRateLimitBurst
+
+	if !w.jsonRPCParams.WebsocketRateLimitEnabled {
+		limit = rate.Inf
+		burst = 0
+	}
+
+	limiter := rate.NewLimiter(limit, burst)
+
 	w.rateLimiters[remoteIP] = newActivityRateLimiter(limiter)
 
 	return w.rateLimiters[remoteIP]
@@ -115,22 +125,22 @@ func (w *websocketContext) cleanupRateLimiters() {
 
 	for ip, rateLimiter := range w.rateLimiters {
 		if time.Since(rateLimiter.LastActivity()) > w.jsonRPCParams.WebsocketClientBlockDuration {
-			w.logger.Debugf("[EVM WS] Removing rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
+			w.logger.LogDebugf("[EVM WS] Removing rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
 			delete(w.rateLimiters, ip)
 		} else {
-			w.logger.Debugf("[EVM WS] Keeping rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
+			w.logger.LogDebugf("[EVM WS] Keeping rate limiter for ip:[%v], lastActivity:[%v], blocked:[%v]\n", ip, rateLimiter.LastActivity().Format(time.RFC822), rateLimiter.Canceled())
 		}
 	}
 }
 
 type rateLimitedConn struct {
 	net.Conn
-	logger  *logger.Logger
+	logger  log.Logger
 	limiter *activityRateLimiter
 	realIP  string
 }
 
-func newRateLimitedConn(conn net.Conn, logger *logger.Logger, r *activityRateLimiter, realIP string) *rateLimitedConn {
+func newRateLimitedConn(conn net.Conn, logger log.Logger, r *activityRateLimiter, realIP string) *rateLimitedConn {
 	return &rateLimitedConn{
 		Conn:    conn,
 		logger:  logger,
@@ -145,19 +155,19 @@ func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 	}
 
 	if rlc.limiter.Canceled() {
-		rlc.logger.Warnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		rlc.logger.LogWarnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
 		return 0, rlc.Conn.Close()
 	}
 
 	if !rlc.limiter.Allow() {
-		rlc.logger.Warnf("[EVM WS Conn/Read] rate limit exceeded for ip:[%v], lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		rlc.logger.LogWarnf("[EVM WS Conn/Read] rate limit exceeded for ip:[%v], lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
 		return 0, rlc.Conn.Close()
 	}
 
 	numBytes, err := rlc.Conn.Read(b)
 
 	if rlc.limiter.Canceled() {
-		rlc.logger.Warnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		rlc.logger.LogWarnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
 		return 0, rlc.Conn.Close()
 	}
 
@@ -170,14 +180,14 @@ func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
 	}
 
 	if rlc.limiter.Canceled() {
-		rlc.logger.Warnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		rlc.logger.LogWarnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
 		return 0, rlc.Conn.Close()
 	}
 
 	numBytes, err := rlc.Conn.Write(b)
 
 	if rlc.limiter.Canceled() {
-		rlc.logger.Warnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
+		rlc.logger.LogWarnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
 		return 0, rlc.Conn.Close()
 	}
 
@@ -186,12 +196,12 @@ func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
 
 type rateLimitedEchoResponse struct {
 	*echo.Response
-	logger  *logger.Logger
+	logger  log.Logger
 	limiter *activityRateLimiter
 	realIP  string
 }
 
-func newRateLimitedEchoResponse(r *echo.Response, logger *logger.Logger, limiter *activityRateLimiter, realIP string) *rateLimitedEchoResponse {
+func newRateLimitedEchoResponse(r *echo.Response, logger log.Logger, limiter *activityRateLimiter, realIP string) *rateLimitedEchoResponse {
 	return &rateLimitedEchoResponse{r, logger, limiter, realIP}
 }
 
@@ -236,16 +246,16 @@ func websocketHandler(server *chainServer, wsContext *websocketContext, realIP s
 		rateLimiter := wsContext.getRateLimiter(realIP)
 		wsLogger := wsContext.logger
 
-		wsLogger.Warnf("Using rate limiter for:[%v], lastActivity:[%v], blocked:[%v]", realIP, rateLimiter.LastActivity(), rateLimiter.Canceled())
+		wsLogger.LogWarnf("Using rate limiter for:[%v], lastActivity:[%v], blocked:[%v]", realIP, rateLimiter.LastActivity(), rateLimiter.Canceled())
 		if rateLimiter.Canceled() {
-			wsLogger.Warnf("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded)\n", realIP)
+			wsLogger.LogWarnf("[EVM WS Conn] Connection from ip:[%v] dropped (previous rate limit exceeded)\n", realIP)
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
 
 		echoResponse, ok := w.(*echo.Response)
 		if !ok {
-			wsLogger.Warn("[EVM WS] Could not cast response to echo.Response")
+			wsLogger.LogWarn("[EVM WS] Could not cast response to echo.Response")
 			http.Error(w, "", http.StatusInternalServerError)
 
 			return
@@ -254,7 +264,7 @@ func websocketHandler(server *chainServer, wsContext *websocketContext, realIP s
 		rateLimitedResponseWriter := newRateLimitedEchoResponse(echoResponse, wsLogger, rateLimiter, realIP)
 		conn, err := upgrader.Upgrade(rateLimitedResponseWriter, r, nil)
 		if err != nil {
-			wsLogger.Info(fmt.Sprintf("[EVM WS] %s", err))
+			wsLogger.LogInfo(fmt.Sprintf("[EVM WS] %s", err))
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}

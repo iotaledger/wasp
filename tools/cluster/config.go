@@ -3,11 +3,13 @@ package cluster
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"os"
+	"path"
+
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"os"
-	"path"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/cluster/templates"
@@ -63,6 +65,15 @@ func NewConfig(waspConfig WaspConfig, l1Config l1starter.IotaNodeEndpoint, modif
 		if len(modifyConfig) > 0 && modifyConfig[0] != nil {
 			nodesConfigs[i] = modifyConfig[0](i, nodesConfigs[i])
 		}
+
+		apiURL := l1Config.APIURL()
+		base, err := url.Parse(apiURL)
+		if err != nil {
+			panic(fmt.Errorf("invalid API URL: %s", apiURL))
+		}
+		// FIXME we need to handle non-SSL URLs too
+		nodesConfigs[i].L1HttpHost = "https://" + base.Host + base.Path
+		nodesConfigs[i].L1WsHost = "wss://" + base.Host + base.Path
 	}
 
 	return &ClusterConfig{

@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -28,17 +27,9 @@ func initNodeconnMetricsCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			if chainAlias == "" {
-				msgsMetrics, _, err := client.MetricsAPI.GetNodeMessageMetrics(ctx).Execute()
-				log.Check(err)
-				printNodeMessagesMetrics(msgsMetrics)
-			} else {
-				chainID, err := isc.ChainIDFromString(chainAlias)
-				log.Check(err)
-				msgsMetrics, _, err := client.MetricsAPI.GetChainMessageMetrics(ctx, chainID.String()).Execute()
-				log.Check(err)
-				printChainMessagesMetrics(msgsMetrics)
-			}
+			msgsMetrics, _, err := client.MetricsAPI.GetChainMessageMetrics(ctx).Execute()
+			log.Check(err)
+			printChainMessagesMetrics(msgsMetrics)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -53,72 +44,17 @@ func mapMetricItem(messages uint32, timestamp time.Time, message string) *apicli
 	}
 }
 
-func printNodeMessagesMetrics(msgsMetrics *apiclient.NodeMessageMetrics) {
-	log.Printf("Following chains are registered for L1 events:\n")
-	for _, s := range msgsMetrics.RegisteredChainIDs {
-		log.Printf("\t%s\n", s)
-	}
-
-	milestoneMsg := ""
-	if msgsMetrics.InMilestone.LastMessage.MilestoneId != nil {
-		milestoneMsg = *msgsMetrics.InMilestone.LastMessage.MilestoneId
-	}
-
-	header := []string{"Message name", "", "Total", "Last time", "Last message"}
-
-	inMilestone := mapMetricItem(msgsMetrics.InMilestone.Messages, msgsMetrics.InMilestone.Timestamp, milestoneMsg)
-	inStateOutput := mapMetricItem(msgsMetrics.InStateOutput.Messages, msgsMetrics.InStateOutput.Timestamp, msgsMetrics.InStateOutput.LastMessage.OutputId)
-	inAliasOutput := mapMetricItem(msgsMetrics.InAliasOutput.Messages, msgsMetrics.InAliasOutput.Timestamp, msgsMetrics.InAliasOutput.LastMessage.Raw)
-	inOutput := mapMetricItem(msgsMetrics.InOutput.Messages, msgsMetrics.InOutput.Timestamp, msgsMetrics.InOutput.LastMessage.OutputId)
-	inOnLedgerRequest := mapMetricItem(msgsMetrics.InOnLedgerRequest.Messages, msgsMetrics.InOnLedgerRequest.Timestamp, msgsMetrics.InOnLedgerRequest.LastMessage.OutputId)
-	inTxInclusionState := mapMetricItem(msgsMetrics.InTxInclusionState.Messages, msgsMetrics.InTxInclusionState.Timestamp, msgsMetrics.InTxInclusionState.LastMessage.TxId)
-	publisherStateTransaction := mapMetricItem(msgsMetrics.OutPublisherStateTransaction.Messages, msgsMetrics.OutPublisherStateTransaction.Timestamp, msgsMetrics.OutPublisherStateTransaction.LastMessage.TxId)
-	govTransaction := mapMetricItem(msgsMetrics.OutPublishGovernanceTransaction.Messages, msgsMetrics.OutPublishGovernanceTransaction.Timestamp, msgsMetrics.OutPublishGovernanceTransaction.LastMessage.TxId)
-	pullLatestOutput := mapMetricItem(msgsMetrics.OutPullLatestOutput.Messages, msgsMetrics.OutPullLatestOutput.Timestamp, msgsMetrics.OutPullLatestOutput.LastMessage)
-	outPullTxInclusionState := mapMetricItem(msgsMetrics.OutPullTxInclusionState.Messages, msgsMetrics.OutPullTxInclusionState.Timestamp, msgsMetrics.OutPullTxInclusionState.LastMessage.TxId)
-	outPullOutputByID := mapMetricItem(msgsMetrics.OutPullOutputByID.Messages, msgsMetrics.OutPullOutputByID.Timestamp, msgsMetrics.OutPullOutputByID.LastMessage.OutputId)
-
-	table := [][]string{
-		makeMessagesMetricsTableRow("Milestone", true, inMilestone),
-		makeMessagesMetricsTableRow("State output", true, inStateOutput),
-		makeMessagesMetricsTableRow("Alias output", true, inAliasOutput),
-		makeMessagesMetricsTableRow("Output", true, inOutput),
-		makeMessagesMetricsTableRow("On ledger request", true, inOnLedgerRequest),
-		makeMessagesMetricsTableRow("Tx inclusion state", true, inTxInclusionState),
-		makeMessagesMetricsTableRow("Publish state transaction", false, publisherStateTransaction),
-		makeMessagesMetricsTableRow("Publish governance transaction", false, govTransaction),
-		makeMessagesMetricsTableRow("Pull latest output", false, pullLatestOutput),
-		makeMessagesMetricsTableRow("Pull tx inclusion state", false, outPullTxInclusionState),
-		makeMessagesMetricsTableRow("Pull output by ID", false, outPullOutputByID),
-	}
-	log.PrintTable(header, table)
-}
-
 func printChainMessagesMetrics(msgsMetrics *apiclient.ChainMessageMetrics) {
 	header := []string{"Message name", "", "Total", "Last time", "Last message"}
 
-	inStateOutput := mapMetricItem(msgsMetrics.InStateOutput.Messages, msgsMetrics.InStateOutput.Timestamp, msgsMetrics.InStateOutput.LastMessage.OutputId)
-	inAliasOutput := mapMetricItem(msgsMetrics.InAliasOutput.Messages, msgsMetrics.InAliasOutput.Timestamp, msgsMetrics.InAliasOutput.LastMessage.Raw)
-	inOutput := mapMetricItem(msgsMetrics.InOutput.Messages, msgsMetrics.InOutput.Timestamp, msgsMetrics.InOutput.LastMessage.OutputId)
-	inOnLedgerRequest := mapMetricItem(msgsMetrics.InOnLedgerRequest.Messages, msgsMetrics.InOnLedgerRequest.Timestamp, msgsMetrics.InOnLedgerRequest.LastMessage.OutputId)
-	inTxInclusionState := mapMetricItem(msgsMetrics.InTxInclusionState.Messages, msgsMetrics.InTxInclusionState.Timestamp, msgsMetrics.InTxInclusionState.LastMessage.TxId)
-	publisherStateTransaction := mapMetricItem(msgsMetrics.OutPublisherStateTransaction.Messages, msgsMetrics.OutPublisherStateTransaction.Timestamp, msgsMetrics.OutPublisherStateTransaction.LastMessage.TxId)
-	govTransaction := mapMetricItem(msgsMetrics.OutPublishGovernanceTransaction.Messages, msgsMetrics.OutPublishGovernanceTransaction.Timestamp, msgsMetrics.OutPublishGovernanceTransaction.LastMessage.TxId)
-	pullLatestOutput := mapMetricItem(msgsMetrics.OutPullLatestOutput.Messages, msgsMetrics.OutPullLatestOutput.Timestamp, msgsMetrics.OutPullLatestOutput.LastMessage)
-	outPullTxInclusionState := mapMetricItem(msgsMetrics.OutPullTxInclusionState.Messages, msgsMetrics.OutPullTxInclusionState.Timestamp, msgsMetrics.OutPullTxInclusionState.LastMessage.TxId)
-	outPullOutputByID := mapMetricItem(msgsMetrics.OutPullOutputByID.Messages, msgsMetrics.OutPullOutputByID.Timestamp, msgsMetrics.OutPullOutputByID.LastMessage.OutputId)
+	inAnchor := mapMetricItem(msgsMetrics.InAnchor.Messages, msgsMetrics.InAnchor.Timestamp, msgsMetrics.InAnchor.LastMessage.Raw)
+	inOnLedgerRequest := mapMetricItem(msgsMetrics.InOnLedgerRequest.Messages, msgsMetrics.InOnLedgerRequest.Timestamp, msgsMetrics.InOnLedgerRequest.LastMessage.Id)
+	publisherStateTransaction := mapMetricItem(msgsMetrics.OutPublisherStateTransaction.Messages, msgsMetrics.OutPublisherStateTransaction.Timestamp, msgsMetrics.OutPublisherStateTransaction.LastMessage.TxDigest)
 
 	table := [][]string{
-		makeMessagesMetricsTableRow("State output", true, inStateOutput),
-		makeMessagesMetricsTableRow("Alias output", true, inAliasOutput),
-		makeMessagesMetricsTableRow("Output", true, inOutput),
+		makeMessagesMetricsTableRow("State anchor", true, inAnchor),
 		makeMessagesMetricsTableRow("On ledger request", true, inOnLedgerRequest),
-		makeMessagesMetricsTableRow("Tx inclusion state", true, inTxInclusionState),
 		makeMessagesMetricsTableRow("Publish state transaction", false, publisherStateTransaction),
-		makeMessagesMetricsTableRow("Publish governance transaction", false, govTransaction),
-		makeMessagesMetricsTableRow("Pull latest output", false, pullLatestOutput),
-		makeMessagesMetricsTableRow("Pull tx inclusion state", false, outPullTxInclusionState),
-		makeMessagesMetricsTableRow("Pull output by ID", false, outPullOutputByID),
 	}
 	log.PrintTable(header, table)
 }

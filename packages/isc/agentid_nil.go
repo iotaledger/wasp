@@ -3,7 +3,7 @@ package isc
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 const nilAgentIDString = "-"
@@ -14,14 +14,6 @@ var _ AgentID = &NilAgentID{}
 
 func (a *NilAgentID) Bytes() []byte {
 	return bcs.MustMarshal(lo.ToPtr(AgentID(a)))
-}
-
-func (a *NilAgentID) BelongsToChain(cID ChainID) bool {
-	return false
-}
-
-func (a *NilAgentID) BytesWithoutChainID() []byte {
-	return a.Bytes()
 }
 
 func (a *NilAgentID) Equals(other AgentID) bool {

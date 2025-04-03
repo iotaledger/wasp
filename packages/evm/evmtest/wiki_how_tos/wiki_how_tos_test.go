@@ -12,6 +12,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/util"
@@ -43,10 +44,9 @@ func TestBaseBalance(t *testing.T) {
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
 
 	balance, _ := env.Chain.EVM().Balance(deployer, nil)
-	decimals := env.Chain.EVM().BaseToken().Decimals
 	var value uint64
 	instance.CallFnExpectEvent(nil, "GotBaseBalance", &value, "getBalanceBaseTokens")
-	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), decimals)
+	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), parameters.BaseTokenDecimals)
 	assert.Equal(t, balance, realBalance)
 }
 
@@ -58,20 +58,20 @@ func TestNFTBalance(t *testing.T) {
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
 
 	// get the agentId of the contract deployer
-	senderAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
+	senderAgentID := isc.NewEthereumAddressAgentID(deployer)
 
 	// mint an NFToken to the contract deployer
 	// and check if the balance returned by the contract is correct
 	mockMetaData := []byte("sesa")
-	nfti, err := env.Chain.Env.MintNFTL1(env.Chain.OriginatorPrivateKey, env.Chain.OriginatorAddress, mockMetaData)
+	nfti, err := env.Chain.Env.MintNFTL1(env.Chain.OwnerPrivateKey, env.Chain.OwnerAddress(), mockMetaData)
 	require.NoError(t, err)
-	env.Chain.MustDepositNFT(nfti, env.Chain.OriginatorAgentID, env.Chain.OriginatorPrivateKey)
+	env.Chain.MustDepositNFT(nfti, env.Chain.OwnerAgentID(), env.Chain.OwnerPrivateKey)
 
 	transfer := isc.NewEmptyAssets()
 	transfer.AddObject(nfti.ID)
 
 	// send the NFT to the contract deployer
-	err = env.Chain.SendFromL2ToL2Account(transfer, senderAgentID, env.Chain.OriginatorPrivateKey)
+	err = env.Chain.SendFromL2ToL2Account(transfer, senderAgentID, env.Chain.OwnerPrivateKey)
 	require.NoError(t, err)
 
 	// get the NFT balance of the contract deployer
@@ -87,7 +87,7 @@ func TestAgentID(t *testing.T) {
 	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
 
 	// get the agentId of the contract deployer
-	senderAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, deployer)
+	senderAgentID := isc.NewEthereumAddressAgentID(deployer)
 
 	// get the agnetId of the contract deployer
 	// and compare it with the agentId returned by the contract

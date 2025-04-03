@@ -6,8 +6,8 @@ package acss
 import (
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMsgVoteSerialization(t *testing.T) {

@@ -7,14 +7,13 @@ import (
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func TestOutputRequestReceiptCodec(t *testing.T) {
 	v := &blocklog.RequestReceipt{
-		Request: isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("0"),
+		Request: isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.Hn("0"),
 			isc.Hn("0")), 123, 456).Sign(cryptolib.NewKeyPair()),
 		Error: &isc.UnresolvedVMError{
 			ErrorCode: blocklog.ErrBlockNotFound.Code(),
@@ -46,7 +45,7 @@ func TestOutputRequestReceiptsCodec(t *testing.T) {
 		BlockIndex: 123,
 		Receipts: []*blocklog.RequestReceipt{
 			{
-				Request: isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("0"),
+				Request: isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.Hn("0"),
 					isc.Hn("0")), 123, 456).Sign(cryptolib.NewKeyPair()),
 				Error: &isc.UnresolvedVMError{
 					ErrorCode: blocklog.ErrBlockNotFound.Code(),
@@ -67,7 +66,7 @@ func TestOutputRequestReceiptsCodec(t *testing.T) {
 				},
 			},
 			{
-				Request: isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("0"),
+				Request: isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.Hn("0"),
 					isc.Hn("0")), 123, 456).Sign(cryptolib.NewKeyPair()),
 				Error: &isc.UnresolvedVMError{
 					ErrorCode: blocklog.ErrBlockNotFound.Code(),

@@ -31,7 +31,6 @@ type RequestJSON struct {
 	Params []string `json:"params"`
 	RequestId string `json:"requestId"`
 	SenderAccount string `json:"senderAccount"`
-	TargetAddress string `json:"targetAddress"`
 }
 
 type _RequestJSON RequestJSON
@@ -40,7 +39,7 @@ type _RequestJSON RequestJSON
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params []string, requestId string, senderAccount string, targetAddress string) *RequestJSON {
+func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTargetJSON, gasBudget string, isEVM bool, isOffLedger bool, params []string, requestId string, senderAccount string) *RequestJSON {
 	this := RequestJSON{}
 	this.Allowance = allowance
 	this.Assets = assets
@@ -51,7 +50,6 @@ func NewRequestJSON(allowance AssetsJSON, assets AssetsJSON, callTarget CallTarg
 	this.Params = params
 	this.RequestId = requestId
 	this.SenderAccount = senderAccount
-	this.TargetAddress = targetAddress
 	return &this
 }
 
@@ -279,30 +277,6 @@ func (o *RequestJSON) SetSenderAccount(v string) {
 	o.SenderAccount = v
 }
 
-// GetTargetAddress returns the TargetAddress field value
-func (o *RequestJSON) GetTargetAddress() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.TargetAddress
-}
-
-// GetTargetAddressOk returns a tuple with the TargetAddress field value
-// and a boolean to check if the value has been set.
-func (o *RequestJSON) GetTargetAddressOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.TargetAddress, true
-}
-
-// SetTargetAddress sets field value
-func (o *RequestJSON) SetTargetAddress(v string) {
-	o.TargetAddress = v
-}
-
 func (o RequestJSON) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -322,7 +296,6 @@ func (o RequestJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize["params"] = o.Params
 	toSerialize["requestId"] = o.RequestId
 	toSerialize["senderAccount"] = o.SenderAccount
-	toSerialize["targetAddress"] = o.TargetAddress
 	return toSerialize, nil
 }
 
@@ -340,7 +313,6 @@ func (o *RequestJSON) UnmarshalJSON(data []byte) (err error) {
 		"params",
 		"requestId",
 		"senderAccount",
-		"targetAddress",
 	}
 
 	allProperties := make(map[string]interface{})

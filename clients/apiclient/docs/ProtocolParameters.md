@@ -4,18 +4,19 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BelowMaxDepth** | **uint32** | The networks max depth | 
-**MinPowScore** | **uint32** | The minimal PoW score | 
-**NetworkName** | **string** | The network name | 
-**RentStructure** | [**RentStructure**](RentStructure.md) |  | 
-**TokenSupply** | **string** | The token supply | 
-**Version** | **int32** | The protocol version | 
+**Epoch** | **int64** | The protocol&#39;s current epoch | 
+**EpochDurationMs** | **int64** | The current epoch&#39;s duration in ms | 
+**EpochStartTimestampMs** | **int64** | The current epoch&#39;s start_timestamp in ms | 
+**IotaTotalSupply** | **int64** | The iota&#39;s total_supply | 
+**ProtocolVersion** | **int64** | The protocol&#39;s version | 
+**ReferenceGasPrice** | **int64** | The current reference_gas_price | 
+**SystemStateVersion** | **int64** | The protocol&#39;s system_state_version | 
 
 ## Methods
 
 ### NewProtocolParameters
 
-`func NewProtocolParameters(belowMaxDepth uint32, minPowScore uint32, networkName string, rentStructure RentStructure, tokenSupply string, version int32, ) *ProtocolParameters`
+`func NewProtocolParameters(epoch int64, epochDurationMs int64, epochStartTimestampMs int64, iotaTotalSupply int64, protocolVersion int64, referenceGasPrice int64, systemStateVersion int64, ) *ProtocolParameters`
 
 NewProtocolParameters instantiates a new ProtocolParameters object
 This constructor will assign default values to properties that have it defined,
@@ -30,124 +31,144 @@ NewProtocolParametersWithDefaults instantiates a new ProtocolParameters object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetBelowMaxDepth
+### GetEpoch
 
-`func (o *ProtocolParameters) GetBelowMaxDepth() uint32`
+`func (o *ProtocolParameters) GetEpoch() int64`
 
-GetBelowMaxDepth returns the BelowMaxDepth field if non-nil, zero value otherwise.
+GetEpoch returns the Epoch field if non-nil, zero value otherwise.
 
-### GetBelowMaxDepthOk
+### GetEpochOk
 
-`func (o *ProtocolParameters) GetBelowMaxDepthOk() (*uint32, bool)`
+`func (o *ProtocolParameters) GetEpochOk() (*int64, bool)`
 
-GetBelowMaxDepthOk returns a tuple with the BelowMaxDepth field if it's non-nil, zero value otherwise
+GetEpochOk returns a tuple with the Epoch field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetBelowMaxDepth
+### SetEpoch
 
-`func (o *ProtocolParameters) SetBelowMaxDepth(v uint32)`
+`func (o *ProtocolParameters) SetEpoch(v int64)`
 
-SetBelowMaxDepth sets BelowMaxDepth field to given value.
+SetEpoch sets Epoch field to given value.
 
 
-### GetMinPowScore
+### GetEpochDurationMs
 
-`func (o *ProtocolParameters) GetMinPowScore() uint32`
+`func (o *ProtocolParameters) GetEpochDurationMs() int64`
 
-GetMinPowScore returns the MinPowScore field if non-nil, zero value otherwise.
+GetEpochDurationMs returns the EpochDurationMs field if non-nil, zero value otherwise.
 
-### GetMinPowScoreOk
+### GetEpochDurationMsOk
 
-`func (o *ProtocolParameters) GetMinPowScoreOk() (*uint32, bool)`
+`func (o *ProtocolParameters) GetEpochDurationMsOk() (*int64, bool)`
 
-GetMinPowScoreOk returns a tuple with the MinPowScore field if it's non-nil, zero value otherwise
+GetEpochDurationMsOk returns a tuple with the EpochDurationMs field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetMinPowScore
+### SetEpochDurationMs
 
-`func (o *ProtocolParameters) SetMinPowScore(v uint32)`
+`func (o *ProtocolParameters) SetEpochDurationMs(v int64)`
 
-SetMinPowScore sets MinPowScore field to given value.
+SetEpochDurationMs sets EpochDurationMs field to given value.
 
 
-### GetNetworkName
+### GetEpochStartTimestampMs
 
-`func (o *ProtocolParameters) GetNetworkName() string`
+`func (o *ProtocolParameters) GetEpochStartTimestampMs() int64`
 
-GetNetworkName returns the NetworkName field if non-nil, zero value otherwise.
+GetEpochStartTimestampMs returns the EpochStartTimestampMs field if non-nil, zero value otherwise.
 
-### GetNetworkNameOk
+### GetEpochStartTimestampMsOk
 
-`func (o *ProtocolParameters) GetNetworkNameOk() (*string, bool)`
+`func (o *ProtocolParameters) GetEpochStartTimestampMsOk() (*int64, bool)`
 
-GetNetworkNameOk returns a tuple with the NetworkName field if it's non-nil, zero value otherwise
+GetEpochStartTimestampMsOk returns a tuple with the EpochStartTimestampMs field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetNetworkName
+### SetEpochStartTimestampMs
 
-`func (o *ProtocolParameters) SetNetworkName(v string)`
+`func (o *ProtocolParameters) SetEpochStartTimestampMs(v int64)`
 
-SetNetworkName sets NetworkName field to given value.
+SetEpochStartTimestampMs sets EpochStartTimestampMs field to given value.
 
 
-### GetRentStructure
+### GetIotaTotalSupply
 
-`func (o *ProtocolParameters) GetRentStructure() RentStructure`
+`func (o *ProtocolParameters) GetIotaTotalSupply() int64`
 
-GetRentStructure returns the RentStructure field if non-nil, zero value otherwise.
+GetIotaTotalSupply returns the IotaTotalSupply field if non-nil, zero value otherwise.
 
-### GetRentStructureOk
+### GetIotaTotalSupplyOk
 
-`func (o *ProtocolParameters) GetRentStructureOk() (*RentStructure, bool)`
+`func (o *ProtocolParameters) GetIotaTotalSupplyOk() (*int64, bool)`
 
-GetRentStructureOk returns a tuple with the RentStructure field if it's non-nil, zero value otherwise
+GetIotaTotalSupplyOk returns a tuple with the IotaTotalSupply field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetRentStructure
+### SetIotaTotalSupply
 
-`func (o *ProtocolParameters) SetRentStructure(v RentStructure)`
+`func (o *ProtocolParameters) SetIotaTotalSupply(v int64)`
 
-SetRentStructure sets RentStructure field to given value.
+SetIotaTotalSupply sets IotaTotalSupply field to given value.
 
 
-### GetTokenSupply
+### GetProtocolVersion
 
-`func (o *ProtocolParameters) GetTokenSupply() string`
+`func (o *ProtocolParameters) GetProtocolVersion() int64`
 
-GetTokenSupply returns the TokenSupply field if non-nil, zero value otherwise.
+GetProtocolVersion returns the ProtocolVersion field if non-nil, zero value otherwise.
 
-### GetTokenSupplyOk
+### GetProtocolVersionOk
 
-`func (o *ProtocolParameters) GetTokenSupplyOk() (*string, bool)`
+`func (o *ProtocolParameters) GetProtocolVersionOk() (*int64, bool)`
 
-GetTokenSupplyOk returns a tuple with the TokenSupply field if it's non-nil, zero value otherwise
+GetProtocolVersionOk returns a tuple with the ProtocolVersion field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetTokenSupply
+### SetProtocolVersion
 
-`func (o *ProtocolParameters) SetTokenSupply(v string)`
+`func (o *ProtocolParameters) SetProtocolVersion(v int64)`
 
-SetTokenSupply sets TokenSupply field to given value.
+SetProtocolVersion sets ProtocolVersion field to given value.
 
 
-### GetVersion
+### GetReferenceGasPrice
 
-`func (o *ProtocolParameters) GetVersion() int32`
+`func (o *ProtocolParameters) GetReferenceGasPrice() int64`
 
-GetVersion returns the Version field if non-nil, zero value otherwise.
+GetReferenceGasPrice returns the ReferenceGasPrice field if non-nil, zero value otherwise.
 
-### GetVersionOk
+### GetReferenceGasPriceOk
 
-`func (o *ProtocolParameters) GetVersionOk() (*int32, bool)`
+`func (o *ProtocolParameters) GetReferenceGasPriceOk() (*int64, bool)`
 
-GetVersionOk returns a tuple with the Version field if it's non-nil, zero value otherwise
+GetReferenceGasPriceOk returns a tuple with the ReferenceGasPrice field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetVersion
+### SetReferenceGasPrice
 
-`func (o *ProtocolParameters) SetVersion(v int32)`
+`func (o *ProtocolParameters) SetReferenceGasPrice(v int64)`
 
-SetVersion sets Version field to given value.
+SetReferenceGasPrice sets ReferenceGasPrice field to given value.
+
+
+### GetSystemStateVersion
+
+`func (o *ProtocolParameters) GetSystemStateVersion() int64`
+
+GetSystemStateVersion returns the SystemStateVersion field if non-nil, zero value otherwise.
+
+### GetSystemStateVersionOk
+
+`func (o *ProtocolParameters) GetSystemStateVersionOk() (*int64, bool)`
+
+GetSystemStateVersionOk returns a tuple with the SystemStateVersion field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetSystemStateVersion
+
+`func (o *ProtocolParameters) SetSystemStateVersion(v int64)`
+
+SetSystemStateVersion sets SystemStateVersion field to given value.
 
 
 

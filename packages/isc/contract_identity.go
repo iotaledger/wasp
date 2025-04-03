@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 
-	"github.com/iotaledger/wasp/packages/util/bcs"
+	bcs "github.com/iotaledger/bcs-go"
 )
 
 type contractIdentityKind byte
@@ -76,9 +76,9 @@ func (c *ContractIdentity) UnmarshalBCS(d *bcs.Decoder) error {
 func (c *ContractIdentity) AgentID(chainID ChainID) AgentID {
 	switch c.kind {
 	case contractIdentityKindHname:
-		return NewContractAgentID(chainID, c.hname)
+		return NewContractAgentID(c.hname)
 	case contractIdentityKindEthereum:
-		return NewEthereumAddressAgentID(chainID, c.evmAddr)
+		return NewEthereumAddressAgentID(c.evmAddr)
 	}
 	return &NilAgentID{}
 }

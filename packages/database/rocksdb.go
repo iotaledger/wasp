@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	hivedb "github.com/iotaledger/hive.go/kvstore/database"
+	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/kvstore/flushkv"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
 )

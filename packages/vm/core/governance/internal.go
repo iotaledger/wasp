@@ -8,13 +8,13 @@ import (
 
 	"github.com/samber/lo"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -46,8 +46,8 @@ func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
 // GetChainInfo returns global variables of the chain
 func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 	ret := &isc.ChainInfo{
-		ChainID:  chainID,
 		Metadata: &isc.PublicChainMetadata{},
+		ChainID:  chainID,
 	}
 	ret.ChainOwnerID = s.GetChainOwnerID()
 	ret.GasFeePolicy = s.GetGasFeePolicy()
@@ -102,7 +102,7 @@ func (s *StateWriter) SetGasFeePolicy(fp *gas.FeePolicy) {
 }
 
 func (s *StateReader) GetDefaultGasPrice() *big.Int {
-	return s.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
+	return s.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 }
 
 func (s *StateReader) GetGasLimits() *gas.Limits {

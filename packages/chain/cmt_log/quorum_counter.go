@@ -1,7 +1,7 @@
 package cmt_log
 
 import (
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
@@ -11,10 +11,10 @@ type QuorumCounter struct {
 	maxPeerVotes map[gpa.NodeID]*MsgNextLogIndex // Latest peer indexes received from peers.
 	lastSentMsgs map[gpa.NodeID]*MsgNextLogIndex // Latest messages sent to peers.
 	myLastVoteLI LogIndex
-	log          *logger.Logger
+	log          log.Logger
 }
 
-func NewQuorumCounter(msgCause MsgNextLogIndexCause, nodeIDs []gpa.NodeID, log *logger.Logger) *QuorumCounter {
+func NewQuorumCounter(msgCause MsgNextLogIndexCause, nodeIDs []gpa.NodeID, log log.Logger) *QuorumCounter {
 	return &QuorumCounter{
 		msgCause:     msgCause,
 		nodeIDs:      nodeIDs,

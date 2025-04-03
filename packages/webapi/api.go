@@ -10,12 +10,13 @@ import (
 
 	"github.com/iotaledger/hive.go/app/configuration"
 	"github.com/iotaledger/hive.go/app/shutdown"
-	loggerpkg "github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/chains"
 	"github.com/iotaledger/wasp/packages/dkg"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/publisher"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -75,7 +76,7 @@ func loadControllers(server echoswagger.ApiRoot, mocker *Mocker, controllersToLo
 }
 
 func Init(
-	logger *loggerpkg.Logger,
+	logger log.Logger,
 	server echoswagger.ApiRoot,
 	waspVersion string,
 	config *configuration.Configuration,
@@ -95,6 +96,7 @@ func Init(
 	indexDbPath string,
 	accountDumpsPath string,
 	pub *publisher.Publisher,
+	l1ParamsFetcher parameters.L1ParamsFetcher,
 	jsonrpcParams *jsonrpc.Parameters,
 ) {
 	// load mock files to generate correct echo swagger documentation
@@ -107,8 +109,8 @@ func Init(
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDbPath, chainMetricsProvider, jsonrpcParams, logger.Named("EVMService"))
-	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager)
+	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDbPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
+	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)
 	// --

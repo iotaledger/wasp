@@ -14,7 +14,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
@@ -118,6 +118,7 @@ type ConsGr struct {
 	consInst                    gpa.AckHandler
 	inputCh                     chan *input
 	inputReceived               *atomic.Bool
+	inputRotateToCh             chan *iotago.Address
 	inputTimeCh                 chan time.Time
 	outputCB                    func(*Output) // For sending output to the user.
 	outputReady                 bool          // Set to true, if we provided output already.
@@ -151,7 +152,7 @@ type ConsGr struct {
 	consensusID                 ConsensusID
 	ctx                         context.Context
 	pipeMetrics                 *metrics.ChainPipeMetrics
-	log                         *logger.Logger
+	log                         log.Logger
 }
 
 func New(
@@ -166,13 +167,14 @@ func New(
 	stateMgr StateMgr,
 	nodeConn NodeConn,
 	net peering.NetworkProvider,
+	rotateTo *iotago.Address,
 	validatorAgentID isc.AgentID,
 	recoveryTimeout time.Duration,
 	redeliveryPeriod time.Duration,
 	printStatusPeriod time.Duration,
 	chainMetrics *metrics.ChainConsensusMetrics,
 	pipeMetrics *metrics.ChainPipeMetrics,
-	log *logger.Logger,
+	log log.Logger,
 ) *ConsGr {
 	cmtPubKey := dkShare.GetSharedPublic()
 	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), cmtPubKey.AsBytes(), logIndex.Bytes()) // ChainID × Committee PubKey × LogIndex
@@ -186,6 +188,7 @@ func New(
 		consInst:          nil, // Set bellow.
 		inputCh:           make(chan *input, 1),
 		inputReceived:     atomic.NewBool(false),
+		inputRotateToCh:   make(chan *iotago.Address, 1),
 		inputTimeCh:       make(chan time.Time, 1),
 		recoveryTimeout:   recoveryTimeout,
 		redeliveryPeriod:  redeliveryPeriod,
@@ -212,6 +215,7 @@ func New(
 		me,
 		myNodeIdentity.GetPrivateKey(),
 		dkShare,
+		rotateTo,
 		procCache,
 		netPeeringID[:],
 		gpa.NodeIDFromPublicKey,
@@ -222,10 +226,10 @@ func New(
 
 	unhook := net.Attach(&netPeeringID, peering.ReceiverChainCons, func(recv *peering.PeerMessageIn) {
 		if recv.MsgType != msgTypeCons {
-			cgr.log.Warnf("Unexpected message, type=%v", recv.MsgType)
+			cgr.log.LogWarnf("Unexpected message, type=%v", recv.MsgType)
 			return
 		}
-		cgr.netRecvPipe.TryAdd(recv, cgr.log.Debugf)
+		cgr.netRecvPipe.TryAdd(recv, cgr.log.LogDebugf)
 	})
 	cgr.netDisconnect = unhook
 
@@ -245,6 +249,10 @@ func (cgr *ConsGr) Input(baseAliasOutput *isc.StateAnchor, outputCB func(*Output
 	}
 	cgr.inputCh <- inp
 	close(cgr.inputCh)
+}
+
+func (cgr *ConsGr) RotateTo(address *iotago.Address) {
+	cgr.inputRotateToCh <- address
 }
 
 func (cgr *ConsGr) Time(t time.Time) {
@@ -286,6 +294,14 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			cgr.outputCB = inp.outputCB
 			cgr.recoverCB = inp.recoverCB
 			cgr.handleConsInput(cons.NewInputProposal(inp.baseAliasOutput))
+
+		case a, ok := <-cgr.inputRotateToCh:
+			if !ok {
+				cgr.inputRotateToCh = nil
+				continue
+			}
+			cgr.handleConsInput(cons.NewInputRotateTo(a))
+
 		case t, ok := <-cgr.inputTimeCh:
 			if !ok {
 				cgr.inputTimeCh = nil
@@ -329,7 +345,7 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			cgr.handleConsInput(cons.NewInputStateMgrBlockSaved(resp))
 
 		case t, ok := <-cgr.nodeConnL1InfoRespCh:
-			cgr.log.Debugf("ConsensusL1InfoProposal received, respCh=%v, response=%v", cgr.nodeConnL1InfoRespCh, t)
+			cgr.log.LogDebugf("ConsensusL1InfoProposal received, respCh=%v, response=%v", cgr.nodeConnL1InfoRespCh, t)
 			if !ok {
 				cgr.nodeConnL1InfoRespCh = nil
 				continue
@@ -357,15 +373,15 @@ func (cgr *ConsGr) run() { //nolint:gocyclo,funlen
 			if cgr.outputReady || cgr.recoverCB == nil {
 				continue
 			}
-			cgr.log.Warn("Recovery timeout reached.")
+			cgr.log.LogWarn("Recovery timeout reached.")
 			cgr.recoverCB()
 			cgr.recoverCB = nil
 			// Don't terminate, maybe output is still needed. // TODO: Reconsider it.
 		case <-printStatusCh:
 			printStatusCh = time.After(cgr.printStatusPeriod)
-			cgr.log.Debug("Consensus Instance: %v", cgr.consInst.StatusString())
+			cgr.log.LogDebugf("Consensus Instance: %v", cgr.consInst.StatusString())
 		case <-ctxClose:
-			cgr.log.Debugf("Closing ConsGr because context closed.")
+			cgr.log.LogDebugf("Closing ConsGr because context closed.")
 			return
 		}
 	}
@@ -386,7 +402,7 @@ func (cgr *ConsGr) handleRedeliveryTick(t time.Time) {
 func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 	msg, err := cgr.consInst.UnmarshalMessage(recv.MsgData)
 	if err != nil {
-		cgr.log.Warnf("cannot parse message: %v", err)
+		cgr.log.LogWarnf("cannot parse message: %v", err)
 		return
 	}
 	msg.SetSender(gpa.NodeIDFromPublicKey(recv.SenderPubKey))
@@ -395,7 +411,7 @@ func (cgr *ConsGr) handleNetMessage(recv *peering.PeerMessageIn) {
 	cgr.tryHandleOutput()
 }
 
-func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
+func (cgr *ConsGr) tryHandleOutput() {
 	outputUntyped := cgr.consInst.Output()
 	if outputUntyped == nil {
 		return
@@ -423,7 +439,7 @@ func (cgr *ConsGr) tryHandleOutput() { //nolint:gocyclo
 	}
 	if output.NeedNodeConnL1Info != nil && !cgr.nodeConnL1InfoAsked {
 		cgr.nodeConnL1InfoRespCh = cgr.nodeConn.ConsensusL1InfoProposal(cgr.ctx, output.NeedNodeConnL1Info)
-		cgr.log.Debugf("ConsensusL1InfoProposal asked, respCh=%v", cgr.nodeConnL1InfoRespCh)
+		cgr.log.LogDebugf("ConsensusL1InfoProposal asked, respCh=%v", cgr.nodeConnL1InfoRespCh)
 		cgr.nodeConnL1InfoAsked = true
 	}
 	if output.NeedVMResult != nil && !cgr.vmAsked {

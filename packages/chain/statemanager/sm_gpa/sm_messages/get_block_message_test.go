@@ -3,10 +3,10 @@ package sm_messages
 import (
 	"testing"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state/statetest"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestMarshalUnmarshalGetBlockMessage(t *testing.T) {

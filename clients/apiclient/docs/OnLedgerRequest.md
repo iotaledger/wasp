@@ -5,15 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Id** | **string** | The request ID | 
-**Output** | [**Output**](Output.md) |  | 
-**OutputId** | **string** | The output ID | 
 **Raw** | **string** | The raw data of the request (Hex) | 
 
 ## Methods
 
 ### NewOnLedgerRequest
 
-`func NewOnLedgerRequest(id string, output Output, outputId string, raw string, ) *OnLedgerRequest`
+`func NewOnLedgerRequest(id string, raw string, ) *OnLedgerRequest`
 
 NewOnLedgerRequest instantiates a new OnLedgerRequest object
 This constructor will assign default values to properties that have it defined,
@@ -46,46 +44,6 @@ and a boolean to check if the value has been set.
 `func (o *OnLedgerRequest) SetId(v string)`
 
 SetId sets Id field to given value.
-
-
-### GetOutput
-
-`func (o *OnLedgerRequest) GetOutput() Output`
-
-GetOutput returns the Output field if non-nil, zero value otherwise.
-
-### GetOutputOk
-
-`func (o *OnLedgerRequest) GetOutputOk() (*Output, bool)`
-
-GetOutputOk returns a tuple with the Output field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOutput
-
-`func (o *OnLedgerRequest) SetOutput(v Output)`
-
-SetOutput sets Output field to given value.
-
-
-### GetOutputId
-
-`func (o *OnLedgerRequest) GetOutputId() string`
-
-GetOutputId returns the OutputId field if non-nil, zero value otherwise.
-
-### GetOutputIdOk
-
-`func (o *OnLedgerRequest) GetOutputIdOk() (*string, bool)`
-
-GetOutputIdOk returns a tuple with the OutputId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetOutputId
-
-`func (o *OnLedgerRequest) SetOutputId(v string)`
-
-SetOutputId sets OutputId field to given value.
 
 
 ### GetRaw

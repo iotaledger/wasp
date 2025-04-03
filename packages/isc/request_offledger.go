@@ -10,14 +10,14 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/crypto/blake2b"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 // OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest
 type OffLedgerRequestDataEssence struct {
-	allowance *Assets `bcs:"export"`
+	allowance *Assets `bcs:"export,optional"`
 	chainID   ChainID `bcs:"export"`
 	msg       Message `bcs:"export"`
 	gasBudget uint64  `bcs:"export"`
@@ -27,6 +27,7 @@ type OffLedgerRequestDataEssence struct {
 // OffLedgerRequestData implements OffLedgerRequest
 type OffLedgerRequestData struct {
 	OffLedgerRequestDataEssence
+
 	signature *cryptolib.Signature `bcs:"export"`
 }
 
@@ -43,18 +44,23 @@ type ImpersonatedOffLedgerRequestData struct {
 }
 
 func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) ImpersonatedOffLedgerRequest {
-	var copyReq OffLedgerRequestData
-	copyReq.OffLedgerRequestDataEssence = *request
-	copyReq.signature = cryptolib.NewEmptySignature()
-
 	return &ImpersonatedOffLedgerRequestData{
-		OffLedgerRequestData: copyReq,
-		address:              nil,
+		OffLedgerRequestData: OffLedgerRequestData{
+			OffLedgerRequestDataEssence: OffLedgerRequestDataEssence{
+				allowance: request.allowance,
+				chainID:   request.chainID,
+				msg:       request.msg,
+				gasBudget: request.gasBudget,
+				nonce:     request.nonce,
+			},
+			signature: cryptolib.NewDummySignature(cryptolib.NewEmptyPublicKey()),
+		},
+		address: nil,
 	}
 }
 
-func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(address *cryptolib.Address) OffLedgerRequest {
-	r.address = address
+func (r *ImpersonatedOffLedgerRequestData) WithSenderAddress(senderAddress *cryptolib.Address) OffLedgerRequest {
+	r.address = senderAddress
 	return r
 }
 
@@ -163,10 +169,6 @@ func (req *OffLedgerRequestData) String() string {
 		req.msg.Params,
 		req.nonce,
 	)
-}
-
-func (req *OffLedgerRequestData) TargetAddress() *cryptolib.Address {
-	return req.chainID.AsAddress()
 }
 
 func (req *OffLedgerRequestData) TimeLock() time.Time {

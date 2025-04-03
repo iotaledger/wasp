@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"runtime/debug"
 	"strings"
@@ -12,7 +13,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/isc"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -24,7 +26,7 @@ var (
 	DebugFlag   bool
 	JSONFlag    bool
 
-	hiveLogger *logger.Logger
+	hiveLogger log.Logger
 )
 
 func Init(rootCmd *cobra.Command) {
@@ -33,25 +35,13 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().BoolVarP(&JSONFlag, "json", "j", false, "json output")
 }
 
-func HiveLogger() *logger.Logger {
+func HiveLogger() log.Logger {
 	if hiveLogger == nil {
-		loggerCfg := logger.Config{
-			Level:             "info",
-			Encoding:          "console",
-			OutputPaths:       []string{"stdout"},
-			DisableEvents:     true,
-			DisableCaller:     true,
-			DisableStacktrace: true,
-			StacktraceLevel:   "panic",
-		}
+		hiveLogger = log.NewLogger(log.WithLevel(slog.LevelInfo), log.WithOutput(os.Stdout))
+
 		if DebugFlag {
-			loggerCfg.Level = "debug"
-			loggerCfg.DisableCaller = false
-			loggerCfg.DisableStacktrace = false
+			hiveLogger = log.NewLogger(log.WithLevel(slog.LevelDebug), log.WithOutput(os.Stdout))
 		}
-		var err error
-		hiveLogger, err = logger.NewRootLogger(loggerCfg)
-		Check(err)
 	}
 	return hiveLogger
 }
@@ -166,7 +156,6 @@ func Check(err error, msg ...string) {
 	Fatalf("%v", message)
 }
 
-//nolint:govet
 func PrintTable(header []string, rows [][]string) {
 	if len(rows) == 0 {
 		return
@@ -223,6 +212,9 @@ func PrintTree(node interface{}, tab, tabwidth int) {
 		PrintTree(tree, tab, tabwidth)
 	case string:
 		fmt.Printf("%s%s\n", indent, node)
+	case isc.CallArguments:
+		fmt.Printf("%s%s\n", indent, node)
+		return
 	default:
 		panic(fmt.Sprintf("no handler of value of type %T", node))
 	}

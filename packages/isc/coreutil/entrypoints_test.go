@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/parameters"
 )
 
 var _ isc.SandboxBase = MockSandBox{}
@@ -92,7 +93,7 @@ func (m MockSandBox) Privileged() isc.Privileged {
 	panic("implement me")
 }
 
-func (m MockSandBox) Requiref(cond bool, format string, args ...interface{}) {
+func (m MockSandBox) Requiref(cond bool, format string, args ...any) {
 	panic("implement me")
 }
 
@@ -170,7 +171,7 @@ func (m MockSandBox) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
 	panic("implement me")
 }
 
-func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*isc.IotaCoinInfo, bool) {
+func (m MockSandBox) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {
 	panic("implement me")
 }
 
@@ -193,7 +194,7 @@ func (m MockSandBox) AllowanceAvailable() *isc.Assets {
 var Contract = coreutil.NewContract(coreutil.CoreContractAccounts)
 
 func TestEntryPointViewFunc(t *testing.T) {
-	testViewFunc := coreutil.NewViewEP11(Contract, "", coreutil.Field[isc.AgentID](), coreutil.Field[isc.AgentID]())
+	testViewFunc := coreutil.NewViewEP11(Contract, "", coreutil.Field[isc.AgentID](""), coreutil.Field[isc.AgentID](""))
 	testViewFuncHandler := testViewFunc.WithHandler(func(view isc.SandboxView, id isc.AgentID) isc.AgentID {
 		return id
 	})
@@ -218,7 +219,7 @@ func TestEntryPointViewFunc(t *testing.T) {
 }
 
 func TestEntryPointMutFunc11(t *testing.T) {
-	testMutFunc := coreutil.NewEP11(Contract, "", coreutil.Field[uint32](), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP11(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) uint32 {
 		return u * 2
 	})
@@ -243,7 +244,7 @@ func TestEntryPointMutFunc11(t *testing.T) {
 }
 
 func TestEntryPointMutFunc12(t *testing.T) {
-	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](), coreutil.Field[uint32](), coreutil.Field[uint32]())
+	testMutFunc := coreutil.NewEP12(Contract, "", coreutil.Field[uint32](""), coreutil.Field[uint32](""), coreutil.Field[uint32](""))
 	testMutFuncHandler := testMutFunc.WithHandler(func(sandbox isc.Sandbox, u uint32) (uint32, uint32) {
 		return u * 2, u * 3
 	})

@@ -27,7 +27,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/logger"
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/evmerrors"
 	"github.com/iotaledger/wasp/packages/evm/evmtest"
@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 }
 
 func newSoloTestEnv(t testing.TB) *soloTestEnv {
-	var log *logger.Logger
+	var log log.Logger
 	if _, ok := t.(*testing.B); ok {
 		log = testlogger.NewSilentLogger(t.Name(), true)
 	}
@@ -100,12 +100,18 @@ func newSoloTestEnv(t testing.TB) *soloTestEnv {
 func TestRPCGetBalance(t *testing.T) {
 	env := newSoloTestEnv(t)
 	_, emptyAddress := solo.NewEthereumAccount()
+
+	{
+		_, err := env.Client.BalanceAtHash(context.Background(), emptyAddress, common.Hash{})
+		require.ErrorContains(env.T, err, "not found")
+	}
+
 	require.Zero(t, env.Balance(emptyAddress).Uint64())
 
 	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits single coin object allocated from faucet
 	wallet, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds(initialBalance)
 	initialBalanceEth := env.Balance(nonEmptyAddress)
-	initialBalanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress)))
+	initialBalanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(nonEmptyAddress)))
 	require.Equal(t, initialBalance.Uint64()*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
 	require.Equal(t, initialBalanceNative*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
 
@@ -385,7 +391,7 @@ func TestRPCGetTxReceipt(t *testing.T) {
 	require.EqualValues(t, env.BlockByNumber(big.NewInt(2)).Hash(), receipt.BlockHash)
 	require.EqualValues(t, 0, receipt.TransactionIndex)
 
-	expectedGasPrice := env.soloChain.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.Decimals)
+	expectedGasPrice := env.soloChain.GetGasFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
 	require.EqualValues(t, expectedGasPrice, receipt.EffectiveGasPrice)
 }
 
@@ -679,6 +685,49 @@ func TestRPCTraceTx(t *testing.T) {
 	})
 }
 
+func TestRPCTraceFailedTx(t *testing.T) {
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	creatorL2Balance := env.Balance(creatorAddress)
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	tx := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
+		&types.LegacyTx{
+			Nonce:    env.NonceAt(creatorAddress),
+			To:       &contractAddress,
+			Value:    creatorL2Balance,
+			Gas:      100000000000000,
+			GasPrice: big.NewInt(10000000000),
+			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(1))),
+		})
+
+	_, err = env.SendTransactionAndWait(tx)
+	require.ErrorContains(t, err, "insufficient funds for gas * price + value")
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, 0, bi.NumSuccessfulRequests)
+
+	t.Run("callTracer", func(t *testing.T) {
+		_, err := env.traceTransactionWithCallTracer(tx.Hash())
+		require.ErrorContains(t, err, "expected exactly one top-level call")
+	})
+
+	t.Run("prestate", func(t *testing.T) {
+		accountMap, err := env.traceTransactionWithPrestate(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(accountMap, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, accountMap)
+
+		diff, err := env.traceTransactionWithPrestateDiff(tx.Hash())
+		// t.Logf("%s", lo.Must(json.MarshalIndent(diff, "", "  ")))
+		require.NoError(t, err)
+		require.NotEmpty(t, diff.Pre)
+		require.Empty(t, diff.Post)
+	})
+}
+
 // Transfer calls produce "fake" Transactions to simulate EVM behavior.
 // They are not real in the sense of being persisted to the blockchain, therefore requires additional checks.
 func TestRPCTraceEVMDeposit(t *testing.T) {
@@ -688,7 +737,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 
 	err := env.soloChain.TransferAllowanceTo(
 		isc.NewAssets(1000),
-		isc.NewEthereumAddressAgentID(env.soloChain.ChainID, evmAddr),
+		isc.NewEthereumAddressAgentID(evmAddr),
 		wallet)
 
 	block := env.BlockByNumber(nil)
@@ -779,7 +828,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 
 func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAddress common.Address, contractABI abi.ABI, contractAddress common.Address) {
 	rqs := make([]isc.Request, 0, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		tx1 := types.MustSignNewTx(creator, types.NewEIP155Signer(big.NewInt(int64(env.ChainID))),
 			&types.LegacyTx{
 				Nonce:    env.NonceAt(creatorAddress) + uint64(i),
@@ -1008,10 +1057,10 @@ func TestRPCTraceBlock(t *testing.T) {
 		call21 := result.Result[traceTx2Index]
 		call22 := result.Result[traceTx2Index+1]
 
-		call11Action := call11.Action.(map[string]interface{})
-		call12Action := call12.Action.(map[string]interface{})
-		call21Action := call21.Action.(map[string]interface{})
-		call22Action := call22.Action.(map[string]interface{})
+		call11Action := call11.Action.(map[string]any)
+		call12Action := call12.Action.(map[string]any)
+		call21Action := call21.Action.(map[string]any)
+		call22Action := call22.Action.(map[string]any)
 
 		require.Equal(t, strings.ToLower(creatorAddress.String()), strings.ToLower(call11Action["from"].(string)))
 		require.Equal(t, strings.ToLower(contractAddress.String()), strings.ToLower(call11Action["to"].(string)))

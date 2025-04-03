@@ -10,15 +10,15 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 func TestBatchProposal1Serialization(t *testing.T) {
@@ -36,6 +36,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 		10,
 		&stateAnchor,
 		util.NewFixedSizeBitVector(11),
+		nil,
 		time.Now(),
 		isctest.NewRandomAgentID(),
 		reqRefs,
@@ -44,7 +45,7 @@ func TestBatchProposal1Serialization(t *testing.T) {
 			Value: coin.Value(100),
 			Ref:   iotatest.RandomObjectRef(),
 		}},
-		parameters.L1Default,
+		parameterstest.L1Mock,
 	)
 
 	bpEncoded := lo.Must1(bcs.Marshal(batchProposal))

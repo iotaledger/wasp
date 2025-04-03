@@ -1,18 +1,18 @@
 package sm_gpa
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/hive.go/logger"
-
+	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/origin"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util/pipe"
@@ -20,7 +20,7 @@ import (
 )
 
 func initTestChainOfBlocks(t *testing.T) (
-	*logger.Logger,
+	log.Logger,
 	*sm_gpa_utils.BlockFactory,
 	state.Store,
 	*stateManagerGPA,
@@ -32,7 +32,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
 	require.True(t, ok)
-	origin.InitChain(allmigrations.LatestSchemaVersion, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, isc.BaseTokenCoinInfo)
+	origin.InitChain(allmigrations.LatestSchemaVersion, store, bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	return log, bf, store, sm
 }
 
@@ -52,7 +52,7 @@ func blocksToBlockInfos(blocks []state.Block) []*blockInfo {
 
 func runTestChainOfBlocks(
 	t *testing.T,
-	log *logger.Logger,
+	log log.Logger,
 	bf *sm_gpa_utils.BlockFactory,
 	store state.Store,
 	sm *stateManagerGPA,
@@ -61,18 +61,18 @@ func runTestChainOfBlocks(
 	blocksInChain []state.Block,
 	blocksExpected []state.Block,
 ) {
-	defer log.Sync()
+	defer log.Shutdown()
 
 	for _, block := range blocksToCommit {
 		sd := bf.GetStateDraft(block)
 		block2 := store.Commit(sd)
 		require.True(t, block.Equals(block2))
-		log.Debugf("Committed block: %v %s", block.StateIndex(), block.L1Commitment())
+		log.LogDebugf("Committed block: %v %s", block.StateIndex(), block.L1Commitment())
 	}
 	for _, block := range blocksToPrune {
 		_, err := store.Prune(block.TrieRoot())
 		require.NoError(t, err)
-		log.Debugf("Pruned block: %v %s", block.StateIndex(), block.L1Commitment())
+		log.LogDebugf("Pruned block: %v %s", block.StateIndex(), block.L1Commitment())
 	}
 	if blocksInChain == nil {
 		require.Nil(t, sm.chainOfBlocks)
@@ -80,7 +80,7 @@ func runTestChainOfBlocks(
 		sm.chainOfBlocks = pipe.NewDeque[*blockInfo]()
 		for _, bi := range blocksToBlockInfos(blocksInChain) {
 			sm.chainOfBlocks.AddEnd(bi)
-			log.Debugf("Added block to currently known blocks chain: %v %s", bi.blockIndex, bi.trieRoot)
+			log.LogDebugf("Added block to currently known blocks chain: %v %s", bi.blockIndex, bi.trieRoot)
 		}
 	}
 
@@ -90,7 +90,7 @@ func runTestChainOfBlocks(
 	bisActual := sm.chainOfBlocks.PeekAll()
 	require.Equal(t, len(bisExpected), len(bisActual))
 	for i := range bisExpected {
-		log.Debugf("Expecting block: %v %s", bisExpected[i].blockIndex, bisExpected[i].trieRoot)
+		log.LogDebugf("Expecting block: %v %s", bisExpected[i].blockIndex, bisExpected[i].trieRoot)
 		require.True(t, bisExpected[i].trieRoot.Equals(bisActual[i].trieRoot))
 		require.Equal(t, bisExpected[i].blockIndex, bisActual[i].blockIndex)
 	}
@@ -138,7 +138,7 @@ func testChainOfBlocksMergeMiddleFullHistory(t *testing.T, totalBlocks, branchFr
 	log, bf, store, sm := initTestChainOfBlocks(t)
 	originalBlocks := bf.GetBlocks(totalBlocks, 1)
 	branchBlocks := bf.GetBlocksFrom(branchLength, 1, originalBlocks[branchFrom].L1Commitment(), 2)
-	blocksToCommit := append([]state.Block{}, originalBlocks[:branchFrom+1]...)
+	blocksToCommit := slices.Clone(originalBlocks[:branchFrom+1])
 	blocksToCommit = append(blocksToCommit, branchBlocks...)
 	blocksInChain := prependOriginBlock(bf, originalBlocks)
 	runTestChainOfBlocks(t, log, bf, store, sm, blocksToCommit, nil, blocksInChain, prependOriginBlock(bf, blocksToCommit))
@@ -173,7 +173,7 @@ func TestChainOfBlocksMergeMiddleSomeHistory(t *testing.T) {
 	log, bf, store, sm := initTestChainOfBlocks(t)
 	originalBlocks := bf.GetBlocks(totalBlocks, 1)
 	branchBlocks := bf.GetBlocksFrom(branchLength, 1, originalBlocks[branchFrom].L1Commitment(), 2)
-	blocksToCommit := append([]state.Block{}, originalBlocks[:branchFrom+1]...)
+	blocksToCommit := slices.Clone(originalBlocks[:branchFrom+1])
 	blocksToCommit = append(blocksToCommit, branchBlocks...)
 	blocksToPrune := prependOriginBlock(bf, blocksToCommit[:prunedBlocks])
 	blocksInChain := originalBlocks[prunedBlocks:]
@@ -188,7 +188,7 @@ func TestChainOfBlocksNoMerge(t *testing.T) {
 	log, bf, store, sm := initTestChainOfBlocks(t)
 	originalBlocks := bf.GetBlocks(totalBlocks, 1)
 	branchBlocks := bf.GetBlocksFrom(branchLength, 1, originalBlocks[branchFrom].L1Commitment(), 2)
-	blocksToCommit := append([]state.Block{}, originalBlocks[:branchFrom+1]...)
+	blocksToCommit := slices.Clone(originalBlocks[:branchFrom+1])
 	blocksToCommit = append(blocksToCommit, branchBlocks...)
 	blocksToPrune := prependOriginBlock(bf, originalBlocks[:branchFrom+1])
 	blocksInChain := originalBlocks[branchFrom+1:]

@@ -43,11 +43,15 @@ type RefWithObject[T any] struct {
 	Owner  *iotago.Address
 }
 
+func init() {
+	if hashing.HashSize != iotago.DigestSize {
+		panic(errors.New("hashing.HashSize must be equal to iotago.DigestSize"))
+	}
+}
+
 // Used in packages/chain/cons/bp/batch_proposal_set as key of a map
-// TODO: maybe use a.Ref.Digest() instead? Maybe have Key() for RefWithObject type?
 func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
-	res, _ := hashing.HashValueFromBytes(rwo.ObjectRef.Bytes())
-	return res
+	return rwo.ObjectRef.Digest.HashValue()
 }
 
 type Referent[T any] struct {
@@ -73,7 +77,7 @@ type AssetsBagBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
 
 type AssetsBagWithBalances struct {
 	AssetsBag
-	Balances AssetsBagBalances `bcs:"-"`
+	Balances AssetsBagBalances
 }
 
 type Anchor struct {

@@ -10,16 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 	websocketserver "nhooyr.io/websocket"
 
-	"github.com/iotaledger/hive.go/app/configuration"
-	appLogger "github.com/iotaledger/hive.go/app/logger"
-	"github.com/iotaledger/hive.go/logger"
+	appLogger "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
 )
 
 func initTest() (*CommandManager, *websockethub.Hub, context.CancelFunc) {
-	_ = appLogger.InitGlobalLogger(configuration.New())
-	log := logger.NewLogger("Test")
+	log := appLogger.NewLogger(appLogger.WithName("Test"))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
@@ -27,7 +24,7 @@ func initTest() (*CommandManager, *websockethub.Hub, context.CancelFunc) {
 	subscriptionManager.Connect(1)
 
 	manager := NewCommandHandler(log, subscriptionManager)
-	hub := websockethub.NewHub(log.Named("Hub"), &websocketserver.AcceptOptions{InsecureSkipVerify: true}, 500, 500, 500)
+	hub := websockethub.NewHub(log.NewChildLogger("Hub"), &websocketserver.AcceptOptions{InsecureSkipVerify: true}, 500, 500, 500)
 
 	go func() { hub.Run(ctx) }()
 

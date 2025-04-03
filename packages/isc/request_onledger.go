@@ -5,19 +5,19 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 
+	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/bcs"
 )
 
 type OnLedgerRequestData struct {
-	requestRef      iotago.ObjectRef   `bcs:"export"`
-	senderAddress   *cryptolib.Address `bcs:"export"`
-	targetAddress   *cryptolib.Address `bcs:"export"`
-	assets          *Assets            `bcs:"export"`
-	assetsBag       *iscmove.AssetsBag `bcs:"export"`
-	requestMetadata *RequestMetadata   `bcs:"export"`
+	requestRef      iotago.ObjectRef               `bcs:"export"`
+	senderAddress   *cryptolib.Address             `bcs:"export"`
+	targetAddress   *cryptolib.Address             `bcs:"export"`
+	assets          *Assets                        `bcs:"export"`
+	assetsBag       *iscmove.AssetsBagWithBalances `bcs:"export"`
+	requestMetadata *RequestMetadata               `bcs:"export"`
 }
 
 var (
@@ -35,12 +35,13 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse allowance: %w", err)
 	}
+
 	r := &OnLedgerRequestData{
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
 		assets:        assets,
-		assetsBag:     &request.Object.AssetsBag.AssetsBag,
+		assetsBag:     &request.Object.AssetsBag,
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
@@ -120,6 +121,7 @@ func (req *OnLedgerRequestData) String() string {
 	if metadata == nil {
 		return "onledger request without metadata"
 	}
+
 	return fmt.Sprintf("OnLedgerRequestData::{ ID: %s, sender: %s, target: %s, entrypoint: %s, Params: %s, Assets: %v, GasBudget: %d }",
 		req.ID().String(),
 		req.SenderAddress().String(),
@@ -136,11 +138,7 @@ func (req *OnLedgerRequestData) RequestRef() iotago.ObjectRef {
 }
 
 func (req *OnLedgerRequestData) AssetsBag() *iscmove.AssetsBagWithBalances {
-	return req.assets.AsAssetsBagWithBalances(req.assetsBag)
-}
-
-func (req *OnLedgerRequestData) TargetAddress() *cryptolib.Address {
-	return req.targetAddress
+	return req.assetsBag
 }
 
 func (req *OnLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {

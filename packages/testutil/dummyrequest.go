@@ -13,10 +13,10 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func DummyOffledgerRequest(chainID isc.ChainID) isc.OffLedgerRequest {
+func DummyOffledgerRequest() isc.OffLedgerRequest {
 	contract := isc.Hn("somecontract")
 	entrypoint := isc.Hn("someentrypoint")
-	req := isc.NewOffLedgerRequest(chainID, isc.NewMessage(contract, entrypoint), 0, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(contract, entrypoint), 0, gas.LimitsDefault.MaxGasPerRequest)
 	keys, _ := testkey.GenKeyAddr()
 	return req.Sign(keys)
 }
