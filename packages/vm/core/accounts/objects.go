@@ -67,19 +67,19 @@ func (s *StateWriter) setObjectOwner(obj isc.IotaObject, agentID isc.AgentID) {
 }
 
 // CreditObjectToAccount credits an Object to the on chain ledger
-func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, obj isc.IotaObject, chainID isc.ChainID) {
+func (s *StateWriter) CreditObjectToAccount(agentID isc.AgentID, obj isc.IotaObject) {
 	s.setObjectOwner(obj, agentID)
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 }
 
 // DebitObjectFromAccount removes an Object from an account.
 // If the account does not own the object, it panics.
-func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID, chainID isc.ChainID) iotago.ObjectType {
+func (s *StateWriter) DebitObjectFromAccount(agentID isc.AgentID, objectID iotago.ObjectID) iotago.ObjectType {
 	t, ok := s.removeObjectOwner(objectID, agentID)
 	if !ok {
 		panic(fmt.Errorf("cannot debit Object %s from %s: %w", objectID.String(), agentID, ErrNotEnoughFunds))
 	}
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 	return t
 }
 
@@ -111,12 +111,12 @@ func (s *StateReader) GetTotalL2Objects() []isc.IotaObject {
 	return s.getL2TotalObjects()
 }
 
-func (s *StateReader) GetObject(id iotago.ObjectID, chID isc.ChainID) (isc.IotaObject, bool) {
+func (s *StateReader) GetObject(id iotago.ObjectID) (isc.IotaObject, bool) {
 	owner := s.objectToOwnerMapR().GetAt(id[:])
 	if owner == nil {
 		return isc.IotaObject{}, false
 	}
 	aid := lo.Must(codec.Decode[isc.AgentID](owner))
-	t := lo.Must(iotago.ObjectTypeFromBytes(s.accountCoinBalancesMapR(accountKey(aid, chID)).GetAt(id[:])))
+	t := lo.Must(iotago.ObjectTypeFromBytes(s.accountCoinBalancesMapR(accountKey(aid)).GetAt(id[:])))
 	return isc.NewIotaObject(id, t), true
 }

@@ -30,7 +30,7 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 
 func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []isc.IotaObject) {
 	for _, o := range objects {
-		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o, reqctx.ChainID())
+		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o)
 	}
 }
 
