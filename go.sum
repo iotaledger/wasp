@@ -115,8 +115,6 @@ github.com/cockroachdb/redact v1.1.5 h1:u1PMllDkdFfPWaNGMyLD1+so+aq3uUItthCFqzwP
 github.com/cockroachdb/redact v1.1.5/go.mod h1:BVNblN9mBWFyMyqK1k3AAiSxhvhfK2oOZZ2lK+dpvRg=
 github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06 h1:zuQyyAKVxetITBuuhv3BI9cMrmStnpT18zmgmTxunpo=
 github.com/cockroachdb/tokenbucket v0.0.0-20230807174530-cc333fc44b06/go.mod h1:7nc4anLGjupUW/PeY5qiNYsdNXj7zopG+eqsS7To5IQ=
-github.com/coder/websocket v1.8.12 h1:5bUXkEPPIbewrnkU8LTCLVaxi4N4J8ahufH2vlo4NAo=
-github.com/coder/websocket v1.8.12/go.mod h1:LNVeNrXQZfe5qhS9ALED3uA+l5pPqvwXg3CKoDBB2gs=
 github.com/coder/websocket v1.8.13 h1:f3QZdXy7uGVz+4uCJy2nTZyM0yTBj8yANEHhqlXZ9FE=
 github.com/coder/websocket v1.8.13/go.mod h1:LNVeNrXQZfe5qhS9ALED3uA+l5pPqvwXg3CKoDBB2gs=
 github.com/consensys/bavard v0.1.30 h1:wwAj9lSnMLFXjEclKwyhf7Oslg8EoaFz9u1QGgt0bsk=
@@ -409,8 +407,6 @@ github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240517131232-748f1ce
 github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240517131232-748f1ce3a2d2/go.mod h1:l9lwqrn8dvaMx3IJpP1wBqZ1DFJi2eHdLzXi2GHk3gQ=
 github.com/iotaledger/hive.go/stringify v0.0.0-20240520064018-c635e5900894 h1:Bt+Hu/EjYmNPBCrl8Wn0JUyDZdiKm37ZDUaCIBceJuA=
 github.com/iotaledger/hive.go/stringify v0.0.0-20240520064018-c635e5900894/go.mod h1:O4p7UmsfoeLqtAUwrKbq0lXMxjY/MLQSpZSavvvvGig=
-github.com/iotaledger/hive.go/web v0.0.0-20240520064018-c635e5900894 h1:4piXQ7bbQjt2/uANsb8ukv62zb6TPxgy2qQxLoXzA3c=
-github.com/iotaledger/hive.go/web v0.0.0-20240520064018-c635e5900894/go.mod h1:xFyjRoi3PjfhOnEq3iSlpDzfeXwIAUsJeCtDCGAC1aM=
 github.com/ipfs/go-cid v0.5.0 h1:goEKKhaGm0ul11IHA7I6p1GmKz8kEYniqFopaB5Otwg=
 github.com/ipfs/go-cid v0.5.0/go.mod h1:0L7vmeNXpQpUS9vt+yEARkJ8rOg43DF3iPgn4GIN0mk=
 github.com/ipfs/go-log/v2 v2.5.1 h1:1XdUzF7048prq4aBjDQQ4SL5RxftpRGdXhNRwKSAlcY=
@@ -1238,8 +1234,6 @@ honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWh
 honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 lukechampine.com/blake3 v1.4.0 h1:xDbKOZCVbnZsfzM6mHSYcGRHZ3YrLDzqz8XnV4uaD5w=
 lukechampine.com/blake3 v1.4.0/go.mod h1:MQJNQCTnR+kwOP/JEZSxj3MaQjp80FOFSNMMHXcSeX0=
-nhooyr.io/websocket v1.8.17 h1:KEVeLJkUywCKVsnLIDlD/5gtayKp8VoCkksHCGGfT9Y=
-nhooyr.io/websocket v1.8.17/go.mod h1:rN9OFWIUwuxg4fR5tELlYC04bXYowCP9GX47ivo2l+c=
 pgregory.net/rapid v1.2.0 h1:keKAYRcjm+e1F0oAuU5F5+YPAWcyxNNRK2wud503Gnk=
 pgregory.net/rapid v1.2.0/go.mod h1:PY5XlDGj0+V1FCq0o192FdRhpKHGTRIWBgqjDBTrq04=
 rsc.io/tmplfunc v0.0.3 h1:53XFQh69AfOa8Tw0Jm7t+GV7KZhOi6jzsCzTtKbMvzU=
