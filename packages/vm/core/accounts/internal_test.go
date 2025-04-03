@@ -319,7 +319,7 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isctest.NewRandomAgentID()
 
 	// cannot move an Object that is not owned
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(obj1)))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(isc.NewIotaObject(iotago.ObjectID{111}, iotago.MustTypeFromString("0x1::abc::ABC")))))
 
 	// moves successfully when the Object is owned
 	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(obj1))
