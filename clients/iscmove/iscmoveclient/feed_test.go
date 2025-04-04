@@ -95,15 +95,16 @@ func TestRequestsFeed(t *testing.T) {
 	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
 		&iscmoveclient.ReceiveRequestsAndTransitionRequest{
-			Signer:        chainOwner,
-			PackageID:     l1starter.ISCPackageID(),
-			AnchorRef:     &anchor.ObjectRef,
-			Reqs:          []iotago.ObjectRef{*requestRef},
-			StateMetadata: []byte{1, 2, 3},
-			TopUpAmount:   100,
-			GasPayment:    getCoinsRes.Data[0].Ref(),
-			GasPrice:      iotaclient.DefaultGasPrice,
-			GasBudget:     iotaclient.DefaultGasBudget,
+			Signer:           chainOwner,
+			PackageID:        l1starter.ISCPackageID(),
+			AnchorRef:        &anchor.ObjectRef,
+			ConsumedRequests: []iotago.ObjectRef{*requestRef},
+			SentAssets:       []iscmoveclient.SentAssets{},
+			StateMetadata:    []byte{1, 2, 3},
+			TopUpAmount:      100,
+			GasPayment:       getCoinsRes.Data[0].Ref(),
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
