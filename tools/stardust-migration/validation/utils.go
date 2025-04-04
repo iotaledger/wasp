@@ -8,6 +8,7 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/pmezard/go-difflib/difflib"
+	"github.com/samber/lo"
 )
 
 var ConcurrentValidation bool // Ugly? Yes. Do we care? No.
@@ -51,14 +52,16 @@ func EnsureEqual(comparisonName, leftStr, rightStr string) {
 
 	cli.DebugLogf("Strings are NOT equal - retrieving diff...")
 
-	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+	diff := lo.Must(difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
 		A:       difflib.SplitLines(leftStr),
 		B:       difflib.SplitLines(rightStr),
 		Context: 0,
-	})
+	}))
 
 	cli.DebugLogf("\n\n*********************  DIFF  **********************\n\n")
-	if strings.Count(diff, "\n") > 100 {
+	diffLinesCount := strings.Count(diff, "\n")
+	cli.DebugLogf("Diff lines count: %v", diffLinesCount)
+	if diffLinesCount > 100 {
 		cli.DebugLogf("Diff is too long, showing only preview")
 		diffLines := strings.Split(diff, "\n")
 		diffFirstHalf := strings.Join(diffLines[:len(diffLines)/2], "\n")

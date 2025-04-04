@@ -228,11 +228,11 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 	var indexStr strings.Builder
 
 	done1 := Go(func() {
-		firstAvailBlockIndex := getFirstAvailableBlockIndex(firstIndex, lastIndex)
+		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
 		printProgress, done := NewProgressPrinter("old_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
 		defer done()
 
-		for blockIndex := firstAvailBlockIndex; blockIndex < lastIndex; blockIndex++ {
+		for blockIndex := max(firstAvailBlockIndex, 1); blockIndex < lastIndex; blockIndex++ {
 			printProgress()
 			_, reqs := lo.Must2(old_blocklog.GetRequestsInBlock(contractState, blockIndex))
 
@@ -240,8 +240,7 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 				lookupKey := req.ID().LookupDigest()
 				lookupKeyListBytes := lookupTable.GetAt(lookupKey[:])
 				if lookupKeyListBytes == nil {
-					indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: NO LOOKUP RECORD\n", blockIndex, reqIdx))
-					continue
+					panic(fmt.Sprintf("Req lookup %v/%v: NO LOOKUP RECORD\n", blockIndex, reqIdx))
 				}
 
 				lookupKeyList := lo.Must(old_blocklog.RequestLookupKeyListFromBytes(lookupKeyListBytes))
@@ -255,7 +254,7 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 				}
 
 				if !found {
-					indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: REQUEST NOT FOUND\n", blockIndex, reqIdx))
+					panic(fmt.Sprintf("Req lookup %v/%v: REQUEST NOT FOUND\n", blockIndex, reqIdx))
 				}
 			}
 		}
@@ -300,7 +299,7 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 	var indexStr strings.Builder
 
 	done1 := Go(func() {
-		firstAvailBlockIndex := getFirstAvailableBlockIndex(firstIndex, lastIndex)
+		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
 		printProgress, done := NewProgressPrinter("new_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
 		defer done()
 		r := blocklog.NewStateReader(contractState)

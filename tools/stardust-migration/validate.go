@@ -69,15 +69,11 @@ func validateMigration(c *cmd.Context) error {
 	// 			Run tracing of that block on old and new node, and compare results
 	// 	As for manually chosen blocks I think about those where GasFeePolicy was changed or where requests failed because of gas.
 	//
-	// 3. (not sure) Check for unexpected DB keys difference
-	// 	For each of (latest state and some of intermediate states):
-	// 		Find difference in presence of keys between old and new state
-	// 		Filter out keys by prefix, which are expected to not be present
-	// 		Analyze the result. Ideally we should eventually have no unexpected difference there
-	// 4. Check special accounts and cases: L2Totals, CommonAccount etc.
-	// 	We could also do that not over states, but over mutations in blocks.
-	// 5. (not sure) Recalculate and validate commitment hash.
-	// 6. Specificy check those block, where "rare" objetcs like NFTs are present/changed.
+	// 3. Check special accounts and cases: L2Totals, CommonAccount etc.
+	// 4. Specifically check those block, where "rare" objects like NFTs are present/change
+	// 5. Specifically check at least one instance of EACH business entity (e.g. OnLedgerRequest, OffLedgerRequest, etc.)
+	// 6. Into each of new state validations add some basic "integration" tests - use business logic funcs to retrieve data
+	// 7. Perform ALL callviews at least once for each of business entity type
 
 	newLatestState := NewRecordingKVStoreReadOnly(lo.Must(destStore.LatestState()))
 	cli.DebugLogf("Latest new state index: %v", newLatestState.R.BlockIndex())
