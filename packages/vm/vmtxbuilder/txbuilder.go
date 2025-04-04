@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/samber/lo"
-
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -24,7 +22,9 @@ type AnchorTransactionBuilder struct {
 	anchor *isc.StateAnchor
 
 	// already consumed requests, specified by entire Request. It is needed for checking validity
-	consumed []isc.OnLedgerRequest
+	consumed []iscmoveclient.ConsumedRequest
+	// sent assets
+	sent []iscmoveclient.SentAssets
 
 	ptb *iotago.ProgrammableTransactionBuilder
 
@@ -61,20 +61,17 @@ func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
 
 // ConsumeRequest adds the request to be consumed in the resulting PTB
 func (txb *AnchorTransactionBuilder) ConsumeRequest(req isc.OnLedgerRequest) {
-	txb.consumed = append(txb.consumed, req)
+	txb.consumed = append(txb.consumed, iscmoveclient.ConsumedRequest{
+		RequestRef: req.RequestRef(),
+		Assets:     req.AssetsBag(),
+	})
 }
 
 func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *isc.Assets) {
-	if txb.ptb == nil {
-		txb.ptb = iotago.NewProgrammableTransactionBuilder()
-	}
-	txb.ptb = iscmoveclient.PTBTakeAndTransferAssets(
-		txb.ptb,
-		txb.iscPackage,
-		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		target,
-		assets.AsISCMove(),
-	)
+	txb.sent = append(txb.sent, iscmoveclient.SentAssets{
+		Target: *target,
+		Assets: *assets.AsISCMove(),
+	})
 }
 
 func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *isc.SendMetadata) {
@@ -120,8 +117,8 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb,
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
-		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
+		txb.consumed,
+		txb.sent,
 		stateMetadata,
 		topUpAmount,
 	)

@@ -59,23 +59,24 @@ func (c *Client) StartNewChain(
 }
 
 type ReceiveRequestsAndTransitionRequest struct {
-	Signer        cryptolib.Signer
-	PackageID     iotago.PackageID
-	AnchorRef     *iotago.ObjectRef
-	Reqs          []iotago.ObjectRef
-	StateMetadata []byte
-	TopUpAmount   uint64
-	GasPayment    *iotago.ObjectRef
-	GasPrice      uint64
-	GasBudget     uint64
+	Signer           cryptolib.Signer
+	PackageID        iotago.PackageID
+	AnchorRef        *iotago.ObjectRef
+	ConsumedRequests []iotago.ObjectRef
+	SentAssets       []SentAssets
+	StateMetadata    []byte
+	TopUpAmount      uint64
+	GasPayment       *iotago.ObjectRef
+	GasPrice         uint64
+	GasBudget        uint64
 }
 
 func (c *Client) ReceiveRequestsAndTransition(
 	ctx context.Context,
 	req *ReceiveRequestsAndTransitionRequest,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-	var reqAssetsBags []*iscmove.AssetsBagWithBalances
-	for _, reqRef := range req.Reqs {
+	consumed := make([]ConsumedRequest, 0, len(req.ConsumedRequests))
+	for _, reqRef := range req.ConsumedRequests {
 		reqWithObj, err := c.GetRequestFromObjectID(ctx, reqRef.ObjectID)
 		if err != nil {
 			return nil, err
@@ -84,7 +85,10 @@ func (c *Client) ReceiveRequestsAndTransition(
 		if err != nil {
 			return nil, err
 		}
-		reqAssetsBags = append(reqAssetsBags, assetsBag)
+		consumed = append(consumed, ConsumedRequest{
+			RequestRef: reqRef,
+			Assets:     assetsBag,
+		})
 	}
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
@@ -92,8 +96,8 @@ func (c *Client) ReceiveRequestsAndTransition(
 		ptb,
 		req.PackageID,
 		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}),
-		req.Reqs,
-		reqAssetsBags,
+		consumed,
+		req.SentAssets,
 		req.StateMetadata,
 		req.TopUpAmount,
 	)
