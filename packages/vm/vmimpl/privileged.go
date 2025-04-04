@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/vm"
@@ -39,12 +37,6 @@ func (reqctx *requestContext) ModifyFoundrySupply(sn uint32, delta *big.Int) int
 	// 	panic(fmt.Errorf("internal: %w", err))
 	// }
 	// return reqctx.vm.txbuilder.ModifyNativeTokenSupply(nativeTokenID, delta)
-}
-
-func (reqctx *requestContext) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, iotago.ObjectID) {
-	reqctx.mustBeCalledFromContract(accounts.Contract)
-	panic("refactor me: vmtxbuilder.MintNFT")
-	// return reqctx.vm.txbuilder.MintNFT(addr, immutableMetadata, issuer)
 }
 
 func (reqctx *requestContext) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, allowance *isc.Assets) isc.CallArguments {

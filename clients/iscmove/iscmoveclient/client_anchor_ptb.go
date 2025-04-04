@@ -1,7 +1,11 @@
 package iscmoveclient
 
 import (
+	"bytes"
 	"fmt"
+	"slices"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -90,7 +94,7 @@ func PTBStartNewChain(
 	return ptb
 }
 
-func PTBTakeAndTransferCoinBalance(
+func PTBTakeAndTransferAssets(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
@@ -113,7 +117,7 @@ func PTBTakeAndTransferCoinBalance(
 	argAssets := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrow.Result, Result: 0}}
 	argB := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argBorrow.Result, Result: 1}}
 
-	for coinType, coinBalance := range assets.Coins {
+	for _, coinType := range slices.Sorted(slices.Values(maps.Keys(assets.Coins))) {
 		argBal := ptb.Command(
 			iotago.Command{
 				MoveCall: &iotago.ProgrammableMoveCall{
@@ -123,7 +127,7 @@ func PTBTakeAndTransferCoinBalance(
 					TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 					Arguments: []iotago.Argument{
 						argAssets,
-						ptb.MustPure(coinBalance),
+						ptb.MustPure(assets.Coins[coinType]),
 					},
 				},
 			},
@@ -145,6 +149,35 @@ func PTBTakeAndTransferCoinBalance(
 			iotago.Command{
 				TransferObjects: &iotago.ProgrammableTransferObjects{
 					Objects: []iotago.Argument{argTransferCoin},
+					Address: ptb.MustForceSeparatePure(target),
+				},
+			},
+		)
+	}
+	for _, id := range slices.SortedFunc(
+		slices.Values(maps.Keys(assets.Objects)),
+		func(a iotago.ObjectID, b iotago.ObjectID) int {
+			return bytes.Compare(a[:], b[:])
+		},
+	) {
+		argObj := ptb.Command(
+			iotago.Command{
+				MoveCall: &iotago.ProgrammableMoveCall{
+					Package:       &packageID,
+					Module:        iscmove.AssetsBagModuleName,
+					Function:      "take_asset",
+					TypeArguments: []iotago.TypeTag{assets.Objects[id].TypeTag()},
+					Arguments: []iotago.Argument{
+						argAssets,
+						ptb.MustForceSeparatePure(id),
+					},
+				},
+			},
+		)
+		ptb.Command(
+			iotago.Command{
+				TransferObjects: &iotago.ProgrammableTransferObjects{
+					Objects: []iotago.Argument{argObj},
 					Address: ptb.MustForceSeparatePure(target),
 				},
 			},
@@ -287,7 +320,7 @@ func PTBReceiveRequestsAndTransition(
 
 		assetsBag := requestAssets[i]
 		argAssetsBag := iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argReceiveRequest.Result, Result: 1}}
-		for coinType := range assetsBag.Balances {
+		for _, coinType := range slices.Sorted(slices.Values(maps.Keys(assetsBag.Coins))) {
 			argBal := ptb.Command(
 				iotago.Command{
 					MoveCall: &iotago.ProgrammableMoveCall{
@@ -307,6 +340,35 @@ func PTBReceiveRequestsAndTransition(
 						Function:      "place_coin_balance",
 						TypeArguments: []iotago.TypeTag{coinType.TypeTag()},
 						Arguments:     []iotago.Argument{argAnchorAssets, argBal},
+					},
+				},
+			)
+		}
+		for _, id := range slices.SortedFunc(
+			slices.Values(maps.Keys(assetsBag.Objects)),
+			func(a iotago.ObjectID, b iotago.ObjectID) int {
+				return bytes.Compare(a[:], b[:])
+			},
+		) {
+			obj := ptb.Command(
+				iotago.Command{
+					MoveCall: &iotago.ProgrammableMoveCall{
+						Package:       &packageID,
+						Module:        iscmove.AssetsBagModuleName,
+						Function:      "take_asset",
+						TypeArguments: []iotago.TypeTag{assetsBag.Objects[id].TypeTag()},
+						Arguments:     []iotago.Argument{argAssetsBag, ptb.MustPure(id)},
+					},
+				},
+			)
+			ptb.Command(
+				iotago.Command{
+					MoveCall: &iotago.ProgrammableMoveCall{
+						Package:       &packageID,
+						Module:        iscmove.AssetsBagModuleName,
+						Function:      "place_asset",
+						TypeArguments: []iotago.TypeTag{assetsBag.Objects[id].TypeTag()},
+						Arguments:     []iotago.Argument{argAnchorAssets, obj},
 					},
 				},
 			)

@@ -52,8 +52,6 @@ type SandboxBase interface {
 	Utils() Utils
 	// Gas returns sub-interface for gas related functions. It is stateful but does not modify chain's state
 	Gas() Gas
-	// GetObjectBCS returns the BCS-encoded contents of an object known by the chain
-	GetObjectBCS(id iotago.ObjectID) ([]byte, bool)
 	// GetCoinInfo returns information about a coin known by the chain
 	GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool)
 	// CallView calls another contract. Only calls view entry points
@@ -85,7 +83,7 @@ type Balance interface {
 	// CoinBalances returns the balance of all coins owned by the smart contract
 	CoinBalances() CoinBalances
 	// OwnedObjects returns the ids of objects owned by the smart contract
-	OwnedObjects() []iotago.ObjectID
+	OwnedObjects() []IotaObject
 	// returns whether a given user owns a given amount of tokens
 	HasInAccount(AgentID, *Assets) bool
 }

@@ -260,7 +260,7 @@ func migrateNFTs(
 		oldNFT := old_accounts.GetNFTData(oldState, nftID)
 		owner := OldAgentIDtoNewAgentID(oldNFT.Owner, oldChainID)
 		newObjectRecord := OldNFTIDtoNewObjectRecord(nftID)
-		w.CreditObjectToAccount(owner, newObjectRecord)
+		w.CreditObjectToAccount(owner, *newObjectRecord)
 		count++
 		return true
 	})

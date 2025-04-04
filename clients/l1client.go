@@ -172,7 +172,7 @@ type L1Client interface {
 	GetBalance(ctx context.Context, req iotaclient.GetBalanceRequest) (*iotajsonrpc.Balance, error)
 	GetCoinMetadata(ctx context.Context, coinType string) (*iotajsonrpc.IotaCoinMetadata, error)
 	GetCoins(ctx context.Context, req iotaclient.GetCoinsRequest) (*iotajsonrpc.CoinPage, error)
-	GetTotalSupply(ctx context.Context, coinType iotago.ObjectType) (*iotajsonrpc.Supply, error)
+	GetTotalSupply(ctx context.Context, coinType string) (*iotajsonrpc.Supply, error)
 	GetChainIdentifier(ctx context.Context) (string, error)
 	GetCheckpoint(ctx context.Context, checkpointId *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error)
 	GetCheckpoints(ctx context.Context, req iotaclient.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error)

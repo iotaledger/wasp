@@ -17,7 +17,6 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
@@ -89,11 +88,16 @@ func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
 	return iotago.ObjectID(nftID[:])
 }
 
-func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *accounts.ObjectRecord {
-	return &accounts.ObjectRecord{
-		ID:  OldNFTIDtoNewObjectID(nftID),
-		BCS: []byte{},
+func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *isc.IotaObject {
+	return &isc.IotaObject{
+		ID:   OldNFTIDtoNewObjectID(nftID),
+		Type: OldNFTIDtoNewObjectType(nftID),
 	}
+}
+
+func OldNFTIDtoNewObjectType(nftID old_iotago.NFTID) coin.Type {
+	// TODO: Implement
+	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nft::NFT", nftID.ToHex())))
 }
 
 // // Creates converter from old account key to new account key.
@@ -196,7 +200,11 @@ func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 
 	for _, nftID := range oldAssets.NFTs {
 		nftObjID := OldNFTIDtoNewObjectID(nftID)
-		newAssets.Objects.Add(nftObjID)
+		nftObjType := OldNFTIDtoNewObjectType(nftID)
+		newAssets.Objects.Add(isc.IotaObject{
+			ID:   nftObjID,
+			Type: nftObjType,
+		})
 	}
 
 	return newAssets

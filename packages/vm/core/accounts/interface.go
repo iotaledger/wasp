@@ -3,7 +3,6 @@ package accounts
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -35,13 +34,7 @@ var (
 	// TODO: implement pagination
 	ViewAccountObjects = coreutil.NewViewEP11(Contract, "accountObjects",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
-		coreutil.Field[[]iotago.ObjectID]("accountObjects"),
-	)
-	// TODO: implement pagination
-	ViewAccountObjectsInCollection = coreutil.NewViewEP21(Contract, "accountObjectsInCollection",
-		coreutil.FieldOptional[isc.AgentID]("agentID"),
-		coreutil.Field[iotago.ObjectID]("collectionID"),
-		coreutil.Field[[]iotago.ObjectID]("accountObjects"),
+		coreutil.Field[[]isc.IotaObject]("accountObjects"),
 	)
 	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
@@ -65,10 +58,6 @@ var (
 	ViewGetAccountNonce = coreutil.NewViewEP11(Contract, "getAccountNonce",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
 		coreutil.Field[uint64]("nonce"),
-	)
-	ViewObjectBCS = coreutil.NewViewEP11(Contract, "objectBCS",
-		coreutil.Field[iotago.ObjectID]("objectID"),
-		coreutil.Field[[]byte]("bcsEncodedBytes"),
 	)
 	// TODO: implement pagination
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",

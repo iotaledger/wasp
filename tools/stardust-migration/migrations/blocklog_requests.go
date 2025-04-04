@@ -68,7 +68,13 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 		GasBudget:      gasBudget,
 	}
 
-	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, &iscmove.AssetsBagWithBalances{AssetsBag: *fakeAssetsBag, Balances: map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{}}, requestMetadata)
+	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, &iscmove.AssetsBagWithBalances{
+		AssetsBag: *fakeAssetsBag,
+		Assets: iscmove.Assets{
+			Coins:   map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{},
+			Objects: map[iotago.ObjectID]iotago.ObjectType{},
+		},
+	}, requestMetadata)
 }
 
 func migrateOffLedgerRequest(req old_isc.OffLedgerRequest, oldChainID old_isc.ChainID) isc.Request {

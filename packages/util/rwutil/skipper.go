@@ -13,8 +13,6 @@ import (
 // It allows you to dummy-read data from the stream and counts the bytes read.
 // It will dummy-write these bytes first, and then resume writing to the wrapped stream
 // The skip Reader is only valid for this Writer until it resumes the stream.
-// See accounts.getNFTData() and accounts.saveNFTData() for an example
-// of how Pushback and Skipper work in conjunction.
 type Skipper struct {
 	w     io.Writer
 	ww    *Writer

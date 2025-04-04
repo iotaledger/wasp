@@ -3,26 +3,18 @@
 
 pragma solidity >=0.8.11;
 
-/**
- * @dev Collection of types and constants used in the ISC system
- */
+/// @dev Collection of types and constants used in the ISC system
 
-// Every ISC chain is initialized with an instance of the Magic contract at this address
+/// @dev Address of the Magic contract deployed on every chain
 address constant ISC_MAGIC_ADDRESS = 0x1074000000000000000000000000000000000000;
 
-// The ERC20 contract for base tokens is at this address:
-address constant ISC_ERC20BASETOKENS_ADDRESS = 0x1074010000000000000000000000000000000000;
-
-// The ERC721 contract for NFTs is at this address:
-address constant ISC_ERC721_ADDRESS = 0x1074030000000000000000000000000000000000;
-
-// A L1 address
+/// Move Address
 type IotaAddress is bytes32;
 
-// A Iota ObjectID
+/// Object ID
 type IotaObjectID is bytes32;
 
-// Information about a given L1 coin
+/// Information about a given Move coin
 struct IotaCoinInfo {
     string coinType;
     uint8 decimals;
@@ -33,90 +25,96 @@ struct IotaCoinInfo {
     uint64 totalSupply;
 }
 
-struct IRC27NFTMetadata {
-    string standard;
-    string version;
-    string mimeType;
-    string uri;
-    string name;
-    string description;
-}
-
-// An ISC hname
+/// An ISC hname
 type ISCHname is uint32;
 
-// An ISC chain ID
+/// An ISC chain ID
 type ISCChainID is bytes32;
 
-// An ISC AgentID
+/// An ISC agent ID
 struct ISCAgentID {
     bytes data;
 }
 
+/// @dev ISC Agent ID kinds
 uint8 constant ISCAgentIDKindNil = 0;
+/// @dev IOTA Address kind
 uint8 constant ISCAgentIDKindAddress = 1;
+/// @dev Ethereum Contract kind
 uint8 constant ISCAgentIDKindContract = 2;
+/// @dev Ethereum Address kind
 uint8 constant ISCAgentIDKindEthereumAddress = 3;
 
-// An ISC request ID
+/// An ISC request ID
 type ISCRequestID is bytes32;
 
-// A single key-value pair
+/// A single key-value pair
 struct ISCDictItem {
     bytes key;
     bytes value;
 }
 
-// Wrapper for the isc.Dict type, a collection of key-value pairs
+/// Wrapper for the isc.Dict type, a collection of key-value pairs
 struct ISCDict {
     ISCDictItem[] items;
 }
 
+/// Struct containing the target contract and entry point hnames
 struct ISCTarget {
     ISCHname contractHname;
     ISCHname entryPoint;
 }
 
+/// A single message to be sent to an ISC contract
 struct ISCMessage {
     ISCTarget target;
     bytes[] params;
 }
 
-// Parameters for building an on-ledger request
+/// Parameters for building an on-ledger request
 struct ISCSendMetadata {
     ISCMessage message;
     ISCAssets allowance;
     uint64 gasBudget;
 }
 
-// Parameters for building an on-ledger request
+/// Options for building an on-ledger request
 struct ISCSendOptions {
     int64 timelock;
     ISCExpiration expiration;
 }
 
-// Expiration of an on-ledger request
+/// Expiration of an on-ledger request
 struct ISCExpiration {
     int64 time;
     IotaAddress returnAddress;
 }
 
-
-// A collection of coins and object IDs
+/// A collection of coins and object IDs
 struct ISCAssets {
     CoinBalance[] coins;
-    IotaObjectID[] objects;
+    IotaObject[] objects;
 }
 
-// An amount of some Iota coin
+/// An amount of some IOTA coin
 struct CoinBalance {
     string coinType;
     uint64 amount;
 }
 
+/// An IOTA object
+struct IotaObject {
+    IotaObjectID id;
+    string objectType;
+}
+
+/**
+ * @title ISCTypes
+ * @notice Collection of utility functions used in the ISC system
+ */
 library ISCTypes {
     /**
-     * @dev Create a new Ethereum AgentID.
+     * @notice Create a new Agent ID from an Ethereum address.
      * @param addr The Ethereum address.
      * @return The new ISCAgentID.
      */
@@ -137,6 +135,11 @@ library ISCTypes {
         return r;
     }
 
+    /**
+     * @notice Creates a new Agent ID from an IOTA Address.
+     * @param addr The IOTA address.
+     * @return The newly created Agent ID.
+     */
     function newL1AgentID(IotaAddress addr) internal pure returns (ISCAgentID memory) {
         bytes memory addrBytes = abi.encodePacked(addr);
 
@@ -153,13 +156,18 @@ library ISCTypes {
         return r;
     }
 
+    /** 
+     * @notice Check if an Agent ID is an Ethereum Agent ID.
+     * @param a The Agent ID.
+     * @return True if the Agent ID is an Ethereum Agent ID.
+     */
     function isEthereum(ISCAgentID memory a) internal pure returns (bool) {
         return uint8(a.data[0]) == ISCAgentIDKindEthereumAddress;
     }
 
     /**
-     * @dev Get the Ethereum address from an ISCAgentID.
-     * @param a The ISCAgentID.
+     * @notice Get the Ethereum address from an Agent ID.
+     * @param a The Agent ID.
      * @return The Ethereum address.
      */
     function ethAddress(ISCAgentID memory a) internal pure returns (address) {
@@ -174,22 +182,12 @@ library ISCTypes {
         return IotaObjectID.wrap(bytes32(tokenID));
     }
 
-    // TODO
-    // /**
-    //  * @dev Check if an NFT is part of a given collection.
-    //  * @param nft The NFT to check.
-    //  * @param collectionId The collection ID to check against.
-    //  * @return True if the NFT is part of the collection, false otherwise.
-    //  */
-    // function isInCollection(
-    //     ISCNFT nft,
-    //     IotaObjectID collectionId
-    // ) internal pure returns (bool) {
-    //     assert(false); // TODO
-    //     // return nft.issuer == collectionId;
-    //     return false;
-    // }
-
+    /**
+     * @notice Get the amount of a specific coin type from a list of CoinBalance.
+     * @param coins The list of CoinBalance.
+     * @param coinType The coin type to search for.
+     * @return The amount of the specified coin type.
+     */
     function getCoinAmount(
         CoinBalance[] memory coins,
         string memory coinType
@@ -202,6 +200,12 @@ library ISCTypes {
         return 0;
     }
 
+    /** 
+     * @notice Compare two byte arrays for equality.
+     * @param a The first byte array.
+     * @param b The second byte array.
+     * @return True if the byte arrays are equal.
+     */
     function bytesEqual(
         bytes memory a,
         bytes memory b
@@ -217,6 +221,12 @@ library ISCTypes {
         return true;
     }
 
+    /**
+     * @notice Compare two strings for equality.
+     * @param a The first string.
+     * @param b The second string.
+     * @return True if the strings are equal.
+     */
     function stringsEqual(
         string memory a,
         string memory b

@@ -9,9 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -135,10 +133,6 @@ func (s *contractSandbox) DestroyFoundry(sn uint32) uint64 {
 
 func (s *contractSandbox) ModifyFoundrySupply(sn uint32, delta *big.Int) int64 {
 	return s.reqctx.ModifyFoundrySupply(sn, delta)
-}
-
-func (s *contractSandbox) MintNFT(addr *cryptolib.Address, immutableMetadata []byte, issuer *cryptolib.Address) (uint16, iotago.ObjectID) {
-	return s.reqctx.MintNFT(addr, immutableMetadata, issuer)
 }
 
 func (s *contractSandbox) GasBurnEnable(enable bool) {

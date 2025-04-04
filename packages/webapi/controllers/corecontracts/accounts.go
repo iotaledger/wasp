@@ -67,7 +67,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 		return err
 	}
 
-	nfts, err := corecontracts.GetAccountNFTs(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	nfts, err := corecontracts.GetAccountObjects(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -77,7 +77,7 @@ func (c *Controller) getAccountNFTs(e echo.Context) error {
 	}
 
 	for k, v := range nfts {
-		nftsResponse.NFTIDs[k] = v.ToHex()
+		nftsResponse.NFTIDs[k] = v.ID.String()
 	}
 
 	return e.JSON(http.StatusOK, nftsResponse)

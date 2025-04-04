@@ -6,7 +6,6 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -29,14 +28,9 @@ func (reqctx *requestContext) creditToAccountFullDecimals(agentID isc.AgentID, a
 	reqctx.accountsStateWriter(gasBurn).CreditToAccountFullDecimals(agentID, amount)
 }
 
-func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objectIDs []iotago.ObjectID) {
-	for _, id := range objectIDs {
-		// TODO: Try to get the Objects data, for now just storing the ID
-		rec := accounts.ObjectRecord{
-			ID:  id,
-			BCS: []byte{},
-		}
-		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, &rec)
+func (reqctx *requestContext) creditObjectsToAccount(agentID isc.AgentID, objects []isc.IotaObject) {
+	for _, o := range objects {
+		reqctx.accountsStateWriter(false).CreditObjectToAccount(agentID, o)
 	}
 }
 
@@ -97,18 +91,11 @@ func (reqctx *requestContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalan
 	return ret
 }
 
-func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []iotago.ObjectID) {
+func (reqctx *requestContext) GetAccountObjects(agentID isc.AgentID) (ret []isc.IotaObject) {
 	reqctx.callAccounts(func(s *accounts.StateWriter) {
 		ret = s.GetAccountObjects(agentID)
 	})
 	return ret
-}
-
-func (reqctx *requestContext) GetObjectBCS(objectID iotago.ObjectID) (ret []byte, ok bool) {
-	reqctx.callAccounts(func(s *accounts.StateWriter) {
-		ret = s.GetObjectBCS(objectID)
-	})
-	return ret, ret != nil
 }
 
 func (reqctx *requestContext) GetCoinInfo(coinType coin.Type) (coinInfo *parameters.IotaCoinInfo, ok bool) {

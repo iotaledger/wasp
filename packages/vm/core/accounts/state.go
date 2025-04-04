@@ -45,7 +45,6 @@ func NewStateWriterFromSandbox(ctx isc.Sandbox) *StateWriter {
 	return NewStateWriter(ctx.SchemaVersion(), ctx.State())
 }
 
-// converts an account key from the accounts contract (shortform without chainID) to an AgentID
 func AgentIDFromKey(key kv.Key) (isc.AgentID, error) {
 	return codec.Decode[isc.AgentID]([]byte(key))
 }

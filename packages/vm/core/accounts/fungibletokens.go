@@ -65,7 +65,6 @@ func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalanc
 }
 
 // debitFromAccount debits coins from the internal accounts map
-// NOTE: this function does not take NFTs into account
 func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances) bool {
 	if len(coins) == 0 {
 		return true

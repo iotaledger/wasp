@@ -31,34 +31,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
-// TODO
-// func TestNFTDepositNoIssuer(t *testing.T) {
-// 	metadata := isc.RequestMetadata{Message: accounts.FuncDeposit.Message()}
-// 	o := &iotago.NFTOutput{
-// 		Amount:       100 * isc.Million,
-// 		NativeTokens: []*isc.NativeToken{},
-// 		NFTID:        iotago.ObjectID{0x1},
-// 		Conditions:   []iotago.UnlockCondition{},
-// 		Features: []iotago.Feature{
-// 			&iotago.MetadataFeature{
-// 				Data: metadata.Bytes(),
-// 			},
-// 			&iotago.SenderFeature{
-// 				Address: tpkg.RandEd25519Address(),
-// 			},
-// 		},
-// 		ImmutableFeatures: []iotago.Feature{
-// 			&iotago.MetadataFeature{
-// 				Data: []byte("foobar"),
-// 			},
-// 		},
-// 	}
-//
-// 	res := simulateRunOutput(t, o)
-// 	require.Len(t, res.RequestResults, 1)
-// 	require.Nil(t, res.RequestResults[0].Receipt.Error)
-// }
-
 var schemaVersion = allmigrations.DefaultScheme.LatestSchemaVersion()
 
 // initChain initializes a new chain state on the given empty store, and returns a fake L1
@@ -127,8 +99,11 @@ func makeOnLedgerRequest(
 					ID:   *requestAssetsBagRef.ObjectID,
 					Size: 1,
 				},
-				Balances: iscmove.AssetsBagBalances{
-					iotajsonrpc.IotaCoinType: iotajsonrpc.CoinValue(baseTokens),
+				Assets: iscmove.Assets{
+					Coins: iscmove.CoinBalances{
+						iotajsonrpc.IotaCoinType: iotajsonrpc.CoinValue(baseTokens),
+					},
+					Objects: iscmove.ObjectCollection{},
 				},
 			},
 			Message: iscmove.Message{
@@ -136,7 +111,7 @@ func makeOnLedgerRequest(
 				Function: uint32(msg.Target.EntryPoint),
 				Args:     msg.Params,
 			},
-			Allowance: iscmove.Assets{},
+			Allowance: *iscmove.NewEmptyAssets(),
 			GasBudget: 1000,
 		},
 	}
