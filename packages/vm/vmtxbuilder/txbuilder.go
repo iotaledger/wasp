@@ -125,8 +125,8 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
-		stateMetadata,
-		topUpAmount,
+		txb.consumed[0].
+			topUpAmount,
 	)
 
 	if txb.rotateToAddr != nil {

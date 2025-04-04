@@ -23,6 +23,11 @@ func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
 	}
 }
 
+type RequestResultEvent struct {
+	RequestID iotago.ObjectID
+	Error     string
+}
+
 type MoveRequest struct {
 	ID        iotago.ObjectID
 	Sender    *cryptolib.Address

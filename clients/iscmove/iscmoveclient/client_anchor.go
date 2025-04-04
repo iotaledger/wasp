@@ -63,6 +63,7 @@ type ReceiveRequestsAndTransitionRequest struct {
 	PackageID     iotago.PackageID
 	AnchorRef     *iotago.ObjectRef
 	Reqs          []iotago.ObjectRef
+	ReqResults    map[iotago.ObjectID]RequestResultEvent
 	StateMetadata []byte
 	TopUpAmount   uint64
 	GasPayment    *iotago.ObjectRef
@@ -94,6 +95,7 @@ func (c *Client) ReceiveRequestsAndTransition(
 		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}),
 		req.Reqs,
 		reqAssetsBags,
+		make(map[iotago.ObjectID]RequestResultEvent),
 		req.StateMetadata,
 		req.TopUpAmount,
 	)

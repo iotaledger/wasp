@@ -198,6 +198,7 @@ func PTBReceiveRequestsAndTransition(
 	argAnchor iotago.Argument,
 	requestRefs []iotago.ObjectRef,
 	requestAssets []*iscmove.AssetsBagWithBalances,
+	requestResults map[iotago.ObjectID]RequestResultEvent,
 	stateMetadata []byte,
 	topUpAmount uint64,
 ) *iotago.ProgrammableTransactionBuilder {

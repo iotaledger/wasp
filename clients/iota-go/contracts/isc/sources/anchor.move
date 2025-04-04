@@ -7,11 +7,13 @@ module isc::anchor {
         coin::{Coin},
         iota::IOTA,
         balance::Balance,
+        event,
     };
     use isc::{
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
     };
+    use std::ascii::String;
 
     // === Main structs ===
 
@@ -27,6 +29,15 @@ module isc::anchor {
     public struct Receipt {
         /// ID of the request object
         request_id: ID,
+    }
+
+    public struct RequestResult has copy, drop {
+        /// ID of the request object
+        request_id: ID,
+        /// A potential error during execution
+        error: Option<String>,
+        /// The state index where the request has been processed
+        state_index: u32,
     }
 
     // === Anchor packing and unpacking ===
@@ -88,6 +99,14 @@ module isc::anchor {
         let req = request::receive(&mut self.id, request);
         let (request_id, assets) = req.destroy();
         (Receipt { request_id }, assets)
+    }
+
+    public fun emit_request_result_event(self: &mut Anchor, request_id: ID, error: Option<String>) {
+        event::emit(RequestResult {
+            request_id: request_id,
+            error: error,
+            state_index: self.state_index,
+        });
     }
 
     public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
