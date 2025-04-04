@@ -48,3 +48,56 @@ func PTBOptionNoneIotaCoin(
 	)
 	return ptb
 }
+
+func PTBOptionSomeError(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	error string, // must be ImmOrOwnedObject
+) iotago.Argument {
+	errStr := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       iotago.IotaPackageIDMoveStdlib,
+				Module:        "string",
+				Function:      "utf8",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					ptb.MustPure([]byte(error)),
+				},
+			},
+		})
+
+	errOpt := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:  iotago.IotaPackageIDMoveStdlib,
+				Module:   "option",
+				Function: "some",
+				TypeArguments: []iotago.TypeTag{
+					*iotago.MustTypeTagFromString("0x1::string::String"),
+				},
+				Arguments: []iotago.Argument{
+					errStr,
+				},
+			},
+		},
+	)
+
+	return errOpt
+}
+
+func PTBOptionNoneError(
+	ptb *iotago.ProgrammableTransactionBuilder,
+) iotago.Argument {
+	res := ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       iotago.IotaPackageIDMoveStdlib,
+				Module:        "option",
+				Function:      "none",
+				TypeArguments: []iotago.TypeTag{*iotago.MustTypeTagFromString("0x1::string::String")},
+				Arguments:     []iotago.Argument{},
+			},
+		},
+	)
+	return res
+}

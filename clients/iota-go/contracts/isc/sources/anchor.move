@@ -13,7 +13,7 @@ module isc::anchor {
         request::{Self, Request},
         assets_bag::{Self, AssetsBag},
     };
-    use std::ascii::String;
+    use std::string::String;
 
     // === Main structs ===
 

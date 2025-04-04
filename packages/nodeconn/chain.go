@@ -106,7 +106,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 		}
 
 		if dryRes.Effects.Data.IsFailed() {
-			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed")
+			return nil, fmt.Errorf("failed to dry-run Anchor transaction: response.Effects.Failed: %s", dryRes.Effects.Data.V1.Status.Error)
 		}
 
 		if dryRes.Effects.Data.IsSuccess() {

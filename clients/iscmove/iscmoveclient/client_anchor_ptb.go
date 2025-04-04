@@ -198,7 +198,7 @@ func PTBReceiveRequestsAndTransition(
 	argAnchor iotago.Argument,
 	requestRefs []iotago.ObjectRef,
 	requestAssets []*iscmove.AssetsBagWithBalances,
-	requestResults map[iotago.ObjectID]RequestResultEvent,
+	requestResultEvents map[iotago.ObjectID]RequestResultEvent,
 	stateMetadata []byte,
 	topUpAmount uint64,
 ) *iotago.ProgrammableTransactionBuilder {
@@ -319,5 +319,31 @@ func PTBReceiveRequestsAndTransition(
 			},
 		},
 	)
+
+	// (self: &mut Anchor, request_id: ID, error: Option<String>)
+	for reqId, ev := range requestResultEvents {
+
+		var errOpt iotago.Argument
+		if ev.Error == "" {
+			errOpt = PTBOptionNoneError(ptb)
+		} else {
+			errOpt = PTBOptionSomeError(ptb, ev.Error)
+		}
+
+		ptb.Command(iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "emit_request_result_event",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					argAnchor,
+					ptb.MustPure(reqId),
+					errOpt,
+				},
+			},
+		})
+	}
+
 	return ptb
 }

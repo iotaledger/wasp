@@ -12,6 +12,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/vmexceptions"
 )
 
@@ -24,7 +25,8 @@ type AnchorTransactionBuilder struct {
 	anchor *isc.StateAnchor
 
 	// already consumed requests, specified by entire Request. It is needed for checking validity
-	consumed []isc.OnLedgerRequest
+	consumed                       []isc.OnLedgerRequest
+	requestResultEventsForConsumed map[iotago.ObjectID]iscmoveclient.RequestResultEvent
 
 	ptb *iotago.ProgrammableTransactionBuilder
 
@@ -42,10 +44,11 @@ func NewAnchorTransactionBuilder(
 	ownerAddr *cryptolib.Address,
 ) *AnchorTransactionBuilder {
 	return &AnchorTransactionBuilder{
-		iscPackage: iscPackage,
-		anchor:     anchor,
-		ptb:        iotago.NewProgrammableTransactionBuilder(),
-		ownerAddr:  ownerAddr,
+		iscPackage:                     iscPackage,
+		anchor:                         anchor,
+		ptb:                            iotago.NewProgrammableTransactionBuilder(),
+		ownerAddr:                      ownerAddr,
+		requestResultEventsForConsumed: make(map[iotago.ObjectID]iscmoveclient.RequestResultEvent),
 	}
 }
 
@@ -78,6 +81,10 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 		target,
 		assets.AsISCMove(),
 	)
+}
+
+func (txb *AnchorTransactionBuilder) AttachRequestResultEvents(results []*vm.RequestResult, resolver func(e *isc.UnresolvedVMError) string) {
+	txb.requestResultEventsForConsumed = CreateRequestResponseEvents(results, resolver)
 }
 
 func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *isc.SendMetadata) {
@@ -125,8 +132,9 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
 		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
-		txb.consumed[0].
-			topUpAmount,
+		txb.requestResultEventsForConsumed,
+		stateMetadata,
+		topUpAmount,
 	)
 
 	if txb.rotateToAddr != nil {

@@ -6,7 +6,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -14,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util/panicutil"
 	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
@@ -131,10 +131,22 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
 		vmctx.task.Log.LogDebugf("runTask OUT: rotate to address %s", rotationAddr.String())
 	}
+
+	resolver := func(e *isc.UnresolvedVMError) string {
+		resolvedErr, err := errors.NewStateReaderFromChainState(stateDraft).Resolve(e)
+		if err != nil {
+			return ""
+		}
+		return resolvedErr.Error()
+	}
+
+	vmctx.txbuilder.AttachRequestResultEvents(requestResults, resolver)
+
 	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
 		taskResult.StateMetadata,
 		uint64(topUpFee),
 	)
+
 	return taskResult
 }
 

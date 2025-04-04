@@ -3,6 +3,7 @@ package vmtxbuilder
 import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm"
 )
 
 // TODO maybe we dont need this interface
@@ -18,6 +19,8 @@ type TransactionBuilder interface {
 
 	// this will be appended RotationTransaction PTB in the end of 'BuildTransactionEssence()'
 	RotationTransaction(rotationAddress *iotago.Address)
+
+	AttachRequestResultEvents(results []*vm.RequestResult, resolver func(e *isc.UnresolvedVMError) string)
 
 	// this will reset txb into nil
 	BuildTransactionEssence(stateMetadata []byte, topUpAmount uint64) iotago.ProgrammableTransaction
