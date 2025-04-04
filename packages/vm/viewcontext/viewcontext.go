@@ -118,7 +118,7 @@ func (ctx *ViewContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
 	return ctx.accountsStateWithGasBurn().GetCoins(agentID)
 }
 
-func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
+func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []isc.IotaObject {
 	return ctx.accountsStateWithGasBurn().GetAccountObjects(agentID)
 }
 

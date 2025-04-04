@@ -48,7 +48,6 @@ func New(
 type PostRequestParams struct {
 	Transfer    *isc.Assets
 	Nonce       uint64
-	NFT         *isc.NFT
 	Allowance   *isc.Assets
 	GasBudget   uint64
 	GasPrice    uint64
@@ -121,7 +120,7 @@ func (c *Client) postSingleRequest(
 	transferAssets := iscmove.NewAssets(0)
 	if params.Transfer != nil {
 		for coinType, coinbal := range params.Transfer.Coins {
-			transferAssets.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinbal.Uint64()))
+			transferAssets.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
 		}
 	}
 	msg := &iscmove.Message{
@@ -132,7 +131,10 @@ func (c *Client) postSingleRequest(
 	allowances := iscmove.NewAssets(0)
 	if params.Allowance != nil {
 		for coinType, coinBalance := range params.Allowance.Coins {
-			allowances.AddCoin(coinType.AsRPCCoinType(), iotajsonrpc.CoinValue(coinBalance.Uint64()))
+			allowances.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinBalance.Uint64()))
+		}
+		for objectID, objectType := range params.Allowance.Objects {
+			allowances.AddObject(iotago.ObjectID(objectID), iotago.ObjectType(objectType))
 		}
 	}
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(

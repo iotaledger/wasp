@@ -3,7 +3,6 @@ package legacy
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
@@ -17,9 +16,9 @@ const (
 )
 
 /*
-	Recreating the old Stardust assets encoding. This should only ever be needed for the internal EVM Fake Transactions.
-	This works very well for BaseToken and NFTs, not for NativeToken.
-	This needs some validation regarding the compatibility between IDs.
+Recreating the old Stardust assets encoding. This should only ever be needed for the internal EVM Fake Transactions.
+This works very well for BaseToken and NFTs, not for NativeToken.
+This needs some validation regarding the compatibility between IDs.
 */
 func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	if v > allmigrations.SchemaVersionMigratedRebased {
@@ -66,9 +65,8 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 
 	if (flags & assetFlagHasNFTs) != 0 {
 		w.WriteSize16(len(assets.Objects))
-
-		assets.Objects.IterateSorted(func(id iotago.ObjectID) bool {
-			w.WriteN(id[:])
+		assets.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+			w.WriteN(obj.ID[:])
 			return true
 		})
 	}

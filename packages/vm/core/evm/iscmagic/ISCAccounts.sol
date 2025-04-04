@@ -46,28 +46,6 @@ interface ISCAccounts {
      */
     function getL2ObjectsCount(ISCAgentID memory agentID) external view
         returns (uint256);
-
-    /**
-     * @notice Retrieves a list of Objects of a given collection owned by a given ISC Agent ID.
-     * @param agentID The ISC Agent ID whose L2 objects are to be queried.
-     * @param collectionId The collection ID whose objects are to be queried.
-     * @return An array of Object IDs.
-     */
-    function getL2ObjectsInCollection(
-        ISCAgentID memory agentID,
-        IotaObjectID collectionId
-    ) external view returns (IotaObjectID[] memory);
-
-    /**
-     * @notice Retrieves the amount of Objects of a given collection owned by a given ISC Agent ID.
-     * @param agentID The ISC Agent ID whose L2 object count is to be queried.
-     * @param collectionId The collection ID whose objects are to be queried.
-     * @return The amount of Objects of a given collection owned by a given ISC Agent ID.
-     */
-    function getL2ObjectsCountInCollection(
-        ISCAgentID memory agentID,
-        IotaObjectID collectionId
-    ) external view returns (uint256);
 }
 
 ISCAccounts constant __iscAccounts = ISCAccounts(ISC_MAGIC_ADDRESS);

@@ -101,9 +101,10 @@ type ProgrammableMoveCall struct {
 
 func (p *ProgrammableMoveCall) String() string {
 	return fmt.Sprintf(
-		"MoveCall: %s::%s(%s)",
+		"MoveCall: %s::%s<%s>(%s)",
 		p.Module,
 		p.Function,
+		strings.Join(lo.Map(p.TypeArguments, func(t TypeTag, _ int) string { return t.String() }), ", "),
 		strings.Join(lo.Map(p.Arguments, func(a Argument, _ int) string { return a.String() }), ", "),
 	)
 }

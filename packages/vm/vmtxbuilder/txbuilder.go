@@ -59,10 +59,7 @@ func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
 	}
 }
 
-// ConsumeRequest adds an input to the transaction.
-// It panics if transaction cannot hold that many inputs
-// All explicitly consumed inputs will hold fixed index in the transaction
-// Returns  the amount of baseTokens needed to cover SD costs for the NTs/NFT contained by the request output
+// ConsumeRequest adds the request to be consumed in the resulting PTB
 func (txb *AnchorTransactionBuilder) ConsumeRequest(req isc.OnLedgerRequest) {
 	txb.consumed = append(txb.consumed, req)
 }
@@ -71,7 +68,7 @@ func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
-	txb.ptb = iscmoveclient.PTBTakeAndTransferCoinBalance(
+	txb.ptb = iscmoveclient.PTBTakeAndTransferAssets(
 		txb.ptb,
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),

@@ -126,6 +126,30 @@ func PTBAssetsBagPlaceCoinWithAmount(
 	return ptb
 }
 
+func PTBAssetsBagPlaceObject(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAssetsBag iotago.Argument,
+	argObject iotago.Argument,
+	argObjectType iotago.ObjectType,
+) *iotago.ProgrammableTransactionBuilder {
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AssetsBagModuleName,
+				Function:      "place_asset",
+				TypeArguments: []iotago.TypeTag{argObjectType.TypeTag()},
+				Arguments: []iotago.Argument{
+					argAssetsBag,
+					argObject,
+				},
+			},
+		},
+	)
+	return ptb
+}
+
 func PTBAssetsBagTakeCoinBalance(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, argAssetsBag iotago.Argument, amount uint64, coinType string) *iotago.ProgrammableTransactionBuilder {
 	typeTag, err := iotago.TypeTagFromString(coinType)
 	if err != nil {

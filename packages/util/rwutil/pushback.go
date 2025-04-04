@@ -12,8 +12,6 @@ import (
 // It uses an in-memory buffer that allows you to write data back to the stream.
 // It will read this data first, and then resume reading from the wrapped stream.
 // The pushback Writer is only valid for this Reader until it resumes the stream.
-// See accounts.getNFTData() and accounts.saveNFTData() for an example
-// of how Pushback and Skipper work in conjunction.
 type PushBack struct {
 	r   io.Reader
 	rr  *Reader

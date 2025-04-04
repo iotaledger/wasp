@@ -70,24 +70,6 @@ contract ISCTest {
         ISC.sandbox.send(receiver, assets, metadata, options);
     }
 
-    function sendNFT(IotaAddress receiver, IotaObjectID id, uint64 storageDeposit) public {
-        ISCAssets memory allowance;
-        allowance.coins = new CoinBalance[](1);
-        allowance.coins[0].coinType = ISC.sandbox.getBaseTokenInfo().coinType;
-        allowance.coins[0].amount = uint64(storageDeposit);
-        allowance.objects = new IotaObjectID[](1);
-        allowance.objects[0] = id;
-
-        ISC.sandbox.takeAllowedFunds(msg.sender, allowance);
-
-        ISCAssets memory assets;
-        assets.objects = new IotaObjectID[](1);
-        assets.objects[0] = id;
-        ISCSendMetadata memory metadata;
-        ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, assets, metadata, options);
-    }
-
     function callInccounter() public {
         bytes[] memory params = new bytes[](1);
         params[0] = hex"012A00000000000000"; // optional int64(42) BCS-encoded
@@ -101,7 +83,7 @@ contract ISCTest {
             }),
             ISCAssets({
                 coins: new CoinBalance[](0),
-                objects: new IotaObjectID[](0)
+                objects: new IotaObject[](0)
             })
         );
     }
@@ -118,7 +100,7 @@ contract ISCTest {
             }),
             ISCAssets({
                 coins: new CoinBalance[](0),
-                objects: new IotaObjectID[](0)
+                objects: new IotaObject[](0)
             })
         );
     }

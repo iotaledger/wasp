@@ -73,12 +73,12 @@ func (ab *AssetsBag) Equals(other *AssetsBag) bool {
 		ab.Size == other.Size
 }
 
-type AssetsBagBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
-
-type AssetsBagWithBalances struct {
-	AssetsBag
-	Balances AssetsBagBalances
-}
+type (
+	AssetsBagWithBalances struct {
+		AssetsBag
+		Assets
+	}
+)
 
 type Anchor struct {
 	ID            iotago.ObjectID
@@ -138,18 +138,17 @@ type Message struct {
 }
 
 type Assets struct {
-	Coins CoinBalances
+	Coins   CoinBalances
+	Objects ObjectCollection
 }
 
-type CoinAllowance struct {
-	CoinType iotajsonrpc.CoinType
-	Balance  iotajsonrpc.CoinValue
-}
-
-type CoinBalances map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
+type (
+	CoinBalances     map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
+	ObjectCollection map[iotago.ObjectID]iotago.ObjectType
+)
 
 func NewEmptyAssets() *Assets {
-	return &Assets{Coins: make(CoinBalances)}
+	return &Assets{Coins: make(CoinBalances), Objects: make(ObjectCollection)}
 }
 
 func NewAssets(baseTokens uint64) *Assets {
@@ -178,6 +177,10 @@ func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinV
 	return a
 }
 
+func (a *Assets) AddObject(objectID iotago.ObjectID, t iotago.ObjectType) {
+	a.Objects[objectID] = t
+}
+
 func (a *Assets) BaseToken() uint64 {
 	token, err := a.FindCoin(iotajsonrpc.IotaCoinType)
 	if err != nil {
@@ -204,27 +207,4 @@ type Request struct {
 type RequestEvent struct {
 	RequestID iotago.ObjectID
 	Anchor    iotago.Address
-}
-
-// Related to: https://github.com/iotaledger/kinesis/blob/isc-iotajsonrpc/crates/sui-framework/packages/stardust/sources/nft/irc27.move
-type IRC27MetaData struct {
-	Version           string
-	MediaType         string
-	URI               string
-	Name              string
-	CollectionName    *string `bcs:"optional"`
-	Royalties         Table[*cryptolib.Address, uint32]
-	IssuerName        *string  `bcs:"optional"`
-	Description       *string  `bcs:"optional"`
-	Attributes        []string // This is actually of Type VecSet which guarantees no duplicates. Not sure if we want to create a separate type for it. But we need to filter it to ensure no duplicates eventually.
-	NonStandardFields Table[string, string]
-}
-
-type NFT struct {
-	ID                iotago.ObjectID
-	LegacySender      *cryptolib.Address `bcs:"optional"`
-	Metadata          *[]uint8           `bcs:"optional"`
-	Tag               *[]uint8           `bcs:"optional"`
-	ImmutableIssuer   *cryptolib.Address `bcs:"optional"`
-	ImmutableMetadata IRC27MetaData
 }

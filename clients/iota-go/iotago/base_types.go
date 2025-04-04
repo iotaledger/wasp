@@ -11,10 +11,8 @@ import (
 type (
 	PackageID      = Address
 	ObjectID       = Address
-	ObjectIDKey    = [AddressLen]byte
 	SequenceNumber = uint64
 	Identifier     = string
-	ObjectType     = string
 )
 
 func PackageIDFromHex(str string) (*PackageID, error) {
@@ -43,12 +41,6 @@ func MustObjectIDFromHex(str string) *ObjectID {
 		panic(err)
 	}
 	return objectID
-}
-
-func (id ObjectID) Key() ObjectIDKey {
-	var result ObjectIDKey
-	copy(result[:], id.Bytes())
-	return result
 }
 
 // ObjectRef for BCS, need to keep this order

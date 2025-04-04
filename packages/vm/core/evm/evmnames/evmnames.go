@@ -7,10 +7,9 @@ package evmnames
 const (
 	Contract = "evm"
 
-	FuncSendTransaction             = "sendTransaction"
-	FuncCallContract                = "callContract"
-	ViewGetChainID                  = "getChainID"
-	FuncRegisterERC20Coin           = "registerERC20Coin"
-	FuncRegisterERC721NFTCollection = "registerERC721NFTCollection"
-	FuncNewL1Deposit                = "newL1Deposit"
+	FuncSendTransaction   = "sendTransaction"
+	FuncCallContract      = "callContract"
+	ViewGetChainID        = "getChainID"
+	FuncRegisterERC20Coin = "registerERC20Coin"
+	FuncNewL1Deposit      = "newL1Deposit"
 )

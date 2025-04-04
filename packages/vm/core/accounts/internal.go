@@ -2,9 +2,7 @@ package accounts
 
 import (
 	"errors"
-	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
@@ -14,14 +12,12 @@ import (
 )
 
 var (
-	ErrNotEnoughFunds           = coreerrors.Register("not enough funds").Create()
-	ErrNotEnoughAllowance       = coreerrors.Register("not enough allowance").Create()
-	ErrBadAmount                = coreerrors.Register("bad native asset amount").Create()
-	ErrDuplicateTreasuryCap     = coreerrors.Register("duplicate TreasuryCap").Create()
-	ErrTreasuryCapNotFound      = coreerrors.Register("TreasuryCap not found").Create()
-	ErrOverflow                 = coreerrors.Register("overflow in token arithmetics").Create()
-	ErrNFTIDNotFound            = coreerrors.Register("NFTID not found").Create()
-	ErrImmutableMetadataInvalid = coreerrors.Register("IRC27 metadata is invalid: '%s'")
+	ErrNotEnoughFunds       = coreerrors.Register("not enough funds").Create()
+	ErrNotEnoughAllowance   = coreerrors.Register("not enough allowance").Create()
+	ErrBadAmount            = coreerrors.Register("bad native asset amount").Create()
+	ErrDuplicateTreasuryCap = coreerrors.Register("duplicate TreasuryCap").Create()
+	ErrTreasuryCapNotFound  = coreerrors.Register("TreasuryCap not found").Create()
+	ErrOverflow             = coreerrors.Register("overflow in token arithmetics").Create()
 )
 
 const (
@@ -41,31 +37,20 @@ const (
 	// Covered in: TestFoundries
 	L2TotalsAccount = "*"
 
-	// prefixObjects | <agentID> stores a map of <ObjectID> => true
-	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixObjects = "o"
-	// prefixObjectsByCollection | <agentID> | <collectionID> stores a map of <ObjectID> => true
-	// Covered in: TestNFTMint
-	// Covered in: TestDepositNFTWithMinStorageDeposit
-	prefixObjectsByCollection = "c"
-
-	// noCollection is the special <collectionID> used for storing NFTs that do not belong in a collection
-	// Covered in: TestNFTMint
-	noCollection = "-"
-
 	// keyNonce stores a map of <agentID> => nonce (uint64)
-	// Covered in: TestNFTMint
+	// Covered in: TODO
 	keyNonce = "m"
 
 	// keyCoinInfo stores a map of <CoinType> => isc.IotaCoinInfo
 	// Covered in: TestFoundries
 	keyCoinInfo = "RC"
-	// keyObjectRecords stores a map of <ObjectID> => ObjectRecord
-	// Covered in: TestDepositNFTWithMinStorageDeposit
-	keyObjectRecords = "RO"
+
+	// prefixObjects | <agentID> stores a map of <ObjectID> => <ObjectType>
+	// Covered in: TODO
+	prefixObjects = "o"
 
 	// keyObjectOwner stores a map of <ObjectID> => isc.AgentID
-	// Covered in: TestDepositNFTWithMinStorageDeposit
+	// Covered in: TODO
 	keyObjectOwner = "W"
 )
 
@@ -130,29 +115,21 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 	}
 	s.creditToAccount(accountKey(toAgentID), assets.Coins)
 
-	for id := range assets.Objects {
-		obj := s.GetObject(id)
-		if obj == nil {
-			return fmt.Errorf("MoveBetweenAccounts: unknown object %s", id)
+	var err error
+	assets.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+		_, ok := s.removeObjectOwner(obj.ID, fromAgentID)
+		if !ok {
+			err = errors.New("MoveBetweenAccounts: object not found in origin account")
+			return false
 		}
-		if !s.debitObjectFromAccount(fromAgentID, obj) {
-			return errors.New("MoveBetweenAccounts: NFT not found in origin account")
-		}
-		s.creditObjectToAccount(toAgentID, obj)
+		s.setObjectOwner(obj, toAgentID)
+		return true
+	})
+	if err != nil {
+		return err
 	}
 
 	s.touchAccount(fromAgentID)
 	s.touchAccount(toAgentID)
 	return nil
-}
-
-// debitBaseTokensFromAllowance is used for adjustment of L2 when part of base tokens are taken for storage deposit
-// It takes base tokens from allowance to the common account and then removes them from the L2 ledger
-func debitBaseTokensFromAllowance(ctx isc.Sandbox, amount coin.Value) {
-	if amount == 0 {
-		return
-	}
-	storageDepositAssets := isc.NewAssets(amount)
-	ctx.TransferAllowedFunds(CommonAccount(), storageDepositAssets)
-	NewStateWriterFromSandbox(ctx).DebitFromAccount(CommonAccount(), storageDepositAssets.Coins)
 }

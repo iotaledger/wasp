@@ -52,7 +52,7 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 		isc.NewEthereumAddressAgentID(h.caller),
 		assets,
 	)
-	// emit ERC20 / ERC721 events for native tokens & NFTs
+	// emit ERC20 events for coins
 	for _, log := range makeTransferEvents(h.ctx, addr, h.caller, assets) {
 		h.evm.StateDB.AddLog(log)
 	}
@@ -103,7 +103,7 @@ func (h *magicContractHandler) Send(
 
 	h.moveAssetsToCommonAccount(req.Assets)
 
-	// emit ERC20 / ERC721 events for native tokens & NFTs
+	// emit ERC20 events for coin transfers
 	for _, log := range makeTransferEvents(h.ctx, h.caller, common.Address{}, req.Assets) {
 		h.evm.StateDB.AddLog(log)
 	}

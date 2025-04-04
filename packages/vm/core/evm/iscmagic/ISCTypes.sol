@@ -8,12 +8,6 @@ pragma solidity >=0.8.11;
 /// @dev Address of the Magic contract deployed on every chain
 address constant ISC_MAGIC_ADDRESS = 0x1074000000000000000000000000000000000000;
 
-/// @dev Address of the ERC20 contract for base tokens
-address constant ISC_ERC20BASETOKENS_ADDRESS = 0x1074010000000000000000000000000000000000;
-
-/// @dev Address of the ERC721 contract for NFTs
-address constant ISC_ERC721_ADDRESS = 0x1074030000000000000000000000000000000000;
-
 /// Move Address
 type IotaAddress is bytes32;
 
@@ -29,16 +23,6 @@ struct IotaCoinInfo {
     string description;
     string iconUrl;
     uint64 totalSupply;
-}
-
-/// Metadata for IRC27 NFTs
-struct IRC27NFTMetadata {
-    string standard;
-    string version;
-    string mimeType;
-    string uri;
-    string name;
-    string description;
 }
 
 /// An ISC hname
@@ -109,13 +93,19 @@ struct ISCExpiration {
 /// A collection of coins and object IDs
 struct ISCAssets {
     CoinBalance[] coins;
-    IotaObjectID[] objects;
+    IotaObject[] objects;
 }
 
 /// An amount of some IOTA coin
 struct CoinBalance {
     string coinType;
     uint64 amount;
+}
+
+/// An IOTA object
+struct IotaObject {
+    IotaObjectID id;
+    string objectType;
 }
 
 /**

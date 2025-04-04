@@ -2,13 +2,11 @@ package wiki_how_tos_test
 
 import (
 	_ "embed"
-	"math/big"
 	"strings"
 	"testing"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -48,36 +46,6 @@ func TestBaseBalance(t *testing.T) {
 	instance.CallFnExpectEvent(nil, "GotBaseBalance", &value, "getBalanceBaseTokens")
 	realBalance := util.BaseTokensDecimalsToEthereumDecimals(coin.Value(value), parameters.BaseTokenDecimals)
 	assert.Equal(t, balance, realBalance)
-}
-
-func TestNFTBalance(t *testing.T) {
-	t.Skip("TODO")
-	env := evmtest.InitEVMWithSolo(t, solo.New(t))
-	privateKey, deployer := env.Chain.NewEthereumAccountWithL2Funds()
-
-	instance := env.DeployContract(privateKey, GetBalanceContractABI, GetBalanceContractBytecode)
-
-	// get the agentId of the contract deployer
-	senderAgentID := isc.NewEthereumAddressAgentID(deployer)
-
-	// mint an NFToken to the contract deployer
-	// and check if the balance returned by the contract is correct
-	mockMetaData := []byte("sesa")
-	nfti, err := env.Chain.Env.MintNFTL1(env.Chain.OwnerPrivateKey, env.Chain.OwnerAddress(), mockMetaData)
-	require.NoError(t, err)
-	env.Chain.MustDepositNFT(nfti, env.Chain.OwnerAgentID(), env.Chain.OwnerPrivateKey)
-
-	transfer := isc.NewEmptyAssets()
-	transfer.AddObject(nfti.ID)
-
-	// send the NFT to the contract deployer
-	err = env.Chain.SendFromL2ToL2Account(transfer, senderAgentID, env.Chain.OwnerPrivateKey)
-	require.NoError(t, err)
-
-	// get the NFT balance of the contract deployer
-	nftBalance := new(big.Int)
-	instance.CallFnExpectEvent(nil, "GotNFTIDs", &nftBalance, "getBalanceNFTs")
-	assert.Equal(t, int64(1), nftBalance.Int64())
 }
 
 func TestAgentID(t *testing.T) {

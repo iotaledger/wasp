@@ -26,13 +26,11 @@ var Processor = Contract.Processor(nil,
 
 	// views
 	ViewAccountObjects.WithHandler(viewAccountObjects),
-	ViewAccountObjectsInCollection.WithHandler(viewAccountObjectsInCollection),
 	ViewBalance.WithHandler(viewBalance),
 	ViewBalanceBaseToken.WithHandler(viewBalanceBaseToken),
 	ViewBalanceBaseTokenEVM.WithHandler(viewBalanceBaseTokenEVM),
 	ViewBalanceCoin.WithHandler(viewBalanceCoin),
 	ViewGetAccountNonce.WithHandler(viewGetAccountNonce),
-	ViewObjectBCS.WithHandler(viewObjectBCS),
 	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 

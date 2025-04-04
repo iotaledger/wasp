@@ -4,7 +4,6 @@
 package iscmagic
 
 import (
-	"math/big"
 	"time"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -46,36 +45,15 @@ func (a ISCAgentID) Unwrap() (isc.AgentID, error) {
 	return isc.AgentIDFromBytes(a.Data)
 }
 
-// TokenIDFromIotaObjectID returns the uint256 tokenID for ERC721
-func TokenIDFromIotaObjectID(o iotago.ObjectID) *big.Int {
-	return new(big.Int).SetBytes(o[:])
-}
-
-// IRC27NFTMetadata matches the struct definition in ISCTypes.sol
-type IRC27NFTMetadata struct {
-	Standard    string
-	Version     string
-	MimeType    string
-	Uri         string
-	Name        string
-	Description string
-}
-
-func WrapIRC27NFTMetadata(m *isc.IRC27NFTMetadata) IRC27NFTMetadata {
-	return IRC27NFTMetadata{
-		Standard:    m.Standard,
-		Version:     m.Version,
-		MimeType:    m.MIMEType,
-		Uri:         m.URI,
-		Name:        m.Name,
-		Description: m.Description,
-	}
+type IotaObject struct {
+	ID         iotago.ObjectID
+	ObjectType string
 }
 
 // ISCAssets matches the struct definition in ISCTypes.sol
 type ISCAssets struct {
 	Coins   []CoinBalance
-	Objects []iotago.ObjectID
+	Objects []IotaObject
 }
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
@@ -87,8 +65,11 @@ func WrapISCAssets(a *isc.Assets) ISCAssets {
 		})
 		return true
 	})
-	a.Objects.IterateSorted(func(id iotago.ObjectID) bool {
-		ret.Objects = append(ret.Objects, id)
+	a.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+		ret.Objects = append(ret.Objects, IotaObject{
+			ID:         obj.ID,
+			ObjectType: obj.Type.String(),
+		})
 		return true
 	})
 	return ret
@@ -99,8 +80,8 @@ func (a ISCAssets) Unwrap() *isc.Assets {
 	for _, b := range a.Coins {
 		assets.AddCoin(coin.MustTypeFromString(string(b.CoinType)), coin.Value(b.Amount))
 	}
-	for _, id := range a.Objects {
-		assets.AddObject(id)
+	for _, o := range a.Objects {
+		assets.AddObject(isc.NewIotaObject(o.ID, iotago.MustTypeFromString(o.ObjectType)))
 	}
 	return assets
 }

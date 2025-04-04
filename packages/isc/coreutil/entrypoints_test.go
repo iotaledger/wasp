@@ -115,7 +115,7 @@ func (m MockSandBox) CoinBalances() isc.CoinBalances {
 	panic("implement me")
 }
 
-func (m MockSandBox) OwnedObjects() []iotago.ObjectID {
+func (m MockSandBox) OwnedObjects() []isc.IotaObject {
 	panic("implement me")
 }
 

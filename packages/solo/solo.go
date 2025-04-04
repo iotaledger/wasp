@@ -608,10 +608,6 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 	return coin.Value(r.TotalBalance.Uint64())
 }
 
-func (env *Solo) L1NFTs(addr *cryptolib.Address) []iotago.ObjectID {
-	panic("TODO")
-}
-
 // L1Assets returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
@@ -621,69 +617,6 @@ func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 		cb.Add(lo.Must(coin.TypeFromString(b.CoinType.String())), coin.Value(b.TotalBalance.Uint64()))
 	}
 	return cb
-}
-
-// MintNFTL1 mints a single NFT with the `issuer` account and sends it to a `target` account.
-// Base tokens in the NFT output are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTL1(issuer *cryptolib.KeyPair, target *cryptolib.Address, immutableMetadata []byte) (*isc.NFT, error) {
-	nfts, err := env.MintNFTsL1(issuer, target, nil, [][]byte{immutableMetadata})
-	if err != nil {
-		return nil, err
-	}
-	return nfts[0], nil
-}
-
-// MintNFTsL1 mints len(metadata) NFTs with the `issuer` account and sends them
-// to a `target` account.
-//
-// If collectionID is not nil, it must be the ID of an NFT owned by the issuer.
-// All minted NFTs will belong to the given collection.
-// See: https://github.com/iotaledger/tips/blob/main/tips/TIP-0027/tip-0027.md
-//
-// Base tokens in the NFT outputs are sent to the minimum storage deposit and are taken from the issuer account.
-func (env *Solo) MintNFTsL1(
-	issuer *cryptolib.KeyPair,
-	target *cryptolib.Address,
-	collectionID *iotago.ObjectID,
-	metadata [][]byte,
-) ([]*isc.NFT, error) {
-	panic("TODO")
-	/*
-		err := errors.New("refactor me: MintNFTsL1")
-		if err != nil {
-			return nil, nil, err
-		}
-		err = env.AddToLedger(tx)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		outSet, err := tx.OutputsSet()
-		if err != nil {
-			return nil, nil, err
-		}
-
-		var nfts []*isc.NFT
-		var infos []*NFTMintedInfo
-		for id, out := range outSet {
-			if out, ok := out.(*iotago.NFTOutput); ok { //nolint:gocritic // false positive
-				nftID := util.NFTIDFromNFTOutput(out, id)
-				info := &NFTMintedInfo{
-					OutputID: id,
-					Output:   out,
-					NFTID:    nftID,
-				}
-				nft := &isc.NFT{
-					ID:       info.NFTID,
-					Issuer:   cryptolib.NewAddressFromIotago(out.ImmutableFeatureSet().IssuerFeature().Address),
-					Metadata: out.ImmutableFeatureSet().MetadataFeature().Data,
-				}
-				nfts = append(nfts, nft)
-				infos = append(infos, info)
-			}
-		}
-		return nfts, infos, nil
-	*/
 }
 
 func (env *Solo) executePTB(
@@ -720,7 +653,9 @@ func (env *Solo) executePTB(
 		},
 	)
 	require.NoError(env.T, err)
-	require.True(env.T, execRes.Effects.Data.IsSuccess())
+	if !execRes.Effects.Data.IsSuccess() {
+		env.T.Fatalf("PTB failed: %s", execRes.Effects.Data.V1.Status.Error)
+	}
 	return execRes
 }
 
@@ -754,6 +689,31 @@ func (env *Solo) L1MintCoin(
 		treasuryCapObject,
 		mintAmount,
 	)
+}
+
+func (env *Solo) L1MintObject(owner *cryptolib.KeyPair) isc.IotaObject {
+	// Create a 2nd chain just to have a L1 object that we can deposit (the anchor)
+	testAnchor, err := env.ISCMoveClient().StartNewChain(env.Ctx(), &iscmoveclient.StartNewChainRequest{
+		GasBudget:         iotaclient.DefaultGasBudget,
+		Signer:            owner,
+		PackageID:         env.ISCPackageID(),
+		StateMetadata:     []byte{},
+		ChainOwnerAddress: owner.Address(),
+		InitCoinRef:       nil,
+		GasPrice:          iotaclient.DefaultGasPrice,
+	})
+	require.NoError(env.T, err)
+
+	o, err := env.ISCMoveClient().GetObject(env.Ctx(), iotaclient.GetObjectRequest{
+		ObjectID: testAnchor.ObjectID,
+		Options: &iotajsonrpc.IotaObjectDataOptions{
+			ShowType: true,
+		},
+	})
+	require.NoError(env.T, err)
+	typ, err := iotago.ObjectTypeFromString(*o.Data.Type)
+	require.NoError(env.T, err)
+	return isc.NewIotaObject(*testAnchor.ObjectID, typ)
 }
 
 func (env *Solo) L1Params() *parameters.L1Params {
