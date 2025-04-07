@@ -48,6 +48,11 @@ func initAnchorCmd() *cobra.Command {
 			fmt.Printf("\tPublicUrl: %s\n", metadata.PublicURL)
 			fmt.Printf("\tSchemaVersion: %d\n", metadata.SchemaVersion)
 
+			if anchor.Object.StateIndex != 0 {
+				fmt.Print("Skipping InitParams, as state index is not 0\n")
+				return
+			}
+
 			initParams, err := origin.DecodeInitParams(metadata.InitParams)
 			if err != nil {
 				fmt.Printf("\tCould not decode Init Params! Params: %s\n", metadata.InitParams.String())
