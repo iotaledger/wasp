@@ -188,6 +188,11 @@ func main() {
 								Aliases: []string{"i", "f", "from-block", "from"},
 								Usage:   "Specify block index to start from. This is used as hint in blocklog migration for cases, when database was generated not from first block.",
 							},
+							&cmd.Uint64Flag{
+								Name:    "to-index",
+								Aliases: []string{"t", "to-block", "to"},
+								Usage:   "Specify block to validate. If not specified, latest available block is validated.",
+							},
 						},
 						Before: processCommonFlags,
 						Action: validateMigration,

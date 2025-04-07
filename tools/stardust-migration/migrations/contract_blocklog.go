@@ -2,12 +2,14 @@ package migrations
 
 import (
 	"fmt"
+	"math"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_coreutil "github.com/nnikolash/wasp-types-exported/packages/isc/coreutil"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_rwutil "github.com/nnikolash/wasp-types-exported/packages/util/rwutil"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
@@ -46,10 +48,18 @@ func Uint32ToAddress(value uint32) iotago.ObjectID {
 	return addr
 }
 
-func migrateBlockRegistry(blockIndex uint32, chainOwner *cryptolib.Address, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
+func migrateBlockRegistry(blockIndex uint32, blockKeepAmount int32, chainOwner *cryptolib.Address, stateMetadata *transaction.StateMetadata, oldState old_kv.KVStoreReader, newState kv.KVStore) blocklog.BlockInfo {
 	oldBlocks := old_collections.NewArrayReadOnly(oldState, old_blocklog.PrefixBlockRegistry)
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(blockIndex + 1)
+
+	if blockKeepAmount > 0 && blockIndex > uint32(blockKeepAmount) {
+		// Anyway this migration already won't work with "-i" option, so we can just
+		// skip iteration over the store and just straight copy pruning logic.
+		// TODO: Is this deterministic? When pruning config changed, is it ALWAYS used by pruning algorythm immedatelly or (sometimes) on next block?
+		prunedBlockIndex := blockIndex - uint32(blockKeepAmount)
+		newBlocks.PruneAt(prunedBlockIndex)
+	}
 
 	oldBlock := oldBlocks.GetAt(blockIndex)
 
@@ -125,35 +135,6 @@ func migrateBlockRegistry(blockIndex uint32, chainOwner *cryptolib.Address, stat
 	return newBlockInfo
 }
 
-func migrateRequestLookupIndex(oldState old_kv.KVStoreReader, newState kv.KVStore) {
-	oldLookup := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestLookupIndex)
-	newLookup := collections.NewMap(newState, blocklog.PrefixRequestLookupIndex)
-
-	progress := NewProgressPrinter(500)
-	oldLookup.Iterate(func(elemKey, oldIndex []byte) bool {
-		// TODO: should the key be also migrated (re-encoded)?
-		if oldIndex == nil {
-			newLookup.DelAt(elemKey)
-		} else {
-			oldLookupKeys, err := old_blocklog.RequestLookupKeyListFromBytes(oldIndex)
-			if err != nil {
-				panic(fmt.Errorf("requestLookupIndex migration error: %v", err))
-			}
-
-			newLookupKeys := blocklog.RequestLookupKeyList{}
-			for _, l := range oldLookupKeys {
-				newLookupKeys = append(newLookupKeys, blocklog.NewRequestLookupKey(l.BlockIndex(), l.RequestIndex()))
-			}
-
-			// TODO: Check if we can take over the original key, I assume so. But double check it
-			newLookup.SetAt(elemKey, newLookupKeys.Bytes())
-		}
-
-		progress.Print()
-		return true
-	})
-}
-
 func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_isc.ChainID) blocklog.RequestReceipt {
 	var burnLog *gas.BurnLog
 
@@ -199,32 +180,100 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_i
 
 func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
-	newRequests := collections.NewMap(newState, blocklog.PrefixRequestReceipts)
-
-	cli.DebugLogf("Migrating request receipts (%d)", oldRequests.Len())
 
 	progress := NewProgressPrinter(500)
-	oldRequests.Iterate(func(elemKey []byte, value []byte) bool {
-		// TODO: should the key be also migrated (re-encoded)?
-		if value == nil {
-			newRequests.DelAt(elemKey)
-		} else {
-			// TODO: Validate if this is fine. BlockIndex and ReqIndex is 0 here, as we don't persist these values in the db
-			// So in my understanding, using 0 here is fine. If not, we need to iterate the whole request lut again and combine the tables.
-			// I added a solution in commit: 96504e6165ed4056a3e8a50281215f3d7eb7c015, for now I go without.
-			oldReceipt, err := old_blocklog.RequestReceiptFromBytes(value, 0, 0)
-			if err != nil {
-				panic(fmt.Errorf("requestReceipt migration error: %v", err))
+	var firstBlockIndex uint32 = math.MaxUint32
+	var lastBlockIndex uint32 = 0
+	var pruneBlockIndex uint32 = 0
+	var totalPrunedRequests uint16 = 0
+	oldRequests.Iterate(func(k, v []byte) bool {
+		// Usually oldState contains mutations for just one block. But not always - e.g. with option "-i" it will contain multiple blocks.
+		// We might ignore that and say we dont care about that option. But why not to implement this is it is easy?
+		lookupKey := lo.Must(old_rwutil.ReadFromBytes(k, &old_blocklog.RequestLookupKey{}))
+
+		if v == nil {
+			// Request deleted - this means that block was pruned
+			if totalPrunedRequests != 0 && pruneBlockIndex != lookupKey.BlockIndex() {
+				panic(fmt.Errorf("unexpected multiple blocks pruned"))
 			}
 
-			newReceipt := migrateSingleReceipt(oldReceipt, oldChainID)
-			newRequests.SetAt(elemKey, newReceipt.Bytes())
+			pruneBlockIndex = lookupKey.BlockIndex()
+			totalPrunedRequests++
+			return true
+		} else {
+			if lookupKey.BlockIndex() < firstBlockIndex {
+				firstBlockIndex = lookupKey.BlockIndex()
+			}
+			if lookupKey.BlockIndex() > lastBlockIndex {
+				lastBlockIndex = lookupKey.BlockIndex()
+			}
 		}
 
 		progress.Print()
-
 		return true
 	})
+
+	if firstBlockIndex > lastBlockIndex {
+		panic(fmt.Errorf("requestReceipts migration error: no receipts found"))
+	}
+
+	cli.DebugLogf("Migrating request receipts (%d)", oldRequests.Len())
+	progress = NewProgressPrinter(500)
+
+	// We need to go through blocks and through requests in the same way they were processed
+	// to ensure, that list in values of lookup table will be generated in the same order as they
+	// will appear after tracing.
+	for blockIndex := firstBlockIndex; blockIndex <= lastBlockIndex; blockIndex++ {
+		oldRequestsInBlock := lo.Must(getRequestReceiptsInBlock(oldState, blockIndex))
+
+		for _, oldReceipt := range oldRequestsInBlock {
+			newReceipt := migrateSingleReceipt(&oldReceipt, oldChainID)
+			newLookupKey := blocklog.NewRequestLookupKey(newReceipt.BlockIndex, newReceipt.RequestIndex)
+			blocklog.NewStateWriter(newState).SaveRequestReceipt(&newReceipt, newLookupKey)
+			progress.Print()
+		}
+	}
+
+	if totalPrunedRequests != 0 {
+		// Some block was pruned - we need to prune it in the new state too.
+		blocklog.NewStateWriter(newState).PruneRequestLogRecordsByBlockIndex(pruneBlockIndex, totalPrunedRequests)
+		// TODO: who should call pruneEventsByBlockIndex?
+	}
+
+	newRequests := collections.NewMapReadOnly(newState, blocklog.PrefixRequestReceipts)
+	if oldRequests.Len() != newRequests.Len() {
+		panic(fmt.Errorf("requestReceipts migration error: old and new receipts count mismatch: %v != %v", oldRequests.Len(), newRequests.Len()))
+	}
+}
+
+func getRequestReceiptsInBlock(partition old_kv.KVStoreReader, blockIndex uint32) ([]old_blocklog.RequestReceipt, error) {
+	blockInfo, ok := old_blocklog.GetBlockInfo(partition, blockIndex)
+	if !ok {
+		return nil, fmt.Errorf("block not found: %d", blockIndex)
+	}
+	reqs := make([]old_blocklog.RequestReceipt, blockInfo.TotalRequests)
+	for reqIdx := uint16(0); reqIdx < blockInfo.TotalRequests; reqIdx++ {
+		recBin, ok := getRequestRecordDataByRef(partition, blockIndex, reqIdx)
+		if !ok {
+			return nil, fmt.Errorf("request not found: %d/%d", blockIndex, reqIdx)
+		}
+		rec, err := old_blocklog.RequestReceiptFromBytes(recBin, blockIndex, reqIdx)
+		if err != nil {
+			return nil, err
+		}
+		reqs[reqIdx] = *rec
+	}
+	return reqs, nil
+}
+
+func getRequestRecordDataByRef(partition old_kv.KVStoreReader, blockIndex uint32, requestIndex uint16) ([]byte, bool) {
+	lookupKey := old_blocklog.NewRequestLookupKey(blockIndex, requestIndex)
+	lookupTable := old_collections.NewMapReadOnly(partition, old_blocklog.PrefixRequestReceipts)
+	recBin := lookupTable.GetAt(lookupKey[:])
+	if recBin == nil {
+		return nil, false
+	}
+	return recBin, true
 }
 
 func printWarningsForUnprocessableRequests(oldState old_kv.KVStoreReader) {
@@ -252,15 +301,16 @@ func migrateGlobalVars(oldState old_kv.KVStoreReader, newState kv.KVStore) uint3
 	return oldBlockIndex
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, chainOwner *cryptolib.Address) blocklog.BlockInfo {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, chainOwner *cryptolib.Address, blockKeepAmount int32) blocklog.BlockInfo {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
 	//printWarningsForUnprocessableRequests(oldContractState)
 	blockIndex := migrateGlobalVars(oldChainState, newChainState)
-	blockInfo := migrateBlockRegistry(blockIndex, chainOwner, stateMetadata, oldContractState, newContractState)
-	migrateRequestLookupIndex(oldContractState, newContractState)
-	migrateRequestReceipts(oldContractState, newContractState, oldChainID)
+	blockInfo := migrateBlockRegistry(blockIndex, blockKeepAmount, chainOwner, stateMetadata, oldContractState, newContractState)
+	if blockIndex != 0 { // no requests on origin block
+		migrateRequestReceipts(oldContractState, newContractState, oldChainID)
+	}
 
 	return blockInfo
 }

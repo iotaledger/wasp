@@ -5,6 +5,8 @@ import (
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
+	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
 	old_trietest "github.com/nnikolash/wasp-types-exported/packages/trie/test"
 	"github.com/samber/lo"
@@ -209,4 +211,19 @@ func (s *PrefixKVStore) IterateSorted(prefix old_kv.Key, f func(key old_kv.Key, 
 
 func (s *PrefixKVStore) IterateKeysSorted(prefix old_kv.Key, f func(key old_kv.Key) bool) {
 	s.s.IterateKeysSorted(prefix, f)
+}
+
+func (s *PrefixKVStore) ApplyMutations(muts *old_buffered.Mutations) (replacedValues old_dict.Dict) {
+	replacedValues = make(map[old_kv.Key][]byte, len(muts.Sets)+len(muts.Dels))
+
+	for k, v := range muts.Sets {
+		replacedValues[k] = s.Get(k)
+		s.Set(k, v)
+	}
+	for k := range muts.Dels {
+		replacedValues[k] = s.Get(k)
+		s.Del(k)
+	}
+
+	return replacedValues
 }

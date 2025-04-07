@@ -225,7 +225,7 @@ func (s *StateWriter) pruneRequestLookupTable(lookupDigest isc.RequestLookupDige
 	return nil
 }
 
-func (s *StateWriter) pruneRequestLogRecordsByBlockIndex(blockIndex uint32, totalRequests uint16) {
+func (s *StateWriter) PruneRequestLogRecordsByBlockIndex(blockIndex uint32, totalRequests uint16) {
 	receiptMap := collections.NewMap(s.state, PrefixRequestReceipts)
 
 	for reqIdx := uint16(0); reqIdx < totalRequests; reqIdx++ {
@@ -256,6 +256,20 @@ func (s *StateReader) getBlockInfoBytes(blockIndex uint32) []byte {
 
 func RequestReceiptKey(rkey RequestLookupKey) []byte {
 	return []byte(collections.MapElemKey(PrefixRequestReceipts, rkey.Bytes()))
+}
+
+func (s *StateReader) GetRequestRecordDataByRef(blockIndex uint32, reqIdx uint16) (*RequestReceipt, error) {
+	recBin, found := s.getRequestRecordDataByRef(blockIndex, reqIdx)
+	if !found {
+		return nil, fmt.Errorf("GetRequestRecordDataByRef: inconsistency: request record %v/%v not found", blockIndex, reqIdx)
+	}
+
+	rec, err := RequestReceiptFromBytes(recBin, blockIndex, reqIdx)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling request receipt: %v/%v: %w", blockIndex, reqIdx, err)
+	}
+
+	return rec, nil
 }
 
 func (s *StateReader) getRequestRecordDataByRef(blockIndex uint32, requestIndex uint16) ([]byte, bool) {
@@ -293,6 +307,6 @@ func (s *StateWriter) pruneBlock(blockIndex uint32) {
 	}
 	registry := collections.NewArray(s.state, PrefixBlockRegistry)
 	registry.PruneAt(blockIndex)
-	s.pruneRequestLogRecordsByBlockIndex(blockIndex, blockInfo.TotalRequests)
+	s.PruneRequestLogRecordsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 	s.pruneEventsByBlockIndex(blockIndex, blockInfo.TotalRequests)
 }

@@ -239,8 +239,8 @@ func migrateSingleState(c *cmd.Context) error {
 	v := migrations.MigrateRootContract(srcState, stateDraft)
 	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID)
 	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID)
-	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, chainOwner)
-	migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, chainOwner)
+	blockKeepAmount := migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, chainOwner)
+	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, chainOwner, blockKeepAmount)
 	migrations.MigrateEVMContract(nil, srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
@@ -369,16 +369,8 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 
 		oldMuts := block.Mutations()
-		// for k, v := range oldMuts.Sets {
-		// 	oldStateTrie.Update([]byte(k), v)
-		// }
-		// for k := range oldMuts.Dels {
-		// 	oldStateTrie.Delete([]byte(k))
-		// }
-		// oldStateTrieRoot, _ := oldStateTrie.Commit(oldStateStore)
-		// lo.Must(old_trie.Prune(oldStateStore, oldStateTriePrevRoot))
-		// oldStateTriePrevRoot = oldStateTrieRoot
-		oldMuts.ApplyTo(oldState)
+		valuesBeforeMutation := oldState.W.ApplyMutations(oldMuts)
+		_ = valuesBeforeMutation // can be used to process deletes, but is not currently needed
 
 		var oldStateMutsOnly old_kv.KVStoreReader
 		migrateFullState := startBlockIndex != 0 && blockIndex == startBlockIndex && !continueMigration
@@ -400,7 +392,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID)
 		accountsMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateGovernanceContract(oldState, newState, oldChainID, chainOwner)
+		blockKeepAmount := migrations.MigrateGovernanceContract(oldState, newState, oldChainID, chainOwner)
 		governanceMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateErrorsContract(oldState, newState)
@@ -416,7 +408,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID)
 		accountsMuts += newState.W.MutationsCountDiff()
 
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, chainOwner)
+		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, chainOwner, blockKeepAmount)
 		blocklogMuts := newState.W.MutationsCountDiff()
 
 		migrations.MigrateEVMContract(oldMuts, oldStateMutsOnly, newState)
@@ -465,8 +457,6 @@ func migrateAllStates(c *cmd.Context) error {
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
 			cli.Logf("Blocks index: %v", blockIndex)
 			cli.Logf("Blocks processed from last print: %v", recentlyBlocksProcessed)
-			//cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.CommittedSize())
-			//cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldState), newState.CommittedSize())
 			cli.Logf("State %v size: old = %v, new = %v", blockIndex, len(oldStateStore), newState.W.CommittedSize())
 			cli.Logf("Mutations per state processed (sets/dels): old = %.1f/%.1f, new = %.1f/%.1f",
 				float64(oldSetsProcessed)/float64(recentlyBlocksProcessed), float64(oldDelsProcessed)/float64(recentlyBlocksProcessed),

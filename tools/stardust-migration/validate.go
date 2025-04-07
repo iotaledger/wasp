@@ -38,6 +38,7 @@ func validateMigration(c *cmd.Context) error {
 	}()
 
 	firstIndex := uint32(c.Uint64("from-block"))
+	lastIndex := uint32(c.Uint64("to-block"))
 	validation.ConcurrentValidation = !c.Bool("no-parallel")
 	cli.DebugLoggingEnabled = true
 
@@ -66,20 +67,30 @@ func validateMigration(c *cmd.Context) error {
 	// 2. Check results of tracing
 	// 	For each of (latest block, some of intermediate blocks, and some manually chosen blocks):
 	// 		For each of requests in that block:
-	// 			Run tracing of that block on old and new node, and compare results
-	// 	As for manually chosen blocks I think about those where GasFeePolicy was changed or where requests failed because of gas.
+	// 			* Run tracing of that block on old and new node, and compare results
+	//          * Check that tracing of all requests in the block produce same mutation as in the block
+	//          * Check that mutations are equal in terms of order of elements in RequestLookupKeysList
+	// 	As for manually chosen blocks I think about those where
+	//   * GasFeePolicy was changed or where requests failed because of gas.
+	//   * Before and after pruning config changed
 	//
 	// 3. Check special accounts and cases: L2Totals, CommonAccount etc.
 	// 4. Specifically check those block, where "rare" objects like NFTs are present/change
 	// 5. Specifically check at least one instance of EACH business entity (e.g. OnLedgerRequest, OffLedgerRequest, etc.)
-	// 6. Into each of new state validations add some basic "integration" tests - use business logic funcs to retrieve data
-	// 7. Perform ALL callviews at least once for each of business entity type
+	// 6. Check prunning is duplicated: requests, lookup table, and others are not available when pruned in old state.
+	// 7. Into each of new state validations add some basic "integration" tests - use business logic funcs to retrieve data.
+	// 8. Perform ALL callviews at least once for each of business entity type.
 
-	newLatestState := NewRecordingKVStoreReadOnly(lo.Must(destStore.LatestState()))
-	cli.DebugLogf("Latest new state index: %v", newLatestState.R.BlockIndex())
+	if lastIndex == 0 {
+		cli.DebugLogf("Using latest new state index")
+		lastIndex = lo.Must(destStore.LatestBlockIndex())
+	}
 
-	cli.DebugLogf("Reading old latest state for index #%v...", newLatestState.R.BlockIndex())
-	oldLatestState := NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(newLatestState.R.BlockIndex())))
+	cli.DebugLogf("Reading old latest state for index #%v...", lastIndex)
+	oldState := NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
+
+	cli.DebugLogf("State index to be validated: %v", lastIndex)
+	newState := NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
 
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
@@ -90,12 +101,12 @@ func validateMigration(c *cmd.Context) error {
 	defer func() {
 		if err := recover(); err != nil {
 			cli.Logf("Validation panicked")
-			PrintLastDBOperations(oldLatestState, newLatestState)
+			PrintLastDBOperations(oldState, newState)
 			panic(err)
 		}
 	}()
 
-	validateStatesEqual(oldLatestState, newLatestState, oldChainID, newChainID, firstIndex, newLatestState.R.BlockIndex())
+	validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, lastIndex)
 
 	return nil
 }
@@ -116,6 +127,7 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 
 	validation.EnsureEqual("states", oldStateContentStr, newStateContentStr)
 
+	cli.UpdateStatusBar("")
 	cli.DebugLogf("States are equal\n")
 }
 

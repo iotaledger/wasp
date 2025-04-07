@@ -26,7 +26,7 @@ func MigrateGovernanceContract(
 	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
 	chainOwner *cryptolib.Address,
-) {
+) (blockKeepAmount int32) {
 
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_governance.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, governance.Contract.Hname())
@@ -43,13 +43,15 @@ func MigrateGovernanceContract(
 	migrateMaintenanceStatus(oldContractState, newContractState)
 	migrateMetadata(oldContractState, newContractState)
 	migratePublicURL(oldContractState, newContractState)
-	migrateBlockKeepAmount(oldContractState, newContractState)
+	blockKeepAmount = migrateBlockKeepAmount(oldContractState, newContractState)
 	// NOTE: VarRotateToAddress ignored
 	// NOTE: VarMinBaseTokensOnCommonAccount ignored, thus deleted
 
 	// TODO: VarAllowedStateControllerAddresses
 
 	cli.DebugLog("Migrated governance contract\n")
+
+	return blockKeepAmount
 }
 
 func migrateChainOwnerID(oldChainState old_kv.KVStoreReader, newContractState kv.KVStore, oldChainID old_isc.ChainID, chainOwner *cryptolib.Address) {
@@ -222,11 +224,13 @@ func migratePublicURL(
 func migrateBlockKeepAmount(
 	oldContractState old_kv.KVStoreReader,
 	newContractState kv.KVStore,
-) {
+) (blockKeepAmount int32) {
 	cli.DebugLog("Migrating block keep amount...\n")
 
-	blockKeepAmount := old_governance.GetBlockKeepAmount(oldContractState)
+	blockKeepAmount = old_governance.GetBlockKeepAmount(oldContractState)
 	governance.NewStateWriter(newContractState).SetBlockKeepAmount(blockKeepAmount)
 
 	cli.DebugLog("Migrated block keep amount\n")
+
+	return blockKeepAmount
 }
