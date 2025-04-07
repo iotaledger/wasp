@@ -175,7 +175,7 @@ func initDeployCmd() *cobra.Command {
 			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress(), l1Params)
 			log.Check(err)
 
-			stateMetadata := initializeNewChainState(committeeAddr, gasCoin, l1Params)
+			stateMetadata := initializeNewChainState(kp.Address(), gasCoin, l1Params)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
