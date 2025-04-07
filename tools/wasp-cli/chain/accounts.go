@@ -18,8 +18,8 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -147,7 +147,7 @@ func initDepositCmd() *cobra.Command {
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
 				allowance := isc.NewAssets(tokens.BaseTokens() / 10)
 
-				util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+				res := util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
@@ -157,6 +157,8 @@ func initDepositCmd() *cobra.Command {
 						},
 					)
 				})
+
+				fmt.Print(res.Digest.String())
 			} else {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0])
