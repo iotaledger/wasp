@@ -219,145 +219,95 @@ func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex
 }
 
 func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
-	cli.DebugLogf("Retrieving old request lookup index")
+	firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
 	lookupTable := old_collections.NewMapReadOnly(contractState, old_blocklog.PrefixRequestLookupIndex)
+	cli.DebugLogf("Retrieving old request lookup index: blocks = [%v; %v]", firstAvailBlockIndex, lastIndex)
 
 	// The table is too big to be stringified - so just checking stringifying requests from last 10000 blocks,
 	// plus gathering general statistics
 
-	var indexStr strings.Builder
+	var indexStr = &strings.Builder{}
+	requestsCount := 0
 
-	done1 := Go(func() {
-		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
-		printProgress, done := NewProgressPrinter("old_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
-		defer done()
+	printProgress, done := NewProgressPrinter("old_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
+	defer done()
 
-		for blockIndex := max(firstAvailBlockIndex, 1); blockIndex < lastIndex; blockIndex++ {
-			printProgress()
-			_, reqs := lo.Must2(old_blocklog.GetRequestsInBlock(contractState, blockIndex))
+	for blockIndex := max(firstAvailBlockIndex, 1); blockIndex < lastIndex; blockIndex++ {
+		printProgress()
+		_, reqs := lo.Must2(old_blocklog.GetRequestsInBlock(contractState, blockIndex))
+		requestsCount += len(reqs)
 
-			for reqIdx, req := range reqs {
-				lookupKey := req.ID().LookupDigest()
-				lookupKeyListBytes := lookupTable.GetAt(lookupKey[:])
-				if lookupKeyListBytes == nil {
-					panic(fmt.Sprintf("Req lookup %v/%v: NO LOOKUP RECORD\n", blockIndex, reqIdx))
+		for reqIdx, req := range reqs {
+			lookupKey := req.ID().LookupDigest()
+			lookupKeyListBytes := lookupTable.GetAt(lookupKey[:])
+			if lookupKeyListBytes == nil {
+				panic(fmt.Sprintf("Req lookup %v/%v: NO LOOKUP RECORD\n", blockIndex, reqIdx))
+			}
+
+			lookupKeyList := lo.Must(old_blocklog.RequestLookupKeyListFromBytes(lookupKeyListBytes))
+			found := false
+			for _, lookupRecord := range lookupKeyList {
+				if lookupRecord.BlockIndex() == blockIndex || lookupRecord.RequestIndex() == uint16(reqIdx) {
+					indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: found\n", blockIndex, reqIdx))
+					found = true
+					break
 				}
+			}
 
-				lookupKeyList := lo.Must(old_blocklog.RequestLookupKeyListFromBytes(lookupKeyListBytes))
-				found := false
-				for _, lookupRecord := range lookupKeyList {
-					if lookupRecord.BlockIndex() == blockIndex || lookupRecord.RequestIndex() == uint16(reqIdx) {
-						indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: found\n", blockIndex, reqIdx))
-						found = true
-						break
-					}
-				}
-
-				if !found {
-					panic(fmt.Sprintf("Req lookup %v/%v: REQUEST NOT FOUND\n", blockIndex, reqIdx))
-				}
+			if !found {
+				panic(fmt.Sprintf("Req lookup %v/%v: REQUEST NOT FOUND\n", blockIndex, reqIdx))
 			}
 		}
-	})
+	}
 
-	realCount := 0
-	nonEmptryLen := 0
-
-	done2 := Go(func() {
-		printProgress, done := NewProgressPrinter("old_blocklog", "lookup (count)", "entries", lookupTable.Len())
-		defer done()
-
-		lookupTable.Iterate(func(key, value []byte) bool {
-			realCount++
-			if len(value) != 0 {
-				nonEmptryLen++
-			}
-
-			printProgress()
-			return true
-		})
-	})
-
-	<-done1
-	<-done2
-
-	cli.DebugLogf("Retrieved %v request lookup index entries", realCount)
-	indexStr.WriteString(fmt.Sprintf("Request lookup index virtual len: %v\n", lookupTable.Len()))
-	indexStr.WriteString(fmt.Sprintf("Request lookup index real len: %v\n", realCount))
-	indexStr.WriteString(fmt.Sprintf("Request lookup index non-empty len: %v\n", nonEmptryLen))
+	if requestsCount == 0 {
+		panic(fmt.Sprintf("No requests found in the blocks range [%v; %v]", firstIndex, lastIndex))
+	}
 
 	return indexStr.String()
 }
 
 func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
-	cli.DebugLogf("Retrieving new request lookup index")
+	firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
 	lookupTable := collections.NewMapReadOnly(contractState, old_blocklog.PrefixRequestLookupIndex)
+	cli.DebugLogf("Retrieving new request lookup index: blocks = [%v; %v]", firstAvailBlockIndex, lastIndex)
 
 	// The table is too big to be stringified - so just checking stringifying requests from last 10000 blocks,
 	// plus gathering general statistics
 
 	var indexStr strings.Builder
 
-	done1 := Go(func() {
-		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
-		printProgress, done := NewProgressPrinter("new_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
-		defer done()
-		r := blocklog.NewStateReader(contractState)
+	printProgress, done := NewProgressPrinter("new_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
+	defer done()
+	r := blocklog.NewStateReader(contractState)
 
-		for blockIndex := firstAvailBlockIndex; blockIndex < lastIndex; blockIndex++ {
-			printProgress()
-			_, reqs := lo.Must2(r.GetRequestsInBlock(blockIndex))
+	for blockIndex := firstAvailBlockIndex; blockIndex < lastIndex; blockIndex++ {
+		printProgress()
+		_, reqs := lo.Must2(r.GetRequestsInBlock(blockIndex))
 
-			for reqIdx, req := range reqs {
-				lookupKey := req.ID().LookupDigest()
-				lookupKeyListBytes := lookupTable.GetAt(lookupKey[:])
-				if lookupKeyListBytes == nil {
-					indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: NO LOOKUP RECORD\n", blockIndex, reqIdx))
-					continue
+		for reqIdx, req := range reqs {
+			lookupKey := req.ID().LookupDigest()
+			lookupKeyListBytes := lookupTable.GetAt(lookupKey[:])
+			if lookupKeyListBytes == nil {
+				indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: NO LOOKUP RECORD\n", blockIndex, reqIdx))
+				continue
+			}
+
+			lookupKeyList := lo.Must(blocklog.RequestLookupKeyListFromBytes(lookupKeyListBytes))
+			found := false
+			for _, lookupRecord := range lookupKeyList {
+				if lookupRecord.BlockIndex() == blockIndex || lookupRecord.RequestIndex() == uint16(reqIdx) {
+					indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: found\n", blockIndex, reqIdx))
+					found = true
+					break
 				}
+			}
 
-				lookupKeyList := lo.Must(blocklog.RequestLookupKeyListFromBytes(lookupKeyListBytes))
-				found := false
-				for _, lookupRecord := range lookupKeyList {
-					if lookupRecord.BlockIndex() == blockIndex || lookupRecord.RequestIndex() == uint16(reqIdx) {
-						indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: found\n", blockIndex, reqIdx))
-						found = true
-						break
-					}
-				}
-
-				if !found {
-					indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: REQUEST NOT FOUND\n", blockIndex, reqIdx))
-				}
+			if !found {
+				indexStr.WriteString(fmt.Sprintf("Req lookup %v/%v: REQUEST NOT FOUND\n", blockIndex, reqIdx))
 			}
 		}
-	})
-
-	realCount := 0
-	nonEmptryLen := 0
-
-	done2 := Go(func() {
-		printProgress, done := NewProgressPrinter("new_blocklog", "lookup (entries)", "entries", lookupTable.Len())
-		defer done()
-
-		lookupTable.Iterate(func(key, value []byte) bool {
-			realCount++
-			if len(value) != 0 {
-				nonEmptryLen++
-			}
-
-			printProgress()
-			return true
-		})
-	})
-
-	<-done1
-	<-done2
-
-	cli.DebugLogf("Retrieved %v request lookup index entries", realCount)
-	indexStr.WriteString(fmt.Sprintf("Request lookup index virtual len: %v\n", lookupTable.Len()))
-	indexStr.WriteString(fmt.Sprintf("Request lookup index real len: %v\n", realCount))
-	indexStr.WriteString(fmt.Sprintf("Request lookup index non-empty len: %v\n", nonEmptryLen))
+	}
 
 	return indexStr.String()
 }
