@@ -18,7 +18,8 @@ var progressPrintingThreadStarted = false
 
 func NewProgressPrinter[Count constraints.Integer](contractName, migrationName, entityPluralName string, totalCount Count) (printProgress, done func()) {
 	if !ConcurrentValidation {
-		return cli.NewProgressPrinter(entityPluralName, totalCount)
+		p, d := cli.NewProgressPrinter(entityPluralName, totalCount)
+		return func() { p() }, d
 	}
 
 	progressMutex.Lock()

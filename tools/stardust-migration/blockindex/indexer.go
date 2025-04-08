@@ -1,175 +1,44 @@
 package blockindex
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path"
-	"slices"
-	"time"
 
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
-	"github.com/samber/lo"
-
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
-	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
+	"github.com/samber/lo"
 )
 
-type TrieRootWithIndex struct {
-	Index uint32
-	Hash  old_trie.Hash
+type BlockIndex interface {
+	BlockByIndex(index uint32) (old_state.Block, old_trie.Hash)
+	BlocksCount() uint32
 }
 
-func BuildIndex(s old_state.Store) []TrieRootWithIndex {
-	// Copied from indexedstore
+func New(store old_state.Store) BlockIndex {
+	const indexFilePath = "index.bin"
+	cli.Logf("Trying to read index from %v", indexFilePath)
 
-	latestState, err := s.LatestState()
-	if err != nil {
-		panic(err)
+	fileIndexer, fileIndexFound := NewFileIndexer(indexFilePath, store)
+	if fileIndexFound {
+		return fileIndexer
 	}
 
-	blockKeepAmount := old_governance.NewStateAccess(latestState).GetBlockKeepAmount()
-	if blockKeepAmount == -1 {
-		// pruning is not enabled - we can get any block just by index
-		return []TrieRootWithIndex{{Index: latestState.BlockIndex(), Hash: latestState.TrieRoot()}}
-	}
+	cli.Logf("Index file NOT found at %v, using on-the-fly indexing", indexFilePath)
 
-	edgeTrieRoots := make([]TrieRootWithIndex, 0, latestState.BlockIndex()/uint32(blockKeepAmount)+1)
-	state := latestState
-	blockIndex := state.BlockIndex()
-	trieRoot := state.TrieRoot()
+	// Index file is not available - using on-the-fly indexer
+	indexer := NewOnTheFlyIndexer(store)
+	printIndexerStats(indexer, store)
 
-	for {
-		edgeTrieRoots = append(edgeTrieRoots, TrieRootWithIndex{Index: blockIndex, Hash: trieRoot})
-
-		earliestAvailableBlockIndex := uint32(0)
-		if uint32(blockKeepAmount) >= blockIndex {
-			// reached the beginning of the chain
-			break
-		}
-
-		earliestAvailableBlockIndex = blockIndex - uint32(blockKeepAmount) + 1
-
-		bi, ok := old_blocklog.NewStateAccess(state).BlockInfo(earliestAvailableBlockIndex + 1)
-		if !ok {
-			panic(fmt.Errorf("blocklog missing block index %d on active state %d", earliestAvailableBlockIndex, blockIndex))
-		}
-
-		trieRoot = bi.PreviousL1Commitment().TrieRoot()
-		state = lo.Must(s.StateByTrieRoot(trieRoot))
-		blockIndex = state.BlockIndex()
-	}
-
-	slices.Reverse(edgeTrieRoots)
-
-	return edgeTrieRoots
+	return indexer
 }
 
-func LoadOrCreate(db old_state.Store) *BlockIndexer {
-	return LoadOrCreateFromFile(db, defaultIndexFilePath(db))
-}
-
-func LoadOrCreateFromFile(db old_state.Store, indexFilePath string) *BlockIndexer {
-	cli.Logf("Loading index from %v...", indexFilePath)
-
-	indexBytes, err := os.ReadFile(indexFilePath)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			panic(err)
-		}
-
-		cli.Logf("Index file not found, building index...")
-		startTime := time.Now()
-		index := BuildIndex(db)
-		cli.Logf("Index built: time = %v, edge states = %v, first edge index = %v, last edge index = %v.",
-			time.Since(startTime), len(index), index[0].Index, index[len(index)-1].Index)
-
-		cli.Logf("Saving index to %v...", indexFilePath)
-		indexBytes = lo.Must(json.MarshalIndent(index, "", "  "))
-		lo.Must0(os.MkdirAll(path.Dir(indexFilePath), 0o755))
-		lo.Must0(os.WriteFile(indexFilePath, indexBytes, 0o655))
-
-		return NewIndexer(db, index)
-	}
-
-	var index []TrieRootWithIndex
-	lo.Must0(json.Unmarshal(indexBytes, &index))
-
-	cli.Logf("Index loaded: edge states = %v, first edge index = %v, last edge index = %v.",
-		len(index), index[0].Index, index[len(index)-1].Index)
-
-	return NewIndexer(db, index)
-}
-
-func defaultIndexFilePath(db old_state.Store) string {
-	trieRoot := lo.Must(db.LatestTrieRoot())
-	return path.Join(os.TempDir(), "stardust-migration-blockindex-"+trieRoot.String()+".json")
-}
-
-func NewIndexer(db old_state.Store, edgeTrieRoots []TrieRootWithIndex) *BlockIndexer {
-	return &BlockIndexer{
-		s:             db,
-		edgeTrieRoots: slices.Clone(edgeTrieRoots),
-	}
-}
-
-type BlockIndexer struct {
-	s             old_state.Store
-	edgeTrieRoots []TrieRootWithIndex
-}
-
-func (bi *BlockIndexer) BlockByIndex(index uint32) (old_state.Block, old_trie.Hash) {
-	if latestIndex := bi.LatestBlockIndex(); index > latestIndex {
-		panic(fmt.Errorf("block index %v is out of range [0; %v]", index, latestIndex))
-	}
-
-	i, exactMatch := slices.BinarySearchFunc(bi.edgeTrieRoots, index, func(i TrieRootWithIndex, index uint32) int {
-		// unsigned... cannot use i.Index - j
-		if i.Index < index {
-			return -1
-		}
-		if i.Index > index {
-			return 1
-		}
-		return 0
-	})
-
-	if exactMatch {
-		trieRoot := bi.edgeTrieRoots[i].Hash
-		block := lo.Must(bi.s.BlockByTrieRoot(trieRoot))
-		if block.StateIndex() != index {
-			// Just double checking
-			// TODO: remove for perf
-			panic(fmt.Errorf("unexpected block index %v, expected %v", block.StateIndex(), index))
-		}
-
-		return block, trieRoot
-	}
-	if i >= len(bi.edgeTrieRoots) {
-		panic("unexpected")
-	}
-
-	edgeTrieRoot := bi.edgeTrieRoots[i].Hash
-	state := lo.Must(bi.s.StateByTrieRoot(edgeTrieRoot))
-
-	nextBlockInfo, ok := old_blocklog.NewStateAccess(state).BlockInfo(index + 1)
-	if !ok {
-		panic(fmt.Errorf("state %v does not have info about block %v", state.BlockIndex(), index+1))
-	}
-
-	trieRoot := nextBlockInfo.PreviousL1Commitment().TrieRoot()
-	block := lo.Must(bi.s.BlockByTrieRoot(trieRoot))
-	if block.StateIndex() != index {
-		// Just double checking
-		// TODO: remove for perf
-		panic(fmt.Errorf("unexpected block index %v, expected %v", block.StateIndex(), index))
-	}
-
-	return block, trieRoot
-}
-
-func (bi *BlockIndexer) LatestBlockIndex() uint32 {
-	return bi.edgeTrieRoots[len(bi.edgeTrieRoots)-1].Index
+func printIndexerStats(indexer *OnTheFlyBlockIndexer, s old_state.Store) {
+	latestBlockIndex := lo.Must(s.LatestBlockIndex())
+	utils.MeasureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 100", func() { indexer.BlockByIndex(100) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 10000", func() { indexer.BlockByIndex(10000) })
+	utils.MeasureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
+	utils.MeasureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
+	utils.MeasureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
 }

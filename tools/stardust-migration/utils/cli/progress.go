@@ -29,7 +29,7 @@ func onlyForBlockProgress(entityPluralName string, msgType string, msg string) {
 	}
 }
 
-func NewProgressPrinter[Count constraints.Integer](entityPluralName string, totalCount Count) (printProgress func(), done func()) {
+func NewProgressPrinter[Count constraints.Integer](entityPluralName string, totalCount Count) (printProgress func(processed ...Count), done func()) {
 	const period = time.Second
 	startTime := time.Now()
 	lastEstimateUpdateTime := startTime
@@ -38,12 +38,17 @@ func NewProgressPrinter[Count constraints.Integer](entityPluralName string, tota
 	var currentSpeed int
 
 	if totalCount == 0 {
-		totalProcessed := 0
-		recentlyProcessed := 0
+		var totalProcessed Count = 0
+		var recentlyProcessed Count = 0
 
-		return func() {
-			totalProcessed++
-			recentlyProcessed++
+		return func(processed ...Count) {
+			var processedV Count = 1
+			if len(processed) > 0 {
+				processedV = processed[0]
+			}
+
+			totalProcessed += processedV
+			recentlyProcessed += processedV
 
 			periodicAction(period, &lastEstimateUpdateTime, func() {
 				avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
@@ -64,8 +69,13 @@ func NewProgressPrinter[Count constraints.Integer](entityPluralName string, tota
 	countLeft := totalCount
 	prevCountLeft := countLeft
 
-	return func() {
-		countLeft--
+	return func(processed ...Count) {
+		var processedV Count = 1
+		if len(processed) > 0 {
+			processedV = processed[0]
+		}
+
+		countLeft -= processedV
 		totalProcessed := totalCount - countLeft
 
 		periodicAction(period, &lastEstimateUpdateTime, func() {

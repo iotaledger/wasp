@@ -795,52 +795,16 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex u
 	printProgress, clearProgress := cli.NewProgressPrinter("blocks", totalBlocksCount)
 	defer clearProgress()
 
-	const indexFilePath = "index.bin"
-	cli.Logf("Trying to read index from %v", indexFilePath)
-
-	blockTrieRoots, indexFileFound := blockindex.ReadIndexFromFile(indexFilePath)
-	if indexFileFound {
-		if len(blockTrieRoots) != int(latestBlockIndex+1) {
-			log.Fatalf("index file was created for other database: block in db = %v, index entries = %v", len(blockTrieRoots), latestBlockIndex+1)
-		}
-
-		for i := startIndex; i <= endIndex; i++ {
-			trieRoot := blockTrieRoots[i]
-			printProgress()
-			block := lo.Must(srcStore.BlockByTrieRoot(trieRoot))
-			if !f(uint32(i), trieRoot, block) {
-				return
-			}
-		}
-
-		return
-	}
-
-	cli.Logf("Index file NOT found at %v, using on-the-fly indexing", indexFilePath)
-
-	// Index file is not available - using on-the-fly indexer
-	indexer := blockindex.LoadOrCreate(srcStore)
-	printIndexerStats(indexer, srcStore)
-
+	blockIndex := blockindex.New(srcStore)
 	bot.Get().PostMessage(fmt.Sprintf("Migrating from: *%d*, to: *%d*", startIndex, endIndex))
 
 	for i := startIndex; i <= endIndex; i++ {
 		printProgress()
-		block, trieRoot := indexer.BlockByIndex(i)
+		block, trieRoot := blockIndex.BlockByIndex(i)
 		if !f(i, trieRoot, block) {
 			return
 		}
 	}
-}
-
-func printIndexerStats(indexer *blockindex.BlockIndexer, s old_state.Store) {
-	latestBlockIndex := lo.Must(s.LatestBlockIndex())
-	utils.MeasureTimeAndPrint("Time for retrieving block 0", func() { indexer.BlockByIndex(0) })
-	utils.MeasureTimeAndPrint("Time for retrieving block 100", func() { indexer.BlockByIndex(100) })
-	utils.MeasureTimeAndPrint("Time for retrieving block 10000", func() { indexer.BlockByIndex(10000) })
-	utils.MeasureTimeAndPrint("Time for retrieving block 1000000", func() { indexer.BlockByIndex(1000000) })
-	utils.MeasureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex-1000), func() { indexer.BlockByIndex(latestBlockIndex - 1000) })
-	utils.MeasureTimeAndPrint(fmt.Sprintf("Time for retrieving block %v", latestBlockIndex), func() { indexer.BlockByIndex(latestBlockIndex) })
 }
 
 // Returns KVStoreReader, which will iterate by both Sets and Dels of mutations. For Dels, value will be nil.

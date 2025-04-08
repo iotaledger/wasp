@@ -12,6 +12,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime"
 	"runtime/debug"
 	"time"
 
@@ -202,29 +203,8 @@ func main() {
 			{
 				Name: "search",
 				Subcommands: []*cmd.Command{
-					{
-						Name:      "iscmagic-allowance",
-						ArgsUsage: "<chain-db-dir>",
-						Flags: []cmd.Flag{
-							&cmd.Uint64Flag{
-								Name:    "from-index",
-								Aliases: []string{"i", "f", "from-block", "from"},
-								Usage:   "Start search from this block index.",
-							},
-							&cmd.Uint64Flag{
-								Name:    "to-index",
-								Aliases: []string{"t", "to-block", "to"},
-								Usage:   "Stop search at this block index.",
-							},
-							&cmd.BoolFlag{
-								Name:    "all",
-								Aliases: []string{"a"},
-								Usage:   "Find all occurrences (by default, only first is printed and search stops).",
-							},
-						},
-						Before: processCommonFlags,
-						Action: search("allowance", searchISCMagicAllowance),
-					},
+					searchCmd("iscmagic-allowance", searchISCMagicAllowance),
+					searchCmd("nft", searchNFT),
 				},
 			},
 		},
@@ -232,6 +212,39 @@ func main() {
 
 	programCtx, _ := signal.NotifyContext(context.Background(), os.Interrupt)
 	lo.Must0(app.RunContext(programCtx, os.Args))
+}
+
+func searchCmd(entityName string, f StateContainsTargetCheckFunc) *cmd.Command {
+	return &cmd.Command{
+		Name:      entityName,
+		ArgsUsage: "<chain-db-dir>",
+		Flags: []cmd.Flag{
+			&cmd.Uint64Flag{
+				Name:    "from-index",
+				Aliases: []string{"i", "f", "from-block", "from"},
+				Usage:   "Start search from this block index.",
+			},
+			&cmd.Uint64Flag{
+				Name:    "to-index",
+				Aliases: []string{"t", "to-block", "to"},
+				Usage:   "Stop search at this block index.",
+			},
+			&cmd.BoolFlag{
+				Name:    "all",
+				Aliases: []string{"a"},
+				Usage:   "Find all occurrences (by default, only first is printed and search stops).",
+			},
+			&cmd.UintFlag{
+				Name:        "parallel",
+				Aliases:     []string{"p"},
+				Usage:       "Number of parallel threads to use for search.",
+				Value:       uint(runtime.NumCPU() * 2),
+				DefaultText: fmt.Sprintf("%v", runtime.NumCPU()*2),
+			},
+		},
+		Before: processCommonFlags,
+		Action: search(entityName, f),
+	}
 }
 
 func processCommonFlags(c *cmd.Context) error {
