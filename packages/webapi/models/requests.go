@@ -14,8 +14,8 @@ type ContractCallViewRequest struct {
 }
 
 type EstimateGasRequestOnledger struct {
-	DryRunRes string `json:"dryRunRes" swagger:"desc(The result of the DryRun encoded in BCS format and represented in hexadecimal),required"`
-	Msg       string `json:"msg" swagger:"desc(The ISC Message encoded in BCS format and represented in hexadecimal),required"`
+	TransactionBytes string `json:"transactionBytes" swagger:"desc(The result of the DryRun encoded in BCS format and represented in hexadecimal),required"`
+	RequestBytes     string `json:"requestBytes" swagger:"desc(The ISC Request encoded in BCS format and represented in hexadecimal),required"`
 }
 
 type EstimateGasRequestOffledger struct {

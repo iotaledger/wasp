@@ -3,12 +3,15 @@ package chain
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/labstack/echo/v4"
+	"golang.org/x/net/context"
+
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -29,26 +32,29 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err = e.Bind(&estimateGasRequest); err != nil {
 		return apierrors.InvalidPropertyError("body", err)
 	}
-	dryRunResBytes, err := hexutil.Decode(estimateGasRequest.DryRunRes)
-	if err != nil {
-		return err
-	}
-	dryRunRes, err := bcs.Unmarshal[iotajsonrpc.DryRunTransactionBlockResponse](dryRunResBytes)
+
+	msgBytes, err := hexutil.Decode(estimateGasRequest.RequestBytes)
 	if err != nil {
 		return err
 	}
 
-	msgBytes, err := hexutil.Decode(estimateGasRequest.Msg)
+	var msg iscmove.Request
+	msg, err = bcs.Unmarshal[iscmove.Request](msgBytes)
 	if err != nil {
-		return err
-	}
-	var msg iscmove.Message
-	msg, err = bcs.Unmarshal[iscmove.Message](msgBytes)
-	if err != nil {
-		return err
+		return apierrors.InvalidPropertyError("requestBytes", err)
 	}
 
-	req, err := isc.FakeEstimateOnLedger(&dryRunRes, &msg)
+	dryRunResBytes, err := hexutil.Decode(estimateGasRequest.TransactionBytes)
+	if err != nil {
+		return apierrors.InvalidPropertyError("transactionBytes", err)
+	}
+
+	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, dryRunResBytes)
+
+	req, err := isc.FakeEstimateOnLedger(dryRunResponse, msg)
 	if err != nil {
 		return fmt.Errorf("cant generate fake request: %s", err)
 	}
