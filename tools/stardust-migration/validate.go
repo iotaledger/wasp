@@ -15,6 +15,7 @@ import (
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -23,6 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
@@ -132,24 +134,30 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 }
 
 func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
-	var accountsContractStr, blocklogContractStr string
+	var accountsContractStr, blocklogContractStr, evmContractStr string
 
 	validation.GoAllAndWait(func() {
 		accountsContractStr = validation.OldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
 	}, func() {
 		blocklogContractStr = validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+	}, func() {
+		evmContractStr = validation.OldEVMContractContentToStr(oldstate.GetContactStateReader(chainState, old_evm.Contract.Hname()))
 	})
 
-	return accountsContractStr + "\n" + blocklogContractStr
+	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
+	return accountsContractStr + "\n" + blocklogContractStr + "\n" + evmContractStr
 }
 
 func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
-	var accountsContractStr, blocklogContractStr string
+	var accountsContractStr, blocklogContractStr, evmContractStr string
 	validation.GoAllAndWait(func() {
 		accountsContractStr = validation.NewAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
 	}, func() {
 		blocklogContractStr = validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+	}, func() {
+		evmContractStr = validation.NewEVMContractContentToStr(newstate.GetContactStateReader(chainState, evm.Contract.Hname()))
 	})
 
-	return accountsContractStr + "\n" + blocklogContractStr
+	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
+	return accountsContractStr + "\n" + blocklogContractStr + "\n" + evmContractStr
 }

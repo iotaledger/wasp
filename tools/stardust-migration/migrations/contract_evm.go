@@ -44,9 +44,7 @@ func migrateEVMEmulator(muts *old_buffered.Mutations, oldContractState old_kv.KV
 	migrateStateDB(oldEmulatorState, newEmulatorState)
 	migrateBlockchainDB(muts, oldEmulatorState, newEmulatorState)
 
-	progress := NewProgressPrinter(500)
-
-	cli.DebugLogf("Migrated %v keys for evm/emulator", progress.Count)
+	cli.DebugLogf("Migrated %v keys for evm/emulator")
 }
 
 func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
@@ -69,25 +67,26 @@ func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState 
 
 	progress := NewProgressPrinter()
 
-	oldMagicState.Iterate(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
-		k = utils.MustRemovePrefix(k, old_evmimpl.PrefixAllowance)
-		if len(k) != 2*common.AddressLength {
-			log.Panicf("unexpected key length: %v", len(k))
+	oldMagicState.Iterate(old_evmimpl.PrefixAllowance, func(oldKeyBytes old_kv.Key, v []byte) bool {
+		oldKeyBytes = utils.MustRemovePrefix(oldKeyBytes, old_evmimpl.PrefixAllowance)
+		if len(oldKeyBytes) != 2*common.AddressLength {
+			log.Panicf("unexpected key length: %v", len(oldKeyBytes))
 		}
 
-		oldFromBytes := []byte(k[:common.AddressLength])
-		oldToBytes := []byte(k[common.AddressLength:])
+		oldFromBytes := []byte(oldKeyBytes[:common.AddressLength])
+		oldToBytes := []byte(oldKeyBytes[common.AddressLength:])
 
 		from := common.BytesToAddress(oldFromBytes)
 		to := common.BytesToAddress(oldToBytes)
+		newKeyBytes := evmimpl.KeyAllowance(from, to)
 
 		if v == nil {
-			newMagicState.Del(kv.Key(k))
+			newMagicState.Del(newKeyBytes)
 		} else {
 			oldAllowance := old_isc.MustAssetsFromBytes(v)
 			newAllowance := OldAssetsToNewAssets(oldAllowance)
 
-			newMagicState.Set(evmimpl.KeyAllowance(from, to), newAllowance.Bytes())
+			newMagicState.Set(newKeyBytes, newAllowance.Bytes())
 		}
 
 		progress.Print()

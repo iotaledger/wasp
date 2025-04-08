@@ -20,10 +20,10 @@ const (
 	// the "privileged" ISC magic methods.
 	// Covered in: TestStorageContract
 	prefixPrivileged = "p"
-	// prefixAllowance stores the allowance between accounts (e.g. by calling
+	// PrefixAllowance stores the allowance between accounts (e.g. by calling
 	// ISC.allow() from solidity).
 	// Covered in: TestSendBaseTokens
-	prefixAllowance = "a"
+	PrefixAllowance = "a"
 	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
 	// registered by calling ISC.registerERC20NativeToken() from solidity.
 	// Covered in: TestERC20CoinWithExternalFoundry
@@ -47,7 +47,7 @@ func addToPrivileged(evmState kv.KVStore, addr common.Address) {
 
 // allowance between two EVM accounts
 func KeyAllowance(from, to common.Address) kv.Key {
-	return prefixAllowance + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
+	return PrefixAllowance + kv.Key(from.Bytes()) + kv.Key(to.Bytes())
 }
 
 func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
