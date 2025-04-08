@@ -21,6 +21,10 @@ func UpdateStatusBar(s string) {
 	statusBar = s
 }
 
+func ClearStatusBar() {
+	UpdateStatusBar("")
+}
+
 func clearStatusBar() {
 	fmt.Print("\033[2K\r")
 }

@@ -84,14 +84,14 @@ func validateMigration(c *cmd.Context) error {
 	// 8. Perform ALL callviews at least once for each of business entity type.
 
 	if lastIndex == 0 {
-		cli.DebugLogf("Using latest new state index")
+		cli.Logf("Using latest new state index")
 		lastIndex = lo.Must(destStore.LatestBlockIndex())
 	}
 
-	cli.DebugLogf("Reading old latest state for index #%v...", lastIndex)
+	cli.Logf("Reading old latest state for index #%v...", lastIndex)
 	oldState := NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
 
-	cli.DebugLogf("State index to be validated: %v", lastIndex)
+	cli.Logf("State index to be validated: %v", lastIndex)
 	newState := NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
 
 	old_parameters.InitL1(&old_parameters.L1Params{
@@ -129,7 +129,7 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 
 	validation.EnsureEqual("states", oldStateContentStr, newStateContentStr)
 
-	cli.UpdateStatusBar("")
+	cli.ClearStatusBar()
 	cli.DebugLogf("States are equal\n")
 }
 

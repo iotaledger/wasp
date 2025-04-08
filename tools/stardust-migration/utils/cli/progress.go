@@ -42,24 +42,22 @@ func NewProgressPrinter[Count constraints.Integer](entityPluralName string, tota
 		recentlyProcessed := 0
 
 		return func() {
-				totalProcessed++
-				recentlyProcessed++
+			totalProcessed++
+			recentlyProcessed++
 
-				periodicAction(period, &lastEstimateUpdateTime, func() {
-					avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
-					currentSpeed = int(float64(recentlyProcessed) / period.Seconds())
-					recentlyProcessed = 0
-				})
+			periodicAction(period, &lastEstimateUpdateTime, func() {
+				avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
+				currentSpeed = int(float64(recentlyProcessed) / period.Seconds())
+				recentlyProcessed = 0
+			})
 
-				updateString := fmt.Sprintf("%v processed: %v. Speed: %v %v/sec. Avg speed: %v %v/sec.",
-					entityPluralNameCapitalized, totalProcessed, currentSpeed, entityPluralName, avgSpeed, entityPluralName)
+			updateString := fmt.Sprintf("%v processed: %v. Speed: %v %v/sec. Avg speed: %v %v/sec.",
+				entityPluralNameCapitalized, totalProcessed, currentSpeed, entityPluralName, avgSpeed, entityPluralName)
 
-				UpdateStatusBar(updateString)
+			UpdateStatusBar(updateString)
 
-				onlyForBlockProgress(entityPluralName, "processing", fmt.Sprintf("Time: %v\n"+updateString, time.Now().Format(time.DateTime)))
-			}, func() {
-				UpdateStatusBarf("")
-			}
+			onlyForBlockProgress(entityPluralName, "processing", fmt.Sprintf("Time: %v\n"+updateString, time.Now().Format(time.DateTime)))
+		}, ClearStatusBar
 	}
 
 	var estimateRunTime time.Duration
@@ -67,28 +65,26 @@ func NewProgressPrinter[Count constraints.Integer](entityPluralName string, tota
 	prevCountLeft := countLeft
 
 	return func() {
-			countLeft--
-			totalProcessed := totalCount - countLeft
+		countLeft--
+		totalProcessed := totalCount - countLeft
 
-			periodicAction(period, &lastEstimateUpdateTime, func() {
-				relProgress := float64(totalProcessed) / float64(totalCount)
-				estimateRunTime = time.Duration(float64(time.Since(startTime)) * (1/relProgress - 1))
-				avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
+		periodicAction(period, &lastEstimateUpdateTime, func() {
+			relProgress := float64(totalProcessed) / float64(totalCount)
+			estimateRunTime = time.Duration(float64(time.Since(startTime)) * (1/relProgress - 1))
+			avgSpeed = int(float64(totalProcessed) / time.Since(startTime).Seconds())
 
-				recentlyProcessed := prevCountLeft - countLeft
-				currentSpeed = int(float64(recentlyProcessed) / period.Seconds())
-				prevCountLeft = countLeft
-			})
+			recentlyProcessed := prevCountLeft - countLeft
+			currentSpeed = int(float64(recentlyProcessed) / period.Seconds())
+			prevCountLeft = countLeft
+		})
 
-			updateString := fmt.Sprintf("%v left: %v. Speed: %v %v/sec. Avg speed: %v %v/sec. Estimate time left: %v",
-				entityPluralNameCapitalized, countLeft, currentSpeed, entityPluralName, avgSpeed, entityPluralName, estimateRunTime)
+		updateString := fmt.Sprintf("%v left: %v. Speed: %v %v/sec. Avg speed: %v %v/sec. Estimate time left: %v",
+			entityPluralNameCapitalized, countLeft, currentSpeed, entityPluralName, avgSpeed, entityPluralName, estimateRunTime)
 
-			UpdateStatusBar(updateString)
+		UpdateStatusBar(updateString)
 
-			onlyForBlockProgress(entityPluralName, "estimate", fmt.Sprintf("Block index: %v. %v", totalProcessed, updateString))
-		}, func() {
-			UpdateStatusBarf("")
-		}
+		onlyForBlockProgress(entityPluralName, "estimate", fmt.Sprintf("Block index: %v. %v", totalProcessed, updateString))
+	}, ClearStatusBar
 }
 
 func periodicAction(period time.Duration, lastActionTime *time.Time, action func()) {

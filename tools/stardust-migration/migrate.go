@@ -512,7 +512,7 @@ func initInMemoryStates(
 	*RecordingKVStore[kv.Key, *InMemoryKVStore, *InMemoryKVStore],
 	uint32,
 ) {
-	defer cli.UpdateStatusBarf("")
+	defer cli.ClearStatusBar()
 
 	if o.ContinueMigration {
 		o.StartBlockIndex = lo.Must(destStore.LatestBlockIndex()) + 1

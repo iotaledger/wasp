@@ -199,6 +199,34 @@ func main() {
 					},
 				},
 			},
+			{
+				Name: "search",
+				Subcommands: []*cmd.Command{
+					{
+						Name:      "iscmagic-allowance",
+						ArgsUsage: "<chain-db-dir>",
+						Flags: []cmd.Flag{
+							&cmd.Uint64Flag{
+								Name:    "from-index",
+								Aliases: []string{"i", "f", "from-block", "from"},
+								Usage:   "Start search from this block index.",
+							},
+							&cmd.Uint64Flag{
+								Name:    "to-index",
+								Aliases: []string{"t", "to-block", "to"},
+								Usage:   "Stop search at this block index.",
+							},
+							&cmd.BoolFlag{
+								Name:    "all",
+								Aliases: []string{"a"},
+								Usage:   "Find all occurrences (by default, only first is printed and search stops).",
+							},
+						},
+						Before: processCommonFlags,
+						Action: search("allowance", searchISCMagicAllowance),
+					},
+				},
+			},
 		},
 	}
 
