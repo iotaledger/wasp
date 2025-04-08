@@ -27,11 +27,11 @@ func initAssetsBagCmd() *cobra.Command {
 			log.Printf("Balances:\n")
 
 			for n, c := range assetsBag.Coins {
-				log.Printf("	%s: %v\n", n, c)
+				log.Printf("\t%s: %v\n", n, c)
 			}
 
 			for n, c := range assetsBag.Objects {
-				log.Printf("	%s: %v\n", n, c)
+				log.Printf("\t%s: %v\n", n, c)
 			}
 		},
 	}
