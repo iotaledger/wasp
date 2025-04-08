@@ -35,8 +35,7 @@ func initAnchorCmd() *cobra.Command {
 			log.Printf("\nStateMetadata decoded:\n")
 			metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 			if err != nil {
-				log.Printf("\tCould not decode state metadata: %v\n", err)
-				return
+				log.Fatalf("\tCould not decode state metadata: %v\n", err)
 			}
 
 			log.Printf("\tGasCoinObjectID: %s\n", metadata.GasCoinObjectID)
