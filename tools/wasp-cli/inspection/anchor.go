@@ -2,7 +2,6 @@ package inspection
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
@@ -27,43 +26,42 @@ func initAnchorCmd() *cobra.Command {
 			anchor, err := cliclients.L2Client().GetAnchorFromObjectID(ctx, objectID)
 			log.Check(err)
 
-			fmt.Printf("Anchor:\n")
-			fmt.Printf("\tID: %s\n", anchor.ObjectID)
-			fmt.Printf("\tAssetsBag: %s\n", anchor.Object.Assets.Value.ID)
-			fmt.Printf("\tStateIndex: %d\n", anchor.Object.StateIndex)
-			fmt.Printf("\tStateMetadata: %s\n", hexutil.Encode(anchor.Object.StateMetadata))
+			log.Printf("Anchor:\n")
+			log.Printf("\tID: %s\n", anchor.ObjectID)
+			log.Printf("\tAssetsBag: %s\n", anchor.Object.Assets.Value.ID)
+			log.Printf("\tStateIndex: %d\n", anchor.Object.StateIndex)
+			log.Printf("\tStateMetadata: %s\n", hexutil.Encode(anchor.Object.StateMetadata))
 
-			fmt.Print("\nStateMetadata decoded:\n")
+			log.Printf("\nStateMetadata decoded:\n")
 			metadata, err := transaction.StateMetadataFromBytes(anchor.Object.StateMetadata)
 			if err != nil {
-				fmt.Printf("\tCould not decode state metadata: %v\n", err)
+				log.Printf("\tCould not decode state metadata: %v\n", err)
 				return
 			}
 
-			fmt.Printf("\tGasCoinObjectID: %s\n", metadata.GasCoinObjectID)
-			fmt.Printf("\tInitDeposit: %d\n", metadata.InitDeposit)
-			fmt.Printf("\tL1Commitment: BlockHash:%s, TrieRoot:%s\n",
+			log.Printf("\tGasCoinObjectID: %s\n", metadata.GasCoinObjectID)
+			log.Printf("\tInitDeposit: %d\n", metadata.InitDeposit)
+			log.Printf("\tL1Commitment: BlockHash:%s, TrieRoot:%s\n",
 				metadata.L1Commitment.BlockHash().String(),
 				metadata.L1Commitment.TrieRoot().String())
-			fmt.Printf("\tPublicUrl: %s\n", metadata.PublicURL)
-			fmt.Printf("\tSchemaVersion: %d\n", metadata.SchemaVersion)
+			log.Printf("\tPublicUrl: %s\n", metadata.PublicURL)
+			log.Printf("\tSchemaVersion: %d\n", metadata.SchemaVersion)
 
 			if anchor.Object.StateIndex != 0 {
-				fmt.Print("Skipping InitParams, as state index is not 0\n")
+				log.Printf("Skipping InitParams, as state index is not 0\n")
 				return
 			}
 
 			initParams, err := origin.DecodeInitParams(metadata.InitParams)
 			if err != nil {
-				fmt.Printf("\tCould not decode Init Params! Params: %s\n", metadata.InitParams.String())
-				return
+				log.Fatalf("\tCould not decode Init Params! Params: %s\n", metadata.InitParams.String())
 			}
 
-			fmt.Print("\n\tInitParams:\n")
-			fmt.Printf("\t\tChainOwner: %s\n", initParams.ChainOwner)
-			fmt.Printf("\t\tBlockKeepAmount: %d\n", initParams.BlockKeepAmount)
-			fmt.Printf("\t\tDeployTestContracts: %v\n", initParams.DeployTestContracts)
-			fmt.Printf("\t\tEVM ChainID: %d\n", initParams.EVMChainID)
+			log.Printf("\n\tInitParams:\n")
+			log.Printf("\t\tChainOwner: %s\n", initParams.ChainOwner)
+			log.Printf("\t\tBlockKeepAmount: %d\n", initParams.BlockKeepAmount)
+			log.Printf("\t\tDeployTestContracts: %v\n", initParams.DeployTestContracts)
+			log.Printf("\t\tEVM ChainID: %d\n", initParams.EVMChainID)
 		},
 	}
 }

@@ -2,7 +2,6 @@ package chain
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"time"
 
@@ -158,7 +157,7 @@ func initDepositCmd() *cobra.Command {
 					)
 				})
 
-				fmt.Print(res.Digest.String())
+				log.Printf("Posted TX: %s\n", res.Digest)
 			} else {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0])
@@ -176,7 +175,7 @@ func initDepositCmd() *cobra.Command {
 				)
 
 				log.Check(err)
-				fmt.Printf("Posted TX: %s\n", res.Digest)
+				log.Printf("Posted TX: %s\n", res.Digest)
 			}
 		},
 	}

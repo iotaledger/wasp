@@ -2,7 +2,6 @@ package inspection
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -24,15 +23,15 @@ func initAssetsBagCmd() *cobra.Command {
 			assetsBag, err := cliclients.L2Client().GetAssetsBagWithBalances(ctx, bagId)
 			log.Check(err)
 
-			fmt.Printf("AssetsBag:\n	ID: %s\n	Size: %d\n\n", assetsBag.ID, assetsBag.Size)
-			fmt.Println("Balances:")
+			log.Printf("AssetsBag:\n	ID: %s\n	Size: %d\n\n", assetsBag.ID, assetsBag.Size)
+			log.Printf("Balances:\n")
 
 			for n, c := range assetsBag.Coins {
-				fmt.Printf("	%s: %v\n", n, c)
+				log.Printf("	%s: %v\n", n, c)
 			}
 
 			for n, c := range assetsBag.Objects {
-				fmt.Printf("	%s: %v\n", n, c)
+				log.Printf("	%s: %v\n", n, c)
 			}
 		},
 	}
