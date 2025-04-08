@@ -72,7 +72,7 @@ func (w *WaspCLITest) runCmd(args []string, f func(*exec.Cmd)) ([]string, error)
 	w.T.Helper()
 	// -w: wait for requests
 	// -d: debug output
-	cmd := exec.Command("wasp-cli", append([]string{"-c", w.dir + "/wasp-cli.json", "-w", "-d"}, args...)...) //nolint:gosec
+	cmd := exec.Command("wasp-cli", append([]string{"-c", w.dir + "/wasp-cli.json", "-w=2m", "-d"}, args...)...) //nolint:gosec
 	cmd.Dir = w.dir
 
 	stdout := new(bytes.Buffer)
