@@ -47,8 +47,7 @@ func initAnchorCmd() *cobra.Command {
 			log.Printf("\tSchemaVersion: %d\n", metadata.SchemaVersion)
 
 			if anchor.Object.StateIndex != 0 {
-				log.Printf("Skipping InitParams, as state index is not 0\n")
-				return
+				log.Fatalf("Skipping InitParams, as state index is not 0\n")
 			}
 
 			initParams, err := origin.DecodeInitParams(metadata.InitParams)
