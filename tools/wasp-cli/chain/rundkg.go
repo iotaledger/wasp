@@ -96,7 +96,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 		log.Fatal("quorum needs to be at least (2/3)+1 of committee size")
 	}
 
-	stateControllerAddr, err := apilib.RunDKG(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
+	committeeAddr, err := apilib.RunDKG(ctx, client, committeePubKeys, uint16(quorum)) //nolint:gosec
 	log.Check(err)
 
 	committeeMembersStr := ""
@@ -106,10 +106,10 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 
 	fmt.Fprintf(os.Stdout,
 		"DKG successful\nAddress: %s\n* committee size = %v\n* quorum = %v\n* members: %s\n",
-		stateControllerAddr.String(),
+		committeeAddr.String(),
 		len(committeePubKeys),
 		quorum,
 		committeeMembersStr,
 	)
-	return stateControllerAddr
+	return committeeAddr
 }

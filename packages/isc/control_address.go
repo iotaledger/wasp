@@ -3,10 +3,12 @@
 
 package isc
 
-import "github.com/iotaledger/wasp/packages/cryptolib"
+import (
+	"github.com/iotaledger/wasp/packages/cryptolib"
+)
 
 type ControlAddresses struct {
-	StateAddress     *cryptolib.Address
-	GoverningAddress *cryptolib.Address
-	SinceBlockIndex  uint32
+	AnchorOwner     *cryptolib.Address
+	ChainAdmin      AgentID
+	SinceBlockIndex uint32
 }

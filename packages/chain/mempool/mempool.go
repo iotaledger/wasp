@@ -529,9 +529,9 @@ func (mpi *mempoolImpl) shouldAddOffledgerRequest(req isc.OffLedgerRequest) erro
 	minFee := governanceState.GetGasFeePolicy().MinFee(isc.RequestGasPrice(req), parameters.BaseTokenDecimals)
 	balance := mpi.accountsState().GetBaseTokensBalanceDiscardExtraDecimals(req.SenderAccount())
 	if balance < minFee {
-		// make an exception for gov calls (sender is chain owner and target is gov contract)
-		chainOwner := governanceState.GetChainOwnerID()
-		isGovRequest := req.SenderAccount().Equals(chainOwner) && req.Message().Target.Contract == governance.Contract.Hname()
+		// make an exception for gov calls (sender is chain admin and target is gov contract)
+		chainAdmin := governanceState.GetChainAdmin()
+		isGovRequest := req.SenderAccount().Equals(chainAdmin) && req.Message().Target.Contract == governance.Contract.Hname()
 		if !isGovRequest {
 			return fmt.Errorf("not enough funds on chain to cover minimum fee")
 		}

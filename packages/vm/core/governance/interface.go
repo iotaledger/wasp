@@ -17,10 +17,9 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
 
 var (
-	// chain owner (L1 entity that is the "owner of the chain")
-	FuncClaimChainOwnership    = coreutil.NewEP0(Contract, "claimChainOwnership")
-	FuncDelegateChainOwnership = coreutil.NewEP1(Contract, "delegateChainOwnership",
-		coreutil.Field[isc.AgentID]("ownerAgentID"),
+	FuncClaimChainAdmin    = coreutil.NewEP0(Contract, "claimChainAdmin")
+	FuncDelegateChainAdmin = coreutil.NewEP1(Contract, "delegateChainAdmin",
+		coreutil.Field[isc.AgentID]("adminAgentID"),
 	)
 	FuncSetPayoutAgentID = coreutil.NewEP1(Contract, "setPayoutAgentID",
 		coreutil.Field[isc.AgentID]("payoutAgentID"),
@@ -34,8 +33,8 @@ var (
 	ViewGetGasCoinTargetValue = coreutil.NewViewEP01(Contract, "getGasCoinTargetValue",
 		coreutil.Field[coin.Value]("targetValue"),
 	)
-	ViewGetChainOwner = coreutil.NewViewEP01(Contract, "getChainOwner",
-		coreutil.Field[isc.AgentID]("chainOwnerAgentID"),
+	ViewGetChainAdmin = coreutil.NewViewEP01(Contract, "getChainAdmin",
+		coreutil.Field[isc.AgentID]("chainAdminAgentID"),
 	)
 
 	// gas
@@ -109,11 +108,11 @@ const (
 	// varGasCoinTargetValue :: uint64
 	varGasCoinTargetValue = "vs" // covered in: TestMetadata
 
-	// chain owner
-	// varChainOwnerID :: AgentID
-	varChainOwnerID = "o" // covered in: TestMetadata
-	// varChainOwnerIDDelegated :: AgentID
-	varChainOwnerIDDelegated = "n" // covered in: TestMaintenanceMode
+	// chain admin
+	// varChainAdmin :: AgentID
+	varChainAdmin = "o" // covered in: TestMetadata
+	// varChainAdminDelegated :: AgentID
+	varChainAdminDelegated = "n" // covered in: TestMaintenanceMode
 
 	// gas
 	// varGasFeePolicyBytes :: gas.FeePolicy

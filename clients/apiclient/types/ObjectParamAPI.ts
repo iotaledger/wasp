@@ -33,19 +33,20 @@ import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
 import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
-import { GovAllowedStateControllerAddressesResponse } from '../models/GovAllowedStateControllerAddressesResponse';
+import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
-import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
+import { IotaObject } from '../models/IotaObject';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
+import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
@@ -64,7 +65,6 @@ import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateAnchor } from '../models/StateAnchor';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
-import { Type } from '../models/Type';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -962,12 +962,12 @@ export interface CorecontractsApiErrorsGetErrorMessageFormatRequest {
     block?: string
 }
 
-export interface CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest {
+export interface CorecontractsApiGovernanceGetChainAdminRequest {
     /**
      * Block index or trie root
      * Defaults to: undefined
      * @type string
-     * @memberof CorecontractsApigovernanceGetAllowedStateControllerAddresses
+     * @memberof CorecontractsApigovernanceGetChainAdmin
      */
     block?: string
 }
@@ -978,16 +978,6 @@ export interface CorecontractsApiGovernanceGetChainInfoRequest {
      * Defaults to: undefined
      * @type string
      * @memberof CorecontractsApigovernanceGetChainInfo
-     */
-    block?: string
-}
-
-export interface CorecontractsApiGovernanceGetChainOwnerRequest {
-    /**
-     * Block index or trie root
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApigovernanceGetChainOwner
      */
     block?: string
 }
@@ -1336,21 +1326,21 @@ export class ObjectCorecontractsApi {
     }
 
     /**
-     * Returns the allowed state controller addresses
-     * Get the allowed state controller addresses
+     * Returns the chain admin
+     * Get the chain admin
      * @param param the request object
      */
-    public governanceGetAllowedStateControllerAddressesWithHttpInfo(param: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest = {}, options?: Configuration): Promise<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
-        return this.api.governanceGetAllowedStateControllerAddressesWithHttpInfo(param.block,  options).toPromise();
+    public governanceGetChainAdminWithHttpInfo(param: CorecontractsApiGovernanceGetChainAdminRequest = {}, options?: Configuration): Promise<HttpInfo<GovChainAdminResponse>> {
+        return this.api.governanceGetChainAdminWithHttpInfo(param.block,  options).toPromise();
     }
 
     /**
-     * Returns the allowed state controller addresses
-     * Get the allowed state controller addresses
+     * Returns the chain admin
+     * Get the chain admin
      * @param param the request object
      */
-    public governanceGetAllowedStateControllerAddresses(param: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest = {}, options?: Configuration): Promise<GovAllowedStateControllerAddressesResponse> {
-        return this.api.governanceGetAllowedStateControllerAddresses(param.block,  options).toPromise();
+    public governanceGetChainAdmin(param: CorecontractsApiGovernanceGetChainAdminRequest = {}, options?: Configuration): Promise<GovChainAdminResponse> {
+        return this.api.governanceGetChainAdmin(param.block,  options).toPromise();
     }
 
     /**
@@ -1369,24 +1359,6 @@ export class ObjectCorecontractsApi {
      */
     public governanceGetChainInfo(param: CorecontractsApiGovernanceGetChainInfoRequest = {}, options?: Configuration): Promise<GovChainInfoResponse> {
         return this.api.governanceGetChainInfo(param.block,  options).toPromise();
-    }
-
-    /**
-     * Returns the chain owner
-     * Get the chain owner
-     * @param param the request object
-     */
-    public governanceGetChainOwnerWithHttpInfo(param: CorecontractsApiGovernanceGetChainOwnerRequest = {}, options?: Configuration): Promise<HttpInfo<GovChainOwnerResponse>> {
-        return this.api.governanceGetChainOwnerWithHttpInfo(param.block,  options).toPromise();
-    }
-
-    /**
-     * Returns the chain owner
-     * Get the chain owner
-     * @param param the request object
-     */
-    public governanceGetChainOwner(param: CorecontractsApiGovernanceGetChainOwnerRequest = {}, options?: Configuration): Promise<GovChainOwnerResponse> {
-        return this.api.governanceGetChainOwner(param.block,  options).toPromise();
     }
 
 }

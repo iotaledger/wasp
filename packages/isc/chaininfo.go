@@ -11,7 +11,7 @@ import (
 // ChainInfo is an API structure containing the main parameters of the chain
 type ChainInfo struct {
 	ChainID         ChainID
-	ChainOwnerID    AgentID
+	ChainAdmin      AgentID
 	GasFeePolicy    *gas.FeePolicy
 	GasLimits       *gas.Limits
 	BlockKeepAmount int32

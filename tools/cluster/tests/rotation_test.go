@@ -1,10 +1,7 @@
 package tests
 
 import (
-	"context"
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -290,78 +287,4 @@ func TestRotationMany(t *testing.T) {
 			require.NoError(t, err)
 		}
 	*/
-}
-
-func (e *ChainEnv) waitStateControllers(addr *cryptolib.Address, timeout time.Duration) error {
-	for _, nodeIndex := range e.Clu.AllNodes() {
-		if err := e.waitStateController(nodeIndex, addr, timeout); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (e *ChainEnv) waitStateController(nodeIndex int, addr *cryptolib.Address, timeout time.Duration) error {
-	var err error
-	result := waitTrue(timeout, func() bool {
-		var a *cryptolib.Address
-		a, err = e.callGetStateController(nodeIndex)
-		if err != nil {
-			e.t.Logf("Error received while waiting state controller change to %s in node %d", addr, nodeIndex)
-			return false
-		}
-		return a.Equals(addr)
-	})
-	if err != nil {
-		return err
-	}
-	if !result {
-		return fmt.Errorf("timeout waiting state controller change to %s in node %d", addr, nodeIndex)
-	}
-	return nil
-}
-
-func (e *ChainEnv) callGetStateController(nodeIndex int) (*cryptolib.Address, error) {
-	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
-		BlocklogGetControlAddresses(context.Background()).
-		Execute()
-	if err != nil {
-		return nil, err
-	}
-
-	address, err := cryptolib.AddressFromHex(controlAddresses.StateAddress)
-	require.NoError(e.t, err)
-
-	return address, nil
-}
-
-func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr *cryptolib.Address) error {
-	for _, i := range e.Chain.AllPeers {
-		if !isAllowedStateControllerAddress(e.t, e.Chain, i, addr) {
-			return fmt.Errorf("state controller address %s is not allowed in node %d", addr, i)
-		}
-	}
-	return nil
-}
-
-func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr *cryptolib.Address) bool {
-	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
-		GovernanceGetAllowedStateControllerAddresses(context.Background()).
-		Execute()
-	require.NoError(t, err)
-
-	if len(addresses.Addresses) == 0 {
-		return false
-	}
-
-	for _, addressHex := range addresses.Addresses {
-		address, err := cryptolib.AddressFromHex(addressHex)
-		require.NoError(t, err)
-
-		if address.Equals(addr) {
-			return true
-		}
-	}
-
-	return false
 }

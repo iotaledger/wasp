@@ -7,12 +7,12 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-func GetChainOwner(ch chain.Chain, blockIndexOrTrieRoot string) (isc.AgentID, error) {
-	ret, err := common.CallView(ch, governance.ViewGetChainOwner.Message(), blockIndexOrTrieRoot)
+func GetChainAdmin(ch chain.Chain, blockIndexOrTrieRoot string) (isc.AgentID, error) {
+	ret, err := common.CallView(ch, governance.ViewGetChainAdmin.Message(), blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
 	}
-	return governance.ViewGetChainOwner.DecodeOutput(ret)
+	return governance.ViewGetChainAdmin.DecodeOutput(ret)
 }
 
 func GetChainInfo(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.ChainInfo, error) {

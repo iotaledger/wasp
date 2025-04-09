@@ -30,19 +30,20 @@ export * from '../models/EventJSON';
 export * from '../models/EventsResponse';
 export * from '../models/FeePolicy';
 export * from '../models/FoundryOutputResponse';
-export * from '../models/GovAllowedStateControllerAddressesResponse';
+export * from '../models/GovChainAdminResponse';
 export * from '../models/GovChainInfoResponse';
-export * from '../models/GovChainOwnerResponse';
 export * from '../models/GovPublicChainMetadata';
 export * from '../models/InfoResponse';
 export * from '../models/Int';
 export * from '../models/IotaCoinInfo';
+export * from '../models/IotaObject';
 export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
 export * from '../models/LoginResponse';
 export * from '../models/NativeTokenIDRegistryResponse';
 export * from '../models/NodeOwnerCertificateResponse';
+export * from '../models/ObjectType';
 export * from '../models/OffLedgerRequest';
 export * from '../models/OnLedgerRequest';
 export * from '../models/OnLedgerRequestMetricItem';
@@ -61,7 +62,6 @@ export * from '../models/RotateChainRequest';
 export * from '../models/StateAnchor';
 export * from '../models/StateResponse';
 export * from '../models/StateTransaction';
-export * from '../models/Type';
 export * from '../models/UnresolvedVMErrorJSON';
 export * from '../models/UpdateUserPasswordRequest';
 export * from '../models/UpdateUserPermissionsRequest';
@@ -101,19 +101,20 @@ import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
 import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
-import { GovAllowedStateControllerAddressesResponse } from '../models/GovAllowedStateControllerAddressesResponse';
+import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
-import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
+import { IotaObject } from '../models/IotaObject';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
+import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
@@ -132,7 +133,6 @@ import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateAnchor } from '../models/StateAnchor';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
-import { Type } from '../models/Type';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -188,19 +188,20 @@ let typeMap: {[index: string]: any} = {
     "EventsResponse": EventsResponse,
     "FeePolicy": FeePolicy,
     "FoundryOutputResponse": FoundryOutputResponse,
-    "GovAllowedStateControllerAddressesResponse": GovAllowedStateControllerAddressesResponse,
+    "GovChainAdminResponse": GovChainAdminResponse,
     "GovChainInfoResponse": GovChainInfoResponse,
-    "GovChainOwnerResponse": GovChainOwnerResponse,
     "GovPublicChainMetadata": GovPublicChainMetadata,
     "InfoResponse": InfoResponse,
     "Int": Int,
     "IotaCoinInfo": IotaCoinInfo,
+    "IotaObject": IotaObject,
     "L1Params": L1Params,
     "Limits": Limits,
     "LoginRequest": LoginRequest,
     "LoginResponse": LoginResponse,
     "NativeTokenIDRegistryResponse": NativeTokenIDRegistryResponse,
     "NodeOwnerCertificateResponse": NodeOwnerCertificateResponse,
+    "ObjectType": ObjectType,
     "OffLedgerRequest": OffLedgerRequest,
     "OnLedgerRequest": OnLedgerRequest,
     "OnLedgerRequestMetricItem": OnLedgerRequestMetricItem,
@@ -219,7 +220,6 @@ let typeMap: {[index: string]: any} = {
     "StateAnchor": StateAnchor,
     "StateResponse": StateResponse,
     "StateTransaction": StateTransaction,
-    "Type": Type,
     "UnresolvedVMErrorJSON": UnresolvedVMErrorJSON,
     "UpdateUserPasswordRequest": UpdateUserPasswordRequest,
     "UpdateUserPermissionsRequest": UpdateUserPermissionsRequest,

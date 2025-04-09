@@ -8,14 +8,14 @@ import (
 )
 
 var Processor = governance.Contract.Processor(nil,
-	// chain owner
-	governance.FuncClaimChainOwnership.WithHandler(claimChainOwnership),
-	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),
+	// chain admin
+	governance.FuncClaimChainAdmin.WithHandler(claimChainAdmin),
+	governance.FuncDelegateChainAdmin.WithHandler(delegateChainAdmin),
 	governance.FuncSetPayoutAgentID.WithHandler(setPayoutAgentID),
 	governance.ViewGetPayoutAgentID.WithHandler(getPayoutAgentID),
 	governance.FuncSetGasCoinTargetValue.WithHandler(setGasCoinTargetValue),
 	governance.ViewGetGasCoinTargetValue.WithHandler(getGasCoinTargetValue),
-	governance.ViewGetChainOwner.WithHandler(getChainOwner),
+	governance.ViewGetChainAdmin.WithHandler(getChainAdmin),
 
 	// fees
 	governance.FuncSetFeePolicy.WithHandler(setFeePolicy),

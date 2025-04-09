@@ -10,28 +10,28 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
 )
 
-func TestChainOwnerIDView(t *testing.T) {
+func TestChainAdminView(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	chainOwnderID, err := sbtestsc.FuncChainOwnerIDView.Call(func(msg isc.Message) (isc.CallArguments, error) {
+	chainOwnderID, err := sbtestsc.FuncChainAdminView.Call(func(msg isc.Message) (isc.CallArguments, error) {
 		return chain.CallViewWithContract(ScName, msg)
 	})
 	require.NoError(t, err)
-	require.EqualValues(t, chain.OwnerAgentID().Bytes(), chainOwnderID.Bytes())
+	require.EqualValues(t, chain.AdminAgentID().Bytes(), chainOwnderID.Bytes())
 }
 
-func TestChainOwnerIDFull(t *testing.T) {
+func TestChainAdminFull(t *testing.T) {
 	_, chain := setupChain(t, nil)
 	setupTestSandboxSC(t, chain, nil)
 
-	chainOwnderID, err := sbtestsc.FuncChainOwnerIDFull.Call(func(msg isc.Message) (isc.CallArguments, error) {
+	chainOwnderID, err := sbtestsc.FuncChainAdminFull.Call(func(msg isc.Message) (isc.CallArguments, error) {
 		req := solo.NewCallParams(msg, ScName).
 			WithGasBudget(100_000)
 		return chain.PostRequestSync(req, nil)
 	})
 	require.NoError(t, err)
-	require.True(t, chain.OwnerAgentID().Equals(chainOwnderID))
+	require.True(t, chain.AdminAgentID().Equals(chainOwnderID))
 }
 
 func TestSandboxCall(t *testing.T) {

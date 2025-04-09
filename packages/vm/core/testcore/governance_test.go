@@ -115,7 +115,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// set owner of the chain
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerAgentID)).
+			solo.NewCallParams(governance.FuncDelegateChainAdmin.Message(ownerAgentID)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -124,7 +124,7 @@ func TestMaintenanceMode(t *testing.T) {
 		testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
 		_, err2 = ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncClaimChainOwnership.Message()).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncClaimChainAdmin.Message()).WithMaxAffordableGasBudget(),
 			ownerWallet,
 		)
 		require.NoError(t, err2)
@@ -139,7 +139,7 @@ func TestMaintenanceMode(t *testing.T) {
 		require.False(t, maintenanceStatus)
 	}
 
-	// test non-chain owner cannot call init maintenance
+	// test non-chain admin cannot call init maintenance
 	{
 		_, err2 := ch.PostRequestSync(
 			solo.NewCallParams(governance.FuncStartMaintenance.Message()).WithMaxAffordableGasBudget(),
@@ -204,7 +204,7 @@ func TestMaintenanceMode(t *testing.T) {
 		require.ErrorContains(t, err2, "unauthorized")
 	}
 
-	// test non-chain owner cannot call stop maintenance
+	// test non-chain admin cannot call stop maintenance
 	{
 		_, err2 := ch.PostRequestSync(
 			solo.NewCallParams(governance.FuncStopMaintenance.Message()).WithMaxAffordableGasBudget(),
@@ -547,7 +547,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	user1AgentID := isc.NewAddressAgentID(user1Addr)
 
 	// transfer some tokens from a new account (user1)
-	ownerBal1 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal1 := ch.L2Assets(ch.AdminAgentID())
 	commonBal1 := ch.L2CommonAccountAssets()
 	user1Bal1 := ch.L2Assets(user1AgentID)
 	transferAmt := coin.Value(2000)
@@ -564,7 +564,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal1.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal2 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal2 := ch.L2Assets(ch.AdminAgentID())
 	user1Bal2 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal1.BaseTokens()+gasFees-addedToCommonAccount1, ownerBal2.BaseTokens())
 	require.Equal(t, user1Bal1.BaseTokens()+transferAmt-gasFees, user1Bal2.BaseTokens())
@@ -579,7 +579,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	require.NoError(t, err)
 
 	// no balance changes (owner calls to gov contract don't pay fees)
-	ownerBal3 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal3 := ch.L2Assets(ch.AdminAgentID())
 	commonBal3 := ch.L2CommonAccountAssets()
 	user1Bal3 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal2.BaseTokens(), ownerBal3.BaseTokens())
@@ -604,7 +604,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal3.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal4 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal4 := ch.L2Assets(ch.AdminAgentID())
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
 

@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
-// getChainInfo view returns general info about the chain: chain ID, chain owner ID, limits and default fees
+// getChainInfo view returns general info about the chain: chain ID, chain admin ID, limits and default fees
 func getChainInfo(ctx isc.SandboxView) *isc.ChainInfo {
 	state := governance.NewStateReaderFromSandbox(ctx)
 	return state.GetChainInfo(ctx.ChainID())

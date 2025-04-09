@@ -95,14 +95,14 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            tcl.chainOwner,
-			ChainOwnerAddress: tcl.chainOwner.Address(),
-			PackageID:         *tcl.iscPackage,
-			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       originDeposit.Ref(),
-			GasPayments:       []*iotago.ObjectRef{gasCoin},
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        tcl.chainOwner,
+			AnchorOwner:   tcl.chainOwner.Address(),
+			PackageID:     *tcl.iscPackage,
+			StateMetadata: stateMetadata.Bytes(),
+			InitCoinRef:   originDeposit.Ref(),
+			GasPayments:   []*iotago.ObjectRef{gasCoin},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(tcl.t, err)

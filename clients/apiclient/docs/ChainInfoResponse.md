@@ -4,8 +4,8 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
+**ChainAdmin** | **string** | The chain admin address (Hex Address) | 
 **ChainID** | **string** | ChainID (Hex Address) | 
-**ChainOwnerId** | **string** | The chain owner address (Hex Address) | 
 **EvmChainId** | **uint32** | The EVM chain ID | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -31,6 +31,26 @@ will change when the set of required properties is changed
 NewChainInfoResponseWithDefaults instantiates a new ChainInfoResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetChainAdmin
+
+`func (o *ChainInfoResponse) GetChainAdmin() string`
+
+GetChainAdmin returns the ChainAdmin field if non-nil, zero value otherwise.
+
+### GetChainAdminOk
+
+`func (o *ChainInfoResponse) GetChainAdminOk() (*string, bool)`
+
+GetChainAdminOk returns a tuple with the ChainAdmin field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetChainAdmin
+
+`func (o *ChainInfoResponse) SetChainAdmin(v string)`
+
+SetChainAdmin sets ChainAdmin field to given value.
+
 
 ### GetChainID
 
@@ -50,26 +70,6 @@ and a boolean to check if the value has been set.
 `func (o *ChainInfoResponse) SetChainID(v string)`
 
 SetChainID sets ChainID field to given value.
-
-
-### GetChainOwnerId
-
-`func (o *ChainInfoResponse) GetChainOwnerId() string`
-
-GetChainOwnerId returns the ChainOwnerId field if non-nil, zero value otherwise.
-
-### GetChainOwnerIdOk
-
-`func (o *ChainInfoResponse) GetChainOwnerIdOk() (*string, bool)`
-
-GetChainOwnerIdOk returns a tuple with the ChainOwnerId field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetChainOwnerId
-
-`func (o *ChainInfoResponse) SetChainOwnerId(v string)`
-
-SetChainOwnerId sets ChainOwnerId field to given value.
 
 
 ### GetEvmChainId

@@ -63,8 +63,8 @@ func initDeployMoveContractCmd() *cobra.Command {
 	return cmd
 }
 
-func initializeNewChainState(stateController *cryptolib.Address, gasCoinObject iotago.ObjectID, l1Params *parameters.L1Params) *transaction.StateMetadata {
-	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(stateController)).Encode()
+func initializeNewChainState(chainAdmin *cryptolib.Address, gasCoinObject iotago.ObjectID, l1Params *parameters.L1Params) *transaction.StateMetadata {
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(chainAdmin)).Encode()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, l1Params)
 	return stateMetadata
@@ -180,7 +180,7 @@ func initDeployCmd() *cobra.Command {
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
 				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
-				OriginatorKeyPair: kp,
+				Signer:            kp,
 				Textout:           os.Stdout,
 				PackageID:         packageID,
 				StateMetadata:     *stateMetadata,

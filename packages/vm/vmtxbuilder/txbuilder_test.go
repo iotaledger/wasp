@@ -37,12 +37,12 @@ func TestTxBuilderBasic(t *testing.T) {
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainSigner,
-			ChainOwnerAddress: chainSigner.Address(),
-			PackageID:         iscPackage,
-			StateMetadata:     []byte{1, 2, 3, 4},
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        chainSigner,
+			AnchorOwner:   chainSigner.Address(),
+			PackageID:     iscPackage,
+			StateMetadata: []byte{1, 2, 3, 4},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -103,14 +103,14 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainSigner,
-			ChainOwnerAddress: chainSigner.Address(),
-			PackageID:         iscPackage,
-			StateMetadata:     []byte{1, 2, 3, 4},
-			InitCoinRef:       getCoinsRes.Data[1].Ref(),
-			GasPayments:       []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        chainSigner,
+			AnchorOwner:   chainSigner.Address(),
+			PackageID:     iscPackage,
+			StateMetadata: []byte{1, 2, 3, 4},
+			InitCoinRef:   getCoinsRes.Data[1].Ref(),
+			GasPayments:   []*iotago.ObjectRef{getCoinsRes.Data[0].Ref()},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -209,12 +209,12 @@ func TestRotateAndBuildTx(t *testing.T) {
 	anchor, err := client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            chainSigner,
-			ChainOwnerAddress: chainSigner.Address(),
-			PackageID:         iscPackage,
-			StateMetadata:     []byte{1, 2, 3, 4},
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        chainSigner,
+			AnchorOwner:   chainSigner.Address(),
+			PackageID:     iscPackage,
+			StateMetadata: []byte{1, 2, 3, 4},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)

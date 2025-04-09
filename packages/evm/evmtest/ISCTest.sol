@@ -94,7 +94,7 @@ contract ISCTest {
             ISCMessage({
                 target: ISCTarget({
                     contractHname: ISC.util.hn("governance"),
-                    entryPoint: ISC.util.hn("claimChainOwnership")
+                    entryPoint: ISC.util.hn("claimChainAdmin")
                 }),
                 params: new bytes[](0)
             }),

@@ -132,7 +132,8 @@ func TestWaspCLIDeposit(t *testing.T) {
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
-	// fund an alternative address to deposit from (so we can test the fees, since --address-index=0 is the chain owner / default payoutAddress)
+	// fund an alternative address to deposit from (so we can test the fees,
+	// since --address-index=0 is the chain admin / default payoutAddress)
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 	w.MustRun("send-funds", "-s", alternativeAddress, "base:10000000")
 
