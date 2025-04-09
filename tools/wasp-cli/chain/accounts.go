@@ -144,7 +144,8 @@ func initDepositCmd() *cobra.Command {
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
-				allowance := isc.NewAssets(tokens.BaseTokens() / 10)
+				allowance := tokens.Clone()
+				allowance.SetBaseTokens(allowance.BaseTokens() / 10)
 
 				res := util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
@@ -162,7 +163,8 @@ func initDepositCmd() *cobra.Command {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0])
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
-				allowance := isc.NewAssets(tokens.BaseTokens() - 10000)
+				allowance := tokens.Clone()
+				allowance.SetBaseTokens(allowance.BaseTokens() / 10)
 
 				res, err := cliclients.ChainClient(client, chainID).PostRequest(
 					ctx,
