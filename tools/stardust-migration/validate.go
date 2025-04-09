@@ -19,6 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/validation"
@@ -81,10 +82,10 @@ func validateMigration(c *cmd.Context) error {
 	}
 
 	cli.Logf("Reading old latest state for index #%v...", lastIndex)
-	oldState := NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
+	oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
 
 	cli.Logf("State index to be validated: %v", lastIndex)
-	newState := NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
+	newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
 
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
@@ -95,7 +96,7 @@ func validateMigration(c *cmd.Context) error {
 	defer func() {
 		if err := recover(); err != nil {
 			cli.Logf("Validation panicked")
-			PrintLastDBOperations(oldState, newState)
+			utils.PrintLastDBOperations(oldState, newState)
 			panic(err)
 		}
 	}()
@@ -110,12 +111,12 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 	var oldStateContentStr, newStateContentStr string
 	validation.GoAllAndWait(func() {
 		oldStateContentStr = oldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
-		cli.DebugLogf("Replacing old chain ID with constant placeholer for comparison...")
+		cli.DebugLogf("Replacing old chain ID with constant placeholder for comparison...")
 		oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
 
 	}, func() {
 		newStateContentStr = newStateContentToStr(newState, newChainID, firstIndex, lastIndex)
-		cli.DebugLogf("Replacing new chain ID with constant placeholer for comparison...")
+		cli.DebugLogf("Replacing new chain ID with constant placeholder for comparison...")
 		newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
 	})
 

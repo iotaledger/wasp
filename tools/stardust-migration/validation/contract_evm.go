@@ -191,6 +191,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
 		printProgress, done := NewProgressPrinter("old_evm", "transactions in block", "transactions", 0)
 		defer done()
+		cli.DebugLogf("Retrieving old transactions by block number in range [%v, %v]...\n", firstAvailBlockIndex, toBlockIndex)
 
 		for blockIndex := firstAvailBlockIndex; blockIndex <= toBlockIndex; blockIndex++ {
 			txs := bc.GetTransactionsByBlockNumber(uint64(blockIndex))
@@ -203,7 +204,10 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash.Hex()))
 			}
 		}
+
+		cli.DebugLogf("Found %v old transactions by block number", totalTransactionsCount)
 	}, func() {
+		cli.DebugLogf("Retrieving all old keys of transactions by block number...\n")
 		bcState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
 		printProgress, done := NewProgressPrinter("old_evm", "transaction keys", "keys", 0)
 		defer done()
@@ -213,6 +217,8 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 			totalKeysCount++
 			return true
 		})
+
+		cli.DebugLogf("Found %v old keys for transactions by block number", totalKeysCount)
 	})
 
 	if totalTransactionsCount == 0 {
@@ -222,12 +228,10 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 	res.WriteString(fmt.Sprintf("Tx in block txs count: %v\n", totalTransactionsCount))
 	res.WriteString(fmt.Sprintf("Tx in block keys count: %v\n", totalKeysCount))
 
-	cli.DebugLogf("Found %v old transactions by block number keys", totalKeysCount)
 	return res.String()
 }
 
 func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
-	cli.DebugLogf("Retrieving old transactions by block number...\n")
 	var res strings.Builder
 
 	totalKeysCount := 0
@@ -238,6 +242,7 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
 		printProgress, done := NewProgressPrinter("evm", "transactions in block", "transactions", 0)
 		defer done()
+		cli.DebugLogf("Retrieving new transactions by block number in range [%v, %v]...\n", firstAvailBlockIndex, toBlockIndex)
 
 		for blockIndex := firstAvailBlockIndex; blockIndex <= toBlockIndex; blockIndex++ {
 			txs := bc.GetTransactionsByBlockNumber(uint64(blockIndex))
@@ -250,7 +255,10 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash.Hex()))
 			}
 		}
+
+		cli.DebugLogf("Found %v new transactions by block number", totalTransactionsCount)
 	}, func() {
+		cli.DebugLogf("Retrieving all new keys of transactions by block number...\n")
 		bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
 		printProgress, done := NewProgressPrinter("evm", "transaction keys", "keys", 0)
 		defer done()
@@ -260,11 +268,12 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 			totalKeysCount++
 			return true
 		})
+
+		cli.DebugLogf("Found %v new keys for transactions by block number", totalKeysCount)
 	})
 
 	res.WriteString(fmt.Sprintf("Tx in block txs count: %v\n", totalTransactionsCount))
 	res.WriteString(fmt.Sprintf("Tx in block keys count: %v\n", totalKeysCount))
 
-	cli.DebugLogf("Found %v new transactions by block number keys", totalKeysCount)
 	return res.String()
 }

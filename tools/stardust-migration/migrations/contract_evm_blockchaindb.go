@@ -99,25 +99,22 @@ func migrateBlockchainDB(muts *old_buffered.Mutations, oldEmulatorStateRealm old
 	})
 
 	// Migrate KeyTransactionsByBlockNumber
-	oldBlockChain.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(key old_kv.Key, value []byte) bool {
+	oldBlockChain.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(oldKey old_kv.Key, value []byte) bool {
 		const blockNumberLen = 8
-		oldBlockNumberBytes, oldTxIndexBytes := utils.MustSplitArrayKey(key, blockNumberLen, old_emulator.KeyTransactionsByBlockNumber)
+		oldBlockNumberBytes, oldTxIndexBytes := utils.MustSplitArrayKey(oldKey, blockNumberLen, old_emulator.KeyTransactionsByBlockNumber)
 		////fmt.Printf("blockNumber: %v, txIndex: %v (INDEX:%v), key: %v (%s)\n", []byte(oldBlockNumberBytes), []byte(oldTxIndexBytes), []byte(key), string(key), len(oldTxIndexBytes) == 0)
 		blockNumber := old_codec.MustDecodeUint64([]byte(oldBlockNumberBytes))
 		if oldTxIndexBytes == "" {
 			// It's a length record
-			if containsDeletedKey(muts, kv.Key(key[:])) {
-				return true
-			}
-
 			newBlockChain.Set(emulator.MakeTransactionsByBlockNumberKey(blockNumber), value)
 			return true
 		}
 
-		txIndex := old_rwutil.NewBytesReader([]byte(oldTxIndexBytes)).Must().ReadUint32()
-		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), txIndex)
+		txIndex := old_rwutil.NewBytesReader([]byte(oldTxIndexBytes)).Must().ReadSize32()
+		newKey := collections.ArrayElemKey(string(emulator.MakeTransactionsByBlockNumberKey(blockNumber)), uint32(txIndex))
 
-		if containsDeletedKey(muts, newKey) {
+		if value == nil {
+			newBlockChain.Del(newKey)
 			return true
 		}
 
@@ -177,8 +174,8 @@ func migrateBlockchainDB(muts *old_buffered.Mutations, oldEmulatorStateRealm old
 			return true
 		}
 
-		recIndex := old_rwutil.NewBytesReader([]byte(oldRecIndexBytes)).Must().ReadUint32()
-		newKey := collections.ArrayElemKey(string(emulator.MakeReceiptsByBlockNumberKey(blockNumber)), recIndex)
+		recIndex := old_rwutil.NewBytesReader([]byte(oldRecIndexBytes)).Must().ReadSize32()
+		newKey := collections.ArrayElemKey(string(emulator.MakeReceiptsByBlockNumberKey(blockNumber)), uint32(recIndex))
 
 		// TODO: This was caught after block 10000, probably pruning in play?
 		if containsDeletedKey(muts, kv.Key(key[:])) {

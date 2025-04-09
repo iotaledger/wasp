@@ -133,7 +133,7 @@ func initMigration(srcChainDBDir, destChainDBDir string, o *migrationOptions) (
 		destKVS := db.Create(destChainDBDir)
 
 		refCountsStore := mapdb.NewMapDB()
-		hybridStore := NewHybridKVStore(destKVS, map[string]kvstore.KVStore{
+		hybridStore := utils.NewHybridKVStore(destKVS, map[string]kvstore.KVStore{
 			string([]byte{1, 2}): refCountsStore,
 			string([]byte{1, 3}): refCountsStore,
 		})
@@ -359,7 +359,7 @@ func migrateAllStates(c *cmd.Context) error {
 			if err := recover(); err != nil {
 				cli.Logf("Error at block index %v", blockIndex)
 				bot.Get().PostMessage(fmt.Sprintf("Error at block index %v", blockIndex))
-				PrintLastDBOperations(oldState, newState)
+				utils.PrintLastDBOperations(oldState, newState)
 				panic(err)
 			}
 		}()
@@ -508,8 +508,8 @@ func initInMemoryStates(
 	o inMemoryStatesOptions,
 ) (
 	old_dict.Dict,
-	*RecordingKVStore[old_kv.Key, *PrefixKVStore, *PrefixKVStore],
-	*RecordingKVStore[kv.Key, *InMemoryKVStore, *InMemoryKVStore],
+	*utils.RecordingKVStore[old_kv.Key, *utils.PrefixKVStore, *utils.PrefixKVStore],
+	*utils.RecordingKVStore[kv.Key, *utils.InMemoryKVStore, *utils.InMemoryKVStore],
 	uint32,
 ) {
 	defer cli.ClearStatusBar()
@@ -524,7 +524,7 @@ func initInMemoryStates(
 		if loaded {
 			cli.Logf("Loaded in-memory states from disk: blockIndex = %v", o.StartBlockIndex-1)
 			setDestStateKeyValidator(savedDestState, o.Debug)
-			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), o.StartBlockIndex
+			return savedSrcStateStore, utils.NewRecordingKVStore(saverSrcState), utils.NewRecordingKVStore(savedDestState), o.StartBlockIndex
 		}
 
 		cli.Logf("In-memory states not found on disk for block %v", o.StartBlockIndex-1)
@@ -535,7 +535,7 @@ func initInMemoryStates(
 		if loaded {
 			cli.Logf("Loaded auto-saved in-memory states from disk: blockIndex = %v", closestAutoSavedBlockIndex)
 			setDestStateKeyValidator(savedDestState, o.Debug)
-			return savedSrcStateStore, NewRecordingKVStore(saverSrcState), NewRecordingKVStore(savedDestState), closestAutoSavedBlockIndex + 1
+			return savedSrcStateStore, utils.NewRecordingKVStore(saverSrcState), utils.NewRecordingKVStore(savedDestState), closestAutoSavedBlockIndex + 1
 		}
 	}
 
@@ -551,7 +551,7 @@ func initInMemoryStates(
 	// // Hybrid-KV-based state
 	oldStateStore := old_dict.New()
 	oldState := initSrcState(oldStateStore, o.StartBlockIndex != 0)
-	newState := NewInMemoryKVStore(false)
+	newState := utils.NewInMemoryKVStore(false)
 	setDestStateKeyValidator(newState, o.Debug)
 
 	if o.StartBlockIndex != 0 {
@@ -602,10 +602,10 @@ func initInMemoryStates(
 		saveInMemoryStates(oldStateStore, newState, o.StartBlockIndex-1, srcChainDBDir)
 	}
 
-	return oldStateStore, NewRecordingKVStore(oldState), NewRecordingKVStore(newState), o.StartBlockIndex
+	return oldStateStore, utils.NewRecordingKVStore(oldState), utils.NewRecordingKVStore(newState), o.StartBlockIndex
 }
 
-func saveInMemoryStates(oldState old_dict.Dict, newState *InMemoryKVStore, lastProcessedBlockIndex uint32, srcChainDBDir string) {
+func saveInMemoryStates(oldState old_dict.Dict, newState *utils.InMemoryKVStore, lastProcessedBlockIndex uint32, srcChainDBDir string) {
 	cli.Logf("Saving in-memory states to disk: blockIndex = %v, srcChainDBDir = %v", lastProcessedBlockIndex, srcChainDBDir)
 	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, lastProcessedBlockIndex)
 
@@ -630,7 +630,7 @@ func saveInMemoryStates(oldState old_dict.Dict, newState *InMemoryKVStore, lastP
 	}
 }
 
-func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestState bool) (old_dict.Dict, *PrefixKVStore, *InMemoryKVStore, bool) {
+func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestState bool) (old_dict.Dict, *utils.PrefixKVStore, *utils.InMemoryKVStore, bool) {
 	cli.Logf("Trying to load in-memory states from disk: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
 	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
 
@@ -654,7 +654,7 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestStat
 	oldState := initSrcState(oldStateStore, true)
 	oldState.IndexRecords()
 
-	newState := NewInMemoryKVStore(false)
+	newState := utils.NewInMemoryKVStore(false)
 
 	if !loadDestState {
 		cli.Logf("Not loading destination state")
@@ -705,8 +705,8 @@ func deleteInMemoryStateFiles(srcChainDBDir string, blockIndex uint32) {
 	}
 }
 
-func initSrcState(store old_dict.Dict, willBePrefilled bool) *PrefixKVStore {
-	state := NewPrefixKVStore(store, func(key old_kv.Key) [][]byte {
+func initSrcState(store old_dict.Dict, willBePrefilled bool) *utils.PrefixKVStore {
+	state := utils.NewPrefixKVStore(store, func(key old_kv.Key) [][]byte {
 		return utils.GetMapElemPrefixes([]byte(key))
 	})
 
@@ -726,7 +726,7 @@ func initSrcState(store old_dict.Dict, willBePrefilled bool) *PrefixKVStore {
 	return state
 }
 
-func setDestStateKeyValidator(s *InMemoryKVStore, o debugOptions) {
+func setDestStateKeyValidator(s *utils.InMemoryKVStore, o debugOptions) {
 	if o.DestKeyMustContain == "" && o.DestValueMustContain == "" {
 		return
 	}

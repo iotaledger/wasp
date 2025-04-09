@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/iotaledger/wasp/packages/kv"
@@ -18,32 +19,45 @@ var ConcurrentValidation bool // Ugly? Yes. Do we care? No.
 // This function is used to run a function in a goroutine IF ConcurrentValidation is set to true.
 // If not - the function runs immediately.
 // This function is added to allow switching between parallel and sequential execution for easier debugging of validations.
-func Go(f func()) <-chan struct{} {
+func Go(f func()) (waitDone func()) {
 	done := make(chan struct{})
+
+	var panicErr error
 
 	if ConcurrentValidation {
 		go func() {
+			defer func() {
+				if r := recover(); r != nil {
+					panicErr = fmt.Errorf("%v:\n%v", r, string(debug.Stack()))
+				}
+			}()
+
 			defer close(done)
 			f()
 		}()
 
-		return done
+		return func() {
+			<-done
+			if panicErr != nil {
+				panic(panicErr)
+			}
+		}
 	}
 
 	f()
 	close(done)
-	return done
+	return func() {}
 }
 
 // GoAllAndWait runs all functions in parallel and waits for all of them to finish (see comment above).
 func GoAllAndWait(f ...func()) {
-	promises := make([]<-chan struct{}, len(f))
+	promises := make([]func(), len(f))
 	for i := range f {
 		promises[i] = Go(f[i])
 	}
 
-	for _, p := range promises {
-		<-p
+	for _, wait := range promises {
+		wait()
 	}
 }
 
