@@ -26,7 +26,6 @@ type CorecontractsAPIService service
 type ApiAccountsGetAccountBalanceRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	agentID string
 	block *string
 }
@@ -45,15 +44,13 @@ func (r ApiAccountsGetAccountBalanceRequest) Execute() (*AssetsResponse, *http.R
 AccountsGetAccountBalance Get all assets belonging to an account
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
  @return ApiAccountsGetAccountBalanceRequest
 */
-func (a *CorecontractsAPIService) AccountsGetAccountBalance(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountBalanceRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountBalance(ctx context.Context, agentID string) ApiAccountsGetAccountBalanceRequest {
 	return ApiAccountsGetAccountBalanceRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		agentID: agentID,
 	}
 }
@@ -73,8 +70,7 @@ func (a *CorecontractsAPIService) AccountsGetAccountBalanceExecute(r ApiAccounts
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/account/{agentID}/balance"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/balance"
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -198,7 +194,7 @@ func (a *CorecontractsAPIService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/account/{agentID}/foundries"
+	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/foundries"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
@@ -276,7 +272,6 @@ func (a *CorecontractsAPIService) AccountsGetAccountFoundriesExecute(r ApiAccoun
 type ApiAccountsGetAccountNFTIDsRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	agentID string
 	block *string
 }
@@ -295,15 +290,13 @@ func (r ApiAccountsGetAccountNFTIDsRequest) Execute() (*AccountNFTsResponse, *ht
 AccountsGetAccountNFTIDs Get all NFT ids belonging to an account
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
  @return ApiAccountsGetAccountNFTIDsRequest
 */
-func (a *CorecontractsAPIService) AccountsGetAccountNFTIDs(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNFTIDsRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountNFTIDs(ctx context.Context, agentID string) ApiAccountsGetAccountNFTIDsRequest {
 	return ApiAccountsGetAccountNFTIDsRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		agentID: agentID,
 	}
 }
@@ -323,8 +316,7 @@ func (a *CorecontractsAPIService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/account/{agentID}/nfts"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/nfts"
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -401,7 +393,6 @@ func (a *CorecontractsAPIService) AccountsGetAccountNFTIDsExecute(r ApiAccountsG
 type ApiAccountsGetAccountNonceRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	agentID string
 	block *string
 }
@@ -420,15 +411,13 @@ func (r ApiAccountsGetAccountNonceRequest) Execute() (*AccountNonceResponse, *ht
 AccountsGetAccountNonce Get the current nonce of an account
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
  @return ApiAccountsGetAccountNonceRequest
 */
-func (a *CorecontractsAPIService) AccountsGetAccountNonce(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountNonceRequest {
+func (a *CorecontractsAPIService) AccountsGetAccountNonce(ctx context.Context, agentID string) ApiAccountsGetAccountNonceRequest {
 	return ApiAccountsGetAccountNonceRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		agentID: agentID,
 	}
 }
@@ -448,8 +437,7 @@ func (a *CorecontractsAPIService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/account/{agentID}/nonce"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/nonce"
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -573,7 +561,7 @@ func (a *CorecontractsAPIService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber}"
+	localVarPath := localBasePath + "/v1/chain/core/accounts/foundry_output/{serialNumber}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"serialNumber"+"}", url.PathEscape(parameterValueToString(r.serialNumber, "serialNumber")), -1)
 
@@ -654,7 +642,6 @@ func (a *CorecontractsAPIService) AccountsGetFoundryOutputExecute(r ApiAccountsG
 type ApiAccountsGetNFTDataRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	nftID string
 	block *string
 }
@@ -673,15 +660,13 @@ func (r ApiAccountsGetNFTDataRequest) Execute() (*http.Response, error) {
 AccountsGetNFTData Get the NFT data by an ID
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param nftID NFT ID (Hex)
  @return ApiAccountsGetNFTDataRequest
 */
-func (a *CorecontractsAPIService) AccountsGetNFTData(ctx context.Context, chainID string, nftID string) ApiAccountsGetNFTDataRequest {
+func (a *CorecontractsAPIService) AccountsGetNFTData(ctx context.Context, nftID string) ApiAccountsGetNFTDataRequest {
 	return ApiAccountsGetNFTDataRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		nftID: nftID,
 	}
 }
@@ -699,8 +684,7 @@ func (a *CorecontractsAPIService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/nftdata/{nftID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/accounts/nftdata/{nftID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"nftID"+"}", url.PathEscape(parameterValueToString(r.nftID, "nftID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -768,7 +752,6 @@ func (a *CorecontractsAPIService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTD
 type ApiAccountsGetNativeTokenIDRegistryRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -786,14 +769,12 @@ func (r ApiAccountsGetNativeTokenIDRegistryRequest) Execute() (*NativeTokenIDReg
 AccountsGetNativeTokenIDRegistry Get a list of all registries
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiAccountsGetNativeTokenIDRegistryRequest
 */
-func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistry(ctx context.Context, chainID string) ApiAccountsGetNativeTokenIDRegistryRequest {
+func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistry(ctx context.Context) ApiAccountsGetNativeTokenIDRegistryRequest {
 	return ApiAccountsGetNativeTokenIDRegistryRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -812,8 +793,7 @@ func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/token_registry"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/accounts/token_registry"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -889,7 +869,6 @@ func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistryExecute(r ApiA
 type ApiAccountsGetTotalAssetsRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -907,14 +886,12 @@ func (r ApiAccountsGetTotalAssetsRequest) Execute() (*AssetsResponse, *http.Resp
 AccountsGetTotalAssets Get all stored assets
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiAccountsGetTotalAssetsRequest
 */
-func (a *CorecontractsAPIService) AccountsGetTotalAssets(ctx context.Context, chainID string) ApiAccountsGetTotalAssetsRequest {
+func (a *CorecontractsAPIService) AccountsGetTotalAssets(ctx context.Context) ApiAccountsGetTotalAssetsRequest {
 	return ApiAccountsGetTotalAssetsRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -933,8 +910,7 @@ func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/accounts/total_assets"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/accounts/total_assets"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1010,7 +986,6 @@ func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 type ApiBlocklogGetBlockInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	blockIndex uint32
 	block *string
 }
@@ -1029,15 +1004,13 @@ func (r ApiBlocklogGetBlockInfoRequest) Execute() (*BlockInfoResponse, *http.Res
 BlocklogGetBlockInfo Get the block info of a certain block index
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetBlockInfoRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetBlockInfo(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
+func (a *CorecontractsAPIService) BlocklogGetBlockInfo(ctx context.Context, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
 	return ApiBlocklogGetBlockInfoRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		blockIndex: blockIndex,
 	}
 }
@@ -1057,8 +1030,7 @@ func (a *CorecontractsAPIService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/blocks/{blockIndex}"
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1138,7 +1110,6 @@ func (a *CorecontractsAPIService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 type ApiBlocklogGetControlAddressesRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -1156,14 +1127,12 @@ func (r ApiBlocklogGetControlAddressesRequest) Execute() (*ControlAddressesRespo
 BlocklogGetControlAddresses Get the control addresses
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetControlAddressesRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetControlAddresses(ctx context.Context, chainID string) ApiBlocklogGetControlAddressesRequest {
+func (a *CorecontractsAPIService) BlocklogGetControlAddresses(ctx context.Context) ApiBlocklogGetControlAddressesRequest {
 	return ApiBlocklogGetControlAddressesRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1182,8 +1151,7 @@ func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlockl
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/controladdresses"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/controladdresses"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1259,7 +1227,6 @@ func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlockl
 type ApiBlocklogGetEventsOfBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	blockIndex uint32
 	block *string
 }
@@ -1278,15 +1245,13 @@ func (r ApiBlocklogGetEventsOfBlockRequest) Execute() (*EventsResponse, *http.Re
 BlocklogGetEventsOfBlock Get events of a block
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetEventsOfBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetEventsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
 	return ApiBlocklogGetEventsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		blockIndex: blockIndex,
 	}
 }
@@ -1306,8 +1271,7 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/events/block/{blockIndex}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/events/block/{blockIndex}"
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1387,7 +1351,6 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 type ApiBlocklogGetEventsOfLatestBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -1405,14 +1368,12 @@ func (r ApiBlocklogGetEventsOfLatestBlockRequest) Execute() (*EventsResponse, *h
 BlocklogGetEventsOfLatestBlock Get events of the latest block
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetEventsOfLatestBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetEventsOfLatestBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlock(ctx context.Context) ApiBlocklogGetEventsOfLatestBlockRequest {
 	return ApiBlocklogGetEventsOfLatestBlockRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1431,8 +1392,7 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/events/block/latest"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/events/block/latest"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1508,7 +1468,6 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 type ApiBlocklogGetEventsOfRequestRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	requestID string
 	block *string
 }
@@ -1527,15 +1486,13 @@ func (r ApiBlocklogGetEventsOfRequestRequest) Execute() (*EventsResponse, *http.
 BlocklogGetEventsOfRequest Get events of a request
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiBlocklogGetEventsOfRequestRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetEventsOfRequest(ctx context.Context, chainID string, requestID string) ApiBlocklogGetEventsOfRequestRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfRequest(ctx context.Context, requestID string) ApiBlocklogGetEventsOfRequestRequest {
 	return ApiBlocklogGetEventsOfRequestRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		requestID: requestID,
 	}
 }
@@ -1555,8 +1512,7 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/events/request/{requestID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/events/request/{requestID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1633,7 +1589,6 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 type ApiBlocklogGetLatestBlockInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -1651,14 +1606,12 @@ func (r ApiBlocklogGetLatestBlockInfoRequest) Execute() (*BlockInfoResponse, *ht
 BlocklogGetLatestBlockInfo Get the block info of the latest block
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetLatestBlockInfoRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfo(ctx context.Context, chainID string) ApiBlocklogGetLatestBlockInfoRequest {
+func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfo(ctx context.Context) ApiBlocklogGetLatestBlockInfoRequest {
 	return ApiBlocklogGetLatestBlockInfoRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1677,8 +1630,7 @@ func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/latest"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/blocks/latest"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -1754,7 +1706,6 @@ func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 type ApiBlocklogGetRequestIDsForBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	blockIndex uint32
 	block *string
 }
@@ -1773,15 +1724,13 @@ func (r ApiBlocklogGetRequestIDsForBlockRequest) Execute() (*RequestIDsResponse,
 BlocklogGetRequestIDsForBlock Get the request ids for a certain block index
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetRequestIDsForBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
 	return ApiBlocklogGetRequestIDsForBlockRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		blockIndex: blockIndex,
 	}
 }
@@ -1801,8 +1750,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/blocks/{blockIndex}/requestids"
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1882,7 +1830,6 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 type ApiBlocklogGetRequestIDsForLatestBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -1900,14 +1847,12 @@ func (r ApiBlocklogGetRequestIDsForLatestBlockRequest) Execute() (*RequestIDsRes
 BlocklogGetRequestIDsForLatestBlock Get the request ids for the latest block
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetRequestIDsForLatestBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetRequestIDsForLatestBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlock(ctx context.Context) ApiBlocklogGetRequestIDsForLatestBlockRequest {
 	return ApiBlocklogGetRequestIDsForLatestBlockRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -1926,8 +1871,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/latest/requestids"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/blocks/latest/requestids"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -2003,7 +1947,6 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 type ApiBlocklogGetRequestIsProcessedRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	requestID string
 	block *string
 }
@@ -2022,15 +1965,13 @@ func (r ApiBlocklogGetRequestIsProcessedRequest) Execute() (*RequestProcessedRes
 BlocklogGetRequestIsProcessed Get the request processing status
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiBlocklogGetRequestIsProcessedRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessed(ctx context.Context, chainID string, requestID string) ApiBlocklogGetRequestIsProcessedRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessed(ctx context.Context, requestID string) ApiBlocklogGetRequestIsProcessedRequest {
 	return ApiBlocklogGetRequestIsProcessedRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		requestID: requestID,
 	}
 }
@@ -2050,8 +1991,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/requests/{requestID}/is_processed"
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -2128,7 +2068,6 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 type ApiBlocklogGetRequestReceiptRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	requestID string
 	block *string
 }
@@ -2147,15 +2086,13 @@ func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*ReceiptResponse, *http.
 BlocklogGetRequestReceipt Get the receipt of a certain request id
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param requestID RequestID (Hex)
  @return ApiBlocklogGetRequestReceiptRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestReceipt(ctx context.Context, chainID string, requestID string) ApiBlocklogGetRequestReceiptRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceipt(ctx context.Context, requestID string) ApiBlocklogGetRequestReceiptRequest {
 	return ApiBlocklogGetRequestReceiptRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		requestID: requestID,
 	}
 }
@@ -2175,8 +2112,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/requests/{requestID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/requests/{requestID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"requestID"+"}", url.PathEscape(parameterValueToString(r.requestID, "requestID")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -2253,7 +2189,6 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	blockIndex uint32
 	block *string
 }
@@ -2272,15 +2207,13 @@ func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() ([]ReceiptRespons
 BlocklogGetRequestReceiptsOfBlock Get all receipts of a certain block
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetRequestReceiptsOfBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, chainID string, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 		blockIndex: blockIndex,
 	}
 }
@@ -2300,8 +2233,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/blocks/{blockIndex}/receipts"
 	localVarPath = strings.Replace(localVarPath, "{"+"blockIndex"+"}", url.PathEscape(parameterValueToString(r.blockIndex, "blockIndex")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -2381,7 +2313,6 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 type ApiBlocklogGetRequestReceiptsOfLatestBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -2399,14 +2330,12 @@ func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() ([]ReceiptR
 BlocklogGetRequestReceiptsOfLatestBlock Get all receipts of the latest block
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlock(ctx context.Context, chainID string) ApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlock(ctx context.Context) ApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -2425,8 +2354,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/blocklog/blocks/latest/receipts"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/blocklog/blocks/latest/receipts"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -2552,7 +2480,7 @@ func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID}"
+	localVarPath := localBasePath + "/v1/chain/core/errors/{contractHname}/message/{errorID}"
 	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"contractHname"+"}", url.PathEscape(parameterValueToString(r.contractHname, "contractHname")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"errorID"+"}", url.PathEscape(parameterValueToString(r.errorID, "errorID")), -1)
@@ -2634,7 +2562,6 @@ func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 type ApiGovernanceGetAllowedStateControllerAddressesRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -2654,14 +2581,12 @@ GovernanceGetAllowedStateControllerAddresses Get the allowed state controller ad
 Returns the allowed state controller addresses
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGovernanceGetAllowedStateControllerAddressesRequest
 */
-func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddresses(ctx context.Context, chainID string) ApiGovernanceGetAllowedStateControllerAddressesRequest {
+func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddresses(ctx context.Context) ApiGovernanceGetAllowedStateControllerAddressesRequest {
 	return ApiGovernanceGetAllowedStateControllerAddressesRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -2680,8 +2605,7 @@ func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddressesEx
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/governance/allowedstatecontrollers"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/governance/allowedstatecontrollers"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -2757,7 +2681,6 @@ func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddressesEx
 type ApiGovernanceGetChainInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -2777,14 +2700,12 @@ GovernanceGetChainInfo Get the chain info
 If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGovernanceGetChainInfoRequest
 */
-func (a *CorecontractsAPIService) GovernanceGetChainInfo(ctx context.Context, chainID string) ApiGovernanceGetChainInfoRequest {
+func (a *CorecontractsAPIService) GovernanceGetChainInfo(ctx context.Context) ApiGovernanceGetChainInfoRequest {
 	return ApiGovernanceGetChainInfoRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -2803,8 +2724,7 @@ func (a *CorecontractsAPIService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/governance/chaininfo"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/governance/chaininfo"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -2880,7 +2800,6 @@ func (a *CorecontractsAPIService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 type ApiGovernanceGetChainOwnerRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	chainID string
 	block *string
 }
 
@@ -2900,14 +2819,12 @@ GovernanceGetChainOwner Get the chain owner
 Returns the chain owner
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
  @return ApiGovernanceGetChainOwnerRequest
 */
-func (a *CorecontractsAPIService) GovernanceGetChainOwner(ctx context.Context, chainID string) ApiGovernanceGetChainOwnerRequest {
+func (a *CorecontractsAPIService) GovernanceGetChainOwner(ctx context.Context) ApiGovernanceGetChainOwnerRequest {
 	return ApiGovernanceGetChainOwnerRequest{
 		ApiService: a,
 		ctx: ctx,
-		chainID: chainID,
 	}
 }
 
@@ -2926,8 +2843,7 @@ func (a *CorecontractsAPIService) GovernanceGetChainOwnerExecute(r ApiGovernance
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chains/{chainID}/core/governance/chainowner"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
+	localVarPath := localBasePath + "/v1/chain/core/governance/chainowner"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

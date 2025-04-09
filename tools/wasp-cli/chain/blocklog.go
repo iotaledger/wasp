@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -55,7 +54,7 @@ func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []str
 	if len(args) == 0 {
 		blockInfo, _, err := client.
 			CorecontractsAPI.
-			BlocklogGetLatestBlockInfo(ctx, config.GetChain(chain).String()).
+			BlocklogGetLatestBlockInfo(ctx).
 			Execute() //nolint:bodyclose // false positive
 
 		log.Check(err)
@@ -68,7 +67,7 @@ func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []str
 
 	blockInfo, _, err := client.
 		CorecontractsAPI.
-		BlocklogGetBlockInfo(ctx, config.GetChain(chain).String(), uint32(index)).
+		BlocklogGetBlockInfo(ctx, uint32(index)).
 		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
 
@@ -78,7 +77,7 @@ func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []str
 
 func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32, chain string) {
 	receipts, _, err := client.CorecontractsAPI.
-		BlocklogGetRequestReceiptsOfBlock(ctx, config.GetChain(chain).String(), index).
+		BlocklogGetRequestReceiptsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
 
@@ -92,7 +91,7 @@ func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index 
 
 func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32, chain string) {
 	events, _, err := client.CorecontractsAPI.
-		BlocklogGetEventsOfBlock(ctx, config.GetChain(chain).String(), index).
+		BlocklogGetEventsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
 		Execute() //nolint:bodyclose // false positive
 
@@ -133,7 +132,6 @@ func initRequestCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
-			chainID := config.GetChain(chain)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
@@ -141,7 +139,7 @@ func initRequestCmd() *cobra.Command {
 
 			// TODO add optional block param?
 			receipt, _, err := client.ChainsAPI.
-				GetReceipt(ctx, chainID.String(), reqID.String()).
+				GetReceipt(ctx, reqID.String()).
 				Execute() //nolint:bodyclose // false positive
 
 			log.Check(err)
@@ -161,7 +159,7 @@ func initRequestCmd() *cobra.Command {
 
 func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID, chain string) {
 	events, _, err := client.CorecontractsAPI.
-		BlocklogGetEventsOfRequest(ctx, config.GetChain(chain).String(), reqID.String()).
+		BlocklogGetEventsOfRequest(ctx, reqID.String()).
 		Execute() //nolint:bodyclose // false positive
 
 	log.Check(err)

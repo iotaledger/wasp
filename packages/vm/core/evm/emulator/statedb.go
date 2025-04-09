@@ -73,18 +73,6 @@ func NewStateDB(ctx Context) *StateDB {
 	}
 }
 
-// NewStateDBFromKVStore Creates a StateDB without any context. Handle with care. Functions requiring the context will crash.
-// It is currently only used for the ERC721 registration using a KVStore which doesn't justify a new class.
-func NewStateDBFromKVStore(emulatorState kv.KVStore) *StateDB {
-	return &StateDB{
-		ctx:              nil,
-		kv:               StateDBSubrealm(emulatorState),
-		snapshots:        make(map[int][]*types.Log),
-		transientStorage: newTransientStorage(),
-		newContracts:     make(map[common.Address]bool),
-	}
-}
-
 func CreateAccount(kv kv.KVStore, addr common.Address) {
 	SetNonce(kv, addr, 0)
 }

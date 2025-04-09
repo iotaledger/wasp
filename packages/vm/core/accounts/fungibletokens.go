@@ -12,13 +12,13 @@ import (
 )
 
 // CreditToAccount brings new funds to the on chain ledger
-func (s *StateWriter) CreditToAccount(agentID isc.AgentID, coins isc.CoinBalances, chainID isc.ChainID) {
+func (s *StateWriter) CreditToAccount(agentID isc.AgentID, coins isc.CoinBalances) {
 	if len(coins) == 0 {
 		return
 	}
-	s.creditToAccount(accountKey(agentID, chainID), coins)
+	s.creditToAccount(accountKey(agentID), coins)
 	s.creditToAccount(L2TotalsAccount, coins)
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 }
 
 // creditToAccount adds coins to the internal account map
@@ -36,13 +36,13 @@ func (s *StateWriter) creditToAccount(accountKey kv.Key, coins isc.CoinBalances)
 	}
 }
 
-func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, wei *big.Int, chainID isc.ChainID) {
+func (s *StateWriter) CreditToAccountFullDecimals(agentID isc.AgentID, wei *big.Int) {
 	if !bigint.IsPositive(wei) {
 		return
 	}
-	s.creditToAccountFullDecimals(accountKey(agentID, chainID), wei)
+	s.creditToAccountFullDecimals(accountKey(agentID), wei)
 	s.creditToAccountFullDecimals(L2TotalsAccount, wei)
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 }
 
 // creditToAccountFullDecimals adds coins to the internal account map
@@ -51,21 +51,20 @@ func (s *StateWriter) creditToAccountFullDecimals(accountKey kv.Key, wei *big.In
 }
 
 // DebitFromAccount takes out coins balance the on chain ledger. If not enough it panics
-func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalances, chainID isc.ChainID) {
+func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalances) {
 	if len(coins) == 0 {
 		return
 	}
-	if !s.debitFromAccount(accountKey(agentID, chainID), coins) {
+	if !s.debitFromAccount(accountKey(agentID), coins) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", coins, agentID, ErrNotEnoughFunds))
 	}
 	if !s.debitFromAccount(L2TotalsAccount, coins) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 }
 
 // debitFromAccount debits coins from the internal accounts map
-// NOTE: this function does not take NFTs into account
 func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances) bool {
 	if len(coins) == 0 {
 		return true
@@ -91,18 +90,18 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances
 }
 
 // DebitFromAccountFullDecimals removes the amount from the chain ledger. If not enough it panics
-func (s *StateWriter) DebitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int, chainID isc.ChainID) {
+func (s *StateWriter) DebitFromAccountFullDecimals(agentID isc.AgentID, amount *big.Int) {
 	if !bigint.IsPositive(amount) {
 		return
 	}
-	if !s.debitFromAccountFullDecimals(accountKey(agentID, chainID), amount) {
+	if !s.debitFromAccountFullDecimals(accountKey(agentID), amount) {
 		panic(fmt.Errorf("cannot debit (%s) from %s: %w", amount.String(), agentID, ErrNotEnoughFunds))
 	}
 
 	if !s.debitFromAccountFullDecimals(L2TotalsAccount, amount) {
 		panic("debitFromAccount: inconsistent ledger state")
 	}
-	s.touchAccount(agentID, chainID)
+	s.touchAccount(agentID)
 }
 
 // debitFromAccountFullDecimals debits the amount from the internal accounts map
@@ -129,8 +128,8 @@ func (s *StateReader) getFungibleTokens(accountKey kv.Key) isc.CoinBalances {
 }
 
 // GetAccountFungibleTokens returns all fungible tokens belonging to the agentID on the state
-func (s *StateReader) GetAccountFungibleTokens(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
-	return s.getFungibleTokens(accountKey(agentID, chainID))
+func (s *StateReader) GetAccountFungibleTokens(agentID isc.AgentID) isc.CoinBalances {
+	return s.getFungibleTokens(accountKey(agentID))
 }
 
 func (s *StateReader) GetTotalL2FungibleTokens() isc.CoinBalances {

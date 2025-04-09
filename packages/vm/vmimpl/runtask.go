@@ -147,45 +147,14 @@ func (vmctx *vmContext) init() {
 		vmctx.schemaVersion = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 
 		// TODO
-		// save the ObjectID of the newly created tokens, foundries and NFTs in the previous block
+		// save the ObjectID of the newly created tokens, foundries and objects in the previous block
 		/*
 			accountsState := vmctx.accountsStateWriterFromChainState(chainState)
 			newNFTIDs := accountsState.
 				UpdateLatestOutputID(vmctx.task.AnchorOutputID, vmctx.task.AnchorOutput.StateIndex)
-
-			if len(newNFTIDs) > 0 {
-				for nftID, owner := range newNFTIDs {
-					nft := accountsState.GetNFTData(nftID)
-					if owner.Kind() == isc.AgentIDKindEthereumAddress {
-						// emit an EVM event so that the mint is visible from the EVM block explorer
-						vmctx.onBlockClose(
-							vmctx.emitEVMEventL1NFTMint(nft.ID, owner.(*isc.EthereumAddressAgentID)),
-						)
-					}
-				}
-			}
 		*/
 	})
 }
-
-/* TODO
-func (vmctx *vmContext) emitEVMEventL1NFTMint(nftID iotago.NFTID, owner *isc.EthereumAddressAgentID) blockCloseCallback {
-	return func(reqIndex uint16) {
-		// fake a request execution and insert a Mint event on the EVM
-		reqCtx := vmctx.newRequestContext(isc.NewImpersonatedOffLedgerRequest(&isc.OffLedgerRequestData{}).WithSenderAddress(&iotago.Ed25519Address{}), reqIndex)
-		reqCtx.pushCallContext(evm.Contract.Hname(), nil, nil, nil)
-		ctx := NewSandbox(reqCtx)
-		evmimpl.AddDummyTxWithTransferEvents(
-			ctx,
-			owner.EthAddress(),
-			isc.NewEmptyAssets().AddNFTs(nftID),
-			nil,
-			false,
-		)
-		reqCtx.uncommittedState.Mutations().ApplyTo(vmctx.stateDraft)
-	}
-}
-*/
 
 func (vmctx *vmContext) runRequests(
 	reqs []isc.Request,

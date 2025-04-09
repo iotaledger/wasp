@@ -4,30 +4,30 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
-[**accountsGetAccountBalance**](CorecontractsApi.md#accountsGetAccountBalance) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-[**accountsGetAccountFoundries**](CorecontractsApi.md#accountsGetAccountFoundries) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
-[**accountsGetAccountNFTIDs**](CorecontractsApi.md#accountsGetAccountNFTIDs) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
-[**accountsGetAccountNonce**](CorecontractsApi.md#accountsGetAccountNonce) | **GET** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**accountsGetFoundryOutput**](CorecontractsApi.md#accountsGetFoundryOutput) | **GET** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
-[**accountsGetNFTData**](CorecontractsApi.md#accountsGetNFTData) | **GET** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
-[**accountsGetNativeTokenIDRegistry**](CorecontractsApi.md#accountsGetNativeTokenIDRegistry) | **GET** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
-[**accountsGetTotalAssets**](CorecontractsApi.md#accountsGetTotalAssets) | **GET** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-[**blocklogGetBlockInfo**](CorecontractsApi.md#blocklogGetBlockInfo) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
-[**blocklogGetControlAddresses**](CorecontractsApi.md#blocklogGetControlAddresses) | **GET** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
-[**blocklogGetEventsOfBlock**](CorecontractsApi.md#blocklogGetEventsOfBlock) | **GET** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
-[**blocklogGetEventsOfLatestBlock**](CorecontractsApi.md#blocklogGetEventsOfLatestBlock) | **GET** /v1/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
-[**blocklogGetEventsOfRequest**](CorecontractsApi.md#blocklogGetEventsOfRequest) | **GET** /v1/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
-[**blocklogGetLatestBlockInfo**](CorecontractsApi.md#blocklogGetLatestBlockInfo) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
-[**blocklogGetRequestIDsForBlock**](CorecontractsApi.md#blocklogGetRequestIDsForBlock) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
-[**blocklogGetRequestIDsForLatestBlock**](CorecontractsApi.md#blocklogGetRequestIDsForLatestBlock) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
-[**blocklogGetRequestIsProcessed**](CorecontractsApi.md#blocklogGetRequestIsProcessed) | **GET** /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
-[**blocklogGetRequestReceipt**](CorecontractsApi.md#blocklogGetRequestReceipt) | **GET** /v1/chains/{chainID}/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
-[**blocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#blocklogGetRequestReceiptsOfBlock) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
-[**blocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#blocklogGetRequestReceiptsOfLatestBlock) | **GET** /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
-[**errorsGetErrorMessageFormat**](CorecontractsApi.md#errorsGetErrorMessageFormat) | **GET** /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
-[**governanceGetAllowedStateControllerAddresses**](CorecontractsApi.md#governanceGetAllowedStateControllerAddresses) | **GET** /v1/chains/{chainID}/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
-[**governanceGetChainInfo**](CorecontractsApi.md#governanceGetChainInfo) | **GET** /v1/chains/{chainID}/core/governance/chaininfo | Get the chain info
-[**governanceGetChainOwner**](CorecontractsApi.md#governanceGetChainOwner) | **GET** /v1/chains/{chainID}/core/governance/chainowner | Get the chain owner
+[**accountsGetAccountBalance**](CorecontractsApi.md#accountsGetAccountBalance) | **GET** /v1/chain/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
+[**accountsGetAccountFoundries**](CorecontractsApi.md#accountsGetAccountFoundries) | **GET** /v1/chain/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
+[**accountsGetAccountNFTIDs**](CorecontractsApi.md#accountsGetAccountNFTIDs) | **GET** /v1/chain/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
+[**accountsGetAccountNonce**](CorecontractsApi.md#accountsGetAccountNonce) | **GET** /v1/chain/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
+[**accountsGetFoundryOutput**](CorecontractsApi.md#accountsGetFoundryOutput) | **GET** /v1/chain/core/accounts/foundry_output/{serialNumber} | Get the foundry output
+[**accountsGetNFTData**](CorecontractsApi.md#accountsGetNFTData) | **GET** /v1/chain/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
+[**accountsGetNativeTokenIDRegistry**](CorecontractsApi.md#accountsGetNativeTokenIDRegistry) | **GET** /v1/chain/core/accounts/token_registry | Get a list of all registries
+[**accountsGetTotalAssets**](CorecontractsApi.md#accountsGetTotalAssets) | **GET** /v1/chain/core/accounts/total_assets | Get all stored assets
+[**blocklogGetBlockInfo**](CorecontractsApi.md#blocklogGetBlockInfo) | **GET** /v1/chain/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
+[**blocklogGetControlAddresses**](CorecontractsApi.md#blocklogGetControlAddresses) | **GET** /v1/chain/core/blocklog/controladdresses | Get the control addresses
+[**blocklogGetEventsOfBlock**](CorecontractsApi.md#blocklogGetEventsOfBlock) | **GET** /v1/chain/core/blocklog/events/block/{blockIndex} | Get events of a block
+[**blocklogGetEventsOfLatestBlock**](CorecontractsApi.md#blocklogGetEventsOfLatestBlock) | **GET** /v1/chain/core/blocklog/events/block/latest | Get events of the latest block
+[**blocklogGetEventsOfRequest**](CorecontractsApi.md#blocklogGetEventsOfRequest) | **GET** /v1/chain/core/blocklog/events/request/{requestID} | Get events of a request
+[**blocklogGetLatestBlockInfo**](CorecontractsApi.md#blocklogGetLatestBlockInfo) | **GET** /v1/chain/core/blocklog/blocks/latest | Get the block info of the latest block
+[**blocklogGetRequestIDsForBlock**](CorecontractsApi.md#blocklogGetRequestIDsForBlock) | **GET** /v1/chain/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
+[**blocklogGetRequestIDsForLatestBlock**](CorecontractsApi.md#blocklogGetRequestIDsForLatestBlock) | **GET** /v1/chain/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
+[**blocklogGetRequestIsProcessed**](CorecontractsApi.md#blocklogGetRequestIsProcessed) | **GET** /v1/chain/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
+[**blocklogGetRequestReceipt**](CorecontractsApi.md#blocklogGetRequestReceipt) | **GET** /v1/chain/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
+[**blocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#blocklogGetRequestReceiptsOfBlock) | **GET** /v1/chain/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
+[**blocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#blocklogGetRequestReceiptsOfLatestBlock) | **GET** /v1/chain/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
+[**errorsGetErrorMessageFormat**](CorecontractsApi.md#errorsGetErrorMessageFormat) | **GET** /v1/chain/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
+[**governanceGetAllowedStateControllerAddresses**](CorecontractsApi.md#governanceGetAllowedStateControllerAddresses) | **GET** /v1/chain/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
+[**governanceGetChainInfo**](CorecontractsApi.md#governanceGetChainInfo) | **GET** /v1/chain/core/governance/chaininfo | Get the chain info
+[**governanceGetChainOwner**](CorecontractsApi.md#governanceGetChainOwner) | **GET** /v1/chain/core/governance/chainowner | Get the chain owner
 
 
 # **accountsGetAccountBalance**
@@ -45,8 +45,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiAccountsGetAccountBalanceRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // AgentID (Hex Address for L1 accounts | Hex for EVM)
   agentID: "agentID_example",
     // Block index or trie root (optional)
@@ -62,7 +60,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -163,8 +160,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiAccountsGetAccountNFTIDsRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // AgentID (Hex Address for L1 accounts | Hex for EVM)
   agentID: "agentID_example",
     // Block index or trie root (optional)
@@ -180,7 +175,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -222,8 +216,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiAccountsGetAccountNonceRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // AgentID (Hex Address for L1 accounts | Hex for EVM)
   agentID: "agentID_example",
     // Block index or trie root (optional)
@@ -239,7 +231,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -340,8 +331,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiAccountsGetNFTDataRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // NFT ID (Hex)
   nftID: "nftID_example",
     // Block index or trie root (optional)
@@ -357,7 +346,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **nftID** | [**string**] | NFT ID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -398,8 +386,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiAccountsGetNativeTokenIDRegistryRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -413,7 +399,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -454,8 +439,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiAccountsGetTotalAssetsRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -469,7 +452,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -510,8 +492,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetBlockInfoRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // BlockIndex (uint32)
   blockIndex: 1,
     // Block index or trie root (optional)
@@ -527,7 +507,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -569,8 +548,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetControlAddressesRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -584,7 +561,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -625,8 +601,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetEventsOfBlockRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // BlockIndex (uint32)
   blockIndex: 1,
     // Block index or trie root (optional)
@@ -642,7 +616,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -684,8 +657,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -699,7 +670,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -740,8 +710,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetEventsOfRequestRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // RequestID (Hex)
   requestID: "requestID_example",
     // Block index or trie root (optional)
@@ -757,7 +725,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -799,8 +766,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetLatestBlockInfoRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -814,7 +779,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -855,8 +819,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetRequestIDsForBlockRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // BlockIndex (uint32)
   blockIndex: 1,
     // Block index or trie root (optional)
@@ -872,7 +834,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -914,8 +875,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -929,7 +888,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -970,8 +928,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetRequestIsProcessedRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // RequestID (Hex)
   requestID: "requestID_example",
     // Block index or trie root (optional)
@@ -987,7 +943,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1029,8 +984,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetRequestReceiptRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // RequestID (Hex)
   requestID: "requestID_example",
     // Block index or trie root (optional)
@@ -1046,7 +999,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **requestID** | [**string**] | RequestID (Hex) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1088,8 +1040,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // BlockIndex (uint32)
   blockIndex: 1,
     // Block index or trie root (optional)
@@ -1105,7 +1055,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **blockIndex** | [**number**] | BlockIndex (uint32) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
@@ -1147,8 +1096,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -1162,7 +1109,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1266,8 +1212,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -1281,7 +1225,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1323,8 +1266,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiGovernanceGetChainInfoRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -1338,7 +1279,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
@@ -1380,8 +1320,6 @@ const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
 const request: CorecontractsApiGovernanceGetChainOwnerRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
@@ -1395,7 +1333,6 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 

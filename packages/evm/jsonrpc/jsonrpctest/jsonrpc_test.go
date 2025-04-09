@@ -111,7 +111,7 @@ func TestRPCGetBalance(t *testing.T) {
 	initialBalance := coin.Value(1_666_666_666) // enought for transfer + gas, but also fits single coin object allocated from faucet
 	wallet, nonEmptyAddress := env.soloChain.NewEthereumAccountWithL2Funds(initialBalance)
 	initialBalanceEth := env.Balance(nonEmptyAddress)
-	initialBalanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(env.soloChain.ChainID, nonEmptyAddress)))
+	initialBalanceNative := uint64(env.soloChain.L2BaseTokens(isc.NewEthereumAddressAgentID(nonEmptyAddress)))
 	require.Equal(t, initialBalance.Uint64()*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
 	require.Equal(t, initialBalanceNative*nativeToEthDigitsConversionRate, initialBalanceEth.Uint64())
 
@@ -737,7 +737,7 @@ func TestRPCTraceEVMDeposit(t *testing.T) {
 
 	err := env.soloChain.TransferAllowanceTo(
 		isc.NewAssets(1000),
-		isc.NewEthereumAddressAgentID(env.soloChain.ChainID, evmAddr),
+		isc.NewEthereumAddressAgentID(evmAddr),
 		wallet)
 
 	block := env.BlockByNumber(nil)

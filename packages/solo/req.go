@@ -100,46 +100,47 @@ func (r *CallParams) AddAllowanceCoins(coinType coin.Type, amount coin.Value) *C
 	return r
 }
 
-func (r *CallParams) AddAllowanceNFTs(nftIDs ...iotago.ObjectID) *CallParams {
+func (r *CallParams) AddAllowanceObject(obj isc.IotaObject) *CallParams {
 	if r.allowance == nil {
 		r.allowance = isc.NewEmptyAssets()
 	}
-
-	for _, nftId := range nftIDs {
-		r.allowance.AddObject(nftId)
-	}
-
+	r.allowance.AddObject(obj)
 	return r
 }
 
+// WithAssets sets the assets to be sent (only applicable when the call is made via on-ledger request)
 func (r *CallParams) WithAssets(assets *isc.Assets) *CallParams {
 	r.assets = assets.Clone()
 	return r
 }
 
+// WithFungibleTokens sets the tokens to be sent (only applicable when the call is made via on-ledger request)
 func (r *CallParams) WithFungibleTokens(ftokens isc.CoinBalances) *CallParams {
 	r.assets.Coins = ftokens.Clone()
 	return r
 }
 
+// AddFungibleTokens adds tokens to be sent (only applicable when the call is made via on-ledger request)
 func (r *CallParams) AddFungibleTokens(ftokens isc.CoinBalances) *CallParams {
 	r.assets.Add(ftokens.ToAssets())
 	return r
 }
 
+// AddBaseTokens adds base tokens to be sent (only applicable when the call is made via on-ledger request)
 func (r *CallParams) AddBaseTokens(amount coin.Value) *CallParams {
 	r.assets.AddBaseTokens(amount)
 	return r
 }
 
+// AddCoin adds a coin to be sent (only applicable when the call is made via on-ledger request)
 func (r *CallParams) AddCoin(coinType coin.Type, amount coin.Value) *CallParams {
 	r.assets.AddCoin(coinType, amount)
 	return r
 }
 
-// Adds an nft to be sent (only applicable when the call is made via on-ledger request)
-func (r *CallParams) WithObject(objectID iotago.ObjectID) *CallParams {
-	r.assets.AddObject(objectID)
+// AddObject adds an object to be sent (only applicable when the call is made via on-ledger request)
+func (r *CallParams) AddObject(obj isc.IotaObject) *CallParams {
+	r.assets.AddObject(obj)
 	return r
 }
 
@@ -203,7 +204,7 @@ func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) 
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAddressAgentID(keyPair.Address()))
 	}
-	ret := isc.NewOffLedgerRequest(ch.ID(), r.msg, r.nonce, r.gasBudget).
+	ret := isc.NewOffLedgerRequest(ch.ChainID, r.msg, r.nonce, r.gasBudget).
 		WithAllowance(r.allowance)
 	return ret.Sign(keyPair)
 }
@@ -282,8 +283,7 @@ func (env *Solo) makeBaseTokenCoin(
 	}
 }
 
-// SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
-func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (ch *Chain) SendRequestWithL1GasBudget(req *CallParams, keyPair *cryptolib.KeyPair, l1GasBudget uint64) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
 		keyPair = ch.OwnerPrivateKey
 	}
@@ -302,7 +302,7 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 			Allowance:        req.allowance.AsISCMove(),
 			OnchainGasBudget: req.gasBudget,
 			GasPrice:         iotaclient.DefaultGasPrice,
-			GasBudget:        iotaclient.DefaultGasBudget,
+			GasBudget:        l1GasBudget,
 		},
 	)
 	if err != nil {
@@ -318,6 +318,11 @@ func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.O
 	r, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
 	require.NoError(ch.Env.T, err)
 	return r, res, nil
+}
+
+// SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
+func (ch *Chain) SendRequest(req *CallParams, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return ch.SendRequestWithL1GasBudget(req, keyPair, iotaclient.DefaultGasBudget)
 }
 
 // PostRequestSync posts a request synchronously sent by the test program to
@@ -382,7 +387,7 @@ func (ch *Chain) PostRequestSyncExt(
 	defer ch.logRequestLastBlock()
 
 	req, l1Res, err = ch.SendRequest(callParams, keyPair)
-	require.NoError(ch.Env.T, err)
+	require.NoError(ch.Env.T, err, "failed to send the request")
 
 	anchorTransitionPTBRes, results := ch.RunRequestsSync([]isc.Request{req})
 	if len(results) == 0 {

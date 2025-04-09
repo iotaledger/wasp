@@ -378,7 +378,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 			time.Sleep(200 * time.Millisecond)
 			err = multiclient.New(clu.WaspClientFromHostName, chain.CommitteeAPIHosts()).Do(
 				func(_ int, a *apiclient.APIClient) error {
-					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background(), chainID.String()).Execute() //nolint:bodyclose // false positive
+					_, _, err2 := a.ChainsAPI.GetChainInfo(context.Background()).Execute() //nolint:bodyclose // false positive
 					return err2
 				})
 			if err != nil {
@@ -935,38 +935,3 @@ func (clu *Cluster) L1BaseTokens(addr *cryptolib.Address) coin.Value {
 func (clu *Cluster) AssertAddressBalances(addr *cryptolib.Address, expected *isc.Assets) bool {
 	return clu.AddressBalances(addr).Equals(expected)
 }
-
-/*
-func (clu *Cluster) MintL1NFT(immutableMetadata []byte, target *cryptolib.Address, issuerKeypair *cryptolib.KeyPair) (iotago.OutputID, *iotago.NFTOutput, error) {
-	panic("refactor me: transaction.NewMintNFTsTransaction")
-	/*outputsSet, err := clu.l1.OutputMap(issuerKeypair.Address())
-	if err != nil {
-		return iotago.RequestID{}, nil, err
-	}
-	var tx *iotago.Transaction
-	_ = outputsSet
-	err = errors.New("refactor me: MintL1NFT")
-
-	if err != nil {
-		return iotago.RequestID{}, nil, err
-	}
-	_, err = clu.l1.PostTxAndWaitUntilConfirmation(tx)
-	if err != nil {
-		return iotago.RequestID{}, nil, err
-	}
-
-	// go through the tx and find the newly minted NFT
-	outputSet, err := tx.OutputsSet()
-	if err != nil {
-		return iotago.RequestID{}, nil, err
-	}
-
-	for oID, o := range outputSet {
-		if oNFT, ok := o.(*iotago.NFTOutput); ok && oNFT.NFTID.Empty() {
-			return oID, oNFT, nil
-		}
-	}
-
-	return iotago.OutputID{}, nil, fmt.Errorf("inconsistency: couldn't find newly minted NFT in tx")
-}
-*/

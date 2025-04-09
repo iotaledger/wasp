@@ -2,7 +2,6 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 )
@@ -27,7 +26,6 @@ var Processor = Contract.Processor(nil,
 	FuncDoNothing.WithHandler(doNothing),
 	// FuncSendToAddress.WithHandler(sendToAddress),
 
-	FuncWithdrawFromChain.WithHandler(withdrawFromChain),
 	FuncCallOnChain.WithHandler(callOnChain),
 	FuncSetInt.WithHandler(setInt),
 	FuncGetInt.WithHandler(getInt),
@@ -47,10 +45,9 @@ var Processor = Contract.Processor(nil,
 	FuncSplitFunds.WithHandler(testSplitFunds),
 	FuncSplitFundsNativeTokens.WithHandler(testSplitFundsNativeTokens),
 	FuncPingAllowanceBack.WithHandler(pingAllowanceBack),
-	FuncSendLargeRequest.WithHandler(sendLargeRequest),
 	FuncInfiniteLoop.WithHandler(infiniteLoop),
 	FuncInfiniteLoopView.WithHandler(infiniteLoopView),
-	FuncSendNFTsBack.WithHandler(sendNFTsBack),
+	FuncSendObjectsBack.WithHandler(sendObjectsBack),
 	FuncClaimAllowance.WithHandler(claimAllowance),
 	FuncStackOverflow.WithHandler(stackOverflow),
 )
@@ -72,14 +69,12 @@ var (
 	)
 
 	FuncSandboxCall            = Contract.ViewFunc("testSandboxCall")
-	FuncCheckContextFromFullEP = coreutil.NewEP4(Contract, "checkContextFromFullEP",
-		coreutil.Field[isc.ChainID](""),
+	FuncCheckContextFromFullEP = coreutil.NewEP3(Contract, "checkContextFromFullEP",
 		coreutil.Field[isc.AgentID](""),
 		coreutil.Field[isc.AgentID](""),
 		coreutil.Field[isc.AgentID](""),
 	)
-	FuncCheckContextFromViewEP = coreutil.NewViewEP3(Contract, "checkContextFromViewEP",
-		coreutil.Field[isc.ChainID](""),
+	FuncCheckContextFromViewEP = coreutil.NewViewEP2(Contract, "checkContextFromViewEP",
 		coreutil.Field[isc.AgentID](""),
 		coreutil.Field[isc.AgentID](""),
 	)
@@ -90,13 +85,6 @@ var (
 	FuncCallPanicFullEP         = Contract.Func("testCallPanicFullEP")
 	FuncCallPanicViewEPFromFull = Contract.Func("testCallPanicViewEPFromFull")
 	FuncCallPanicViewEPFromView = Contract.ViewFunc("testCallPanicViewEPFromView")
-
-	FuncWithdrawFromChain = coreutil.NewEP4(Contract, "withdrawFromChain",
-		coreutil.Field[isc.ChainID](""),
-		coreutil.Field[coin.Value](""),
-		coreutil.FieldOptional[uint64](""),
-		coreutil.FieldOptional[uint64](""),
-	)
 
 	FuncDoNothing = coreutil.NewEP0(Contract, "doNothing")
 	// FuncSendToAddress = coreutil.NewEP(Contract,"sendToAddress")
@@ -134,12 +122,10 @@ var (
 	FuncSplitFunds             = coreutil.NewEP0(Contract, "splitFunds")
 	FuncSplitFundsNativeTokens = coreutil.NewEP0(Contract, "splitFundsNativeTokens")
 	FuncPingAllowanceBack      = coreutil.NewEP0(Contract, "pingAllowanceBack")
-	FuncSendLargeRequest       = coreutil.NewEP1(Contract, "sendLargeRequest",
-		coreutil.Field[uint64](""),
-	)
+
 	FuncInfiniteLoop     = coreutil.NewEP0(Contract, "infiniteLoop")
 	FuncInfiniteLoopView = coreutil.NewViewEP0(Contract, "infiniteLoopView")
-	FuncSendNFTsBack     = coreutil.NewEP0(Contract, "sendNFTsBack")
+	FuncSendObjectsBack  = coreutil.NewEP0(Contract, "sendObjectsBack")
 	FuncClaimAllowance   = coreutil.NewEP0(Contract, "claimAllowance")
 	FuncStackOverflow    = coreutil.NewEP0(Contract, "stackOverflow")
 )

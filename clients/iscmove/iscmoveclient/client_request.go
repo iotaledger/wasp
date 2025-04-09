@@ -9,6 +9,7 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -160,6 +161,23 @@ func (c *Client) CreateAndSendRequestWithAssets(
 			tuple.A.CoinType,
 		)
 	}
+
+	// Place the non-coin objects
+	for id, t := range req.Assets.Objects {
+		objRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &id})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get object %s: %w", id, err)
+		}
+		ref := objRes.Data.Ref()
+		ptb = PTBAssetsBagPlaceObject(
+			ptb,
+			req.PackageID,
+			argAssetsBag,
+			ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: &ref}),
+			t,
+		)
+	}
+
 	ptb = PTBCreateAndSendRequest(
 		ptb,
 		req.PackageID,
@@ -208,7 +226,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 		Sender    *cryptolib.Address
 		AssetsBag iscmove.Referent[iscmove.AssetsBag]
 		Message   iscmove.Message
-		Allowance []iscmove.CoinAllowance
+		Allowance []byte
 		GasBudget uint64
 	}
 
@@ -222,6 +240,16 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
 
+	var allowance iscmove.Assets
+	if len(intermediateRequest.Allowance) > 0 {
+		allowance, err = bcs.Unmarshal[iscmove.Assets](intermediateRequest.Allowance)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal allowance: %w", err)
+		}
+	} else {
+		allowance = *iscmove.NewEmptyAssets()
+	}
+
 	req := MoveRequest{
 		ID:     intermediateRequest.ID,
 		Sender: intermediateRequest.Sender,
@@ -230,7 +258,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 			Value: bals,
 		},
 		Message:   intermediateRequest.Message,
-		Allowance: intermediateRequest.Allowance,
+		Allowance: allowance,
 		GasBudget: intermediateRequest.GasBudget,
 	}
 

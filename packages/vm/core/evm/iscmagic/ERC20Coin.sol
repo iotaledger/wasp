@@ -9,7 +9,7 @@ import "./ISCPrivileged.sol";
 
 /**
  * @title ERC20Coin
- * @dev The ERC20 contract for a Iota coin.
+ * @notice The ERC20 contract for an IOTA coin.
  */
 contract ERC20Coin {
     using ISCTypes for CoinBalance[];
@@ -22,7 +22,7 @@ contract ERC20Coin {
     uint8 private _decimals;
 
     /**
-     * @dev Emitted when the allowance of a spender for an owner is set.
+     * @notice Emitted when the allowance of a spender for an owner is set.
      * @param tokenOwner The owner of the tokens.
      * @param spender The address allowed to spend the tokens.
      * @param tokens The amount of tokens allowed to be spent.
@@ -34,7 +34,7 @@ contract ERC20Coin {
     );
 
     /**
-     * @dev Emitted when tokens are transferred from one address to another.
+     * @notice Emitted when tokens are transferred from one address to another.
      * @param from The address tokens are transferred from.
      * @param to The address tokens are transferred to.
      * @param tokens The amount of tokens transferred.
@@ -42,7 +42,7 @@ contract ERC20Coin {
     event Transfer(address indexed from, address indexed to, uint256 tokens);
 
     /**
-     * @dev Returns the name of the native token.
+     * @notice Returns the name of the native token.
      * @return The name of the token.
      */
     function name() public view returns (string memory) {
@@ -50,7 +50,7 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Returns the ticker symbol of the native token.
+     * @notice Returns the ticker symbol of the native token.
      * @return The ticker symbol of the token.
      */
     function symbol() public view returns (string memory) {
@@ -58,7 +58,7 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Returns the number of decimals used for the native token.
+     * @notice Returns the number of decimals used for the native token.
      * @return The number of decimals.
      */
     function decimals() public view returns (uint8) {
@@ -66,7 +66,7 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Returns the total supply of the native token.
+     * @notice Returns the total supply of the native token.
      * @return The total supply of the token.
      */
     function totalSupply() public view virtual returns (uint256) {
@@ -74,20 +74,17 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Returns the balance of a token owner.
+     * @notice Returns the balance of a token owner.
      * @param tokenOwner The address of the token owner.
      * @return The balance of the token owner.
      */
     function balanceOf(address tokenOwner) public view returns (uint256) {
-        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(
-            tokenOwner,
-            __iscSandbox.getChainID()
-        );
+        ISCAgentID memory ownerAgentID = ISCTypes.newEthereumAgentID(tokenOwner);
         return __iscAccounts.getL2BalanceCoin(_iotaCoinType, ownerAgentID);
     }
 
     /**
-     * @dev Transfers tokens from the sender's address to the receiver's address.
+     * @notice Transfers tokens from the sender's address to the receiver's address.
      * @param receiver The address to transfer tokens to.
      * @param numTokens The amount of tokens to transfer.
      * @return true.
@@ -107,7 +104,7 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Sets the allowance of a spender to spend tokens on behalf of the owner.
+     * @notice Sets the allowance of a spender to spend tokens on behalf of the owner.
      * @param delegate The address allowed to spend the tokens.
      * @param numTokens The amount of tokens allowed to be spent.
      * @return true.
@@ -128,7 +125,7 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Returns the amount of tokens that the spender is allowed to spend on behalf of the owner.
+     * @notice Returns the amount of tokens that the spender is allowed to spend on behalf of the owner.
      * @param owner The address of the token owner.
      * @param delegate The address of the spender.
      * @return The amount of tokens the spender is allowed to spend.
@@ -142,7 +139,7 @@ contract ERC20Coin {
     }
 
     /**
-     * @dev Transfers tokens from one address to another on behalf of a token owner.
+     * @notice Transfers tokens from one address to another on behalf of a token owner.
      * @param owner The address from which tokens are transferred.
      * @param buyer The address to which tokens are transferred.
      * @param numTokens The amount of tokens to transfer.

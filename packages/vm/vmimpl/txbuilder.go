@@ -36,20 +36,16 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot vmtxbuilder.Transactio
 	vmctx.txbuilder = snapshot
 }
 
-func (vmctx *vmContext) getTotalL2Coins() isc.CoinBalances {
-	return vmctx.accountsStateWriterFromChainState(vmctx.stateDraft).GetTotalL2FungibleTokens()
-}
-
 func (vmctx *vmContext) deductTopUpFeeFromCommonAccount(fee coin.Value) {
 	bal := isc.NewCoinBalances()
 	bal.AddBaseTokens(fee)
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		vmctx.accountsStateWriterFromChainState(chainState).
-			DebitFromAccount(accounts.CommonAccount(), bal, vmctx.ChainID())
+			DebitFromAccount(accounts.CommonAccount(), bal)
 	})
 }
 
 func (vmctx *vmContext) commonAccountBalance() coin.Value {
 	return accounts.NewStateReaderFromChainState(vmctx.schemaVersion, vmctx.stateDraft).
-		GetBaseTokensBalanceDiscardExtraDecimals(accounts.CommonAccount(), vmctx.ChainID())
+		GetBaseTokensBalanceDiscardExtraDecimals(accounts.CommonAccount())
 }

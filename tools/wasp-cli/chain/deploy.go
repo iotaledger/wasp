@@ -6,7 +6,10 @@ package chain
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -149,7 +152,19 @@ func initDeployCmd() *cobra.Command {
 			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 
-			// packageID, err := l1Client.DeployISCContracts(ctx, cryptolib.SignerToIotaSigner(kp))
+			client := cliclients.WaspClientWithVersionCheck(ctx, node)
+			_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
+
+			// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
+			if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
+				log.Fatal(fmt.Errorf("failed to get current chain info: %w", err))
+			}
+
+			// Now check if the response is 404, if not, a Chain has already been deployed. Exit early.
+			if header != nil && header.StatusCode != http.StatusNotFound {
+				log.Fatal("A chain has already been deployed.")
+			}
+
 			packageID := config.GetPackageID()
 
 			committeeAddr := doDKG(ctx, node, peers, quorum)
@@ -160,7 +175,7 @@ func initDeployCmd() *cobra.Command {
 			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress(), l1Params)
 			log.Check(err)
 
-			stateMetadata := initializeNewChainState(committeeAddr, gasCoin, l1Params)
+			stateMetadata := initializeNewChainState(kp.Address(), gasCoin, l1Params)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,

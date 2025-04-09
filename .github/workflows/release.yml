@@ -125,7 +125,9 @@ jobs:
           platforms: linux/amd64 #,linux/arm64
           push: true
 
-          tags: ${{ secrets.DOCKER_REGISTRY_URL }}/wasp-rebased:latest
+          tags: |
+            ${{ secrets.DOCKER_REGISTRY_URL }}/wasp-rebased:latest
+            ${{ secrets.DOCKER_REGISTRY_URL }}/wasp-rebased:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
@@ -137,7 +139,9 @@ jobs:
           file: ./tools/wasp-cli/Dockerfile
           platforms: linux/amd64 #,linux/arm64
           push: true
-          tags: ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:latest
+          tags: |
+            ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:latest
+            ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}

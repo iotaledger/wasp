@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -27,7 +26,6 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chain = defaultChainFallback(chain)
 
-			chainID := config.GetChain(chain)
 			action := args[0]
 			node = waspcmd.DefaultWaspNodeFallback(node)
 
@@ -40,7 +38,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			case "add":
 				executeActionFunc = func(peer string) {
 					_, err := client.ChainsAPI.
-						AddAccessNode(ctx, chainID.String(), peer).
+						AddAccessNode(ctx, peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					log.Printf("added %s as an access node\n", peer)
@@ -48,7 +46,7 @@ func initPermissionlessAccessNodesCmd() *cobra.Command {
 			case "remove":
 				executeActionFunc = func(peer string) {
 					_, err := client.ChainsAPI.
-						RemoveAccessNode(ctx, chainID.String(), peer).
+						RemoveAccessNode(ctx, peer).
 						Execute() //nolint:bodyclose // false positive
 					log.Check(err)
 					log.Printf("removed %s as an access node\n", peer)

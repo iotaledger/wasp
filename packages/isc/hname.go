@@ -6,6 +6,7 @@ package isc
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -41,6 +42,7 @@ func HnameFromBytes(data []byte) (ret Hname, err error) {
 }
 
 func HnameFromString(s string) (Hname, error) {
+	s = strings.TrimPrefix(s, "0x")
 	n, err := strconv.ParseUint(s, 16, 32)
 	if err != nil {
 		return HnameNil, fmt.Errorf("cannot parse hname: %w", err)
@@ -61,7 +63,7 @@ func (hn Hname) IsNil() bool {
 }
 
 func (hn Hname) String() string {
-	return fmt.Sprintf("%08x", int(hn))
+	return fmt.Sprintf("0x%08x", int(hn))
 }
 
 func ContractStateSubrealm(chainState kv.KVStore, contract Hname) kv.KVStore {

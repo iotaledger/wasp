@@ -33,18 +33,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all assets belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
-    public async accountsGetAccountBalance(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetAccountBalance(agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetAccountBalance", "chainID");
-        }
-
 
         // verify required parameter 'agentID' is not null or undefined
         if (agentID === null || agentID === undefined) {
@@ -54,8 +47,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/account/{agentID}/balance'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/balance'
             .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
 
         // Make Request Context
@@ -100,7 +92,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/account/{agentID}/foundries'
+        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/foundries'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
             .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
 
@@ -125,18 +117,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all NFT ids belonging to an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
-    public async accountsGetAccountNFTIDs(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetAccountNFTIDs(agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetAccountNFTIDs", "chainID");
-        }
-
 
         // verify required parameter 'agentID' is not null or undefined
         if (agentID === null || agentID === undefined) {
@@ -146,8 +131,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/account/{agentID}/nfts'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/nfts'
             .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
 
         // Make Request Context
@@ -171,18 +155,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the current nonce of an account
-     * @param chainID ChainID (Hex Address)
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
-    public async accountsGetAccountNonce(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetAccountNonce(agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetAccountNonce", "chainID");
-        }
-
 
         // verify required parameter 'agentID' is not null or undefined
         if (agentID === null || agentID === undefined) {
@@ -192,8 +169,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/account/{agentID}/nonce'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/nonce'
             .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
 
         // Make Request Context
@@ -238,7 +214,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber}'
+        const localVarPath = '/v1/chain/core/accounts/foundry_output/{serialNumber}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
             .replace('{' + 'serialNumber' + '}', encodeURIComponent(String(serialNumber)));
 
@@ -263,18 +239,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the NFT data by an ID
-     * @param chainID ChainID (Hex Address)
      * @param nftID NFT ID (Hex)
      * @param block Block index or trie root
      */
-    public async accountsGetNFTData(chainID: string, nftID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetNFTData(nftID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetNFTData", "chainID");
-        }
-
 
         // verify required parameter 'nftID' is not null or undefined
         if (nftID === null || nftID === undefined) {
@@ -284,8 +253,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/nftdata/{nftID}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/accounts/nftdata/{nftID}'
             .replace('{' + 'nftID' + '}', encodeURIComponent(String(nftID)));
 
         // Make Request Context
@@ -309,22 +277,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get a list of all registries
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async accountsGetNativeTokenIDRegistry(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetNativeTokenIDRegistry(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetNativeTokenIDRegistry", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/token_registry'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/accounts/token_registry';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -347,22 +307,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all stored assets
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async accountsGetTotalAssets(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetTotalAssets(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetTotalAssets", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/accounts/total_assets'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/accounts/total_assets';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -385,18 +337,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the block info of a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public async blocklogGetBlockInfo(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetBlockInfo(blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetBlockInfo", "chainID");
-        }
-
 
         // verify required parameter 'blockIndex' is not null or undefined
         if (blockIndex === null || blockIndex === undefined) {
@@ -406,8 +351,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/blocks/{blockIndex}'
             .replace('{' + 'blockIndex' + '}', encodeURIComponent(String(blockIndex)));
 
         // Make Request Context
@@ -431,22 +375,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the control addresses
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async blocklogGetControlAddresses(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetControlAddresses(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetControlAddresses", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/controladdresses'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/blocklog/controladdresses';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -469,18 +405,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get events of a block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public async blocklogGetEventsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetEventsOfBlock(blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetEventsOfBlock", "chainID");
-        }
-
 
         // verify required parameter 'blockIndex' is not null or undefined
         if (blockIndex === null || blockIndex === undefined) {
@@ -490,8 +419,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/events/block/{blockIndex}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/events/block/{blockIndex}'
             .replace('{' + 'blockIndex' + '}', encodeURIComponent(String(blockIndex)));
 
         // Make Request Context
@@ -515,22 +443,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get events of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async blocklogGetEventsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetEventsOfLatestBlock(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetEventsOfLatestBlock", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/events/block/latest'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/blocklog/events/block/latest';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -553,18 +473,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get events of a request
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public async blocklogGetEventsOfRequest(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetEventsOfRequest(requestID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetEventsOfRequest", "chainID");
-        }
-
 
         // verify required parameter 'requestID' is not null or undefined
         if (requestID === null || requestID === undefined) {
@@ -574,8 +487,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/events/request/{requestID}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/events/request/{requestID}'
             .replace('{' + 'requestID' + '}', encodeURIComponent(String(requestID)));
 
         // Make Request Context
@@ -599,22 +511,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the block info of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async blocklogGetLatestBlockInfo(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetLatestBlockInfo(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetLatestBlockInfo", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/blocks/latest'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/blocklog/blocks/latest';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -637,18 +541,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the request ids for a certain block index
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public async blocklogGetRequestIDsForBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetRequestIDsForBlock(blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetRequestIDsForBlock", "chainID");
-        }
-
 
         // verify required parameter 'blockIndex' is not null or undefined
         if (blockIndex === null || blockIndex === undefined) {
@@ -658,8 +555,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/blocks/{blockIndex}/requestids'
             .replace('{' + 'blockIndex' + '}', encodeURIComponent(String(blockIndex)));
 
         // Make Request Context
@@ -683,22 +579,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the request ids for the latest block
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async blocklogGetRequestIDsForLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetRequestIDsForLatestBlock(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetRequestIDsForLatestBlock", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/blocks/latest/requestids'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/blocklog/blocks/latest/requestids';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -721,18 +609,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the request processing status
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public async blocklogGetRequestIsProcessed(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetRequestIsProcessed(requestID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetRequestIsProcessed", "chainID");
-        }
-
 
         // verify required parameter 'requestID' is not null or undefined
         if (requestID === null || requestID === undefined) {
@@ -742,8 +623,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/requests/{requestID}/is_processed'
             .replace('{' + 'requestID' + '}', encodeURIComponent(String(requestID)));
 
         // Make Request Context
@@ -767,18 +647,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get the receipt of a certain request id
-     * @param chainID ChainID (Hex Address)
      * @param requestID RequestID (Hex)
      * @param block Block index or trie root
      */
-    public async blocklogGetRequestReceipt(chainID: string, requestID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetRequestReceipt(requestID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetRequestReceipt", "chainID");
-        }
-
 
         // verify required parameter 'requestID' is not null or undefined
         if (requestID === null || requestID === undefined) {
@@ -788,8 +661,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/requests/{requestID}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/requests/{requestID}'
             .replace('{' + 'requestID' + '}', encodeURIComponent(String(requestID)));
 
         // Make Request Context
@@ -813,18 +685,11 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all receipts of a certain block
-     * @param chainID ChainID (Hex Address)
      * @param blockIndex BlockIndex (uint32)
      * @param block Block index or trie root
      */
-    public async blocklogGetRequestReceiptsOfBlock(chainID: string, blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetRequestReceiptsOfBlock(blockIndex: number, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetRequestReceiptsOfBlock", "chainID");
-        }
-
 
         // verify required parameter 'blockIndex' is not null or undefined
         if (blockIndex === null || blockIndex === undefined) {
@@ -834,8 +699,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
+        const localVarPath = '/v1/chain/core/blocklog/blocks/{blockIndex}/receipts'
             .replace('{' + 'blockIndex' + '}', encodeURIComponent(String(blockIndex)));
 
         // Make Request Context
@@ -859,22 +723,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
     /**
      * Get all receipts of the latest block
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async blocklogGetRequestReceiptsOfLatestBlock(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async blocklogGetRequestReceiptsOfLatestBlock(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "blocklogGetRequestReceiptsOfLatestBlock", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/blocklog/blocks/latest/receipts'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/blocklog/blocks/latest/receipts';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -925,7 +781,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID}'
+        const localVarPath = '/v1/chain/core/errors/{contractHname}/message/{errorID}'
             .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
             .replace('{' + 'contractHname' + '}', encodeURIComponent(String(contractHname)))
             .replace('{' + 'errorID' + '}', encodeURIComponent(String(errorID)));
@@ -952,22 +808,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     /**
      * Returns the allowed state controller addresses
      * Get the allowed state controller addresses
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async governanceGetAllowedStateControllerAddresses(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async governanceGetAllowedStateControllerAddresses(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "governanceGetAllowedStateControllerAddresses", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/governance/allowedstatecontrollers'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/governance/allowedstatecontrollers';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -991,22 +839,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     /**
      * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
      * Get the chain info
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async governanceGetChainInfo(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async governanceGetChainInfo(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "governanceGetChainInfo", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/governance/chaininfo'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/governance/chaininfo';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -1030,22 +870,14 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     /**
      * Returns the chain owner
      * Get the chain owner
-     * @param chainID ChainID (Hex Address)
      * @param block Block index or trie root
      */
-    public async governanceGetChainOwner(chainID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async governanceGetChainOwner(block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "governanceGetChainOwner", "chainID");
-        }
-
 
 
         // Path Params
-        const localVarPath = '/v1/chains/{chainID}/core/governance/chainowner'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)));
+        const localVarPath = '/v1/chain/core/governance/chainowner';
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);

@@ -13,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
@@ -29,7 +28,6 @@ func initRotateCmd() *cobra.Command {
 		Long:  "Empty or missing argument means we cancel attempt to rotate the chain.",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			chainID := config.GetChain(chain)
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
@@ -39,7 +37,7 @@ func initRotateCmd() *cobra.Command {
 				rotateToAddress = &args[0]
 			}
 
-			_, err := client.ChainsAPI.RotateChain(ctx, chainID.String()).RotateRequest(apiclient.RotateChainRequest{
+			_, err := client.ChainsAPI.RotateChain(ctx).RotateRequest(apiclient.RotateChainRequest{
 				RotateToAddress: rotateToAddress,
 			}).Execute() //nolint:bodyclose // false positive
 			log.Check(err)

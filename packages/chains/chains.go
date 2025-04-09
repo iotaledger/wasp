@@ -481,6 +481,18 @@ func (c *Chains) Get(chainID isc.ChainID) (chain.Chain, error) {
 	return ret.chain, nil
 }
 
+func (c *Chains) GetFirst() (chain.Chain, error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	if c.allChains.Size() == 0 {
+		return nil, interfaces.ErrChainNotFound
+	}
+
+	ret := c.allChains.Values()[0]
+	return ret.chain, nil
+}
+
 func (c *Chains) ValidatorAddress() *cryptolib.Address {
 	return c.validatorFeeAddr
 }

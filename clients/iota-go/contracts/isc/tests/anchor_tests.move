@@ -78,15 +78,8 @@ module isc::anchor_tests {
 
         let nft_id = object::id(&test_b_nft);
 
-        // ClientPTB.2 create allowance
-        let mut allowance_cointypes = vector::empty();
-        let mut allowance_balances = vector::empty();
-        allowance_cointypes.push_back(string::utf8(b"TEST_A"));
-        allowance_balances.push_back(100);
-        allowance_cointypes.push_back(string::utf8(b"TEST_A"));
-        allowance_balances.push_back(111);
-        allowance_cointypes.push_back(string::utf8(b"IOTA"));
-        allowance_balances.push_back(32);
+        // ClientPTB.2 create the allowance (empty means no allowance)
+        let allowance = vector::empty();
 
         // ClientPTB.3 Add the assets to the bag.
         let mut req_assets = assets_bag::new(&mut ctx);
@@ -109,8 +102,7 @@ module isc::anchor_tests {
             42, // contract hname
             42, // entry point
             vector::empty(), // args
-            allowance_cointypes,
-            allowance_balances,
+            allowance,
             100,
             &mut ctx,
         );
@@ -183,7 +175,6 @@ module isc::anchor_tests {
         let initial_iota_in_request = 10000;
         let initial_testA_in_request = 100;
         let chain_owner = @0xA;
-        let sender = @0xB;
         let mut ctx = tx_context::dummy();
 
         let mut anchor = anchor::start_new_chain(vector::empty(), option::none(), &mut ctx);

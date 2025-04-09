@@ -37,7 +37,7 @@ func knownAgentID(b byte, h uint32) isc.AgentID {
 	for i := range chainID {
 		chainID[i] = b
 	}
-	return isc.NewContractAgentID(chainID, isc.Hname(h))
+	return isc.NewContractAgentID(isc.Hname(h))
 }
 
 var dummyAssetID = coin.MustTypeFromString("0x1::foo::bar")
@@ -55,25 +55,25 @@ func testCreditDebit1(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := knownAgentID(1, 2)
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
 	require.NotNil(t, total)
 	require.True(t, total.Equals(transfer))
 
 	transfer[coin.BaseTokenType] = 1
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
 	expected := isc.NewCoinBalances().AddBaseTokens(43).Add(dummyAssetID, 4)
 	require.True(t, expected.Equals(total))
 
-	userAssets := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
+	userAssets := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.EqualValues(t, 43, userAssets.BaseTokens())
 	require.EqualValues(t, 4, userAssets[dummyAssetID])
 	checkLedgerT(t, v, state)
 
-	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, expected, isc.ChainID{})
+	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, expected)
 	total = checkLedgerT(t, v, state)
 	expected = isc.NewCoinBalances()
 	require.True(t, expected.Equals(total))
@@ -86,20 +86,20 @@ func testCreditDebit2(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
 	expected := transfer
 	require.True(t, expected.Equals(total))
 
 	transfer = isc.NewCoinBalances().Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 	expected = isc.NewCoinBalances().AddBaseTokens(42)
 	require.True(t, expected.Equals(total))
 
-	require.Zero(t, accounts.NewStateReader(v, state).GetCoinBalance(agentID1, dummyAssetID, isc.ChainID{}))
-	bal1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
+	require.Zero(t, accounts.NewStateReader(v, state).GetCoinBalance(agentID1, dummyAssetID))
+	bal1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.False(t, bal1.IsEmpty())
 	require.True(t, total.Equals(bal1))
 }
@@ -111,7 +111,7 @@ func testCreditDebit3(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
 	expected := transfer
@@ -120,7 +120,7 @@ func testCreditDebit3(t *testing.T, v isc.SchemaVersion) {
 	transfer = isc.NewCoinBalances().Add(dummyAssetID, 100)
 	require.Panics(t,
 		func() {
-			accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, transfer, isc.ChainID{})
+			accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, transfer)
 		},
 	)
 	total = checkLedgerT(t, v, state)
@@ -136,7 +136,7 @@ func testCreditDebit4(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
 	expected := transfer
@@ -149,7 +149,7 @@ func testCreditDebit4(t *testing.T, v isc.SchemaVersion) {
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = isc.NewCoinBalances().AddBaseTokens(20)
-	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets(), isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets())
 	require.NoError(t, err)
 	total = checkLedgerT(t, v, state)
 
@@ -159,12 +159,12 @@ func testCreditDebit4(t *testing.T, v isc.SchemaVersion) {
 	expected = isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
 	require.True(t, expected.Equals(total))
 
-	bm1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
+	bm1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.False(t, bm1.IsEmpty())
 	expected = isc.NewCoinBalances().AddBaseTokens(22).Add(dummyAssetID, 2)
 	require.True(t, expected.Equals(bm1))
 
-	bm2 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID2, isc.ChainID{})
+	bm2 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID2)
 	require.False(t, bm2.IsEmpty())
 	expected = isc.NewCoinBalances().AddBaseTokens(20)
 	require.True(t, expected.Equals(bm2))
@@ -177,7 +177,7 @@ func testCreditDebit5(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
 	expected := transfer
@@ -190,7 +190,7 @@ func testCreditDebit5(t *testing.T, v isc.SchemaVersion) {
 	require.NotEqualValues(t, agentID1, agentID2)
 
 	transfer = isc.NewCoinBalances().AddBaseTokens(50)
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets(), isc.ChainID{}))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets()))
 	total = checkLedgerT(t, v, state)
 
 	keys = accounts.NewStateReader(v, state).AllAccountsAsDict().Keys()
@@ -199,11 +199,11 @@ func testCreditDebit5(t *testing.T, v isc.SchemaVersion) {
 	expected = isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
 	require.True(t, expected.Equals(total))
 
-	bm1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
+	bm1 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.False(t, bm1.IsEmpty())
 	require.True(t, expected.Equals(bm1))
 
-	bm2 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID2, isc.ChainID{})
+	bm2 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID2)
 	require.True(t, bm2.IsEmpty())
 }
 
@@ -214,23 +214,23 @@ func testCreditDebit6(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	checkLedgerT(t, v, state)
 
 	agentID2 := isctest.NewRandomAgentID()
 	require.NotEqualValues(t, agentID1, agentID2)
 
-	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets(), isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets())
 	require.NoError(t, err)
 	total = checkLedgerT(t, v, state)
 
 	keys := accounts.NewStateReader(v, state).AllAccountsAsDict().Keys()
 	require.EqualValues(t, 2, len(keys))
 
-	bal := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
+	bal := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.True(t, bal.IsEmpty())
 
-	bal2 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID2, isc.ChainID{})
+	bal2 := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID2)
 	require.False(t, bal2.IsEmpty())
 	require.True(t, total.Equals(bal2))
 }
@@ -242,13 +242,13 @@ func testCreditDebit7(t *testing.T, v isc.SchemaVersion) {
 
 	agentID1 := isctest.NewRandomAgentID()
 	transfer := isc.NewCoinBalances().Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	checkLedgerT(t, v, state)
 
 	debitTransfer := isc.NewCoinBalances().AddBaseTokens(1)
 	// debit must fail
 	require.Panics(t, func() {
-		accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, debitTransfer, isc.ChainID{})
+		accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, debitTransfer)
 	})
 
 	total = checkLedgerT(t, v, state)
@@ -261,14 +261,14 @@ func testMoveAll(t *testing.T, v isc.SchemaVersion) {
 	agentID2 := isctest.NewRandomAgentID()
 
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	accs := accounts.NewStateReader(v, state).AllAccountsAsDict()
 	require.Len(t, accs, 1)
 	require.EqualValues(t, 1, len(accs))
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
-	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets(), isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, transfer.ToAssets())
 	require.NoError(t, err)
 	accs = accounts.NewStateReader(v, state).AllAccountsAsDict()
 	require.Len(t, accs, 2)
@@ -282,20 +282,20 @@ func testDebitAll(t *testing.T, v isc.SchemaVersion) {
 	agentID1 := isctest.NewRandomAgentID()
 
 	transfer := isc.NewCoinBalances().AddBaseTokens(42).Add(dummyAssetID, 2)
-	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	accs := accounts.NewStateReader(v, state).AllAccountsAsDict()
 	require.Len(t, accs, 1)
 	require.EqualValues(t, 1, len(accs))
 	_, ok := accs[kv.Key(agentID1.Bytes())]
 	require.True(t, ok)
 
-	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, transfer, isc.ChainID{})
+	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, transfer)
 	accs = accounts.NewStateReader(v, state).AllAccountsAsDict()
 	require.Len(t, accs, 1)
 	require.EqualValues(t, 1, len(accs))
 	require.True(t, ok)
 
-	assets := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1, isc.ChainID{})
+	assets := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.True(t, assets.IsEmpty())
 
 	assets = accounts.NewStateReader(v, state).GetTotalL2FungibleTokens()
@@ -309,58 +309,44 @@ func testTransferObjects(t *testing.T, v isc.SchemaVersion) {
 	require.True(t, total.Equals(isc.NewCoinBalances()))
 
 	agentID1 := isctest.NewRandomAgentID()
-	object1 := &accounts.ObjectRecord{
-		ID:  iotago.ObjectID{123},
-		BCS: []byte("foobar"),
-	}
-	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, object1, isc.ChainID{})
+	obj1 := isc.NewIotaObject(iotago.ObjectID{123}, iotago.MustTypeFromString("0x1::abc::ABC"))
+	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, obj1)
 	// object is credited
 	user1Objects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, user1Objects, 1)
-	require.Equal(t, user1Objects[0], object1.ID)
-
-	// object data is saved (accounts.SaveObject must be called)
-	accounts.NewStateWriter(v, state).SaveObject(object1)
-
-	objectData := accounts.NewStateReader(v, state).GetObjectBCS(object1.ID)
-	require.Equal(t, object1.BCS, objectData)
+	require.Equal(t, user1Objects[0], obj1)
 
 	agentID2 := isctest.NewRandomAgentID()
 
 	// cannot move an Object that is not owned
-	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(iotago.ObjectID{111}), isc.ChainID{}))
+	require.Error(t, accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(isc.NewIotaObject(iotago.ObjectID{111}, iotago.MustTypeFromString("0x1::abc::ABC")))))
 
 	// moves successfully when the Object is owned
-	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(object1.ID), isc.ChainID{})
+	err := accounts.NewStateWriter(v, state).MoveBetweenAccounts(agentID1, agentID2, isc.NewAssets(0).AddObject(obj1))
 	require.NoError(t, err)
 
 	user1Objects = accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, user1Objects, 0)
 	user2Objects := accounts.NewStateReader(v, state).GetAccountObjects(agentID2)
 	require.Len(t, user2Objects, 1)
-	require.Equal(t, user2Objects[0], object1.ID)
+	require.Equal(t, user2Objects[0], obj1)
 
 	// remove the Object from the chain
-	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID2, object1.ID, isc.ChainID{})
-	accounts.NewStateWriter(v, state).DeleteObject(object1.ID)
-	require.Nil(t, accounts.NewStateReader(v, state).GetObjectBCS(object1.ID))
+	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID2, obj1.ID)
 }
 
 func testCreditDebitObject1(t *testing.T, v isc.SchemaVersion) {
 	state := dict.New()
 
 	agentID1 := knownAgentID(1, 2)
-	object := &accounts.ObjectRecord{
-		ID:  iotago.ObjectID{123},
-		BCS: []byte("foobar"),
-	}
-	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, object, isc.ChainID{})
+	obj := isc.NewIotaObject(iotago.ObjectID{123}, iotago.MustTypeFromString("0x1::abc::ABC"))
+	accounts.NewStateWriter(v, state).CreditObjectToAccount(agentID1, obj)
 
 	accObjects := accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, accObjects, 1)
-	require.Equal(t, accObjects[0], object.ID)
+	require.Equal(t, accObjects[0], obj)
 
-	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID1, object.ID, isc.ChainID{})
+	accounts.NewStateWriter(v, state).DebitObjectFromAccount(agentID1, obj.ID)
 
 	accObjects = accounts.NewStateReader(v, state).GetAccountObjects(agentID1)
 	require.Len(t, accObjects, 0)

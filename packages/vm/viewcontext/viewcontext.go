@@ -90,7 +90,7 @@ func (ctx *ViewContext) CurrentContractAccountID() isc.AgentID {
 	if corecontracts.IsCoreHname(hname) {
 		return accounts.CommonAccount()
 	}
-	return isc.NewContractAgentID(ctx.ChainID(), hname)
+	return isc.NewContractAgentID(hname)
 }
 
 func (ctx *ViewContext) Caller() isc.AgentID {
@@ -102,7 +102,7 @@ func (ctx *ViewContext) Caller() isc.AgentID {
 		return nil
 	default:
 		callerHname := ctx.callStack[len(ctx.callStack)-1].contract
-		return isc.NewContractAgentID(ctx.chainID, callerHname)
+		return isc.NewContractAgentID(callerHname)
 	}
 }
 
@@ -115,10 +115,10 @@ func (ctx *ViewContext) accountsStateWithGasBurn() *accounts.StateReader {
 }
 
 func (ctx *ViewContext) GetCoinBalances(agentID isc.AgentID) isc.CoinBalances {
-	return ctx.accountsStateWithGasBurn().GetCoins(agentID, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetCoins(agentID)
 }
 
-func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []iotago.ObjectID {
+func (ctx *ViewContext) GetAccountObjects(agentID isc.AgentID) []isc.IotaObject {
 	return ctx.accountsStateWithGasBurn().GetAccountObjects(agentID)
 }
 
@@ -135,11 +135,11 @@ func (ctx *ViewContext) Timestamp() time.Time {
 }
 
 func (ctx *ViewContext) GetBaseTokensBalance(agentID isc.AgentID) (coin.Value, *big.Int) {
-	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetBaseTokensBalance(agentID)
 }
 
 func (ctx *ViewContext) GetCoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value {
-	return ctx.accountsStateWithGasBurn().GetCoinBalance(agentID, coinType, ctx.chainID)
+	return ctx.accountsStateWithGasBurn().GetCoinBalance(agentID, coinType)
 }
 
 func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) isc.CallArguments {

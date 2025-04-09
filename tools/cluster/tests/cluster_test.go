@@ -44,8 +44,7 @@ func TestClusterMultiNodeCommittee(t *testing.T) {
 	t.Run("offledger basic", func(t *testing.T) { run(t, testOffledgerRequest) }) // passed
 	t.Run("offledger nonce", func(t *testing.T) { run(t, testOffledgerNonce) })   // passed
 
-	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) }) // FIXME feature not implement in WebAPI
-	// t.Run("webapi ISC estimategas onledger NFT", func(t *testing.T) { run(t, testEstimateGasOnLedgerNFT) })
+	t.Run("webapi ISC estimategas onledger", func(t *testing.T) { run(t, testEstimateGasOnLedger) })   // FIXME feature not implement in WebAPI
 	t.Run("webapi ISC estimategas offledger", func(t *testing.T) { run(t, testEstimateGasOffLedger) }) // passed
 }
 
@@ -63,7 +62,7 @@ func createTestWrapper(tt *testing.T, clusterSize int, committee []int) func(t *
 		env := newChainEnv(t, clu, chain)
 
 		t.Cleanup(func() {
-			clu.MultiClient().DeactivateChain(chain.ChainID)
+			clu.MultiClient().DeactivateChain()
 		})
 		f(t, env)
 	}

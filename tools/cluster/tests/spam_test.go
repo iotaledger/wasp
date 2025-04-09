@@ -104,7 +104,7 @@ func testSpamOnledger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 30*time.Second)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background()).Execute()
 	require.NoError(t, err)
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
@@ -189,7 +189,7 @@ func testSpamOffLedger(t *testing.T, env *ChainEnv) {
 
 	waitUntil(t, env.counterEquals(int64(numRequests)), []int{0}, 5*time.Minute)
 
-	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background(), env.Chain.ChainID.String()).Execute()
+	res, _, err := env.Chain.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetEventsOfLatestBlock(context.Background()).Execute()
 	require.NoError(t, err)
 
 	eventBytes, err := cryptolib.DecodeHex(res.Events[len(res.Events)-1].Payload)
@@ -210,8 +210,8 @@ func testSpamEVM(t *testing.T, env *ChainEnv) {
 	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
-	evmAgentID := isc.NewEthereumAddressAgentID(env.Chain.ChainID, evmAddr)
-	env.TransferFundsTo(isc.NewAssets(iotaclient.FundsFromFaucetAmount-1*isc.Million), nil, keyPair, evmAgentID)
+	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
+	env.TransferFundsTo(isc.NewAssets(iotaclient.FundsFromFaucetAmount-1*isc.Million), keyPair, evmAgentID)
 
 	// deploy solidity inccounter
 	storageContractAddr, storageContractABI := env.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))

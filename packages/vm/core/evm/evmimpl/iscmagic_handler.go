@@ -20,8 +20,8 @@ import (
 
 // magicContractHandler has one public receiver for each ISC magic method, with
 // the same name capitalized.
-// For example, if ISC.getL2NFTs() is called from solidity, this will
-// correspond to a call to [GetL2NFTs].
+// For example, if ISC.getChainID() is called from solidity, this will
+// correspond to a call to [GetChainID].
 type magicContractHandler struct {
 	ctx       isc.Sandbox
 	evm       *vm.EVM
@@ -89,14 +89,14 @@ func reflectCall(handler any, method *abi.Method, args []any) []byte {
 
 func (h *magicContractHandler) call(msg isc.Message, allowance *isc.Assets) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
+		isc.NewEthereumAddressAgentID(h.caller),
 		msg, allowance,
 	)
 }
 
 func (h *magicContractHandler) callView(msg isc.Message) isc.CallArguments {
 	return h.ctx.Privileged().CallOnBehalfOf(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
+		isc.NewEthereumAddressAgentID(h.caller),
 		msg,
 		isc.NewEmptyAssets(),
 	)

@@ -23,7 +23,7 @@ import (
 func TestImpersonatedOffLedgerRequest(t *testing.T) {
 	requestFrom := cryptolib.NewRandomAddress()
 
-	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0).
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0).
 		WithAllowance(isc.NewAssets(1074)).
 		WithNonce(1074).
 		WithGasBudget(1074)
@@ -34,7 +34,6 @@ func TestImpersonatedOffLedgerRequest(t *testing.T) {
 	require.NotNil(t, impRequest)
 	require.NotNil(t, impRequest.SenderAccount())
 	require.Equal(t, impRequest.SenderAccount().String(), requestFrom.String())
-
 }
 
 func TestRequestToJSONObject(t *testing.T) {
@@ -104,7 +103,10 @@ func TestRequestDataSerialization(t *testing.T) {
 						ID:   *iotatest.RandomAddress(),
 						Size: 1,
 					},
-					Balances: iscmove.AssetsBagBalances{iotajsonrpc.IotaCoinType: 200},
+					Assets: iscmove.Assets{
+						Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 200},
+						Objects: iscmove.ObjectCollection{},
+					},
 				},
 				Message: iscmove.Message{
 					Contract: uint32(isc.Hn("target_contract")),
@@ -112,7 +114,8 @@ func TestRequestDataSerialization(t *testing.T) {
 					Args:     [][]byte{},
 				},
 				Allowance: iscmove.Assets{
-					Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
+					Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
+					Objects: make(iscmove.ObjectCollection),
 				},
 				GasBudget: 1000,
 			},

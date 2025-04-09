@@ -29,7 +29,7 @@ func (c *Client) GetAllCoins(ctx context.Context, req GetAllCoinsRequest) (*iota
 
 type GetBalanceRequest struct {
 	Owner    *iotago.Address
-	CoinType iotago.ObjectType // optional
+	CoinType string // optional
 }
 
 // GetBalance to use default iotago coin(0x2::iota::IOTA) when coinType is empty
@@ -49,9 +49,9 @@ func (c *Client) GetCoinMetadata(ctx context.Context, coinType string) (*iotajso
 
 type GetCoinsRequest struct {
 	Owner    *iotago.Address
-	CoinType *iotago.ObjectType // optional
-	Cursor   *iotago.ObjectID   // optional
-	Limit    uint               // optional
+	CoinType *string          // optional
+	Cursor   *iotago.ObjectID // optional
+	Limit    uint             // optional
 }
 
 // GetCoins to use default iotago coin(0x2::iota::IOTA) when coinType is nil
@@ -61,7 +61,7 @@ func (c *Client) GetCoins(ctx context.Context, req GetCoinsRequest) (*iotajsonrp
 	return &resp, c.transport.Call(ctx, &resp, getCoins, req.Owner, req.CoinType, req.Cursor, req.Limit)
 }
 
-func (c *Client) GetTotalSupply(ctx context.Context, coinType iotago.ObjectType) (*iotajsonrpc.Supply, error) {
+func (c *Client) GetTotalSupply(ctx context.Context, coinType string) (*iotajsonrpc.Supply, error) {
 	var resp iotajsonrpc.Supply
 	return &resp, c.transport.Call(ctx, &resp, getTotalSupply, coinType)
 }

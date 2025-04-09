@@ -7,6 +7,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -56,7 +58,7 @@ func (s *SandboxBase) CoinBalances() isc.CoinBalances {
 	return s.Ctx.GetCoinBalances(s.AccountID())
 }
 
-func (s *SandboxBase) OwnedObjects() []iotago.ObjectID {
+func (s *SandboxBase) OwnedObjects() []isc.IotaObject {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	return s.Ctx.GetAccountObjects(s.AccountID())
 }
@@ -64,17 +66,14 @@ func (s *SandboxBase) OwnedObjects() []iotago.ObjectID {
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
 	accountAssets := isc.Assets{
-		Coins:   s.Ctx.GetCoinBalances(agentID),
-		Objects: isc.NewObjectIDSetFromArray(s.Ctx.GetAccountObjects(agentID)),
+		Coins: s.Ctx.GetCoinBalances(agentID),
+		Objects: lo.SliceToMap(s.Ctx.GetAccountObjects(agentID), func(o isc.IotaObject) (iotago.ObjectID, iotago.ObjectType) {
+			return o.ID, o.Type
+		}),
 	}
 	tokenBalance, _ := s.Ctx.GetBaseTokensBalance(agentID)
 	accountAssets.AddBaseTokens(tokenBalance)
 	return accountAssets.Spend(assets)
-}
-
-func (s *SandboxBase) GetObjectBCS(id iotago.ObjectID) ([]byte, bool) {
-	s.Ctx.GasBurn(gas.BurnCodeGetNFTData)
-	return s.Ctx.GetObjectBCS(id)
 }
 
 func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo, bool) {

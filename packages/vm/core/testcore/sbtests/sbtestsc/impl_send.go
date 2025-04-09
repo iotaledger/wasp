@@ -4,9 +4,7 @@ import (
 	"fmt"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller
@@ -57,7 +55,7 @@ func pingAllowanceBack(ctx isc.Sandbox) {
 	caller := ctx.Caller()
 	addr, ok := isc.AddressFromAgentID(caller)
 	// assert caller is L1 address, not a SC
-	ctx.Requiref(ok && !ctx.ChainID().IsSameChain(caller),
+	ctx.Requiref(ok,
 		"pingAllowanceBack: caller expected to be a L1 address")
 	// save allowance budget because after transfer it will be modified
 	toSend := ctx.AllowanceAvailable()
@@ -79,52 +77,25 @@ func pingAllowanceBack(ctx isc.Sandbox) {
 	)
 }
 
-// tries to sendback whaever NFTs are specified in allowance
-func sendNFTsBack(ctx isc.Sandbox) {
+// tries to sendback whatever objectss are specified in allowance
+func sendObjectsBack(ctx isc.Sandbox) {
 	addr, ok := isc.AddressFromAgentID(ctx.Caller())
 	ctx.Requiref(ok, "caller must have L1 address")
 
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	for nftID := range allowance.Objects {
+	for objID, t := range allowance.Objects {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
-			Assets:        isc.NewEmptyAssets().AddObject(nftID),
-
-			Metadata: &isc.SendMetadata{},
-			Options:  isc.SendOptions{},
+			Assets:        isc.NewEmptyAssets().AddObject(isc.NewIotaObject(objID, t)),
 		})
 	}
 }
 
 // just claims everything from allowance and does nothing with it
-// tests the "getData" sandbox call for every NFT sent in allowance
 func claimAllowance(ctx isc.Sandbox) {
-	initialNFTset := ctx.OwnedObjects()
+	initialObjects := ctx.OwnedObjects()
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	ctx.Requiref(len(ctx.OwnedObjects())-len(initialNFTset) == len(allowance.Objects), "must get all NFTs from allowance")
-	for _, id := range allowance.Objects {
-		panic("TODO: fix GetNFTData")
-		_ = id
-		// nftData := ctx.GetNFTData(id)
-		// ctx.Requiref(!nftData.ID.Empty(), "must have NFTID")
-		// ctx.Requiref(len(nftData.Metadata) > 0, "must have metadata")
-		// ctx.Requiref(nftData.Issuer != nil, "must have issuer")
-	}
-}
-
-func sendLargeRequest(ctx isc.Sandbox, x uint64) {
-	req := isc.RequestParameters{
-		TargetAddress: cryptolib.NewRandomAddress(),
-		Metadata: &isc.SendMetadata{
-			Message: isc.NewMessage(
-				isc.Hn("foo"),
-				isc.Hn("bar"),
-				isc.NewCallArguments(codec.Encode(x)),
-			),
-		},
-		Assets: ctx.AllowanceAvailable(),
-	}
-	ctx.Send(req)
+	ctx.Requiref(len(ctx.OwnedObjects())-len(initialObjects) == len(allowance.Objects), "must get all objects from allowance")
 }

@@ -33,17 +33,17 @@ func (s *StateWriter) setCoinBalance(accountKey kv.Key, coinType coin.Type, n co
 	}
 }
 
-func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID coin.Type, chainID isc.ChainID) coin.Value {
-	return s.getCoinBalance(accountKey(agentID, chainID), coinID)
+func (s *StateReader) GetCoinBalance(agentID isc.AgentID, coinID coin.Type) coin.Value {
+	return s.getCoinBalance(accountKey(agentID), coinID)
 }
 
 func (s *StateReader) GetCoinBalanceTotal(coinID coin.Type) coin.Value {
 	return s.getCoinBalance(L2TotalsAccount, coinID)
 }
 
-func (s *StateReader) GetCoins(agentID isc.AgentID, chainID isc.ChainID) isc.CoinBalances {
+func (s *StateReader) GetCoins(agentID isc.AgentID) isc.CoinBalances {
 	ret := isc.CoinBalances{}
-	s.accountCoinBalancesMapR(accountKey(agentID, chainID)).Iterate(func(coinType []byte, val []byte) bool {
+	s.accountCoinBalancesMapR(accountKey(agentID)).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
 			codec.MustDecode[coin.Type](coinType),
 			codec.MustDecode[coin.Value](val),

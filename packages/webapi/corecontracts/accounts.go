@@ -1,7 +1,6 @@
 package corecontracts
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -25,7 +24,7 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	return accounts.ViewBalance.DecodeOutput(ret)
 }
 
-func GetAccountNFTs(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]iotago.Address, error) {
+func GetAccountObjects(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]isc.IotaObject, error) {
 	ret, err := common.CallView(ch, accounts.ViewAccountObjects.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
 		return nil, err
@@ -43,15 +42,6 @@ func GetAccountNonce(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot s
 		return 0, err
 	}
 	return accounts.ViewGetAccountNonce.DecodeOutput(ret)
-}
-
-func GetNFTData(ch chain.Chain, nftID iotago.ObjectID, blockIndexOrTrieRoot string) (*isc.NFT, error) {
-	panic("TODO")
-	// ret, err := common.CallView(ch, accounts.ViewNFTData.Message(nftID), blockIndexOrTrieRoot)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return accounts.ViewNFTData.DecodeOutput(ret)
 }
 
 func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]coin.Type, error) {

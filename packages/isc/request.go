@@ -48,7 +48,6 @@ type Calldata interface {
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID
 	SenderAccount() AgentID
-	TargetAddress() *cryptolib.Address
 	EVMCallMsg() *ethereum.CallMsg
 }
 

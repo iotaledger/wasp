@@ -1,7 +1,6 @@
 package chain
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -58,7 +57,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 	controllerutils.SetOperation(e, "estimate_gas_offledger")
-	ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return err
 	}
@@ -99,10 +98,6 @@ func (c *Controller) estimateGasOffLedger(e echo.Context) error {
 
 	impRequest := isc.NewImpersonatedOffLedgerRequest(&offLedgerRequestData.OffLedgerRequestDataEssence).
 		WithSenderAddress(requestFrom)
-
-	if !impRequest.TargetAddress().Equals(chainID.AsAddress()) {
-		return apierrors.InvalidPropertyError("requestBytes", errors.New("wrong chainID"))
-	}
 
 	rec, err := common.EstimateGas(ch, impRequest)
 	if err != nil {

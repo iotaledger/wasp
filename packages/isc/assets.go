@@ -71,7 +71,7 @@ func (c CoinBalances) Sub(coinType coin.Type, amount coin.Value) CoinBalances {
 func (c CoinBalances) ToAssets() *Assets {
 	return &Assets{
 		Coins:   c,
-		Objects: NewObjectIDSet(),
+		Objects: NewObjectSet(),
 	}
 }
 
@@ -167,63 +167,80 @@ func (c CoinBalances) Clone() CoinBalances {
 	return r
 }
 
-type ObjectIDSet map[iotago.ObjectID]struct{}
-
-func NewObjectIDSet() ObjectIDSet {
-	return make(map[iotago.ObjectID]struct{})
+// IotaObject represents a non-coin object originally created on L1
+type IotaObject struct {
+	ID   iotago.ObjectID   `json:"id" swagger:"required"`
+	Type iotago.ObjectType `json:"type" swagger:"required"`
 }
 
-func NewObjectIDSetFromArray(ids []iotago.ObjectID) ObjectIDSet {
-	set := NewObjectIDSet()
-
-	for _, id := range ids {
-		set.Add(id)
-	}
-
-	return set
+func NewIotaObject(id iotago.ObjectID, t iotago.ObjectType) IotaObject {
+	return IotaObject{id, t}
 }
 
-func (o ObjectIDSet) Add(id iotago.ObjectID) {
-	o[id] = struct{}{}
+type ObjectSet map[iotago.ObjectID]iotago.ObjectType
+
+func NewObjectSet() ObjectSet {
+	return make(ObjectSet)
 }
 
-func (o ObjectIDSet) Has(id iotago.ObjectID) bool {
+func (o ObjectSet) Add(obj IotaObject) {
+	o[obj.ID] = obj.Type
+}
+
+func (o ObjectSet) Has(id iotago.ObjectID) bool {
 	_, ok := o[id]
 	return ok
 }
 
-func (o ObjectIDSet) Sorted() []iotago.ObjectID {
+func (o ObjectSet) KeysSorted() []iotago.ObjectID {
 	ids := lo.Keys(o)
 	slices.SortFunc(ids, func(a, b iotago.ObjectID) int { return bytes.Compare(a[:], b[:]) })
 	return ids
 }
 
-func (o ObjectIDSet) IterateSorted(f func(iotago.ObjectID) bool) {
-	for _, id := range o.Sorted() {
-		if !f(id) {
+func (o ObjectSet) Sorted() []IotaObject {
+	var ret []IotaObject
+	for _, id := range o.KeysSorted() {
+		ret = append(ret, NewIotaObject(id, o[id]))
+	}
+	return ret
+}
+
+func (o ObjectSet) IterateSorted(f func(IotaObject) bool) {
+	for _, id := range o.KeysSorted() {
+		if !f(NewIotaObject(id, o[id])) {
 			return
 		}
 	}
 }
 
-func (o *ObjectIDSet) UnmarshalJSON(b []byte) error {
-	var ids []iotago.ObjectID
-	err := json.Unmarshal(b, &ids)
+func (o *ObjectSet) JSON() []IotaObject {
+	var objs []IotaObject
+	o.IterateSorted(func(obj IotaObject) bool {
+		objs = append(objs, obj)
+		return true
+	})
+	return objs
+}
+
+func (o *ObjectSet) UnmarshalJSON(b []byte) error {
+	var objs []IotaObject
+	err := json.Unmarshal(b, &objs)
 	if err != nil {
 		return err
 	}
-	*o = NewObjectIDSet()
-	for _, id := range ids {
-		o.Add(id)
+	*o = NewObjectSet()
+	for _, obj := range objs {
+		o.Add(NewIotaObject(obj.ID, obj.Type))
 	}
 	return nil
 }
 
-func (o ObjectIDSet) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.Sorted())
+func (o ObjectSet) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.JSON())
 }
 
-func (o ObjectIDSet) Equals(b ObjectIDSet) bool {
+func (o ObjectSet) Equals(b ObjectSet) bool {
 	if len(o) != len(b) {
 		return false
 	}
@@ -240,13 +257,13 @@ type Assets struct {
 	// Coins is a set of coin balances
 	Coins CoinBalances `json:"coins" swagger:"required"`
 	// Objects is a set of non-Coin object IDs (e.g. NFTs)
-	Objects ObjectIDSet `json:"objects" swagger:"required"`
+	Objects ObjectSet `json:"objects" swagger:"required"`
 }
 
 func NewEmptyAssets() *Assets {
 	return &Assets{
 		Coins:   NewCoinBalances(),
-		Objects: NewObjectIDSet(),
+		Objects: NewObjectSet(),
 	}
 }
 
@@ -256,8 +273,11 @@ func NewAssets(baseTokens coin.Value) *Assets {
 
 func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (*Assets, error) {
 	assets := NewEmptyAssets()
-	for cointype, coinval := range assetsBag.Balances {
+	for cointype, coinval := range assetsBag.Coins {
 		assets.Coins.Add(coin.MustTypeFromString(cointype.String()), coin.Value(coinval))
+	}
+	for objectID, t := range assetsBag.Objects {
+		assets.Objects.Add(NewIotaObject(objectID, t))
 	}
 	return assets, nil
 }
@@ -270,6 +290,9 @@ func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
 			return nil, fmt.Errorf("failed to parse string to coin.Type: %w", err)
 		}
 		ret.Coins.Add(coinType, coin.Value(v))
+	}
+	for id, t := range assets.Objects {
+		ret.Objects.Add(NewIotaObject(id, t))
 	}
 	return ret, nil
 }
@@ -293,8 +316,8 @@ func (a *Assets) AddCoin(coinType coin.Type, amount coin.Value) *Assets {
 	return a
 }
 
-func (a *Assets) AddObject(id iotago.ObjectID) *Assets {
-	a.Objects.Add(id)
+func (a *Assets) AddObject(obj IotaObject) *Assets {
+	a.Objects.Add(obj)
 	return a
 }
 
@@ -306,8 +329,8 @@ func (a *Assets) String() string {
 	s := lo.MapToSlice(a.Coins, func(coinType coin.Type, amount coin.Value) string {
 		return fmt.Sprintf("%s: %d", coinType, amount)
 	})
-	s = append(s, lo.MapToSlice(a.Objects, func(id iotago.ObjectID, _ struct{}) string {
-		return id.ShortString()
+	s = append(s, lo.MapToSlice(a.Objects, func(id iotago.ObjectID, t iotago.ObjectType) string {
+		return fmt.Sprintf("%s: %s", t, id)
 	})...)
 	return fmt.Sprintf("Assets{%s}", strings.Join(s, ", "))
 }
@@ -359,8 +382,8 @@ func (a *Assets) Add(b *Assets) *Assets {
 	for coinType, amount := range b.Coins {
 		a.Coins.Add(coinType, amount)
 	}
-	for id := range b.Objects {
-		a.Objects.Add(id)
+	for id, t := range b.Objects {
+		a.Objects.Add(NewIotaObject(id, t))
 	}
 	return a
 }
@@ -390,11 +413,14 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 	r := iscmove.NewEmptyAssets()
 	for coinType, amount := range a.Coins {
 		if amount > 0 {
-			r.AddCoin(coinType.ToIotaJSONRPC(), iotajsonrpc.CoinValue(amount))
+			r.AddCoin(
+				iotajsonrpc.CoinType(coinType.String()),
+				iotajsonrpc.CoinValue(amount),
+			)
 		}
 	}
-	if len(a.Objects) > 0 {
-		panic("TODO")
+	for objectID, t := range a.Objects {
+		r.AddObject(objectID, t)
 	}
 	return r
 }
@@ -402,10 +428,13 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBagWithBalances {
 	ret := &iscmove.AssetsBagWithBalances{
 		AssetsBag: *b,
-		Balances:  make(iscmove.AssetsBagBalances),
+		Assets:    *iscmove.NewEmptyAssets(),
 	}
 	for cointype, coinval := range a.Coins {
-		ret.Balances[cointype.ToIotaJSONRPC()] = iotajsonrpc.CoinValue(coinval)
+		ret.Coins[iotajsonrpc.CoinType(cointype.String())] = iotajsonrpc.CoinValue(coinval)
+	}
+	for objectID, t := range a.Objects {
+		ret.Objects[objectID] = t
 	}
 	return ret
 }

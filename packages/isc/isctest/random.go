@@ -1,6 +1,8 @@
 package isctest
 
 import (
+	"time"
+
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -107,9 +109,9 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 	ref := iotatest.RandomObjectRef()
 	a := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Balances:  make(iscmove.AssetsBagBalances),
+		Assets:    *iscmove.NewEmptyAssets(),
 	}
-	a.Balances[iotajsonrpc.IotaCoinType] = 1000
+	a.Coins[iotajsonrpc.IotaCoinType] = 1000
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{
@@ -121,10 +123,13 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{
-				iotajsonrpc.IotaCoinType:                                111,
-				iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"): 222,
-			}},
+			Allowance: iscmove.Assets{
+				Coins: iscmove.CoinBalances{
+					iotajsonrpc.IotaCoinType:                                111,
+					iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"): 222,
+				},
+				Objects: make(iscmove.ObjectCollection),
+			},
 			GasBudget: 1000,
 		},
 	}
@@ -147,9 +152,9 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 	ref := iotatest.RandomObjectRef()
 	a := iscmove.AssetsBagWithBalances{
 		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Balances:  make(iscmove.AssetsBagBalances),
+		Assets:    *iscmove.NewEmptyAssets(),
 	}
-	a.Balances[iotajsonrpc.IotaCoinType] = 1000
+	a.Coins[iotajsonrpc.IotaCoinType] = 1000
 	req := iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{
@@ -160,7 +165,10 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance: iscmove.Assets{Coins: iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000}},
+			Allowance: iscmove.Assets{
+				Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000},
+				Objects: make(iscmove.ObjectCollection),
+			},
 			GasBudget: 100000,
 		},
 	}
@@ -173,5 +181,5 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 
 // NewRandomAgentID creates random AgentID
 func NewRandomAgentID() isc.AgentID {
-	return isc.NewContractAgentID(RandomChainID(), isc.Hn("testName"))
+	return isc.NewContractAgentID(isc.Hn(time.Now().String()))
 }

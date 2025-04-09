@@ -31,7 +31,7 @@ func TestIotaEventDecode(t *testing.T) {
         "pool_id": "0x4405b50d791fd3346754e8171aaab6bc2ed26c2c46efdd033c14b30ae507ac33",
         "price": "863800"
       },
-      "bcs": "yNS5iDS3Gvdo3DhXdtFpuTS12RrSiNkrvjcm2rejntCt1jjM24MvS8o5s9dDHCe4pxwJvVbm1pBWymUgAGmG7SAZpxJSocaXSFj5oW1YT2KkZoEieUfPRbmcmf6fAHYHi5Nb1Hq73RFXjXG5soSUsgZyrP",
+      "bcs": "RAW1DXkf0zRnVOgXGqq2vC7SbCxG790DPBSzCuUHrDN1LIQAAAAAgF51cLjUi+I9AKVPiG3ii58jsQ5vpoI5OmmIBZhBKcuO06jdQses9ChbAHgFG5gBAAAAeAUbmAEAADguDQAAAAAAL1WXv5ABAAA=",
       "timestampMs": "1721197686017"
     }`)
 	var event iotajsonrpc.IotaEvent

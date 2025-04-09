@@ -88,13 +88,12 @@ func (e *ChainEnv) DepositFunds(amount coin.Value, keyPair *cryptolib.KeyPair) {
 	require.NoError(e.t, err, "Error while WaitUntilAllRequestsProcessedSuccessfully for tx.ID=%v", tx.Digest)
 }
 
-func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, nft *isc.NFT, keyPair *cryptolib.KeyPair, targetAccount isc.AgentID) {
+func (e *ChainEnv) TransferFundsTo(assets *isc.Assets, keyPair *cryptolib.KeyPair, targetAccount isc.AgentID) {
 	client := e.Chain.Client(keyPair)
 	transferAssets := assets.Clone()
 	l2GasFee := 1 * isc.Million
 	tx, err := client.PostRequest(context.Background(), accounts.FuncTransferAllowanceTo.Message(targetAccount), chainclient.PostRequestParams{
 		Transfer:    transferAssets.AddBaseTokens(coin.Value(l2GasFee)),
-		NFT:         nft,
 		Allowance:   assets,
 		GasBudget:   iotaclient.DefaultGasBudget,
 		L2GasBudget: uint64(l2GasFee),
@@ -198,8 +197,8 @@ func (e *ChainEnv) NewTestContractEnv(t *testing.T) *TestContractEnv {
 	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	evmPvtKey, evmAddr := solo.NewEthereumAccount()
-	evmAgentID := isc.NewEthereumAddressAgentID(e.Chain.ChainID, evmAddr)
-	e.TransferFundsTo(isc.NewAssets(1*isc.Million), nil, keyPair, evmAgentID)
+	evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
+	e.TransferFundsTo(isc.NewAssets(1*isc.Million), keyPair, evmAgentID)
 	contractAddr, contractABI := e.DeploySolidityContract(evmPvtKey, evmtest.StorageContractABI, evmtest.StorageContractBytecode, uint32(42))
 	return &TestContractEnv{
 		t:                   t,

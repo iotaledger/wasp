@@ -81,14 +81,6 @@ func (id ChainID) Key() ChainIDKey {
 	return ChainIDKey(id.AsObjectID().String())
 }
 
-func (id ChainID) IsSameChain(agentID AgentID) bool {
-	contract, ok := agentID.(*ContractAgentID)
-	if !ok {
-		return false
-	}
-	return id.Equals(contract.ChainID())
-}
-
 func (id ChainID) ShortString() string {
 	return id.AsAddress().String()[0:10]
 }

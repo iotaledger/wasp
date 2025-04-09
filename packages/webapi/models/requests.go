@@ -1,7 +1,6 @@
 package models
 
 type OffLedgerRequest struct {
-	ChainID string `json:"chainId" swagger:"desc(The chain id),required"`
 	Request string `json:"request" swagger:"desc(Offledger Request (Hex)),required"`
 }
 

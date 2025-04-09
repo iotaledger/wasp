@@ -2,13 +2,9 @@ package coin
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"math/big"
 	"strconv"
-	"strings"
-
-	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -61,110 +57,24 @@ var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
 // Two instances of Type are equal iif they represent the same coin type.
-type Type struct { // struct to enforce using the constructor functions
-	s string
-}
+type Type = iotago.ObjectType
 
-// TypeJSON is the representation of a Iota coin type that is used in the JSON API (bacause coin.Type does not work properly with our swagger)
-type TypeJSON string
-
-func (t TypeJSON) ToType() Type {
-	return Type{s: string(t)}
-}
-
-func (t Type) ToTypeJSON() TypeJSON {
-	return TypeJSON(t.s)
-}
+type TypeJSON = iotago.ObjectTypeJSON
 
 func TypeFromString(s string) (Type, error) {
-	rt, err := iotago.NewResourceType(s)
-	if err != nil {
-		return Type{}, fmt.Errorf("invalid Type %q: %w", s, err)
-	}
-	return Type{s: rt.String()}, nil
+	return iotago.ObjectTypeFromString(s)
 }
 
 func MustTypeFromString(s string) Type {
-	t, err := TypeFromString(s)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
-func (t *Type) MarshalJSON() ([]byte, error) {
-	return json.Marshal(t.s)
-}
-
-func (t *Type) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &t.s)
-}
-
-func (t *Type) MarshalBCS(e *bcs.Encoder) error {
-	rt := t.ResourceType()
-	e.Encode(rt)
-	return nil
-}
-
-func (t *Type) UnmarshalBCS(d *bcs.Decoder) error {
-	rt := bcs.Decode[iotago.ResourceType](d)
-	if d.Err() != nil {
-		return d.Err()
-	}
-	*t = Type{s: rt.String()}
-	return nil
-}
-
-// MatchesStringType returns true if the given string represents the same coin
-// type, even if abbreviated (e.g. ""0x2::iota::IOTA"")
-func (t Type) MatchesStringType(s string) bool {
-	rt, err := TypeFromString(s)
-	if err != nil {
-		return false
-	}
-	return rt.String() == t.s
-}
-
-func (t Type) String() string {
-	return t.s
-}
-
-func (t Type) AsRPCCoinType() iotajsonrpc.CoinType {
-	return iotajsonrpc.CoinType(t.String())
-}
-
-func (t Type) ShortString() string {
-	return t.ResourceType().ShortString()
-}
-
-func (t Type) ResourceType() *iotago.ResourceType {
-	return lo.Must(iotago.NewResourceType(t.s))
-}
-
-func (t Type) TypeTag() iotago.TypeTag {
-	coinTypeTag, err := iotago.TypeTagFromString(t.String())
-	if err != nil {
-		panic(err)
-	}
-	return *coinTypeTag
-}
-
-func (t Type) Bytes() []byte {
-	return bcs.MustMarshal(&t)
+	return iotago.MustTypeFromString(s)
 }
 
 func TypeFromBytes(b []byte) (Type, error) {
-	var r Type
-	r, err := bcs.Unmarshal[Type](b)
-	return r, err
-}
-
-func (t Type) ToIotaJSONRPC() iotajsonrpc.CoinType {
-	return iotajsonrpc.CoinType(t.String())
+	return iotago.ObjectTypeFromBytes(b)
 }
 
 func CompareTypes(a, b Type) int {
-	return strings.Compare(a.s, b.s)
+	return iotago.CompareTypes(a, b)
 }
 
 var (

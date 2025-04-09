@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/samber/lo"
-
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -24,7 +22,9 @@ type AnchorTransactionBuilder struct {
 	anchor *isc.StateAnchor
 
 	// already consumed requests, specified by entire Request. It is needed for checking validity
-	consumed []isc.OnLedgerRequest
+	consumed []iscmoveclient.ConsumedRequest
+	// sent assets
+	sent []iscmoveclient.SentAssets
 
 	ptb *iotago.ProgrammableTransactionBuilder
 
@@ -59,50 +59,48 @@ func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
 	}
 }
 
-// ConsumeRequest adds an input to the transaction.
-// It panics if transaction cannot hold that many inputs
-// All explicitly consumed inputs will hold fixed index in the transaction
-// Returns  the amount of baseTokens needed to cover SD costs for the NTs/NFT contained by the request output
+// ConsumeRequest adds the request to be consumed in the resulting PTB
 func (txb *AnchorTransactionBuilder) ConsumeRequest(req isc.OnLedgerRequest) {
-	txb.consumed = append(txb.consumed, req)
+	txb.consumed = append(txb.consumed, iscmoveclient.ConsumedRequest{
+		RequestRef: req.RequestRef(),
+		Assets:     req.AssetsBag(),
+	})
 }
 
 func (txb *AnchorTransactionBuilder) SendAssets(target *iotago.Address, assets *isc.Assets) {
-	if txb.ptb == nil {
-		txb.ptb = iotago.NewProgrammableTransactionBuilder()
-	}
-	txb.ptb = iscmoveclient.PTBTakeAndTransferCoinBalance(
-		txb.ptb,
-		txb.iscPackage,
-		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		target,
-		assets.AsISCMove(),
-	)
+	txb.sent = append(txb.sent, iscmoveclient.SentAssets{
+		Target: *target,
+		Assets: *assets.AsISCMove(),
+	})
 }
 
-func (txb *AnchorTransactionBuilder) SendCrossChainRequest(targetPackage *iotago.Address, targetAnchor *iotago.Address, assets *isc.Assets, metadata *isc.SendMetadata) {
+func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *isc.SendMetadata) {
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
+
 	txb.ptb = iscmoveclient.PTBAssetsBagNew(txb.ptb, txb.iscPackage, txb.ownerAddr)
+
 	argAssetsBag := txb.ptb.LastCommandResultArg()
 	argAnchor := txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()})
+
 	for coinType, coinBalance := range assets.Coins {
 		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
 	}
-	// TODO set allowance
-	allowanceCointypes := txb.ptb.MustForceSeparatePure(&bcs.Option[[]string]{None: true})
-	allowanceBalances := txb.ptb.MustForceSeparatePure(&bcs.Option[[]uint64]{None: true})
-	txb.ptb = iscmoveclient.PTBCreateAndSendCrossRequest(
+
+	allowance := &iscmove.Assets{}
+
+	if metadata.Allowance != nil {
+		allowance = metadata.Allowance.AsISCMove()
+	}
+
+	txb.ptb = iscmoveclient.PTBCreateAndSendRequest(
 		txb.ptb,
 		txb.iscPackage,
-		*targetAnchor,
+		*txb.anchor.GetObjectID(),
 		argAssetsBag,
-		uint32(metadata.Message.Target.Contract),
-		uint32(metadata.Message.Target.EntryPoint),
-		metadata.Message.Params,
-		allowanceCointypes,
-		allowanceBalances,
+		metadata.Message.AsISCMove(),
+		allowance,
 		metadata.GasBudget,
 	)
 }
@@ -119,8 +117,8 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb,
 		txb.iscPackage,
 		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) iotago.ObjectRef { return r.RequestRef() }),
-		lo.Map(txb.consumed, func(r isc.OnLedgerRequest, _ int) *iscmove.AssetsBagWithBalances { return r.AssetsBag() }),
+		txb.consumed,
+		txb.sent,
 		stateMetadata,
 		topUpAmount,
 	)

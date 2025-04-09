@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -28,17 +27,9 @@ func initNodeconnMetricsCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			if chainAlias == "" {
-				msgsMetrics, _, err := client.MetricsAPI.GetNodeMessageMetrics(ctx).Execute()
-				log.Check(err)
-				printNodeMessagesMetrics(msgsMetrics)
-			} else {
-				chainID, err := isc.ChainIDFromString(chainAlias)
-				log.Check(err)
-				msgsMetrics, _, err := client.MetricsAPI.GetChainMessageMetrics(ctx, chainID.String()).Execute()
-				log.Check(err)
-				printChainMessagesMetrics(msgsMetrics)
-			}
+			msgsMetrics, _, err := client.MetricsAPI.GetChainMessageMetrics(ctx).Execute()
+			log.Check(err)
+			printChainMessagesMetrics(msgsMetrics)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -51,26 +42,6 @@ func mapMetricItem(messages uint32, timestamp time.Time, message string) *apicli
 		LastMessage: message,
 		Messages:    messages,
 	}
-}
-
-func printNodeMessagesMetrics(msgsMetrics *apiclient.NodeMessageMetrics) {
-	log.Printf("Following chains are registered for L1 events:\n")
-	for _, s := range msgsMetrics.RegisteredChainIDs {
-		log.Printf("\t%s\n", s)
-	}
-
-	header := []string{"Message name", "", "Total", "Last time", "Last message"}
-
-	inAnchor := mapMetricItem(msgsMetrics.InAnchor.Messages, msgsMetrics.InAnchor.Timestamp, msgsMetrics.InAnchor.LastMessage.Raw)
-	inOnLedgerRequest := mapMetricItem(msgsMetrics.InOnLedgerRequest.Messages, msgsMetrics.InOnLedgerRequest.Timestamp, msgsMetrics.InOnLedgerRequest.LastMessage.Id)
-	publisherStateTransaction := mapMetricItem(msgsMetrics.OutPublisherStateTransaction.Messages, msgsMetrics.OutPublisherStateTransaction.Timestamp, msgsMetrics.OutPublisherStateTransaction.LastMessage.TxDigest)
-
-	table := [][]string{
-		makeMessagesMetricsTableRow("State anchor", true, inAnchor),
-		makeMessagesMetricsTableRow("On ledger request", true, inOnLedgerRequest),
-		makeMessagesMetricsTableRow("Publish state transaction", false, publisherStateTransaction),
-	}
-	log.PrintTable(header, table)
 }
 
 func printChainMessagesMetrics(msgsMetrics *apiclient.ChainMessageMetrics) {

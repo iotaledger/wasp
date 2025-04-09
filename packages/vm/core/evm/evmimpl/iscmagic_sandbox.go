@@ -48,23 +48,23 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 	assets := allowance.Unwrap()
 	subtractFromAllowance(h.ctx, addr, h.caller, assets)
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), addr),
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
+		isc.NewEthereumAddressAgentID(addr),
+		isc.NewEthereumAddressAgentID(h.caller),
 		assets,
 	)
-	// emit ERC20 / ERC721 events for native tokens & NFTs
+	// emit ERC20 events for coins
 	for _, log := range makeTransferEvents(h.ctx, addr, h.caller, assets) {
 		h.evm.StateDB.AddLog(log)
 	}
 }
 
-var errInvalidAllowance = coreerrors.Register("allowance must not be greater than sent tokens").Create()
+var errMetadataUnsupported = coreerrors.Register("metadata is unsupported")
 
 func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Value {
 	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.BaseTokenDecimals)
 
-	evmAddr := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), iscmagic.Address)
-	caller := isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller)
+	evmAddr := isc.NewEthereumAddressAgentID(iscmagic.Address)
+	caller := isc.NewEthereumAddressAgentID(h.caller)
 
 	// Move the already transferred base tokens from the 0x1074 address back to the callers account.
 	h.ctx.Privileged().MustMoveBetweenAccounts(
@@ -80,14 +80,14 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 func (h *magicContractHandler) Send(
 	targetAddress iotago.Address,
 	assets iscmagic.ISCAssets,
+	// For now both args are kept for legacy reasons. Removing those would be the "right choice", but will break tracing
+	// for migrated blocks. We need to estimate how many requests would be affected and assess if we can remove those.
 	metadata iscmagic.ISCSendMetadata,
 	sendOptions iscmagic.ISCSendOptions,
 ) {
 	req := isc.RequestParameters{
 		TargetAddress: cryptolib.NewAddressFromIota(&targetAddress),
 		Assets:        assets.Unwrap(),
-		Metadata:      metadata.Unwrap(),
-		Options:       sendOptions.Unwrap(),
 	}
 
 	if h.callValue.BitLen() > 0 {
@@ -97,16 +97,17 @@ func (h *magicContractHandler) Send(
 
 	// make sure that allowance <= sent tokens, so that the target contract does not
 	// spend from the common account
-	if req.Metadata != nil && !req.Assets.Clone().Spend(req.Metadata.Allowance) {
-		panic(errInvalidAllowance)
+	if metadata.Unwrap() != nil {
+		panic(errMetadataUnsupported)
 	}
 
 	h.moveAssetsToCommonAccount(req.Assets)
 
-	// emit ERC20 / ERC721 events for native tokens & NFTs
+	// emit ERC20 events for coin transfers
 	for _, log := range makeTransferEvents(h.ctx, h.caller, common.Address{}, req.Assets) {
 		h.evm.StateDB.AddLog(log)
 	}
+
 	h.ctx.Privileged().SendOnBehalfOf(
 		isc.ContractIdentityFromEVMAddress(h.caller),
 		req,
@@ -127,7 +128,7 @@ var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (
 // account before sending to L1
 func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {
 	h.ctx.Privileged().MustMoveBetweenAccounts(
-		isc.NewEthereumAddressAgentID(h.ctx.ChainID(), h.caller),
+		isc.NewEthereumAddressAgentID(h.caller),
 		h.ctx.AccountID(),
 		assets,
 	)

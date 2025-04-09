@@ -7,37 +7,45 @@ import "./ISCTypes.sol";
 
 /**
  * @title ISCAccounts
- * @dev Functions of the ISC Magic Contract to access the core accounts functionality
+ * @notice Functions of the ISC Magic Contract to access the core accounts functionality
  */
 interface ISCAccounts {
-    // Get the L2 base tokens balance of an account
+    
+    /**
+     * @notice Retrieves the L2 balance of base tokens for a given ISC Agent ID.
+     * @param agentID The ISC Agent ID whose L2 base token balance is to be queried.
+     * @return The L2 balance of base tokens.
+     */
     function getL2BalanceBaseTokens(ISCAgentID memory agentID) external view returns (uint64);
 
-    // Get the L2 coin balance of an account
+    /**
+     * @notice Retrieves the L2 balance of a given coin type for a given ISC Agent ID.
+     * @param coinType The type of the coin as a string.
+     * @param agentID The ISC Agent ID whose L2 coin balance is to be queried.
+     * @return The L2 balance of the given coin type.
+     */
     function getL2BalanceCoin(
         string memory coinType,
         ISCAgentID memory agentID
     ) external view returns (uint64);
 
-    // Get the list of objects owned by an account on L2
+    /**
+     * @notice Retrieves a list of Objects owned by a given ISC Agent ID.
+     * @param agentID The ISC Agent ID whose L2 objects are to be queried.
+     * @return An array of Object IDs.
+     * 
+     * @notice This function returns all objects except coins.
+     */
     function getL2Objects(ISCAgentID memory agentID) external view
         returns (IotaObjectID[] memory);
 
-    // Get the amount of objects owned by an account on L2
+    /**
+     * @notice Retrieves the amount of Objects owned by a given ISC Agent ID.
+     * @param agentID The ISC Agent ID whose L2 object count is to be queried.
+     * @return The amount of Objects owned by a given ISC Agent ID.
+     */
     function getL2ObjectsCount(ISCAgentID memory agentID) external view
         returns (uint256);
-
-    // Get the objects of a given collection owned by an account on L2
-    function getL2ObjectsInCollection(
-        ISCAgentID memory agentID,
-        IotaObjectID collectionId
-    ) external view returns (IotaObjectID[] memory);
-
-    // Get the amount of objects of a given collection owned by an account on L2
-    function getL2ObjectsCountInCollection(
-        ISCAgentID memory agentID,
-        IotaObjectID collectionId
-    ) external view returns (uint256);
 }
 
 ISCAccounts constant __iscAccounts = ISCAccounts(ISC_MAGIC_ADDRESS);
