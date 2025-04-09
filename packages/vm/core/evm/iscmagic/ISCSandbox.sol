@@ -118,10 +118,10 @@ interface ISCSandbox {
     function getChainID() external view returns (ISCChainID);
 
     /**
-     * @notice Retrieves the owner Agent ID of the ISC chain.
-     * @return The owner of the ISC chain.
+     * @notice Retrieves the Agent ID of the ISC chain admin.
+     * @return The ISC chain admin.
      */
-    function getChainOwnerID() external view returns (ISCAgentID memory);
+    function getChainAdmin() external view returns (ISCAgentID memory);
 
     /**
      * @notice Retrieves the timestamp of the ISC block.

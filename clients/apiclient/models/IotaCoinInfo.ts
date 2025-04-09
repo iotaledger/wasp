@@ -10,11 +10,11 @@
  * Do not edit the class manually.
  */
 
-import { Type } from '../models/Type';
+import { ObjectType } from '../models/ObjectType';
 import { HttpFile } from '../http/http';
 
 export class IotaCoinInfo {
-    'coinType': Type;
+    'coinType': ObjectType;
     /**
     * The token decimals
     */
@@ -48,7 +48,7 @@ export class IotaCoinInfo {
         {
             "name": "coinType",
             "baseName": "coinType",
-            "type": "Type",
+            "type": "ObjectType",
             "format": ""
         },
         {

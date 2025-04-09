@@ -25,9 +25,9 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 	}
 
 	controlAddressesResponse := &models.ControlAddressesResponse{
-		GoverningAddress: controlAddresses.GoverningAddress.String(),
-		SinceBlockIndex:  controlAddresses.SinceBlockIndex,
-		StateAddress:     controlAddresses.StateAddress.String(),
+		AnchorOwner:     controlAddresses.AnchorOwner.String(),
+		ChainAdmin:      controlAddresses.ChainAdmin.String(),
+		SinceBlockIndex: controlAddresses.SinceBlockIndex,
 	}
 
 	return e.JSON(http.StatusOK, controlAddressesResponse)
@@ -92,12 +92,10 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 
 func GetRequestReceipt(e echo.Context, c interfaces.ChainService) error {
 	ch, err := c.GetChain()
-
 	if err != nil {
 		return err
 	}
 	requestID, err := params.DecodeRequestID(e)
-
 	if err != nil {
 		return err
 	}
@@ -164,7 +162,6 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 
 func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
-
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -202,7 +199,7 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 	if err != nil {
 		return err
 	}
-	
+
 	var events []*isc.Event
 	blockIndex := e.Param(params.ParamBlockIndex)
 

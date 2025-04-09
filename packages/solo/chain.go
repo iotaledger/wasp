@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -39,8 +38,8 @@ import (
 func (ch *Chain) String() string {
 	w := new(rwutil.Buffer)
 	fmt.Fprintf(w, "Chain ID: %s\n", ch.ChainID)
-	fmt.Fprintf(w, "Chain operator: %s\n", ch.OperatorAddress())
-	fmt.Fprintf(w, "Chain owner: %s\n", ch.OwnerAddress())
+	fmt.Fprintf(w, "Anchor owner: %s\n", ch.AnchorOwnerAddress())
+	fmt.Fprintf(w, "Chain admin: %s\n", ch.AdminAddress())
 	block, err := ch.store.LatestBlock()
 	require.NoError(ch.Env.T, err)
 	fmt.Fprintf(w, "Root commitment: %s\n", block.TrieRoot())
@@ -49,10 +48,10 @@ func (ch *Chain) String() string {
 
 // DumpAccounts dumps all account balances into the human-readable string
 func (ch *Chain) DumpAccounts() string {
-	_, chainOwnerID, _ := ch.GetInfo()
-	ret := fmt.Sprintf("ChainID: %s\nChain owner: %s\n",
+	_, chainAdmin, _ := ch.GetInfo()
+	ret := fmt.Sprintf("ChainID: %s\nChain admin: %s\n",
 		ch.ChainID.String(),
-		chainOwnerID.String(),
+		chainAdmin.String(),
 	)
 	acc := ch.L2Accounts()
 	for i := range acc {
@@ -146,13 +145,13 @@ func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, by
 
 // GetInfo returns information about the chain:
 //   - chainID
-//   - agentID of the chain owner
+//   - agentID of the chain admin
 //   - list of contracts deployed on the chain
 func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
-	res, err := ch.CallView(governance.ViewGetChainOwner.Message())
+	res, err := ch.CallView(governance.ViewGetChainAdmin.Message())
 	require.NoError(ch.Env.T, err)
 
-	chainOwnerID, err := governance.ViewGetChainOwner.DecodeOutput(res)
+	chainAdmin, err := governance.ViewGetChainAdmin.DecodeOutput(res)
 	require.NoError(ch.Env.T, err)
 
 	res, err = ch.CallView(root.ViewGetContractRecords.Message())
@@ -160,7 +159,7 @@ func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.Contra
 
 	contracts, err := root.ViewGetContractRecords.DecodeOutput(res)
 	require.NoError(ch.Env.T, err)
-	return ch.ChainID, chainOwnerID, lo.Associate(contracts, func(item lo.Tuple2[*isc.Hname, *root.ContractRecord]) (isc.Hname, *root.ContractRecord) {
+	return ch.ChainID, chainAdmin, lo.Associate(contracts, func(item lo.Tuple2[*isc.Hname, *root.ContractRecord]) (isc.Hname, *root.ContractRecord) {
 		return *item.A, item.B
 	})
 }
@@ -266,53 +265,6 @@ func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex ui
 	return ret
 }
 
-// AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) AddAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(governance.FuncAddAllowedStateControllerAddress.Message(addr)).
-		WithMaxAffordableGasBudget()
-	_, err := ch.PostRequestSync(req, keyPair)
-	return err
-}
-
-// AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) RemoveAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(governance.FuncRemoveAllowedStateControllerAddress.Message(addr)).
-		WithMaxAffordableGasBudget()
-	_, err := ch.PostRequestSync(req, keyPair)
-	return err
-}
-
-// AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) GetAllowedStateControllerAddresses() []*cryptolib.Address {
-	res, err := ch.CallView(governance.ViewGetAllowedStateControllerAddresses.Message())
-	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.DecodeOutput(res))
-}
-
-// RotateStateController rotates the chain to the new controller address.
-// We assume self-governed chain here.
-// Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr *cryptolib.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
-	panic("TODO")
-	// req := NewCallParams(governance.FuncRotateStateController.Message(newStateAddr)).
-	// 	WithMaxAffordableGasBudget()
-	// result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
-	// if result.Receipt.Error == nil {
-	// 	ch.StateControllerKeyPair = newStateKeyPair
-	// }
-	// return ch.ResolveVMError(result.Receipt.Error).AsGoError()
-}
-
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {
-	panic("TODO")
-	/*
-		reqID, err := ch.RequestFromParamsToLedger(req, keyPair)
-		require.NoError(ch.Env.T, err)
-		results := ch.RunRequestsSync(reqs, "postSpecial")
-		return results[0]
-	*/
-}
-
 type L1L2CoinBalances struct {
 	Address *cryptolib.Address
 	L1      isc.CoinBalances
@@ -392,18 +344,14 @@ func (ch *Chain) SaveDB(path string) {
 	lo.Must0(store.Flush())
 }
 
-func (ch *Chain) OwnerAddress() *cryptolib.Address {
-	return ch.OwnerPrivateKey.Address()
+func (ch *Chain) AdminAddress() *cryptolib.Address {
+	return ch.ChainAdmin.Address()
 }
 
-func (ch *Chain) OwnerAgentID() isc.AgentID {
-	return isc.NewAddressAgentID(ch.OwnerAddress())
+func (ch *Chain) AdminAgentID() isc.AgentID {
+	return isc.NewAddressAgentID(ch.AdminAddress())
 }
 
-func (ch *Chain) OperatorAddress() *cryptolib.Address {
-	return ch.OperatorPrivateKey.Address()
-}
-
-func (ch *Chain) OperatorAgentID() isc.AgentID {
-	return isc.NewAddressAgentID(ch.OperatorAddress())
+func (ch *Chain) AnchorOwnerAddress() *cryptolib.Address {
+	return ch.AnchorOwner.Address()
 }

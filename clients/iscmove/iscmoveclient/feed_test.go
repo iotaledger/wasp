@@ -23,9 +23,9 @@ func TestRequestsFeed(t *testing.T) {
 	client := iscmoveclienttest.NewHTTPClient()
 
 	iscOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	chainOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
+	anchorOwner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 
-	anchor := startNewChain(t, client, chainOwner)
+	anchor := startNewChain(t, client, anchorOwner)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -89,13 +89,13 @@ func TestRequestsFeed(t *testing.T) {
 	require.Len(t, ownedReqs, 1)
 	require.Equal(t, *requestRef.ObjectID, ownedReqs[0].Object.ID)
 
-	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: chainOwner.Address().AsIotaAddress()})
+	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: anchorOwner.Address().AsIotaAddress()})
 	require.NoError(t, err)
 
 	_, err = client.ReceiveRequestsAndTransition(
 		context.Background(),
 		&iscmoveclient.ReceiveRequestsAndTransitionRequest{
-			Signer:           chainOwner,
+			Signer:           anchorOwner,
 			PackageID:        l1starter.ISCPackageID(),
 			AnchorRef:        &anchor.ObjectRef,
 			ConsumedRequests: []iotago.ObjectRef{*requestRef},

@@ -2559,53 +2559,53 @@ func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-type ApiGovernanceGetAllowedStateControllerAddressesRequest struct {
+type ApiGovernanceGetChainAdminRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
 	block *string
 }
 
 // Block index or trie root
-func (r ApiGovernanceGetAllowedStateControllerAddressesRequest) Block(block string) ApiGovernanceGetAllowedStateControllerAddressesRequest {
+func (r ApiGovernanceGetChainAdminRequest) Block(block string) ApiGovernanceGetChainAdminRequest {
 	r.block = &block
 	return r
 }
 
-func (r ApiGovernanceGetAllowedStateControllerAddressesRequest) Execute() (*GovAllowedStateControllerAddressesResponse, *http.Response, error) {
-	return r.ApiService.GovernanceGetAllowedStateControllerAddressesExecute(r)
+func (r ApiGovernanceGetChainAdminRequest) Execute() (*GovChainAdminResponse, *http.Response, error) {
+	return r.ApiService.GovernanceGetChainAdminExecute(r)
 }
 
 /*
-GovernanceGetAllowedStateControllerAddresses Get the allowed state controller addresses
+GovernanceGetChainAdmin Get the chain admin
 
-Returns the allowed state controller addresses
+Returns the chain admin
 
  @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGovernanceGetAllowedStateControllerAddressesRequest
+ @return ApiGovernanceGetChainAdminRequest
 */
-func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddresses(ctx context.Context) ApiGovernanceGetAllowedStateControllerAddressesRequest {
-	return ApiGovernanceGetAllowedStateControllerAddressesRequest{
+func (a *CorecontractsAPIService) GovernanceGetChainAdmin(ctx context.Context) ApiGovernanceGetChainAdminRequest {
+	return ApiGovernanceGetChainAdminRequest{
 		ApiService: a,
 		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//  @return GovAllowedStateControllerAddressesResponse
-func (a *CorecontractsAPIService) GovernanceGetAllowedStateControllerAddressesExecute(r ApiGovernanceGetAllowedStateControllerAddressesRequest) (*GovAllowedStateControllerAddressesResponse, *http.Response, error) {
+//  @return GovChainAdminResponse
+func (a *CorecontractsAPIService) GovernanceGetChainAdminExecute(r ApiGovernanceGetChainAdminRequest) (*GovChainAdminResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodGet
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *GovAllowedStateControllerAddressesResponse
+		localVarReturnValue  *GovChainAdminResponse
 	)
 
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetAllowedStateControllerAddresses")
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetChainAdmin")
 	if err != nil {
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v1/chain/core/governance/allowedstatecontrollers"
+	localVarPath := localBasePath + "/v1/chain/core/governance/chainadmin"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -2725,125 +2725,6 @@ func (a *CorecontractsAPIService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 	}
 
 	localVarPath := localBasePath + "/v1/chain/core/governance/chaininfo"
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	if r.block != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
-	}
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
-}
-
-type ApiGovernanceGetChainOwnerRequest struct {
-	ctx context.Context
-	ApiService *CorecontractsAPIService
-	block *string
-}
-
-// Block index or trie root
-func (r ApiGovernanceGetChainOwnerRequest) Block(block string) ApiGovernanceGetChainOwnerRequest {
-	r.block = &block
-	return r
-}
-
-func (r ApiGovernanceGetChainOwnerRequest) Execute() (*GovChainOwnerResponse, *http.Response, error) {
-	return r.ApiService.GovernanceGetChainOwnerExecute(r)
-}
-
-/*
-GovernanceGetChainOwner Get the chain owner
-
-Returns the chain owner
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiGovernanceGetChainOwnerRequest
-*/
-func (a *CorecontractsAPIService) GovernanceGetChainOwner(ctx context.Context) ApiGovernanceGetChainOwnerRequest {
-	return ApiGovernanceGetChainOwnerRequest{
-		ApiService: a,
-		ctx: ctx,
-	}
-}
-
-// Execute executes the request
-//  @return GovChainOwnerResponse
-func (a *CorecontractsAPIService) GovernanceGetChainOwnerExecute(r ApiGovernanceGetChainOwnerRequest) (*GovChainOwnerResponse, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *GovChainOwnerResponse
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetChainOwner")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chain/core/governance/chainowner"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

@@ -17,12 +17,12 @@ func testEventLogEventData(ctx isc.Sandbox) {
 	eventTest(ctx)
 }
 
-func testChainOwnerIDView(ctx isc.SandboxView) isc.AgentID {
-	return ctx.ChainOwnerID()
+func testChainAdminView(ctx isc.SandboxView) isc.AgentID {
+	return ctx.ChainAdmin()
 }
 
-func testChainOwnerIDFull(ctx isc.Sandbox) isc.AgentID {
-	return ctx.ChainOwnerID()
+func testChainAdminFull(ctx isc.Sandbox) isc.AgentID {
+	return ctx.ChainAdmin()
 }
 
 func testSandboxCall(ctx isc.SandboxView) isc.CallArguments {

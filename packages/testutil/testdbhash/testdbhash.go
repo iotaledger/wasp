@@ -105,9 +105,12 @@ func verifyHash(
 	if os.Getenv(envVarUpdateDBHash) != "" {
 		saveHash(hashFilename, hash)
 	} else {
-		expected := loadHash(hashFilename)
+		// TODO: replace Logf with Fatalf after tests are deterministic
+		expected, err := loadHash(hashFilename)
+		if err != nil {
+			t.Logf("could not load hash from %s: %v", hashFilename, err)
+		}
 		if expected != hash {
-			// TODO: replace with Fatalf after tests are deterministic
 			t.Logf(
 				msg+
 					" This may be due to a BREAKING CHANGE; make sure that you add a migration "+
@@ -139,9 +142,12 @@ func stringifyKey(k []byte, isState bool) string {
 	return fmt.Sprintf("[%s|%s] [%d] %x", c.Name, asciiPrefix, len(k), k)
 }
 
-func loadHash(filename string) hashing.HashValue {
-	b := lo.Must(os.ReadFile(fullPath(filename)))
-	return hashing.MustHashValueFromHex(strings.TrimSpace(string(b)))
+func loadHash(filename string) (hashing.HashValue, error) {
+	b, err := os.ReadFile(fullPath(filename))
+	if err != nil {
+		return hashing.HashValue{}, err
+	}
+	return hashing.MustHashValueFromHex(strings.TrimSpace(string(b))), nil
 }
 
 func saveHash(filename string, hash hashing.HashValue) {

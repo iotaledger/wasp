@@ -21,7 +21,7 @@ var _ MappedNullable = &IotaCoinInfo{}
 
 // IotaCoinInfo struct for IotaCoinInfo
 type IotaCoinInfo struct {
-	CoinType Type `json:"coinType"`
+	CoinType ObjectType `json:"coinType"`
 	// The token decimals
 	Decimals int32 `json:"decimals"`
 	// The token description
@@ -42,7 +42,7 @@ type _IotaCoinInfo IotaCoinInfo
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewIotaCoinInfo(coinType Type, decimals int32, description string, iconUrl string, name string, tickerSymbol string, totalSupply int64) *IotaCoinInfo {
+func NewIotaCoinInfo(coinType ObjectType, decimals int32, description string, iconUrl string, name string, tickerSymbol string, totalSupply int64) *IotaCoinInfo {
 	this := IotaCoinInfo{}
 	this.CoinType = coinType
 	this.Decimals = decimals
@@ -63,9 +63,9 @@ func NewIotaCoinInfoWithDefaults() *IotaCoinInfo {
 }
 
 // GetCoinType returns the CoinType field value
-func (o *IotaCoinInfo) GetCoinType() Type {
+func (o *IotaCoinInfo) GetCoinType() ObjectType {
 	if o == nil {
-		var ret Type
+		var ret ObjectType
 		return ret
 	}
 
@@ -74,7 +74,7 @@ func (o *IotaCoinInfo) GetCoinType() Type {
 
 // GetCoinTypeOk returns a tuple with the CoinType field value
 // and a boolean to check if the value has been set.
-func (o *IotaCoinInfo) GetCoinTypeOk() (*Type, bool) {
+func (o *IotaCoinInfo) GetCoinTypeOk() (*ObjectType, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -82,7 +82,7 @@ func (o *IotaCoinInfo) GetCoinTypeOk() (*Type, bool) {
 }
 
 // SetCoinType sets field value
-func (o *IotaCoinInfo) SetCoinType(v Type) {
+func (o *IotaCoinInfo) SetCoinType(v ObjectType) {
 	o.CoinType = v
 }
 

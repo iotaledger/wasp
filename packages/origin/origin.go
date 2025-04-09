@@ -31,29 +31,29 @@ import (
 )
 
 type InitParams struct {
-	ChainOwner          isc.AgentID
+	ChainAdmin          isc.AgentID
 	EVMChainID          uint16
 	BlockKeepAmount     int32
 	DeployTestContracts bool
 }
 
 func NewInitParams(
-	chainOwner isc.AgentID,
+	chainAdmin isc.AgentID,
 	evmChainID uint16,
 	blockKeepAmount int32,
 	deployTestContracts bool,
 ) *InitParams {
 	return &InitParams{
-		ChainOwner:          chainOwner,
+		ChainAdmin:          chainAdmin,
 		EVMChainID:          evmChainID,
 		BlockKeepAmount:     blockKeepAmount,
 		DeployTestContracts: deployTestContracts,
 	}
 }
 
-func DefaultInitParams(chainOwner isc.AgentID) *InitParams {
+func DefaultInitParams(chainAdmin isc.AgentID) *InitParams {
 	return &InitParams{
-		ChainOwner:          chainOwner,
+		ChainAdmin:          chainAdmin,
 		EVMChainID:          evm.DefaultChainID,
 		BlockKeepAmount:     governance.DefaultBlockKeepAmount,
 		DeployTestContracts: false,
@@ -152,7 +152,7 @@ func InitChain(
 	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
-	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainOwner, blockKeepAmount)
+	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
 	evmimpl.SetInitialState(evm.Contract.StateSubrealm(d), initParams.EVMChainID)
 	if initParams.DeployTestContracts {
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))

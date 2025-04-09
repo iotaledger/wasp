@@ -18,7 +18,7 @@ func PTBStartNewChain(
 	packageID iotago.PackageID,
 	stateMetadata []byte,
 	argInitCoin iotago.Argument,
-	ownerAddress *cryptolib.Address,
+	anchorOwner *cryptolib.Address,
 ) *iotago.ProgrammableTransactionBuilder {
 	arg1 := ptb.Command(
 		iotago.Command{
@@ -38,7 +38,7 @@ func PTBStartNewChain(
 		iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{arg1},
-				Address: ptb.MustPure(ownerAddress.AsIotaAddress()),
+				Address: ptb.MustPure(anchorOwner.AsIotaAddress()),
 			},
 		},
 	)

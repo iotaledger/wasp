@@ -172,7 +172,7 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 // mainly for estimating gas.
 func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, error) {
 	if keyPair == nil {
-		keyPair = ch.OwnerPrivateKey
+		keyPair = ch.ChainAdmin
 	}
 	ref := iotatest.RandomObjectRef()
 	assetsBagRef := iotatest.RandomObjectRef()
@@ -199,7 +199,7 @@ func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (
 // NewRequestOffLedger creates off-ledger request from parameters
 func (r *CallParams) NewRequestOffLedger(ch *Chain, keyPair *cryptolib.KeyPair) isc.OffLedgerRequest {
 	if keyPair == nil {
-		keyPair = ch.OwnerPrivateKey
+		keyPair = ch.ChainAdmin
 	}
 	if r.nonce == 0 {
 		r.nonce = ch.Nonce(isc.NewAddressAgentID(keyPair.Address()))
@@ -285,7 +285,7 @@ func (env *Solo) makeBaseTokenCoin(
 
 func (ch *Chain) SendRequestWithL1GasBudget(req *CallParams, keyPair *cryptolib.KeyPair, l1GasBudget uint64) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
 	if keyPair == nil {
-		keyPair = ch.OwnerPrivateKey
+		keyPair = ch.ChainAdmin
 	}
 	res, err := ch.Env.ISCMoveClient().CreateAndSendRequestWithAssets(
 		ch.Env.ctx,
@@ -382,7 +382,7 @@ func (ch *Chain) PostRequestSyncExt(
 	err error,
 ) {
 	if keyPair == nil {
-		keyPair = ch.OwnerPrivateKey
+		keyPair = ch.ChainAdmin
 	}
 	defer ch.logRequestLastBlock()
 

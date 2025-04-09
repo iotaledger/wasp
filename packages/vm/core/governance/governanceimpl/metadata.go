@@ -10,7 +10,7 @@ const (
 )
 
 func setMetadata(ctx isc.Sandbox, publicURLOpt *string, metadataOpt **isc.PublicChainMetadata) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	n := 0
 	if publicURLOpt != nil {

@@ -56,7 +56,7 @@ func initAnchorCmd() *cobra.Command {
 			}
 
 			log.Printf("\n\tInitParams:\n")
-			log.Printf("\t\tChainOwner: %s\n", initParams.ChainOwner)
+			log.Printf("\t\tChainAdmin: %s\n", initParams.ChainAdmin)
 			log.Printf("\t\tBlockKeepAmount: %d\n", initParams.BlockKeepAmount)
 			log.Printf("\t\tDeployTestContracts: %v\n", initParams.DeployTestContracts)
 			log.Printf("\t\tEVM ChainID: %d\n", initParams.EVMChainID)

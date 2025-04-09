@@ -364,7 +364,7 @@ func TestMempoolChainOwner(t *testing.T) {
 	require.Equal(t, te.chainOwner.Address().String(), te.anchor.Owner().String(), "chainOwner and anchor owner are not the same")
 
 	governanceState := governance.NewStateReaderFromChainState(te.stateForAnchor(0, te.anchor))
-	chainOwner := governanceState.GetChainOwnerID()
+	chainOwner := governanceState.GetChainAdmin()
 	chainOwnerAddress, success := isc.AddressFromAgentID(chainOwner)
 	require.True(t, success, "unable to get address from chain owner agentID")
 	require.Equal(t, te.chainOwner.Address().String(), chainOwnerAddress.String(), "chain owner incorrect")
