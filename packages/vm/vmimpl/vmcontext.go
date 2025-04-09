@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -14,7 +13,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/execution"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
@@ -102,13 +100,11 @@ func (vmctx *vmContext) withStateUpdate(f func(chainState kv.KVStore)) {
 }
 
 // extractBlock does the closing actions on the block
-// return nil for normal block and rotation address for rotation block
 func (vmctx *vmContext) extractBlock(
 	numRequests, numSuccess, numOffLedger uint16,
-) (uint32, *state.L1Commitment, time.Time, *cryptolib.Address) {
-	var rotationAddr *cryptolib.Address
+) (uint32, *state.L1Commitment, time.Time) {
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		rotationAddr = vmctx.saveBlockInfo(chainState, numRequests, numSuccess, numOffLedger)
+		vmctx.saveBlockInfo(chainState, numRequests, numSuccess, numOffLedger)
 		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.Timestamp)
 	})
 
@@ -119,22 +115,11 @@ func (vmctx *vmContext) extractBlock(
 	blockIndex := vmctx.stateDraft.BlockIndex()
 	timestamp := vmctx.stateDraft.Timestamp()
 
-	return blockIndex, l1Commitment, timestamp, rotationAddr
+	return blockIndex, l1Commitment, timestamp
 }
 
-func (vmctx *vmContext) checkRotationAddress() (ret *cryptolib.Address) {
-	return governance.NewStateReaderFromChainState(vmctx.stateDraft).GetRotationAddress()
-}
-
-// saveBlockInfo is in the blocklog partition context. Returns rotation address if this block is a rotation block
-func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuccess, numOffLedger uint16) *cryptolib.Address {
-	if rotationAddress := vmctx.checkRotationAddress(); rotationAddress != nil {
-		// block was marked fake by the governance contract because it is a committee rotation.
-		// There was only on request in the block
-		// We skip saving block information in order to avoid inconsistencies
-		return rotationAddress
-	}
-
+// saveBlockInfo is in the blocklog partition context
+func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuccess, numOffLedger uint16) {
 	blockInfo := &blocklog.BlockInfo{
 		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
 		BlockIndex:            vmctx.stateDraft.BlockIndex(),
@@ -152,7 +137,6 @@ func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuc
 	blocklogState.SaveNextBlockInfo(blockInfo)
 	blocklogState.Prune(blockInfo.BlockIndex, vmctx.chainInfo.BlockKeepAmount)
 	vmctx.task.Log.LogDebugf("saved blockinfo:\n%s", blockInfo)
-	return nil
 }
 
 func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestResult) {

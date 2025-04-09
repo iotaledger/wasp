@@ -8,12 +8,6 @@ import (
 )
 
 var Processor = governance.Contract.Processor(nil,
-	// state controller
-	governance.FuncAddAllowedStateControllerAddress.WithHandler(addAllowedStateControllerAddress),
-	governance.FuncRemoveAllowedStateControllerAddress.WithHandler(removeAllowedStateControllerAddress),
-	governance.FuncRotateStateController.WithHandler(rotateStateController),
-	governance.ViewGetAllowedStateControllerAddresses.WithHandler(getAllowedStateControllerAddresses),
-
 	// chain owner
 	governance.FuncClaimChainOwnership.WithHandler(claimChainOwnership),
 	governance.FuncDelegateChainOwnership.WithHandler(delegateChainOwnership),

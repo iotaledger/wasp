@@ -24,10 +24,6 @@ type GovChainInfoResponse struct {
 	Metadata     GovPublicChainMetadata `json:"metadata" swagger:"desc(The metadata of the chain),required"`
 }
 
-type GovAllowedStateControllerAddressesResponse struct {
-	Addresses []string `json:"addresses" swagger:"desc(The allowed state controller addresses (Hex Address))"`
-}
-
 type GovChainOwnerResponse struct {
 	ChainOwner string `json:"chainOwner" swagger:"desc(The chain owner (Hex Address))"`
 }

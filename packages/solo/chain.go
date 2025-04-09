@@ -26,7 +26,6 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
@@ -264,53 +263,6 @@ func (ch *Chain) GetRequestReceiptsForBlockRange(fromBlockIndex, toBlockIndex ui
 		ret = append(ret, recs...)
 	}
 	return ret
-}
-
-// AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) AddAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(governance.FuncAddAllowedStateControllerAddress.Message(addr)).
-		WithMaxAffordableGasBudget()
-	_, err := ch.PostRequestSync(req, keyPair)
-	return err
-}
-
-// AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) RemoveAllowedStateController(addr *cryptolib.Address, keyPair *cryptolib.KeyPair) error {
-	req := NewCallParams(governance.FuncRemoveAllowedStateControllerAddress.Message(addr)).
-		WithMaxAffordableGasBudget()
-	_, err := ch.PostRequestSync(req, keyPair)
-	return err
-}
-
-// AddAllowedStateController adds the address to the allowed state controlled address list
-func (ch *Chain) GetAllowedStateControllerAddresses() []*cryptolib.Address {
-	res, err := ch.CallView(governance.ViewGetAllowedStateControllerAddresses.Message())
-	require.NoError(ch.Env.T, err)
-	return lo.Must(governance.ViewGetAllowedStateControllerAddresses.DecodeOutput(res))
-}
-
-// RotateStateController rotates the chain to the new controller address.
-// We assume self-governed chain here.
-// Mostly use for the testing of committee rotation logic, otherwise not much needed for smart contract testing
-func (ch *Chain) RotateStateController(newStateAddr *cryptolib.Address, newStateKeyPair, ownerKeyPair *cryptolib.KeyPair) error {
-	panic("TODO")
-	// req := NewCallParams(governance.FuncRotateStateController.Message(newStateAddr)).
-	// 	WithMaxAffordableGasBudget()
-	// result := ch.postRequestSyncTxSpecial(req, ownerKeyPair)
-	// if result.Receipt.Error == nil {
-	// 	ch.StateControllerKeyPair = newStateKeyPair
-	// }
-	// return ch.ResolveVMError(result.Receipt.Error).AsGoError()
-}
-
-func (ch *Chain) postRequestSyncTxSpecial(req *CallParams, keyPair *cryptolib.KeyPair) *vm.RequestResult {
-	panic("TODO")
-	/*
-		reqID, err := ch.RequestFromParamsToLedger(req, keyPair)
-		require.NoError(ch.Env.T, err)
-		results := ch.RunRequestsSync(reqs, "postSpecial")
-		return results[0]
-	*/
 }
 
 type L1L2CoinBalances struct {

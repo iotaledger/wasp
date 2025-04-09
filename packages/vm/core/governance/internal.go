@@ -28,21 +28,6 @@ func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount in
 	s.SetPayoutAgentID(chainOwner)
 }
 
-// GetRotationAddress tries to read the state of 'governance' and extract rotation address
-// If succeeds, it means this block is fake.
-// If fails, return nil
-func (s *StateReader) GetRotationAddress() *cryptolib.Address {
-	ret, err := codec.Decode[*cryptolib.Address](s.state.Get(varRotateToAddress), nil)
-	if err != nil {
-		return nil
-	}
-	return ret
-}
-
-func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
-	s.state.Set(varRotateToAddress, codec.Encode(a))
-}
-
 // GetChainInfo returns global variables of the chain
 func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 	ret := &isc.ChainInfo{
@@ -159,14 +144,6 @@ func (s *StateWriter) AccessNodeCandidatesMap() *collections.Map {
 
 func (s *StateReader) AccessNodeCandidatesMap() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, varAccessNodeCandidates)
-}
-
-func (s *StateWriter) AllowedStateControllerAddressesMap() *collections.Map {
-	return collections.NewMap(s.state, varAllowedStateControllerAddresses)
-}
-
-func (s *StateReader) AllowedStateControllerAddressesMap() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, varAllowedStateControllerAddresses)
 }
 
 func (s *StateReader) GetMaintenanceStatus() bool {

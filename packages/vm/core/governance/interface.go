@@ -17,20 +17,6 @@ import (
 var Contract = coreutil.NewContract(coreutil.CoreContractGovernance)
 
 var (
-	// state controller (entity that owns the state output via AliasAddress)
-	FuncRotateStateController = coreutil.NewEP1(Contract, coreutil.CoreEPRotateStateController,
-		coreutil.Field[*cryptolib.Address]("newStateControllerAddr"),
-	)
-	FuncAddAllowedStateControllerAddress = coreutil.NewEP1(Contract, "addAllowedStateControllerAddress",
-		coreutil.Field[*cryptolib.Address]("stateControllerAddress"),
-	)
-	FuncRemoveAllowedStateControllerAddress = coreutil.NewEP1(Contract, "removeAllowedStateControllerAddress",
-		coreutil.Field[*cryptolib.Address]("stateControllerAddress"),
-	)
-	ViewGetAllowedStateControllerAddresses = coreutil.NewViewEP01(Contract, "getAllowedStateControllerAddresses",
-		coreutil.Field[[]*cryptolib.Address]("stateControllerAddresses"),
-	)
-
 	// chain owner (L1 entity that is the "owner of the chain")
 	FuncClaimChainOwnership    = coreutil.NewEP0(Contract, "claimChainOwnership")
 	FuncDelegateChainOwnership = coreutil.NewEP1(Contract, "delegateChainOwnership",
@@ -118,12 +104,6 @@ var (
 
 // state variables
 const (
-	// state controller
-	// varAllowedStateControllerAddresses :: map[Address]bool
-	varAllowedStateControllerAddresses = "a" // covered in: TestGovernance1
-	// varRotateToAddress :: Address (should never persist in the state)
-	varRotateToAddress = "r"
-
 	// varPayoutAgentID :: AgentID
 	varPayoutAgentID = "pa" // covered in: TestMetadata
 	// varGasCoinTargetValue :: uint64

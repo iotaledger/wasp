@@ -136,14 +136,6 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 		SetOperationId("governanceGetChainOwner").
 		SetDescription("Returns the chain owner").
 		SetSummary("Get the chain owner")
-
-	api.GET("chain/core/governance/allowedstatecontrollers", c.getAllowedStateControllerAddresses).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The state controller addresses", mocker.Get(models.GovAllowedStateControllerAddressesResponse{}), nil).
-		SetOperationId("governanceGetAllowedStateControllerAddresses").
-		SetDescription("Returns the allowed state controller addresses").
-		SetSummary("Get the allowed state controller addresses")
 }
 
 //nolint:funlen

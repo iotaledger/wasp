@@ -61,27 +61,3 @@ func (c *Controller) getChainOwner(e echo.Context) error {
 
 	return e.JSON(http.StatusOK, chainOwnerResponse)
 }
-
-func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
-	ch, err := c.chainService.GetChain()
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
-
-	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
-
-	encodedAddresses := make([]string, len(addresses))
-
-	for k, v := range addresses {
-		encodedAddresses[k] = v.String()
-	}
-
-	addressesResponse := models.GovAllowedStateControllerAddressesResponse{
-		Addresses: encodedAddresses,
-	}
-
-	return e.JSON(http.StatusOK, addressesResponse)
-}
