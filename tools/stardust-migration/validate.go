@@ -13,20 +13,12 @@ import (
 	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
-	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
-	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
-	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 	"github.com/iotaledger/wasp/tools/stardust-migration/validation"
@@ -137,27 +129,27 @@ func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.Chain
 	var accountsContractStr, blocklogContractStr, evmContractStr string
 
 	validation.GoAllAndWait(func() {
-		accountsContractStr = validation.OldAccountsContractContentToStr(oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname()), chainID)
+		accountsContractStr = validation.OldAccountsContractContentToStr(chainState, chainID)
 	}, func() {
-		blocklogContractStr = validation.OldBlocklogContractContentToStr(oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+		blocklogContractStr = validation.OldBlocklogContractContentToStr(chainState, chainID, firstIndex, lastIndex)
 	}, func() {
-		evmContractStr = validation.OldEVMContractContentToStr(oldstate.GetContactStateReader(chainState, old_evm.Contract.Hname()))
+		evmContractStr = validation.OldEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
 
 	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
-	return accountsContractStr + "\n" + blocklogContractStr + "\n" + evmContractStr
+	return accountsContractStr + blocklogContractStr + evmContractStr
 }
 
 func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
 	var accountsContractStr, blocklogContractStr, evmContractStr string
 	validation.GoAllAndWait(func() {
-		accountsContractStr = validation.NewAccountsContractContentToStr(newstate.GetContactStateReader(chainState, accounts.Contract.Hname()), chainID)
+		accountsContractStr = validation.NewAccountsContractContentToStr(chainState, chainID)
 	}, func() {
-		blocklogContractStr = validation.NewBlocklogContractContentToStr(newstate.GetContactStateReader(chainState, blocklog.Contract.Hname()), chainID, firstIndex, lastIndex)
+		blocklogContractStr = validation.NewBlocklogContractContentToStr(chainState, chainID, firstIndex, lastIndex)
 	}, func() {
-		evmContractStr = validation.NewEVMContractContentToStr(newstate.GetContactStateReader(chainState, evm.Contract.Hname()))
+		evmContractStr = validation.NewEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
 
 	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
-	return accountsContractStr + "\n" + blocklogContractStr + "\n" + evmContractStr
+	return accountsContractStr + blocklogContractStr + evmContractStr
 }

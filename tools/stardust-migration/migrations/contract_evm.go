@@ -44,7 +44,7 @@ func migrateEVMEmulator(muts *old_buffered.Mutations, oldContractState old_kv.KV
 	migrateStateDB(oldEmulatorState, newEmulatorState)
 	migrateBlockchainDB(muts, oldEmulatorState, newEmulatorState)
 
-	cli.DebugLogf("Migrated %v keys for evm/emulator")
+	cli.DebugLogf("Migrated evm/emulator")
 }
 
 func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
@@ -63,6 +63,7 @@ func migrateISCMagicPrivileged(oldMagicState old_kv.KVStoreReader, newMagicState
 }
 
 func migrateISCMagicAllowance(oldMagicState old_kv.KVStoreReader, newMagicState kv.KVStore) {
+	// TODO: this migration does not seem to migrate anything - always zero records found
 	cli.DebugLog("Migrating iscmagic/allowance...")
 
 	progress := NewProgressPrinter()

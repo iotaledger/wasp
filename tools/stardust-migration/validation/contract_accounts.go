@@ -23,14 +23,17 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
-func OldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+func OldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
 	// TODO: There will be not enought memory to store all that stringyfied data.
 	// Would need to change the flow of validation. But for current development it's fine.
 
+	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	accsStr, accs := oldAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("Old accounts preview:\n%v\n", utils.MultilinePreview(accsStr))
 
@@ -43,10 +46,11 @@ func OldAccountsContractContentToStr(contractState old_kv.KVStoreReader, chainID
 		cli.DebugLogf("Old native token balances preview:\n%v\n", utils.MultilinePreview(nativeTokenBalancesStr))
 	})
 
-	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTokenBalancesStr
+	return accsStr + baseTokenBalancesStr + nativeTokenBalancesStr
 }
 
-func NewAccountsContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID) string {
+func NewAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID) string {
+	contractState := newstate.GetContactStateReader(chainState, accounts.Contract.Hname())
 	accsStr, accs := newAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("New accounts preview:\n%v\n", utils.MultilinePreview(accsStr))
 
@@ -54,7 +58,7 @@ func NewAccountsContractContentToStr(contractState kv.KVStoreReader, chainID isc
 	cli.DebugLogf("New base token balances preview:\n%v\n", utils.MultilinePreview(baseTokenBalancesStr))
 	cli.DebugLogf("New native token balances preview:\n%v\n", utils.MultilinePreview(nativeTOkenBalancesStr))
 
-	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTOkenBalancesStr
+	return accsStr + baseTokenBalancesStr + nativeTOkenBalancesStr
 }
 
 func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) (string, map[old_kv.Key]old_isc.AgentID) {

@@ -4,3 +4,4 @@ main
 stardust-migration
 *.pprof
 index.bin
+migration_result.json

@@ -5,8 +5,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	"github.com/pmezard/go-difflib/difflib"
 	"github.com/samber/lo"
 )
@@ -122,4 +124,28 @@ func EnsureEqual(comparisonName, leftStr, rightStr string) {
 	}
 
 	panic(fmt.Errorf("%v are NOT equal", strings.Title(comparisonName)))
+}
+
+func OldReadOnlyKVStore(r old_kv.KVStoreReader) old_kv.KVStore {
+	type oldReadOnlyKVStore struct {
+		old_kv.KVStoreReader
+		old_kv.KVWriter
+	}
+
+	return &oldReadOnlyKVStore{
+		KVStoreReader: r,
+		KVWriter:      nil,
+	}
+}
+
+func NewReadOnlyKVStore(r kv.KVStoreReader) kv.KVStore {
+	type newReadOnlyKVStore struct {
+		kv.KVStoreReader
+		kv.KVWriter
+	}
+
+	return &newReadOnlyKVStore{
+		KVStoreReader: r,
+		KVWriter:      nil,
+	}
 }

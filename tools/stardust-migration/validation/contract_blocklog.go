@@ -15,13 +15,17 @@ import (
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
 const blockRetentionPeriod = 10000
 
-func OldBlocklogContractContentToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
+func OldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
+	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
+
 	var receiptsStr, blockRegistryStr, requestLookupIndexStr string
 	GoAllAndWait(func() {
 		receiptsStr = OldReceiptsContentToStr(contractState, firstIndex, lastIndex)
@@ -34,7 +38,7 @@ func OldBlocklogContractContentToStr(contractState old_kv.KVStoreReader, chainID
 		cli.DebugLogf("Old request lookup index preview:\n%v\n", utils.MultilinePreview(requestLookupIndexStr))
 	})
 
-	return receiptsStr + "\n" + blockRegistryStr + "\n" + requestLookupIndexStr
+	return receiptsStr + blockRegistryStr + requestLookupIndexStr
 }
 
 func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
@@ -84,7 +88,9 @@ func OldReceiptsContentToStr(contractState old_kv.KVStoreReader, firstIndex, las
 	return requestStr.String()
 }
 
-func NewBlocklogContractContentToStr(contractState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
+func NewBlocklogContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
+	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
+
 	var receiptsStr, blockRegistryStr, requestLookupIndexStr string
 	GoAllAndWait(func() {
 		receiptsStr = NewReceiptsContentToStr(contractState, firstIndex, lastIndex)
@@ -97,7 +103,7 @@ func NewBlocklogContractContentToStr(contractState kv.KVStoreReader, chainID isc
 		cli.DebugLogf("New request lookup index preview:\n%v\n", utils.MultilinePreview(requestLookupIndexStr))
 	})
 
-	return receiptsStr + "\n" + blockRegistryStr + "\n" + requestLookupIndexStr
+	return receiptsStr + blockRegistryStr + requestLookupIndexStr
 }
 
 func NewReceiptsContentToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {

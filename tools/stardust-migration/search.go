@@ -17,6 +17,7 @@ import (
 
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
@@ -70,11 +71,8 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 			for blockIndex := fromIndex + i; blockIndex <= toIndex; blockIndex += threadsCount {
 				block, _ := indexer.BlockByIndex(blockIndex)
 
-				f(dictKvFromMuts(block.Mutations()), func(k old_kv.Key, v []byte) bool {
-					if v == nil {
-						return true
-					}
-
+				state := old_dict.Dict(block.Mutations().Sets)
+				f(state, func(k old_kv.Key, v []byte) bool {
 					found.Store(true)
 
 					if firstFoundValues[i] == nil {

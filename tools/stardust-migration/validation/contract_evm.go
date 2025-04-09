@@ -12,36 +12,52 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
+	old_evm_types "github.com/nnikolash/wasp-types-exported/packages/evm/evmtypes"
+	"github.com/nnikolash/wasp-types-exported/packages/hashing"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
+	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
 )
 
 // ISCMagicPrivileged - ignored (bytes just copied)
 // ISCMagicERC20ExternalNativeTokens - ignored (bytes just copied)
 // ISCMagicAllowance - ignored (migration is very simple and is done by prefix - does not make much sense it check it)
-// TODO: Review if ignors here are still correct (maybe some those have changed?)
+// emulator.KeyAccountNonce - ignored (bytes just copied)
+// emulator.KeyAccountCode - ignored (bytes just copied)
+// emulator.KeyAccountState - ignored (bytes just copied)
+// emulator.KeyAccountSelfDestructed - ignored (bytes just copied)
+// emulator.KeyBlockNumberByBlockHash - ignored (bytes just copied)
+// emulator.KeyBlockIndexByTxHash - ignored (bytes just copied)
+// emulator.KeyBlockNumberByTxHash - ignored (bytes just copied)
+// TODO: Review if ignores here are still correct (maybe some those have changed?)
+// TODO: All of these ignores should at least have some intergration tess written for them
 
-func OldEVMContractContentToStr(chainState old_kv.KVStoreReader) string {
+func OldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving old EVM contract content...\n")
 	contractState := old_evm.ContractPartitionR(chainState)
-	var allowanceStr string
+	var allowanceStr, txByBlockStr string
 
 	GoAllAndWait(func() {
 		allowanceStr = oldISCMagicAllowanceContentToStr(contractState)
 		cli.DebugLogf("Old ISC magic allowance preview:\n%v\n", utils.MultilinePreview(allowanceStr))
+	}, func() {
+		txByBlockStr = oldTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		cli.DebugLogf("Old transactions by block number preview:\n%v\n", utils.MultilinePreview(txByBlockStr))
 	})
 
-	return allowanceStr
+	return allowanceStr + txByBlockStr
 }
 
 func oldISCMagicAllowanceContentToStr(contractState old_kv.KVStoreReader) string {
+	// TODO: This validation does not find any records, needs to be fixed
 	cli.DebugLogf("Retrieving old ISCMagicAllowance content...\n")
 	iscMagicState := old_evm.ISCMagicSubrealmR(contractState)
 
@@ -87,17 +103,20 @@ func oldISCMagicAllowanceContentToStr(contractState old_kv.KVStoreReader) string
 	return res.String()
 }
 
-func NewEVMContractContentToStr(chainState kv.KVStoreReader) string {
+func NewEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving new EVM contract content...\n")
 	contractState := evm.ContractPartitionR(chainState)
-	var allowanceStr string
+	var allowanceStr, txByBlockStr string
 
 	GoAllAndWait(func() {
 		allowanceStr = newISCMagicAllowanceContentToStr(contractState)
 		cli.DebugLogf("New ISC magic allowance preview:\n%v\n", utils.MultilinePreview(allowanceStr))
+	}, func() {
+		txByBlockStr = newTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		cli.DebugLogf("New transactions by block number preview:\n%v\n", utils.MultilinePreview(txByBlockStr))
 	})
 
-	return allowanceStr
+	return allowanceStr + txByBlockStr
 }
 
 func newISCMagicAllowanceContentToStr(contractState kv.KVStoreReader) string {
@@ -157,5 +176,95 @@ func newISCMagicAllowanceContentToStr(contractState kv.KVStoreReader) string {
 	})
 
 	cli.DebugLogf("Found %v new ISC magic allowance entries", count)
+	return res.String()
+}
+
+func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
+	cli.DebugLogf("Retrieving old transactions by block number...\n")
+	var res strings.Builder
+
+	totalKeysCount := 0
+	totalTransactionsCount := 0
+
+	GoAllAndWait(func() {
+		bc := old_emulator.NewBlockchainDB(OldReadOnlyKVStore(old_evm.EmulatorStateSubrealmR(contractState)), 0, 0)
+		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
+		printProgress, done := NewProgressPrinter("old_evm", "transactions in block", "transactions", 0)
+		defer done()
+
+		for blockIndex := firstAvailBlockIndex; blockIndex <= toBlockIndex; blockIndex++ {
+			txs := bc.GetTransactionsByBlockNumber(uint64(blockIndex))
+			totalTransactionsCount += len(txs)
+
+			for _, tx := range txs {
+				printProgress()
+				oldTxBytes := old_evm_types.EncodeTransaction(tx)
+				bytesHash := hashing.HashData(oldTxBytes)
+				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash.Hex()))
+			}
+		}
+	}, func() {
+		bcState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
+		printProgress, done := NewProgressPrinter("old_evm", "transaction keys", "keys", 0)
+		defer done()
+
+		bcState.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(k old_kv.Key, v []byte) bool {
+			printProgress()
+			totalKeysCount++
+			return true
+		})
+	})
+
+	if totalTransactionsCount == 0 {
+		panic("no transactions found") // should never happen
+	}
+
+	res.WriteString(fmt.Sprintf("Tx in block txs count: %v\n", totalTransactionsCount))
+	res.WriteString(fmt.Sprintf("Tx in block keys count: %v\n", totalKeysCount))
+
+	cli.DebugLogf("Found %v old transactions by block number keys", totalKeysCount)
+	return res.String()
+}
+
+func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
+	cli.DebugLogf("Retrieving old transactions by block number...\n")
+	var res strings.Builder
+
+	totalKeysCount := 0
+	totalTransactionsCount := 0
+
+	GoAllAndWait(func() {
+		bc := emulator.NewBlockchainDB(NewReadOnlyKVStore(evm.EmulatorStateSubrealmR(contractState)), 0, 0)
+		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
+		printProgress, done := NewProgressPrinter("evm", "transactions in block", "transactions", 0)
+		defer done()
+
+		for blockIndex := firstAvailBlockIndex; blockIndex <= toBlockIndex; blockIndex++ {
+			txs := bc.GetTransactionsByBlockNumber(uint64(blockIndex))
+			totalTransactionsCount += len(txs)
+
+			for _, tx := range txs {
+				printProgress()
+				oldTxBytes := old_evm_types.EncodeTransaction(tx)
+				bytesHash := hashing.HashData(oldTxBytes)
+				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash.Hex()))
+			}
+		}
+	}, func() {
+		bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
+		printProgress, done := NewProgressPrinter("evm", "transaction keys", "keys", 0)
+		defer done()
+
+		bcState.IterateSorted(emulator.KeyTransactionsByBlockNumber, func(k kv.Key, v []byte) bool {
+			printProgress()
+			totalKeysCount++
+			return true
+		})
+	})
+
+	res.WriteString(fmt.Sprintf("Tx in block txs count: %v\n", totalTransactionsCount))
+	res.WriteString(fmt.Sprintf("Tx in block keys count: %v\n", totalKeysCount))
+
+	cli.DebugLogf("Found %v new transactions by block number keys", totalKeysCount)
 	return res.String()
 }
