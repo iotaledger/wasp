@@ -42,7 +42,7 @@ func NewProgressPrinter[Count constraints.Integer](contractName, migrationName, 
 		doneCount:        0,
 	}
 
-	contractProgresses[entityPluralName] = append(contractProgresses[entityPluralName], progress)
+	contractProgresses[migrationName] = append(contractProgresses[migrationName], progress)
 
 	printProgress = func() {
 		progressMutex.RLock()

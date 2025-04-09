@@ -62,7 +62,7 @@ func oldISCMagicAllowanceContentToStr(contractState old_kv.KVStoreReader) string
 	iscMagicState := old_evm.ISCMagicSubrealmR(contractState)
 
 	var res strings.Builder
-	printProgress, done := NewProgressPrinter("old_evm", "allowance", "entries", 0)
+	printProgress, done := NewProgressPrinter("old_evm", "iscmagic allowance", "entries", 0)
 	defer done()
 	count := 0
 
@@ -124,7 +124,7 @@ func newISCMagicAllowanceContentToStr(contractState kv.KVStoreReader) string {
 	iscMagicState := evm.ISCMagicSubrealmR(contractState)
 
 	var res strings.Builder
-	printProgress, done := NewProgressPrinter("evm", "allowance", "entries", 0)
+	printProgress, done := NewProgressPrinter("evm", "iscmagic allowance", "entries", 0)
 	defer done()
 	count := 0
 
@@ -189,7 +189,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 	GoAllAndWait(func() {
 		bc := old_emulator.NewBlockchainDB(OldReadOnlyKVStore(old_evm.EmulatorStateSubrealmR(contractState)), 0, 0)
 		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
-		printProgress, done := NewProgressPrinter("old_evm", "transactions in block", "transactions", 0)
+		printProgress, done := NewProgressPrinter("old_evm", "transactions in block (tx)", "transactions", 0)
 		defer done()
 		cli.DebugLogf("Retrieving old transactions by block number in range [%v, %v]...\n", firstAvailBlockIndex, toBlockIndex)
 
@@ -209,7 +209,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 	}, func() {
 		cli.DebugLogf("Retrieving all old keys of transactions by block number...\n")
 		bcState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
-		printProgress, done := NewProgressPrinter("old_evm", "transaction keys", "keys", 0)
+		printProgress, done := NewProgressPrinter("old_evm", "transactions in block (keys)", "keys", 0)
 		defer done()
 
 		bcState.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(k old_kv.Key, v []byte) bool {
@@ -240,7 +240,7 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 	GoAllAndWait(func() {
 		bc := emulator.NewBlockchainDB(NewReadOnlyKVStore(evm.EmulatorStateSubrealmR(contractState)), 0, 0)
 		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
-		printProgress, done := NewProgressPrinter("evm", "transactions in block", "transactions", 0)
+		printProgress, done := NewProgressPrinter("evm", "transactions in block (tx)", "transactions", 0)
 		defer done()
 		cli.DebugLogf("Retrieving new transactions by block number in range [%v, %v]...\n", firstAvailBlockIndex, toBlockIndex)
 
@@ -260,7 +260,7 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 	}, func() {
 		cli.DebugLogf("Retrieving all new keys of transactions by block number...\n")
 		bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
-		printProgress, done := NewProgressPrinter("evm", "transaction keys", "keys", 0)
+		printProgress, done := NewProgressPrinter("evm", "transactions in block (keys)", "keys", 0)
 		defer done()
 
 		bcState.IterateSorted(emulator.KeyTransactionsByBlockNumber, func(k kv.Key, v []byte) bool {
