@@ -122,6 +122,7 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Val
 
 func initDepositCmd() *cobra.Command {
 	var adjustStorageDeposit bool
+	var printReceipt bool
 	var node string
 	var chain string
 
@@ -139,21 +140,23 @@ func initDepositCmd() *cobra.Command {
 
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			util.TryMergeAllCoins(ctx)
-
+			util.TryManageCoinsAmount(ctx)
+			var res *iotajsonrpc.IotaTransactionBlockResponse
+			var err error
 			if strings.Contains(args[0], "|") {
 				// deposit to own agentID
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args))
 				allowance := tokens.Clone()
-				allowance.SetBaseTokens(allowance.BaseTokens() / 10)
+				allowance.SetBaseTokens(allowance.BaseTokens())
 
-				res := util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+				res = util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 					return cliclients.ChainClient(client, chainID).PostRequest(ctx,
 						accounts.FuncDeposit.Message(),
 						chainclient.PostRequestParams{
-							Transfer:  tokens,
-							Allowance: allowance,
-							GasBudget: iotaclient.DefaultGasBudget,
+							Transfer:    tokens,
+							Allowance:   allowance,
+							GasBudget:   iotaclient.DefaultGasBudget,
+							L2GasBudget: isc.Million,
 						},
 					)
 				})
@@ -164,25 +167,41 @@ func initDepositCmd() *cobra.Command {
 				agentID := util.AgentIDFromString(args[0])
 				tokens := util.ParseFungibleTokens(util.ArgsToFungibleTokensStr(args[1:]))
 				allowance := tokens.Clone()
-				allowance.SetBaseTokens(allowance.BaseTokens() / 10)
+				allowance.SetBaseTokens(allowance.BaseTokens())
 
-				res, err := cliclients.ChainClient(client, chainID).PostRequest(
-					ctx,
-					accounts.FuncTransferAllowanceTo.Message(agentID),
-					chainclient.PostRequestParams{
-						Transfer:  tokens,
-						Allowance: allowance,
-						GasBudget: iotaclient.DefaultGasBudget,
-					},
-				)
+				res = util.WithSCTransaction(ctx, client, func() (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+					return cliclients.ChainClient(client, chainID).PostRequest(
+						ctx,
+						accounts.FuncTransferAllowanceTo.Message(agentID),
+						chainclient.PostRequestParams{
+							Transfer:    tokens,
+							Allowance:   allowance,
+							GasBudget:   iotaclient.DefaultGasBudget,
+							L2GasBudget: isc.Million,
+						},
+					)
+				})
 
 				log.Check(err)
-				log.Printf("Posted TX: %s\n", res.Digest)
+			}
+			log.Printf("Posted TX: %s\n", res.Digest)
+			if printReceipt {
+				log.Printf("L1 Gas Fee: %d\n", res.Effects.Data.GasFee())
+				ref, err := res.GetCreatedObjectInfo("request", "Request")
+				log.Check(err)
+				log.Printf("Requet ID: %s\n", ref.ObjectID.String())
+				receipt, _, err := client.ChainsAPI.
+					GetReceipt(ctx, ref.ObjectID.String()).
+					Execute() //nolint:bodyclose // false positive
+
+				log.Check(err)
+				util.LogReceipt(*receipt, 0)
 			}
 		},
 	}
 
 	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
+	cmd.Flags().BoolVarP(&printReceipt, "print-receipt", "p", false, "print tx recetip")
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	withChainFlag(cmd, &chain)
 
