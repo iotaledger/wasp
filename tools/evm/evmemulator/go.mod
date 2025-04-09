@@ -64,17 +64,17 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4 // indirect
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
-	github.com/iotaledger/hive.go/constraints v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/crypto v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/db v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/ds v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/ierrors v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/kvstore v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/lo v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/log v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/runtime v0.0.0-20240520064018-c635e5900894 // indirect
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20240517131232-748f1ce3a2d2 // indirect
-	github.com/iotaledger/hive.go/stringify v0.0.0-20240520064018-c635e5900894 // indirect
+	github.com/iotaledger/hive.go/constraints v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/ds v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/ierrors v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/kvstore v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/lo v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/runtime v0.0.0-20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20250409140545-e1a365dbea74 // indirect
+	github.com/iotaledger/hive.go/stringify v0.0.0-20250409140545-e1a365dbea74 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
