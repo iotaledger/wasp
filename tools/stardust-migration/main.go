@@ -201,6 +201,24 @@ func main() {
 				},
 			},
 			{
+				Name:      "webapi-validate",
+				ArgsUsage: "http://stardust-isc:9090 http://rebased-isc:9090",
+				Flags: []cmd.Flag{
+					&cmd.Uint64Flag{
+						Name:    "from-index",
+						Aliases: []string{"i", "f", "from-block", "from"},
+						Usage:   "Specify block index to start from. This is used as hint in blocklog migration for cases, when database was generated not from first block.",
+					},
+					&cmd.Uint64Flag{
+						Name:    "to-index",
+						Aliases: []string{"t", "to-block", "to"},
+						Usage:   "Specify block to validate. If not specified, latest available block is validated.",
+					},
+				},
+				Before: processCommonFlags,
+				Action: validateWebAPI,
+			},
+			{
 				Name: "search",
 				Subcommands: []*cmd.Command{
 					searchCmd("iscmagic-allowance", searchISCMagicAllowance),
