@@ -120,7 +120,7 @@ func (c *Client) postSingleRequest(
 	transferAssets := iscmove.NewAssets(0)
 	if params.Transfer != nil {
 		for coinType, coinbal := range params.Transfer.Coins {
-			transferAssets.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
+			transferAssets.AddCoin(iotajsonrpc.MustCoinTypeFromString(coinType.String()), iotajsonrpc.CoinValue(coinbal.Uint64()))
 		}
 	}
 	msg := &iscmove.Message{
@@ -131,7 +131,7 @@ func (c *Client) postSingleRequest(
 	allowances := iscmove.NewAssets(0)
 	if params.Allowance != nil {
 		for coinType, coinBalance := range params.Allowance.Coins {
-			allowances.AddCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinBalance.Uint64()))
+			allowances.AddCoin(iotajsonrpc.MustCoinTypeFromString(coinType.String()), iotajsonrpc.CoinValue(coinBalance.Uint64()))
 		}
 		for objectID, objectType := range params.Allowance.Objects {
 			allowances.AddObject(iotago.ObjectID(objectID), iotago.ObjectType(objectType))
