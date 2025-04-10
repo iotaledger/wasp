@@ -414,7 +414,7 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 	for coinType, amount := range a.Coins {
 		if amount > 0 {
 			r.AddCoin(
-				iotajsonrpc.CoinType(coinType.String()),
+				iotajsonrpc.MustCoinTypeFromString(coinType.String()),
 				iotajsonrpc.CoinValue(amount),
 			)
 		}
@@ -431,7 +431,7 @@ func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBa
 		Assets:    *iscmove.NewEmptyAssets(),
 	}
 	for cointype, coinval := range a.Coins {
-		ret.Coins[iotajsonrpc.CoinType(cointype.String())] = iotajsonrpc.CoinValue(coinval)
+		ret.Coins[iotajsonrpc.MustCoinTypeFromString(cointype.String())] = iotajsonrpc.CoinValue(coinval)
 	}
 	for objectID, t := range a.Objects {
 		ret.Objects[objectID] = t

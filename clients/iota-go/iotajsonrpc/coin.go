@@ -42,7 +42,7 @@ func (c *Coin) String() string {
 }
 
 func (c *Coin) IsIOTA() bool {
-	return c.CoinType == IotaCoinType
+	return MustCoinTypeFromString(c.CoinType.String()) == IotaCoinType
 }
 
 type CoinFields struct {
