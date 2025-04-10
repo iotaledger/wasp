@@ -41,24 +41,25 @@ import (
 // TODO: All of these ignores should at least have some intergration tess written for them
 
 func OldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
-	cli.DebugLogf("Retrieving old EVM contract content...\n")
+	cli.DebugLogf("Retrieving old EVM contract content...")
 	contractState := old_evm.ContractPartitionR(chainState)
 	var allowanceStr, txByBlockStr string
 
 	GoAllAndWait(func() {
-		allowanceStr = oldISCMagicAllowanceContentToStr(contractState)
-		cli.DebugLogf("Old ISC magic allowance preview:\n%v\n", utils.MultilinePreview(allowanceStr))
+		allowanceStr = oldISCMagicAllowanceToStr(contractState)
+		cli.DebugLogf("Old ISC magic allowance preview:\n%v", utils.MultilinePreview(allowanceStr))
 	}, func() {
 		txByBlockStr = oldTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
-		cli.DebugLogf("Old transactions by block number preview:\n%v\n", utils.MultilinePreview(txByBlockStr))
+		cli.DebugLogf("Old transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
 	})
 
 	return allowanceStr + txByBlockStr
 }
 
-func oldISCMagicAllowanceContentToStr(contractState old_kv.KVStoreReader) string {
-	// TODO: This validation does not find any records, needs to be fixed
-	cli.DebugLogf("Retrieving old ISCMagicAllowance content...\n")
+func oldISCMagicAllowanceToStr(contractState old_kv.KVStoreReader) string {
+	// TODO: This validation does not find any records. Assuming the reason is that allowance is added and then substracted
+	// 	     in the same transaction. Need to double-check it.
+	cli.DebugLogf("Retrieving old ISCMagicAllowance entries...")
 	iscMagicState := old_evm.ISCMagicSubrealmR(contractState)
 
 	var res strings.Builder
@@ -104,23 +105,23 @@ func oldISCMagicAllowanceContentToStr(contractState old_kv.KVStoreReader) string
 }
 
 func NewEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
-	cli.DebugLogf("Retrieving new EVM contract content...\n")
+	cli.DebugLogf("Retrieving new EVM contract content...")
 	contractState := evm.ContractPartitionR(chainState)
 	var allowanceStr, txByBlockStr string
 
 	GoAllAndWait(func() {
-		allowanceStr = newISCMagicAllowanceContentToStr(contractState)
-		cli.DebugLogf("New ISC magic allowance preview:\n%v\n", utils.MultilinePreview(allowanceStr))
+		allowanceStr = newISCMagicAllowanceToStr(contractState)
+		cli.DebugLogf("New ISC magic allowance preview:\n%v", utils.MultilinePreview(allowanceStr))
 	}, func() {
 		txByBlockStr = newTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
-		cli.DebugLogf("New transactions by block number preview:\n%v\n", utils.MultilinePreview(txByBlockStr))
+		cli.DebugLogf("New transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
 	})
 
 	return allowanceStr + txByBlockStr
 }
 
-func newISCMagicAllowanceContentToStr(contractState kv.KVStoreReader) string {
-	cli.DebugLogf("Retrieving new ISCMagicAllowance content...\n")
+func newISCMagicAllowanceToStr(contractState kv.KVStoreReader) string {
+	cli.DebugLogf("Retrieving new ISCMagicAllowance entries...")
 	iscMagicState := evm.ISCMagicSubrealmR(contractState)
 
 	var res strings.Builder
@@ -180,7 +181,7 @@ func newISCMagicAllowanceContentToStr(contractState kv.KVStoreReader) string {
 }
 
 func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
-	cli.DebugLogf("Retrieving old transactions by block number...\n")
+	cli.DebugLogf("Retrieving old transactions by block number...")
 	var res strings.Builder
 
 	totalKeysCount := 0
@@ -191,7 +192,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
 		printProgress, done := NewProgressPrinter("old_evm", "transactions in block (tx)", "transactions", 0)
 		defer done()
-		cli.DebugLogf("Retrieving old transactions by block number in range [%v, %v]...\n", firstAvailBlockIndex, toBlockIndex)
+		cli.DebugLogf("Retrieving old transactions by block number in range [%v, %v]...", firstAvailBlockIndex, toBlockIndex)
 
 		for blockIndex := firstAvailBlockIndex; blockIndex <= toBlockIndex; blockIndex++ {
 			txs := bc.GetTransactionsByBlockNumber(uint64(blockIndex))
@@ -207,12 +208,12 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 
 		cli.DebugLogf("Found %v old transactions by block number", totalTransactionsCount)
 	}, func() {
-		cli.DebugLogf("Retrieving all old keys of transactions by block number...\n")
+		cli.DebugLogf("Retrieving all old keys of transactions by block number...")
 		bcState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
 		printProgress, done := NewProgressPrinter("old_evm", "transactions in block (keys)", "keys", 0)
 		defer done()
 
-		bcState.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(k old_kv.Key, v []byte) bool {
+		bcState.Iterate(old_emulator.KeyTransactionsByBlockNumber, func(k old_kv.Key, v []byte) bool {
 			printProgress()
 			totalKeysCount++
 			return true
@@ -242,7 +243,7 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 		firstAvailBlockIndex := max(getFirstAvailableBlockIndex(fromBlockIndex, toBlockIndex), 1)
 		printProgress, done := NewProgressPrinter("evm", "transactions in block (tx)", "transactions", 0)
 		defer done()
-		cli.DebugLogf("Retrieving new transactions by block number in range [%v, %v]...\n", firstAvailBlockIndex, toBlockIndex)
+		cli.DebugLogf("Retrieving new transactions by block number in range [%v, %v]...", firstAvailBlockIndex, toBlockIndex)
 
 		for blockIndex := firstAvailBlockIndex; blockIndex <= toBlockIndex; blockIndex++ {
 			txs := bc.GetTransactionsByBlockNumber(uint64(blockIndex))
@@ -258,12 +259,12 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 
 		cli.DebugLogf("Found %v new transactions by block number", totalTransactionsCount)
 	}, func() {
-		cli.DebugLogf("Retrieving all new keys of transactions by block number...\n")
+		cli.DebugLogf("Retrieving all new keys of transactions by block number...")
 		bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
 		printProgress, done := NewProgressPrinter("evm", "transactions in block (keys)", "keys", 0)
 		defer done()
 
-		bcState.IterateSorted(emulator.KeyTransactionsByBlockNumber, func(k kv.Key, v []byte) bool {
+		bcState.Iterate(emulator.KeyTransactionsByBlockNumber, func(k kv.Key, v []byte) bool {
 			printProgress()
 			totalKeysCount++
 			return true
