@@ -129,6 +129,10 @@ func main() {
 								Usage: "Disable reading pre-saved in-memory states from files. This forces loading entire latest state from DB (may take a lot of time).",
 							},
 							&cmd.BoolFlag{
+								Name:  "periodic-state-save",
+								Usage: "Save state every 20000 blocks. This will slow down the migration, but might allow to continue it later in case of unexpected interruption.",
+							},
+							&cmd.BoolFlag{
 								Name:  "refcount-cache",
 								Usage: "Enable storing refcounts in memory. Otherwise they will always be directly written to DB. This will speed up the migration, but will use huge amount of memory.",
 							},

@@ -59,7 +59,7 @@ import (
 )
 
 const (
-	inMemoryStatesSevingPeriodBlocks = 20000
+	inMemoryStatesSavingPeriodBlocks = 20000
 )
 
 type migrationOptions struct {
@@ -282,6 +282,7 @@ func migrateAllStates(c *cmd.Context) error {
 	skipLoad := c.Bool("skip-load")
 	continueMigration := c.Bool("continue")
 	disableStateCache := c.Bool("no-state-cache")
+	periodStateSave := c.Bool("periodic-state-save")
 	enableRefcountCache := c.Bool("refcount-cache")
 	useDummyChainOwner := c.Bool("dummy-chain-owner")
 	dryRun := c.Bool("dry-run")
@@ -448,10 +449,10 @@ func migrateAllStates(c *cmd.Context) error {
 			cli.Logf("Block Index: %d\n", blockIndex)
 			writeMigrationResult(stateMetadata, blockIndex)
 		}
-		if blockIndex != 0 && blockIndex%inMemoryStatesSevingPeriodBlocks == 0 {
+		if periodStateSave && blockIndex != 0 && blockIndex%inMemoryStatesSavingPeriodBlocks == 0 {
 			cli.Logf("Pre-saving in-memory states at block index %v", blockIndex)
 			saveInMemoryStates(oldStateStore, newState.W, blockIndex, srcChainDBDir)
-			deleteInMemoryStateFiles(srcChainDBDir, (blockIndex - inMemoryStatesSevingPeriodBlocks))
+			deleteInMemoryStateFiles(srcChainDBDir, (blockIndex - inMemoryStatesSavingPeriodBlocks))
 		}
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
@@ -529,7 +530,7 @@ func initInMemoryStates(
 
 		cli.Logf("In-memory states not found on disk for block %v", o.StartBlockIndex-1)
 
-		closestAutoSavedBlockIndex := (o.StartBlockIndex - 2) - (o.StartBlockIndex-2)%inMemoryStatesSevingPeriodBlocks
+		closestAutoSavedBlockIndex := (o.StartBlockIndex - 2) - (o.StartBlockIndex-2)%inMemoryStatesSavingPeriodBlocks
 		cli.Logf("Trying to load auto-saved in-memory states from disk for block %v", closestAutoSavedBlockIndex)
 		savedSrcStateStore, saverSrcState, savedDestState, loaded = tryLoadInMemoryStates(srcChainDBDir, closestAutoSavedBlockIndex, o.ContinueMigration)
 		if loaded {
