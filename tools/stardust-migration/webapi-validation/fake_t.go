@@ -2,14 +2,14 @@ package webapi_validation
 
 import "fmt"
 
-type MockT struct{}
+type mockT struct{}
 
-func (m MockT) Errorf(format string, args ...interface{}) {
+func (m mockT) Errorf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-func (m MockT) FailNow() {
+func (m mockT) FailNow() {
 	panic("Test failed")
 }
 
-var T *MockT = &MockT{}
+var t *mockT = &mockT{}

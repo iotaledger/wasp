@@ -132,14 +132,14 @@ func migrationPrepare(ctx context.Context, node string, packageID iotago.Package
 
 	fmt.Println("Creating Anchor")
 	anchor, err := l1Client.L2().StartNewChain(ctx, &iscmoveclient.StartNewChainRequest{
-		PackageID:         packageID,
-		GasPayments:       []*iotago.ObjectRef{getFirstCoin(ctx, kp, l1Client, nil)},
-		ChainOwnerAddress: kp.Address(),
-		Signer:            kp,
-		GasPrice:          iotaclient.DefaultGasPrice,
-		GasBudget:         iotaclient.DefaultGasBudget,
-		StateMetadata:     make([]byte, 0),
-		InitCoinRef:       nil,
+		PackageID:     packageID,
+		GasPayments:   []*iotago.ObjectRef{getFirstCoin(ctx, kp, l1Client, nil)},
+		AnchorOwner:   kp.Address(),
+		Signer:        kp,
+		GasPrice:      iotaclient.DefaultGasPrice,
+		GasBudget:     iotaclient.DefaultGasBudget,
+		StateMetadata: make([]byte, 0),
+		InitCoinRef:   nil,
 	})
 	log.Check(err)
 

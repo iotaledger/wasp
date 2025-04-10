@@ -19,7 +19,6 @@ type L2Client interface {
 		ctx context.Context,
 		req *iscmoveclient.CreateAnchorWithAssetsBagRefRequest,
 	) (*iscmove.AnchorWithRef, error)
-	CreateAndFillAssetsBagWithBaseTokens(ctx context.Context, req *iscmoveclient.CreateAndFillAssetsBagWithBaseTokens) (*iotago.ObjectRef, error)
 	UpdateAnchorStateMetadata(ctx context.Context, req *iscmoveclient.UpdateAnchorStateMetadataRequest) (bool, error)
 	CreateAndSendRequest(
 		ctx context.Context,

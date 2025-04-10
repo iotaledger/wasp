@@ -37,7 +37,7 @@ func initSendFundsCmd() *cobra.Command {
 
 			myWallet := wallet.Load()
 			senderAddress := myWallet.Address()
-			util.TryManageCoinsAmount(cmd.Context())
+			util.TryMergeAllCoins(cmd.Context())
 			time.Sleep(3 * time.Second)
 
 			client := cliclients.L1Client()
