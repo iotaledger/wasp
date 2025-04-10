@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
+	"github.com/stretchr/testify/require"
 	cmd "github.com/urfave/cli/v2"
 
 	stardust_apiclient "github.com/nnikolash/wasp-types-exported/clients/apiextensions"
@@ -56,8 +58,18 @@ func validateWebAPI(c *cmd.Context) error {
 	chainValidation := webapi_validation.NewChainValidation(testContext)
 	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
 
-	chainValidation.Validate(1)
-	coreBlockValidation.Validate(1)
+	latestBlock, _, err := rClient.CorecontractsAPI.BlocklogGetLatestBlockInfo(ctx).Execute()
+	require.NoError(base.T, err)
+
+	log.Printf("Starting Stardust/Rebased WebAPI validation. From 1 => %d", latestBlock.BlockIndex)
+
+	for i := uint32(1); i < latestBlock.BlockIndex; i++ {
+		if i%100 == 0 {
+			fmt.Printf("StateIndex: %d \n", i)
+		}
+		chainValidation.Validate(i)
+		coreBlockValidation.Validate(i)
+	}
 
 	return nil
 }

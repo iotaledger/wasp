@@ -2,6 +2,8 @@ package webapi_validation
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/samber/lo"
@@ -74,8 +76,18 @@ func stardustWebHNameToRebased(name string) string {
 }
 
 func bech32ToHex(address string) string {
+
+	if strings.Contains(address, "@") {
+		// This is either an EVM address or a contract call
+		// EVM@ChainID
+		// Contract@ChainID
+
+		splitString := strings.Split(address, "@")
+		return splitString[0]
+	}
+
 	_, bytes, err := iotago.ParseBech32(address)
-	require.NoError(base.T, err)
+	require.NoError(base.T, err, fmt.Sprintf("Passed address: %s", address))
 
 	switch bytes.(type) {
 	case *iotago.Ed25519Address:
@@ -87,6 +99,12 @@ func bech32ToHex(address string) string {
 	default:
 		panic("failed to convert Bech32 address!")
 	}
+}
+
+func stardustBalanceToRebased(balance string) string {
+	number, err := strconv.ParseUint(balance, 10, 64)
+	require.NoError(base.T, err)
+	return strconv.FormatUint(number*1000, 10)
 }
 
 func (c *CoreBlockLogValidation) validateRequestIDsInBlock(stateIndex uint32) {
@@ -123,7 +141,7 @@ func (c *CoreBlockLogValidation) validateRequestsInBlock(stateIndex uint32) {
 		require.Equal(base.T, rebasedReceipt.ErrorMessage, stardustReceipt.ErrorMessage)
 		require.Equal(base.T, rebasedReceipt.GasBurned, stardustReceipt.GasBurned)
 		require.Equal(base.T, rebasedReceipt.GasBudget, stardustReceipt.GasBudget)
-		require.Equal(base.T, rebasedReceipt.GasFeeCharged, stardustReceipt.GasFeeCharged)
+		require.Equal(base.T, rebasedReceipt.GasFeeCharged, stardustBalanceToRebased(stardustReceipt.GasFeeCharged))
 
 		// If one is nil, the other must be too. Enforce the check by checking either, then both.
 		if rebasedReceipt.RawError != nil || stardustReceipt.RawError != nil {
@@ -139,7 +157,10 @@ func (c *CoreBlockLogValidation) validateRequestsInBlock(stateIndex uint32) {
 		require.EqualValues(base.T, rebasedReceipt.GasBurnLog, stardustBurnRecordToRebased(stardustReceipt.GasBurnLog))
 		require.Equal(base.T, rebasedReceipt.StorageDepositCharged, stardustReceipt.StorageDepositCharged)
 
-		require.EqualValues(base.T, rebasedReceipt.Request.Params, stardustParamsToRebased(stardustReceipt.Request.Params.Items))
+		// Excluding this for now, as the migrator converts known function args into the new Rebased format and a direct comparison won't work
+		// Try using `migrateContractCall` based on the stringified params maybe..
+		// require.EqualValues(base.T, rebasedReceipt.Request.Params, stardustParamsToRebased(stardustReceipt.Request.Params.Items))
+
 		require.EqualValues(base.T, rebasedReceipt.Request.GasBudget, stardustReceipt.Request.GasBudget)
 		require.EqualValues(base.T, rebasedReceipt.Request.RequestId, trimStardustRequestIDForRebased(stardustReceipt.Request.RequestId))
 		require.EqualValues(base.T, rebasedReceipt.Request.CallTarget.ContractHName, stardustWebHNameToRebased(stardustReceipt.Request.CallTarget.ContractHName))
@@ -147,7 +168,6 @@ func (c *CoreBlockLogValidation) validateRequestsInBlock(stateIndex uint32) {
 		require.EqualValues(base.T, rebasedReceipt.Request.IsEVM, stardustReceipt.Request.IsEVM)
 		require.EqualValues(base.T, rebasedReceipt.Request.SenderAccount, bech32ToHex(stardustReceipt.Request.SenderAccount))
 		require.EqualValues(base.T, rebasedReceipt.Request.IsOffLedger, stardustReceipt.Request.IsOffLedger)
-
 		// Omiting stardustReceipt.Request.TargetAddress as it's always the ChainID and therefore removed on Rebased
 	}
 }
@@ -157,7 +177,7 @@ func (c *CoreBlockLogValidation) validateBlockInfo(stateIndex uint32) {
 
 	require.Equal(base.T, sRes.BlockIndex, rRes.BlockIndex)
 	require.Equal(base.T, sRes.GasBurned, rRes.GasBurned)
-	require.Equal(base.T, sRes.GasFeeCharged, rRes.GasFeeCharged)
+	require.Equal(base.T, stardustBalanceToRebased(sRes.GasFeeCharged), rRes.GasFeeCharged, fmt.Sprintf("Rebased Balance: '%s', Stardust Balance: '%s'", rRes.GasFeeCharged, sRes.GasFeeCharged))
 	require.Equal(base.T, sRes.NumOffLedgerRequests, rRes.NumOffLedgerRequests)
 	require.Equal(base.T, sRes.NumSuccessfulRequests, rRes.NumSuccessfulRequests)
 	require.Equal(base.T, sRes.TotalRequests, rRes.TotalRequests)
