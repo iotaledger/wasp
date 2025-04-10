@@ -29,7 +29,7 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
-func OldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+func oldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
 	// TODO: There will be not enought memory to store all that stringyfied data.
 	// Would need to change the flow of validation. But for current development it's fine.
 
@@ -49,7 +49,7 @@ func OldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID ol
 	return accsStr + baseTokenBalancesStr + nativeTokenBalancesStr
 }
 
-func NewAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID) string {
+func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID) string {
 	contractState := newstate.GetContactStateReader(chainState, accounts.Contract.Hname())
 	accsStr, accs := newAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("New accounts preview:%v", utils.MultilinePreview(accsStr))
@@ -67,7 +67,7 @@ func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.Ch
 
 	cli.DebugLogf("Found %v accounts", accs.Len())
 	cli.DebugLogf("Reading accounts...")
-	printProgress, clearProgress := NewProgressPrinter("old_accounts", "acc list", "accounts", accs.Len())
+	printProgress, clearProgress := NewProgressPrinter("accounts_old", "acc list", "accounts", accs.Len())
 	defer clearProgress()
 
 	var accsStr strings.Builder
@@ -94,7 +94,7 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 
 	cli.DebugLogf("Found %v accounts", len(accs))
 	cli.DebugLogf("Reading accounts...")
-	printProgress, clearProgress := NewProgressPrinter("new_accounts", "acc list", "accounts", uint32(len(accs)))
+	printProgress, clearProgress := NewProgressPrinter("accounts_new", "acc list", "accounts", uint32(len(accs)))
 	defer clearProgress()
 
 	var accsStr strings.Builder
@@ -131,7 +131,7 @@ func oldBaseTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old_i
 func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old base token balances (by prefix)...")
 
-	printProgress, clearProgress := NewProgressPrinter("old_accounts", "base balances (prefix)", "balances", 0)
+	printProgress, clearProgress := NewProgressPrinter("accounts_old", "base balances (prefix)", "balances", 0)
 	defer clearProgress()
 
 	var balancesStr strings.Builder
@@ -184,7 +184,7 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old base token balances (from map)...")
 
-	printProgress, clearProgress := NewProgressPrinter("old_accounts", "base balances (map)", "balances", len(knownAccs)+1)
+	printProgress, clearProgress := NewProgressPrinter("accounts_old", "base balances (map)", "balances", len(knownAccs)+1)
 	defer clearProgress()
 
 	var balancesStr strings.Builder
@@ -229,7 +229,7 @@ func oldNativeTokenBalancesToStr(contractState old_kv.KVStoreReader, chainID old
 func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID, knownAccs map[old_kv.Key]old_isc.AgentID) string {
 	cli.DebugLogf("Reading old native token balances (by prefix)...")
 
-	printProgress, clearProgress := NewProgressPrinter("old_accounts", "native balances (prefix)", "balances", 0)
+	printProgress, clearProgress := NewProgressPrinter("accounts_old", "native balances (prefix)", "balances", 0)
 	defer clearProgress()
 
 	var balancesStr strings.Builder
@@ -323,7 +323,7 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (base, native string) {
 	cli.DebugLogf("Reading new token balances (using prefix iteration)...")
 
-	printProgress, clearProgress := NewProgressPrinter("new_accounts", "balances (prefix)", "balances", 0)
+	printProgress, clearProgress := NewProgressPrinter("accounts_new", "balances (prefix)", "balances", 0)
 	defer clearProgress()
 
 	var baseBalancesStr strings.Builder
@@ -434,7 +434,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.ChainID, accs map[kv.Key]isc.AgentID) (base, native string) {
 	cli.DebugLogf("Reading new token balances (using accs map)...")
 
-	printProgress, clearProgress := NewProgressPrinter("new_accounts", "balances (map)", "balances", uint32(len(accs)))
+	printProgress, clearProgress := NewProgressPrinter("accounts_new", "balances (map)", "balances", uint32(len(accs)))
 	defer clearProgress()
 
 	var baseBalancesStr strings.Builder

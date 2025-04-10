@@ -54,6 +54,14 @@ func NewProgressPrinter[Count constraints.Integer](contractName, migrationName, 
 		progressMutex.RLock()
 		defer progressMutex.RUnlock()
 		progress.done = true
+
+		for _, progress := range contractProgresses[migrationName] {
+			if !progress.done {
+				return
+			}
+		}
+
+		printMultiProgress()
 	}
 
 	return printProgress, done

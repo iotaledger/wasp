@@ -5,13 +5,11 @@ import (
 	"reflect"
 	"strings"
 
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -23,7 +21,7 @@ import (
 
 const blockRetentionPeriod = 10000
 
-func OldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
+func oldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
 	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
 
 	var receiptsStr, blockRegistryStr, requestLookupIndexStr string
@@ -43,56 +41,78 @@ func OldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, chainID ol
 
 func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
 	var firstAvailableBlockIndex = getFirstAvailableBlockIndex(firstIndex, lastIndex)
-
-	cli.DebugLogf("Retrieving old receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
 	var requestStr strings.Builder
-	reqCount := 0
-	printProgress, done := NewProgressPrinter("old_blocklog", "receipts", "receipts", lastIndex-firstAvailableBlockIndex+1)
-	defer done()
+	receiptKeysCount := 0
 
-	for blockIndex := firstAvailableBlockIndex; blockIndex < lastIndex; blockIndex++ {
-		_, requests, err := old_blocklog.GetRequestsInBlock(contractState, blockIndex)
-		if err != nil {
-			if strings.Contains(err.Error(), "request not found") {
-				requestStr.WriteString(fmt.Sprintf("Req in block: %v: MISSING\n", blockIndex))
-				continue
+	GoAllAndWait(func() {
+
+		cli.DebugLogf("Retrieving old receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
+		reqCount := 0
+		printProgress, done := NewProgressPrinter("blocklog_old", "receipts (requests)", "receipts", lastIndex-firstAvailableBlockIndex+1)
+		defer done()
+
+		for blockIndex := firstAvailableBlockIndex; blockIndex < lastIndex; blockIndex++ {
+			_, requests, err := old_blocklog.GetRequestsInBlock(contractState, blockIndex)
+			if err != nil {
+				if strings.Contains(err.Error(), "request not found") {
+					requestStr.WriteString(fmt.Sprintf("Req in block: %v: MISSING\n", blockIndex))
+					continue
+				}
+				panic(err)
 			}
-			panic(err)
+
+			for _, req := range requests {
+				// 																						^ There is no concept of RequestIndexes anymore, snip it.
+				str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID().OutputID().TransactionID().ToHex(), req.Assets().BaseTokens)
+				requestStr.WriteString(str)
+				reqCount++
+			}
+
+			printProgress()
 		}
 
-		for _, req := range requests {
-			// 																						^ There is no concept of RequestIndexes anymore, snip it.
-			str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID().OutputID().TransactionID().ToHex(), req.Assets().BaseTokens)
-			requestStr.WriteString(str)
-			reqCount++
+		if uint32(reqCount) < (lastIndex - firstAvailableBlockIndex) {
+			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, reqCount))
 		}
 
-		printProgress()
-	}
+		cli.DebugLogf("Retrieved %v requests", reqCount)
 
-	if reqCount == 0 {
-		panic(fmt.Sprintf("No requests found in the blocks range [%v; %v]", firstIndex, lastIndex))
-	}
+		if firstAvailableBlockIndex > 0 {
+			firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
+			_, _, err := old_blocklog.GetRequestsInBlock(contractState, firstUnavailableBlockIndex)
+			if err == nil {
+				panic(fmt.Sprintf("Block %v should be unavailable, but it is available", firstUnavailableBlockIndex))
+			}
+			if !strings.Contains(err.Error(), "block not found") {
+				panic(err)
+			}
 
-	cli.DebugLogf("Retrieved %v requests", reqCount)
-
-	if firstAvailableBlockIndex > 0 {
-		firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
-		_, _, err := old_blocklog.GetRequestsInBlock(contractState, firstUnavailableBlockIndex)
-		if err == nil {
-			panic(fmt.Sprintf("Block %v should be unavailable, but it is available", firstUnavailableBlockIndex))
+			requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): unavailable\n", firstUnavailableBlockIndex))
 		}
-		if !strings.Contains(err.Error(), "block not found") {
-			panic(err)
-		}
+	}, func() {
+		printProgress, done := NewProgressPrinter("blocklog_old", "receipts (keys)", "keys", 0)
+		defer done()
 
-		requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): unavailable\n", firstUnavailableBlockIndex))
-	}
+		contractState.Iterate(old_blocklog.PrefixRequestReceipts, func(key old_kv.Key, value []byte) bool {
+			printProgress()
+			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestReceipts)
+			if key == "" || key[0] == '.' {
+				receiptKeysCount++
+			}
+			return true
+		})
+
+		if uint32(receiptKeysCount) < (lastIndex - firstAvailableBlockIndex) {
+			panic(fmt.Sprintf("Not enough receipt keys found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, receiptKeysCount))
+		}
+	})
+
+	requestStr.WriteString(fmt.Sprintf("Receipts keys: %v\n", receiptKeysCount))
 
 	return requestStr.String()
 }
 
-func NewBlocklogContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
+func newBlocklogContractContentToStr(chainState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
 	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
 
 	var receiptsStr, blockRegistryStr, requestLookupIndexStr string
@@ -111,42 +131,60 @@ func NewBlocklogContractContentToStr(chainState kv.KVStoreReader, chainID isc.Ch
 }
 
 func newReceiptsToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
-	var firstAvailableBlockIndex = getFirstAvailableBlockIndex(firstIndex, lastIndex)
-
-	cli.DebugLogf("Retrieving new receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
 	var requestStr strings.Builder
-	reqCount := 0
-	printProgress, done := NewProgressPrinter("new_blocklog", "receipts", "receipts", lastIndex-firstAvailableBlockIndex+1)
-	defer done()
+	receiptKeysCount := 0
 
-	for blockIndex := firstAvailableBlockIndex; blockIndex < lastIndex; blockIndex++ {
-		_, requests, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(blockIndex)
-		if err != nil {
-			if strings.Contains(err.Error(), "request not found") {
-				requestStr.WriteString(fmt.Sprintf("Req in block: %v: MISSING\n", blockIndex))
-				continue
+	GoAllAndWait(func() {
+		var firstAvailableBlockIndex = getFirstAvailableBlockIndex(firstIndex, lastIndex)
+
+		cli.DebugLogf("Retrieving new receipts content: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailableBlockIndex, lastIndex)
+		reqCount := 0
+		printProgress, done := NewProgressPrinter("blocklog_new", "receipts", "receipts", lastIndex-firstAvailableBlockIndex+1)
+		defer done()
+
+		for blockIndex := firstAvailableBlockIndex; blockIndex < lastIndex; blockIndex++ {
+			_, requests, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(blockIndex)
+			if err != nil {
+				if strings.Contains(err.Error(), "request not found") {
+					requestStr.WriteString(fmt.Sprintf("Req in block: %v: MISSING\n", blockIndex))
+					continue
+				}
+				panic(err)
 			}
-			panic(err)
+
+			for _, req := range requests {
+				str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID(), req.Assets().BaseTokens()/1000) // Base token conversion 9=>6
+				requestStr.WriteString(str)
+				reqCount++
+			}
+
+			printProgress()
 		}
 
-		for _, req := range requests {
-			str := fmt.Sprintf("Type:%s,ID:%s,BaseToken:%d\n", reflect.TypeOf(req), req.ID(), req.Assets().BaseTokens()/1000) // Base token conversion 9=>6
-			requestStr.WriteString(str)
-			reqCount++
+		cli.DebugLogf("Retrieved %v requests", reqCount)
+
+		if firstAvailableBlockIndex > 0 {
+			firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
+			_, _, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(firstUnavailableBlockIndex)
+			requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): %v\n",
+				firstUnavailableBlockIndex, lo.Ternary(err == nil, "AVAILABLE", "unavailable")))
+
 		}
+	}, func() {
+		printProgress, done := NewProgressPrinter("blocklog_new", "receipts (keys)", "keys", 0)
+		defer done()
 
-		printProgress()
-	}
+		contractState.Iterate(kv.Key(blocklog.PrefixRequestReceipts), func(key kv.Key, value []byte) bool {
+			printProgress()
+			key = utils.MustRemovePrefix(key, blocklog.PrefixRequestReceipts)
+			if key == "" || key[0] == '.' {
+				receiptKeysCount++
+			}
+			return true
+		})
+	})
 
-	cli.DebugLogf("Retrieved %v requests", reqCount)
-
-	if firstAvailableBlockIndex > 0 {
-		firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
-		_, _, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(firstUnavailableBlockIndex)
-		requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): %v\n",
-			firstUnavailableBlockIndex, lo.Ternary(err == nil, "AVAILABLE", "unavailable")))
-
-	}
+	requestStr.WriteString(fmt.Sprintf("Receipts keys: %v\n", receiptKeysCount))
 
 	return requestStr.String()
 }
@@ -166,7 +204,7 @@ func oldBlockRegistryToStr(contractState old_kv.KVStoreReader, firstIndex, lastI
 	GoAllAndWait(func() {
 		cli.DebugLogf("Retrieving old blocks: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
 		blocks := old_collections.NewArrayReadOnly(contractState, old_blocklog.PrefixBlockRegistry)
-		printProgress, done := NewProgressPrinter("old_blocklog", "block registry (blocks)", "blocks", lastIndex-firstAvailBlockIndex+1)
+		printProgress, done := NewProgressPrinter("blocklog_old", "block registry (blocks)", "blocks", lastIndex-firstAvailBlockIndex+1)
 		defer done()
 
 		blocksStr.WriteString(fmt.Sprintf("Block registry virtual len: %v\n", blocks.Len()))
@@ -194,17 +232,20 @@ func oldBlockRegistryToStr(contractState old_kv.KVStoreReader, firstIndex, lastI
 		}
 	}, func() {
 		cli.DebugLogf("Retrieving old block registry keys: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
-		printProgress, done := NewProgressPrinter("old_blocklog", "block registry (keys)", "keys", 0)
+		printProgress, done := NewProgressPrinter("blocklog_old", "block registry (keys)", "keys", 0)
 		defer done()
 
 		contractState.Iterate(old_blocklog.PrefixBlockRegistry, func(key old_kv.Key, value []byte) bool {
-			blockRegistryKeys++
 			printProgress()
+			key = utils.MustRemovePrefix(key, old_blocklog.PrefixBlockRegistry)
+			if key == "" || key[0] == '#' {
+				blockRegistryKeys++
+			}
 			return true
 		})
 
-		if blockRegistryKeys == 0 {
-			panic(fmt.Sprintf("No block registry keys found in the blocks range [%v; %v]", firstIndex, lastIndex))
+		if uint32(blockRegistryKeys) < (lastIndex - firstAvailBlockIndex) {
+			panic(fmt.Sprintf("Not enough block registry keys found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, blockRegistryKeys))
 		}
 
 		cli.DebugLogf("Retrieved %v old block registry keys", blockRegistryKeys)
@@ -223,7 +264,7 @@ func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex
 	GoAllAndWait(func() {
 		cli.DebugLogf("Retrieving new blocks: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
 		blocks := blocklog.NewStateReader(contractState).GetBlockRegistry()
-		printProgress, done := NewProgressPrinter("new_blocklog", "block registry (blocks)", "blocks", lastIndex-firstAvailBlockIndex+1)
+		printProgress, done := NewProgressPrinter("blocklog_new", "block registry (blocks)", "blocks", lastIndex-firstAvailBlockIndex+1)
 		defer done()
 
 		blocksStr.WriteString(fmt.Sprintf("Block registry virtual len: %v\n", blocks.Len()))
@@ -249,12 +290,15 @@ func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex
 		}
 	}, func() {
 		cli.DebugLogf("Retrieving new block registry keys: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
-		printProgress, done := NewProgressPrinter("blocklog", "block registry (keys)", "keys", 0)
+		printProgress, done := NewProgressPrinter("blocklog_new", "block registry (keys)", "keys", 0)
 		defer done()
 
 		contractState.Iterate(kv.Key(blocklog.PrefixBlockRegistry), func(key kv.Key, value []byte) bool {
-			blockRegistryKeys++
 			printProgress()
+			key = utils.MustRemovePrefix(key, blocklog.PrefixBlockRegistry)
+			if key == "" || key[0] == '#' {
+				blockRegistryKeys++
+			}
 			return true
 		})
 
@@ -279,10 +323,10 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 
 	GoAllAndWait(func() {
 		requestsCount := 0
-		printProgress, done := NewProgressPrinter("old_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
+		printProgress, done := NewProgressPrinter("blocklog_old", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
 		defer done()
 
-		for blockIndex := max(firstAvailBlockIndex, 1); blockIndex < lastIndex; blockIndex++ {
+		for blockIndex := firstAvailBlockIndex; blockIndex < lastIndex; blockIndex++ {
 			printProgress()
 			_, reqs := lo.Must2(old_blocklog.GetRequestsInBlock(contractState, blockIndex))
 			requestsCount += len(reqs)
@@ -310,30 +354,30 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 			}
 		}
 
-		if requestsCount == 0 {
-			panic(fmt.Sprintf("No requests found in the blocks range [%v; %v]", firstIndex, lastIndex))
+		if uint32(requestsCount) < (lastIndex - firstAvailBlockIndex) {
+			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, requestsCount))
 		}
 
 		cli.DebugLogf("Retrieved %v old request lookup entries", requestsCount)
 	}, func() {
-		printProgress, done := NewProgressPrinter("old_blocklog", "lookup (elements)", "keys", 0)
+		printProgress, done := NewProgressPrinter("blocklog_old", "lookup (elements)", "keys", 0)
 		defer done()
 
 		contractState.Iterate(old_blocklog.PrefixRequestLookupIndex, func(key old_kv.Key, value []byte) bool {
-			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestLookupIndex)
-			if len(key) == 0 {
-				return true
-			}
-
-			lookupKeyList := lo.Must(old_blocklog.RequestLookupKeyListFromBytes(value))
-			elementsCount += len(lookupKeyList)
 			printProgress()
-
+			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestLookupIndex)
+			if key == "" {
+				elementsCount++
+			} else if key[0] == '.' {
+				lookupKeyList := lo.Must(old_blocklog.RequestLookupKeyListFromBytes(value))
+				elementsCount += len(lookupKeyList)
+			}
 			return true
 		})
 
-		if elementsCount == 0 {
-			panic(fmt.Sprintf("No request lookup index keys found in the blocks range [%v; %v]", firstIndex, lastIndex))
+		if uint32(elementsCount) < (lastIndex - firstAvailBlockIndex) {
+			panic(fmt.Sprintf("Not enough request lookup index keys found in the blocks range [%v; %v]: %v",
+				firstIndex, lastIndex, elementsCount))
 		}
 
 		cli.DebugLogf("Retrieved %v old request lookup index keys", elementsCount)
@@ -357,7 +401,7 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 
 	GoAllAndWait(func() {
 		requestsCount := 0
-		printProgress, done := NewProgressPrinter("new_blocklog", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
+		printProgress, done := NewProgressPrinter("blocklog_new", "lookup (requests)", "requests", lastIndex-firstAvailBlockIndex+1)
 		defer done()
 		r := blocklog.NewStateReader(contractState)
 
@@ -392,19 +436,17 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 
 		cli.DebugLogf("Retrieved %v new request lookup entries", requestsCount)
 	}, func() {
-		printProgress, done := NewProgressPrinter("blocklog", "lookup (elements)", "keys", 0)
+		printProgress, done := NewProgressPrinter("blocklog_new", "lookup (elements)", "keys", 0)
 		defer done()
 
 		contractState.Iterate(kv.Key(blocklog.PrefixRequestLookupIndex), func(key kv.Key, value []byte) bool {
-			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestLookupIndex)
-			if len(key) == 0 {
-				return true
-			}
-
-			lookupKeyList := lo.Must(blocklog.RequestLookupKeyListFromBytes(value))
-			elementsCount += len(lookupKeyList)
 			printProgress()
-
+			if key == kv.Key(blocklog.PrefixRequestLookupIndex) {
+				elementsCount++
+			} else {
+				lookupKeyList := lo.Must(blocklog.RequestLookupKeyListFromBytes(value))
+				elementsCount += len(lookupKeyList)
+			}
 			return true
 		})
 

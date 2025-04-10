@@ -53,7 +53,7 @@ func migrateBlockRegistry(blockIndex uint32, blockKeepAmount int32, chainOwner *
 	newBlocks := collections.NewArray(newState, blocklog.PrefixBlockRegistry)
 	newBlocks.SetSize(blockIndex + 1)
 
-	if blockKeepAmount > 0 && blockIndex > uint32(blockKeepAmount) {
+	if blockKeepAmount > 0 && blockIndex >= uint32(blockKeepAmount) {
 		// Anyway this migration already won't work with "-i" option, so we can just
 		// skip iteration over the store and just straight copy pruning logic.
 		// TODO: Is this deterministic? When pruning config changed, is it ALWAYS used by pruning algorythm immedatelly or (sometimes) on next block?

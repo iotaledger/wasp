@@ -110,12 +110,11 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 	cli.DebugLogf("Validating states equality...\n")
 	var oldStateContentStr, newStateContentStr string
 	validation.GoAllAndWait(func() {
-		oldStateContentStr = oldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
+		oldStateContentStr = validation.OldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
 		cli.DebugLogf("Replacing old chain ID with constant placeholder for comparison...")
 		oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
-
 	}, func() {
-		newStateContentStr = newStateContentToStr(newState, newChainID, firstIndex, lastIndex)
+		newStateContentStr = validation.NewStateContentToStr(newState, newChainID, firstIndex, lastIndex)
 		cli.DebugLogf("Replacing new chain ID with constant placeholder for comparison...")
 		newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
 	})
@@ -124,33 +123,4 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 
 	cli.ClearStatusBar()
 	cli.DebugLogf("States are equal\n")
-}
-
-func oldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
-	var accountsContractStr, blocklogContractStr, evmContractStr string
-
-	validation.GoAllAndWait(func() {
-		accountsContractStr = validation.OldAccountsContractContentToStr(chainState, chainID)
-	}, func() {
-		blocklogContractStr = validation.OldBlocklogContractContentToStr(chainState, chainID, firstIndex, lastIndex)
-	}, func() {
-		evmContractStr = validation.OldEVMContractContentToStr(chainState, firstIndex, lastIndex)
-	})
-
-	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
-	return accountsContractStr + blocklogContractStr + evmContractStr
-}
-
-func newStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
-	var accountsContractStr, blocklogContractStr, evmContractStr string
-	validation.GoAllAndWait(func() {
-		accountsContractStr = validation.NewAccountsContractContentToStr(chainState, chainID)
-	}, func() {
-		blocklogContractStr = validation.NewBlocklogContractContentToStr(chainState, chainID, firstIndex, lastIndex)
-	}, func() {
-		evmContractStr = validation.NewEVMContractContentToStr(chainState, firstIndex, lastIndex)
-	})
-
-	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
-	return accountsContractStr + blocklogContractStr + evmContractStr
 }
