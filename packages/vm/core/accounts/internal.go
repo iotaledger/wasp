@@ -90,13 +90,13 @@ func (s *StateReader) HasEnoughForAllowance(agentID isc.AgentID, allowance *isc.
 		return true
 	}
 	accountKey := accountKey(agentID)
-	for coinType, amount := range allowance.Coins {
+	for coinType, amount := range allowance.Coins.Iterate() {
 		if s.getCoinBalance(accountKey, coinType) < amount {
 			return false
 		}
 	}
-	for id := range allowance.Objects {
-		if !s.hasObject(agentID, id) {
+	for obj := range allowance.Objects.Iterate() {
+		if !s.hasObject(agentID, obj.ID) {
 			return false
 		}
 	}
@@ -115,18 +115,12 @@ func (s *StateWriter) MoveBetweenAccounts(fromAgentID, toAgentID isc.AgentID, as
 	}
 	s.creditToAccount(accountKey(toAgentID), assets.Coins)
 
-	var err error
-	assets.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+	for obj := range assets.Objects.Iterate() {
 		_, ok := s.removeObjectOwner(obj.ID, fromAgentID)
 		if !ok {
-			err = errors.New("MoveBetweenAccounts: object not found in origin account")
-			return false
+			return errors.New("MoveBetweenAccounts: object not found in origin account")
 		}
 		s.setObjectOwner(obj, toAgentID)
-		return true
-	})
-	if err != nil {
-		return err
 	}
 
 	s.touchAccount(fromAgentID)

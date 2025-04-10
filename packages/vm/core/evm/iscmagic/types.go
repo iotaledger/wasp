@@ -58,20 +58,18 @@ type ISCAssets struct {
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
 	var ret ISCAssets
-	a.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
+	for coinType, amount := range a.Coins.Iterate() {
 		ret.Coins = append(ret.Coins, CoinBalance{
 			CoinType: CoinType(coinType.String()),
 			Amount:   CoinValue(amount),
 		})
-		return true
-	})
-	a.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+	}
+	for obj := range a.Objects.Iterate() {
 		ret.Objects = append(ret.Objects, IotaObject{
 			ID:         obj.ID,
 			ObjectType: obj.Type.String(),
 		})
-		return true
-	})
+	}
 	return ret
 }
 

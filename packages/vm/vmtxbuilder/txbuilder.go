@@ -84,7 +84,7 @@ func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *i
 	argAssetsBag := txb.ptb.LastCommandResultArg()
 	argAnchor := txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()})
 
-	for coinType, coinBalance := range assets.Coins {
+	for coinType, coinBalance := range assets.Coins.Iterate() {
 		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
 	}
 
