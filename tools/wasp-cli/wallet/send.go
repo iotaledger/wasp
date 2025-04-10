@@ -20,10 +20,8 @@ import (
 )
 
 func initSendFundsCmd() *cobra.Command {
-	var adjustStorageDeposit bool
-
 	cmd := &cobra.Command{
-		Use:   "send-funds <target-address> <token-id>:<amount> <token-id2>:<amount> ...",
+		Use:   "send-funds <target-address> <token-id1>|<amount1> <token-id2>|<amount2> ...",
 		Short: "Transfer L1 tokens",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -106,8 +104,6 @@ func initSendFundsCmd() *cobra.Command {
 			fmt.Printf("%v", res)
 		},
 	}
-
-	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
 	return cmd
 }

@@ -183,5 +183,5 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 
 	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{
 		GasBudget: iotaclient.DefaultGasBudget,
-	}, withOffLedger, true)
+	}, withOffLedger)
 }

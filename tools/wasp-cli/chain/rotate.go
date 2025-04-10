@@ -61,7 +61,7 @@ func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chai
 	}
 	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{
 		GasBudget: iotaclient.DefaultGasBudget,
-	}, offledger, true)
+	}, offledger)
 }
 
 func initChangeGovControllerCmd() *cobra.Command {
