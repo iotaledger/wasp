@@ -93,7 +93,7 @@ func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex 
 		printProgress, done := NewProgressPrinter("blocklog_old", "receipts (keys)", "keys", 0)
 		defer done()
 
-		contractState.Iterate(old_blocklog.PrefixRequestReceipts, func(key old_kv.Key, value []byte) bool {
+		contractState.IterateSorted(old_blocklog.PrefixRequestReceipts, func(key old_kv.Key, value []byte) bool {
 			printProgress()
 			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestReceipts)
 			if key == "" || key[0] == '.' {
@@ -174,7 +174,7 @@ func newReceiptsToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint
 		printProgress, done := NewProgressPrinter("blocklog_new", "receipts (keys)", "keys", 0)
 		defer done()
 
-		contractState.Iterate(kv.Key(blocklog.PrefixRequestReceipts), func(key kv.Key, value []byte) bool {
+		contractState.IterateSorted(kv.Key(blocklog.PrefixRequestReceipts), func(key kv.Key, value []byte) bool {
 			printProgress()
 			key = utils.MustRemovePrefix(key, blocklog.PrefixRequestReceipts)
 			if key == "" || key[0] == '.' {
@@ -235,7 +235,7 @@ func oldBlockRegistryToStr(contractState old_kv.KVStoreReader, firstIndex, lastI
 		printProgress, done := NewProgressPrinter("blocklog_old", "block registry (keys)", "keys", 0)
 		defer done()
 
-		contractState.Iterate(old_blocklog.PrefixBlockRegistry, func(key old_kv.Key, value []byte) bool {
+		contractState.IterateSorted(old_blocklog.PrefixBlockRegistry, func(key old_kv.Key, value []byte) bool {
 			printProgress()
 			key = utils.MustRemovePrefix(key, old_blocklog.PrefixBlockRegistry)
 			if key == "" || key[0] == '#' {
@@ -293,7 +293,7 @@ func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex
 		printProgress, done := NewProgressPrinter("blocklog_new", "block registry (keys)", "keys", 0)
 		defer done()
 
-		contractState.Iterate(kv.Key(blocklog.PrefixBlockRegistry), func(key kv.Key, value []byte) bool {
+		contractState.IterateSorted(kv.Key(blocklog.PrefixBlockRegistry), func(key kv.Key, value []byte) bool {
 			printProgress()
 			key = utils.MustRemovePrefix(key, blocklog.PrefixBlockRegistry)
 			if key == "" || key[0] == '#' {
@@ -363,7 +363,7 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 		printProgress, done := NewProgressPrinter("blocklog_old", "lookup (elements)", "keys", 0)
 		defer done()
 
-		contractState.Iterate(old_blocklog.PrefixRequestLookupIndex, func(key old_kv.Key, value []byte) bool {
+		contractState.IterateSorted(old_blocklog.PrefixRequestLookupIndex, func(key old_kv.Key, value []byte) bool {
 			printProgress()
 			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestLookupIndex)
 			if key == "" {
@@ -439,7 +439,7 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 		printProgress, done := NewProgressPrinter("blocklog_new", "lookup (elements)", "keys", 0)
 		defer done()
 
-		contractState.Iterate(kv.Key(blocklog.PrefixRequestLookupIndex), func(key kv.Key, value []byte) bool {
+		contractState.IterateSorted(kv.Key(blocklog.PrefixRequestLookupIndex), func(key kv.Key, value []byte) bool {
 			printProgress()
 			if key == kv.Key(blocklog.PrefixRequestLookupIndex) {
 				elementsCount++

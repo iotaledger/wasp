@@ -11,6 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
@@ -22,6 +23,7 @@ import (
 	"github.com/nnikolash/wasp-types-exported/packages/hashing"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
@@ -43,7 +45,7 @@ import (
 func oldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving old EVM contract content...")
 	contractState := old_evm.ContractPartitionR(chainState)
-	var allowanceStr, txByBlockStr string
+	var allowanceStr, txByBlockStr, blockHeaderStr string
 
 	GoAllAndWait(func() {
 		allowanceStr = oldISCMagicAllowanceToStr(contractState)
@@ -51,15 +53,18 @@ func oldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex,
 	}, func() {
 		txByBlockStr = oldTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("Old transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
+	}, func() {
+		blockHeaderStr = oldBlockHeaderByBlockNumberToStr(contractState)
+		cli.DebugLogf("Old block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
 	})
 
-	return allowanceStr + txByBlockStr
+	return allowanceStr + txByBlockStr + blockHeaderStr
 }
 
 func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving new EVM contract content...")
 	contractState := evm.ContractPartitionR(chainState)
-	var allowanceStr, txByBlockStr string
+	var allowanceStr, txByBlockStr, blockHeaderStr string
 
 	GoAllAndWait(func() {
 		allowanceStr = newISCMagicAllowanceToStr(contractState)
@@ -67,9 +72,12 @@ func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toB
 	}, func() {
 		txByBlockStr = newTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("New transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
+	}, func() {
+		blockHeaderStr = newBlockHeaderByBlockNumberToStr(contractState)
+		cli.DebugLogf("New block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
 	})
 
-	return allowanceStr + txByBlockStr
+	return allowanceStr + txByBlockStr + blockHeaderStr
 }
 
 func oldISCMagicAllowanceToStr(contractState old_kv.KVStoreReader) string {
@@ -83,7 +91,7 @@ func oldISCMagicAllowanceToStr(contractState old_kv.KVStoreReader) string {
 	defer done()
 	count := 0
 
-	iscMagicState.Iterate(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
+	iscMagicState.IterateSorted(old_evmimpl.PrefixAllowance, func(k old_kv.Key, v []byte) bool {
 		printProgress()
 		count++
 
@@ -129,7 +137,7 @@ func newISCMagicAllowanceToStr(contractState kv.KVStoreReader) string {
 	defer done()
 	count := 0
 
-	iscMagicState.Iterate(evmimpl.PrefixAllowance, func(k kv.Key, v []byte) bool {
+	iscMagicState.IterateSorted(evmimpl.PrefixAllowance, func(k kv.Key, v []byte) bool {
 		printProgress()
 		count++
 
@@ -216,7 +224,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 		printProgress, done := NewProgressPrinter("evm_old", "transactions in block (keys)", "keys", 0)
 		defer done()
 
-		bcState.Iterate(old_emulator.KeyTransactionsByBlockNumber, func(k old_kv.Key, v []byte) bool {
+		bcState.IterateSorted(old_emulator.KeyTransactionsByBlockNumber, func(k old_kv.Key, v []byte) bool {
 			printProgress()
 			keysCount++
 			return true
@@ -265,7 +273,7 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 		printProgress, done := NewProgressPrinter("evm_new", "transactions in block (keys)", "keys", 0)
 		defer done()
 
-		bcState.Iterate(emulator.KeyTransactionsByBlockNumber, func(k kv.Key, v []byte) bool {
+		bcState.IterateSorted(emulator.KeyTransactionsByBlockNumber, func(k kv.Key, v []byte) bool {
 			printProgress()
 			keysCount++
 			return true
@@ -276,5 +284,64 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 
 	res.WriteString(fmt.Sprintf("Tx in block keys count: %v\n", keysCount))
 
+	return res.String()
+}
+
+func oldBlockHeaderByBlockNumberToStr(contractState old_kv.KVStoreReader) string {
+	cli.DebugLogf("Retrieving old BlockHeaderByBlockNumber...")
+	iscMagicState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
+
+	var res strings.Builder
+	printProgress, done := NewProgressPrinter("evm_old", "block headers by block", "headers", 0)
+	defer done()
+	count := 0
+
+	iscMagicState.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(k old_kv.Key, v []byte) bool {
+		keyWithoutPrefix := utils.MustRemovePrefix(k, old_emulator.KeyBlockHeaderByBlockNumber)
+
+		blockNumber := old_codec.MustDecodeUint64([]byte(keyWithoutPrefix))
+		header := lo.Must(old_emulator.HeaderFromBytes(v))
+
+		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, oldBlockHeaderToStr(header)))
+
+		printProgress()
+		count++
+		return true
+	})
+
+	if count == 0 {
+		panic("no old block headers found")
+	}
+
+	cli.DebugLogf("Found %v old block headers by block number", count)
+	return res.String()
+}
+
+func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
+	cli.DebugLogf("Retrieving new BlockHeaderByBlockNumber...")
+	iscMagicState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
+
+	var res strings.Builder
+	printProgress, done := NewProgressPrinter("evm_new", "block headers by block", "headers", 0)
+	defer done()
+	count := 0
+
+	iscMagicState.IterateSorted(emulator.KeyBlockHeaderByBlockNumber, func(k kv.Key, v []byte) bool {
+		keyWithoutPrefix := utils.MustRemovePrefix(k, emulator.KeyBlockHeaderByBlockNumber)
+
+		blockNumber := codec.MustDecode[uint64]([]byte(keyWithoutPrefix))
+		newHeader := emulator.MustHeaderFromBytes(v)
+
+		// Reverse conversion
+		var oldHeader old_emulator.Header = old_emulator.Header(*newHeader)
+
+		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, oldBlockHeaderToStr(&oldHeader)))
+
+		printProgress()
+		count++
+		return true
+	})
+
+	cli.DebugLogf("Found %v new block headers by block number", count)
 	return res.String()
 }

@@ -99,7 +99,7 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 
 	var accsStr strings.Builder
 	agentIDs := make(map[kv.Key]isc.AgentID)
-	accs.Iterate("", func(accKey kv.Key, accValue []byte) bool { // NOTE: using Iterate instead of IterateSorted because lines will be sorted anyway
+	accs.IterateSorted("", func(accKey kv.Key, accValue []byte) bool { // NOTE: using Iterate instead of IterateSorted because lines will be sorted anyway
 		accID := lo.Must(accounts.AgentIDFromKey(kv.Key(accKey)))
 		accsStr.WriteString("\tAcc: ")
 		accsStr.WriteString(newAgentIDToStr(accID))
@@ -139,7 +139,7 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
-	contractState.Iterate(old_accounts.PrefixBaseTokens, func(k old_kv.Key, v []byte) bool {
+	contractState.IterateSorted(old_accounts.PrefixBaseTokens, func(k old_kv.Key, v []byte) bool {
 		accKey := utils.MustRemovePrefix(k, old_accounts.PrefixBaseTokens)
 
 		var accStr string
@@ -235,7 +235,7 @@ func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, c
 	var balancesStr strings.Builder
 	count := 0
 
-	contractState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+	contractState.IterateSorted(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
 		accKey, accStr, _, ntID, isMapElem := utils.MustSplitParseMapKeyAny(k, old_accounts.PrefixNativeTokens, func(accKey, ntIDBytes old_kv.Key) (string, old_iotago.NativeTokenID, error) {
 			var accStr string
 			if accKey == old_accounts.L2TotalsAccount {
@@ -333,7 +333,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 
 	// NOTE: Specifically using here prefix iteration instead of using list of accounts.
 	//       This is done to perform validation using separate logic from the migration - this improved reliability of the validation.
-	contractState.Iterate(kv.Key(accounts.PrefixAccountCoinBalances), func(k kv.Key, v []byte) bool {
+	contractState.IterateSorted(kv.Key(accounts.PrefixAccountCoinBalances), func(k kv.Key, v []byte) bool {
 		accKey, accStr, _, coinType, isMapElem := utils.MustSplitParseMapKeyAny(k, accounts.PrefixAccountCoinBalances, func(accKey, coinTypeBytes kv.Key) (string, coin.Type, error) {
 			// Unfortunatelly sometimes accKey or coinTypeBytes contains map separator (dot - .)
 			// And as both accKey and coinTypeBytes hae dynamic size, we cannot expected the separator at some specific position.
@@ -399,7 +399,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 	})
 
 	// Process balances with remainder but without coin balance part
-	contractState.Iterate(accounts.PrefixAccountWeiRemainder, func(k kv.Key, v []byte) bool {
+	contractState.IterateSorted(accounts.PrefixAccountWeiRemainder, func(k kv.Key, v []byte) bool {
 		accKey := utils.MustRemovePrefix(k, accounts.PrefixAccountWeiRemainder)
 		coinBalance := accounts.NewStateReader(newSchema, contractState).UnsafeGetCoinBalance(accKey, coin.BaseTokenType)
 		if coinBalance != 0 {

@@ -3,14 +3,16 @@ package validation
 import (
 	"fmt"
 
-	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
-	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
+	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
 )
 
 const (
@@ -88,4 +90,16 @@ func newBlockToStr(block *blocklog.BlockInfo) string {
 
 func convertNewBaseBalanceToOldBaseBalance(v coin.Value) uint64 {
 	return uint64(v) / 1000
+}
+
+func oldBlockHeaderToStr(header *old_emulator.Header) string {
+	return fmt.Sprintf("h=%v, gl=%v, gu=%v, t=%v, th=%v, rh=%v, b=%x",
+		header.Hash.String(),
+		header.GasLimit,
+		header.GasUsed,
+		header.Time,
+		header.TxHash.String(),
+		header.ReceiptHash.String(),
+		lo.Must(header.Bloom.MarshalText()),
+	)
 }
