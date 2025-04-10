@@ -1,4 +1,4 @@
-package webapi_validation
+package base
 
 import (
 	"context"
@@ -12,16 +12,16 @@ import (
 const MainnetChainID = "iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5"
 
 type ValidationContext struct {
-	ctx     context.Context
-	sClient *stardust_client.APIClient
-	rClient *rebased_client.APIClient
+	Ctx     context.Context
+	SClient *stardust_client.APIClient
+	RClient *rebased_client.APIClient
 }
 
 func NewValidationContext(ctx context.Context, sClient *stardust_client.APIClient, rClient *rebased_client.APIClient) ValidationContext {
 	return ValidationContext{
-		ctx:     ctx,
-		sClient: sClient,
-		rClient: rClient,
+		Ctx:     ctx,
+		SClient: sClient,
+		RClient: rClient,
 	}
 }
 

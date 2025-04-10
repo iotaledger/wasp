@@ -12,6 +12,7 @@ import (
 	rebased_apiclient "github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	webapi_validation "github.com/iotaledger/wasp/tools/stardust-migration/webapi-validation"
+	"github.com/iotaledger/wasp/tools/stardust-migration/webapi-validation/base"
 )
 
 func validateWebAPI(c *cmd.Context) error {
@@ -51,7 +52,7 @@ func validateWebAPI(c *cmd.Context) error {
 
 	ctx := context.Background()
 
-	testContext := webapi_validation.NewValidationContext(ctx, sClient, rClient)
+	testContext := base.NewValidationContext(ctx, sClient, rClient)
 	chainValidation := webapi_validation.NewChainValidation(testContext)
 	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
 

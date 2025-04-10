@@ -1,4 +1,4 @@
-package webapi_validation
+package base
 
 import "fmt"
 
@@ -12,4 +12,4 @@ func (m mockT) FailNow() {
 	panic("Test failed")
 }
 
-var t *mockT = &mockT{}
+var T *mockT = &mockT{}
