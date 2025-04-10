@@ -27,12 +27,12 @@ func setupTest(t *testing.T) *solo.Chain {
 	limits := ch.GetGasLimits()
 	limits.MaxGasPerBlock = math.MaxUint64
 	limits.MaxGasPerRequest = math.MaxUint64
-	ch.SetGasLimits(ch.OwnerPrivateKey, limits)
+	ch.SetGasLimits(ch.ChainAdmin, limits)
 
 	// set gas very cheap
 	fp := ch.GetGasFeePolicy()
 	fp.GasPerToken.A = 1000000
-	ch.SetGasFeePolicy(ch.OwnerPrivateKey, fp)
+	ch.SetGasFeePolicy(ch.ChainAdmin, fp)
 
 	ch.MustDepositBaseTokensToL2(10_000_000, nil)
 	return ch

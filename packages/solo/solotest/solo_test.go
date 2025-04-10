@@ -22,7 +22,7 @@ func TestSaveSnapshot(t *testing.T) {
 
 	env := solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 	ch := env.NewChain()
-	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.OwnerPrivateKey)
+	ch.MustDepositBaseTokensToL2(2*isc.Million, ch.ChainAdmin)
 
 	// create foundry and native tokens on L2
 	// sn, nativeTokenID, err := ch.NewNativeTokenParams(1000).CreateFoundry()

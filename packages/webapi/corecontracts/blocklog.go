@@ -1,6 +1,8 @@
 package corecontracts
 
 import (
+	"fmt"
+
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
@@ -15,10 +17,15 @@ func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
 
 	committeeAddr := ch.GetCommitteeInfo().Address
 
+	admin, err := GetChainAdmin(ch, fmt.Sprintf("%d", anchor.GetStateIndex()))
+	if err != nil {
+		return nil, err
+	}
+
 	return &isc.ControlAddresses{
-		StateAddress:     committeeAddr,
-		GoverningAddress: committeeAddr,
-		SinceBlockIndex:  anchor.GetStateIndex(),
+		AnchorOwner:     committeeAddr,
+		ChainAdmin:      admin,
+		SinceBlockIndex: anchor.GetStateIndex(),
 	}, nil
 }
 

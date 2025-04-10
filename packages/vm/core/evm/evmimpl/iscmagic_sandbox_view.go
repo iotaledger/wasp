@@ -16,9 +16,9 @@ func (h *magicContractHandler) GetChainID() isc.ChainID {
 	return h.ctx.ChainID()
 }
 
-// handler for ISCSandbox::getChainOwnerID
-func (h *magicContractHandler) GetChainOwnerID() iscmagic.ISCAgentID {
-	return iscmagic.WrapISCAgentID(h.ctx.ChainOwnerID())
+// handler for ISCSandbox::getChainAdmin
+func (h *magicContractHandler) GetChainAdmin() iscmagic.ISCAgentID {
+	return iscmagic.WrapISCAgentID(h.ctx.ChainAdmin())
 }
 
 // handler for ISCSandbox::getTimestampUnixSeconds

@@ -39,7 +39,7 @@ type WaspCallContext interface {
 	GetCoinBalance(agentID isc.AgentID, coinType coin.Type) coin.Value
 	Call(msg isc.Message, allowance *isc.Assets) isc.CallArguments
 	ChainID() isc.ChainID
-	ChainOwnerID() isc.AgentID
+	ChainAdmin() isc.AgentID
 	ChainInfo() *isc.ChainInfo
 	CurrentContractHname() isc.Hname
 	Params() isc.CallArguments

@@ -33,19 +33,20 @@ import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
 import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
-import { GovAllowedStateControllerAddressesResponse } from '../models/GovAllowedStateControllerAddressesResponse';
+import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
-import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
+import { IotaObject } from '../models/IotaObject';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
+import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
@@ -64,7 +65,6 @@ import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateAnchor } from '../models/StateAnchor';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
-import { Type } from '../models/Type';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -912,22 +912,22 @@ export class PromiseCorecontractsApi {
     }
 
     /**
-     * Returns the allowed state controller addresses
-     * Get the allowed state controller addresses
+     * Returns the chain admin
+     * Get the chain admin
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddressesWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
-        const result = this.api.governanceGetAllowedStateControllerAddressesWithHttpInfo(block, _options);
+    public governanceGetChainAdminWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<GovChainAdminResponse>> {
+        const result = this.api.governanceGetChainAdminWithHttpInfo(block, _options);
         return result.toPromise();
     }
 
     /**
-     * Returns the allowed state controller addresses
-     * Get the allowed state controller addresses
+     * Returns the chain admin
+     * Get the chain admin
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddresses(block?: string, _options?: Configuration): Promise<GovAllowedStateControllerAddressesResponse> {
-        const result = this.api.governanceGetAllowedStateControllerAddresses(block, _options);
+    public governanceGetChainAdmin(block?: string, _options?: Configuration): Promise<GovChainAdminResponse> {
+        const result = this.api.governanceGetChainAdmin(block, _options);
         return result.toPromise();
     }
 
@@ -948,26 +948,6 @@ export class PromiseCorecontractsApi {
      */
     public governanceGetChainInfo(block?: string, _options?: Configuration): Promise<GovChainInfoResponse> {
         const result = this.api.governanceGetChainInfo(block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Returns the chain owner
-     * Get the chain owner
-     * @param [block] Block index or trie root
-     */
-    public governanceGetChainOwnerWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<GovChainOwnerResponse>> {
-        const result = this.api.governanceGetChainOwnerWithHttpInfo(block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Returns the chain owner
-     * Get the chain owner
-     * @param [block] Block index or trie root
-     */
-    public governanceGetChainOwner(block?: string, _options?: Configuration): Promise<GovChainOwnerResponse> {
-        const result = this.api.governanceGetChainOwner(block, _options);
         return result.toPromise();
     }
 

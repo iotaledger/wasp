@@ -22,8 +22,8 @@ type FeePolicy struct {
 	// GasPerToken specifies how many gas units are paid for each token.
 	GasPerToken util.Ratio32 `json:"gasPerToken" swagger:"desc(The gas per token ratio (A/B) (gas/token)),required"`
 
-	// ValidatorFeeShare Validator/ChainOwner fee split: percentage of fees which goes to Validator
-	// 0 mean all goes to ChainOwner
+	// ValidatorFeeShare is the Validator/ChainAdmin fee split: percentage of fees which goes to Validator
+	// 0 means all goes to ChainAdmin
 	// >=100 all goes to Validator
 	ValidatorFeeShare uint8 `json:"validatorFeeShare" swagger:"desc(The validator fee share.),required"`
 }
@@ -114,7 +114,7 @@ func (p *FeePolicy) GasBudgetFromTokens(availableTokens coin.Value) uint64 {
 func DefaultFeePolicy() *FeePolicy {
 	return &FeePolicy{
 		GasPerToken:       DefaultGasPerToken,
-		ValidatorFeeShare: 0, // by default all goes to the chainOwner
+		ValidatorFeeShare: 0, // by default all goes to the chain admin
 		EVMGasRatio:       DefaultEVMGasRatio,
 	}
 }

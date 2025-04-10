@@ -21,10 +21,10 @@ var _ MappedNullable = &ChainInfoResponse{}
 
 // ChainInfoResponse struct for ChainInfoResponse
 type ChainInfoResponse struct {
+	// The chain admin address (Hex Address)
+	ChainAdmin string `json:"chainAdmin"`
 	// ChainID (Hex Address)
 	ChainID string `json:"chainID"`
-	// The chain owner address (Hex Address)
-	ChainOwnerId string `json:"chainOwnerId"`
 	// The EVM chain ID
 	EvmChainId uint32 `json:"evmChainId"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
@@ -42,10 +42,10 @@ type _ChainInfoResponse ChainInfoResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
+func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
 	this := ChainInfoResponse{}
+	this.ChainAdmin = chainAdmin
 	this.ChainID = chainID
-	this.ChainOwnerId = chainOwnerId
 	this.EvmChainId = evmChainId
 	this.GasFeePolicy = gasFeePolicy
 	this.GasLimits = gasLimits
@@ -61,6 +61,30 @@ func NewChainInfoResponse(chainID string, chainOwnerId string, evmChainId uint32
 func NewChainInfoResponseWithDefaults() *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	return &this
+}
+
+// GetChainAdmin returns the ChainAdmin field value
+func (o *ChainInfoResponse) GetChainAdmin() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ChainAdmin
+}
+
+// GetChainAdminOk returns a tuple with the ChainAdmin field value
+// and a boolean to check if the value has been set.
+func (o *ChainInfoResponse) GetChainAdminOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ChainAdmin, true
+}
+
+// SetChainAdmin sets field value
+func (o *ChainInfoResponse) SetChainAdmin(v string) {
+	o.ChainAdmin = v
 }
 
 // GetChainID returns the ChainID field value
@@ -85,30 +109,6 @@ func (o *ChainInfoResponse) GetChainIDOk() (*string, bool) {
 // SetChainID sets field value
 func (o *ChainInfoResponse) SetChainID(v string) {
 	o.ChainID = v
-}
-
-// GetChainOwnerId returns the ChainOwnerId field value
-func (o *ChainInfoResponse) GetChainOwnerId() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.ChainOwnerId
-}
-
-// GetChainOwnerIdOk returns a tuple with the ChainOwnerId field value
-// and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetChainOwnerIdOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.ChainOwnerId, true
-}
-
-// SetChainOwnerId sets field value
-func (o *ChainInfoResponse) SetChainOwnerId(v string) {
-	o.ChainOwnerId = v
 }
 
 // GetEvmChainId returns the EvmChainId field value
@@ -265,8 +265,8 @@ func (o ChainInfoResponse) MarshalJSON() ([]byte, error) {
 
 func (o ChainInfoResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["chainAdmin"] = o.ChainAdmin
 	toSerialize["chainID"] = o.ChainID
-	toSerialize["chainOwnerId"] = o.ChainOwnerId
 	toSerialize["evmChainId"] = o.EvmChainId
 	toSerialize["gasFeePolicy"] = o.GasFeePolicy
 	toSerialize["gasLimits"] = o.GasLimits
@@ -281,8 +281,8 @@ func (o *ChainInfoResponse) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
+		"chainAdmin",
 		"chainID",
-		"chainOwnerId",
 		"evmChainId",
 		"gasFeePolicy",
 		"gasLimits",

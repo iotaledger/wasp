@@ -1,133 +1,127 @@
 package tests
 
 import (
-	"context"
-	"fmt"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 func TestBasicRotation(t *testing.T) { // FIXME serious error
 	t.Skipf("Rotation requires refactoring to work, skipped for now")
-	env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
+	/*
+		env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
-	newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
-	require.NoError(t, err)
+		newCmtAddr, err := env.Clu.RunDKG([]int{2, 3, 4, 5}, 3)
+		require.NoError(t, err)
 
-	kp, _, err := env.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
+		kp, _, err := env.Clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
 
-	myClient := env.Chain.Client(kp)
+		myClient := env.Chain.Client(kp)
 
-	// check the chain works
-	tx, err := myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
-		GasBudget: iotaclient.DefaultGasBudget,
-	})
-
-	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
-	require.NoError(t, err)
-
-	// change the committee to the new one
-	govClient := env.Chain.Client(env.Chain.OriginatorKeyPair)
-
-	tx, err = govClient.PostRequest(context.Background(),
-		governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{
+		// check the chain works
+		tx, err := myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+			Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
 			GasBudget: iotaclient.DefaultGasBudget,
 		})
 
-	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
-	require.NoError(t, err)
+		require.NoError(t, err)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
+		require.NoError(t, err)
 
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr),
-		chainclient.PostRequestParams{
-			GasBudget: 5 * iotaclient.DefaultGasBudget,
+		// change the committee to the new one
+		govClient := env.Chain.Client(env.Chain.OriginatorKeyPair)
+
+		tx, err = govClient.PostRequest(context.Background(),
+			governance.FuncAddAllowedStateControllerAddress.Message(newCmtAddr), chainclient.PostRequestParams{
+				GasBudget: iotaclient.DefaultGasBudget,
+			})
+
+		require.NoError(t, err)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
+		require.NoError(t, err)
+
+		tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(newCmtAddr),
+			chainclient.PostRequestParams{
+				GasBudget: 5 * iotaclient.DefaultGasBudget,
+			})
+		require.NoError(t, err)
+		time.Sleep(3 * time.Second)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, true, 20*time.Second)
+		require.NoError(t, err)
+
+		stateController, err := env.callGetStateController(0)
+		require.NoError(t, err)
+		require.True(t, stateController.Equals(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
+
+		// check the chain still works
+		tx, err = myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
+			Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
+			GasBudget: iotaclient.DefaultGasBudget,
 		})
-	require.NoError(t, err)
-	time.Sleep(3 * time.Second)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, true, 20*time.Second)
-	require.NoError(t, err)
-
-	stateController, err := env.callGetStateController(0)
-	require.NoError(t, err)
-	require.True(t, stateController.Equals(newCmtAddr), "StateController, expected=%v, received=%v", newCmtAddr, stateController)
-
-	// check the chain still works
-	tx, err = myClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
-		Transfer:  isc.NewAssets(10 + iotaclient.DefaultGasBudget),
-		GasBudget: iotaclient.DefaultGasBudget,
-	})
-	require.NoError(t, err)
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
-	require.NoError(t, err)
+		require.NoError(t, err)
+		_, err = env.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, false, 20*time.Second)
+		require.NoError(t, err)
+	*/
 }
 
 // cluster of 10 access nodes and two overlapping committees
 func TestRotation(t *testing.T) {
 	t.Skipf("Rotation requires refactoring to work, skipped for now")
 
-	numRequests := 8
+	/*
+		numRequests := 8
 
-	clu := newCluster(t, waspClusterOpts{nNodes: 10})
-	rotation1 := newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3)
-	rotation2 := newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3)
+		clu := newCluster(t, waspClusterOpts{nNodes: 10})
+		rotation1 := newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3)
+		rotation2 := newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3)
 
-	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
-	require.NoError(t, err)
-	t.Logf("chainID: %s", chain.ChainID)
+		t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
+		chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
+		require.NoError(t, err)
+		t.Logf("chainID: %s", chain.ChainID)
 
-	chEnv := newChainEnv(t, clu, chain)
+		chEnv := newChainEnv(t, clu, chain)
 
-	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
+		require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 5*time.Second))
 
-	keyPair, _, err := clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
+		keyPair, _, err := clu.NewKeyPairWithFunds()
+		require.NoError(t, err)
 
-	myClient := chain.Client(keyPair)
+		myClient := chain.Client(keyPair)
 
-	_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
-	require.NoError(t, err)
+		_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
+		require.NoError(t, err)
 
-	waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 5*time.Second)
+		waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 5*time.Second)
 
-	govClient := chain.Client(chain.OriginatorKeyPair)
+		govClient := chain.Client(chain.OriginatorKeyPair)
 
-	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
-	tx, err := govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(rotation2.Address),
-		*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
-	)
-	require.NoError(t, err)
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 15*time.Second)
-	require.NoError(t, err)
-	require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
-	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
+		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
+		tx, err := govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(rotation2.Address),
+			*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
+		)
+		require.NoError(t, err)
+		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 15*time.Second)
+		require.NoError(t, err)
+		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
+		require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
 
-	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{})
-	require.NoError(t, err)
-	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 15*time.Second))
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 15*time.Second)
-	require.NoError(t, err)
+		t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
+		tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{})
+		require.NoError(t, err)
+		require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 15*time.Second))
+		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 15*time.Second)
+		require.NoError(t, err)
 
-	_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
-	require.NoError(t, err)
+		_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
+		require.NoError(t, err)
 
-	waitUntil(t, chEnv.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
+		waitUntil(t, chEnv.counterEquals(int64(2*numRequests)), clu.Config.AllNodes(), 15*time.Second)
+	*/
 }
 
 // cluster of 10 access nodes; chain is initialized by one node committee and then
@@ -144,73 +138,75 @@ func TestRotation(t *testing.T) {
 func TestRotationFromSingle(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
 
-	numRequests := 16
+	/*
+		numRequests := 16
 
-	clu := newCluster(t, waspClusterOpts{nNodes: 10})
-	rotation1 := newTestRotationSingleRotation(t, clu, []int{0}, 1)
-	rotation2 := newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4}, 3)
+		clu := newCluster(t, waspClusterOpts{nNodes: 10})
+		rotation1 := newTestRotationSingleRotation(t, clu, []int{0}, 1)
+		rotation2 := newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4}, 3)
 
-	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
-	require.NoError(t, err)
-	t.Logf("chainID: %s", chain.ChainID)
+		t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotation1.Committee, rotation1.Quorum, rotation1.Address)
+		chain, err := clu.DeployChain(clu.Config.AllNodes(), rotation1.Committee, rotation1.Quorum, rotation1.Address)
+		require.NoError(t, err)
+		t.Logf("chainID: %s", chain.ChainID)
 
-	chEnv := newChainEnv(t, clu, chain)
-	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 30*time.Second))
-	incCounterResultChan := make(chan error)
+		chEnv := newChainEnv(t, clu, chain)
+		require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 30*time.Second))
+		incCounterResultChan := make(chan error)
 
-	go func() {
-		keyPair, _, err2 := clu.NewKeyPairWithFunds()
-		if err2 != nil {
-			incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err2)
-			return
-		}
-		myClient := chain.Client(keyPair)
-		for i := 0; i < numRequests; i++ {
-			t.Logf("Posting inccounter request number %v", i)
-			_, err2 = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
-				GasBudget: iotaclient.DefaultGasBudget,
-			})
+		go func() {
+			keyPair, _, err2 := clu.NewKeyPairWithFunds()
 			if err2 != nil {
-				incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
+				incCounterResultChan <- fmt.Errorf("failed to create a key pair: %w", err2)
 				return
 			}
-			time.Sleep(100 * time.Millisecond)
+			myClient := chain.Client(keyPair)
+			for i := 0; i < numRequests; i++ {
+				t.Logf("Posting inccounter request number %v", i)
+				_, err2 = myClient.PostRequest(context.Background(), inccounter.FuncIncCounter.Message(nil), chainclient.PostRequestParams{
+					GasBudget: iotaclient.DefaultGasBudget,
+				})
+				if err2 != nil {
+					incCounterResultChan <- fmt.Errorf("failed to post inccounter request number %v: %w", i, err2)
+					return
+				}
+				time.Sleep(100 * time.Millisecond)
+			}
+			incCounterResultChan <- nil
+		}()
+
+		govClient := chain.Client(chain.OriginatorKeyPair)
+
+		time.Sleep(500 * time.Millisecond)
+		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
+		tx, err := govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(rotation2.Address),
+			*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
+		)
+		require.NoError(t, err)
+		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
+		require.NoError(t, err)
+		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
+		require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
+
+		time.Sleep(500 * time.Millisecond)
+		t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
+		tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{
+			GasBudget: iotaclient.DefaultGasBudget,
+		})
+		require.NoError(t, err)
+		require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 30*time.Second))
+		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
+		require.NoError(t, err)
+
+		select {
+		case incCounterResult := <-incCounterResultChan:
+			require.NoError(t, incCounterResult)
+		case <-time.After(1 * time.Minute):
+			t.Fatal("Timeout waiting incCounterResult")
 		}
-		incCounterResultChan <- nil
-	}()
 
-	govClient := chain.Client(chain.OriginatorKeyPair)
-
-	time.Sleep(500 * time.Millisecond)
-	t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation2.Address, rotation2.Committee)
-	tx, err := govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(rotation2.Address),
-		*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
-	)
-	require.NoError(t, err)
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(t, err)
-	require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation2.Address))
-	require.NoError(t, chEnv.waitStateControllers(rotation1.Address, 15*time.Second))
-
-	time.Sleep(500 * time.Millisecond)
-	t.Logf("Rotating to committee %v with quorum %v and address %s", rotation2.Committee, rotation2.Quorum, rotation2.Address)
-	tx, err = govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation2.Address), chainclient.PostRequestParams{
-		GasBudget: iotaclient.DefaultGasBudget,
-	})
-	require.NoError(t, err)
-	require.NoError(t, chEnv.waitStateControllers(rotation2.Address, 30*time.Second))
-	_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, 30*time.Second)
-	require.NoError(t, err)
-
-	select {
-	case incCounterResult := <-incCounterResultChan:
-		require.NoError(t, incCounterResult)
-	case <-time.After(1 * time.Minute):
-		t.Fatal("Timeout waiting incCounterResult")
-	}
-
-	waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 30*time.Second)
+		waitUntil(t, chEnv.counterEquals(int64(numRequests)), chEnv.Clu.Config.AllNodes(), 30*time.Second)
+	*/
 }
 
 type testRotationSingleRotation struct {
@@ -231,137 +227,64 @@ func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee
 
 func TestRotationMany(t *testing.T) {
 	t.Skip("Cluster tests currently disabled")
+	/*
+		testutil.RunHeavy(t)
+		if testing.Short() {
+			t.Skip("skipping test in short mode.")
+		}
 
-	testutil.RunHeavy(t)
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
+		const numRequests = 2
+		const waitTimeout = 260 * time.Second
 
-	const numRequests = 2
-	const waitTimeout = 260 * time.Second
+		clu := newCluster(t, waspClusterOpts{nNodes: 10})
+		rotations := []testRotationSingleRotation{
+			newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3),
+			newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3),
+			newTestRotationSingleRotation(t, clu, []int{3, 4, 5, 6, 7, 8}, 5),
+			newTestRotationSingleRotation(t, clu, []int{9, 4, 5, 6, 7, 8, 3}, 5),
+			newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 7),
+		}
 
-	clu := newCluster(t, waspClusterOpts{nNodes: 10})
-	rotations := []testRotationSingleRotation{
-		newTestRotationSingleRotation(t, clu, []int{0, 1, 2, 3}, 3),
-		newTestRotationSingleRotation(t, clu, []int{2, 3, 4, 5}, 3),
-		newTestRotationSingleRotation(t, clu, []int{3, 4, 5, 6, 7, 8}, 5),
-		newTestRotationSingleRotation(t, clu, []int{9, 4, 5, 6, 7, 8, 3}, 5),
-		newTestRotationSingleRotation(t, clu, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 7),
-	}
+		t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
+		chain, err := clu.DeployChain(clu.Config.AllNodes(), rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
+		require.NoError(t, err)
+		t.Logf("chainID: %s", chain.ChainID)
 
-	t.Logf("Deploying chain by committee %v with quorum %v and address %s", rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
-	chain, err := clu.DeployChain(clu.Config.AllNodes(), rotations[0].Committee, rotations[0].Quorum, rotations[0].Address)
-	require.NoError(t, err)
-	t.Logf("chainID: %s", chain.ChainID)
+		chEnv := newChainEnv(t, clu, chain)
 
-	chEnv := newChainEnv(t, clu, chain)
+		govClient := chain.Client(chain.OriginatorKeyPair)
 
-	govClient := chain.Client(chain.OriginatorKeyPair)
+		for _, rotation := range rotations {
+			t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation.Address, rotation.Committee)
+			tx, err2 := govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(rotation.Address),
+				*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
+			)
+			require.NoError(t, err2)
+			_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
+			require.NoError(t, err2)
+			require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
+		}
 
-	for _, rotation := range rotations {
-		t.Logf("Adding address %s of committee %v to allowed state controller addresses", rotation.Address, rotation.Committee)
-		tx, err2 := govClient.PostRequest(context.Background(), governance.FuncAddAllowedStateControllerAddress.Message(rotation.Address),
-			*chainclient.NewPostRequestParams().WithBaseTokens(1 * isc.Million),
-		)
-		require.NoError(t, err2)
-		_, err2 = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
-		require.NoError(t, err2)
-		require.NoError(t, chEnv.checkAllowedStateControllerAddressInAllNodes(rotation.Address))
-	}
-
-	keyPair, _, err := chEnv.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
-
-	myClient := chain.Client(keyPair)
-
-	for i, rotation := range rotations {
-		t.Logf("Rotating to %v-th committee %v with quorum %v and address %s", i, rotation.Committee, rotation.Quorum, rotation.Address)
-
-		_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
+		keyPair, _, err := chEnv.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 
-		waitUntil(t, chEnv.counterEquals(int64(numRequests*(i+1))), chEnv.Clu.Config.AllNodes(), 30*time.Second)
+		myClient := chain.Client(keyPair)
 
-		tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{
-			GasBudget: iotaclient.DefaultGasBudget,
-		})
-		require.NoError(t, err)
-		require.NoError(t, chEnv.waitStateControllers(rotation.Address, waitTimeout))
-		_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
-		require.NoError(t, err)
-	}
-}
+		for i, rotation := range rotations {
+			t.Logf("Rotating to %v-th committee %v with quorum %v and address %s", i, rotation.Committee, rotation.Quorum, rotation.Address)
 
-func (e *ChainEnv) waitStateControllers(addr *cryptolib.Address, timeout time.Duration) error {
-	for _, nodeIndex := range e.Clu.AllNodes() {
-		if err := e.waitStateController(nodeIndex, addr, timeout); err != nil {
-			return err
+			_, err = myClient.PostMultipleRequests(context.Background(), inccounter.FuncIncCounter.Message(nil), numRequests)
+			require.NoError(t, err)
+
+			waitUntil(t, chEnv.counterEquals(int64(numRequests*(i+1))), chEnv.Clu.Config.AllNodes(), 30*time.Second)
+
+			tx, err := govClient.PostRequest(context.Background(), governance.FuncRotateStateController.Message(rotation.Address), chainclient.PostRequestParams{
+				GasBudget: iotaclient.DefaultGasBudget,
+			})
+			require.NoError(t, err)
+			require.NoError(t, chEnv.waitStateControllers(rotation.Address, waitTimeout))
+			_, err = chEnv.Chain.AllNodesMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chEnv.Chain.ChainID, tx, false, waitTimeout)
+			require.NoError(t, err)
 		}
-	}
-	return nil
-}
-
-func (e *ChainEnv) waitStateController(nodeIndex int, addr *cryptolib.Address, timeout time.Duration) error {
-	var err error
-	result := waitTrue(timeout, func() bool {
-		var a *cryptolib.Address
-		a, err = e.callGetStateController(nodeIndex)
-		if err != nil {
-			e.t.Logf("Error received while waiting state controller change to %s in node %d", addr, nodeIndex)
-			return false
-		}
-		return a.Equals(addr)
-	})
-	if err != nil {
-		return err
-	}
-	if !result {
-		return fmt.Errorf("timeout waiting state controller change to %s in node %d", addr, nodeIndex)
-	}
-	return nil
-}
-
-func (e *ChainEnv) callGetStateController(nodeIndex int) (*cryptolib.Address, error) {
-	controlAddresses, _, err := e.Chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
-		BlocklogGetControlAddresses(context.Background()).
-		Execute()
-	if err != nil {
-		return nil, err
-	}
-
-	address, err := cryptolib.AddressFromHex(controlAddresses.StateAddress)
-	require.NoError(e.t, err)
-
-	return address, nil
-}
-
-func (e *ChainEnv) checkAllowedStateControllerAddressInAllNodes(addr *cryptolib.Address) error {
-	for _, i := range e.Chain.AllPeers {
-		if !isAllowedStateControllerAddress(e.t, e.Chain, i, addr) {
-			return fmt.Errorf("state controller address %s is not allowed in node %d", addr, i)
-		}
-	}
-	return nil
-}
-
-func isAllowedStateControllerAddress(t *testing.T, chain *cluster.Chain, nodeIndex int, addr *cryptolib.Address) bool {
-	addresses, _, err := chain.Cluster.WaspClient(nodeIndex).CorecontractsAPI.
-		GovernanceGetAllowedStateControllerAddresses(context.Background()).
-		Execute()
-	require.NoError(t, err)
-
-	if len(addresses.Addresses) == 0 {
-		return false
-	}
-
-	for _, addressHex := range addresses.Addresses {
-		address, err := cryptolib.AddressFromHex(addressHex)
-		require.NoError(t, err)
-
-		if address.Equals(addr) {
-			return true
-		}
-	}
-
-	return false
+	*/
 }

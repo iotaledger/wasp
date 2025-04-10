@@ -155,8 +155,8 @@ func (ctx *ViewContext) ChainID() isc.ChainID {
 	return ctx.chainInfo.ChainID
 }
 
-func (ctx *ViewContext) ChainOwnerID() isc.AgentID {
-	return ctx.chainInfo.ChainOwnerID
+func (ctx *ViewContext) ChainAdmin() isc.AgentID {
+	return ctx.chainInfo.ChainAdmin
 }
 
 func (ctx *ViewContext) CurrentContractHname() isc.Hname {

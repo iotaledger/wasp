@@ -27,23 +27,7 @@ import (
 	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
-func TestWaspCLINoChains(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
-	w := newWaspCLITest(t)
-
-	out := w.MustRun("address")
-
-	ownerAddr := regexp.MustCompile(`(?m)Address:\s+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1]
-	require.NotEmpty(t, ownerAddr)
-
-	out = w.MustRun("chain", "list", "--node=0", "--node=0")
-	require.Contains(t, out[0], "Total 0 chain(s)")
-}
-
 func TestWaspAuth(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	w := newWaspCLITest(t, waspClusterOpts{
 		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
 			configParams.AuthScheme = "jwt"
@@ -59,16 +43,20 @@ func TestWaspAuth(t *testing.T) {
 }
 
 func TestZeroGasFee(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	w := newWaspCLITest(t)
-
 	const chainName = "chain1"
 	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
+	w.MustRun("request-funds")
+	w.MustRun("request-funds", "--address-index=1")
 	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--block-keep-amount=123", "--node=0")
 	w.ActivateChainOnAllNodes(chainName, 0)
+
+	w.MustRun("address")
+	alternativeAddress := getAddress(w.MustRun("address"))
+	w.MustRun("chain", "deposit", alternativeAddress, "base|2000000", "--node=0")
+	w.MustRun("chain", "balance", alternativeAddress, "--node=0")
 	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
 	require.NoError(t, err)
 	require.Contains(t, outs, "Gas fee: gas units * (100/1)")
@@ -85,18 +73,28 @@ func TestZeroGasFee(t *testing.T) {
 
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
-		w.MustRun("send-funds", "-s", alternativeAddress, "base:1000000")
-		checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
+		w.MustRun("send-funds", "-s", alternativeAddress, "base|1000000")
+		outs := w.MustRun("balance", "--address-index=1")
 		_, eth := newEthereumAccount()
-		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
-		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000)
+		w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--address-index=1")
+		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
+		checkL2Balance(t, outs, 1000000)
 	})
 }
 
-func checkBalance(t *testing.T, out []string, expected int) {
+func checkL1Balance(t *testing.T, out []string, expected int) {
 	t.Helper()
-	// regex example: base tokens 1000000
-	//				  -----  ------token  amount-----  ------base   1364700
+	r := regexp.MustCompile(`- 0x[0]{0,63}2+::iota::IOTA: (\d+)`).FindStringSubmatch(strings.Join(out, ""))
+	if r == nil {
+		panic("couldn't check balance")
+	}
+	amount, err := strconv.Atoi(r[1])
+	require.NoError(t, err)
+	require.EqualValues(t, expected, amount)
+}
+
+func checkL2Balance(t *testing.T, out []string, expected int) {
+	t.Helper()
 	r := regexp.MustCompile(`.*(?i:base)\s*(?i:tokens)?:*\s*(\d+).*`).FindStringSubmatch(strings.Join(out, ""))
 	if r == nil {
 		panic("couldn't check balance")
@@ -114,42 +112,64 @@ func getAddress(out []string) string {
 	return r[1]
 }
 
-func TestWaspCLISendFunds(t *testing.T) { // FIXME error in wasp-cli
+func TestWaspCLISendFunds(t *testing.T) { // passed
 	w := newWaspCLITest(t)
 
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
 
-	w.MustRun("send-funds", alternativeAddress, "base|1000000")
-	checkBalance(t, w.MustRun("balance", "--address-index=1"), 1000000)
+	w.MustRun("request-funds")
+	w.MustRun("send-funds", alternativeAddress, "base|1000")
+	outs := w.MustRun("balance", "--address-index=1")
+	checkL1Balance(t, outs, 1000)
 }
 
-func TestWaspCLIDeposit(t *testing.T) {
+func TestWaspCLIDeposit(t *testing.T) { // passed
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
-	// w.MustRun("request-funds")
-	// time.Sleep(3 * time.Second)
+	w.MustRun("request-funds")
+	w.MustRun("request-funds", "--address-index=1")
+	outs := w.MustRun("balance")
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
-	// fund an alternative address to deposit from (so we can test the fees, since --address-index=0 is the chain owner / default payoutAddress)
+	// fund an alternative address to deposit from (so we can test the fees,
+	// since --address-index=0 is the chain admin / default payoutAddress)
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
-	w.MustRun("send-funds", "-s", alternativeAddress, "base:10000000")
+	w.MustRun("send-funds", "-s", alternativeAddress, "base|10000000", "--address-index=1")
 
+	outs = w.MustRun("balance")
 	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals)
+
+	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
+	require.NoError(t, err)
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
-		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
-		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0"), 1000000-int(minFee))
+		w.MustRun("chain", "deposit", "base|1000000", "--node=0")
+		outs := w.MustRun("chain", "deposit", eth.String(), "base|10000", "--node=0", "--print-receipt")
+		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
+		checkL2Balance(t, outs, 10000)
 	})
 
 	t.Run("deposit to own account, then to EVM", func(t *testing.T) {
-		w.MustRun("chain", "deposit", "base:1000000", "--node=0", "--address-index=1")
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-int(minFee))
+		w.MustRun("chain", "deposit", "base|1000000", "--node=0", "--address-index=1")
+		outs = w.MustRun("chain", "balance", "--node=0", "--address-index=1")
+		checkL2Balance(t, outs, 1000000-int(minFee))
 		_, eth := newEthereumAccount()
-		w.MustRun("chain", "deposit", eth.String(), "base:1000000", "--node=0", "--address-index=1")
-		checkBalance(t, w.MustRun("chain", "balance", eth.String(), "--node=0", "--address-index=1"), 1000000) // fee will be taken from the sender on-chain balance
-		checkBalance(t, w.MustRun("chain", "balance", "--node=0", "--address-index=1"), 1000000-2*int(minFee))
+		outs = w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--address-index=1", "--print-receipt")
+		re := regexp.MustCompile(`Gas fee charged:\s*(\d+)`)
+		var l2GasFee int64
+		for _, line := range outs {
+			matches := re.FindStringSubmatch(line)
+			if len(matches) > 1 {
+				l2GasFee, err = strconv.ParseInt(matches[1], 10, 64)
+				require.NoError(t, err)
+			}
+		}
+		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
+		checkL2Balance(t, outs, 1000000) // fee will be taken from the sender on-chain balance
+		outs = w.MustRun("chain", "balance", "--node=0", "--address-index=1")
+		checkL2Balance(t, outs, 1000000-int(minFee)-int(l2GasFee))
 	})
 
 	// t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
@@ -164,8 +184,8 @@ func TestWaspCLIDeposit(t *testing.T) {
 	// 	out := w.PostRequestGetReceipt(
 	// 		"accounts", accounts.FuncNativeTokenCreate.Name,
 	// 		"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme),
-	// 		"-l", "base:1000000",
-	// 		"-t", "base:100000000",
+	// 		"-l", "base|1000000",
+	// 		"-t", "base|100000000",
 	// 		"string", accounts.ParamTokenName, "string", "TEST",
 	// 		"string", accounts.ParamTokenTickerSymbol, "string", "TS",
 	// 		"string", accounts.ParamTokenDecimals, "uint8", "8",
@@ -180,7 +200,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	// 		"string", accounts.ParamFoundrySN, "uint32", foundrySN,
 	// 		"string", accounts.ParamSupplyDeltaAbs, "bigint", "2",
 	// 		"string", accounts.ParamDestroyTokens, "bool", "false",
-	// 		"-l", "base:1000000",
+	// 		"-l", "base|1000000",
 	// 		"--off-ledger",
 	// 		"--node=0",
 	// 	)
@@ -197,7 +217,7 @@ func TestWaspCLIDeposit(t *testing.T) {
 	// 	// withdraw this token to the wasp-cli L1 address
 	// 	out = w.PostRequestGetReceipt(
 	// 		"accounts", accounts.FuncWithdraw.Name,
-	// 		"-l", fmt.Sprintf("base:1000000, %s:2", tokenID),
+	// 		"-l", fmt.Sprintf("base|1000000, %s:2", tokenID),
 	// 		"--off-ledger",
 	// 		"--node=0",
 	// 	)
@@ -240,7 +260,6 @@ func findRequestIDInOutput(out []string) string {
 }
 
 func TestWaspCLIBlockLog(t *testing.T) {
-	t.Skip("wasp-cli need to be fixed")
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
@@ -304,78 +323,15 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	require.True(t, found)
 }
 
-func TestWaspCLIRejoinChain(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
-	w := newWaspCLITest(t)
-
-	// make sure deploying with a bad quorum breaks
-	require.Panics(
-		t,
-		func() {
-			w.MustRun("chain", "deploy", "--chain=chain1", "--peers=0,1,2,3,4,5", "--quorum=4", "--node=0")
-			w.ActivateChainOnAllNodes("chain1", 0)
-		})
-
-	chainName := "chain1"
-
-	committee, quorum := w.ArgCommitteeConfig(0)
-
-	// test chain deploy command
-	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes(chainName, 0)
-
-	var chainID string
-	for _, idx := range w.Cluster.AllNodes() {
-		// test chain info command
-		chainID = w.ChainID(idx)
-		require.NotEmpty(t, chainID)
-		t.Logf("Chain ID: %s", chainID)
-	}
-
-	// test chain list command
-	for _, idx := range w.Cluster.AllNodes() {
-		out := w.MustRun("chain", "list", fmt.Sprintf("--node=%d", idx))
-		require.Contains(t, out[0], "Total 1 chain(s)")
-		require.Contains(t, out[4], chainID)
-	}
-
-	for _, idx := range w.Cluster.AllNodes() {
-		// deactivate chain and check that the chain was deactivated
-		w.MustRun("chain", "deactivate", fmt.Sprintf("--node=%d", idx))
-		out := w.MustRun("chain", "list", fmt.Sprintf("--node=%d", idx))
-		require.Contains(t, out[0], "Total 1 chain(s)")
-		require.Contains(t, out[4], chainID)
-
-		chOut := strings.Fields(out[4])
-		active, _ := strconv.ParseBool(chOut[1])
-		require.False(t, active)
-	}
-
-	for _, idx := range w.Cluster.AllNodes() {
-		// activate chain and check that it was activated
-		w.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
-		out := w.MustRun("chain", "list", fmt.Sprintf("--node=%d", idx))
-		require.Contains(t, out[0], "Total 1 chain(s)")
-		require.Contains(t, out[4], chainID)
-
-		chOut := strings.Fields(out[4])
-		active, _ := strconv.ParseBool(chOut[1])
-		require.True(t, active)
-	}
-}
-
 func TestWaspCLILongParam(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:1000000", "--node=0")
+	w.MustRun("chain", "deposit", "base|1000000", "--node=0")
 
-	veryLongTokenName := strings.Repeat("A", 10_000)
+	veryLongTokenName := strings.Repeat("A", 100_000)
 
 	errMsg := "slice length is too long"
 	defer func() {
@@ -398,9 +354,7 @@ func TestWaspCLILongParam(t *testing.T) {
 	t.FailNow()
 }
 
-func TestWaspCLITrustListImport(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestWaspCLITrustListImport(t *testing.T) { // passed
 	w := newWaspCLITest(t, waspClusterOpts{
 		nNodes:  4,
 		dirName: "wasp-cluster-initial",
@@ -462,9 +416,7 @@ func TestWaspCLITrustListImport(t *testing.T) {
 	}
 }
 
-func TestWaspCLICantPeerWithSelf(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestWaspCLICantPeerWithSelf(t *testing.T) { // passed
 	w := newWaspCLITest(t, waspClusterOpts{
 		nNodes: 1,
 	})
@@ -479,9 +431,7 @@ func TestWaspCLICantPeerWithSelf(t *testing.T) {
 		})
 }
 
-func TestWaspCLIListTrustDistrust(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+func TestWaspCLIListTrustDistrust(t *testing.T) { // passed
 	w := newWaspCLITest(t)
 	out := w.MustRun("peering", "list-trusted", "--node=0")
 	// one of the entries starts with "1", meaning node 0 trusts node 1
@@ -505,21 +455,20 @@ func TestWaspCLIListTrustDistrust(t *testing.T) {
 }
 
 func TestWaspCLIMintNativeToken(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+	t.Skip("TODO MintNativeToken")
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
+	w.MustRun("chain", "deposit", "base|100000000", "--node=0")
 
 	out := w.MustRun(
 		"chain", "create-native-token",
 		"--max-supply=1000000",
 		"--melted-tokens=0",
 		"--minted-tokens=0",
-		"--allowance=base:1000000",
+		"--allowance=base|1000000",
 		"--token-name=TEST",
 		"--token-decimals=8",
 		"--token-symbol=TS",
@@ -531,46 +480,6 @@ func TestWaspCLIMintNativeToken(t *testing.T) {
 	require.NotEmpty(t, reqID)
 
 	out = w.MustRun("chain", "request", reqID, "--node=0")
-	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
-}
-
-func TestWaspCLIRegisterERC20NativeTokenOnRemoteChain(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
-	w := newWaspCLITest(t)
-
-	committee, quorum := w.ArgCommitteeConfig(0)
-	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain1", 0)
-	w.MustRun("chain", "deposit", "base:100000000", "--node=0")
-
-	w.CreateL2NativeToken(isc.SimpleTokenScheme{
-		MaximumSupply: big.NewInt(1000000),
-		MeltedTokens:  big.NewInt(0),
-		MintedTokens:  big.NewInt(0),
-	}, "test", "test_symbol", 1)
-
-	w.MustRun("chain", "deploy", "--chain=chain2", committee, quorum, "--node=0")
-	w.ActivateChainOnAllNodes("chain2", 0)
-	w.MustRun("chain", "deposit", "base:100000000", "--node=0", "--chain=chain2")
-
-	out := w.MustRun(
-		"chain", "register-erc20-native-token-on-remote-chain",
-		"-o",
-		"--foundry-sn=1",
-		"--token-name=test",
-		"--ticker-symbol=test_symbol",
-		"--token-decimals=1",
-		"--target=chain2",
-		"--node=0",
-		"--chain=chain1",
-		"--allowance=base:1000000",
-	)
-
-	reqID := findRequestIDInOutput(out)
-	require.NotEmpty(t, reqID)
-
-	out = w.MustRun("chain", "request", reqID, "--node=0", "--chain=chain1")
 	require.Contains(t, strings.Join(out, "\n"), "Error: (empty)")
 }
 
@@ -589,15 +498,12 @@ func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *
 }
 
 func TestEVMISCReceipt(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	w := newWaspCLITest(t)
 	committee, quorum := w.ArgCommitteeConfig(0)
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	ethPvtKey, ethAddr := newEthereumAccount()
-	w.MustRun("chain", "deposit", ethAddr.String(), "base:100000000", "--node=0")
-
+	ethPvtKey, _ := newEthereumAccount()
+	w.MustRun("chain", "deposit", "base|100000000", "--node=0")
 	// send some arbitrary EVM tx
 	tx := sendDummyEVMTx(t, w, ethPvtKey)
 	out := w.MustRun("chain", "request", tx.Hash().Hex(), "--node=0")

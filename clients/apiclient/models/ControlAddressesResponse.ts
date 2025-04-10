@@ -14,17 +14,17 @@ import { HttpFile } from '../http/http';
 
 export class ControlAddressesResponse {
     /**
-    * The governing address (Hex Address)
+    * The anchor owner (Hex Address)
     */
-    'governingAddress': string;
+    'anchorOwner': string;
+    /**
+    * The chain admin (Hex Address)
+    */
+    'chainAdmin': string;
     /**
     * The block index (uint32
     */
     'sinceBlockIndex': number;
-    /**
-    * The state address (Hex Address)
-    */
-    'stateAddress': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -32,8 +32,14 @@ export class ControlAddressesResponse {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "governingAddress",
-            "baseName": "governingAddress",
+            "name": "anchorOwner",
+            "baseName": "anchorOwner",
+            "type": "string",
+            "format": "string"
+        },
+        {
+            "name": "chainAdmin",
+            "baseName": "chainAdmin",
             "type": "string",
             "format": "string"
         },
@@ -42,12 +48,6 @@ export class ControlAddressesResponse {
             "baseName": "sinceBlockIndex",
             "type": "number",
             "format": "int32"
-        },
-        {
-            "name": "stateAddress",
-            "baseName": "stateAddress",
-            "type": "string",
-            "format": "string"
         }    ];
 
     static getAttributeTypeMap() {

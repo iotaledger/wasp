@@ -76,8 +76,8 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		initialCommonAccountBalance,
 		ch.L2BaseTokens(accounts.CommonAccount()),
 	)
-	// chain owner's account is empty
-	require.Zero(t, ch.L2BaseTokens(ch.OwnerAgentID()))
+	// chain admin's account is empty
+	require.Zero(t, ch.L2BaseTokens(ch.AdminAgentID()))
 
 	// total owned by the chain is initialCommonAccountBalance
 	require.EqualValues(t,
@@ -139,11 +139,11 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		gasCoinValueAfter,
 	)
 
-	// the collected fees go to the payout (chain owner by default), minus the
+	// the collected fees go to the payout (chain admin by default), minus the
 	// amount used to top up the common account
 	require.EqualValues(t,
 		vmRes.Receipt.GasFeeCharged-addedToCommonAccount,
-		ch.L2BaseTokens(ch.OwnerAgentID()),
+		ch.L2BaseTokens(ch.AdminAgentID()),
 	)
 }
 
@@ -187,7 +187,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			})
 			ch, _ := env.NewChainExt(nil, 0, "chain", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
-			senderKeyPair, senderAddr := ch.OwnerPrivateKey, ch.OwnerAddress()
+			senderKeyPair, senderAddr := ch.ChainAdmin, ch.AdminAddress()
 			if !test.SenderIsOriginator {
 				senderKeyPair, senderAddr = env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 			}
@@ -197,7 +197,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
 			senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
 			senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
-			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.OwnerAgentID())
+			originatorL2BaseTokensBefore := ch.L2BaseTokens(ch.AdminAgentID())
 			commonAccountBaseTokensBefore := ch.L2CommonAccountBaseTokens()
 
 			require.EqualValues(t, 0, commonAccountBaseTokensBefore)
@@ -221,7 +221,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			t.Logf("senderL2BaseTokensBefore: %d, senderL2BaseTokensAfter: %d", senderL2BaseTokensBefore, senderL2BaseTokensAfter)
 			commonAccountBaseTokensAfter := ch.L2CommonAccountBaseTokens()
 			t.Logf("commonAccountBaseTokensBefore: %d, commonAccountBaseTokensAfter: %d", commonAccountBaseTokensBefore, commonAccountBaseTokensAfter)
-			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.OwnerAgentID())
+			originatorL2BaseTokensAfter := ch.L2BaseTokens(ch.AdminAgentID())
 			t.Logf("originatorL2BaseTokensBefore: %d, originatorL2BaseTokensAfter: %d", originatorL2BaseTokensBefore, originatorL2BaseTokensAfter)
 			l1GasFee := coin.Value(l1Res.Effects.Data.GasFee())
 			l2GasFee := ch.LastReceipt().GasFeeCharged
@@ -463,7 +463,7 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 		isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil),
 		0,
 		math.MaxUint64,
-	).WithSender(ch.OwnerPrivateKey.GetPublicKey())
+	).WithSender(ch.ChainAdmin.GetPublicKey())
 
 	require.ErrorContains(t, req.VerifySignature(), "invalid signature")
 

@@ -1,9 +1,6 @@
 // 'root' a core contract on the chain. It is responsible for:
 // - initial setup of the chain during chain deployment
 // - maintaining of core parameters of the chain
-// - maintaining (setting, delegating) chain owner ID
-// - maintaining (granting, revoking) smart contract deployment rights
-// - deployment of smart contracts on the chain and maintenance of contract registry
 
 package rootimpl
 

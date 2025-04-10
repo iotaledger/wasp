@@ -117,20 +117,15 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		vmctx.deductTopUpFeeFromCommonAccount(topUpFee)
 	}
 
-	blockIndex, l1Commitment, timestamp, rotationAddr := vmctx.extractBlock(
+	blockIndex, l1Commitment, timestamp := vmctx.extractBlock(
 		numProcessed, numSuccess, numOffLedger,
 	)
 
-	vmctx.task.Log.LogDebugf("closed vmContext: block index: %d, state hash: %s timestamp: %v, rotationAddr: %v",
-		blockIndex, l1Commitment, timestamp, rotationAddr)
+	vmctx.task.Log.LogDebugf("closed vmContext: block index: %d, state hash: %s timestamp: %v",
+		blockIndex, l1Commitment, timestamp)
 
 	taskResult.StateMetadata = vmctx.StateMetadata(l1Commitment, task.GasCoin)
 	vmctx.task.Log.LogDebugf("runTask OUT. block index: %d", blockIndex)
-	if rotationAddr != nil {
-		// rotation happens
-		vmctx.txbuilder.RotationTransaction(rotationAddr.AsIotaAddress())
-		vmctx.task.Log.LogDebugf("runTask OUT: rotate to address %s", rotationAddr.String())
-	}
 
 	taskResult.UnsignedTransaction = vmctx.txbuilder.BuildTransactionEssence(
 		taskResult.StateMetadata,

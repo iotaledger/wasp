@@ -124,7 +124,8 @@ func initDisableFeePolicyCmd() *cobra.Command {
 				chain,
 				governance.FuncSetFeePolicy.Message(feePolicy),
 				chainclient.PostRequestParams{
-					GasBudget: iotaclient.DefaultGasBudget,
+					GasBudget:   iotaclient.DefaultGasBudget,
+					L2GasBudget: 1 * isc.Million,
 				},
 				offLedger,
 				true,

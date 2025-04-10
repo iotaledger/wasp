@@ -31,13 +31,13 @@ func TestStartNewChain(t *testing.T) {
 	anchor1, err := client.StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            signer,
-			ChainOwnerAddress: signer.Address(),
-			PackageID:         l1starter.ISCPackageID(),
-			StateMetadata:     []byte{1, 2, 3, 4},
-			InitCoinRef:       getCoinsRes.Data[1].Ref(),
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        signer,
+			AnchorOwner:   signer.Address(),
+			PackageID:     l1starter.ISCPackageID(),
+			StateMetadata: []byte{1, 2, 3, 4},
+			InitCoinRef:   getCoinsRes.Data[1].Ref(),
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -108,15 +108,16 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 			txnResponse, err = client.ReceiveRequestsAndTransition(
 				context.Background(),
 				&iscmoveclient.ReceiveRequestsAndTransitionRequest{
-					Signer:        chainSigner,
-					PackageID:     l1starter.ISCPackageID(),
-					AnchorRef:     &anchor.ObjectRef,
-					Reqs:          []iotago.ObjectRef{*requestRef},
-					StateMetadata: []byte{1, 2, 3},
-					TopUpAmount:   topUpAmount,
-					GasPayment:    gasCoin1.Ref(),
-					GasPrice:      iotaclient.DefaultGasPrice,
-					GasBudget:     iotaclient.DefaultGasBudget,
+					Signer:           chainSigner,
+					PackageID:        l1starter.ISCPackageID(),
+					AnchorRef:        &anchor.ObjectRef,
+					ConsumedRequests: []iotago.ObjectRef{*requestRef},
+					SentAssets:       []iscmoveclient.SentAssets{},
+					StateMetadata:    []byte{1, 2, 3},
+					TopUpAmount:      topUpAmount,
+					GasPayment:       gasCoin1.Ref(),
+					GasPrice:         iotaclient.DefaultGasPrice,
+					GasBudget:        iotaclient.DefaultGasBudget,
 				},
 			)
 			require.NoError(t, err)
@@ -152,14 +153,14 @@ func startNewChain(t *testing.T, client *iscmoveclient.Client, signer cryptolib.
 			anchor, err = client.StartNewChain(
 				context.Background(),
 				&iscmoveclient.StartNewChainRequest{
-					Signer:            signer,
-					ChainOwnerAddress: signer.Address(),
-					PackageID:         l1starter.ISCPackageID(),
-					StateMetadata:     []byte{1, 2, 3, 4},
-					InitCoinRef:       selectedChainGasCoin.Ref(),
-					GasPayments:       []*iotago.ObjectRef{gasCoin.Ref()},
-					GasPrice:          iotaclient.DefaultGasPrice,
-					GasBudget:         iotaclient.DefaultGasBudget,
+					Signer:        signer,
+					AnchorOwner:   signer.Address(),
+					PackageID:     l1starter.ISCPackageID(),
+					StateMetadata: []byte{1, 2, 3, 4},
+					InitCoinRef:   selectedChainGasCoin.Ref(),
+					GasPayments:   []*iotago.ObjectRef{gasCoin.Ref()},
+					GasPrice:      iotaclient.DefaultGasPrice,
+					GasBudget:     iotaclient.DefaultGasBudget,
 				},
 			)
 			require.NoError(t, err)

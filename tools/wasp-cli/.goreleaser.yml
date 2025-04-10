@@ -151,4 +151,4 @@ release:
   prerelease: auto
   github:
     owner: iotaledger
-    name: isc-rebased
+    name: wasp
