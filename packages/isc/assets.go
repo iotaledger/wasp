@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"iter"
 	"maps"
 	"math/big"
 	"slices"
@@ -24,12 +25,13 @@ func NewCoinBalances() CoinBalances {
 	return make(CoinBalances)
 }
 
-func (c CoinBalances) IterateSorted(f func(coin.Type, coin.Value) bool) {
-	types := lo.Keys(c)
-	slices.SortFunc(types, coin.CompareTypes)
-	for _, coinType := range types {
-		if !f(coinType, c[coinType]) {
-			return
+// Iterate returns a deterministic iterator
+func (c CoinBalances) Iterate() iter.Seq2[coin.Type, coin.Value] {
+	return func(yield func(coin.Type, coin.Value) bool) {
+		for _, k := range slices.SortedFunc(maps.Keys(c), coin.CompareTypes) {
+			if !yield(k, c[k]) {
+				return
+			}
 		}
 	}
 }
@@ -85,17 +87,13 @@ func (c CoinBalances) BaseTokens() coin.Value {
 
 func (c CoinBalances) NativeTokens() CoinBalances {
 	ret := CoinBalances{}
-
-	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
+	for t, v := range c {
 		// Exclude BaseTokens
 		if coin.BaseTokenType.MatchesStringType(t.String()) {
-			return true
+			continue
 		}
-
 		ret[t] = v
-		return true
-	})
-
+	}
 	return ret
 }
 
@@ -110,14 +108,12 @@ type CoinJSON struct {
 
 func (c *CoinBalances) JSON() []CoinJSON {
 	var coins []CoinJSON
-	c.IterateSorted(func(t coin.Type, v coin.Value) bool {
+	for t, v := range c.Iterate() {
 		coins = append(coins, CoinJSON{
 			CoinType: t.ToTypeJSON(),
 			Balance:  v.String(),
 		})
-		return true
-	})
-
+	}
 	return coins
 }
 
@@ -206,21 +202,24 @@ func (o ObjectSet) Sorted() []IotaObject {
 	return ret
 }
 
-func (o ObjectSet) IterateSorted(f func(IotaObject) bool) {
-	for _, id := range o.KeysSorted() {
-		if !f(NewIotaObject(id, o[id])) {
-			return
+// Iterate returns a deterministic iterator
+func (c ObjectSet) Iterate() iter.Seq[IotaObject] {
+	return func(yield func(IotaObject) bool) {
+		for _, k := range slices.SortedFunc(maps.Keys(c), func(a, b iotago.ObjectID) int {
+			return bytes.Compare(a[:], b[:])
+		}) {
+			if !yield(IotaObject{
+				ID:   k,
+				Type: c[k],
+			}) {
+				return
+			}
 		}
 	}
 }
 
 func (o *ObjectSet) JSON() []IotaObject {
-	var objs []IotaObject
-	o.IterateSorted(func(obj IotaObject) bool {
-		objs = append(objs, obj)
-		return true
-	})
-	return objs
+	return slices.Collect(o.Iterate())
 }
 
 func (o *ObjectSet) UnmarshalJSON(b []byte) error {
@@ -433,9 +432,7 @@ func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBa
 	for cointype, coinval := range a.Coins {
 		ret.Coins[iotajsonrpc.CoinType(cointype.String())] = iotajsonrpc.CoinValue(coinval)
 	}
-	for objectID, t := range a.Objects {
-		ret.Objects[objectID] = t
-	}
+	maps.Copy(ret.Objects, a.Objects)
 	return ret
 }
 
