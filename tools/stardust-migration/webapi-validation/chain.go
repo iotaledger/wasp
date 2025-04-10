@@ -28,6 +28,8 @@ func (c *ChainValidation) validateChainInfo(stateIndex uint32) {
 	require.Equal(t, sRes.EvmChainId, rRes.EvmChainId)
 	require.Equal(t, sRes.IsActive, rRes.IsActive)
 
+	// As we work with two different clients, we can not simply require.Equal(gasFeePolicy, gasFeePolicy) as the types are different, and require does do not a type independent reflection.
+	// The types are different even with the same fields, leading to a failure.
 	require.Equal(t, sRes.GasFeePolicy.EvmGasRatio.A, rRes.GasFeePolicy.EvmGasRatio.A)
 	require.Equal(t, sRes.GasFeePolicy.EvmGasRatio.B, rRes.GasFeePolicy.EvmGasRatio.B)
 

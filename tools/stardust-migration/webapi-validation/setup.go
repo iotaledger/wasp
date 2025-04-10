@@ -2,6 +2,7 @@ package webapi_validation
 
 import (
 	"context"
+	"strconv"
 
 	stardust_client "github.com/nnikolash/wasp-types-exported/clients/apiclient"
 
@@ -22,4 +23,8 @@ func NewValidationContext(ctx context.Context, sClient *stardust_client.APIClien
 		sClient: sClient,
 		rClient: rClient,
 	}
+}
+
+func Uint32ToString(uint32 uint32) string {
+	return strconv.FormatUint(uint64(uint32), 10)
 }

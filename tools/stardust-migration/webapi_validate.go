@@ -53,10 +53,10 @@ func validateWebAPI(c *cmd.Context) error {
 
 	testContext := webapi_validation.NewValidationContext(ctx, sClient, rClient)
 	chainValidation := webapi_validation.NewChainValidation(testContext)
-	coreAccountsValidation := webapi_validation.NewCoreAccountsValidation(testContext)
+	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
 
-	chainValidation.Validate(0)
-	coreAccountsValidation.Validate(0)
+	chainValidation.Validate(1)
+	coreBlockValidation.Validate(1)
 
 	return nil
 }
