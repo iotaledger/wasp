@@ -40,8 +40,6 @@ func (c *CoreBlockLogValidation) validateRequestIDsInBlock(stateIndex uint32) {
 	require.EqualValues(base.T, stardustRequestIDs, rRes.RequestIds)
 }
 
-func 
-
 func (c *CoreBlockLogValidation) validateBlockInfo(stateIndex uint32) {
 	sRes, rRes := c.client.BlocklogGetBlockInfo(stateIndex)
 
