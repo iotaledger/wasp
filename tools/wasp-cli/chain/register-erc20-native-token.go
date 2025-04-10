@@ -40,7 +40,7 @@ func initRegisterERC20NativeTokenCmd() *cobra.Command {
 
 			postRequest(ctx, client, chainAliasName, request, chainclient.PostRequestParams{
 				GasBudget: iotaclient.DefaultGasBudget,
-			}, withOffLedger, true)
+			}, withOffLedger)
 		},
 	}
 
