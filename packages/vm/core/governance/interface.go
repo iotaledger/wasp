@@ -104,7 +104,7 @@ var (
 // state variables
 const (
 	// varPayoutAgentID :: AgentID
-	varPayoutAgentID = "pa" // covered in: TestMetadata
+	VarPayoutAgentID = "pa" // covered in: TestMetadata
 	// varGasCoinTargetValue :: uint64
 	varGasCoinTargetValue = "vs" // covered in: TestMetadata
 

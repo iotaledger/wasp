@@ -57,7 +57,7 @@ func MigrateGovernanceContract(
 func migrateChainOwnerID(oldChainState old_kv.KVStoreReader, newContractState kv.KVStore, oldChainID old_isc.ChainID, chainOwner *cryptolib.Address) {
 	cli.DebugLog("Migrating chain owner...\n")
 
-	governance.NewStateWriter(newContractState).SetChainOwnerID(isc.NewAddressAgentID(chainOwner))
+	governance.NewStateWriter(newContractState).SetChainAdmin(isc.NewAddressAgentID(chainOwner))
 
 	cli.DebugLog("Migrated chain owner\n")
 }
@@ -69,7 +69,7 @@ func migrateChainOwnerIDDelegetaed(oldContractState old_kv.KVStoreReader, newCon
 	if len(oldChainOwnerDelegatedIDBytes) != 0 {
 		oldChainOwnerDelegatedID := lo.Must(old_codec.DecodeAgentID(oldChainOwnerDelegatedIDBytes))
 		newChainIDOwnerDelegatedID := OldAgentIDtoNewAgentID(oldChainOwnerDelegatedID, oldChainID)
-		governance.NewStateWriter(newContractState).SetChainOwnerIDDelegated(newChainIDOwnerDelegatedID)
+		governance.NewStateWriter(newContractState).SetChainAdmin(newChainIDOwnerDelegatedID)
 	}
 
 	cli.DebugLog("Migrated chain owner delegated\n")
