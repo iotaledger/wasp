@@ -332,9 +332,6 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
 	cli.DebugLogf("Reading old NFTs...\n")
 
-	printProgress, clearProgress := cli.NewProgressPrinter("NFTs", 0)
-	defer clearProgress()
-
 	var strBuilder strings.Builder
 
 	ownerToNft := old_accounts.NftToOwnerMapR(contractState)
@@ -366,7 +363,6 @@ func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) s
 
 	for _, obj := range objectsToOwner {
 		strBuilder.WriteString(fmt.Sprintf("\t%v : %v\n", obj.objID, obj.owner))
-		printProgress()
 	}
 
 	strBuilder.WriteString("owner to ObjectIDs mapping:\n")
@@ -398,9 +394,6 @@ func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) s
 
 func newNftsToStr(accountsState kv.KVStoreReader, chainID isc.ChainID) string {
 	cli.DebugLogf("Reading new NFTs...\n")
-
-	printProgress, clearProgress := cli.NewProgressPrinter("NFTs", 0)
-	defer clearProgress()
 
 	var strBuilder strings.Builder
 
@@ -434,7 +427,6 @@ func newNftsToStr(accountsState kv.KVStoreReader, chainID isc.ChainID) string {
 
 	for _, obj := range objectsToOwner {
 		strBuilder.WriteString(fmt.Sprintf("\t%v : %v\n", obj.objID, newAgentIDToStr(obj.owner)))
-		printProgress()
 	}
 
 	// accountToObjectsMap
