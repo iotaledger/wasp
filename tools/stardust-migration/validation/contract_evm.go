@@ -302,7 +302,9 @@ func oldBlockHeaderByBlockNumberToStr(contractState old_kv.KVStoreReader) string
 		blockNumber := old_codec.MustDecodeUint64([]byte(keyWithoutPrefix))
 		header := lo.Must(old_emulator.HeaderFromBytes(v))
 
-		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, oldBlockHeaderToStr(header)))
+		// String is very big - hashing it. Might not be needed if later we will hash all strings anyway (which is likely)
+		headerStrHash := hashing.HashData([]byte(oldBlockHeaderToStr(header)))
+		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, headerStrHash))
 
 		printProgress()
 		count++
@@ -335,7 +337,9 @@ func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
 		// Reverse conversion
 		var oldHeader old_emulator.Header = old_emulator.Header(*newHeader)
 
-		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, oldBlockHeaderToStr(&oldHeader)))
+		// String is very big - hashing it. Might not be needed if later we will hash all strings anyway (which is likely)
+		headerStrHash := hashing.HashData([]byte(oldBlockHeaderToStr(&oldHeader)))
+		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, headerStrHash))
 
 		printProgress()
 		count++

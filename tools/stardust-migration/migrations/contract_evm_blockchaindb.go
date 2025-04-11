@@ -126,22 +126,15 @@ func migrateBlockchainDB(muts *old_buffered.Mutations, oldEmulatorStateRealm old
 
 	// Migrate KeyBlockHeaderByBlockNumber
 	oldBlockChain.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(key old_kv.Key, value []byte) bool {
-		blockNumber := old_codec.MustDecodeUint64([]byte(key[len(old_emulator.KeyBlockHeaderByBlockNumber):]))
-		//fmt.Printf("blockNumber: %v, key: %v (%s)\n", blockNumber, []byte(key), string(key))
+		key = utils.MustRemovePrefix(key, old_emulator.KeyBlockHeaderByBlockNumber)
+		blockNumber := old_codec.MustDecodeUint64([]byte(key))
 
-		if len(value) == 0 {
-			if containsDeletedKey(muts, kv.Key(key[:])) {
-				return true
-			}
-
-			newBlockChain.Set(kv.Key(key), value)
+		if value == nil {
+			newBlockChain.Del(emulator.MakeBlockHeaderByBlockNumberKey(blockNumber))
 			return true
 		}
 
-		oldHeader, err := old_emulator.HeaderFromBytes(value)
-		if err != nil {
-			panic(fmt.Errorf("failed to decode header of old evm type: %v", err))
-		}
+		oldHeader := lo.Must(old_emulator.HeaderFromBytes(value))
 
 		newHeader := emulator.Header{
 			Hash:        oldHeader.Hash,
