@@ -75,8 +75,6 @@ func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
 	switch flag {
 	case KeySchemeFlagEd25519:
 		buf = []byte{KeySchemeFlagEd25519.Byte()}
-	case KeySchemeFlagSecp256k1:
-		buf = []byte{KeySchemeFlagEd25519.Byte()}
 	case KeySchemeFlagIotaEd25519:
 		buf = []byte{}
 	default:
