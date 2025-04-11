@@ -67,8 +67,13 @@ func (s *contractSandbox) Request() isc.Calldata {
 	return s.reqctx.req
 }
 
+const ReqAssetsBagSizeLimit = 25 // this const should be equal to the one in request.move
+
 func (s *contractSandbox) Send(par isc.RequestParameters) {
 	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.reqctx.numPostedOutputs))
+	if len(par.Assets.Coins)+len(par.Assets.Objects) > ReqAssetsBagSizeLimit {
+		panic(vm.ErrAssetsOversize)
+	}
 	s.reqctx.send(par)
 }
 

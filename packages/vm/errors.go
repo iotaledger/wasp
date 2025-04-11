@@ -27,6 +27,7 @@ var (
 	ErrSenderUnknown             = coreerrors.Register("sender unknown").Create()
 	ErrNotEnoughTokensLeftForGas = coreerrors.Register("not enough funds left to pay for gas").Create()
 	ErrUnauthorized              = coreerrors.Register("unauthorized access").Create()
+	ErrAssetsOversize            = coreerrors.Register("the size of assets to be sent exceeds the max of a request")
 	ErrIllegalCall               = coreerrors.Register("illegal call - entrypoint cannot be called from contracts")
 	ErrEVMExecutionReverted      = coreerrors.Register("execution reverted: %s") // hex-encoded revert data
 )
