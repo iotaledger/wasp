@@ -1,9 +1,11 @@
 package validation
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/big"
+	"sort"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -16,6 +18,7 @@ import (
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -37,16 +40,19 @@ func oldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID ol
 	accsStr, accs := oldAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("Old accounts preview:%v", utils.MultilinePreview(accsStr))
 
-	var baseTokenBalancesStr, nativeTokenBalancesStr string
+	var baseTokenBalancesStr, nativeTokenBalancesStr, nftsStr string
 	GoAllAndWait(func() {
 		baseTokenBalancesStr = oldBaseTokenBalancesToStr(contractState, chainID, accs)
 		cli.DebugLogf("Old base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
 	}, func() {
 		nativeTokenBalancesStr = oldNativeTokenBalancesToStr(contractState, chainID, accs)
 		cli.DebugLogf("Old native token balances preview:%v", utils.MultilinePreview(nativeTokenBalancesStr))
+	}, func() {
+		nftsStr = oldNftsToStr(contractState, chainID)
+		cli.DebugLogf("Old NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 
-	return accsStr + baseTokenBalancesStr + nativeTokenBalancesStr
+	return accsStr + baseTokenBalancesStr + nativeTokenBalancesStr + nftsStr
 }
 
 func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID) string {
@@ -58,7 +64,10 @@ func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.Ch
 	cli.DebugLogf("New base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
 	cli.DebugLogf("New native token balances preview:%v", utils.MultilinePreview(nativeTOkenBalancesStr))
 
-	return accsStr + baseTokenBalancesStr + nativeTOkenBalancesStr
+	nftsStr := newNftsToStr(contractState, chainID)
+	cli.DebugLogf("New NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
+
+	return accsStr + baseTokenBalancesStr + nativeTOkenBalancesStr + nftsStr
 }
 
 func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) (string, map[old_kv.Key]old_isc.AgentID) {
@@ -318,6 +327,142 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 	})
 
 	return baseFromPrefix, nativeFromPrefix
+}
+
+func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
+	cli.DebugLogf("Reading old NFTs...\n")
+
+	printProgress, clearProgress := cli.NewProgressPrinter("NFTs", 0)
+	defer clearProgress()
+
+	var strBuilder strings.Builder
+
+	ownerToNft := old_accounts.NftToOwnerMapR(contractState)
+
+	// objectToOwnerMap
+	strBuilder.WriteString("ObjectID to owner mapping:\n")
+	strBuilder.WriteString("ObjectID : owner\n")
+
+	type objectToOwner struct {
+		objID iotago.ObjectID
+		owner string
+	}
+
+	nftOwners := map[string]old_isc.AgentID{}
+	objectsToOwner := []objectToOwner{}
+	ownerToNft.Iterate(func(k []byte, v []byte) bool {
+		nftID := old_codec.MustDecodeNFTID([]byte(k))
+		objID := iotago.ObjectID(nftID[:])
+		oldAgentID := lo.Must(old_isc.AgentIDFromBytes(v))
+		nftOwners[oldAgentID.String()] = oldAgentID
+		oldAgentIDStr := oldAgentIDToStr(oldAgentID)
+		objectsToOwner = append(objectsToOwner, objectToOwner{objID, oldAgentIDStr})
+		return true
+	})
+
+	sort.Slice(objectsToOwner, func(i, j int) bool {
+		return bytes.Compare(objectsToOwner[i].objID[:], objectsToOwner[j].objID[:]) < 0
+	})
+
+	for _, obj := range objectsToOwner {
+		strBuilder.WriteString(fmt.Sprintf("\t%v : %v\n", obj.objID, obj.owner))
+		printProgress()
+	}
+
+	strBuilder.WriteString("owner to ObjectIDs mapping:\n")
+
+	sortedNftOwners := []old_isc.AgentID{}
+	for ownerStr := range nftOwners {
+		sortedNftOwners = append(sortedNftOwners, nftOwners[ownerStr])
+	}
+	sort.Slice(sortedNftOwners, func(i, j int) bool {
+		return oldAgentIDToStr(sortedNftOwners[i]) < oldAgentIDToStr(sortedNftOwners[j])
+	})
+
+	for _, owner := range sortedNftOwners {
+		strBuilder.WriteString(fmt.Sprintf("\t%v objects:\n", oldAgentIDToStr(owner)))
+
+		ownerObjects := old_accounts.GetAccountNFTs(contractState, owner)
+
+		sort.Slice(ownerObjects, func(i, j int) bool {
+			return bytes.Compare(ownerObjects[i][:], ownerObjects[j][:]) < 0
+		})
+
+		for _, obj := range ownerObjects {
+			strBuilder.WriteString(fmt.Sprintf("\t\t%v\n", obj.String()))
+		}
+	}
+
+	return strBuilder.String()
+}
+
+func newNftsToStr(accountsState kv.KVStoreReader, chainID isc.ChainID) string {
+	cli.DebugLogf("Reading new NFTs...\n")
+
+	printProgress, clearProgress := cli.NewProgressPrinter("NFTs", 0)
+	defer clearProgress()
+
+	var strBuilder strings.Builder
+
+	sr := accounts.NewStateReader(newSchema, accountsState)
+
+	allAccounts := sr.AllAccountsAsDict()
+
+	nftOwners := map[string]isc.AgentID{}
+
+	// objectToOwnerMap
+	strBuilder.WriteString("ObjectID to owner mapping:\n")
+	strBuilder.WriteString("ObjectID : owner\n")
+
+	type objectToOwner struct {
+		objID iotago.ObjectID
+		owner isc.AgentID
+	}
+	objectsToOwner := []objectToOwner{}
+	for objID, owner := range sr.GetObjectsToOwnerMap() {
+		nftOwners[owner.String()] = owner
+		if !allAccounts.Has(kv.Key(owner.String())) {
+			// cli.Logf("account not found in all accounts map: %v", owner)
+			panic(fmt.Errorf("account not found in all accounts map: %v", owner))
+		}
+		objectsToOwner = append(objectsToOwner, objectToOwner{objID, owner})
+	}
+
+	sort.Slice(objectsToOwner, func(i, j int) bool {
+		return bytes.Compare(objectsToOwner[i].objID[:], objectsToOwner[j].objID[:]) < 0
+	})
+
+	for _, obj := range objectsToOwner {
+		strBuilder.WriteString(fmt.Sprintf("\t%v : %v\n", obj.objID, newAgentIDToStr(obj.owner)))
+		printProgress()
+	}
+
+	// accountToObjectsMap
+	strBuilder.WriteString("owner to ObjectIDs mapping:\n")
+
+	sortedNftOwners := []isc.AgentID{}
+	for ownerStr := range nftOwners {
+		sortedNftOwners = append(sortedNftOwners, nftOwners[ownerStr])
+	}
+	sort.Slice(sortedNftOwners, func(i, j int) bool {
+		return newAgentIDToStr(sortedNftOwners[i]) < newAgentIDToStr(sortedNftOwners[j])
+	})
+
+	for _, owner := range sortedNftOwners {
+		strBuilder.WriteString(fmt.Sprintf("\t%v objects:\n", newAgentIDToStr(owner)))
+
+		ownerObjects := sr.GetAccountObjects(owner)
+		sort.Slice(ownerObjects, func(i, j int) bool {
+			return bytes.Compare(ownerObjects[i].ID[:], ownerObjects[j].ID[:]) < 0
+		})
+
+		for _, obj := range ownerObjects {
+			strBuilder.WriteString(fmt.Sprintf("\t\t%v\n", obj.ID.String()))
+		}
+	}
+	cli.DebugLogf("strBuilder: %v", strBuilder.String())
+
+	return strBuilder.String()
 }
 
 func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (base, native string) {

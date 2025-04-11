@@ -120,3 +120,18 @@ func (s *StateReader) GetObject(id iotago.ObjectID) (isc.IotaObject, bool) {
 	t := lo.Must(iotago.ObjectTypeFromBytes(s.accountCoinBalancesMapR(AccountKey(aid)).GetAt(id[:])))
 	return isc.NewIotaObject(id, t), true
 }
+
+func (s *StateReader) GetObjectsToOwnerMap() map[iotago.ObjectID]isc.AgentID {
+	ret := make(map[iotago.ObjectID]isc.AgentID)
+	s.objectToOwnerMapR().Iterate(func(k []byte, v []byte) bool {
+		id := iotago.ObjectID{}
+		copy(id[:], k)
+		agentID, err := isc.AgentIDFromBytes(v)
+		if err != nil {
+			panic(fmt.Errorf("cannot convert %v to AgentID: %w", v, err))
+		}
+		ret[id] = agentID
+		return true
+	})
+	return ret
+}
