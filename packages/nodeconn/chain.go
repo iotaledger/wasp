@@ -117,9 +117,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-				ShowEffects:        true,
+				ShowObjectChanges: true,
+				ShowEffects:       true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
