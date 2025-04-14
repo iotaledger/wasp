@@ -45,6 +45,8 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
+const maxLogsTopics = 4
+
 // EVMChain provides common functionality to interact with the EVM state.
 type EVMChain struct {
 	backend  ChainBackend
@@ -546,12 +548,14 @@ func (e *EVMChain) BlockTransactionCountByNumber(blockNumber *big.Int) (uint64, 
 
 // Logs executes a log filter operation, blocking during execution and
 // returning all the results in one batch.
-//
-
 func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*types.Log, error) {
 	e.log.LogDebugf("Logs(q=%v)", query)
 	if query == nil {
 		query = &ethereum.FilterQuery{}
+	}
+
+	if len(query.Topics) > maxLogsTopics {
+		return nil, errors.New("too many topics in filter")
 	}
 
 	if params == nil {
