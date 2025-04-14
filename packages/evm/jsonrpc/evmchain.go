@@ -45,6 +45,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
+// this constant is copied from go-ethereum
 const maxLogsTopics = 4
 
 // EVMChain provides common functionality to interact with the EVM state.
@@ -554,6 +555,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*typ
 		query = &ethereum.FilterQuery{}
 	}
 
+	// this condition is copied from go-ethereum
 	if len(query.Topics) > maxLogsTopics {
 		return nil, errors.New("too many topics in filter")
 	}
