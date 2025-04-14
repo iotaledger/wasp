@@ -6,6 +6,7 @@ package nodeconn
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 
 	bcs "github.com/iotaledger/bcs-go"
@@ -218,7 +219,8 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 				ncc.anchorHandler(&anchor, l1Params)
 			case req := <-newRequests:
 				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
-				if err != nil {
+				// Invalid allowance will make the request execution failed, so the onledger request object will be consumed
+				if err != nil && !strings.Contains(err.Error(), "failed to parse allowance") {
 					panic(err)
 				}
 				ncc.LogInfo("Incoming request ", req.ObjectID.String(), " ", onledgerReq.String(), " ", onledgerReq.ID().String())
