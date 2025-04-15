@@ -29,8 +29,7 @@ func LoadUnsafeInMemoryTestingSeed(addressIndex uint32) wallets.Wallet {
 	seed, err := hexutil.Decode(config.GetTestingSeed())
 	log.Check(err)
 
-	useLegacyDerivation := config.GetUseLegacyDerivation()
-	keyPair := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(seed, addressIndex, useLegacyDerivation))
+	keyPair := cryptolib.KeyPairFromSeed(cryptolib.SubSeed(seed, addressIndex))
 
 	return NewUnsafeInMemoryTestingSeed(keyPair, addressIndex)
 }
