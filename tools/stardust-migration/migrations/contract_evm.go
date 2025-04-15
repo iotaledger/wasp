@@ -6,7 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
-	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
 
@@ -17,13 +16,13 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
-func MigrateEVMContract(muts *old_buffered.Mutations, oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
+func MigrateEVMContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore) {
 	cli.DebugLog("Migrating evm contract...")
 
 	oldContractState := old_evm.ContractPartitionR(oldChainState)
 	newContractState := evm.ContractPartition(newChainState)
 
-	migrateEVMEmulator(muts, oldContractState, newContractState)
+	migrateEVMEmulator(oldContractState, newContractState)
 
 	oldMagicState := old_evm.ISCMagicSubrealmR(oldContractState)
 	newMagicState := evm.ISCMagicSubrealm(newContractState)
@@ -35,14 +34,14 @@ func MigrateEVMContract(muts *old_buffered.Mutations, oldChainState old_kv.KVSto
 	cli.DebugLog("Migrated evm contract")
 }
 
-func migrateEVMEmulator(muts *old_buffered.Mutations, oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
+func migrateEVMEmulator(oldContractState old_kv.KVStoreReader, newContractState kv.KVStore) {
 	cli.DebugLog("Migrating evm/emulator...")
 
 	oldEmulatorState := old_evm.EmulatorStateSubrealmR(oldContractState)
 	newEmulatorState := evm.EmulatorStateSubrealm(newContractState)
 
 	migrateStateDB(oldEmulatorState, newEmulatorState)
-	migrateBlockchainDB(muts, oldEmulatorState, newEmulatorState)
+	migrateBlockchainDB(oldEmulatorState, newEmulatorState)
 
 	cli.DebugLogf("Migrated evm/emulator")
 }

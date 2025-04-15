@@ -241,7 +241,7 @@ func migrateSingleState(c *cmd.Context) error {
 	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID)
 	blockKeepAmount := migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, chainOwner)
 	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, chainOwner, blockKeepAmount)
-	migrations.MigrateEVMContract(nil, srcState, stateDraft)
+	migrations.MigrateEVMContract(srcState, stateDraft)
 
 	newBlock := destStore.Commit(stateDraft)
 	destStore.SetLatest(newBlock.TrieRoot())
@@ -412,7 +412,7 @@ func migrateAllStates(c *cmd.Context) error {
 		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, chainOwner, blockKeepAmount)
 		blocklogMuts := newState.W.MutationsCountDiff()
 
-		migrations.MigrateEVMContract(oldMuts, oldStateMutsOnly, newState)
+		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
 		evmMuts := newState.W.MutationsCountDiff()
 
 		newMuts, _ := newState.W.Commit(true)

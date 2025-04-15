@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
@@ -162,4 +163,15 @@ func NewReadOnlyKVStore(r kv.KVStoreReader) kv.KVStore {
 		KVStoreReader: r,
 		KVWriter:      nil,
 	}
+}
+
+var HashStrings = true
+
+func hashValue[Value ~string | ~[]byte](v Value) string {
+	// In future this can be controled by command parameter to disable caching to see real values.
+	if !HashStrings {
+		return string(v)
+	}
+
+	return hashing.HashData([]byte(v)).Hex()
 }

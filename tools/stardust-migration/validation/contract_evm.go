@@ -9,9 +9,11 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/coin"
+	evm_types "github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
@@ -20,10 +22,10 @@ import (
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_evm_types "github.com/nnikolash/wasp-types-exported/packages/evm/evmtypes"
-	"github.com/nnikolash/wasp-types-exported/packages/hashing"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_codec "github.com/nnikolash/wasp-types-exported/packages/kv/codec"
+	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
@@ -45,7 +47,7 @@ import (
 func oldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving old EVM contract content...")
 	contractState := old_evm.ContractPartitionR(chainState)
-	var allowanceStr, txByBlockStr, blockHeaderStr string
+	var allowanceStr, txByBlockStr, blockHeaderStr, receiptsStr string
 
 	GoAllAndWait(func() {
 		allowanceStr = oldISCMagicAllowanceToStr(contractState)
@@ -56,15 +58,18 @@ func oldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex,
 	}, func() {
 		blockHeaderStr = oldBlockHeaderByBlockNumberToStr(contractState)
 		cli.DebugLogf("Old block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
+	}, func() {
+		receiptsStr = oldReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		cli.DebugLogf("Old receipts by block number preview:\n%v", utils.MultilinePreview(receiptsStr))
 	})
 
-	return allowanceStr + txByBlockStr + blockHeaderStr
+	return allowanceStr + txByBlockStr + blockHeaderStr + receiptsStr
 }
 
 func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving new EVM contract content...")
 	contractState := evm.ContractPartitionR(chainState)
-	var allowanceStr, txByBlockStr, blockHeaderStr string
+	var allowanceStr, txByBlockStr, blockHeaderStr, receiptsStr string
 
 	GoAllAndWait(func() {
 		allowanceStr = newISCMagicAllowanceToStr(contractState)
@@ -75,9 +80,12 @@ func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toB
 	}, func() {
 		blockHeaderStr = newBlockHeaderByBlockNumberToStr(contractState)
 		cli.DebugLogf("New block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
+	}, func() {
+		receiptsStr = newReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		cli.DebugLogf("New receipts by block number preview:\n%v", utils.MultilinePreview(receiptsStr))
 	})
 
-	return allowanceStr + txByBlockStr + blockHeaderStr
+	return allowanceStr + txByBlockStr + blockHeaderStr + receiptsStr
 }
 
 func oldISCMagicAllowanceToStr(contractState old_kv.KVStoreReader) string {
@@ -208,8 +216,8 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 			for _, tx := range txs {
 				printProgress()
 				oldTxBytes := old_evm_types.EncodeTransaction(tx)
-				bytesHash := hashing.HashData(oldTxBytes)
-				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash.Hex()))
+				bytesHash := hashValue(oldTxBytes)
+				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash))
 			}
 		}
 
@@ -261,8 +269,8 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 			for _, tx := range txs {
 				printProgress()
 				oldTxBytes := old_evm_types.EncodeTransaction(tx)
-				bytesHash := hashing.HashData(oldTxBytes)
-				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash.Hex()))
+				bytesHash := hashValue(oldTxBytes)
+				res.WriteString(fmt.Sprintf("Tx in block: %v, txHash: %v, txBytesHash: %v\n", blockIndex, tx.Hash().Hex(), bytesHash))
 			}
 		}
 
@@ -289,21 +297,21 @@ func newTransactionsByBlockNumberToStr(contractState kv.KVStoreReader, fromBlock
 
 func oldBlockHeaderByBlockNumberToStr(contractState old_kv.KVStoreReader) string {
 	cli.DebugLogf("Retrieving old BlockHeaderByBlockNumber...")
-	iscMagicState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
+	bcsState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
 
 	var res strings.Builder
 	printProgress, done := NewProgressPrinter("evm_old", "block headers by block", "headers", 0)
 	defer done()
 	count := 0
 
-	iscMagicState.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(k old_kv.Key, v []byte) bool {
+	bcsState.IterateSorted(old_emulator.KeyBlockHeaderByBlockNumber, func(k old_kv.Key, v []byte) bool {
 		keyWithoutPrefix := utils.MustRemovePrefix(k, old_emulator.KeyBlockHeaderByBlockNumber)
 
 		blockNumber := old_codec.MustDecodeUint64([]byte(keyWithoutPrefix))
 		header := lo.Must(old_emulator.HeaderFromBytes(v))
 
 		// String is very big - hashing it. Might not be needed if later we will hash all strings anyway (which is likely)
-		headerStrHash := hashing.HashData([]byte(oldBlockHeaderToStr(header)))
+		headerStrHash := hashValue([]byte(oldEVMBlockHeaderToStr(header)))
 		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, headerStrHash))
 
 		printProgress()
@@ -321,14 +329,14 @@ func oldBlockHeaderByBlockNumberToStr(contractState old_kv.KVStoreReader) string
 
 func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
 	cli.DebugLogf("Retrieving new BlockHeaderByBlockNumber...")
-	iscMagicState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
+	bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
 
 	var res strings.Builder
 	printProgress, done := NewProgressPrinter("evm_new", "block headers by block", "headers", 0)
 	defer done()
 	count := 0
 
-	iscMagicState.IterateSorted(emulator.KeyBlockHeaderByBlockNumber, func(k kv.Key, v []byte) bool {
+	bcState.IterateSorted(emulator.KeyBlockHeaderByBlockNumber, func(k kv.Key, v []byte) bool {
 		keyWithoutPrefix := utils.MustRemovePrefix(k, emulator.KeyBlockHeaderByBlockNumber)
 
 		blockNumber := codec.MustDecode[uint64]([]byte(keyWithoutPrefix))
@@ -338,7 +346,7 @@ func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
 		var oldHeader old_emulator.Header = old_emulator.Header(*newHeader)
 
 		// String is very big - hashing it. Might not be needed if later we will hash all strings anyway (which is likely)
-		headerStrHash := hashing.HashData([]byte(oldBlockHeaderToStr(&oldHeader)))
+		headerStrHash := hashValue([]byte(oldEVMBlockHeaderToStr(&oldHeader)))
 		res.WriteString(fmt.Sprintf("Block header: %v: %v\n", blockNumber, headerStrHash))
 
 		printProgress()
@@ -348,4 +356,134 @@ func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
 
 	cli.DebugLogf("Found %v new block headers by block number", count)
 	return res.String()
+}
+
+func oldReceiptsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromIndex, toIndex uint32) string {
+	cli.DebugLogf("Retrieving old receipts by block number...")
+	bcState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
+	fromIndex = max(getFirstAvailableBlockIndex(fromIndex, toIndex), 2) - 1
+	var receiptsStr strings.Builder
+	keysCount := 0
+
+	GoAllAndWait(func() {
+		printProgress, done := NewProgressPrinter("evm_old", "receipts by block (receipts)", "receipts", toIndex-fromIndex)
+		defer done()
+		recCount := 0
+
+		for blockIndex := fromIndex; blockIndex < toIndex; blockIndex++ {
+			printProgress()
+			receipts := old_collections.NewArrayReadOnly(bcState, string(old_emulator.MakeReceiptsByBlockNumberKey(uint64(blockIndex))))
+
+			for reqIdx := uint32(0); reqIdx < receipts.Len(); reqIdx++ {
+				recBytes := receipts.GetAt(reqIdx)
+				if recBytes == nil {
+					receiptsStr.WriteString(fmt.Sprintf("Block: %v, receipt %v: MISSING\n", blockIndex, reqIdx))
+					continue
+				}
+
+				rec := lo.Must(old_evm_types.DecodeReceipt(recBytes))
+				// String is very big - hashing it. Might not be needed if later we will hash all strings anyway (which is likely)
+				recStrHash := hashValue([]byte(evmReceiptsToStr(rec)))
+				receiptsStr.WriteString(fmt.Sprintf("Block: %v, receipt %v: %v\n", blockIndex, reqIdx, recStrHash))
+				recCount++
+			}
+		}
+
+		cli.DebugLogf("Found %v old receipts by block number", recCount)
+
+		if uint32(recCount) < (toIndex - fromIndex) {
+			panic(fmt.Sprintf("Not enough receipts found in range [%v, %v]: %v", fromIndex, toIndex, recCount))
+		}
+	}, func() {
+		printProgress, done := NewProgressPrinter("evm_old", "receipts by block (keys)", "keys", 0)
+		defer done()
+
+		bcState.IterateSorted(old_emulator.KeyReceiptsByBlockNumber, func(k old_kv.Key, v []byte) bool {
+			keyWithoutPrefix := utils.MustRemovePrefix(k, old_emulator.KeyReceiptsByBlockNumber)
+			if len(keyWithoutPrefix) < 8 {
+				// cannot even contain blockIndex
+				return true
+			}
+			keyWithoutPrefix = keyWithoutPrefix[8:]
+			if keyWithoutPrefix != "" && keyWithoutPrefix[0] != '#' {
+				// not length and not element
+				return true
+			}
+
+			keysCount++
+			printProgress()
+			return true
+		})
+
+		cli.DebugLogf("Found %v keys of old receipts by block number", keysCount)
+
+		if uint32(keysCount) < (toIndex - fromIndex) {
+			panic(fmt.Sprintf("Not enough keys found in range [%v, %v]: %v", fromIndex, toIndex, keysCount))
+		}
+	})
+
+	receiptsStr.WriteString(fmt.Sprintf("Receipts by block keys count: %v\n", keysCount))
+
+	return receiptsStr.String()
+}
+
+func newReceiptsByBlockNumberToStr(contractState kv.KVStoreReader, fromIndex, toIndex uint32) string {
+	cli.DebugLogf("Retrieving new receipts by block number...")
+	bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
+	fromIndex = max(getFirstAvailableBlockIndex(fromIndex, toIndex), 2) - 1
+	var receiptsStr strings.Builder
+	keysCount := 0
+
+	GoAllAndWait(func() {
+		printProgress, done := NewProgressPrinter("evm_new", "receipts by block (receipts)", "receipts", toIndex-fromIndex)
+		defer done()
+		recCount := 0
+
+		for blockIndex := fromIndex; blockIndex < toIndex; blockIndex++ {
+			printProgress()
+			receipts := collections.NewArrayReadOnly(bcState, string(emulator.MakeReceiptsByBlockNumberKey(uint64(blockIndex))))
+
+			for reqIdx := uint32(0); reqIdx < receipts.Len(); reqIdx++ {
+				recBytes := receipts.GetAt(reqIdx)
+				if recBytes == nil {
+					receiptsStr.WriteString(fmt.Sprintf("Block: %v, receipt %v: MISSING\n", blockIndex, reqIdx))
+					continue
+				}
+
+				rec := lo.Must(evm_types.DecodeReceipt(recBytes))
+				// String is very big - hashing it. Might not be needed if later we will hash all strings anyway (which is likely)
+				recStrHash := hashValue([]byte(evmReceiptsToStr(rec)))
+				receiptsStr.WriteString(fmt.Sprintf("Block: %v, receipt %v: %v\n", blockIndex, reqIdx, recStrHash))
+				recCount++
+			}
+		}
+
+		cli.DebugLogf("Found %v new receipts by block number", recCount)
+	}, func() {
+		printProgress, done := NewProgressPrinter("evm_new", "receipts by block (keys)", "keys", 0)
+		defer done()
+
+		bcState.IterateSorted(emulator.KeyReceiptsByBlockNumber, func(k kv.Key, v []byte) bool {
+			keyWithoutPrefix := utils.MustRemovePrefix(k, emulator.KeyReceiptsByBlockNumber)
+			if len(keyWithoutPrefix) < 8 {
+				// cannot even contain blockIndex
+				return true
+			}
+			keyWithoutPrefix = keyWithoutPrefix[8:]
+			if keyWithoutPrefix != "" && keyWithoutPrefix[0] != '#' {
+				// not length and not element
+				return true
+			}
+
+			keysCount++
+			printProgress()
+			return true
+		})
+
+		cli.DebugLogf("Found %v keys of new receipts by block number", keysCount)
+	})
+
+	receiptsStr.WriteString(fmt.Sprintf("Receipts by block keys count: %v\n", keysCount))
+
+	return receiptsStr.String()
 }
