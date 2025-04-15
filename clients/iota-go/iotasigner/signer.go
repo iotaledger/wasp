@@ -18,7 +18,7 @@ type Bip32CoinType int
 const (
 	// testnet/alphanet uses COIN_TYPE = 1
 	TestnetCoinType Bip32CoinType = 1
-	// / IOTA coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
+	// IOTA coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
 	IotaCoinType Bip32CoinType = 4218
 )
 
@@ -59,7 +59,6 @@ type Signer interface {
 	SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error)
 }
 
-// FIXME support more than ed25519
 type InMemorySigner struct {
 	ed25519Keypair *KeypairEd25519
 
@@ -70,18 +69,14 @@ func NewSigner(seed []byte, flag KeySchemeFlag) *InMemorySigner {
 	prikey := ed25519.NewKeyFromSeed(seed)
 	pubkey := prikey.Public().(ed25519.PublicKey)
 
-	// IOTA_DIFF iotago ignore flag when signature scheme is ed25519
-	var buf []byte
-	switch flag {
-	case KeySchemeFlagEd25519:
-		buf = []byte{KeySchemeFlagEd25519.Byte()}
-	case KeySchemeFlagIotaEd25519:
-		buf = []byte{}
-	default:
+	// Right now only supports ED25519. Stardust *Addresses* used to include the scheme flag, Rebased does not.
+	// https://docs.iota.org/developer/cryptography/transaction-auth/keys-addresses#address-format
+
+	if flag != KeySchemeFlagEd25519 {
 		panic("unrecognizable key scheme flag")
 	}
-	buf = append(buf, pubkey...)
-	addrBytes := blake2b.Sum256(buf)
+
+	addrBytes := blake2b.Sum256(pubkey)
 	addr := "0x" + hex.EncodeToString(addrBytes[:])
 
 	return &InMemorySigner{
@@ -139,7 +134,6 @@ func (s *InMemorySigner) PublicKey() []byte {
 }
 
 func (s *InMemorySigner) Sign(msg []byte) (signature *Signature, err error) {
-	// FIXME support more than ed25519
 	sig := ed25519.Sign(s.ed25519Keypair.PriKey, msg)
 
 	return &Signature{
@@ -151,7 +145,6 @@ func (s *InMemorySigner) Address() *iotago.Address {
 	return s.address
 }
 
-// FIXME support more than ed25519
 func (s *InMemorySigner) SignTransactionBlock(txnBytes []byte, intent Intent) (*Signature, error) {
 	data := MessageWithIntent(intent, txnBytes)
 	hash := blake2b.Sum256(data)

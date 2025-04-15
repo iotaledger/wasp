@@ -18,7 +18,7 @@ func TestCompatability(t *testing.T) {
 
 	kp := KeyPairFromSeed(SubSeed(seed, seedIndex))
 	subseed := SubSeed(seed, seedIndex)
-	suikp := iotasigner.NewSigner(subseed[:], iotasigner.KeySchemeFlagIotaEd25519)
+	suikp := iotasigner.NewSigner(subseed[:], iotasigner.KeySchemeFlagDefault)
 
 	require.Equal(t, kp.Address().AsIotaAddress().Data(), suikp.Address().Data())
 

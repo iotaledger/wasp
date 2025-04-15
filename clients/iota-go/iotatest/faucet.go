@@ -13,7 +13,7 @@ func MakeSignerWithFunds(index int, faucetURL string) iotasigner.Signer {
 }
 
 func MakeSignerWithFundsFromSeed(seed []byte, index int, faucetURL string) iotasigner.Signer {
-	keySchemeFlag := iotasigner.KeySchemeFlagIotaEd25519
+	keySchemeFlag := iotasigner.KeySchemeFlagDefault
 
 	// there are only 256 different signers can be generated
 	signer := iotasigner.NewSignerByIndex(seed, keySchemeFlag, index)
