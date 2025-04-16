@@ -11,6 +11,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -176,7 +177,7 @@ func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (
 	}
 	ref := iotatest.RandomObjectRef()
 	assetsBagRef := iotatest.RandomObjectRef()
-	return isc.OnLedgerFromRequest(&iscmove.RefWithObject[iscmove.Request]{
+	return isc.OnLedgerFromMoveRequest(&iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{
 			ID:     *ref.ObjectID,
@@ -190,8 +191,8 @@ func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (
 				Function: uint32(r.msg.Target.EntryPoint),
 				Args:     r.msg.Params,
 			},
-			Allowance: *r.allowance.AsISCMove(),
-			GasBudget: r.gasBudget,
+			AllowanceBCS: lo.Must(bcs.Marshal(r.allowance.AsISCMove())),
+			GasBudget:    r.gasBudget,
 		},
 	}, ch.ChainID.AsAddress())
 }
@@ -283,7 +284,15 @@ func (env *Solo) makeBaseTokenCoin(
 	}
 }
 
-func (ch *Chain) SendRequestWithL1GasBudget(req *CallParams, keyPair *cryptolib.KeyPair, l1GasBudget uint64) (isc.OnLedgerRequest, *iotajsonrpc.IotaTransactionBlockResponse, error) {
+func (ch *Chain) SendRequestWithL1GasBudget(
+	req *CallParams,
+	keyPair *cryptolib.KeyPair,
+	l1GasBudget uint64,
+) (
+	isc.OnLedgerRequest,
+	*iotajsonrpc.IotaTransactionBlockResponse,
+	error,
+) {
 	if keyPair == nil {
 		keyPair = ch.ChainAdmin
 	}
@@ -299,7 +308,7 @@ func (ch *Chain) SendRequestWithL1GasBudget(req *CallParams, keyPair *cryptolib.
 				Function: uint32(req.msg.Target.EntryPoint),
 				Args:     req.msg.Params,
 			},
-			Allowance:        req.allowance.AsISCMove(),
+			AllowanceBCS:     lo.Must(bcs.Marshal(req.allowance.AsISCMove())),
 			OnchainGasBudget: req.gasBudget,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        l1GasBudget,
@@ -308,16 +317,20 @@ func (ch *Chain) SendRequestWithL1GasBudget(req *CallParams, keyPair *cryptolib.
 	if err != nil {
 		return nil, nil, err
 	}
-
 	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(ch.Env.T, err)
 
-	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, reqRef.ObjectID)
+	l1req := ch.GetL1RequestData(*reqRef.ObjectID)
+	return l1req, res, nil
+}
+
+func (ch *Chain) GetL1RequestData(objectID iotago.ObjectID) isc.OnLedgerRequest {
+	reqWithObj, err := ch.Env.ISCMoveClient().GetRequestFromObjectID(ch.Env.ctx, &objectID)
 	require.NoError(ch.Env.T, err)
 
-	r, err := isc.OnLedgerFromRequest(reqWithObj, keyPair.Address())
+	r, err := isc.OnLedgerFromMoveRequest(reqWithObj, ch.ID().AsAddress())
 	require.NoError(ch.Env.T, err)
-	return r, res, nil
+	return r
 }
 
 // SendRequest creates a request based on parameters and sigScheme, then send it to the anchor.
