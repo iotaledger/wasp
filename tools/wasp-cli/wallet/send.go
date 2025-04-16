@@ -3,8 +3,9 @@ package wallet
 import (
 	"context"
 	"fmt"
-	"fortio.org/safecast"
 	"time"
+
+	"fortio.org/safecast"
 
 	"github.com/spf13/cobra"
 

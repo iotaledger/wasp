@@ -84,10 +84,10 @@ func TryManageCoinsAmount(ctx context.Context) {
 	}})
 	ptb.Command(iotago.Command{TransferObjects: &iotago.ProgrammableTransferObjects{
 		Objects: []iotago.Argument{
-			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(0)}},
-			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(1)}},
-			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(2)}},
-			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(3)}},
+			{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(0)}},
+			{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(1)}},
+			{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(2)}},
+			{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(3)}},
 		},
 		Address: ptb.MustPure(w.Address().AsIotaAddress()),
 	}})

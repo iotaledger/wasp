@@ -2,9 +2,10 @@ package util
 
 import (
 	"context"
-	"fortio.org/safecast"
 	"os"
 	"time"
+
+	"fortio.org/safecast"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
