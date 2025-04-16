@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"strconv"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -22,29 +21,31 @@ type AccountsClientWrapper struct {
 
 // AccountsGetAccountBalance wraps both API calls for getting account balance
 func (c *AccountsClientWrapper) AccountsGetAccountBalance(stateIndex uint32, agentID string) (*stardust_client.AssetsResponse, *rebased_client.AssetsResponse) {
-	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetAccountBalance(c.Ctx, MainnetChainID, c.oldAgentIDFromHex(agentID).String()).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, string(lo.Must1(io.ReadAll(rawResponse.Body))))
-	baseTokens := lo.Must(strconv.Atoi(sRes.BaseTokens))
-	if baseTokens > 0 || len(sRes.NativeTokens) > 0 {
-		fmt.Printf("stardust: agent %s, base tokens: %s, native tokens: %s\n", agentID, sRes.BaseTokens, sRes.NativeTokens)
-	}
+	oldAgentIDStr := addHexPrefix(c.oldAgentIDFromHex(agentID).String())
+	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetAccountBalance(c.Ctx, MainnetChainID, oldAgentIDStr).Block(Uint32ToString(stateIndex)).Execute()
+	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), oldAgentIDStr)
+	// baseTokens := lo.Must(strconv.Atoi(sRes.BaseTokens))
+	// if baseTokens > 0 || len(sRes.NativeTokens) > 0 {
+	// 	fmt.Printf("stardust: agent %s, base tokens: %s, native tokens: %s\n", agentID, sRes.BaseTokens, sRes.NativeTokens)
+	// }
 
-	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetAccountBalance(c.Ctx, agentID).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, string(lo.Must1(io.ReadAll(rawResponse.Body))))
-	baseTokens = lo.Must(strconv.Atoi(rRes.BaseTokens))
-	if baseTokens > 0 || len(rRes.NativeTokens) > 0 {
-		fmt.Printf("rebased: agent %s, base tokens: %s, native tokens: %s\n", agentID, rRes.BaseTokens, rRes.NativeTokens)
-	}
+	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetAccountBalance(c.Ctx, addHexPrefix(agentID)).Block(Uint32ToString(stateIndex)).Execute()
+	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), agentID)
+	// baseTokens = lo.Must(strconv.Atoi(rRes.BaseTokens))
+	// if baseTokens > 0 || len(rRes.NativeTokens) > 0 {
+	// 	fmt.Printf("rebased: agent %s, base tokens: %s, native tokens: %s\n", agentID, rRes.BaseTokens, rRes.NativeTokens)
+	// }
 
 	return sRes, rRes
 }
 
 // AccountsGetAccountNFTIDs wraps both API calls for getting account NFT IDs
 func (c *AccountsClientWrapper) AccountsGetAccountNFTIDs(stateIndex uint32, agentID string) (*stardust_client.AccountNFTsResponse, *rebased_client.AccountNFTsResponse) {
-	sRes, _, err := c.SClient.CorecontractsApi.AccountsGetAccountNFTIDs(c.Ctx, MainnetChainID, agentID).Block(Uint32ToString(stateIndex)).Execute()
+	oldAgentIDStr := addHexPrefix(c.oldAgentIDFromHex(agentID).String())
+	sRes, _, err := c.SClient.CorecontractsApi.AccountsGetAccountNFTIDs(c.Ctx, MainnetChainID, oldAgentIDStr).Block(Uint32ToString(stateIndex)).Execute()
 	require.NoError(T, err)
 
-	rRes, _, err := c.RClient.CorecontractsAPI.AccountsGetAccountNFTIDs(c.Ctx, agentID).Block(Uint32ToString(stateIndex)).Execute()
+	rRes, _, err := c.RClient.CorecontractsAPI.AccountsGetAccountNFTIDs(c.Ctx, addHexPrefix(agentID)).Block(Uint32ToString(stateIndex)).Execute()
 	require.NoError(T, err)
 
 	return sRes, rRes
@@ -52,10 +53,11 @@ func (c *AccountsClientWrapper) AccountsGetAccountNFTIDs(stateIndex uint32, agen
 
 // AccountsGetAccountNonce wraps both API calls for getting account nonce
 func (c *AccountsClientWrapper) AccountsGetAccountNonce(stateIndex uint32, agentID string) (*stardust_client.AccountNonceResponse, *rebased_client.AccountNonceResponse) {
-	sRes, _, err := c.SClient.CorecontractsApi.AccountsGetAccountNonce(c.Ctx, MainnetChainID, agentID).Block(Uint32ToString(stateIndex)).Execute()
+	oldAgentIDStr := addHexPrefix(c.oldAgentIDFromHex(agentID).String())
+	sRes, _, err := c.SClient.CorecontractsApi.AccountsGetAccountNonce(c.Ctx, MainnetChainID, oldAgentIDStr).Block(Uint32ToString(stateIndex)).Execute()
 	require.NoError(T, err)
 
-	rRes, _, err := c.RClient.CorecontractsAPI.AccountsGetAccountNonce(c.Ctx, agentID).Block(Uint32ToString(stateIndex)).Execute()
+	rRes, _, err := c.RClient.CorecontractsAPI.AccountsGetAccountNonce(c.Ctx, addHexPrefix(agentID)).Block(Uint32ToString(stateIndex)).Execute()
 	require.NoError(T, err)
 
 	return sRes, rRes
@@ -70,6 +72,15 @@ func (c *AccountsClientWrapper) AccountsGetTotalAssets(stateIndex uint32) (*star
 	require.NoError(T, err)
 
 	return sRes, rRes
+}
+
+func addHexPrefix(s string) string {
+	// skip if contains 0x or is not a contract hname
+	if len(s) > 8 || s[:2] == "0x" {
+		return s
+	}
+
+	return "0x" + s
 }
 
 func (c *AccountsClientWrapper) oldAgentIDFromHex(agentID string) old_isc.AgentID {

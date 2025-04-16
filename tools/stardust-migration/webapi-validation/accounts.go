@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/stardust-migration/webapi-validation/base"
+	"github.com/stretchr/testify/require"
 )
 
 //go:embed all_accounts_src.txt
@@ -39,11 +42,46 @@ func NewAccountValidation(validationContext base.ValidationContext) AccountValid
 }
 
 func (a *AccountValidation) ValidateBaseTokenBalances(stateIndex uint32) {
-	for i, address := range a.addresses {
-		a.client.AccountsGetAccountBalance(stateIndex, address.Address)
-		fmt.Printf("processed %d addresses", i)
-		fmt.Printf("\r")
+	addresses := make(chan ParsedAddress)
+	semaphore := make(chan struct{}, 100)
+	progressChan := make(chan struct{}, 100)
+	var processedCount atomic.Int32
+
+	go func() {
+		for range progressChan {
+			fmt.Printf("processed %d addresses", processedCount.Add(1))
+			fmt.Printf("\r")
+		}
+		fmt.Println()
+	}()
+
+	go func() {
+		for _, address := range a.addresses {
+			addresses <- address
+		}
+		close(addresses)
+	}()
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(a.addresses))
+
+	for address := range addresses {
+		semaphore <- struct{}{}
+		go func(addr ParsedAddress) {
+			defer wg.Done()
+			defer func() {
+				<-semaphore
+				progressChan <- struct{}{}
+			}()
+
+			oldBalance, newBalance := a.client.AccountsGetAccountBalance(stateIndex, addr.Address)
+			oldBalance.BaseTokens = stardustBalanceToRebased(oldBalance.BaseTokens)
+			require.EqualValues(base.T, oldBalance.BaseTokens, newBalance.BaseTokens)
+		}(address)
 	}
+
+	wg.Wait()
+	close(progressChan)
 }
 
 func (a *AccountValidation) ValidateNativeTokenBalances(ctx base.ValidationContext) {
