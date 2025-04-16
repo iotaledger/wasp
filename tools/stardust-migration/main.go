@@ -39,14 +39,7 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
-// NOTE: Every record type should be explicitly included in migration
-// NOTE: All migration is node at once or just abandoned. There is no option to continue.
-// TODO: Do we start from block 0 or N+1 where N last old block?
-// TODO: Do we prune old block? Are we going to do migration from origin? If not, have we pruned blocks with old schemas?
 // TODO: What to do with foundry prefixes?
-// TODO: From where to get new chain ID?
-// TODO: Need to migrate ALL trie roots to support tracing.
-// TODO: New state draft might be huge, but it is stored in memory - might be an issue.
 
 func main() {
 	// For pprof profilings

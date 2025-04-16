@@ -59,6 +59,7 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 		oldAgentChainID := oldAgentID.ChainID()
 
 		if !bytes.Equal(oldChainID.Bytes(), oldAgentChainID.Bytes()) {
+			// TODO: Handle cross-chain agent ID
 			//panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID.ChainID().AsAddress().Bech32(old_iotago.PrefixMainnet)))
 		}
 		hname := OldHnameToNewHname(oldAgentID.Hname())
@@ -68,6 +69,7 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 		oldAgentID := oldAgentID.(*old_isc.EthereumAddressAgentID)
 		oldAgentChainID := oldAgentID.ChainID()
 		if !oldAgentChainID.Equals(oldChainID) {
+			// TODO: Handle cross-chain agent ID
 			//panic(fmt.Sprintf("Found cross-chain agent ID: %s", oldAgentID))
 		}
 		ethAddr := oldAgentID.EthAddress()
@@ -100,55 +102,8 @@ func OldNFTIDtoNewObjectType(nftID old_iotago.NFTID) coin.Type {
 	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nft::NFT", nftID.ToHex())))
 }
 
-// // Creates converter from old account key to new account key.
-// func OldAccountKeyToNewAccountKey(oldChainID old_isc.ChainID, newChainID isc.ChainID) func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
-// 	return func(oldAccountKey old_kv.Key) (newAccKey kv.Key) {
-// 		oldAgentID := lo.Must(old_accounts.AgentIDFromKey(oldAccountKey, oldChainID))
-// 		newAgentID := OldAgentIDtoNewAgentID(oldAgentID, newChainID)
-// 		return accounts.AccountKey(newAgentID, newChainID)
-// 	}
-// }
-
-// func OldBaseTokensFullDecimalBalanceToNewBalance(oldTokensBalance *big.Int) (balance coin.Value, remainder *big.Int) {
-// 	// TODO: what is the conversion rate?
-// 	var newBalance uint64
-// 	newBalance, remainder = old_util.EthereumDecimalsToBaseTokenDecimals(oldTokensBalance, oldBaseTokenDecimals)
-// 	return coin.Value(newBalance), remainder
-// }
-
-// Base token balance storage format:
-//   New IOTA rebased (uint64 IOTA + big.Int Wei remainder):
-//     Acc1 = 4 IOTA
-//     Rem1 = 0.5 IOTA
-//     Acc2 = 5 IOTA
-//     Rem2 = 0.5 IOTA
-//     Total = 10 IOTA
-//   Old IOTA with new schema (big.Int):
-//     Acc1 = 4.5 IOTA
-//     Acc2 = 5.5 IOTA
-//     Total = 10 IOTA
-//   Old IOTA with old schema (uint64 + added zeros in evm)
-//     Acc1 = 4.000 IOTA
-//     Acc2 = 5.000 IOTA
-//     Total = 9 IOTA
-
-// const (
-// 	// TODO: what is the correct value?
-// 	oldBaseTokenDecimals uint32 = 6
-// )
-
-// func DecodeOldTokens(b []byte) uint64 {
-// 	amount := old_codec.MustDecodeBigIntAbs(b, big.NewInt(0))
-// 	// TODO: This is incorrect for native tokens and for base tokens of old schema
-// 	convertedAmount, remainder := old_util.EthereumDecimalsToBaseTokenDecimals(amount, oldBaseTokenDecimals)
-// 	_ = remainder
-
-// 	return convertedAmount
-// }
-
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	// TODO: Implement
-	// Temporary implementaion needed to fix base tokens migration, becase right now native token balances override base token balances
 	h := tokenID.ToHex()
 	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nt::NT%v", h[:66], h[66:])))
 }
@@ -167,8 +122,6 @@ func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.
 }
 
 func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {
-	// TODO: There is no cinversion rate, right?
-
 	if !oldNativeTokenAmount.IsUint64() {
 		fmt.Println(fmt.Errorf("\n** ERROR old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
 		return coin.Value(math.MaxUint64)
@@ -177,18 +130,11 @@ func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Val
 	return coin.Value(oldNativeTokenAmount.Uint64())
 }
 
-func convertBaseTokensFullDecimal(oldBalanceFullDecimals *big.Int) *big.Int {
-	// NOTE: We do NOT need to apply conversion here - full decimal value stays same,
-	// because number of digits has changes for internal representation, but not for ethereum.
-	return oldBalanceFullDecimals
-}
-
 func ConvertOldCoinDecimalsToNew(from uint64) coin.Value {
 	return coin.Value(from * 1000) // Stardust 6 / Rebased 9 decimals
 }
 
 func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
-	// TODO: conversion rate?
 	newBaseTokensBalance := ConvertOldCoinDecimalsToNew(oldAssets.BaseTokens)
 	newAssets := isc.NewAssets(newBaseTokensBalance)
 

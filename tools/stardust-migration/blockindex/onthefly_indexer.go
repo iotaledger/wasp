@@ -151,8 +151,7 @@ func (bi *OnTheFlyBlockIndexer) BlockByIndex(index uint32) (old_state.Block, old
 		trieRoot := bi.edgeTrieRoots[i].Hash
 		block := lo.Must(bi.s.BlockByTrieRoot(trieRoot))
 		if block.StateIndex() != index {
-			// Just double checking
-			// TODO: remove for perf
+			// Just double checking (can be removed for perf)
 			panic(fmt.Errorf("unexpected block index %v, expected %v", block.StateIndex(), index))
 		}
 
@@ -173,8 +172,7 @@ func (bi *OnTheFlyBlockIndexer) BlockByIndex(index uint32) (old_state.Block, old
 	trieRoot := nextBlockInfo.PreviousL1Commitment().TrieRoot()
 	block := lo.Must(bi.s.BlockByTrieRoot(trieRoot))
 	if block.StateIndex() != index {
-		// Just double checking
-		// TODO: remove for perf
+		// Just double checking (can be removed for perf)
 		panic(fmt.Errorf("unexpected block index %v, expected %v", block.StateIndex(), index))
 	}
 

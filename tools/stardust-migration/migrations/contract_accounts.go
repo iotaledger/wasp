@@ -110,21 +110,21 @@ func migrateBaseTokenBalances(
 			newAccKey = accounts.AccountKey(newAgentID)
 		}
 
-		var newBalance *big.Int
+		var balance *big.Int
 		if oldBalanceBytes != nil {
-			var oldBalance *big.Int
 			switch v {
 			case 0:
 				amount := old_codec.MustDecodeUint64(oldBalanceBytes, 0)
-				oldBalance = old_util.BaseTokensDecimalsToEthereumDecimals(amount, old_parameters.L1().BaseToken.Decimals)
+				balance = old_util.BaseTokensDecimalsToEthereumDecimals(amount, old_parameters.L1().BaseToken.Decimals)
 			default:
-				oldBalance = old_codec.MustDecodeBigIntAbs(oldBalanceBytes, big.NewInt(0))
+				balance = old_codec.MustDecodeBigIntAbs(oldBalanceBytes, big.NewInt(0))
 			}
 
-			newBalance = convertBaseTokensFullDecimal(oldBalance)
+			// NOTE: We do NOT need to apply conversion here - full decimal value stays same,
+			// because number of digits has changes for internal representation, but not for ethereum.
 		}
 
-		w.UnsafeSetBaseTokensFullDecimals(newAccKey, newBalance)
+		w.UnsafeSetBaseTokensFullDecimals(newAccKey, balance)
 
 		return true
 	})

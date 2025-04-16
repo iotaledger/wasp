@@ -33,7 +33,7 @@ import (
 )
 
 func oldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
-	// TODO: There will be not enought memory to store all that stringyfied data.
+	// NOTE: There will be not enought memory to store all that stringyfied data.
 	// Would need to change the flow of validation. But for current development it's fine.
 
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())

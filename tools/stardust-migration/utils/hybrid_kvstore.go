@@ -16,7 +16,7 @@ func NewHybridKVStore(defaultStore kvstore.KVStore, storesByPrefix map[string]kv
 
 type HybridKVStore struct {
 	def            kvstore.KVStore
-	storesByPrefix map[string]kvstore.KVStore // TODO: add trie for faster prefix determination
+	storesByPrefix map[string]kvstore.KVStore // We could add trie here for faster prefix determination
 	initialKeys    map[string]bool
 }
 

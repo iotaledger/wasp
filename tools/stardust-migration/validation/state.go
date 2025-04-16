@@ -18,7 +18,7 @@ func OldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.Chain
 		evmContractStr = oldEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
 
-	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
+	// NOTE: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
 	return accountsContractStr + blocklogContractStr + evmContractStr
 }
 
@@ -32,6 +32,6 @@ func NewStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firs
 		evmContractStr = newEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
 
-	// TODO: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
+	// NOTE: for later states this mst likely will take huge amount of time and could cause OOM. For final testing need to change this flow.
 	return accountsContractStr + blocklogContractStr + evmContractStr
 }
