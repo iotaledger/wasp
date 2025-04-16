@@ -3,6 +3,7 @@ package wallet
 import (
 	"context"
 	"fmt"
+	"fortio.org/safecast"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -44,7 +45,10 @@ func initSendFundsCmd() *cobra.Command {
 			log.Check(err)
 			for _, balance := range balances {
 				requestedAmt := tokens.Coins[coin.MustTypeFromString(balance.CoinType.String())]
-				if coin.Value(balance.TotalBalance.Int64()) < requestedAmt {
+				var coinValue uint64
+				coinValue, err = safecast.Convert[uint64](balance.TotalBalance.Int64())
+				log.Check(err)
+				if coin.Value(coinValue) < requestedAmt {
 					panic("not enough balance")
 				}
 			}
