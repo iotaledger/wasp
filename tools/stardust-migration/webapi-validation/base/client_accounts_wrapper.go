@@ -1,7 +1,16 @@
 package base
 
 import (
+	"encoding/hex"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
+
+	"github.com/ethereum/go-ethereum/common"
 	stardust_client "github.com/nnikolash/wasp-types-exported/clients/apiclient"
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	rebased_client "github.com/iotaledger/wasp/clients/apiclient"
@@ -13,11 +22,19 @@ type AccountsClientWrapper struct {
 
 // AccountsGetAccountBalance wraps both API calls for getting account balance
 func (c *AccountsClientWrapper) AccountsGetAccountBalance(stateIndex uint32, agentID string) (*stardust_client.AssetsResponse, *rebased_client.AssetsResponse) {
-	sRes, _, err := c.SClient.CorecontractsApi.AccountsGetAccountBalance(c.Ctx, MainnetChainID, agentID).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err)
+	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetAccountBalance(c.Ctx, MainnetChainID, c.oldAgentIDFromHex(agentID).String()).Block(Uint32ToString(stateIndex)).Execute()
+	require.NoError(T, err, string(lo.Must1(io.ReadAll(rawResponse.Body))))
+	baseTokens := lo.Must(strconv.Atoi(sRes.BaseTokens))
+	if baseTokens > 0 || len(sRes.NativeTokens) > 0 {
+		fmt.Printf("stardust: agent %s, base tokens: %s, native tokens: %s\n", agentID, sRes.BaseTokens, sRes.NativeTokens)
+	}
 
-	rRes, _, err := c.RClient.CorecontractsAPI.AccountsGetAccountBalance(c.Ctx, agentID).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err)
+	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetAccountBalance(c.Ctx, agentID).Block(Uint32ToString(stateIndex)).Execute()
+	require.NoError(T, err, string(lo.Must1(io.ReadAll(rawResponse.Body))))
+	baseTokens = lo.Must(strconv.Atoi(rRes.BaseTokens))
+	if baseTokens > 0 || len(rRes.NativeTokens) > 0 {
+		fmt.Printf("rebased: agent %s, base tokens: %s, native tokens: %s\n", agentID, rRes.BaseTokens, rRes.NativeTokens)
+	}
 
 	return sRes, rRes
 }
@@ -53,4 +70,23 @@ func (c *AccountsClientWrapper) AccountsGetTotalAssets(stateIndex uint32) (*star
 	require.NoError(T, err)
 
 	return sRes, rRes
+}
+
+func (c *AccountsClientWrapper) oldAgentIDFromHex(agentID string) old_isc.AgentID {
+	switch {
+	case len(agentID) == 42:
+		// evm address
+		return old_isc.NewEthereumAddressAgentID(ChainID, common.HexToAddress(agentID))
+	case len(agentID) == 66:
+		// iota address
+		s := strings.Replace(agentID, "0x", "", 1)
+		s = "0100" + s
+		return lo.Must(old_isc.AgentIDFromBytes(lo.Must(hex.DecodeString(s))))
+	case len(agentID) == 8:
+		// contract hname
+		hname := lo.Must(old_isc.HnameFromString(agentID))
+		return old_isc.NewContractAgentID(ChainID, hname)
+	default:
+		panic(fmt.Sprintf("Unknown agent ID: %s", agentID))
+	}
 }

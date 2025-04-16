@@ -10,7 +10,9 @@ import (
 	cmd "github.com/urfave/cli/v2"
 
 	stardust_apiclient "github.com/nnikolash/wasp-types-exported/clients/apiextensions"
+	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
 
+	old_iotago "github.com/iotaledger/iota.go/v3"
 	rebased_apiclient "github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	webapi_validation "github.com/iotaledger/wasp/tools/stardust-migration/webapi-validation"
@@ -52,11 +54,21 @@ func validateWebAPI(c *cmd.Context) error {
 		return fmt.Errorf("failed to create Rebased API Client: %v for '%s'", err, rebasedEndpoint)
 	}
 
+	old_parameters.InitL1(&old_parameters.L1Params{
+		Protocol: &old_iotago.ProtocolParameters{
+			Bech32HRP: old_iotago.PrefixMainnet,
+		},
+		BaseToken: &old_parameters.BaseToken{
+			Decimals: 6,
+		},
+	})
+
 	ctx := context.Background()
 
 	testContext := base.NewValidationContext(ctx, sClient, rClient)
 	chainValidation := webapi_validation.NewChainValidation(testContext)
 	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
+	accountValidation := webapi_validation.NewAccountValidation(testContext)
 
 	latestBlock, _, err := rClient.CorecontractsAPI.BlocklogGetLatestBlockInfo(ctx).Execute()
 	require.NoError(base.T, err)
@@ -69,6 +81,7 @@ func validateWebAPI(c *cmd.Context) error {
 		}
 		chainValidation.Validate(i)
 		coreBlockValidation.Validate(i)
+		accountValidation.ValidateBaseTokenBalances(i)
 	}
 
 	return nil
