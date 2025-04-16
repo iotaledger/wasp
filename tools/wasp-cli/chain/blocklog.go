@@ -148,7 +148,7 @@ func initRequestCmd() *cobra.Command {
 			util.LogReceipt(*receipt)
 
 			log.Printf("\n")
-			logEventsInRequest(ctx, client, reqID, chain)
+			logEventsInRequest(ctx, client, reqID)
 			log.Printf("\n")
 		},
 	}
@@ -157,7 +157,7 @@ func initRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID, chain string) {
+func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID) {
 	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfRequest(ctx, reqID.String()).
 		Execute() //nolint:bodyclose // false positive
