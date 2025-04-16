@@ -63,10 +63,13 @@ func initDeployMoveContractCmd() *cobra.Command {
 	return cmd
 }
 
-func initializeNewChainState(chainAdmin *cryptolib.Address, gasCoinObject iotago.ObjectID, l1Params *parameters.L1Params) *transaction.StateMetadata {
-	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(chainAdmin)).Encode()
+func initializeNewChainState(chainAdmin *cryptolib.Address, gasCoinObject iotago.ObjectID, l1Params *parameters.L1Params, evmChainID uint16) *transaction.StateMetadata {
+	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(chainAdmin))
+	initParams.EVMChainID = evmChainID
+	initParamsEncoded := initParams.Encode()
+
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
-	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, gasCoinObject, isc.GasCoinTargetValue, l1Params)
+	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParamsEncoded, gasCoinObject, isc.GasCoinTargetValue, l1Params)
 	return stateMetadata
 }
 
@@ -175,7 +178,7 @@ func initDeployCmd() *cobra.Command {
 			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress(), l1Params)
 			log.Check(err)
 
-			stateMetadata := initializeNewChainState(kp.Address(), gasCoin, l1Params)
+			stateMetadata := initializeNewChainState(kp.Address(), gasCoin, l1Params, evmChainID)
 
 			par := apilib.CreateChainParams{
 				Layer1Client:      l1Client,
