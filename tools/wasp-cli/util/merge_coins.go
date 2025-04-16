@@ -52,7 +52,7 @@ func TryManageCoinsAmount(ctx context.Context) {
 	client := cliclients.L1Client()
 	w := wallet.Load()
 
-	coinPage, err := client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
+	coinPage, err := client.GetCoins(ctx, iotaclient.GetCoinsRequest{
 		Owner: w.Address().AsIotaAddress(),
 	})
 	log.Check(err)
@@ -103,7 +103,7 @@ func TryManageCoinsAmount(ctx context.Context) {
 	txBytes, err := bcs.Marshal(&tx)
 	log.Check(err)
 	_, err = client.SignAndExecuteTransaction(
-		context.Background(),
+		ctx,
 		&iotaclient.SignAndExecuteTransactionRequest{
 			Signer:      cryptolib.SignerToIotaSigner(w),
 			TxDataBytes: txBytes,
