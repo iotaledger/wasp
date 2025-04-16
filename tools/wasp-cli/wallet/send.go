@@ -58,7 +58,8 @@ func initSendFundsCmd() *cobra.Command {
 			)
 			log.Check(err)
 			for cointype, balance := range tokens.Coins {
-				pickedCoin, err := iotajsonrpc.PickupCoinsWithCointype(
+				var pickedCoin *iotajsonrpc.PickedCoins
+				pickedCoin, err = iotajsonrpc.PickupCoinsWithCointype(
 					coinPage,
 					balance.BigInt(),
 					iotajsonrpc.MustCoinTypeFromString(cointype.String()),
