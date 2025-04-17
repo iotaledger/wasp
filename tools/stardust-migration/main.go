@@ -189,6 +189,10 @@ func main() {
 								Aliases: []string{"t", "to-block", "to"},
 								Usage:   "Specify block to validate. If not specified, latest available block is validated.",
 							},
+							&cmd.BoolFlag{
+								Name:  "no-hashing",
+								Usage: "Do not hash data before comparing. Will produce bigger but more user-friendly output.",
+							},
 						},
 						Before: processCommonFlags,
 						Action: validateMigration,

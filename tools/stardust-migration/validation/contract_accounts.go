@@ -95,7 +95,7 @@ func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.Ch
 	})
 
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v accounts:%v", accs.Len(), utils.SortLines(accsStr.String()))
+	res := fmt.Sprintf("Found %v accounts:%v\n", accs.Len(), utils.SortLines(accsStr.String()))
 
 	return res, agentIDs
 }
@@ -122,7 +122,7 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 	})
 
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v accounts:%v", len(accs), utils.SortLines(accsStr.String()))
+	res := fmt.Sprintf("Found %v accounts:%v\n", len(accs), utils.SortLines(accsStr.String()))
 
 	return res, agentIDs
 }
@@ -188,7 +188,7 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 
 	cli.DebugLogf("Found %v old base token balances", count)
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v base token balances:%v", count, utils.SortLines(balancesStr.String()))
+	res := fmt.Sprintf("Found %v base token balances:%v\n", count, utils.SortLines(balancesStr.String()))
 
 	return res
 }
@@ -227,7 +227,7 @@ func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainI
 
 	cli.DebugLogf("Found %v old base token balances", count)
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v base token balances:%v", count, utils.SortLines(balancesStr.String()))
+	res := fmt.Sprintf("Found %v base token balances:%v\n", count, utils.SortLines(balancesStr.String()))
 
 	return res
 }
@@ -308,7 +308,7 @@ func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, c
 
 	cli.DebugLogf("Found %v old native token balances", count)
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v native token balances:%v", count, utils.SortLines(balancesStr.String()))
+	res := fmt.Sprintf("Found %v native token balances:%v\n", count, utils.SortLines(balancesStr.String()))
 
 	return res
 }
@@ -565,8 +565,8 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 
 	cli.DebugLogf("Found %v new base token balances, %v new native token balances", baseCount, nativeCount)
 	cli.DebugLogf("Formatting lines...")
-	resBase := fmt.Sprintf("Found %v base token balances:%v", baseCount, utils.SortLines(baseBalancesStr.String()))
-	resNative := fmt.Sprintf("Found %v native token balances:%v", nativeCount, utils.SortLines(nativeBalancesStr.String()))
+	resBase := fmt.Sprintf("Found %v base token balances:%v\n", baseCount, utils.SortLines(baseBalancesStr.String()))
+	resNative := fmt.Sprintf("Found %v native token balances:%v\n", nativeCount, utils.SortLines(nativeBalancesStr.String()))
 
 	return resBase, resNative
 }
@@ -637,8 +637,8 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 
 	cli.DebugLogf("Found %v new base token balances, %v new native token balances", baseCount, nativeCount)
 	cli.DebugLogf("Formatting lines...")
-	resBase := fmt.Sprintf("Found %v base token balances:%v", baseCount, utils.SortLines(baseBalancesStr.String()))
-	resNative := fmt.Sprintf("Found %v native token balances:%v", nativeCount, utils.SortLines(nativeBalancesStr.String()))
+	resBase := fmt.Sprintf("Found %v base token balances:%v\n", baseCount, utils.SortLines(baseBalancesStr.String()))
+	resNative := fmt.Sprintf("Found %v native token balances:%v\n", nativeCount, utils.SortLines(nativeBalancesStr.String()))
 
 	return resBase, resNative
 }

@@ -35,6 +35,7 @@ func validateMigration(c *cmd.Context) error {
 	firstIndex := uint32(c.Uint64("from-block"))
 	lastIndex := uint32(c.Uint64("to-block"))
 	validation.ConcurrentValidation = !c.Bool("no-parallel")
+	hashValues := !c.Bool("no-hashing")
 	cli.DebugLoggingEnabled = true
 
 	srcChainDBDir := c.Args().Get(0)
@@ -102,6 +103,7 @@ func validateMigration(c *cmd.Context) error {
 		}
 	}()
 
+	validation.HashValues = hashValues
 	validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, lastIndex)
 
 	return nil

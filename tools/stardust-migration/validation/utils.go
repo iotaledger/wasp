@@ -165,11 +165,10 @@ func NewReadOnlyKVStore(r kv.KVStoreReader) kv.KVStore {
 	}
 }
 
-var HashStrings = true
+var HashValues = true
 
 func hashValue[Value ~string | ~[]byte](v Value) string {
-	// In future this can be controled by command parameter to disable caching to see real values.
-	if !HashStrings {
+	if !HashValues {
 		return string(v)
 	}
 
