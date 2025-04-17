@@ -512,8 +512,8 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 }
 
 // initWithdrawTest deploys TestCoin, mints 1M tokens and deposits 100 to user's account
-func initWithdrawTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *accountsDepositTest {
-	v := initDepositTest(t, initCommonAccountBaseTokens...)
+func initWithdrawTest(t *testing.T) *accountsDepositTest {
+	v := initDepositTest(t)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	coinPackageID, treasuryCap := v.ch.Env.L1DeployCoinPackage(v.user)
 	v.coinType = coin.MustTypeFromString(fmt.Sprintf(
