@@ -17,8 +17,8 @@ import (
 func Create(dbDir string) kvstore.KVStore {
 	cli.Logf("Creating DB in %v\n", dbDir)
 
-	// TODO: BlockCacheSize - what value should be there?
-	rocksDB := lo.Must(database.NewRocksDB(dbDir, database.CacheSizeDefault))
+	const cacheSiize64MiB = 64 * 1024 * 1024 // 64 MiB - taken from config_defaults.json
+	rocksDB := lo.Must(database.NewRocksDB(dbDir, cacheSiize64MiB))
 
 	db := database.New(
 		dbDir,

@@ -23,6 +23,7 @@ import (
 	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
+	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
 )
 
 type StateContainsTargetCheckFunc func(state old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool)
@@ -182,4 +183,17 @@ func searchNFT(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []b
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	nfts := old_collections.NewMapReadOnly(contractState, old_accounts.KeyNFTOutputRecords)
 	nfts.Iterate(func(k, v []byte) bool { onFound(old_kv.Key(k), v); return false })
+}
+
+func searchBlockKeepAmountNot10000(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+	contractState := oldstate.GetContactStateReader(chainState, old_governance.Contract.Hname())
+	blockKeepAmount := old_governance.NewStateAccess(contractState).GetBlockKeepAmount()
+	if blockKeepAmount != 10000 {
+		onFound(old_kv.Key(""), []byte{0})
+	}
+}
+
+func searchFoundies(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+	contractState.Iterate(old_accounts.PrefixFoundries, onFound)
 }

@@ -221,6 +221,8 @@ func main() {
 				Subcommands: []*cmd.Command{
 					searchCmd("iscmagic-allowance", searchISCMagicAllowance),
 					searchCmd("nft", searchNFT),
+					searchCmd("block-keep-amount-change", searchBlockKeepAmountNot10000),
+					searchCmd("foundry", searchFoundies),
 				},
 			},
 		},
