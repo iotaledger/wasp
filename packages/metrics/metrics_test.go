@@ -88,15 +88,12 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					Objects: make(iscmove.ObjectCollection),
 				},
 			},
-			Allowance: iscmove.Assets{
-				Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 1},
-				Objects: make(iscmove.ObjectCollection),
-			},
-			GasBudget: 1000,
+			AllowanceBCS: nil,
+			GasBudget:    1000,
 		},
 	}
 
-	onLedgerRequest1, _ := isc.OnLedgerFromRequest(request, cryptolib.NewRandomAddress())
+	onLedgerRequest1, _ := isc.OnLedgerFromMoveRequest(request, cryptolib.NewRandomAddress())
 	return onLedgerRequest1
 }
 

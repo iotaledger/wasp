@@ -117,9 +117,8 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			TxDataBytes: txBytes,
 			Signatures:  task.tx.Signatures,
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
-				ShowObjectChanges:  true,
-				ShowBalanceChanges: true,
-				ShowEffects:        true,
+				ShowObjectChanges: true,
+				ShowEffects:       true,
 			},
 			RequestType: iotajsonrpc.TxnRequestTypeWaitForLocalExecution,
 		})
@@ -174,7 +173,7 @@ func (ncc *ncChain) syncChainState(ctx context.Context) error {
 
 		// The owner will always be the Anchor, so instead of pulling the Anchor and using its ID
 		// the owner address will be used.
-		onLedgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(req.Owner))
+		onLedgerReq, err := isc.OnLedgerFromMoveRequest(req, cryptolib.NewAddressFromIota(req.Owner))
 		if err != nil {
 			return
 		}
@@ -217,7 +216,7 @@ func (ncc *ncChain) subscribeToUpdates(ctx context.Context, anchorID iotago.Obje
 				}
 				ncc.anchorHandler(&anchor, l1Params)
 			case req := <-newRequests:
-				onledgerReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewAddressFromIota(&anchorID))
+				onledgerReq, err := isc.OnLedgerFromMoveRequest(req, cryptolib.NewAddressFromIota(&anchorID))
 				if err != nil {
 					panic(err)
 				}

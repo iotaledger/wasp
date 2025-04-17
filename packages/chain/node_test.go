@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
@@ -121,8 +122,9 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	incRequests := make([]iscmove.RefWithObject[iscmove.Request], incCount)
 
 	for i := range incCount {
-		assets := iscmove.NewAssets(10000000)
-		allowance := iscmove.NewAssets(assets.BaseToken() / 10)
+		const baseTokens = 10000000
+		assets := iscmove.NewAssets(baseTokens)
+		allowanceBCS := lo.Must(bcs.Marshal(assets))
 		one := int64(1)
 		mmm := inccounter.FuncIncCounter.Message(&one)
 		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
@@ -135,7 +137,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				Function: uint32(mmm.Target.EntryPoint),
 				Args:     mmm.Params,
 			},
-			Allowance:        allowance,
+			AllowanceBCS:     allowanceBCS,
 			OnchainGasBudget: 100000,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
@@ -152,7 +154,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	collectedRequests := make([]isc.Request, 0)
 	for _, tnc := range te.nodeConns {
 		for _, req := range incRequests {
-			onLedgerRequest, err := isc.OnLedgerFromRequest(&req, tnc.chainID.AsAddress())
+			onLedgerRequest, err := isc.OnLedgerFromMoveRequest(&req, tnc.chainID.AsAddress())
 			require.NoError(t, err)
 			collectedRequests = append(collectedRequests, onLedgerRequest)
 			tnc.recvRequest(

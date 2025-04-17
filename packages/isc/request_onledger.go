@@ -34,17 +34,12 @@ var (
 	_ Calldata        = new(OnLedgerRequestData)
 )
 
-func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
+func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], anchorAddress *cryptolib.Address) (OnLedgerRequest, error) {
 	assets, err := AssetsFromAssetsBagWithBalances(&request.Object.AssetsBag)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse assets from AssetsBag: %w", err)
 	}
-	allowance, err := AssetsFromISCMove(&request.Object.Allowance)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse allowance: %w", err)
-	}
-
-	r := &OnLedgerRequestData{
+	return &OnLedgerRequestData{
 		requestRef:    request.ObjectRef,
 		senderAddress: request.Object.Sender,
 		targetAddress: anchorAddress,
@@ -59,11 +54,10 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 				},
 				Params: request.Object.Message.Args,
 			},
-			Allowance: allowance,
-			GasBudget: request.Object.GasBudget,
+			AllowanceBCS: request.Object.AllowanceBCS,
+			GasBudget:    request.Object.GasBudget,
 		},
-	}
-	return r, nil
+	}, nil
 }
 
 func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse, msg *iscmove.Request) (OnLedgerRequest, error) {
@@ -182,11 +176,15 @@ func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse,
 	return r, nil
 }
 
-func (req *OnLedgerRequestData) Allowance() *Assets {
-	if req.requestMetadata == nil {
-		return NewEmptyAssets()
+func (req *OnLedgerRequestData) Allowance() (*Assets, error) {
+	if req.requestMetadata == nil || len(req.requestMetadata.AllowanceBCS) == 0 {
+		return NewEmptyAssets(), nil
 	}
-	return req.requestMetadata.Allowance
+	assets, err := bcs.Unmarshal[iscmove.Assets](req.requestMetadata.AllowanceBCS)
+	if err != nil {
+		return nil, err
+	}
+	return AssetsFromISCMove(&assets)
 }
 
 func (req *OnLedgerRequestData) Assets() *Assets {
