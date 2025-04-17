@@ -60,12 +60,15 @@ func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.Ch
 	accsStr, accs := newAccountsListToStr(contractState, chainID)
 	cli.DebugLogf("New accounts preview:%v", utils.MultilinePreview(accsStr))
 
-	baseTokenBalancesStr, nativeTOkenBalancesStr := newTokenBalancesToStr(contractState, chainID, accs)
-	cli.DebugLogf("New base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
-	cli.DebugLogf("New native token balances preview:%v", utils.MultilinePreview(nativeTOkenBalancesStr))
-
-	nftsStr := newNftsToStr(contractState, chainID)
-	cli.DebugLogf("New NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
+	var baseTokenBalancesStr, nativeTOkenBalancesStr, nftsStr string
+	GoAllAndWait(func() {
+		baseTokenBalancesStr, nativeTOkenBalancesStr = newTokenBalancesToStr(contractState, chainID, accs)
+		cli.DebugLogf("New base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
+		cli.DebugLogf("New native token balances preview:%v", utils.MultilinePreview(nativeTOkenBalancesStr))
+	}, func() {
+		nftsStr = newNftsToStr(contractState, chainID)
+		cli.DebugLogf("New NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
+	})
 
 	return accsStr + baseTokenBalancesStr + nativeTOkenBalancesStr + nftsStr
 }
