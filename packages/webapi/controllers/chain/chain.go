@@ -141,8 +141,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 					return false
 				}
 			}
-			accKey := kv.Key(key)
-			agentID := lo.Must(accounts.AgentIDFromKey(accKey))
+			agentID := lo.Must(accounts.AgentIDFromKey(key))
 			accountAssets := sa.GetAccountFungibleTokens(agentID)
 			assetsJSON, err2 := json.Marshal(accountAssets)
 			if err2 != nil {
