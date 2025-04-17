@@ -16,7 +16,7 @@ import (
 )
 
 func TestCounter(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
@@ -71,7 +71,7 @@ func TestManyRequests2(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	gasCoinValueBefore := coin.Value(chain.GetLatestGasCoin().Value)

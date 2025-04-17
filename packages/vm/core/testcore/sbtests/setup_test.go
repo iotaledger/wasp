@@ -26,12 +26,12 @@ func TestMain(m *testing.M) {
 	l1starter.TestMain(m)
 }
 
-func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo, *solo.Chain) {
+func setupChain(t *testing.T) (*solo.Solo, *solo.Chain) {
 	env := solo.New(t, &solo.InitOptions{
 		Debug:             false,
 		GasBurnLogEnabled: true,
 	})
-	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	chain, _ := env.NewChainExt(nil, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 	err := chain.SendFromL1ToL2AccountBaseTokens(1000, iotaclient.FundsFromFaucetAmount/10, chain.AdminAgentID(), chain.ChainAdmin)
 	require.NoError(t, err)
 	return env, chain
@@ -58,12 +58,12 @@ func setupTestSandboxSC(t *testing.T, chain *solo.Chain, user *cryptolib.KeyPair
 }
 
 func TestSetup1(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 }
 
 func TestSetup2(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	user, _ := setupDeployer(t, chain)
 	setupTestSandboxSC(t, chain, user)
 }
