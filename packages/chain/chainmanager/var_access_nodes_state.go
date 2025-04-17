@@ -3,7 +3,6 @@ package chainmanager
 import (
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
@@ -28,11 +27,6 @@ type varAccessNodeStateImpl struct {
 	chainID isc.ChainID
 	tipAO   *isc.StateAnchor
 	log     log.Logger
-}
-
-type varAccessNodeStateEntry struct {
-	output   *isc.StateAnchor // The published AO.
-	consumed iotago.ObjectID  // The AO used as an input for the TX.
 }
 
 func NewVarAccessNodeState(chainID isc.ChainID, log log.Logger) VarAccessNodeState {

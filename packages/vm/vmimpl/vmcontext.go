@@ -154,7 +154,3 @@ func (vmctx *vmContext) assertConsistentGasTotals(requestResults []*vm.RequestRe
 		panic("vmctx.gasFeeChargedTotal != sumGasFeeCharged")
 	}
 }
-
-func (vmctx *vmContext) onBlockClose(f blockCloseCallback) {
-	vmctx.onBlockCloseCallbacks = append(vmctx.onBlockCloseCallbacks, f)
-}

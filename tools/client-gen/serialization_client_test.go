@@ -52,24 +52,6 @@ type AccountSettings struct {
 	Baz uint32
 }
 
-var testf = CoreContractFunction{
-	FunctionName: "TestFunction",
-	InputArgs: []CompiledField{
-		{
-			Name: "maxAmount",
-			Type: reflect.TypeOf(uint64(0)),
-		},
-		{
-			Name: "accountName",
-			Type: reflect.TypeOf(string("ASDASDASD")),
-		},
-		{
-			Name: "accountSettings",
-			Type: reflect.TypeOf(AccountSettings{}),
-		},
-	},
-}
-
 func extractFields(fields []coreutil.FieldArg) []CompiledField {
 	compiled := make([]CompiledField, len(fields))
 

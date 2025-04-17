@@ -844,6 +844,7 @@ func checkChainNFTData(t *testing.T, ch *solo.Chain, obj isc.IotaObject, owner i
 
 func TestAccounts_TransferNFTAllowance(t *testing.T) {
 	t.Skip("!!! TODO")
+	checkChainNFTData(t, nil, isc.IotaObject{}, nil)
 	// env := solo.New(t, &solo.InitOptions{})
 	// ch := env.NewChain()
 	//
