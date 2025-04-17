@@ -41,6 +41,7 @@ import (
 )
 
 func TestGrBasic(t *testing.T) {
+	t.Parallel()
 	type test struct {
 		n        int
 		f        int
