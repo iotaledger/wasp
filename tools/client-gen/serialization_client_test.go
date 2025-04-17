@@ -85,7 +85,7 @@ func constructCoreContractFunction(f CoreContractFunctionStructure) CoreContract
 func TestGenerateVariables(t *testing.T) {
 	t.Skip()
 
-	generateContractFuncs(t)
+	generateContractFuncs()
 }
 
 func TestBCSConversion(t *testing.T) {

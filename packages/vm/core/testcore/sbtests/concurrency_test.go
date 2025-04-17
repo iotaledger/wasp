@@ -36,7 +36,7 @@ func TestManyRequests(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	gasCoinValueBefore := coin.Value(chain.GetLatestGasCoin().Value)
