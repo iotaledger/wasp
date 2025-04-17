@@ -4,14 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BaseTokens** | **string** | The base tokens (uint64 as string) | 
-**NativeTokens** | [**[]CoinJSON**](CoinJSON.md) |  | 
+**Coins** | [**[]CoinJSON**](CoinJSON.md) |  | 
 
 ## Methods
 
 ### NewAssetsResponse
 
-`func NewAssetsResponse(baseTokens string, nativeTokens []CoinJSON, ) *AssetsResponse`
+`func NewAssetsResponse(coins []CoinJSON, ) *AssetsResponse`
 
 NewAssetsResponse instantiates a new AssetsResponse object
 This constructor will assign default values to properties that have it defined,
@@ -26,44 +25,24 @@ NewAssetsResponseWithDefaults instantiates a new AssetsResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetBaseTokens
+### GetCoins
 
-`func (o *AssetsResponse) GetBaseTokens() string`
+`func (o *AssetsResponse) GetCoins() []CoinJSON`
 
-GetBaseTokens returns the BaseTokens field if non-nil, zero value otherwise.
+GetCoins returns the Coins field if non-nil, zero value otherwise.
 
-### GetBaseTokensOk
+### GetCoinsOk
 
-`func (o *AssetsResponse) GetBaseTokensOk() (*string, bool)`
+`func (o *AssetsResponse) GetCoinsOk() (*[]CoinJSON, bool)`
 
-GetBaseTokensOk returns a tuple with the BaseTokens field if it's non-nil, zero value otherwise
+GetCoinsOk returns a tuple with the Coins field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetBaseTokens
+### SetCoins
 
-`func (o *AssetsResponse) SetBaseTokens(v string)`
+`func (o *AssetsResponse) SetCoins(v []CoinJSON)`
 
-SetBaseTokens sets BaseTokens field to given value.
-
-
-### GetNativeTokens
-
-`func (o *AssetsResponse) GetNativeTokens() []CoinJSON`
-
-GetNativeTokens returns the NativeTokens field if non-nil, zero value otherwise.
-
-### GetNativeTokensOk
-
-`func (o *AssetsResponse) GetNativeTokensOk() (*[]CoinJSON, bool)`
-
-GetNativeTokensOk returns a tuple with the NativeTokens field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetNativeTokens
-
-`func (o *AssetsResponse) SetNativeTokens(v []CoinJSON)`
-
-SetNativeTokens sets NativeTokens field to given value.
+SetCoins sets Coins field to given value.
 
 
 

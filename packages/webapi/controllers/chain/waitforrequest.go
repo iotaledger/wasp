@@ -16,6 +16,7 @@ import (
 
 func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 	controllerutils.SetOperation(e, "wait_request")
+	// XXX maybe increase the max timeout
 	const maximumTimeoutSeconds = 60
 	const defaultTimeoutSeconds = 30
 

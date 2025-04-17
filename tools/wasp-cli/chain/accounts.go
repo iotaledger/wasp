@@ -41,10 +41,12 @@ func initBalanceCmd() *cobra.Command {
 			log.Check(err)
 
 			header := []string{"token", "amount"}
-			rows := make([][]string, len(balance.NativeTokens)+1)
+			rows := make([][]string, len(balance.Coins))
 
-			rows[0] = []string{"base", balance.BaseTokens}
-			for k, v := range balance.NativeTokens {
+			for k, v := range balance.Coins {
+				if coin.BaseTokenType.MatchesStringType(v.CoinType) {
+					rows[0] = []string{"base", v.Balance}
+				}
 				rows[k+1] = []string{v.CoinType, v.Balance}
 			}
 
@@ -71,13 +73,13 @@ func initAccountObjectsCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			nfts, _, err := client.CorecontractsAPI.
-				AccountsGetAccountNFTIDs(ctx, agentID.String()).
+			objects, _, err := client.CorecontractsAPI.
+				AccountsGetAccountObjectIDs(ctx, agentID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
-			for _, nftID := range nfts.NftIds {
-				log.Printf("%s\n", nftID)
+			for _, objectId := range objects.ObjectIds {
+				log.Printf("%s\n", objectId)
 			}
 		},
 	}

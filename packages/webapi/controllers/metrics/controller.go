@@ -32,6 +32,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	adminAPI.GET("metrics/chain/messages", c.getChainMessageMetrics, authentication.ValidatePermissions([]string{permissions.Read})).
+		// we should refactor the description of the error
 		AddResponse(http.StatusNotFound, "Chain not found", nil, nil).
 		AddResponse(http.StatusOK, "A list of all available metrics.", models.ChainMessageMetrics{}, nil).
 		SetOperationId("getChainMessageMetrics").

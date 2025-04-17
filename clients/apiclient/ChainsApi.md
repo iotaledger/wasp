@@ -11,9 +11,8 @@ Method | HTTP request | Description
 [**dumpAccounts**](ChainsApi.md#dumpAccounts) | **POST** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
 [**estimateGasOffledger**](ChainsApi.md#estimateGasOffledger) | **POST** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**estimateGasOnledger**](ChainsApi.md#estimateGasOnledger) | **POST** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
-[**getChainInfo**](ChainsApi.md#getChainInfo) | **GET** /v1/chain | Get information about a specific chain
+[**getChainInfo**](ChainsApi.md#getChainInfo) | **GET** /v1/chain | Get information about the chain
 [**getCommitteeInfo**](ChainsApi.md#getCommitteeInfo) | **GET** /v1/chain/committee | Get information about the deployed committee
-[**getContracts**](ChainsApi.md#getContracts) | **GET** /v1/chain/contracts | Get all available chain contracts
 [**getMempoolContents**](ChainsApi.md#getMempoolContents) | **GET** /v1/chain/mempool | Get the contents of the mempool.
 [**getReceipt**](ChainsApi.md#getReceipt) | **GET** /v1/chain/receipts/{requestID} | Get a receipt from a request ID
 [**getStateValue**](ChainsApi.md#getStateValue) | **GET** /v1/chain/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
@@ -444,7 +443,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | Information about a specific chain |  -  |
+**200** | Information about the chain |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
@@ -497,59 +496,6 @@ Name | Type | Description  | Notes
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | A list of all nodes tied to the chain |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **getContracts**
-> Array<ContractInfoResponse> getContracts()
-
-
-### Example
-
-
-```typescript
-import { createConfiguration, ChainsApi } from '';
-import type { ChainsApiGetContractsRequest } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new ChainsApi(configuration);
-
-const request: ChainsApiGetContractsRequest = {
-    // Block index or trie root (optional)
-  block: "block_example",
-};
-
-const data = await apiInstance.getContracts(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**Array<ContractInfoResponse>**
-
-### Authorization
-
-[Authorization](README.md#Authorization)
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | A list of all available contracts |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)

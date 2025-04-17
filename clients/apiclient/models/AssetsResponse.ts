@@ -14,11 +14,7 @@ import { CoinJSON } from '../models/CoinJSON';
 import { HttpFile } from '../http/http';
 
 export class AssetsResponse {
-    /**
-    * The base tokens (uint64 as string)
-    */
-    'baseTokens': string;
-    'nativeTokens': Array<CoinJSON>;
+    'coins': Array<CoinJSON>;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -26,14 +22,8 @@ export class AssetsResponse {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "baseTokens",
-            "baseName": "baseTokens",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "nativeTokens",
-            "baseName": "nativeTokens",
+            "name": "coins",
+            "baseName": "coins",
             "type": "Array<CoinJSON>",
             "format": ""
         }    ];

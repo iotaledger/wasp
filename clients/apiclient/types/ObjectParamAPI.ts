@@ -1,9 +1,8 @@
 import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/http';
 import { Configuration} from '../configuration'
 
-import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
+import { AccountObjectsResponse } from '../models/AccountObjectsResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AnchorMetricItem } from '../models/AnchorMetricItem';
 import { AssetsJSON } from '../models/AssetsJSON';
@@ -22,7 +21,6 @@ import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
 import { ConsensusWorkflowMetrics } from '../models/ConsensusWorkflowMetrics';
 import { ContractCallViewRequest } from '../models/ContractCallViewRequest';
-import { ContractInfoResponse } from '../models/ContractInfoResponse';
 import { ControlAddressesResponse } from '../models/ControlAddressesResponse';
 import { DKSharesInfo } from '../models/DKSharesInfo';
 import { DKSharesPostRequest } from '../models/DKSharesPostRequest';
@@ -32,7 +30,6 @@ import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger
 import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
-import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
 import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
@@ -44,7 +41,6 @@ import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
-import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -200,16 +196,6 @@ export interface ChainsApiGetCommitteeInfoRequest {
      * Defaults to: undefined
      * @type string
      * @memberof ChainsApigetCommitteeInfo
-     */
-    block?: string
-}
-
-export interface ChainsApiGetContractsRequest {
-    /**
-     * Block index or trie root
-     * Defaults to: undefined
-     * @type string
-     * @memberof ChainsApigetContracts
      */
     block?: string
 }
@@ -424,7 +410,7 @@ export class ObjectChainsApi {
     }
 
     /**
-     * Get information about a specific chain
+     * Get information about the chain
      * @param param the request object
      */
     public getChainInfoWithHttpInfo(param: ChainsApiGetChainInfoRequest = {}, options?: Configuration): Promise<HttpInfo<ChainInfoResponse>> {
@@ -432,7 +418,7 @@ export class ObjectChainsApi {
     }
 
     /**
-     * Get information about a specific chain
+     * Get information about the chain
      * @param param the request object
      */
     public getChainInfo(param: ChainsApiGetChainInfoRequest = {}, options?: Configuration): Promise<ChainInfoResponse> {
@@ -453,22 +439,6 @@ export class ObjectChainsApi {
      */
     public getCommitteeInfo(param: ChainsApiGetCommitteeInfoRequest = {}, options?: Configuration): Promise<CommitteeInfoResponse> {
         return this.api.getCommitteeInfo(param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all available chain contracts
-     * @param param the request object
-     */
-    public getContractsWithHttpInfo(param: ChainsApiGetContractsRequest = {}, options?: Configuration): Promise<HttpInfo<Array<ContractInfoResponse>>> {
-        return this.api.getContractsWithHttpInfo(param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all available chain contracts
-     * @param param the request object
-     */
-    public getContracts(param: ChainsApiGetContractsRequest = {}, options?: Configuration): Promise<Array<ContractInfoResponse>> {
-        return this.api.getContracts(param.block,  options).toPromise();
     }
 
     /**
@@ -637,47 +607,6 @@ export interface CorecontractsApiAccountsGetAccountBalanceRequest {
     block?: string
 }
 
-export interface CorecontractsApiAccountsGetAccountFoundriesRequest {
-    /**
-     * ChainID (Hex Address)
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccountFoundries
-     */
-    chainID: string
-    /**
-     * AgentID (Hex Address for L1 accounts, Hex for EVM)
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccountFoundries
-     */
-    agentID: string
-    /**
-     * Block index or trie root
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccountFoundries
-     */
-    block?: string
-}
-
-export interface CorecontractsApiAccountsGetAccountNFTIDsRequest {
-    /**
-     * AgentID (Hex Address for L1 accounts | Hex for EVM)
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccountNFTIDs
-     */
-    agentID: string
-    /**
-     * Block index or trie root
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetAccountNFTIDs
-     */
-    block?: string
-}
-
 export interface CorecontractsApiAccountsGetAccountNonceRequest {
     /**
      * AgentID (Hex Address for L1 accounts | Hex for EVM)
@@ -695,54 +624,19 @@ export interface CorecontractsApiAccountsGetAccountNonceRequest {
     block?: string
 }
 
-export interface CorecontractsApiAccountsGetFoundryOutputRequest {
+export interface CorecontractsApiAccountsGetAccountObjectIDsRequest {
     /**
-     * ChainID (Hex Address)
+     * AgentID (Hex Address for L1 accounts | Hex for EVM)
      * Defaults to: undefined
      * @type string
-     * @memberof CorecontractsApiaccountsGetFoundryOutput
+     * @memberof CorecontractsApiaccountsGetAccountObjectIDs
      */
-    chainID: string
-    /**
-     * Serial Number (uint32)
-     * Minimum: 1
-     * Defaults to: undefined
-     * @type number
-     * @memberof CorecontractsApiaccountsGetFoundryOutput
-     */
-    serialNumber: number
+    agentID: string
     /**
      * Block index or trie root
      * Defaults to: undefined
      * @type string
-     * @memberof CorecontractsApiaccountsGetFoundryOutput
-     */
-    block?: string
-}
-
-export interface CorecontractsApiAccountsGetNFTDataRequest {
-    /**
-     * NFT ID (Hex)
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetNFTData
-     */
-    nftID: string
-    /**
-     * Block index or trie root
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetNFTData
-     */
-    block?: string
-}
-
-export interface CorecontractsApiAccountsGetNativeTokenIDRegistryRequest {
-    /**
-     * Block index or trie root
-     * Defaults to: undefined
-     * @type string
-     * @memberof CorecontractsApiaccountsGetNativeTokenIDRegistry
+     * @memberof CorecontractsApiaccountsGetAccountObjectIDs
      */
     block?: string
 }
@@ -1006,38 +900,6 @@ export class ObjectCorecontractsApi {
     }
 
     /**
-     * Get all foundries owned by an account
-     * @param param the request object
-     */
-    public accountsGetAccountFoundriesWithHttpInfo(param: CorecontractsApiAccountsGetAccountFoundriesRequest, options?: Configuration): Promise<HttpInfo<AccountFoundriesResponse>> {
-        return this.api.accountsGetAccountFoundriesWithHttpInfo(param.chainID, param.agentID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all foundries owned by an account
-     * @param param the request object
-     */
-    public accountsGetAccountFoundries(param: CorecontractsApiAccountsGetAccountFoundriesRequest, options?: Configuration): Promise<AccountFoundriesResponse> {
-        return this.api.accountsGetAccountFoundries(param.chainID, param.agentID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param param the request object
-     */
-    public accountsGetAccountNFTIDsWithHttpInfo(param: CorecontractsApiAccountsGetAccountNFTIDsRequest, options?: Configuration): Promise<HttpInfo<AccountNFTsResponse>> {
-        return this.api.accountsGetAccountNFTIDsWithHttpInfo(param.agentID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param param the request object
-     */
-    public accountsGetAccountNFTIDs(param: CorecontractsApiAccountsGetAccountNFTIDsRequest, options?: Configuration): Promise<AccountNFTsResponse> {
-        return this.api.accountsGetAccountNFTIDs(param.agentID, param.block,  options).toPromise();
-    }
-
-    /**
      * Get the current nonce of an account
      * @param param the request object
      */
@@ -1054,51 +916,19 @@ export class ObjectCorecontractsApi {
     }
 
     /**
-     * Get the foundry output
+     * Get all object ids belonging to an account
      * @param param the request object
      */
-    public accountsGetFoundryOutputWithHttpInfo(param: CorecontractsApiAccountsGetFoundryOutputRequest, options?: Configuration): Promise<HttpInfo<FoundryOutputResponse>> {
-        return this.api.accountsGetFoundryOutputWithHttpInfo(param.chainID, param.serialNumber, param.block,  options).toPromise();
+    public accountsGetAccountObjectIDsWithHttpInfo(param: CorecontractsApiAccountsGetAccountObjectIDsRequest, options?: Configuration): Promise<HttpInfo<AccountObjectsResponse>> {
+        return this.api.accountsGetAccountObjectIDsWithHttpInfo(param.agentID, param.block,  options).toPromise();
     }
 
     /**
-     * Get the foundry output
+     * Get all object ids belonging to an account
      * @param param the request object
      */
-    public accountsGetFoundryOutput(param: CorecontractsApiAccountsGetFoundryOutputRequest, options?: Configuration): Promise<FoundryOutputResponse> {
-        return this.api.accountsGetFoundryOutput(param.chainID, param.serialNumber, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param param the request object
-     */
-    public accountsGetNFTDataWithHttpInfo(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<HttpInfo<void>> {
-        return this.api.accountsGetNFTDataWithHttpInfo(param.nftID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param param the request object
-     */
-    public accountsGetNFTData(param: CorecontractsApiAccountsGetNFTDataRequest, options?: Configuration): Promise<void> {
-        return this.api.accountsGetNFTData(param.nftID, param.block,  options).toPromise();
-    }
-
-    /**
-     * Get a list of all registries
-     * @param param the request object
-     */
-    public accountsGetNativeTokenIDRegistryWithHttpInfo(param: CorecontractsApiAccountsGetNativeTokenIDRegistryRequest = {}, options?: Configuration): Promise<HttpInfo<NativeTokenIDRegistryResponse>> {
-        return this.api.accountsGetNativeTokenIDRegistryWithHttpInfo(param.block,  options).toPromise();
-    }
-
-    /**
-     * Get a list of all registries
-     * @param param the request object
-     */
-    public accountsGetNativeTokenIDRegistry(param: CorecontractsApiAccountsGetNativeTokenIDRegistryRequest = {}, options?: Configuration): Promise<NativeTokenIDRegistryResponse> {
-        return this.api.accountsGetNativeTokenIDRegistry(param.block,  options).toPromise();
+    public accountsGetAccountObjectIDs(param: CorecontractsApiAccountsGetAccountObjectIDsRequest, options?: Configuration): Promise<AccountObjectsResponse> {
+        return this.api.accountsGetAccountObjectIDs(param.agentID, param.block,  options).toPromise();
     }
 
     /**
@@ -1344,7 +1174,7 @@ export class ObjectCorecontractsApi {
     }
 
     /**
-     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chain\' to get information about the chain.
      * Get the chain info
      * @param param the request object
      */
@@ -1353,7 +1183,7 @@ export class ObjectCorecontractsApi {
     }
 
     /**
-     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chain\' to get information about the chain.
      * Get the chain info
      * @param param the request object
      */

@@ -37,6 +37,6 @@ func (c *Controller) getInfo(e echo.Context) error {
 		Version:    c.waspVersion,
 		PublicKey:  identity.PublicKey.String(),
 		PeeringURL: identity.PeeringURL,
-		L1Params:   l1Params,
+		L1Params:   models.MapL1ParamsResponse(l1Params),
 	})
 }

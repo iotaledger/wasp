@@ -75,12 +75,16 @@ sed -i "/uint32/! s/NullableInt /nullableIntUnused /g" "$SCRIPTPATH/utils.go"
 OBSOLETE_FILES=$(sort /tmp/prev_openapi_generator_files $SCRIPTPATH/.openapi-generator/FILES | uniq -u)
 if [ ! -z "$OBSOLETE_FILES" ]; then
   DELETED_FILES_DIR=/tmp/openapi_generator_deleted_files_$(date +%F_%H-%M-%S)
-  
+
   echo "Deleting obsolete files - moving them to $DELETED_FILES_DIR:"
-  echo $OBSOLETE_FILES
-  (
-    mkdir -p $DELETED_FILES_DIR &&
-    cd $SCRIPTPATH &&
-    echo $OBSOLETE_FILES | xargs -I{} mv {} $DELETED_FILES_DIR/
-  )
+  echo "$OBSOLETE_FILES"
+  mkdir -p $DELETED_FILES_DIR
+
+  echo "$OBSOLETE_FILES" | while read -r file; do
+    if [ -f "$SCRIPTPATH/$file" ]; then
+      mv "$SCRIPTPATH/$file" "$DELETED_FILES_DIR/"
+    else
+      echo "Warning: File not found: $SCRIPTPATH/$file"
+    fi
+  done
 fi

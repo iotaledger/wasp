@@ -119,17 +119,6 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 	return ret, nil
 }
 
-func (ch *Chain) ContractRegistry(nodeIndex ...int) ([]apiclient.ContractInfoResponse, error) {
-	contracts, _, err := ch.Cluster.
-		WaspClient(nodeIndex...).ChainsAPI.GetContracts(context.Background()).
-		Execute() //nolint:bodyclose // false positive
-	if err != nil {
-		return nil, err
-	}
-
-	return contracts, nil
-}
-
 func (ch *Chain) GetCounterValue(nodeIndex ...int) (int64, error) {
 	result, _, err := ch.Cluster.
 		WaspClient(nodeIndex...).ChainsAPI.CallView(context.Background()).

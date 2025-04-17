@@ -10,12 +10,11 @@
  * Do not edit the class manually.
  */
 
-import { AssetsResponse } from '../models/AssetsResponse';
 import { HttpFile } from '../http/http';
 
-export class FoundryOutputResponse {
-    'assets': AssetsResponse;
-    'foundryId': string;
+export class AccountObjectsResponse {
+    'objectIds': Array<string>;
+    'objectTypes': Array<string>;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -23,20 +22,20 @@ export class FoundryOutputResponse {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "assets",
-            "baseName": "assets",
-            "type": "AssetsResponse",
-            "format": ""
+            "name": "objectIds",
+            "baseName": "objectIds",
+            "type": "Array<string>",
+            "format": "string"
         },
         {
-            "name": "foundryId",
-            "baseName": "foundryId",
-            "type": "string",
+            "name": "objectTypes",
+            "baseName": "objectTypes",
+            "type": "Array<string>",
             "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
-        return FoundryOutputResponse.attributeTypeMap;
+        return AccountObjectsResponse.attributeTypeMap;
     }
 
     public constructor() {
