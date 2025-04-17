@@ -1,3 +1,5 @@
+// Package corecontracts contains routes for webapi core contract interactions
+
 package corecontracts
 
 import (

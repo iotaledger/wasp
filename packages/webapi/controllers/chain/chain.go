@@ -153,7 +153,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 		})
 		// delete last ',' for a valid json
 		prevString = prevString[:len(prevString)-1]
-		_, err = f.WriteString(fmt.Sprintf("%s}\n", prevString))
+		_, err = fmt.Fprintf(f, "%s}\n", prevString)
 		if err != nil {
 			c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
 		}

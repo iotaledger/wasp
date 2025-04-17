@@ -1,3 +1,4 @@
+// Package vmimpl is the implementation of a wasp vm
 package vmimpl
 
 import (

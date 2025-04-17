@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/dbinspector/stardust_wasp"
+	"github.com/iotaledger/wasp/tools/dbinspector/stardustwasp"
 )
 
 func compareKey(contractKeys map[string]string, key kv.Key) string {
@@ -26,8 +26,7 @@ func compareKey(contractKeys map[string]string, key kv.Key) string {
 		}
 
 		sliced := key[:keyLen]
-
-		if bytes.Compare([]byte(k), []byte(sliced)) == 0 {
+		if bytes.Equal([]byte(k), []byte(sliced)) {
 			return v
 		}
 	}
@@ -71,22 +70,22 @@ func stateStatsPerHnameWithKeys(ctx context.Context, kvs kvstore.KVStore) {
 	state := getState(kvs, blockIndex)
 
 	fmt.Println("Accounts")
-	for k, v := range getContractStats(accounts.Contract, stardust_wasp.AccountsKeys, state) {
+	for k, v := range getContractStats(accounts.Contract, stardustwasp.AccountsKeys, state) {
 		fmt.Printf("\t%s: %d\n", k, v)
 	}
 
 	fmt.Println("Governance")
-	for k, v := range getContractStats(governance.Contract, stardust_wasp.GovernanceKeys, state) {
+	for k, v := range getContractStats(governance.Contract, stardustwasp.GovernanceKeys, state) {
 		fmt.Printf("\t%s: %d\n", k, v)
 	}
 
 	fmt.Println("EVM")
-	for k, v := range getContractStats(evm.Contract, stardust_wasp.EvmKeys, state) {
+	for k, v := range getContractStats(evm.Contract, stardustwasp.EvmKeys, state) {
 		fmt.Printf("\t%s: %d\n", k, v)
 	}
 
 	fmt.Println("BlockLog")
-	for k, v := range getContractStats(blocklog.Contract, stardust_wasp.BlocklogKeys, state) {
+	for k, v := range getContractStats(blocklog.Contract, stardustwasp.BlocklogKeys, state) {
 		fmt.Printf("\t%s: %d\n", k, v)
 	}
 }

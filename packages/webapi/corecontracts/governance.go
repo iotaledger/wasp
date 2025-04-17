@@ -1,3 +1,4 @@
+// Package corecontracts provides methods for the webapi to interact with core contracts
 package corecontracts
 
 import (

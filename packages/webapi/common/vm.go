@@ -1,3 +1,4 @@
+// Package common implements common VM methods
 package common
 
 import (

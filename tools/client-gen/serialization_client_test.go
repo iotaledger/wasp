@@ -26,7 +26,7 @@ import (
 
 func getName(p reflect.Type) string {
 	// Regex to run
-	r := regexp.MustCompile("([a-zA-Z]+)\\[")
+	r := regexp.MustCompile(`([a-zA-Z]+)\[`)
 
 	// Return capture
 	str := p.String()
@@ -286,6 +286,6 @@ func TestTypes(t *testing.T) {
 	objectRef := iotatest.RandomObjectRef()
 	b := bcs.MustMarshal(objectRef)
 
-	fmt.Println(b, hexutil.Encode(b))
+	fmt.Println(string(b), hexutil.Encode(b))
 	fmt.Println(objectRef)
 }

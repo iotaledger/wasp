@@ -1,3 +1,4 @@
+// Package node implements webapi node controller
 package node
 
 import (

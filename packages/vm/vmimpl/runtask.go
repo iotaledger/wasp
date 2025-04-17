@@ -31,7 +31,7 @@ func Run(task *vm.VMTask) (res *vm.VMTaskResult, err error) {
 	return res, err
 }
 
-func newVmContext(
+func newVMContext(
 	task *vm.VMTask,
 	stateDraft state.StateDraft,
 	txbuilder vmtxbuilder.TransactionBuilder,
@@ -81,7 +81,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	prevL1Commitment := lo.Must(transaction.L1CommitmentFromAnchor(task.Anchor))
 	stateDraft := lo.Must(task.Store.NewStateDraft(task.Timestamp, prevL1Commitment))
 	txbuilder := vmtxbuilder.NewAnchorTransactionBuilder(task.Anchor.ISCPackage(), task.Anchor, task.Anchor.Owner())
-	vmctx := newVmContext(task, stateDraft, txbuilder)
+	vmctx := newVMContext(task, stateDraft, txbuilder)
 	vmctx.init()
 
 	// run the batch of requests
