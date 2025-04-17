@@ -107,7 +107,7 @@ func TestProperCoinUse(t *testing.T) {
 			AnchorAddress: anchor.ObjectID,
 			Assets:        iscmove.NewAssets(100000),
 			Message:       iscmovetest.RandomMessage(),
-			Allowance:     iscmove.NewAssets(100000),
+			AllowanceBCS:  nil,
 			GasPrice:      iotaclient.DefaultGasPrice,
 			GasBudget:     iotaclient.DefaultGasBudget,
 		},
@@ -143,7 +143,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 				AnchorAddress: anchor.ObjectID,
 				AssetsBagRef:  assetsBagRef,
 				Message:       iscmovetest.RandomMessage(),
-				Allowance:     iscmove.NewAssets(100),
+				AllowanceBCS:  nil,
 				GasPrice:      iotaclient.DefaultGasPrice,
 				GasBudget:     iotaclient.DefaultGasBudget,
 			},
@@ -209,7 +209,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 				AnchorAddress: anchor.ObjectID,
 				AssetsBagRef:  assetsBagRef,
 				Message:       iscmovetest.RandomMessage(),
-				Allowance:     iscmove.NewAssets(100),
+				AllowanceBCS:  nil,
 				GasPrice:      iotaclient.DefaultGasPrice,
 				GasBudget:     iotaclient.DefaultGasBudget,
 			},
@@ -275,7 +275,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 				AnchorAddress: anchor.ObjectID,
 				AssetsBagRef:  assetsBagRef,
 				Message:       iscmovetest.RandomMessage(),
-				Allowance:     iscmove.NewAssets(100),
+				AllowanceBCS:  nil,
 				GasPrice:      iotaclient.DefaultGasPrice,
 				GasBudget:     iotaclient.DefaultGasBudget,
 			},
@@ -301,15 +301,9 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 			AnchorAddress: anchor.ObjectID,
 			Assets:        iscmove.NewAssets(100),
 			Message:       iscmovetest.RandomMessage(),
-			Allowance: &iscmove.Assets{
-				Coins: iscmove.CoinBalances{
-					iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"):    11,
-					iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"): 12,
-				},
-				Objects: make(iscmove.ObjectCollection),
-			},
-			GasPrice:  iotaclient.DefaultGasPrice,
-			GasBudget: iotaclient.DefaultGasBudget,
+			AllowanceBCS:  []byte{1, 2, 3},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -337,15 +331,9 @@ func TestGetRequestFromObjectID(t *testing.T) {
 			AnchorAddress: anchor.ObjectID,
 			AssetsBagRef:  assetsBagRef,
 			Message:       iscmovetest.RandomMessage(),
-			Allowance: &iscmove.Assets{
-				Coins: iscmove.CoinBalances{
-					iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"):    21,
-					iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"): 12,
-				},
-				Objects: make(iscmove.ObjectCollection),
-			},
-			GasPrice:  iotaclient.DefaultGasPrice,
-			GasBudget: iotaclient.DefaultGasBudget,
+			AllowanceBCS:  []byte{1, 2, 3},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -355,6 +343,5 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)
 	require.NoError(t, err)
-	require.Equal(t, iotajsonrpc.CoinValue(12), req.Object.Allowance.Coins[iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")])
-	require.Equal(t, iotajsonrpc.CoinValue(21), req.Object.Allowance.Coins[iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA")])
+	require.Equal(t, []byte{1, 2, 3}, req.Object.AllowanceBCS)
 }

@@ -84,7 +84,7 @@ func TestReceiveRequestAndTransition(t *testing.T) {
 				AnchorAddress: anchor.ObjectID,
 				AssetsBagRef:  sentAssetsBagRef,
 				Message:       iscmovetest.RandomMessage(),
-				Allowance:     iscmove.NewAssets(100),
+				AllowanceBCS:  nil,
 				GasPayments: []*iotago.ObjectRef{
 					getCoinsRes.Data[2].Ref(),
 				},
