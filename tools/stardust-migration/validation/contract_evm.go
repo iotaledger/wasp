@@ -50,16 +50,16 @@ func oldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex,
 	var allowanceStr, txByBlockStr, blockHeaderStr, receiptsStr string
 
 	GoAllAndWait(func() {
-		//allowanceStr = oldISCMagicAllowanceToStr(contractState)
+		allowanceStr = oldISCMagicAllowanceToStr(contractState)
 		cli.DebugLogf("Old ISC magic allowance preview:\n%v", utils.MultilinePreview(allowanceStr))
 	}, func() {
-		//txByBlockStr = oldTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		txByBlockStr = oldTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("Old transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
 	}, func() {
-		blockHeaderStr = oldBlockHeaderByBlockNumberToStr(contractState)
+		//blockHeaderStr = oldBlockHeaderByBlockNumberToStr(contractState)
 		cli.DebugLogf("Old block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
 	}, func() {
-		//receiptsStr = oldReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		receiptsStr = oldReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("Old receipts by block number preview:\n%v", utils.MultilinePreview(receiptsStr))
 	})
 
@@ -72,16 +72,16 @@ func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toB
 	var allowanceStr, txByBlockStr, blockHeaderStr, receiptsStr string
 
 	GoAllAndWait(func() {
-		//allowanceStr = newISCMagicAllowanceToStr(contractState)
+		allowanceStr = newISCMagicAllowanceToStr(contractState)
 		cli.DebugLogf("New ISC magic allowance preview:\n%v", utils.MultilinePreview(allowanceStr))
 	}, func() {
-		//txByBlockStr = newTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		txByBlockStr = newTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("New transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
 	}, func() {
-		blockHeaderStr = newBlockHeaderByBlockNumberToStr(contractState)
+		//blockHeaderStr = newBlockHeaderByBlockNumberToStr(contractState)
 		cli.DebugLogf("New block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
 	}, func() {
-		//receiptsStr = newReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
+		receiptsStr = newReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("New receipts by block number preview:\n%v", utils.MultilinePreview(receiptsStr))
 	})
 

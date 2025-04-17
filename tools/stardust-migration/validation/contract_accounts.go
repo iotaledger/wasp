@@ -48,7 +48,7 @@ func oldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID ol
 		nativeTokenBalancesStr = oldNativeTokenBalancesToStr(contractState, chainID, accs)
 		cli.DebugLogf("Old native token balances preview:%v", utils.MultilinePreview(nativeTokenBalancesStr))
 	}, func() {
-		nftsStr = oldNftsToStr(contractState, chainID)
+		//nftsStr = oldNftsToStr(contractState, chainID)
 		cli.DebugLogf("Old NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 
@@ -66,7 +66,7 @@ func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.Ch
 		cli.DebugLogf("New base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
 		cli.DebugLogf("New native token balances preview:%v", utils.MultilinePreview(nativeTOkenBalancesStr))
 	}, func() {
-		nftsStr = newNftsToStr(contractState, chainID)
+		//nftsStr = newNftsToStr(contractState, chainID)
 		cli.DebugLogf("New NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 

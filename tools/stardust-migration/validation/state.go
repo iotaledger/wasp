@@ -11,9 +11,9 @@ func OldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.Chain
 	var accountsContractStr, blocklogContractStr, evmContractStr string
 
 	GoAllAndWait(func() {
-		//accountsContractStr = oldAccountsContractContentToStr(chainState, chainID)
+		accountsContractStr = oldAccountsContractContentToStr(chainState, chainID)
 	}, func() {
-		//blocklogContractStr = oldBlocklogContractContentToStr(chainState, firstIndex, lastIndex)
+		blocklogContractStr = oldBlocklogContractContentToStr(chainState, firstIndex, lastIndex)
 	}, func() {
 		evmContractStr = oldEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
@@ -25,9 +25,9 @@ func OldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.Chain
 func NewStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
 	var accountsContractStr, blocklogContractStr, evmContractStr string
 	GoAllAndWait(func() {
-		//accountsContractStr = newAccountsContractContentToStr(chainState, chainID)
+		accountsContractStr = newAccountsContractContentToStr(chainState, chainID)
 	}, func() {
-		//blocklogContractStr = newBlocklogContractContentToStr(chainState, firstIndex, lastIndex)
+		blocklogContractStr = newBlocklogContractContentToStr(chainState, firstIndex, lastIndex)
 	}, func() {
 		evmContractStr = newEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
