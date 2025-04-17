@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type OnLedgerRequestData struct {
@@ -65,7 +66,7 @@ func OnLedgerFromRequest(request *iscmove.RefWithObject[iscmove.Request], anchor
 	return r, nil
 }
 
-func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse, msg *iscmove.Message) (OnLedgerRequest, error) {
+func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse, msg *iscmove.Request) (OnLedgerRequest, error) {
 	assets := NewAssets(0)
 	allowance := NewAssets(0)
 	tx := dryRunRes.Input.Data.V1.Transaction.Data.ProgrammableTransaction
@@ -154,6 +155,11 @@ func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse,
 		return nil, err
 	}
 
+	allowanceAsAssets, err := AssetsFromISCMove(&msg.Allowance)
+	if err != nil {
+		return nil, err
+	}
+
 	r := &OnLedgerRequestData{
 		requestRef:    *iotatest.RandomObjectRef(),
 		senderAddress: cryptolib.NewRandomAddress(),
@@ -169,7 +175,7 @@ func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse,
 				},
 				Params: msg.Args,
 			},
-			Allowance: allowance,
+			Allowance: allowanceAsAssets,
 			GasBudget: iotaclient.DefaultGasBudget,
 		},
 	}
