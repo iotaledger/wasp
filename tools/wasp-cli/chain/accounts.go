@@ -71,13 +71,13 @@ func initAccountObjectsCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			nfts, _, err := client.CorecontractsAPI.
-				AccountsGetAccountNFTIDs(ctx, agentID.String()).
+			objects, _, err := client.CorecontractsAPI.
+				AccountsGetAccountObjectIDs(ctx, agentID.String()).
 				Execute() //nolint:bodyclose // false positive
 			log.Check(err)
 
-			for _, nftID := range nfts.NftIds {
-				log.Printf("%s\n", nftID)
+			for _, objectId := range objects.ObjectIds {
+				log.Printf("%s\n", objectId)
 			}
 		},
 	}

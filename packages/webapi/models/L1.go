@@ -32,6 +32,7 @@ type StateAnchor struct {
 	Raw           string `json:"raw" swagger:"desc(The raw data of the anchor (Hex)),required"`
 }
 
+// TODO should be removed in the future
 type StateTransaction struct {
 	StateIndex        uint32 `json:"stateIndex" swagger:"desc(The state index),required,min(1)"`
 	TransactionDigest string `json:"txDigest" swagger:"desc(The transaction Digest),required"`

@@ -5,12 +5,9 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**AccountsGetAccountBalance**](CorecontractsAPI.md#AccountsGetAccountBalance) | **Get** /v1/chain/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-[**AccountsGetAccountFoundries**](CorecontractsAPI.md#AccountsGetAccountFoundries) | **Get** /v1/chain/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
-[**AccountsGetAccountNFTIDs**](CorecontractsAPI.md#AccountsGetAccountNFTIDs) | **Get** /v1/chain/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
 [**AccountsGetAccountNonce**](CorecontractsAPI.md#AccountsGetAccountNonce) | **Get** /v1/chain/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**AccountsGetFoundryOutput**](CorecontractsAPI.md#AccountsGetFoundryOutput) | **Get** /v1/chain/core/accounts/foundry_output/{serialNumber} | Get the foundry output
-[**AccountsGetNFTData**](CorecontractsAPI.md#AccountsGetNFTData) | **Get** /v1/chain/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
-[**AccountsGetNativeTokenIDRegistry**](CorecontractsAPI.md#AccountsGetNativeTokenIDRegistry) | **Get** /v1/chain/core/accounts/token_registry | Get a list of all registries
+[**AccountsGetAccountObjectIDs**](CorecontractsAPI.md#AccountsGetAccountObjectIDs) | **Get** /v1/chain/core/accounts/account/{agentID}/objects | Get all object ids belonging to an account
+[**AccountsGetObjectData**](CorecontractsAPI.md#AccountsGetObjectData) | **Get** /v1/chain/core/accounts/objectdata/{objectID} | Get the object data by an ID
 [**AccountsGetTotalAssets**](CorecontractsAPI.md#AccountsGetTotalAssets) | **Get** /v1/chain/core/accounts/total_assets | Get all stored assets
 [**BlocklogGetBlockInfo**](CorecontractsAPI.md#BlocklogGetBlockInfo) | **Get** /v1/chain/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
 [**BlocklogGetControlAddresses**](CorecontractsAPI.md#BlocklogGetControlAddresses) | **Get** /v1/chain/core/blocklog/controladdresses | Get the control addresses
@@ -100,149 +97,6 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## AccountsGetAccountFoundries
-
-> AccountFoundriesResponse AccountsGetAccountFoundries(ctx, chainID, agentID).Block(block).Execute()
-
-Get all foundries owned by an account
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
-	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts, Hex for EVM)
-	block := "block_example" // string | Block index or trie root (optional)
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountFoundries(context.Background(), chainID, agentID).Block(block).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountFoundries``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `AccountsGetAccountFoundries`: AccountFoundriesResponse
-	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountFoundries`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
-**agentID** | **string** | AgentID (Hex Address for L1 accounts, Hex for EVM) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAccountsGetAccountFoundriesRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**AccountFoundriesResponse**](AccountFoundriesResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## AccountsGetAccountNFTIDs
-
-> AccountNFTsResponse AccountsGetAccountNFTIDs(ctx, agentID).Block(block).Execute()
-
-Get all NFT ids belonging to an account
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
-	block := "block_example" // string | Block index or trie root (optional)
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountNFTIDs(context.Background(), agentID).Block(block).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountNFTIDs``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `AccountsGetAccountNFTIDs`: AccountNFTsResponse
-	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountNFTIDs`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-**ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**agentID** | **string** | AgentID (Hex Address for L1 accounts | Hex for EVM) | 
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAccountsGetAccountNFTIDsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
-
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**AccountNFTsResponse**](AccountNFTsResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
 ## AccountsGetAccountNonce
 
 > AccountNonceResponse AccountsGetAccountNonce(ctx, agentID).Block(block).Execute()
@@ -313,11 +167,11 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## AccountsGetFoundryOutput
+## AccountsGetAccountObjectIDs
 
-> FoundryOutputResponse AccountsGetFoundryOutput(ctx, chainID, serialNumber).Block(block).Execute()
+> AccountObjectsResponse AccountsGetAccountObjectIDs(ctx, agentID).Block(block).Execute()
 
-Get the foundry output
+Get all object ids belonging to an account
 
 ### Example
 
@@ -332,19 +186,18 @@ import (
 )
 
 func main() {
-	chainID := "chainID_example" // string | ChainID (Hex Address)
-	serialNumber := uint32(56) // uint32 | Serial Number (uint32)
+	agentID := "agentID_example" // string | AgentID (Hex Address for L1 accounts | Hex for EVM)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.CorecontractsAPI.AccountsGetFoundryOutput(context.Background(), chainID, serialNumber).Block(block).Execute()
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetAccountObjectIDs(context.Background(), agentID).Block(block).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetFoundryOutput``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetAccountObjectIDs``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `AccountsGetFoundryOutput`: FoundryOutputResponse
-	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetFoundryOutput`: %v\n", resp)
+	// response from `AccountsGetAccountObjectIDs`: AccountObjectsResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetAccountObjectIDs`: %v\n", resp)
 }
 ```
 
@@ -354,23 +207,21 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**chainID** | **string** | ChainID (Hex Address) | 
-**serialNumber** | **uint32** | Serial Number (uint32) | 
+**agentID** | **string** | AgentID (Hex Address for L1 accounts | Hex for EVM) | 
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiAccountsGetFoundryOutputRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiAccountsGetAccountObjectIDsRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
-
  **block** | **string** | Block index or trie root | 
 
 ### Return type
 
-[**FoundryOutputResponse**](FoundryOutputResponse.md)
+[**AccountObjectsResponse**](AccountObjectsResponse.md)
 
 ### Authorization
 
@@ -386,11 +237,11 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## AccountsGetNFTData
+## AccountsGetObjectData
 
-> AccountsGetNFTData(ctx, nftID).Block(block).Execute()
+> IotaObject AccountsGetObjectData(ctx, objectID).Block(block).Execute()
 
-Get the NFT data by an ID
+Get the object data by an ID
 
 ### Example
 
@@ -405,16 +256,18 @@ import (
 )
 
 func main() {
-	nftID := "nftID_example" // string | NFT ID (Hex)
+	objectID := "objectID_example" // string | Object ID (Hex)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	r, err := apiClient.CorecontractsAPI.AccountsGetNFTData(context.Background(), nftID).Block(block).Execute()
+	resp, r, err := apiClient.CorecontractsAPI.AccountsGetObjectData(context.Background(), objectID).Block(block).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetNFTData``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetObjectData``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
+	// response from `AccountsGetObjectData`: IotaObject
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetObjectData`: %v\n", resp)
 }
 ```
 
@@ -424,11 +277,11 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**nftID** | **string** | NFT ID (Hex) | 
+**objectID** | **string** | Object ID (Hex) | 
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiAccountsGetNFTDataRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiAccountsGetObjectDataRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
@@ -438,71 +291,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
- (empty response body)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## AccountsGetNativeTokenIDRegistry
-
-> NativeTokenIDRegistryResponse AccountsGetNativeTokenIDRegistry(ctx).Block(block).Execute()
-
-Get a list of all registries
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	block := "block_example" // string | Block index or trie root (optional)
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.CorecontractsAPI.AccountsGetNativeTokenIDRegistry(context.Background()).Block(block).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.AccountsGetNativeTokenIDRegistry``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `AccountsGetNativeTokenIDRegistry`: NativeTokenIDRegistryResponse
-	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.AccountsGetNativeTokenIDRegistry`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiAccountsGetNativeTokenIDRegistryRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**NativeTokenIDRegistryResponse**](NativeTokenIDRegistryResponse.md)
+[**IotaObject**](IotaObject.md)
 
 ### Authorization
 

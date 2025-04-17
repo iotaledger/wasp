@@ -23,7 +23,6 @@ func Init(rootCmd *cobra.Command) {
 
 	chainCmd.AddCommand(initDeployCmd())
 	chainCmd.AddCommand(initInfoCmd())
-	chainCmd.AddCommand(initListContractsCmd())
 	chainCmd.AddCommand(initDeployMoveContractCmd())
 	chainCmd.AddCommand(initBalanceCmd())
 	chainCmd.AddCommand(initAccountObjectsCmd())

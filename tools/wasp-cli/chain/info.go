@@ -86,10 +86,6 @@ func initInfoCmd() *cobra.Command {
 				printNodes("Candidate nodes", committeeInfo.CandidateNodes, false, false)
 				log.Printf("\n")
 
-				contracts, _, err := client.ChainsAPI.GetContracts(ctx).Execute() //nolint:bodyclose // false positive
-				log.Check(err)
-				log.Printf("#Contracts: %d\n", len(contracts))
-
 				log.Printf("Admin: %s\n", chainInfo.ChainAdmin)
 				log.Printf("Common account: %s\n", accounts.CommonAccount())
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)

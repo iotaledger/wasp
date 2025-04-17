@@ -88,7 +88,6 @@ Class | Method | HTTP request | Description
 *ChainsApi* | [**AddAccessNode**](docs/ChainsApi.md#addaccessnode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
 *ChainsApi* | [**DeactivateChain**](docs/ChainsApi.md#deactivatechain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
 *ChainsApi* | [**GetChainInfo**](docs/ChainsApi.md#getchaininfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
-*ChainsApi* | [**GetChains**](docs/ChainsApi.md#getchains) | **Get** /v1/chains | Get a list of all chains
 *ChainsApi* | [**GetCommitteeInfo**](docs/ChainsApi.md#getcommitteeinfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
 *ChainsApi* | [**GetContracts**](docs/ChainsApi.md#getcontracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
 *ChainsApi* | [**GetRequestIDFromEVMTransactionID**](docs/ChainsApi.md#getrequestidfromevmtransactionid) | **Get** /v1/chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
@@ -98,8 +97,6 @@ Class | Method | HTTP request | Description
 *ChainsApi* | [**V1ChainsChainIDEvmGet**](docs/ChainsApi.md#v1chainschainidevmget) | **Get** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
 *ChainsApi* | [**V1ChainsChainIDEvmWsGet**](docs/ChainsApi.md#v1chainschainidevmwsget) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
 *CorecontractsApi* | [**AccountsGetAccountBalance**](docs/CorecontractsApi.md#accountsgetaccountbalance) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-*CorecontractsApi* | [**AccountsGetAccountFoundries**](docs/CorecontractsApi.md#accountsgetaccountfoundries) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
-*CorecontractsApi* | [**AccountsGetAccountNFTIDs**](docs/CorecontractsApi.md#accountsgetaccountnftids) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
 *CorecontractsApi* | [**AccountsGetAccountNonce**](docs/CorecontractsApi.md#accountsgetaccountnonce) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
 *CorecontractsApi* | [**AccountsGetAccounts**](docs/CorecontractsApi.md#accountsgetaccounts) | **Get** /v1/chains/{chainID}/core/accounts | Get a list of all accounts
 *CorecontractsApi* | [**AccountsGetFoundryOutput**](docs/CorecontractsApi.md#accountsgetfoundryoutput) | **Get** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
@@ -158,9 +155,6 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [AccountFoundriesResponse](docs/AccountFoundriesResponse.md)
- - [AccountListResponse](docs/AccountListResponse.md)
- - [AccountNFTsResponse](docs/AccountNFTsResponse.md)
  - [AccountNonceResponse](docs/AccountNonceResponse.md)
  - [AddUserRequest](docs/AddUserRequest.md)
  - [Assets](docs/Assets.md)
@@ -193,7 +187,6 @@ Class | Method | HTTP request | Description
  - [ErrorParameter](docs/ErrorParameter.md)
  - [EventsResponse](docs/EventsResponse.md)
  - [FeePolicy](docs/FeePolicy.md)
- - [FoundryOutputResponse](docs/FoundryOutputResponse.md)
  - [GovAllowedStateControllerAddressesResponse](docs/GovAllowedStateControllerAddressesResponse.md)
  - [GovChainInfoResponse](docs/GovChainInfoResponse.md)
  - [GovChainOwnerResponse](docs/GovChainOwnerResponse.md)

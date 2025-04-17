@@ -81,8 +81,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChainInfoResponse'
-          description: Information about a specific chain
-      summary: Get information about a specific chain
+          description: Information about the chain
+      summary: Get information about the chain
       tags:
       - chains
   /v1/chain/access-node/{peer}:
@@ -254,36 +254,6 @@ paths:
       summary: Get information about the deployed committee
       tags:
       - chains
-  /v1/chain/contracts:
-    get:
-      operationId: getContracts
-      parameters:
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                items:
-                  $ref: '#/components/schemas/ContractInfoResponse'
-                type: array
-          description: A list of all available contracts
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      security:
-      - Authorization: []
-      summary: Get all available chain contracts
-      tags:
-      - chains
   /v1/chain/core/accounts/account/{agentID}/balance:
     get:
       operationId: accountsGetAccountBalance
@@ -315,79 +285,6 @@ paths:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
       summary: Get all assets belonging to an account
-      tags:
-      - corecontracts
-  /v1/chain/core/accounts/account/{agentID}/foundries:
-    get:
-      operationId: accountsGetAccountFoundries
-      parameters:
-      - description: ChainID (Hex Address)
-        in: path
-        name: chainID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: "AgentID (Hex Address for L1 accounts, Hex for EVM)"
-        in: path
-        name: agentID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountFoundriesResponse'
-          description: All foundries owned by an account
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get all foundries owned by an account
-      tags:
-      - corecontracts
-  /v1/chain/core/accounts/account/{agentID}/nfts:
-    get:
-      operationId: accountsGetAccountNFTIDs
-      parameters:
-      - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
-        in: path
-        name: agentID
-        required: true
-        schema:
-          format: string
-          type: string
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccountNFTsResponse'
-          description: All NFT ids belonging to an account
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get all NFT ids belonging to an account
       tags:
       - corecontracts
   /v1/chain/core/accounts/account/{agentID}/nonce:
@@ -423,25 +320,17 @@ paths:
       summary: Get the current nonce of an account
       tags:
       - corecontracts
-  /v1/chain/core/accounts/foundry_output/{serialNumber}:
+  /v1/chain/core/accounts/account/{agentID}/objects:
     get:
-      operationId: accountsGetFoundryOutput
+      operationId: accountsGetAccountObjectIDs
       parameters:
-      - description: ChainID (Hex Address)
+      - description: AgentID (Hex Address for L1 accounts | Hex for EVM)
         in: path
-        name: chainID
+        name: agentID
         required: true
         schema:
           format: string
           type: string
-      - description: Serial Number (uint32)
-        in: path
-        name: serialNumber
-        required: true
-        schema:
-          format: int32
-          minimum: 1
-          type: integer
       - description: Block index or trie root
         in: query
         name: block
@@ -453,24 +342,24 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FoundryOutputResponse'
-          description: The foundry output
+                $ref: '#/components/schemas/AccountObjectsResponse'
+          description: All object ids belonging to an account
         "401":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get the foundry output
+      summary: Get all object ids belonging to an account
       tags:
       - corecontracts
-  /v1/chain/core/accounts/nftdata/{nftID}:
+  /v1/chain/core/accounts/objectdata/{objectID}:
     get:
-      operationId: accountsGetNFTData
+      operationId: accountsGetObjectData
       parameters:
-      - description: NFT ID (Hex)
+      - description: Object ID (Hex)
         in: path
-        name: nftID
+        name: objectID
         required: true
         schema:
           format: string
@@ -482,39 +371,19 @@ paths:
           format: string
           type: string
       responses:
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get the NFT data by an ID
-      tags:
-      - corecontracts
-  /v1/chain/core/accounts/token_registry:
-    get:
-      operationId: accountsGetNativeTokenIDRegistry
-      parameters:
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NativeTokenIDRegistryResponse'
-          description: A list of all registries
+                $ref: '#/components/schemas/IotaObject'
+          description: The object data
         "401":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get a list of all registries
+      summary: Get the object data by an ID
       tags:
       - corecontracts
   /v1/chain/core/accounts/total_assets:
@@ -1329,7 +1198,7 @@ paths:
             application/json:
               schema:
                 additionalProperties:
-                  example: "true"
+                  example: info
                   format: string
                   type: string
                 type: object
@@ -1818,44 +1687,6 @@ paths:
       summary: The websocket connection service
 components:
   schemas:
-    AccountFoundriesResponse:
-      example:
-        foundrySerialNumbers:
-        - 0
-        - 0
-      properties:
-        foundrySerialNumbers:
-          items:
-            format: int32
-            type: integer
-          type: array
-          xml:
-            name: FoundrySerialNumbers
-            wrapped: true
-      required:
-      - foundrySerialNumbers
-      type: object
-      xml:
-        name: AccountFoundriesResponse
-    AccountNFTsResponse:
-      example:
-        nftIds:
-        - nftIds
-        - nftIds
-      properties:
-        nftIds:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: NFTIDs
-            wrapped: true
-      required:
-      - nftIds
-      type: object
-      xml:
-        name: AccountNFTsResponse
     AccountNonceResponse:
       example:
         nonce: nonce
@@ -1871,6 +1702,25 @@ components:
       type: object
       xml:
         name: AccountNonceResponse
+    AccountObjectsResponse:
+      example:
+        objectIds:
+        - objectIds
+        - objectIds
+      properties:
+        objectIds:
+          items:
+            format: string
+            type: string
+          type: array
+          xml:
+            name: ObjectIDs
+            wrapped: true
+      required:
+      - objectIds
+      type: object
+      xml:
+        name: AccountObjectsResponse
     AddUserRequest:
       example:
         password: password
@@ -1942,13 +1792,13 @@ components:
           balance: balance
         objects:
         - id:
-          - 5
-          - 5
+          - 0
+          - 0
           type:
             s: s
         - id:
-          - 5
-          - 5
+          - 0
+          - 0
           type:
             s: s
       properties:
@@ -1974,29 +1824,21 @@ components:
         name: AssetsJSON
     AssetsResponse:
       example:
-        baseTokens: baseTokens
-        nativeTokens:
+        coins:
         - coinType: coinType
           balance: balance
         - coinType: coinType
           balance: balance
       properties:
-        baseTokens:
-          description: The base tokens (uint64 as string)
-          format: string
-          type: string
-          xml:
-            name: BaseTokens
-        nativeTokens:
+        coins:
           items:
             $ref: '#/components/schemas/CoinJSON'
           type: array
           xml:
-            name: NativeTokens
+            name: Coins
             wrapped: true
       required:
-      - baseTokens
-      - nativeTokens
+      - coins
       type: object
       xml:
         name: AssetsResponse
@@ -2696,29 +2538,6 @@ components:
       type: object
       xml:
         name: ContractCallViewRequest
-    ContractInfoResponse:
-      example:
-        name: name
-        hName: hName
-      properties:
-        hName:
-          description: The id (HName as Hex)) of the contract.
-          format: string
-          type: string
-          xml:
-            name: HName
-        name:
-          description: The name of the contract.
-          format: string
-          type: string
-          xml:
-            name: Name
-      required:
-      - hName
-      - name
-      type: object
-      xml:
-        name: ContractInfoResponse
     ControlAddressesResponse:
       example:
         chainAdmin: chainAdmin
@@ -2998,30 +2817,6 @@ components:
       type: object
       xml:
         name: FeePolicy
-    FoundryOutputResponse:
-      example:
-        assets:
-          baseTokens: baseTokens
-          nativeTokens:
-          - coinType: coinType
-            balance: balance
-          - coinType: coinType
-            balance: balance
-        foundryId: foundryId
-      properties:
-        assets:
-          $ref: '#/components/schemas/AssetsResponse'
-        foundryId:
-          format: string
-          type: string
-          xml:
-            name: FoundryID
-      required:
-      - assets
-      - foundryId
-      type: object
-      xml:
-        name: FoundryOutputResponse
     GovChainAdminResponse:
       example:
         chainAdmin: chainAdmin
@@ -3308,8 +3103,8 @@ components:
     IotaObject:
       example:
         id:
-        - 5
-        - 5
+        - 0
+        - 0
         type:
           s: s
       properties:
@@ -3468,25 +3263,6 @@ components:
       type: object
       xml:
         name: LoginResponse
-    NativeTokenIDRegistryResponse:
-      example:
-        nativeTokenRegistryIds:
-        - nativeTokenRegistryIds
-        - nativeTokenRegistryIds
-      properties:
-        nativeTokenRegistryIds:
-          items:
-            format: string
-            type: string
-          type: array
-          xml:
-            name: NativeTokenRegistryIDs
-            wrapped: true
-      required:
-      - nativeTokenRegistryIds
-      type: object
-      xml:
-        name: NativeTokenIDRegistryResponse
     NodeOwnerCertificateResponse:
       example:
         certificate: certificate
@@ -3877,13 +3653,13 @@ components:
               balance: balance
             objects:
             - id:
-              - 5
-              - 5
+              - 0
+              - 0
               type:
                 s: s
             - id:
-              - 5
-              - 5
+              - 0
+              - 0
               type:
                 s: s
           isOffLedger: true
@@ -3900,13 +3676,13 @@ components:
               balance: balance
             objects:
             - id:
-              - 5
-              - 5
+              - 0
+              - 0
               type:
                 s: s
             - id:
-              - 5
-              - 5
+              - 0
+              - 0
               type:
                 s: s
           params:
@@ -4020,13 +3796,13 @@ components:
             balance: balance
           objects:
           - id:
-            - 5
-            - 5
+            - 0
+            - 0
             type:
               s: s
           - id:
-            - 5
-            - 5
+            - 0
+            - 0
             type:
               s: s
         isOffLedger: true
@@ -4043,13 +3819,13 @@ components:
             balance: balance
           objects:
           - id:
-            - 5
-            - 5
+            - 0
+            - 0
             type:
               s: s
           - id:
-            - 5
-            - 5
+            - 0
+            - 0
             type:
               s: s
         params:

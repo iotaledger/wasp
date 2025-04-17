@@ -46,11 +46,6 @@ type CommitteeInfoResponse struct {
 	StateAddress   string          `json:"stateAddress" swagger:"desc(State address, if we are part of it.),required"`
 }
 
-type ContractInfoResponse struct {
-	HName string `json:"hName" swagger:"desc(The id (HName as Hex)) of the contract.),required"`
-	Name  string `json:"name" swagger:"desc(The name of the contract.),required"`
-}
-
 type PublicChainMetadata struct {
 	EVMJsonRPCURL   string `json:"evmJsonRpcURL" swagger:"desc(The EVM json rpc url),required"`
 	EVMWebSocketURL string `json:"evmWebSocketURL" swagger:"desc(The EVM websocket url)),required"`

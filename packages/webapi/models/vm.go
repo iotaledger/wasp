@@ -41,7 +41,6 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		GasBudget:     fmt.Sprint(receipt.GasBudget),
 		GasBurned:     fmt.Sprint(receipt.GasBurned),
 		GasFeeCharged: receipt.GasFeeCharged.String(),
-		SDCharged:     receipt.SDCharged.String(),
 		GasBurnLog:    burnRecords,
 	}
 }

@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -164,7 +163,7 @@ func (e *ChainEnv) EVMJSONRPClient(nodeIndex int) *ethclient.Client {
 }
 
 func NewEVMJSONRPClient(t *testing.T, chainID string, clu *cluster.Cluster, nodeIndex int) *ethclient.Client {
-	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", chainID)
+	evmJSONRPCPath := "/v1/chain/evm"
 	jsonRPCEndpoint := clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)

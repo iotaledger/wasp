@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -60,4 +61,13 @@ func DecodeUInt(e echo.Context, key string) (uint64, error) {
 		return 0, apierrors.InvalidPropertyError(key, err)
 	}
 	return value, nil
+}
+
+func DecodeObjectID(e echo.Context) (*iotago.ObjectID, error) {
+	objectID, err := iotago.ObjectIDFromHex(e.Param(ParamObjectID))
+	if err != nil {
+		return nil, apierrors.InvalidPropertyError(ParamObjectID, err)
+	}
+
+	return objectID, nil
 }
