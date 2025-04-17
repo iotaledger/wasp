@@ -39,8 +39,6 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 )
 
-// TODO: What to do with foundry prefixes?
-
 func main() {
 	// For pprof profilings
 	go func() {

@@ -63,7 +63,6 @@ func migrateBlockRegistry(blockIndex uint32, blockKeepAmount int32, chainOwner *
 
 	oldBlock := oldBlocks.GetAt(blockIndex)
 
-	// TODO: Just poll latest L1Params once so we can save some space here and have more accurate info.
 	defaultL1Params := &parameters.L1Params{
 		BaseToken: &parameters.IotaCoinInfo{
 			CoinType:    coin.BaseTokenType,
@@ -109,7 +108,7 @@ func migrateBlockRegistry(blockIndex uint32, blockKeepAmount int32, chainOwner *
 			},
 			ObjectRef: iotago.ObjectRef{
 				ObjectID: &iotaObjectID,
-				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")), // TODO: fix this dummy ID
+				Digest:   iotago.DigestFromBytes([]byte("MIGRATEDMIGRATEDMIGRATEDMIGRATED")),
 				Version:  iotago.SequenceNumber(blockIndex - 1),
 			},
 			Owner: chainOwner.AsIotaAddress(),

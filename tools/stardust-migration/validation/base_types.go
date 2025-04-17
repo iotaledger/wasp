@@ -74,6 +74,13 @@ func newBlockToStr(block *blocklog.BlockInfo) string {
 		block.PreviousAnchor.Anchor().ObjectID != nil &&
 		block.PreviousAnchor.Anchor().Digest != nil
 
+	if anchorPresent {
+		if block.PreviousAnchor.GetStateIndex() != block.BlockIndex-1 {
+			panic(fmt.Sprintf("invalid previoud anchor in the block: expected anchor for block %v, got for %v",
+				block.BlockIndex-1, block.PreviousAnchor.GetStateIndex()))
+		}
+	}
+
 	return fmt.Sprintf("v=%v, i=%v, t=%v, tr=%v, sr=%v, or=%v, an=%v, gb=%v, gfc=%v",
 		block.SchemaVersion,
 		block.BlockIndex,

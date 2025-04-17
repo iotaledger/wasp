@@ -75,6 +75,7 @@ func validateMigration(c *cmd.Context) error {
 	// 6. Check prunning is duplicated: requests, lookup table, and others are not available when pruned in old state.
 	// 7. Into each of new state validations add some basic "integration" tests - use business logic funcs to retrieve data.
 	// 8. Perform ALL callviews at least once for each of business entity type.
+	// 9. Ensure hash of EVM transaction tracing is same for transactions with Native Tokens and NFTs
 
 	if lastIndex == 0 {
 		cli.Logf("Using latest new state index")

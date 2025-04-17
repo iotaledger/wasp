@@ -47,9 +47,6 @@ func OldIotaGoAddressToCryptoLibAddress(address old_iotago.Address) *cryptolib.A
 func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.ChainID) isc.AgentID {
 	switch oldAgentID.Kind() {
 	case old_isc.AgentIDKindAddress:
-		// TODO: I think we need to remove the first byte from the byte array
-		// https://docs.iota.org/developer/stardust/addresses#bech32-to-hex-conversion
-		// There you can see Bech32->Bytes->Remove first byte-> == new address
 		oldAddr := oldAgentID.(*old_isc.AddressAgentID).Address()
 		newAdd := iotago.MustAddressFromHex(oldAddr.String())
 		return isc.NewAddressAgentID(cryptolib.NewAddressFromIota(newAdd))
@@ -109,7 +106,9 @@ func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
-	//panic("TODO: Not implemented")
+	// TODO: Implement
+	//panic(fmt.Sprintf("Expected to never be used: %v", tokenID.ToHex()))
+
 	return parameters.IotaCoinInfo{
 		CoinType:    coin.BaseTokenType,
 		Decimals:    6,
@@ -122,6 +121,7 @@ func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.
 }
 
 func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {
+	// TODO: There is no conversion rate, right?
 	if !oldNativeTokenAmount.IsUint64() {
 		fmt.Println(fmt.Errorf("\n** ERROR old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
 		return coin.Value(math.MaxUint64)

@@ -46,8 +46,7 @@ func MigrateGovernanceContract(
 	blockKeepAmount = migrateBlockKeepAmount(oldContractState, newContractState)
 	// NOTE: VarRotateToAddress ignored
 	// NOTE: VarMinBaseTokensOnCommonAccount ignored, thus deleted
-
-	// TODO: VarAllowedStateControllerAddresses
+	// NOTE: VarAllowedStateControllerAddresses ignored
 
 	cli.DebugLog("Migrated governance contract\n")
 
