@@ -34,8 +34,8 @@ type SandboxBase interface {
 	Params() CallArguments
 	// ChainID returns the chain ID
 	ChainID() ChainID
-	// ChainOwnerID returns the AgentID of the current owner of the chain
-	ChainOwnerID() AgentID
+	// ChainAdmin returns the chain admin AgentID (not necessarily the same as "anchor owner")
+	ChainAdmin() AgentID
 	// ChainInfo returns information and configuration parameters of the chain
 	ChainInfo() *ChainInfo
 	// Contract returns the Hname of the current contract in the context
@@ -72,7 +72,7 @@ type Helpers interface {
 type Authorize interface {
 	RequireCaller(agentID AgentID)
 	RequireCallerAnyOf(agentID []AgentID)
-	RequireCallerIsChainOwner()
+	RequireCallerIsChainAdmin()
 }
 
 type Balance interface {

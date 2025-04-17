@@ -34,19 +34,20 @@ import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
 import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
-import { GovAllowedStateControllerAddressesResponse } from '../models/GovAllowedStateControllerAddressesResponse';
+import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
-import { GovChainOwnerResponse } from '../models/GovChainOwnerResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
+import { IotaObject } from '../models/IotaObject';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
 import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
+import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
@@ -65,7 +66,6 @@ import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateAnchor } from '../models/StateAnchor';
 import { StateResponse } from '../models/StateResponse';
 import { StateTransaction } from '../models/StateTransaction';
-import { Type } from '../models/Type';
 import { UnresolvedVMErrorJSON } from '../models/UnresolvedVMErrorJSON';
 import { UpdateUserPasswordRequest } from '../models/UpdateUserPasswordRequest';
 import { UpdateUserPermissionsRequest } from '../models/UpdateUserPermissionsRequest';
@@ -1460,12 +1460,12 @@ export class ObservableCorecontractsApi {
     }
 
     /**
-     * Returns the allowed state controller addresses
-     * Get the allowed state controller addresses
+     * Returns the chain admin
+     * Get the chain admin
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddressesWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<GovAllowedStateControllerAddressesResponse>> {
-        const requestContextPromise = this.requestFactory.governanceGetAllowedStateControllerAddresses(block, _options);
+    public governanceGetChainAdminWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<GovChainAdminResponse>> {
+        const requestContextPromise = this.requestFactory.governanceGetChainAdmin(block, _options);
 
         // build promise chain
         let middlewarePreObservable = from<RequestContext>(requestContextPromise);
@@ -1479,17 +1479,17 @@ export class ObservableCorecontractsApi {
                 for (const middleware of this.configuration.middleware) {
                     middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
                 }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.governanceGetAllowedStateControllerAddressesWithHttpInfo(rsp)));
+                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.governanceGetChainAdminWithHttpInfo(rsp)));
             }));
     }
 
     /**
-     * Returns the allowed state controller addresses
-     * Get the allowed state controller addresses
+     * Returns the chain admin
+     * Get the chain admin
      * @param [block] Block index or trie root
      */
-    public governanceGetAllowedStateControllerAddresses(block?: string, _options?: Configuration): Observable<GovAllowedStateControllerAddressesResponse> {
-        return this.governanceGetAllowedStateControllerAddressesWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovAllowedStateControllerAddressesResponse>) => apiResponse.data));
+    public governanceGetChainAdmin(block?: string, _options?: Configuration): Observable<GovChainAdminResponse> {
+        return this.governanceGetChainAdminWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovChainAdminResponse>) => apiResponse.data));
     }
 
     /**
@@ -1523,39 +1523,6 @@ export class ObservableCorecontractsApi {
      */
     public governanceGetChainInfo(block?: string, _options?: Configuration): Observable<GovChainInfoResponse> {
         return this.governanceGetChainInfoWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovChainInfoResponse>) => apiResponse.data));
-    }
-
-    /**
-     * Returns the chain owner
-     * Get the chain owner
-     * @param [block] Block index or trie root
-     */
-    public governanceGetChainOwnerWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<GovChainOwnerResponse>> {
-        const requestContextPromise = this.requestFactory.governanceGetChainOwner(block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.governanceGetChainOwnerWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Returns the chain owner
-     * Get the chain owner
-     * @param [block] Block index or trie root
-     */
-    public governanceGetChainOwner(block?: string, _options?: Configuration): Observable<GovChainOwnerResponse> {
-        return this.governanceGetChainOwnerWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<GovChainOwnerResponse>) => apiResponse.data));
     }
 
 }

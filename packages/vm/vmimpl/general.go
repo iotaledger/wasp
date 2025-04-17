@@ -28,12 +28,12 @@ func (vmctx *vmContext) ChainInfo() *isc.ChainInfo {
 	return vmctx.chainInfo
 }
 
-func (reqctx *requestContext) ChainOwnerID() isc.AgentID {
-	return reqctx.vm.ChainOwnerID()
+func (reqctx *requestContext) ChainAdmin() isc.AgentID {
+	return reqctx.vm.ChainAdmin()
 }
 
-func (vmctx *vmContext) ChainOwnerID() isc.AgentID {
-	return vmctx.chainInfo.ChainOwnerID
+func (vmctx *vmContext) ChainAdmin() isc.AgentID {
+	return vmctx.chainInfo.ChainAdmin
 }
 
 func (reqctx *requestContext) CurrentContractAgentID() isc.AgentID {

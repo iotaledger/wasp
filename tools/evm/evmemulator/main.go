@@ -95,8 +95,8 @@ func initSolo() (*soloContext, *solo.Chain) {
 
 	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
-	chainOwner, _ := env.NewKeyPairWithFunds()
-	chain, _ := env.NewChainExt(chainOwner, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll)
+	chainAdmin, _ := env.NewKeyPairWithFunds()
+	chain, _ := env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll)
 	return ctx, chain
 }
 

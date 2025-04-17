@@ -27,7 +27,7 @@ func (s *StateWriter) creditToAccount(accountKey kv.Key, coins isc.CoinBalances)
 		return
 	}
 
-	for coinType, amount := range coins {
+	for coinType, amount := range coins.Iterate() {
 		if amount == 0 {
 			continue
 		}
@@ -72,7 +72,7 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances
 
 	// first check, then mutate
 	coinMutations := isc.NewCoinBalances()
-	for coinType, amount := range coins {
+	for coinType, amount := range coins.Iterate() {
 		if amount == 0 {
 			continue
 		}
@@ -83,7 +83,7 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances
 		coinMutations[coinType] = balance - amount
 	}
 
-	for coinType, amount := range coinMutations {
+	for coinType, amount := range coinMutations.Iterate() {
 		s.setCoinBalance(accountKey, coinType, amount)
 	}
 	return true

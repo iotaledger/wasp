@@ -24,7 +24,7 @@ type PublicChainMetadata struct {
 type ChainInfo struct {
 	IsActive     bool
 	ChainID      isc.ChainID
-	ChainOwnerID isc.AgentID
+	ChainAdmin   isc.AgentID
 	GasFeePolicy *gas.FeePolicy
 	GasLimits    *gas.Limits
 	PublicURL    string
@@ -36,7 +36,7 @@ func MapChainInfo(info *isc.ChainInfo, isActive bool) *ChainInfo {
 	chainInfo := &ChainInfo{
 		IsActive:     isActive,
 		ChainID:      info.ChainID,
-		ChainOwnerID: info.ChainOwnerID,
+		ChainAdmin:   info.ChainAdmin,
 		GasFeePolicy: info.GasFeePolicy,
 		GasLimits:    info.GasLimits,
 		PublicURL:    info.PublicURL,

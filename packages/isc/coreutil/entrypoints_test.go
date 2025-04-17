@@ -33,7 +33,7 @@ func (m MockSandBox) RequireCallerAnyOf(agentID []isc.AgentID) {
 	panic("implement me")
 }
 
-func (m MockSandBox) RequireCallerIsChainOwner() {
+func (m MockSandBox) RequireCallerIsChainAdmin() {
 	panic("implement me")
 }
 
@@ -131,7 +131,7 @@ func (m MockSandBox) ChainID() isc.ChainID {
 	panic("implement me")
 }
 
-func (m MockSandBox) ChainOwnerID() isc.AgentID {
+func (m MockSandBox) ChainAdmin() isc.AgentID {
 	panic("implement me")
 }
 

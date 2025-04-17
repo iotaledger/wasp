@@ -18,7 +18,7 @@ import (
 )
 
 //nolint:unparam
-func postRequest(ctx context.Context, client *apiclient.APIClient, chain string, msg isc.Message, params chainclient.PostRequestParams, offLedger, adjustStorageDeposit bool) {
+func postRequest(ctx context.Context, client *apiclient.APIClient, chain string, msg isc.Message, params chainclient.PostRequestParams, offLedger bool) {
 	chainID := config.GetChain(chain)
 	chainClient := cliclients.ChainClient(client, chainID)
 
@@ -67,7 +67,7 @@ func initPostRequestCmd() *cobra.Command {
 				GasBudget:   iotaclient.DefaultGasBudget,
 				L2GasBudget: iotaclient.DefaultGasBudget,
 			}
-			postRequest(ctx, client, chain, msg, postParams, postRequestParams.offLedger, postRequestParams.adjustStorageDeposit)
+			postRequest(ctx, client, chain, msg, postParams, postRequestParams.offLedger)
 		},
 	}
 
@@ -79,21 +79,19 @@ func initPostRequestCmd() *cobra.Command {
 }
 
 type postRequestParams struct {
-	transfer             []string
-	allowance            []string
-	offLedger            bool
-	adjustStorageDeposit bool
+	transfer  []string
+	allowance []string
+	offLedger bool
 }
 
 func (p *postRequestParams) initFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVarP(&p.allowance, "allowance", "l", []string{},
-		"include allowance as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...")
+		"include allowance as part of the transaction. Format: <token-id1>|<amount1>, <token-id2>|<amount2> ...")
 
 	cmd.Flags().StringSliceVarP(&p.transfer, "transfer", "t", []string{},
-		"include a funds transfer as part of the transaction. Format: <token-id>:<amount>,<token-id>:amount...",
+		"include a funds transfer as part of the transaction. Format: <token-id1>|<amount1>, <token-id2>|<amount2> ...",
 	)
 	cmd.Flags().BoolVarP(&p.offLedger, "off-ledger", "o", false,
 		"post an off-ledger request",
 	)
-	cmd.Flags().BoolVarP(&p.adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 }

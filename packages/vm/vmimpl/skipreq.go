@@ -16,18 +16,7 @@ import (
 
 // earlyCheckReasonToSkip checks if request must be ignored without even modifying the state
 func (reqctx *requestContext) earlyCheckReasonToSkip(maintenanceMode bool) error {
-	/*if reqctx.vm.task.AnchorOutput.StateIndex == 0 {
-		if len(reqctx.vm.task.AnchorOutput.Assets.Value) > 0 {
-			return errors.New("can't init chain with native assets on the origin alias output")
-		}
-	} else {
-		if len(reqctx.vm.task.AnchorOutput.NativeTokens) > 0 {
-			panic("inconsistency: native assets on the anchor output")
-		}
-	}*/
-
-	if maintenanceMode &&
-		reqctx.req.Message().Target.Contract != governance.Contract.Hname() {
+	if maintenanceMode && reqctx.req.Message().Target.Contract != governance.Contract.Hname() {
 		return errors.New("skipped due to maintenance mode")
 	}
 

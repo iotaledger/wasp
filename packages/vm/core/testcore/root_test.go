@@ -42,10 +42,10 @@ func TestGetInfo(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain()
 
-	chainID, ownerAgentID, contracts := chain.GetInfo()
+	chainID, admin, contracts := chain.GetInfo()
 
 	require.EqualValues(t, chain.ChainID, chainID)
-	require.EqualValues(t, chain.OwnerAgentID(), ownerAgentID)
+	require.EqualValues(t, chain.AdminAgentID(), admin)
 	require.GreaterOrEqual(t, len(contracts), len(corecontracts.All))
 
 	_, ok := contracts[root.Contract.Hname()]
@@ -55,49 +55,49 @@ func TestGetInfo(t *testing.T) {
 	require.True(t, ok)
 }
 
-func TestChangeOwnerAuthorized(t *testing.T) {
+func TestChangeAdminAuthorized(t *testing.T) {
 	env := solo.New(t, &solo.InitOptions{
 		Debug:           true,
 		PrintStackTrace: true,
 	})
 	chain := env.NewChain()
 
-	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := isc.NewAddressAgentID(ownerAddr)
+	newAdmin, ownerAddr := env.NewKeyPairWithFunds()
+	newAdminAgentID := isc.NewAddressAgentID(ownerAddr)
 
 	req := solo.NewCallParams(
-		governance.FuncDelegateChainOwnership.Message(newOwnerAgentID),
+		governance.FuncDelegateChainAdmin.Message(newAdminAgentID),
 	).WithGasBudget(100_000).
 		AddBaseTokens(100_000)
 
 	_, err := chain.PostRequestSync(req, nil)
 	require.NoError(t, err)
 
-	_, ownerAgentID, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OwnerAgentID(), ownerAgentID)
+	_, admin, _ := chain.GetInfo()
+	require.EqualValues(t, chain.AdminAgentID(), admin)
 
-	req = solo.NewCallParams(governance.FuncClaimChainOwnership.Message()).
+	req = solo.NewCallParams(governance.FuncClaimChainAdmin.Message()).
 		WithGasBudget(100_000).
 		AddBaseTokens(100_000)
 
-	_, err = chain.PostRequestSync(req, newOwner)
+	_, err = chain.PostRequestSync(req, newAdmin)
 	require.NoError(t, err)
 
-	_, ownerAgentID, _ = chain.GetInfo()
-	require.True(t, newOwnerAgentID.Equals(ownerAgentID))
+	_, admin, _ = chain.GetInfo()
+	require.True(t, newAdminAgentID.Equals(admin))
 }
 
-func TestChangeOwnerUnauthorized(t *testing.T) {
+func TestChangeAdminUnauthorized(t *testing.T) {
 	env := solo.New(t)
 	chain := env.NewChain()
 
-	newOwner, ownerAddr := env.NewKeyPairWithFunds()
-	newOwnerAgentID := isc.NewAddressAgentID(ownerAddr)
-	req := solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(newOwnerAgentID)).
+	newAdmin, ownerAddr := env.NewKeyPairWithFunds()
+	newAdminAgentID := isc.NewAddressAgentID(ownerAddr)
+	req := solo.NewCallParams(governance.FuncDelegateChainAdmin.Message(newAdminAgentID)).
 		AddBaseTokens(100_000)
-	_, err := chain.PostRequestSync(req, newOwner)
+	_, err := chain.PostRequestSync(req, newAdmin)
 	require.ErrorContains(t, err, "unauthorized")
 
-	_, ownerAgentID, _ := chain.GetInfo()
-	require.EqualValues(t, chain.OwnerAgentID(), ownerAgentID)
+	_, admin, _ := chain.GetInfo()
+	require.EqualValues(t, chain.AdminAgentID(), admin)
 }

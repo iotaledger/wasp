@@ -7,85 +7,44 @@ import (
 
 	"github.com/iotaledger/wasp/clients/chainclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
 )
 
 func initRegisterERC20NativeTokenCmd() *cobra.Command {
-	return buildPostRequestCmd(
-		"register-erc20-native-token",
-		"Call evm core contract registerERC20NativeToken entry point",
-		evm.Contract.Name,
-		evm.FuncRegisterERC20Coin.Name,
-		func(cmd *cobra.Command) {
-			initRegisterERC20NativeTokenParams(cmd)
-		},
-		getRegisterERC20NativeTokenArgs,
-	)
-}
-
-func buildPostRequestCmd(name, desc, hname, fname string, initFlags func(cmd *cobra.Command), funcArgs func(cmd *cobra.Command) []string) *cobra.Command {
 	var (
-		chain             string
-		node              string
-		postrequestParams postRequestParams
+		node           string
+		chainAliasName string
+		withOffLedger  bool
 	)
 
 	cmd := &cobra.Command{
-		Use:   name,
-		Short: desc,
-		Args:  cobra.NoArgs,
+		Use:   "register-erc20-native-token <coinType>",
+		Short: "Call evm core contract registerERC20NativeToken entry point",
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
-			chain = defaultChainFallback(chain)
+			chainAliasName = defaultChainFallback(chainAliasName)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			allowanceTokens := util.ParseFungibleTokens(postrequestParams.allowance)
-
-			params := chainclient.PostRequestParams{
-				Transfer:  util.ParseFungibleTokens(postrequestParams.transfer),
-				Allowance: allowanceTokens,
-				GasBudget: iotaclient.DefaultGasBudget,
+			coinType, err := coin.TypeFromString(args[0])
+			if err != nil {
+				log.Fatalf("invalid coin type: %s => %v", coinType, err)
 			}
-			postRequest(
-				ctx,
-				client,
-				chain,
-				isc.NewMessageFromNames(hname, fname, util.EncodeParams(funcArgs(cmd))),
-				params,
-				postrequestParams.offLedger,
-				postrequestParams.adjustStorageDeposit,
-			)
+
+			request := evm.FuncRegisterERC20Coin.Message(coinType)
+
+			postRequest(ctx, client, chainAliasName, request, chainclient.PostRequestParams{
+				GasBudget: iotaclient.DefaultGasBudget,
+			}, withOffLedger)
 		},
 	}
+
 	waspcmd.WithWaspNodeFlag(cmd, &node)
-	withChainFlag(cmd, &chain)
-	postrequestParams.initFlags(cmd)
-	initFlags(cmd)
-
+	withChainFlag(cmd, &chainAliasName)
 	return cmd
-}
-
-func initRegisterERC20NativeTokenParams(cmd *cobra.Command) {
-	cmd.Flags().Uint32("foundry-sn", 0, "Foundry serial number")
-	cmd.Flags().String("token-name", "", "Token name")
-	cmd.Flags().String("ticker-symbol", "", "Ticker symbol")
-	cmd.Flags().Uint8("token-decimals", 0, "Token decimals")
-}
-
-func getRegisterERC20NativeTokenArgs(cmd *cobra.Command) []string {
-	return []string{
-		"string", "fs", "uint32", flagValString(cmd, "foundry-sn"),
-		"string", "n", "string", flagValString(cmd, "token-name"),
-		"string", "t", "string", flagValString(cmd, "ticker-symbol"),
-		"string", "d", "uint8", flagValString(cmd, "token-decimals"),
-	}
-}
-
-func flagValString(cmd *cobra.Command, cmdName string) string {
-	return cmd.Flag(cmdName).Value.String()
 }

@@ -18,11 +18,13 @@ func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f fu
 	req, err := f()
 	log.Check(err)
 	log.Printf("Posted off-ledger request (check result with: %s chain request %s)\n", os.Args[0], req.ID().String())
-	if config.WaitForCompletion {
+	if config.WaitForCompletion != config.DefaultWaitForCompletion {
+		timeout, err := time.ParseDuration(config.WaitForCompletion)
+		log.Check(err)
 		receipt, _, err := client.ChainsAPI.
 			WaitForRequest(ctx, req.ID().String()).
 			WaitForL1Confirmation(true).
-			TimeoutSeconds(60).
+			TimeoutSeconds(int32(timeout / time.Second)).
 			Execute()
 
 		log.Check(err)
@@ -30,7 +32,7 @@ func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f fu
 	}
 }
 
-func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...bool) *iotajsonrpc.IotaTransactionBlockResponse {
+func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func() (*iotajsonrpc.IotaTransactionBlockResponse, error), forceWait ...time.Duration) *iotajsonrpc.IotaTransactionBlockResponse {
 	tx, err := f()
 	log.Check(err)
 	log.Printf("Posted on-ledger transaction %s\n", tx.Digest)
@@ -38,10 +40,17 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func(
 	ref, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	log.Check(err)
 	log.Printf("Request ID: %s\n", ref.ObjectID.String())
+	log.Printf("TX Digest: %s\n", tx.Digest)
 
-	if config.WaitForCompletion || len(forceWait) > 0 {
+	if len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
-		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, 1*time.Minute)
+		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, forceWait[0])
+		log.Check(err2)
+	} else if config.WaitForCompletion != config.DefaultWaitForCompletion {
+		log.Printf("Waiting for tx requests to be processed...\n")
+		timeout, err := time.ParseDuration(config.WaitForCompletion)
+		log.Check(err)
+		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, timeout)
 		log.Check(err2)
 	}
 

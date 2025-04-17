@@ -63,7 +63,7 @@ func addCandidateNode(
 	state.AccessNodeCandidatesMap().SetAt(ani.NodePubKey.Bytes(), bcs.MustMarshal(&ani.AccessNodeData))
 	ctx.Log().Infof("Governance::AddCandidateNode: accessNodeCandidate added, pubKey=%s", pubKeyStr)
 
-	if ctx.ChainOwnerID().Equals(ctx.Request().SenderAccount()) {
+	if ctx.ChainAdmin().Equals(ctx.Request().SenderAccount()) {
 		state.AccessNodesMap().SetAt(ani.NodePubKey.Bytes(), codec.Encode(true))
 		ctx.Log().Infof("Governance::AddCandidateNode: accessNode added, pubKey=%s", pubKeyStr)
 	}
@@ -74,7 +74,7 @@ func addCandidateNode(
 // It is possible that after executing `revokeAccessNode(...)` a node will stay
 // in the list of validators, and will be absent in the candidate or an access node set.
 // The node is removed from the list of access nodes immediately, but the validator rotation
-// must be initiated by the chain owner explicitly.
+// must be initiated by the chain admin explicitly.
 func revokeAccessNode(
 	ctx isc.Sandbox,
 	pubKey *cryptolib.PublicKey,
@@ -86,9 +86,9 @@ func revokeAccessNode(
 	state.AccessNodesMap().DelAt(pubKey.Bytes())
 }
 
-// Can only be invoked by the chain owner.
+// Can only be invoked by the chain admin.
 func changeAccessNodes(ctx isc.Sandbox, reqs governance.ChangeAccessNodeActions) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 
 	state := governance.NewStateWriterFromSandbox(ctx)
 	accessNodeCandidates := state.AccessNodeCandidatesMap()

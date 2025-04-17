@@ -21,12 +21,12 @@ var _ MappedNullable = &ControlAddressesResponse{}
 
 // ControlAddressesResponse struct for ControlAddressesResponse
 type ControlAddressesResponse struct {
-	// The governing address (Hex Address)
-	GoverningAddress string `json:"governingAddress"`
+	// The anchor owner (Hex Address)
+	AnchorOwner string `json:"anchorOwner"`
+	// The chain admin (Hex Address)
+	ChainAdmin string `json:"chainAdmin"`
 	// The block index (uint32
 	SinceBlockIndex uint32 `json:"sinceBlockIndex"`
-	// The state address (Hex Address)
-	StateAddress string `json:"stateAddress"`
 }
 
 type _ControlAddressesResponse ControlAddressesResponse
@@ -35,11 +35,11 @@ type _ControlAddressesResponse ControlAddressesResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewControlAddressesResponse(governingAddress string, sinceBlockIndex uint32, stateAddress string) *ControlAddressesResponse {
+func NewControlAddressesResponse(anchorOwner string, chainAdmin string, sinceBlockIndex uint32) *ControlAddressesResponse {
 	this := ControlAddressesResponse{}
-	this.GoverningAddress = governingAddress
+	this.AnchorOwner = anchorOwner
+	this.ChainAdmin = chainAdmin
 	this.SinceBlockIndex = sinceBlockIndex
-	this.StateAddress = stateAddress
 	return &this
 }
 
@@ -51,28 +51,52 @@ func NewControlAddressesResponseWithDefaults() *ControlAddressesResponse {
 	return &this
 }
 
-// GetGoverningAddress returns the GoverningAddress field value
-func (o *ControlAddressesResponse) GetGoverningAddress() string {
+// GetAnchorOwner returns the AnchorOwner field value
+func (o *ControlAddressesResponse) GetAnchorOwner() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.GoverningAddress
+	return o.AnchorOwner
 }
 
-// GetGoverningAddressOk returns a tuple with the GoverningAddress field value
+// GetAnchorOwnerOk returns a tuple with the AnchorOwner field value
 // and a boolean to check if the value has been set.
-func (o *ControlAddressesResponse) GetGoverningAddressOk() (*string, bool) {
+func (o *ControlAddressesResponse) GetAnchorOwnerOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.GoverningAddress, true
+	return &o.AnchorOwner, true
 }
 
-// SetGoverningAddress sets field value
-func (o *ControlAddressesResponse) SetGoverningAddress(v string) {
-	o.GoverningAddress = v
+// SetAnchorOwner sets field value
+func (o *ControlAddressesResponse) SetAnchorOwner(v string) {
+	o.AnchorOwner = v
+}
+
+// GetChainAdmin returns the ChainAdmin field value
+func (o *ControlAddressesResponse) GetChainAdmin() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.ChainAdmin
+}
+
+// GetChainAdminOk returns a tuple with the ChainAdmin field value
+// and a boolean to check if the value has been set.
+func (o *ControlAddressesResponse) GetChainAdminOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.ChainAdmin, true
+}
+
+// SetChainAdmin sets field value
+func (o *ControlAddressesResponse) SetChainAdmin(v string) {
+	o.ChainAdmin = v
 }
 
 // GetSinceBlockIndex returns the SinceBlockIndex field value
@@ -99,30 +123,6 @@ func (o *ControlAddressesResponse) SetSinceBlockIndex(v uint32) {
 	o.SinceBlockIndex = v
 }
 
-// GetStateAddress returns the StateAddress field value
-func (o *ControlAddressesResponse) GetStateAddress() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.StateAddress
-}
-
-// GetStateAddressOk returns a tuple with the StateAddress field value
-// and a boolean to check if the value has been set.
-func (o *ControlAddressesResponse) GetStateAddressOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.StateAddress, true
-}
-
-// SetStateAddress sets field value
-func (o *ControlAddressesResponse) SetStateAddress(v string) {
-	o.StateAddress = v
-}
-
 func (o ControlAddressesResponse) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
@@ -133,9 +133,9 @@ func (o ControlAddressesResponse) MarshalJSON() ([]byte, error) {
 
 func (o ControlAddressesResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["governingAddress"] = o.GoverningAddress
+	toSerialize["anchorOwner"] = o.AnchorOwner
+	toSerialize["chainAdmin"] = o.ChainAdmin
 	toSerialize["sinceBlockIndex"] = o.SinceBlockIndex
-	toSerialize["stateAddress"] = o.StateAddress
 	return toSerialize, nil
 }
 
@@ -144,9 +144,9 @@ func (o *ControlAddressesResponse) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"governingAddress",
+		"anchorOwner",
+		"chainAdmin",
 		"sinceBlockIndex",
-		"stateAddress",
 	}
 
 	allProperties := make(map[string]interface{})

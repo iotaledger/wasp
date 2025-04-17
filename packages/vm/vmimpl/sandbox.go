@@ -113,8 +113,8 @@ func (s *contractSandbox) RequireCaller(agentID isc.AgentID) {
 	}
 }
 
-func (s *contractSandbox) RequireCallerIsChainOwner() {
-	s.RequireCaller(s.ChainOwnerID())
+func (s *contractSandbox) RequireCallerIsChainAdmin() {
+	s.RequireCaller(s.ChainAdmin())
 }
 
 func (s *contractSandbox) Privileged() isc.Privileged {

@@ -129,21 +129,13 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 		SetDescription("If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.").
 		SetSummary("Get the chain info")
 
-	api.GET("chain/core/governance/chainowner", c.getChainOwner).
+	api.GET("chain/core/governance/chainadmin", c.getChainAdmin).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The chain owner", mocker.Get(models.GovChainOwnerResponse{}), nil).
-		SetOperationId("governanceGetChainOwner").
-		SetDescription("Returns the chain owner").
-		SetSummary("Get the chain owner")
-
-	api.GET("chain/core/governance/allowedstatecontrollers", c.getAllowedStateControllerAddresses).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The state controller addresses", mocker.Get(models.GovAllowedStateControllerAddressesResponse{}), nil).
-		SetOperationId("governanceGetAllowedStateControllerAddresses").
-		SetDescription("Returns the allowed state controller addresses").
-		SetSummary("Get the allowed state controller addresses")
+		AddResponse(http.StatusOK, "The chain admin", mocker.Get(models.GovChainAdminResponse{}), nil).
+		SetOperationId("governanceGetChainAdmin").
+		SetDescription("Returns the chain admin").
+		SetSummary("Get the chain admin")
 }
 
 //nolint:funlen

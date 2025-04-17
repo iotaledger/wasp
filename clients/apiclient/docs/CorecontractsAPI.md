@@ -25,9 +25,8 @@ Method | HTTP request | Description
 [**BlocklogGetRequestReceiptsOfBlock**](CorecontractsAPI.md#BlocklogGetRequestReceiptsOfBlock) | **Get** /v1/chain/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
 [**BlocklogGetRequestReceiptsOfLatestBlock**](CorecontractsAPI.md#BlocklogGetRequestReceiptsOfLatestBlock) | **Get** /v1/chain/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
 [**ErrorsGetErrorMessageFormat**](CorecontractsAPI.md#ErrorsGetErrorMessageFormat) | **Get** /v1/chain/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
-[**GovernanceGetAllowedStateControllerAddresses**](CorecontractsAPI.md#GovernanceGetAllowedStateControllerAddresses) | **Get** /v1/chain/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
+[**GovernanceGetChainAdmin**](CorecontractsAPI.md#GovernanceGetChainAdmin) | **Get** /v1/chain/core/governance/chainadmin | Get the chain admin
 [**GovernanceGetChainInfo**](CorecontractsAPI.md#GovernanceGetChainInfo) | **Get** /v1/chain/core/governance/chaininfo | Get the chain info
-[**GovernanceGetChainOwner**](CorecontractsAPI.md#GovernanceGetChainOwner) | **Get** /v1/chain/core/governance/chainowner | Get the chain owner
 
 
 
@@ -1469,11 +1468,11 @@ No authorization required
 [[Back to README]](../README.md)
 
 
-## GovernanceGetAllowedStateControllerAddresses
+## GovernanceGetChainAdmin
 
-> GovAllowedStateControllerAddressesResponse GovernanceGetAllowedStateControllerAddresses(ctx).Block(block).Execute()
+> GovChainAdminResponse GovernanceGetChainAdmin(ctx).Block(block).Execute()
 
-Get the allowed state controller addresses
+Get the chain admin
 
 
 
@@ -1494,13 +1493,13 @@ func main() {
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.CorecontractsAPI.GovernanceGetAllowedStateControllerAddresses(context.Background()).Block(block).Execute()
+	resp, r, err := apiClient.CorecontractsAPI.GovernanceGetChainAdmin(context.Background()).Block(block).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.GovernanceGetAllowedStateControllerAddresses``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.GovernanceGetChainAdmin``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `GovernanceGetAllowedStateControllerAddresses`: GovAllowedStateControllerAddressesResponse
-	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.GovernanceGetAllowedStateControllerAddresses`: %v\n", resp)
+	// response from `GovernanceGetChainAdmin`: GovChainAdminResponse
+	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.GovernanceGetChainAdmin`: %v\n", resp)
 }
 ```
 
@@ -1510,7 +1509,7 @@ func main() {
 
 ### Other Parameters
 
-Other parameters are passed through a pointer to a apiGovernanceGetAllowedStateControllerAddressesRequest struct via the builder pattern
+Other parameters are passed through a pointer to a apiGovernanceGetChainAdminRequest struct via the builder pattern
 
 
 Name | Type | Description  | Notes
@@ -1519,7 +1518,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**GovAllowedStateControllerAddressesResponse**](GovAllowedStateControllerAddressesResponse.md)
+[**GovChainAdminResponse**](GovChainAdminResponse.md)
 
 ### Authorization
 
@@ -1586,72 +1585,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**GovChainInfoResponse**](GovChainInfoResponse.md)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## GovernanceGetChainOwner
-
-> GovChainOwnerResponse GovernanceGetChainOwner(ctx).Block(block).Execute()
-
-Get the chain owner
-
-
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	block := "block_example" // string | Block index or trie root (optional)
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.CorecontractsAPI.GovernanceGetChainOwner(context.Background()).Block(block).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `CorecontractsAPI.GovernanceGetChainOwner``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `GovernanceGetChainOwner`: GovChainOwnerResponse
-	fmt.Fprintf(os.Stdout, "Response from `CorecontractsAPI.GovernanceGetChainOwner`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGovernanceGetChainOwnerRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**GovChainOwnerResponse**](GovChainOwnerResponse.md)
 
 ### Authorization
 

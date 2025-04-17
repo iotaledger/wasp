@@ -17,13 +17,13 @@ import { HttpFile } from '../http/http';
 
 export class GovChainInfoResponse {
     /**
+    * The chain admin address (Hex Address).
+    */
+    'chainAdmin': string;
+    /**
     * ChainID (Hex Address).
     */
     'chainID': string;
-    /**
-    * The chain owner address (Hex Address).
-    */
-    'chainOwnerId': string;
     'gasFeePolicy': FeePolicy;
     'gasLimits': Limits;
     'metadata': GovPublicChainMetadata;
@@ -38,14 +38,14 @@ export class GovChainInfoResponse {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "chainID",
-            "baseName": "chainID",
+            "name": "chainAdmin",
+            "baseName": "chainAdmin",
             "type": "string",
             "format": "string"
         },
         {
-            "name": "chainOwnerId",
-            "baseName": "chainOwnerId",
+            "name": "chainID",
+            "baseName": "chainID",
             "type": "string",
             "format": "string"
         },

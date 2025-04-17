@@ -71,7 +71,7 @@ func (e *SoloChainEnv) parseISCCallOptions(opts []iscCallOptions) iscCallOptions
 	}
 	opt := opts[0]
 	if opt.wallet == nil {
-		opt.wallet = e.Chain.OwnerPrivateKey
+		opt.wallet = e.Chain.ChainAdmin
 	}
 	return opt
 }

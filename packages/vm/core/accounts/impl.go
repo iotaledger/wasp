@@ -104,11 +104,11 @@ func withdraw(ctx isc.Sandbox) {
 }
 
 func setCoinMetadata(ctx isc.Sandbox, coinInfo *parameters.IotaCoinInfo) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 	NewStateWriterFromSandbox(ctx).SaveCoinInfo(coinInfo)
 }
 
 func deleteCoinMetadata(ctx isc.Sandbox, coinType coin.Type) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 	NewStateWriterFromSandbox(ctx).DeleteCoinInfo(coinType)
 }

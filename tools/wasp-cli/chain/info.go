@@ -90,7 +90,7 @@ func initInfoCmd() *cobra.Command {
 				log.Check(err)
 				log.Printf("#Contracts: %d\n", len(contracts))
 
-				log.Printf("Owner: %s\n", chainInfo.ChainOwnerId)
+				log.Printf("Admin: %s\n", chainInfo.ChainAdmin)
 				log.Printf("Common account: %s\n", accounts.CommonAccount())
 				log.Printf("Gas fee: gas units * (%d/%d)\n", chainInfo.GasFeePolicy.GasPerToken.A, chainInfo.GasFeePolicy.GasPerToken.B)
 				log.Printf("Validator fee share: %d%%\n", chainInfo.GasFeePolicy.ValidatorFeeShare)

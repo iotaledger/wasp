@@ -91,7 +91,7 @@ func (ch *Chain) runTaskNoLock(reqs []isc.Request, estimateGas bool) *vm.VMTaskR
 		Timestamp:          ch.Env.GlobalTime(),
 		Store:              ch.store,
 		Entropy:            hashing.PseudoRandomHash(nil),
-		ValidatorFeeTarget: ch.OwnerAgentID(),
+		ValidatorFeeTarget: ch.AdminAgentID(),
 		Log:                ch.Log().NewChildLogger("RunTask"),
 		// state baseline is always valid in Solo
 		EnableGasBurnLogging: ch.Env.enableGasBurnLogging,
@@ -122,7 +122,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 	ch.Env.MustWithWaitForNextVersion(gasPayment.Ref, func() {
 		ptbRes = ch.Env.executePTB(
 			res.UnsignedTransaction,
-			ch.OperatorPrivateKey,
+			ch.AnchorOwner,
 			[]*iotago.ObjectRef{gasPayment.Ref},
 			iotaclient.DefaultGasBudget,
 			iotaclient.DefaultGasPrice,

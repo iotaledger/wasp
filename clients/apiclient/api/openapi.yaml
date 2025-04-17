@@ -960,10 +960,10 @@ paths:
       summary: Get the error message format of a specific error id
       tags:
       - corecontracts
-  /v1/chain/core/governance/allowedstatecontrollers:
+  /v1/chain/core/governance/chainadmin:
     get:
-      description: Returns the allowed state controller addresses
-      operationId: governanceGetAllowedStateControllerAddresses
+      description: Returns the chain admin
+      operationId: governanceGetChainAdmin
       parameters:
       - description: Block index or trie root
         in: query
@@ -976,15 +976,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GovAllowedStateControllerAddressesResponse'
-          description: The state controller addresses
+                $ref: '#/components/schemas/GovChainAdminResponse'
+          description: The chain admin
         "401":
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get the allowed state controller addresses
+      summary: Get the chain admin
       tags:
       - corecontracts
   /v1/chain/core/governance/chaininfo:
@@ -1013,33 +1013,6 @@ paths:
                 $ref: '#/components/schemas/ValidationError'
           description: "Unauthorized (Wrong permissions, missing token)"
       summary: Get the chain info
-      tags:
-      - corecontracts
-  /v1/chain/core/governance/chainowner:
-    get:
-      description: Returns the chain owner
-      operationId: governanceGetChainOwner
-      parameters:
-      - description: Block index or trie root
-        in: query
-        name: block
-        schema:
-          format: string
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GovChainOwnerResponse'
-          description: The chain owner
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ValidationError'
-          description: "Unauthorized (Wrong permissions, missing token)"
-      summary: Get the chain owner
       tags:
       - corecontracts
   /v1/chain/deactivate:
@@ -1968,10 +1941,16 @@ components:
         - coinType: coinType
           balance: balance
         objects:
-        - - 5
+        - id:
           - 5
-        - - 5
           - 5
+          type:
+            s: s
+        - id:
+          - 5
+          - 5
+          type:
+            s: s
       properties:
         coins:
           items:
@@ -1982,10 +1961,7 @@ components:
             wrapped: true
         objects:
           items:
-            items:
-              format: int32
-              type: integer
-            type: array
+            $ref: '#/components/schemas/IotaObject'
           type: array
           xml:
             name: Objects
@@ -2167,7 +2143,7 @@ components:
         name: CallTargetJSON
     ChainInfoResponse:
       example:
-        chainOwnerId: chainOwnerId
+        chainAdmin: chainAdmin
         metadata:
           website: website
           evmWebSocketURL: evmWebSocketURL
@@ -2192,18 +2168,18 @@ components:
             b: 0
         isActive: true
       properties:
+        chainAdmin:
+          description: The chain admin address (Hex Address)
+          format: string
+          type: string
+          xml:
+            name: ChainAdmin
         chainID:
           description: ChainID (Hex Address)
           format: string
           type: string
           xml:
             name: ChainID
-        chainOwnerId:
-          description: The chain owner address (Hex Address)
-          format: string
-          type: string
-          xml:
-            name: ChainOwnerID
         evmChainId:
           description: The EVM chain ID
           format: int32
@@ -2230,8 +2206,8 @@ components:
           xml:
             name: PublicURL
       required:
+      - chainAdmin
       - chainID
-      - chainOwnerId
       - evmChainId
       - gasFeePolicy
       - gasLimits
@@ -2745,16 +2721,22 @@ components:
         name: ContractInfoResponse
     ControlAddressesResponse:
       example:
-        governingAddress: governingAddress
+        chainAdmin: chainAdmin
         sinceBlockIndex: 1
-        stateAddress: stateAddress
+        anchorOwner: anchorOwner
       properties:
-        governingAddress:
-          description: The governing address (Hex Address)
+        anchorOwner:
+          description: The anchor owner (Hex Address)
           format: string
           type: string
           xml:
-            name: GoverningAddress
+            name: AnchorOwner
+        chainAdmin:
+          description: The chain admin (Hex Address)
+          format: string
+          type: string
+          xml:
+            name: ChainAdmin
         sinceBlockIndex:
           description: The block index (uint32
           format: int32
@@ -2762,16 +2744,10 @@ components:
           type: integer
           xml:
             name: SinceBlockIndex
-        stateAddress:
-          description: The state address (Hex Address)
-          format: string
-          type: string
-          xml:
-            name: StateAddress
       required:
-      - governingAddress
+      - anchorOwner
+      - chainAdmin
       - sinceBlockIndex
-      - stateAddress
       type: object
       xml:
         name: ControlAddressesResponse
@@ -3055,27 +3031,22 @@ components:
       type: object
       xml:
         name: FoundryOutputResponse
-    GovAllowedStateControllerAddressesResponse:
+    GovChainAdminResponse:
       example:
-        addresses:
-        - addresses
-        - addresses
+        chainAdmin: chainAdmin
       properties:
-        addresses:
-          description: The allowed state controller addresses (Hex Address)
-          items:
-            format: string
-            type: string
-          type: array
+        chainAdmin:
+          description: The chain admin (Hex Address)
+          format: string
+          type: string
           xml:
-            name: Addresses
-            wrapped: true
+            name: ChainAdmin
       type: object
       xml:
-        name: GovAllowedStateControllerAddressesResponse
+        name: GovChainAdminResponse
     GovChainInfoResponse:
       example:
-        chainOwnerId: chainOwnerId
+        chainAdmin: chainAdmin
         metadata:
           website: website
           evmWebSocketURL: evmWebSocketURL
@@ -3098,18 +3069,18 @@ components:
             a: 0
             b: 0
       properties:
+        chainAdmin:
+          description: The chain admin address (Hex Address).
+          format: string
+          type: string
+          xml:
+            name: ChainAdmin
         chainID:
           description: ChainID (Hex Address).
           format: string
           type: string
           xml:
             name: ChainID
-        chainOwnerId:
-          description: The chain owner address (Hex Address).
-          format: string
-          type: string
-          xml:
-            name: ChainOwnerID
         gasFeePolicy:
           $ref: '#/components/schemas/FeePolicy'
         gasLimits:
@@ -3123,8 +3094,8 @@ components:
           xml:
             name: PublicURL
       required:
+      - chainAdmin
       - chainID
-      - chainOwnerId
       - gasFeePolicy
       - gasLimits
       - metadata
@@ -3132,19 +3103,6 @@ components:
       type: object
       xml:
         name: GovChainInfoResponse
-    GovChainOwnerResponse:
-      example:
-        chainOwner: chainOwner
-      properties:
-        chainOwner:
-          description: The chain owner (Hex Address)
-          format: string
-          type: string
-          xml:
-            name: ChainOwner
-      type: object
-      xml:
-        name: GovChainOwnerResponse
     GovPublicChainMetadata:
       example:
         website: website
@@ -3308,7 +3266,7 @@ components:
         iconUrl: iconUrl
       properties:
         coinType:
-          $ref: '#/components/schemas/Type'
+          $ref: '#/components/schemas/ObjectType'
         decimals:
           description: The token decimals
           format: int32
@@ -3356,6 +3314,30 @@ components:
       type: object
       xml:
         name: IotaCoinInfo
+    IotaObject:
+      example:
+        id:
+        - 5
+        - 5
+        type:
+          s: s
+      properties:
+        id:
+          items:
+            format: int32
+            type: integer
+          type: array
+          xml:
+            name: ID
+            wrapped: true
+        type:
+          $ref: '#/components/schemas/ObjectType'
+      required:
+      - id
+      - type
+      type: object
+      xml:
+        name: IotaObject
     L1Params:
       example:
         protocol:
@@ -3529,6 +3511,18 @@ components:
       type: object
       xml:
         name: NodeOwnerCertificateResponse
+    ObjectType:
+      example:
+        s: s
+      properties:
+        s:
+          format: string
+          type: string
+          xml:
+            name: s
+      type: object
+      xml:
+        name: ObjectType
     OffLedgerRequest:
       example:
         request: Hex string
@@ -3891,10 +3885,16 @@ components:
             - coinType: coinType
               balance: balance
             objects:
-            - - 5
+            - id:
               - 5
-            - - 5
               - 5
+              type:
+                s: s
+            - id:
+              - 5
+              - 5
+              type:
+                s: s
           isOffLedger: true
           requestId: requestId
           callTarget:
@@ -3908,10 +3908,16 @@ components:
             - coinType: coinType
               balance: balance
             objects:
-            - - 5
+            - id:
               - 5
-            - - 5
               - 5
+              type:
+                s: s
+            - id:
+              - 5
+              - 5
+              type:
+                s: s
           params:
           - params
           - params
@@ -4022,10 +4028,16 @@ components:
           - coinType: coinType
             balance: balance
           objects:
-          - - 5
+          - id:
             - 5
-          - - 5
             - 5
+            type:
+              s: s
+          - id:
+            - 5
+            - 5
+            type:
+              s: s
         isOffLedger: true
         requestId: requestId
         callTarget:
@@ -4039,10 +4051,16 @@ components:
           - coinType: coinType
             balance: balance
           objects:
-          - - 5
+          - id:
             - 5
-          - - 5
             - 5
+            type:
+              s: s
+          - id:
+            - 5
+            - 5
+            type:
+              s: s
         params:
         - params
         - params
@@ -4214,18 +4232,6 @@ components:
       type: object
       xml:
         name: StateTransaction
-    Type:
-      example:
-        s: s
-      properties:
-        s:
-          format: string
-          type: string
-          xml:
-            name: s
-      type: object
-      xml:
-        name: Type
     UnresolvedVMErrorJSON:
       example:
         code: code

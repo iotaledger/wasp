@@ -24,13 +24,14 @@ import (
 var (
 	BaseDir           string
 	ConfigPath        string
-	WaitForCompletion bool
+	WaitForCompletion string
 )
 
 const (
-	l1ParamsKey          = "l1.params"
-	l1ParamsTimestampKey = "l1.timestamp"
-	l1ParamsExpiration   = 24 * time.Hour
+	l1ParamsKey              = "l1.params"
+	l1ParamsTimestampKey     = "l1.timestamp"
+	l1ParamsExpiration       = 24 * time.Hour
+	DefaultWaitForCompletion = "0s"
 )
 
 func L1ParamsExpired() bool {

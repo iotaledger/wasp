@@ -78,11 +78,11 @@ type chainData struct {
 	// ChainID is the ID of the chain (in this version alias of the ChainAddress)
 	ChainID isc.ChainID
 
-	// OperatorPrivateKey the key pair used to create and operate the chain.
-	OperatorPrivateKey *cryptolib.KeyPair
+	// AnchorOwner the key pair used to create and operate the chain.
+	AnchorOwner *cryptolib.KeyPair
 
-	// OwnerPrivateKey the key pair designed as ChainOwner
-	OwnerPrivateKey *cryptolib.KeyPair
+	// ChainAdmin the key pair designed as chain admin
+	ChainAdmin *cryptolib.KeyPair
 
 	db kvstore.KVStore
 
@@ -235,15 +235,15 @@ func (env *Solo) GetChainByName(name string) *Chain {
 }
 
 const (
-	DefaultChainOwnerBaseTokens = 50 * isc.Million
+	DefaultChainAdminBaseTokens = 50 * isc.Million
 )
 
 // NewChain deploys a new default chain instance.
-func (env *Solo) NewChain(depositFundsForOwner ...bool) *Chain {
+func (env *Solo) NewChain(depositFundsForAdmin ...bool) *Chain {
 	ret, _ := env.NewChainExt(nil, 0, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	if len(depositFundsForOwner) == 0 || depositFundsForOwner[0] {
+	if len(depositFundsForAdmin) == 0 || depositFundsForAdmin[0] {
 		// deposit some tokens for the chain originator
-		err := ret.DepositBaseTokensToL2(DefaultChainOwnerBaseTokens, ret.OwnerPrivateKey)
+		err := ret.DepositBaseTokensToL2(DefaultChainAdminBaseTokens, ret.ChainAdmin)
 		require.NoError(env.T, err)
 	}
 	return ret
@@ -268,7 +268,7 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 }
 
 func (env *Solo) deployChain(
-	chainOwner *cryptolib.KeyPair,
+	chainAdmin *cryptolib.KeyPair,
 	initCommonAccountBaseTokens coin.Value,
 	name string,
 	evmChainID uint16,
@@ -276,16 +276,16 @@ func (env *Solo) deployChain(
 ) (chainData, *isc.StateAnchor) {
 	env.logger.LogDebugf("deploying new chain '%s'", name)
 
-	if chainOwner == nil {
-		chainOwner = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
-		env.GetFundsFromFaucet(chainOwner.Address())
+	if chainAdmin == nil {
+		chainAdmin = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
+		env.GetFundsFromFaucet(chainAdmin.Address())
 	}
 
-	chainOperator := env.NewKeyPairFromIndex(-2000 + len(env.chains))
-	env.GetFundsFromFaucet(chainOperator.Address())
+	anchorOwner := env.NewKeyPairFromIndex(-2000 + len(env.chains))
+	env.GetFundsFromFaucet(anchorOwner.Address())
 
 	initParams := origin.NewInitParams(
-		isc.NewAddressAgentID(chainOwner.Address()),
+		isc.NewAddressAgentID(chainAdmin.Address()),
 		evmChainID,
 		blockKeepAmount,
 		true,
@@ -295,8 +295,8 @@ func (env *Solo) deployChain(
 	db := mapdb.NewMapDB()
 	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
 
-	gasCoinRef := env.makeBaseTokenCoin(chainOperator, isc.GasCoinTargetValue, nil)
-	env.logger.LogInfof("Chain Originator address: %v\n", chainOperator)
+	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
+	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
 	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
 
 	var block state.Block
@@ -315,7 +315,7 @@ func (env *Solo) deployChain(
 
 	if initCommonAccountBaseTokens > 0 {
 		initCoin = env.makeBaseTokenCoin(
-			chainOperator,
+			anchorOwner,
 			initCommonAccountBaseTokens,
 			func(c *iotajsonrpc.Coin) bool {
 				return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID)
@@ -324,7 +324,7 @@ func (env *Solo) deployChain(
 	}
 
 	gasPayment, err := iotajsonrpc.PickupCoinsWithFilter(
-		env.L1BaseTokenCoins(chainOperator.Address()),
+		env.L1BaseTokenCoins(anchorOwner.Address()),
 		uint64(iotaclient.DefaultGasBudget),
 		func(c *iotajsonrpc.Coin) bool {
 			return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID) &&
@@ -339,14 +339,14 @@ func (env *Solo) deployChain(
 			anchorRef, err = env.ISCMoveClient().StartNewChain(
 				env.ctx,
 				&iscmoveclient.StartNewChainRequest{
-					Signer:            chainOperator,
-					ChainOwnerAddress: chainOperator.Address(),
-					PackageID:         env.ISCPackageID(),
-					StateMetadata:     stateMetadata.Bytes(),
-					InitCoinRef:       initCoin,
-					GasPrice:          iotaclient.DefaultGasPrice,
-					GasBudget:         iotaclient.DefaultGasBudget,
-					GasPayments:       gasPayment.CoinRefs(),
+					Signer:        anchorOwner,
+					AnchorOwner:   anchorOwner.Address(),
+					PackageID:     env.ISCPackageID(),
+					StateMetadata: stateMetadata.Bytes(),
+					InitCoinRef:   initCoin,
+					GasPrice:      iotaclient.DefaultGasPrice,
+					GasBudget:     iotaclient.DefaultGasBudget,
+					GasPayments:   gasPayment.CoinRefs(),
 				},
 			)
 		})
@@ -356,21 +356,21 @@ func (env *Solo) deployChain(
 	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
 
 	env.logger.LogInfof(
-		"deployed chain '%s' - ID: %s - chain operator: %s - chain owner: %s - origin trie root: %s",
+		"deployed chain '%s' - ID: %s - anchor owner: %s - chain admin: %s - origin trie root: %s",
 		name,
 		chainID,
-		chainOperator.Address(),
-		chainOwner.Address(),
+		anchorOwner.Address(),
+		chainAdmin.Address(),
 		block.TrieRoot(),
 	)
 
 	return chainData{
-		Name:               name,
-		ChainID:            chainID,
-		OperatorPrivateKey: chainOperator,
-		OwnerPrivateKey:    chainOwner,
-		db:                 db,
-		migrationScheme:    allmigrations.DefaultScheme,
+		Name:            name,
+		ChainID:         chainID,
+		AnchorOwner:     anchorOwner,
+		ChainAdmin:      chainAdmin,
+		db:              db,
+		migrationScheme: allmigrations.DefaultScheme,
 	}, nil
 }
 
@@ -694,13 +694,13 @@ func (env *Solo) L1MintCoin(
 func (env *Solo) L1MintObject(owner *cryptolib.KeyPair) isc.IotaObject {
 	// Create a 2nd chain just to have a L1 object that we can deposit (the anchor)
 	testAnchor, err := env.ISCMoveClient().StartNewChain(env.Ctx(), &iscmoveclient.StartNewChainRequest{
-		GasBudget:         iotaclient.DefaultGasBudget,
-		Signer:            owner,
-		PackageID:         env.ISCPackageID(),
-		StateMetadata:     []byte{},
-		ChainOwnerAddress: owner.Address(),
-		InitCoinRef:       nil,
-		GasPrice:          iotaclient.DefaultGasPrice,
+		GasBudget:     iotaclient.DefaultGasBudget,
+		Signer:        owner,
+		PackageID:     env.ISCPackageID(),
+		StateMetadata: []byte{},
+		AnchorOwner:   owner.Address(),
+		InitCoinRef:   nil,
+		GasPrice:      iotaclient.DefaultGasPrice,
 	})
 	require.NoError(env.T, err)
 

@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
+	websocketserver "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
-	websocketserver "nhooyr.io/websocket"
 
 	appLogger "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/websockethub"

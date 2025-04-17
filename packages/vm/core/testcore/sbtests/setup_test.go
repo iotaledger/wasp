@@ -32,7 +32,7 @@ func setupChain(t *testing.T, keyPairOriginator *cryptolib.KeyPair) (*solo.Solo,
 		GasBurnLogEnabled: true,
 	})
 	chain, _ := env.NewChainExt(keyPairOriginator, 10_000, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
-	err := chain.SendFromL1ToL2AccountBaseTokens(1000, iotaclient.FundsFromFaucetAmount/10, chain.OwnerAgentID(), chain.OwnerPrivateKey)
+	err := chain.SendFromL1ToL2AccountBaseTokens(1000, iotaclient.FundsFromFaucetAmount/10, chain.AdminAgentID(), chain.ChainAdmin)
 	require.NoError(t, err)
 	return env, chain
 }

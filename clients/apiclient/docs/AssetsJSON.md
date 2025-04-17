@@ -5,13 +5,13 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Coins** | [**[]CoinJSON**](CoinJSON.md) |  | 
-**Objects** | **[][]int32** |  | 
+**Objects** | [**[]IotaObject**](IotaObject.md) |  | 
 
 ## Methods
 
 ### NewAssetsJSON
 
-`func NewAssetsJSON(coins []CoinJSON, objects [][]int32, ) *AssetsJSON`
+`func NewAssetsJSON(coins []CoinJSON, objects []IotaObject, ) *AssetsJSON`
 
 NewAssetsJSON instantiates a new AssetsJSON object
 This constructor will assign default values to properties that have it defined,
@@ -48,20 +48,20 @@ SetCoins sets Coins field to given value.
 
 ### GetObjects
 
-`func (o *AssetsJSON) GetObjects() [][]int32`
+`func (o *AssetsJSON) GetObjects() []IotaObject`
 
 GetObjects returns the Objects field if non-nil, zero value otherwise.
 
 ### GetObjectsOk
 
-`func (o *AssetsJSON) GetObjectsOk() (*[][]int32, bool)`
+`func (o *AssetsJSON) GetObjectsOk() (*[]IotaObject, bool)`
 
 GetObjectsOk returns a tuple with the Objects field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetObjects
 
-`func (o *AssetsJSON) SetObjects(v [][]int32)`
+`func (o *AssetsJSON) SetObjects(v []IotaObject)`
 
 SetObjects sets Objects field to given value.
 

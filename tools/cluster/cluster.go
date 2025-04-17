@@ -21,19 +21,17 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
-
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/chainclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
 	"github.com/iotaledger/wasp/clients/multiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -350,7 +348,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 		apilib.CreateChainParams{
 			Layer1Client:      l1Client,
 			CommitteeAPIHosts: chain.CommitteeAPIHosts(),
-			OriginatorKeyPair: chain.OriginatorKeyPair,
+			Signer:            chain.OriginatorKeyPair,
 			Textout:           os.Stdout,
 			Prefix:            "[cluster] ",
 			StateMetadata:     stateMetaData,

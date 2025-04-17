@@ -107,7 +107,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 	var placedCoins []lo.Tuple2[*iotajsonrpc.Coin, uint64]
 	// assume we can find it in the first page
-	for cointype, bal := range req.Assets.Coins {
+	for cointype, bal := range req.Assets.Coins.Iterate() {
 		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType.String())) {
 			continue
 		}
@@ -163,7 +163,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 
 	// Place the non-coin objects
-	for id, t := range req.Assets.Objects {
+	for id, t := range req.Assets.Objects.Iterate() {
 		objRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &id})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", id, err)

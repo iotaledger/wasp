@@ -3,6 +3,9 @@ package iscmove
 import (
 	"bytes"
 	"errors"
+	"iter"
+	"maps"
+	"slices"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -190,6 +193,30 @@ func (a *Assets) BaseToken() uint64 {
 	}
 
 	return token.Uint64()
+}
+
+// Iterate returns a deterministic iterator
+func (c CoinBalances) Iterate() iter.Seq2[iotajsonrpc.CoinType, iotajsonrpc.CoinValue] {
+	return func(yield func(iotajsonrpc.CoinType, iotajsonrpc.CoinValue) bool) {
+		for _, k := range slices.Sorted(maps.Keys(c)) {
+			if !yield(k, c[k]) {
+				return
+			}
+		}
+	}
+}
+
+// Iterate returns a deterministic iterator
+func (o ObjectCollection) Iterate() iter.Seq2[iotago.ObjectID, iotago.ObjectType] {
+	return func(yield func(iotago.ObjectID, iotago.ObjectType) bool) {
+		for _, k := range slices.SortedFunc(maps.Keys(o), func(a, b iotago.ObjectID) int {
+			return bytes.Compare(a[:], b[:])
+		}) {
+			if !yield(k, o[k]) {
+				return
+			}
+		}
+	}
 }
 
 type Request struct {

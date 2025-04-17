@@ -9,9 +9,9 @@ import (
 )
 
 type ControlAddressesResponse struct {
-	GoverningAddress string `json:"governingAddress" swagger:"required,desc(The governing address (Hex Address))"`
-	SinceBlockIndex  uint32 `json:"sinceBlockIndex" swagger:"required,min(1),desc(The block index (uint32)"`
-	StateAddress     string `json:"stateAddress" swagger:"required,desc(The state address (Hex Address))"`
+	AnchorOwner     string `json:"anchorOwner" swagger:"required,desc(The anchor owner (Hex Address))"`
+	ChainAdmin      string `json:"chainAdmin" swagger:"required,desc(The chain admin (Hex Address))"`
+	SinceBlockIndex uint32 `json:"sinceBlockIndex" swagger:"required,min(1),desc(The block index (uint32)"`
 }
 
 type BlockInfoResponse struct {

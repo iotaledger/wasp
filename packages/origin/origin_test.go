@@ -81,14 +81,14 @@ func TestCreateOrigin(t *testing.T) {
 		t,
 		client,
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            sentSigner,
-			ChainOwnerAddress: stateSigner.Address(),
-			PackageID:         l1starter.ISCPackageID(),
-			StateMetadata:     originStateMetadata.Bytes(),
-			InitCoinRef:       originDeposit.Ref(),
-			GasPayments:       []*iotago.ObjectRef{gasCoin},
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        sentSigner,
+			AnchorOwner:   stateSigner.Address(),
+			PackageID:     l1starter.ISCPackageID(),
+			StateMetadata: originStateMetadata.Bytes(),
+			InitCoinRef:   originDeposit.Ref(),
+			GasPayments:   []*iotago.ObjectRef{gasCoin},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -218,7 +218,7 @@ func startNewChain(
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = iscmoveclient.PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
+	ptb = iscmoveclient.PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.AnchorOwner)
 
 	txnResponse, err := client.SignAndExecutePTB(
 		context.Background(),

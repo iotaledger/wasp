@@ -95,14 +95,14 @@ func (tcl *TestChainLedger) MakeTxChainOrigin() (*isc.StateAnchor, coin.Value) {
 	anchorRef, err := tcl.l1client.L2().StartNewChain(
 		context.Background(),
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            tcl.chainOwner,
-			ChainOwnerAddress: tcl.chainOwner.Address(),
-			PackageID:         *tcl.iscPackage,
-			StateMetadata:     stateMetadata.Bytes(),
-			InitCoinRef:       originDeposit.Ref(),
-			GasPayments:       []*iotago.ObjectRef{gasCoin},
-			GasPrice:          iotaclient.DefaultGasPrice,
-			GasBudget:         iotaclient.DefaultGasBudget,
+			Signer:        tcl.chainOwner,
+			AnchorOwner:   tcl.chainOwner.Address(),
+			PackageID:     *tcl.iscPackage,
+			StateMetadata: stateMetadata.Bytes(),
+			InitCoinRef:   originDeposit.Ref(),
+			GasPayments:   []*iotago.ObjectRef{gasCoin},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(tcl.t, err)
@@ -195,51 +195,4 @@ func (tcl *TestChainLedger) UpdateAnchor(anchor *isc.StateAnchor) (*isc.StateAnc
 	}
 	stateAnchor := isc.NewStateAnchor(anchorWithRef, anchor.ISCPackage())
 	return &stateAnchor, nil
-}
-
-func (tcl *TestChainLedger) FakeRotationTX(anchor *isc.StateAnchor, nextCommitteeAddr *cryptolib.Address) *isc.StateAnchor {
-	// FIXME a temp impl before the decision of Rotation
-	signer := cryptolib.SignerToIotaSigner(tcl.chainOwner)
-	ptb := iotago.NewProgrammableTransactionBuilder()
-
-	ptb.Command(iotago.Command{
-		TransferObjects: &iotago.ProgrammableTransferObjects{
-			Objects: []iotago.Argument{ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: anchor.GetObjectRef()})},
-			Address: ptb.MustPure(nextCommitteeAddr),
-		},
-	},
-	)
-
-	pt := ptb.Finish()
-	coins, err := tcl.l1client.GetCoinObjsForTargetAmount(context.Background(), signer.Address(), iotaclient.DefaultGasBudget, iotaclient.DefaultGasBudget)
-	require.NoError(tcl.t, err)
-	gasPayments := coins.CoinRefs()
-
-	tx := iotago.NewProgrammable(
-		signer.Address(),
-		pt,
-		gasPayments,
-		iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
-	)
-
-	txnBytes, err := bcs.Marshal(&tx)
-	require.NoError(tcl.t, err)
-	txnResponse, err := tcl.l1client.SignAndExecuteTransaction(
-		context.Background(),
-		&iotaclient.SignAndExecuteTransactionRequest{
-			TxDataBytes: txnBytes,
-			Signer:      signer,
-			Options:     &iotajsonrpc.IotaTransactionBlockResponseOptions{ShowEffects: true, ShowObjectChanges: true},
-		},
-	)
-
-	require.NoError(tcl.t, err)
-	require.True(tcl.t, txnResponse.Effects.Data.IsSuccess())
-
-	anchorRef, err := tcl.l1client.L2().GetAnchorFromObjectID(context.Background(), anchor.GetObjectID())
-	require.NoError(tcl.t, err)
-
-	tmp := isc.NewStateAnchor(anchorRef, *tcl.iscPackage)
-	return &tmp
 }

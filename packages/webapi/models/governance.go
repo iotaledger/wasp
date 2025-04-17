@@ -17,17 +17,13 @@ type GovPublicChainMetadata struct {
 
 type GovChainInfoResponse struct {
 	ChainID      string                 `json:"chainID" swagger:"desc(ChainID (Hex Address).),required"`
-	ChainOwnerID string                 `json:"chainOwnerId" swagger:"desc(The chain owner address (Hex Address).),required"`
+	ChainAdmin   string                 `json:"chainAdmin" swagger:"desc(The chain admin address (Hex Address).),required"`
 	GasFeePolicy *gas.FeePolicy         `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
 	GasLimits    *gas.Limits            `json:"gasLimits" swagger:"desc(The gas limits),required"`
 	PublicURL    string                 `json:"publicURL" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
 	Metadata     GovPublicChainMetadata `json:"metadata" swagger:"desc(The metadata of the chain),required"`
 }
 
-type GovAllowedStateControllerAddressesResponse struct {
-	Addresses []string `json:"addresses" swagger:"desc(The allowed state controller addresses (Hex Address))"`
-}
-
-type GovChainOwnerResponse struct {
-	ChainOwner string `json:"chainOwner" swagger:"desc(The chain owner (Hex Address))"`
+type GovChainAdminResponse struct {
+	ChainAdmin string `json:"chainAdmin" swagger:"desc(The chain admin (Hex Address))"`
 }

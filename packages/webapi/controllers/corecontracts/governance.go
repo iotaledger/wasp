@@ -14,7 +14,7 @@ import (
 func MapGovChainInfoResponse(chainInfo *isc.ChainInfo) models.GovChainInfoResponse {
 	return models.GovChainInfoResponse{
 		ChainID:      chainInfo.ChainID.String(),
-		ChainOwnerID: chainInfo.ChainOwnerID.String(),
+		ChainAdmin:   chainInfo.ChainAdmin.String(),
 		GasFeePolicy: chainInfo.GasFeePolicy,
 		GasLimits:    chainInfo.GasLimits,
 		PublicURL:    chainInfo.PublicURL,
@@ -44,44 +44,19 @@ func (c *Controller) getChainInfo(e echo.Context) error {
 	return e.JSON(http.StatusOK, chainInfoResponse)
 }
 
-func (c *Controller) getChainOwner(e echo.Context) error {
+func (c *Controller) getChainAdmin(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
 
-	chainOwner, err := corecontracts.GetChainOwner(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	chainAdmin, err := corecontracts.GetChainAdmin(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
 
-	chainOwnerResponse := models.GovChainOwnerResponse{
-		ChainOwner: chainOwner.String(),
+	chainAdminResponse := models.GovChainAdminResponse{
+		ChainAdmin: chainAdmin.String(),
 	}
-
-	return e.JSON(http.StatusOK, chainOwnerResponse)
-}
-
-func (c *Controller) getAllowedStateControllerAddresses(e echo.Context) error {
-	ch, err := c.chainService.GetChain()
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
-
-	addresses, err := corecontracts.GetAllowedStateControllerAddresses(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	if err != nil {
-		return c.handleViewCallError(err)
-	}
-
-	encodedAddresses := make([]string, len(addresses))
-
-	for k, v := range addresses {
-		encodedAddresses[k] = v.String()
-	}
-
-	addressesResponse := models.GovAllowedStateControllerAddressesResponse{
-		Addresses: encodedAddresses,
-	}
-
-	return e.JSON(http.StatusOK, addressesResponse)
+	return e.JSON(http.StatusOK, chainAdminResponse)
 }

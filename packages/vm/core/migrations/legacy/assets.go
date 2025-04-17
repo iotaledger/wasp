@@ -3,7 +3,6 @@ package legacy
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -54,21 +53,20 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	}
 
 	if (flags & assetFlagHasNativeTokens) != 0 {
-		w.WriteSize16(len(assets.Coins.NativeTokens()))
-		assets.Coins.NativeTokens().IterateSorted(func(t coin.Type, v coin.Value) bool {
+		nts := assets.Coins.NativeTokens()
+		w.WriteSize16(len(nts))
+		for t, v := range nts.Iterate() {
 			w.WriteN(t.Bytes()[:])
 			n := v.BigInt().Div(v.BigInt(), new(big.Int).SetUint64(1000))
 			w.WriteUint256(n)
-			return true
-		})
+		}
 	}
 
 	if (flags & assetFlagHasNFTs) != 0 {
 		w.WriteSize16(len(assets.Objects))
-		assets.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+		for obj := range assets.Objects.Iterate() {
 			w.WriteN(obj.ID[:])
-			return true
-		})
+		}
 	}
 
 	return w.Bytes()

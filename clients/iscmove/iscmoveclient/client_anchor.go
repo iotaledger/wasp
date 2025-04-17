@@ -13,14 +13,14 @@ import (
 )
 
 type StartNewChainRequest struct {
-	Signer            cryptolib.Signer
-	ChainOwnerAddress *cryptolib.Address
-	PackageID         iotago.PackageID
-	StateMetadata     []byte
-	InitCoinRef       *iotago.ObjectRef
-	GasPayments       []*iotago.ObjectRef
-	GasPrice          uint64
-	GasBudget         uint64
+	Signer        cryptolib.Signer
+	AnchorOwner   *cryptolib.Address
+	PackageID     iotago.PackageID
+	StateMetadata []byte
+	InitCoinRef   *iotago.ObjectRef
+	GasPayments   []*iotago.ObjectRef
+	GasPrice      uint64
+	GasBudget     uint64
 }
 
 // the only exception which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
@@ -38,7 +38,7 @@ func (c *Client) StartNewChain(
 	}
 	argInitCoin = ptb.LastCommandResultArg()
 
-	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.ChainOwnerAddress)
+	ptb = PTBStartNewChain(ptb, req.PackageID, req.StateMetadata, argInitCoin, req.AnchorOwner)
 	txnResponse, err := c.SignAndExecutePTB(
 		ctx,
 		req.Signer,

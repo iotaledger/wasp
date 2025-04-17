@@ -9,122 +9,22 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/testutil/testdbhash"
 	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/governance/governanceimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func TestGovernance1(t *testing.T) {
-	corecontracts.PrintWellKnownHnames()
-
-	t.Run("empty list of allowed rotation addresses", func(t *testing.T) {
-		env := solo.New(t)
-		chain := env.NewChain()
-
-		lst := chain.GetAllowedStateControllerAddresses()
-		require.EqualValues(t, 0, len(lst))
-	})
-	t.Run("add/remove allowed rotation addresses", func(t *testing.T) {
-		env := solo.New(t)
-		chain := env.NewChain()
-
-		_, addr1 := env.NewKeyPair(env.NewSeedFromTestNameAndTimestamp(t.Name()))
-		err := chain.AddAllowedStateController(addr1, nil)
-		require.NoError(t, err)
-		res := chain.GetAllowedStateControllerAddresses()
-		require.EqualValues(t, 1, len(res))
-
-		testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
-
-		_, addr2 := env.NewKeyPair()
-		err = chain.AddAllowedStateController(addr2, nil)
-		require.NoError(t, err)
-		res = chain.GetAllowedStateControllerAddresses()
-		require.EqualValues(t, 2, len(res))
-
-		require.True(t, addr1.Equals(res[0]) || addr1.Equals(res[1]))
-		require.True(t, addr2.Equals(res[0]) || addr2.Equals(res[1]))
-
-		err = chain.RemoveAllowedStateController(addr1, nil)
-		require.NoError(t, err)
-		res = chain.GetAllowedStateControllerAddresses()
-		require.EqualValues(t, 1, len(res))
-		require.True(t, addr2.Equals(res[0]))
-
-		err = chain.RemoveAllowedStateController(addr1, nil)
-		require.NoError(t, err)
-		res = chain.GetAllowedStateControllerAddresses()
-		require.EqualValues(t, 1, len(res))
-		require.True(t, addr2.Equals(res[0]))
-
-		err = chain.RemoveAllowedStateController(addr2, nil)
-		require.NoError(t, err)
-		res = chain.GetAllowedStateControllerAddresses()
-		require.EqualValues(t, 0, len(res))
-	})
-}
-
-func TestGovernanceRotate(t *testing.T) {
-	t.Skip("TODO")
-	/*
-		corecontracts.PrintWellKnownHnames()
-
-		t.Run("not allowed address", func(t *testing.T) {
-			env := solo.New(t)
-			chain := env.NewChain()
-
-			kp, addr := env.NewKeyPair()
-			err := chain.RotateStateController(addr, kp, nil)
-			require.Error(t, err)
-			strings.Contains(err.Error(), "checkRotateCommitteeRequest: address is not allowed as next state address")
-		})
-		t.Run("unauthorized", func(t *testing.T) {
-			env := solo.New(t)
-			chain := env.NewChain()
-
-			kp, addr := env.NewKeyPairWithFunds()
-			err := chain.RotateStateController(addr, kp, kp)
-			require.Error(t, err)
-			strings.Contains(err.Error(), "checkRotateStateControllerRequest: unauthorized access")
-		})
-		t.Run("rotate success", func(t *testing.T) {
-			env := solo.New(t)
-			chain := env.NewChain()
-
-			chain.WaitUntilMempoolIsEmpty()
-
-			newKP, newAddr := env.NewKeyPair()
-			err := chain.AddAllowedStateController(newAddr, nil)
-			require.NoError(t, err)
-
-			err = chain.RotateStateController(newAddr, newKP, nil)
-			require.NoError(t, err)
-
-			chain.WaitUntilMempoolIsEmpty()
-
-			ca := chain.GetControlAddresses()
-			require.True(t, ca.StateAddress.Equals(newAddr))
-
-			req := solo.NewCallParamsEx("dummy", "dummy").WithMaxAffordableGasBudget()
-			_, err = chain.PostRequestSync(req, nil)
-			testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
-		})
-	*/
-}
-
 func TestGovernanceAccessNodes(t *testing.T) {
-	t.Skip("TODO")
 	env := solo.New(t)
 	node1KP, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	node1OwnerKP, node1OwnerAddr := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -147,7 +47,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 			governance.NewNodeOwnershipCertificate(node1KP, node1OwnerAddr).Bytes(),
 			"http://my-api/url",
 			false,
-		)).WithMaxAffordableGasBudget(),
+		)).AddBaseTokens(iotaclient.DefaultGasBudget),
 		node1OwnerKP, // Sender should match data used to create the Cert field value.
 	)
 	require.NoError(t, err)
@@ -169,7 +69,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 			governance.ChangeAccessNodeActions{
 				governance.AcceptAccessNodeAction(node1KP.GetPublicKey()),
 			},
-		)).WithMaxAffordableGasBudget(),
+		)).AddBaseTokens(iotaclient.DefaultGasBudget),
 		chainKP,
 	)
 	require.NoError(t, err)
@@ -179,7 +79,7 @@ func TestGovernanceAccessNodes(t *testing.T) {
 	res, err = chain.CallView(governance.ViewGetChainNodes.Message())
 	require.NoError(t, err)
 	candidates, accessNodes = lo.Must2(governance.ViewGetChainNodes.DecodeOutput(res))
-	require.Empty(t, candidates)
+	require.Len(t, candidates, 1)
 	require.Len(t, accessNodes, 1)
 	require.Equal(t, node1KP.GetPublicKey().Bytes(), accessNodes[0].Bytes())
 
@@ -202,7 +102,6 @@ func TestGovernanceAccessNodes(t *testing.T) {
 }
 
 func TestMaintenanceMode(t *testing.T) {
-	t.Skip("TODO")
 	env := solo.New(t)
 	ch := env.NewChain()
 
@@ -216,7 +115,7 @@ func TestMaintenanceMode(t *testing.T) {
 	// set owner of the chain
 	{
 		_, err2 := ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerAgentID)).
+			solo.NewCallParams(governance.FuncDelegateChainAdmin.Message(ownerAgentID)).
 				WithMaxAffordableGasBudget(),
 			nil,
 		)
@@ -225,7 +124,7 @@ func TestMaintenanceMode(t *testing.T) {
 		testdbhash.VerifyContractStateHash(env, governance.Contract, "", t.Name())
 
 		_, err2 = ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncClaimChainOwnership.Message()).WithMaxAffordableGasBudget(),
+			solo.NewCallParams(governance.FuncClaimChainAdmin.Message()).WithMaxAffordableGasBudget(),
 			ownerWallet,
 		)
 		require.NoError(t, err2)
@@ -240,7 +139,7 @@ func TestMaintenanceMode(t *testing.T) {
 		require.False(t, maintenanceStatus)
 	}
 
-	// test non-chain owner cannot call init maintenance
+	// test non-chain admin cannot call init maintenance
 	{
 		_, err2 := ch.PostRequestSync(
 			solo.NewCallParams(governance.FuncStartMaintenance.Message()).WithMaxAffordableGasBudget(),
@@ -277,7 +176,8 @@ func TestMaintenanceMode(t *testing.T) {
 	}
 
 	// requests are skipped
-	ch.RunAllReceivedRequests(2)
+	_, res := ch.RunRequestBatch(2)
+	require.Empty(t, res)
 	for _, req := range reqs {
 		require.False(t, ch.IsRequestProcessed(req.ID()))
 	}
@@ -304,7 +204,7 @@ func TestMaintenanceMode(t *testing.T) {
 		require.ErrorContains(t, err2, "unauthorized")
 	}
 
-	// test non-chain owner cannot call stop maintenance
+	// test non-chain admin cannot call stop maintenance
 	{
 		_, err2 := ch.PostRequestSync(
 			solo.NewCallParams(governance.FuncStopMaintenance.Message()).WithMaxAffordableGasBudget(),
@@ -314,7 +214,8 @@ func TestMaintenanceMode(t *testing.T) {
 	}
 
 	// requests are still skipped
-	ch.RunAllReceivedRequests(2)
+	_, res = ch.RunRequestBatch(2)
+	require.Empty(t, res)
 	for _, req := range reqs {
 		require.False(t, ch.IsRequestProcessed(req.ID()))
 	}
@@ -333,96 +234,6 @@ func TestMaintenanceMode(t *testing.T) {
 	for _, req := range reqs {
 		require.True(t, ch.IsRequestProcessed(req.ID()))
 	}
-}
-
-var (
-	ownerContract        = coreutil.NewContract("chain owner contract")
-	claimOwnershipFunc   = ownerContract.Func("claimOwnership")
-	startMaintenanceFunc = ownerContract.Func("initMaintenance")
-)
-
-/*
-func createOwnerContract(t *testing.T) (*solo.Chain, *coreutil.ContractInfo) {
-	ownerContractProcessor := ownerContract.Processor(nil,
-		claimOwnershipFunc.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-			return ctx.Call(governance.FuncClaimChainOwnership.Message(), nil)
-		}),
-		startMaintenanceFunc.WithHandler(func(ctx isc.Sandbox) isc.CallArguments {
-			return ctx.Call(governance.FuncStartMaintenance.Message(), nil)
-		}),
-	)
-	env := solo.New(t).
-		WithNativeContract(ownerContractProcessor)
-	ch := env.NewChain()
-
-	err := ch.DeployContract(nil, ownerContract.Name, ownerContract.ProgramHash)
-	require.NoError(t, err)
-
-	return ch, ownerContract
-}
-*/
-
-func TestGovernanceDisallowMaintenanceDeadlock1(t *testing.T) {
-	t.Skip("TODO")
-	/*
-		ch, ownerContract := createOwnerContract(t)
-
-		ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
-		userWallet, _ := ch.Env.NewKeyPairWithFunds()
-
-		// from the initial owner - set maintenance
-		_, err := ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncStartMaintenance.Message()).WithMaxAffordableGasBudget(),
-			nil,
-		)
-		require.NoError(t, err)
-
-		// set the "owner contract" as the new chain owner
-		_, err = ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerContractAgentID)).
-				WithMaxAffordableGasBudget(),
-			nil,
-		)
-		require.NoError(t, err)
-
-		// the "owner contract" cannot claim ownership
-		_, err = ch.PostRequestSync(
-			solo.NewCallParams(claimOwnershipFunc.Message(nil)).WithMaxAffordableGasBudget(),
-			userWallet,
-		)
-		require.ErrorContains(t, err, "skipped")
-	*/
-}
-
-func TestGovernanceDisallowMaintenanceDeadlock2(t *testing.T) {
-	t.Skip("TODO")
-	/*
-		ch, ownerContract := createOwnerContract(t)
-
-		ownerContractAgentID := isc.NewContractAgentID(ch.ChainID, ownerContract.Hname())
-		userWallet, _ := ch.Env.NewKeyPairWithFunds()
-
-		// set the "owner contract" as the new chain owner
-		_, err := ch.PostRequestSync(
-			solo.NewCallParams(governance.FuncDelegateChainOwnership.Message(ownerContractAgentID)).
-				WithMaxAffordableGasBudget(),
-			nil,
-		)
-		require.NoError(t, err)
-
-		_, err = ch.PostRequestSync(
-			solo.NewCallParams(claimOwnershipFunc.Message(nil)).WithMaxAffordableGasBudget(),
-			userWallet,
-		)
-		require.NoError(t, err)
-
-		// the "owner contract" is unable to start maintenance
-		_, err = ch.PostRequestSync(
-			solo.NewCallParams(startMaintenanceFunc.Message(nil)).WithMaxAffordableGasBudget(),
-			userWallet,
-		)
-		require.ErrorContains(t, err, "unauthorized")
-	*/
 }
 
 func TestGovernanceMetadata(t *testing.T) {
@@ -736,7 +547,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	user1AgentID := isc.NewAddressAgentID(user1Addr)
 
 	// transfer some tokens from a new account (user1)
-	ownerBal1 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal1 := ch.L2Assets(ch.AdminAgentID())
 	commonBal1 := ch.L2CommonAccountAssets()
 	user1Bal1 := ch.L2Assets(user1AgentID)
 	transferAmt := coin.Value(2000)
@@ -753,7 +564,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal1.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal2 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal2 := ch.L2Assets(ch.AdminAgentID())
 	user1Bal2 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal1.BaseTokens()+gasFees-addedToCommonAccount1, ownerBal2.BaseTokens())
 	require.Equal(t, user1Bal1.BaseTokens()+transferAmt-gasFees, user1Bal2.BaseTokens())
@@ -768,7 +579,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 	require.NoError(t, err)
 
 	// no balance changes (owner calls to gov contract don't pay fees)
-	ownerBal3 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal3 := ch.L2Assets(ch.AdminAgentID())
 	commonBal3 := ch.L2CommonAccountAssets()
 	user1Bal3 := ch.L2Assets(user1AgentID)
 	require.Equal(t, ownerBal2.BaseTokens(), ownerBal3.BaseTokens())
@@ -793,7 +604,7 @@ func TestGovernanceGasPayout(t *testing.T) {
 		isc.GasCoinTargetValue-commonBal3.BaseTokens(),
 		vmRes.Receipt.GasFeeCharged,
 	)
-	ownerBal4 := ch.L2Assets(ch.OwnerAgentID())
+	ownerBal4 := ch.L2Assets(ch.AdminAgentID())
 	commonBal4 := ch.L2CommonAccountAssets()
 	user1Bal4 := ch.L2Assets(user1AgentID)
 

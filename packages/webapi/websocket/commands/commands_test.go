@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	websocketserver "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"
-	websocketserver "nhooyr.io/websocket"
 
 	appLogger "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"

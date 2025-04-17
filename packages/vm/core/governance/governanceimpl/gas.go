@@ -13,7 +13,7 @@ import (
 
 // setFeePolicy sets the global fee policy for the chain in serialized form
 func setFeePolicy(ctx isc.Sandbox, fp *gas.FeePolicy) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetGasFeePolicy(fp)
 }
@@ -27,7 +27,7 @@ func getFeePolicy(ctx isc.SandboxView) *gas.FeePolicy {
 var errInvalidGasRatio = coreerrors.Register("invalid gas ratio").Create()
 
 func setEVMGasRatio(ctx isc.Sandbox, ratio util.Ratio32) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 	if !ratio.IsValid() {
 		panic(errInvalidGasRatio)
 	}
@@ -43,7 +43,7 @@ func getEVMGasRatio(ctx isc.SandboxView) util.Ratio32 {
 }
 
 func setGasLimits(ctx isc.Sandbox, limits *gas.Limits) {
-	ctx.RequireCallerIsChainOwner()
+	ctx.RequireCallerIsChainAdmin()
 	state := governance.NewStateWriterFromSandbox(ctx)
 	state.SetGasLimits(limits)
 }

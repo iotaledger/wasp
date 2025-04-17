@@ -110,9 +110,14 @@ func (reqctx *requestContext) consumeRequest() {
 
 	senderBaseTokens := req.Assets().BaseTokens() + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
-	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
-	if senderBaseTokens < minReqCost {
-		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
+	// check if the sender has enough balance to cover the minimum gas fee
+	if reqctx.shouldChargeGasFee() {
+		minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
+		if senderBaseTokens < minReqCost {
+			// TODO: this should probably not skip the request, and also the check
+			// should be done in L1 so the request is rejected before it reaches the mempool
+			panic(vmexceptions.ErrNotEnoughFundsForMinFee)
+		}
 	}
 
 	reqctx.creditObjectsToAccount(sender, req.Assets().Objects.Sorted())
@@ -142,7 +147,7 @@ func (reqctx *requestContext) shouldChargeGasFee() bool {
 	if reqctx.req.SenderAccount() == nil {
 		return false
 	}
-	if reqctx.req.SenderAccount().Equals(reqctx.vm.ChainOwnerID()) && reqctx.req.Message().Target.Contract == governance.Contract.Hname() {
+	if reqctx.req.SenderAccount().Equals(reqctx.vm.ChainAdmin()) && reqctx.req.Message().Target.Contract == governance.Contract.Hname() {
 		return false
 	}
 	return true
@@ -412,7 +417,7 @@ func (reqctx *requestContext) chargeGasFee() {
 	}
 
 	// ensure common account has at least GasCoinTargetValue, and transfer the rest of gas fee to payout AgentID
-	// if the payout AgentID is not set in governance contract, then chain owner will be used
+	// if the payout AgentID is not set in governance contract, then chain admin will be used
 	targetCommonAccountBalance := governance.NewStateReaderFromChainState(reqctx.uncommittedState).GetGasCoinTargetValue()
 	commonAccountBal := reqctx.GetBaseTokensBalanceDiscardRemainder(accounts.CommonAccount())
 	reqctx.vm.task.Log.LogDebugf("common account balance: %d, targetCommonAccountBalance: %d", commonAccountBal, targetCommonAccountBalance)

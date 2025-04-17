@@ -98,6 +98,42 @@ func PickupCoins(
 	}, nil
 }
 
+func PickupCoinsWithCointype(
+	inputCoins *CoinPage,
+	targetAmount *big.Int,
+	cointype CoinType,
+) (*PickedCoins, error) {
+	coins := inputCoins.Data
+	inputCount := len(coins)
+	if inputCount <= 0 {
+		return nil, ErrNoCoinsFound
+	}
+
+	total := big.NewInt(0)
+	pickedCoins := []*Coin{}
+	for _, coin := range coins {
+		if coin.CoinType != cointype {
+			continue
+		}
+		total = total.Add(total, new(big.Int).SetUint64(coin.Balance.Uint64()))
+		pickedCoins = append(pickedCoins, coin)
+
+		if total.Cmp(targetAmount) >= 0 {
+			break
+		}
+	}
+	if total.Cmp(targetAmount) < 0 {
+		if inputCoins.HasNextPage {
+			return nil, ErrNeedMergeCoin
+		}
+	}
+	return &PickedCoins{
+		Coins:        pickedCoins,
+		TargetAmount: targetAmount,
+		TotalAmount:  total,
+	}, nil
+}
+
 func PickupCoinsSimple(coins Coins, targetAmount uint64) (Coins, error) {
 	return PickupCoinsWithFilter(coins, targetAmount, nil)
 }

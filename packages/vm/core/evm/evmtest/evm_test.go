@@ -174,7 +174,7 @@ func TestGasCharged(t *testing.T) {
 
 func TestGasRatio(t *testing.T) {
 	env := InitEVM(t)
-	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOwnerBaseTokens, nil)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
@@ -194,7 +194,7 @@ func TestGasRatio(t *testing.T) {
 	require.Equal(t, gas.DefaultEVMGasRatio, env.getEVMGasRatio())
 
 	// current owner is able to set a new gasRatio
-	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.Chain.OwnerPrivateKey})
+	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.Chain.ChainAdmin})
 	require.NoError(t, err)
 	require.Equal(t, newGasRatio, env.getEVMGasRatio())
 
@@ -207,13 +207,13 @@ func TestGasRatio(t *testing.T) {
 // tests that the gas limits are correctly enforced based on the base tokens sent
 func TestGasLimit(t *testing.T) {
 	env := InitEVM(t)
-	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOwnerBaseTokens, nil)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
 	// set a gas ratio such that evm gas cost in base tokens is larger than storage deposit cost
-	err := env.setEVMGasRatio(util.Ratio32{A: 10, B: 1}, iscCallOptions{wallet: env.Chain.OwnerPrivateKey})
+	err := env.setEVMGasRatio(util.Ratio32{A: 10, B: 1}, iscCallOptions{wallet: env.Chain.ChainAdmin})
 	require.NoError(t, err)
 
 	// estimate gas by sending a valid tx
@@ -233,7 +233,7 @@ func TestGasLimit(t *testing.T) {
 
 func TestNotEnoughISCGas(t *testing.T) {
 	env := InitEVM(t)
-	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOwnerBaseTokens, nil)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
 	ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
@@ -244,7 +244,7 @@ func TestNotEnoughISCGas(t *testing.T) {
 	// only the owner can call the setEVMGasRatio endpoint
 	// set the ISC gas ratio VERY HIGH
 	newGasRatio := util.Ratio32{A: gas.DefaultEVMGasRatio.A * 500, B: gas.DefaultEVMGasRatio.B}
-	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.Chain.OwnerPrivateKey})
+	err = env.setEVMGasRatio(newGasRatio, iscCallOptions{wallet: env.Chain.ChainAdmin})
 	require.NoError(t, err)
 	require.Equal(t, newGasRatio, env.getEVMGasRatio())
 
@@ -368,13 +368,13 @@ func TestLoopWithGasLeftEstimateGas(t *testing.T) {
 
 func TestEstimateContractGas(t *testing.T) {
 	env := InitEVM(t)
-	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOwnerBaseTokens, nil)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 	ethAgentID := isc.NewEthereumAddressAgentID(ethAddr)
 	contract := env.deployERC20Contract(ethKey, "TEST", "tst")
 
-	err := env.registerERC20Coin(env.Chain.OwnerPrivateKey, coin.BaseTokenType)
+	err := env.registerERC20Coin(env.Chain.ChainAdmin, coin.BaseTokenType)
 	require.NoError(t, err)
 	base := env.ERC20Coin(ethKey, coin.BaseTokenType)
 	initialBalance := env.Chain.L2BaseTokens(ethAgentID)
@@ -430,17 +430,17 @@ func TestMagicContract(t *testing.T) {
 	require.True(t, env.Chain.ChainID.Equals(chainID))
 }
 
-func TestISCChainOwnerID(t *testing.T) {
+func TestISCChainAdmin(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 
 	var ret struct {
 		iscmagic.ISCAgentID
 	}
-	env.ISCMagicSandbox(ethKey).callView("getChainOwnerID", nil, &ret)
+	env.ISCMagicSandbox(ethKey).callView("getChainAdmin", nil, &ret)
 
-	chainOwnerID := env.Chain.OwnerAgentID()
-	require.True(t, chainOwnerID.Equals(lo.Must(ret.Unwrap())))
+	chainAdmin := env.Chain.AdminAgentID()
+	require.True(t, chainAdmin.Equals(lo.Must(ret.Unwrap())))
 }
 
 func TestISCTimestamp(t *testing.T) {
@@ -461,9 +461,9 @@ func TestISCCallView(t *testing.T) {
 	env := InitEVM(t)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	var ret [][]byte
-	chainOwnerID := env.Chain.OwnerAgentID()
+	chainAdmin := env.Chain.AdminAgentID()
 	err := env.ISCMagicSandbox(ethKey).callView("callView", []any{
-		iscmagic.WrapISCMessage(accounts.ViewBalance.Message(&chainOwnerID)),
+		iscmagic.WrapISCMessage(accounts.ViewBalance.Message(&chainAdmin)),
 	}, &ret)
 	require.NoError(t, err)
 	require.NotEmpty(t, ret)
@@ -868,7 +868,7 @@ func TestISCPanic(t *testing.T) {
 
 	require.Error(t, err)
 	require.Equal(t, types.ReceiptStatusFailed, ret.EVMReceipt.Status)
-	require.Contains(t, err.Error(), "not delegated to another chain owner")
+	require.Contains(t, err.Error(), "not delegated to another chain admin")
 }
 
 func TestERC20BaseTokens(t *testing.T) {
@@ -876,7 +876,7 @@ func TestERC20BaseTokens(t *testing.T) {
 	ethKey, ethAddr := env.Chain.NewEthereumAccountWithL2Funds()
 
 	env.Chain.DepositBaseTokensToL2(10*isc.Million, nil)
-	err := env.registerERC20Coin(env.Chain.OwnerPrivateKey, coin.BaseTokenType)
+	err := env.registerERC20Coin(env.Chain.ChainAdmin, coin.BaseTokenType)
 	require.NoError(t, err)
 
 	erc20 := env.ERC20Coin(ethKey, coin.BaseTokenType)
@@ -1891,7 +1891,7 @@ func TestSelfDestruct6780(t *testing.T) {
 
 func TestChangeGasLimit(t *testing.T) {
 	env := InitEVM(t)
-	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOwnerBaseTokens, nil)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 	ethKey, _ := env.Chain.NewEthereumAccountWithL2Funds()
 	storage := env.deployStorageContract(ethKey)
 
@@ -1917,7 +1917,7 @@ func TestChangeGasLimit(t *testing.T) {
 
 func TestChangeGasPerToken(t *testing.T) {
 	env := InitEVM(t)
-	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainOwnerBaseTokens, nil)
+	env.Chain.MustDepositBaseTokensToL2(solo.DefaultChainAdminBaseTokens, nil)
 
 	var fee coin.Value
 	{
@@ -1987,7 +1987,7 @@ func TestEVMCallViewGas(t *testing.T) {
 	var ret struct {
 		iscmagic.ISCAgentID
 	}
-	err := env.ISCMagicSandbox(ethKey).callView("getChainOwnerID", nil, &ret)
+	err := env.ISCMagicSandbox(ethKey).callView("getChainAdmin", nil, &ret)
 	require.NoError(t, err)
 }
 
@@ -2133,7 +2133,7 @@ func TestCaller(t *testing.T) {
 	err := env.Chain.TransferAllowanceTo(
 		isc.NewAssets(42),
 		isc.NewEthereumAddressAgentID(iscTest.address),
-		env.Chain.OwnerPrivateKey,
+		env.Chain.ChainAdmin,
 	)
 	require.NoError(t, err)
 

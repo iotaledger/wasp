@@ -32,7 +32,6 @@ func TestCallRecursive(t *testing.T) {
 	setupTestSandboxSC(t, chain, nil)
 
 	depth := uint64(27)
-	t.Logf("originator base tokens: %d", chain.L2BaseTokens(chain.OwnerAgentID()))
 	req := solo.NewCallParams(
 		sbtestsc.FuncCallOnChain.Message(isc.NewCallArguments(
 			codec.Encode(depth),
@@ -43,7 +42,6 @@ func TestCallRecursive(t *testing.T) {
 	).
 		WithGasBudget(5_000_000)
 	_, err := chain.PostRequestSync(req, nil)
-	t.Logf("receipt: %s", chain.LastReceipt())
 	require.NoError(t, err)
 
 	r, err := sbtestsc.FuncGetCounter.Call(func(msg isc.Message) (isc.CallArguments, error) {

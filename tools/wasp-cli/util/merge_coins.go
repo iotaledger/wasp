@@ -6,6 +6,7 @@ import (
 
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -44,5 +45,73 @@ func TryMergeAllCoins(ctx context.Context) {
 	}
 
 	_, err = client.MergeCoinsAndExecute(ctx, cryptolib.SignerToIotaSigner(w), baseCoins[0].Ref(), coinsToMerge, iotaclient.DefaultGasBudget)
+	log.Check(err)
+}
+
+func TryManageCoinsAmount(ctx context.Context) {
+	client := cliclients.L1Client()
+	w := wallet.Load()
+
+	coinPage, err := client.GetCoins(context.TODO(), iotaclient.GetCoinsRequest{
+		Owner: w.Address().AsIotaAddress(),
+	})
+	log.Check(err)
+
+	coins := iotajsonrpc.Coins(coinPage.Data)
+	var mergeCoins []iotago.Argument
+	sum := uint64(0)
+	ptb := iotago.NewProgrammableTransactionBuilder()
+
+	for i, coin := range coins {
+		sum += coin.Balance.Uint64()
+		if i == 0 {
+			continue
+		}
+		mergeCoins = append(mergeCoins, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: coin.Ref()}))
+	}
+
+	if len(coins) > 1 {
+		ptb.Command(iotago.Command{MergeCoins: &iotago.ProgrammableMergeCoins{
+			Destination: iotago.GetArgumentGasCoin(),
+			Sources:     mergeCoins,
+		}})
+	}
+
+	argSplitAmount := ptb.MustForceSeparatePure(sum/5 - 100)
+	argSplitCoins := ptb.Command(iotago.Command{SplitCoins: &iotago.ProgrammableSplitCoins{
+		Coin:    iotago.GetArgumentGasCoin(),
+		Amounts: []iotago.Argument{argSplitAmount, argSplitAmount, argSplitAmount, argSplitAmount},
+	}})
+	ptb.Command(iotago.Command{TransferObjects: &iotago.ProgrammableTransferObjects{
+		Objects: []iotago.Argument{
+			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(0)}},
+			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(1)}},
+			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(2)}},
+			iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(3)}},
+		},
+		Address: ptb.MustPure(w.Address().AsIotaAddress()),
+	}})
+	pt := ptb.Finish()
+	tx := iotago.NewProgrammable(
+		w.Address().AsIotaAddress(),
+		pt,
+		[]*iotago.ObjectRef{coins[0].Ref()},
+		iotaclient.DefaultGasBudget,
+		iotaclient.DefaultGasPrice,
+	)
+
+	txBytes, err := bcs.Marshal(&tx)
+	log.Check(err)
+	_, err = client.SignAndExecuteTransaction(
+		context.Background(),
+		&iotaclient.SignAndExecuteTransactionRequest{
+			Signer:      cryptolib.SignerToIotaSigner(w),
+			TxDataBytes: txBytes,
+			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
+				ShowEffects:       true,
+				ShowObjectChanges: true,
+			},
+		},
+	)
 	log.Check(err)
 }

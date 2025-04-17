@@ -4,15 +4,15 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**GoverningAddress** | **string** | The governing address (Hex Address) | 
+**AnchorOwner** | **string** | The anchor owner (Hex Address) | 
+**ChainAdmin** | **string** | The chain admin (Hex Address) | 
 **SinceBlockIndex** | **uint32** | The block index (uint32 | 
-**StateAddress** | **string** | The state address (Hex Address) | 
 
 ## Methods
 
 ### NewControlAddressesResponse
 
-`func NewControlAddressesResponse(governingAddress string, sinceBlockIndex uint32, stateAddress string, ) *ControlAddressesResponse`
+`func NewControlAddressesResponse(anchorOwner string, chainAdmin string, sinceBlockIndex uint32, ) *ControlAddressesResponse`
 
 NewControlAddressesResponse instantiates a new ControlAddressesResponse object
 This constructor will assign default values to properties that have it defined,
@@ -27,24 +27,44 @@ NewControlAddressesResponseWithDefaults instantiates a new ControlAddressesRespo
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetGoverningAddress
+### GetAnchorOwner
 
-`func (o *ControlAddressesResponse) GetGoverningAddress() string`
+`func (o *ControlAddressesResponse) GetAnchorOwner() string`
 
-GetGoverningAddress returns the GoverningAddress field if non-nil, zero value otherwise.
+GetAnchorOwner returns the AnchorOwner field if non-nil, zero value otherwise.
 
-### GetGoverningAddressOk
+### GetAnchorOwnerOk
 
-`func (o *ControlAddressesResponse) GetGoverningAddressOk() (*string, bool)`
+`func (o *ControlAddressesResponse) GetAnchorOwnerOk() (*string, bool)`
 
-GetGoverningAddressOk returns a tuple with the GoverningAddress field if it's non-nil, zero value otherwise
+GetAnchorOwnerOk returns a tuple with the AnchorOwner field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetGoverningAddress
+### SetAnchorOwner
 
-`func (o *ControlAddressesResponse) SetGoverningAddress(v string)`
+`func (o *ControlAddressesResponse) SetAnchorOwner(v string)`
 
-SetGoverningAddress sets GoverningAddress field to given value.
+SetAnchorOwner sets AnchorOwner field to given value.
+
+
+### GetChainAdmin
+
+`func (o *ControlAddressesResponse) GetChainAdmin() string`
+
+GetChainAdmin returns the ChainAdmin field if non-nil, zero value otherwise.
+
+### GetChainAdminOk
+
+`func (o *ControlAddressesResponse) GetChainAdminOk() (*string, bool)`
+
+GetChainAdminOk returns a tuple with the ChainAdmin field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetChainAdmin
+
+`func (o *ControlAddressesResponse) SetChainAdmin(v string)`
+
+SetChainAdmin sets ChainAdmin field to given value.
 
 
 ### GetSinceBlockIndex
@@ -65,26 +85,6 @@ and a boolean to check if the value has been set.
 `func (o *ControlAddressesResponse) SetSinceBlockIndex(v uint32)`
 
 SetSinceBlockIndex sets SinceBlockIndex field to given value.
-
-
-### GetStateAddress
-
-`func (o *ControlAddressesResponse) GetStateAddress() string`
-
-GetStateAddress returns the StateAddress field if non-nil, zero value otherwise.
-
-### GetStateAddressOk
-
-`func (o *ControlAddressesResponse) GetStateAddressOk() (*string, bool)`
-
-GetStateAddressOk returns a tuple with the StateAddress field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetStateAddress
-
-`func (o *ControlAddressesResponse) SetStateAddress(v string)`
-
-SetStateAddress sets StateAddress field to given value.
 
 
 

@@ -25,9 +25,8 @@ Method | HTTP request | Description
 [**blocklogGetRequestReceiptsOfBlock**](CorecontractsApi.md#blocklogGetRequestReceiptsOfBlock) | **GET** /v1/chain/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
 [**blocklogGetRequestReceiptsOfLatestBlock**](CorecontractsApi.md#blocklogGetRequestReceiptsOfLatestBlock) | **GET** /v1/chain/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
 [**errorsGetErrorMessageFormat**](CorecontractsApi.md#errorsGetErrorMessageFormat) | **GET** /v1/chain/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
-[**governanceGetAllowedStateControllerAddresses**](CorecontractsApi.md#governanceGetAllowedStateControllerAddresses) | **GET** /v1/chain/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
+[**governanceGetChainAdmin**](CorecontractsApi.md#governanceGetChainAdmin) | **GET** /v1/chain/core/governance/chainadmin | Get the chain admin
 [**governanceGetChainInfo**](CorecontractsApi.md#governanceGetChainInfo) | **GET** /v1/chain/core/governance/chaininfo | Get the chain info
-[**governanceGetChainOwner**](CorecontractsApi.md#governanceGetChainOwner) | **GET** /v1/chain/core/governance/chainowner | Get the chain owner
 
 
 # **accountsGetAccountBalance**
@@ -1196,27 +1195,27 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **governanceGetAllowedStateControllerAddresses**
-> GovAllowedStateControllerAddressesResponse governanceGetAllowedStateControllerAddresses()
+# **governanceGetChainAdmin**
+> GovChainAdminResponse governanceGetChainAdmin()
 
-Returns the allowed state controller addresses
+Returns the chain admin
 
 ### Example
 
 
 ```typescript
 import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest } from '';
+import type { CorecontractsApiGovernanceGetChainAdminRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
-const request: CorecontractsApiGovernanceGetAllowedStateControllerAddressesRequest = {
+const request: CorecontractsApiGovernanceGetChainAdminRequest = {
     // Block index or trie root (optional)
   block: "block_example",
 };
 
-const data = await apiInstance.governanceGetAllowedStateControllerAddresses(request);
+const data = await apiInstance.governanceGetChainAdmin(request);
 console.log('API called successfully. Returned data:', data);
 ```
 
@@ -1230,7 +1229,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**GovAllowedStateControllerAddressesResponse**
+**GovChainAdminResponse**
 
 ### Authorization
 
@@ -1245,7 +1244,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | The state controller addresses |  -  |
+**200** | The chain admin |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
@@ -1300,60 +1299,6 @@ No authorization required
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
 **200** | The chain info |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **governanceGetChainOwner**
-> GovChainOwnerResponse governanceGetChainOwner()
-
-Returns the chain owner
-
-### Example
-
-
-```typescript
-import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiGovernanceGetChainOwnerRequest } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new CorecontractsApi(configuration);
-
-const request: CorecontractsApiGovernanceGetChainOwnerRequest = {
-    // Block index or trie root (optional)
-  block: "block_example",
-};
-
-const data = await apiInstance.governanceGetChainOwner(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**GovChainOwnerResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | The chain owner |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)

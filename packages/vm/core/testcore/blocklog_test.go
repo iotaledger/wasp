@@ -235,6 +235,6 @@ func TestBlocklog_FoundriesWithPruning(t *testing.T) {
 		ch.DepositBaseTokensToL2(1000, nil)
 	}
 
-	err = ch.DestroyFoundry(sn, ch.OwnerPrivateKey)
+	err = ch.DestroyFoundry(sn, ch.ChainAdmin)
 	require.NoError(t, err)
 }

@@ -23,7 +23,7 @@ func initRotateCmd() *cobra.Command {
 		chain string
 	)
 	cmd := &cobra.Command{
-		Use:   "rotate <new state controller address>",
+		Use:   "rotate <new committee address>",
 		Short: "Ask this node to propose rotation address.",
 		Long:  "Empty or missing argument means we cancel attempt to rotate the chain.",
 		Args:  cobra.MaximumNArgs(1),
@@ -61,7 +61,7 @@ func setMaintenanceStatus(ctx context.Context, client *apiclient.APIClient, chai
 	}
 	postRequest(ctx, client, chain, msg, chainclient.PostRequestParams{
 		GasBudget: iotaclient.DefaultGasBudget,
-	}, offledger, true)
+	}, offledger)
 }
 
 func initChangeGovControllerCmd() *cobra.Command {

@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/disrec"
+	"github.com/iotaledger/wasp/tools/wasp-cli/inspection"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/metrics"
 	"github.com/iotaledger/wasp/tools/wasp-cli/peering"
@@ -85,6 +86,7 @@ func init() {
 	peering.Init(rootCmd)
 	metrics.Init(rootCmd)
 	disrec.Init(rootCmd)
+	inspection.Init(rootCmd)
 }
 
 func main() {

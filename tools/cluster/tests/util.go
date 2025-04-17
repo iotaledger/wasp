@@ -31,7 +31,7 @@ func (e *ChainEnv) checkCoreContracts() {
 		info, err := governance.ViewGetChainInfo.DecodeOutput(ret)
 		require.NoError(e.t, err)
 
-		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainOwnerID)
+		require.EqualValues(e.t, e.Chain.OriginatorID(), info.ChainAdmin)
 
 		records, err := e.Chain.Client(nil, i).
 			CallView(context.Background(), root.ViewGetContractRecords.Message())
@@ -112,10 +112,10 @@ func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
 	chainID, err := isc.ChainIDFromString(chainInfo.ChainID)
 	require.NoError(e.t, err)
 
-	ownerID, err := isc.AgentIDFromString(chainInfo.ChainOwnerId)
+	admin, err := isc.AgentIDFromString(chainInfo.ChainAdmin)
 	require.NoError(e.t, err)
 
-	return chainID, ownerID
+	return chainID, admin
 }
 
 func (e *ChainEnv) findContract(name string, nodeIndex ...int) (*root.ContractRecord, error) {

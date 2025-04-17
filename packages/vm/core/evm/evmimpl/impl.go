@@ -344,7 +344,7 @@ func makeTransferEvents(
 ) []*types.Log {
 	logs := make([]*types.Log, 0)
 	stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
-	for coinType, value := range assets.Coins {
+	for coinType, value := range assets.Coins.Iterate() {
 		if value == 0 {
 			continue
 		}

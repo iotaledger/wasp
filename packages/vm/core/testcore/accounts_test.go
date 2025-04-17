@@ -481,9 +481,9 @@ func TestAccounts_WithdrawEverything(t *testing.T) {
 
 type accountsDepositTest struct {
 	env               *solo.Solo
-	chainOwner        *cryptolib.KeyPair
-	chainOwnerAddr    *cryptolib.Address
-	chainOwnerAgentID isc.AgentID
+	chainAdmin        *cryptolib.KeyPair
+	chainAdminAddr    *cryptolib.Address
+	chainAdminAgentID isc.AgentID
 	user              *cryptolib.KeyPair
 	userAddr          *cryptolib.Address
 	userAgentID       isc.AgentID
@@ -496,8 +496,8 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 	ret := &accountsDepositTest{}
 	ret.env = solo.New(t, &solo.InitOptions{Debug: true, PrintStackTrace: true})
 
-	ret.chainOwner, ret.chainOwnerAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromTestNameAndTimestamp(t.Name()))
-	ret.chainOwnerAgentID = isc.NewAddressAgentID(ret.chainOwnerAddr)
+	ret.chainAdmin, ret.chainAdminAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	ret.chainAdminAgentID = isc.NewAddressAgentID(ret.chainAdminAddr)
 	ret.user, ret.userAddr = ret.env.NewKeyPairWithFunds(ret.env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ret.userAgentID = isc.NewAddressAgentID(ret.userAddr)
 
@@ -505,7 +505,7 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 	if len(initCommonAccountBaseTokens) != 0 {
 		initBaseTokens = initCommonAccountBaseTokens[0]
 	}
-	ret.ch, _ = ret.env.NewChainExt(ret.chainOwner, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
+	ret.ch, _ = ret.env.NewChainExt(ret.chainAdmin, initBaseTokens, "chain1", evm.DefaultChainID, governance.DefaultBlockKeepAmount)
 
 	ret.req = solo.NewCallParams(accounts.FuncDeposit.Message())
 	return ret
@@ -711,7 +711,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 	// initializes it all and prepares withdraw request, does not post it
 	v := initWithdrawTest(t)
 	initialCommonAccountBaseTokens := v.ch.L2CommonAccountAssets().BaseTokens()
-	initialOwnerAccountBaseTokens := v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens()
+	initialAdminAccountBaseTokens := v.ch.L2Assets(v.chainAdminAgentID).BaseTokens()
 
 	// deposit some base tokens into the common account
 	someUserWallet, _ := v.env.NewKeyPairWithFunds()
@@ -719,7 +719,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 	require.NoError(t, err)
 	commonAccBaseTokens := initialCommonAccountBaseTokens + 10*isc.Million
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens())
-	require.EqualValues(t, initialOwnerAccountBaseTokens+v.ch.LastReceipt().GasFeeCharged, v.ch.L2Assets(v.chainOwnerAgentID).BaseTokens())
+	require.EqualValues(t, initialAdminAccountBaseTokens+v.ch.LastReceipt().GasFeeCharged, v.ch.L2Assets(v.chainAdminAgentID).BaseTokens())
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens())
 }
 
@@ -747,7 +747,7 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)
-	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.OwnerPrivateKey)
+	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.ch.ChainAdmin)
 	v.ch.MustDepositBaseTokensToL2(10*isc.Million, v.user)
 
 	v.ch.AssertL2Coins(v.userAgentID, v.coinType, coin.Value(100))

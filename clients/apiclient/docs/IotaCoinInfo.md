@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**CoinType** | [**Type**](Type.md) |  | 
+**CoinType** | [**ObjectType**](ObjectType.md) |  | 
 **Decimals** | **int32** | The token decimals | 
 **Description** | **string** | The token description | 
 **IconUrl** | **string** | The icon URL | 
@@ -16,7 +16,7 @@ Name | Type | Description | Notes
 
 ### NewIotaCoinInfo
 
-`func NewIotaCoinInfo(coinType Type, decimals int32, description string, iconUrl string, name string, tickerSymbol string, totalSupply int64, ) *IotaCoinInfo`
+`func NewIotaCoinInfo(coinType ObjectType, decimals int32, description string, iconUrl string, name string, tickerSymbol string, totalSupply int64, ) *IotaCoinInfo`
 
 NewIotaCoinInfo instantiates a new IotaCoinInfo object
 This constructor will assign default values to properties that have it defined,
@@ -33,20 +33,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetCoinType
 
-`func (o *IotaCoinInfo) GetCoinType() Type`
+`func (o *IotaCoinInfo) GetCoinType() ObjectType`
 
 GetCoinType returns the CoinType field if non-nil, zero value otherwise.
 
 ### GetCoinTypeOk
 
-`func (o *IotaCoinInfo) GetCoinTypeOk() (*Type, bool)`
+`func (o *IotaCoinInfo) GetCoinTypeOk() (*ObjectType, bool)`
 
 GetCoinTypeOk returns a tuple with the CoinType field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCoinType
 
-`func (o *IotaCoinInfo) SetCoinType(v Type)`
+`func (o *IotaCoinInfo) SetCoinType(v ObjectType)`
 
 SetCoinType sets CoinType field to given value.
 

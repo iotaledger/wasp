@@ -6,24 +6,22 @@ import (
 
 // names of core contracts
 const (
-	CoreContractRoot            = "root"
-	CoreContractAccounts        = "accounts"
-	CoreContractBlocklog        = "blocklog"
-	CoreContractGovernance      = "governance"
-	CoreContractErrors          = "errors"
-	CoreContractEVM             = "evm"
-	CoreEPRotateStateController = "rotateStateController"
-	CoreIncCounter              = "inccounter"
+	CoreContractRoot       = "root"
+	CoreContractAccounts   = "accounts"
+	CoreContractBlocklog   = "blocklog"
+	CoreContractGovernance = "governance"
+	CoreContractErrors     = "errors"
+	CoreContractEVM        = "evm"
+	CoreIncCounter         = "inccounter"
 )
 
 var (
-	CoreContractRootHname            = isc.Hn(CoreContractRoot)
-	CoreContractAccountsHname        = isc.Hn(CoreContractAccounts)
-	CoreContractBlocklogHname        = isc.Hn(CoreContractBlocklog)
-	CoreContractGovernanceHname      = isc.Hn(CoreContractGovernance)
-	CoreContractErrorsHname          = isc.Hn(CoreContractErrors)
-	CoreContractEVMHname             = isc.Hn(CoreContractEVM)
-	CoreEPRotateStateControllerHname = isc.Hn(CoreEPRotateStateController)
+	CoreContractRootHname       = isc.Hn(CoreContractRoot)
+	CoreContractAccountsHname   = isc.Hn(CoreContractAccounts)
+	CoreContractBlocklogHname   = isc.Hn(CoreContractBlocklog)
+	CoreContractGovernanceHname = isc.Hn(CoreContractGovernance)
+	CoreContractErrorsHname     = isc.Hn(CoreContractErrors)
+	CoreContractEVMHname        = isc.Hn(CoreContractEVM)
 
 	hnames = map[string]isc.Hname{
 		CoreContractRoot:       CoreContractRootHname,

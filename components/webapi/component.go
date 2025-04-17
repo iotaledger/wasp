@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
+	websocketserver "github.com/coder/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pangpanglabs/echoswagger/v2"
 	"go.uber.org/dig"
-	websocketserver "nhooyr.io/websocket"
 
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/configuration"

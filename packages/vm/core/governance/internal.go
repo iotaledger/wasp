@@ -18,29 +18,14 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func (s *StateWriter) SetInitialState(chainOwner isc.AgentID, blockKeepAmount int32) {
-	s.SetChainOwnerID(chainOwner)
+func (s *StateWriter) SetInitialState(chainAdmin isc.AgentID, blockKeepAmount int32) {
+	s.SetChainAdmin(chainAdmin)
 	s.SetGasFeePolicy(gas.DefaultFeePolicy())
 	s.SetGasLimits(gas.LimitsDefault)
 	s.SetMaintenanceStatus(false)
 	s.SetBlockKeepAmount(blockKeepAmount)
 	s.SetGasCoinTargetValue(isc.GasCoinTargetValue)
-	s.SetPayoutAgentID(chainOwner)
-}
-
-// GetRotationAddress tries to read the state of 'governance' and extract rotation address
-// If succeeds, it means this block is fake.
-// If fails, return nil
-func (s *StateReader) GetRotationAddress() *cryptolib.Address {
-	ret, err := codec.Decode[*cryptolib.Address](s.state.Get(varRotateToAddress), nil)
-	if err != nil {
-		return nil
-	}
-	return ret
-}
-
-func (s *StateWriter) SetRotationAddress(a *cryptolib.Address) {
-	s.state.Set(varRotateToAddress, codec.Encode(a))
+	s.SetPayoutAgentID(chainAdmin)
 }
 
 // GetChainInfo returns global variables of the chain
@@ -49,7 +34,7 @@ func (s *StateReader) GetChainInfo(chainID isc.ChainID) *isc.ChainInfo {
 		Metadata: &isc.PublicChainMetadata{},
 		ChainID:  chainID,
 	}
-	ret.ChainOwnerID = s.GetChainOwnerID()
+	ret.ChainAdmin = s.GetChainAdmin()
 	ret.GasFeePolicy = s.GetGasFeePolicy()
 	ret.GasLimits = s.GetGasLimits()
 	ret.BlockKeepAmount = s.GetBlockKeepAmount()
@@ -66,23 +51,23 @@ func (s *StateWriter) SetGasCoinTargetValue(m coin.Value) {
 	s.state.Set(varGasCoinTargetValue, codec.Encode(m))
 }
 
-func (s *StateReader) GetChainOwnerID() isc.AgentID {
-	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainOwnerID)))
+func (s *StateReader) GetChainAdmin() isc.AgentID {
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainAdmin)))
 }
 
-func (s *StateWriter) SetChainOwnerID(a isc.AgentID) {
-	s.state.Set(varChainOwnerID, codec.Encode(a))
-	if s.GetChainOwnerIDDelegated() != nil {
-		s.state.Del(varChainOwnerIDDelegated)
+func (s *StateWriter) SetChainAdmin(a isc.AgentID) {
+	s.state.Set(varChainAdmin, codec.Encode(a))
+	if s.GetChainAdminDelegated() != nil {
+		s.state.Del(varChainAdminDelegated)
 	}
 }
 
-func (s *StateReader) GetChainOwnerIDDelegated() isc.AgentID {
-	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainOwnerIDDelegated), nil))
+func (s *StateReader) GetChainAdminDelegated() isc.AgentID {
+	return lo.Must(codec.Decode[isc.AgentID](s.state.Get(varChainAdminDelegated), nil))
 }
 
-func (s *StateWriter) SetChainOwnerIDDelegated(a isc.AgentID) {
-	s.state.Set(varChainOwnerIDDelegated, codec.Encode(a))
+func (s *StateWriter) SetChainAdminDelegated(a isc.AgentID) {
+	s.state.Set(varChainAdminDelegated, codec.Encode(a))
 }
 
 func (s *StateReader) GetPayoutAgentID() isc.AgentID {
@@ -159,14 +144,6 @@ func (s *StateWriter) AccessNodeCandidatesMap() *collections.Map {
 
 func (s *StateReader) AccessNodeCandidatesMap() *collections.ImmutableMap {
 	return collections.NewMapReadOnly(s.state, varAccessNodeCandidates)
-}
-
-func (s *StateWriter) AllowedStateControllerAddressesMap() *collections.Map {
-	return collections.NewMap(s.state, varAllowedStateControllerAddresses)
-}
-
-func (s *StateReader) AllowedStateControllerAddressesMap() *collections.ImmutableMap {
-	return collections.NewMapReadOnly(s.state, varAllowedStateControllerAddresses)
 }
 
 func (s *StateReader) GetMaintenanceStatus() bool {

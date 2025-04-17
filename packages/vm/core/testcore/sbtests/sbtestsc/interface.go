@@ -9,8 +9,8 @@ import (
 var Contract = coreutil.NewContract("testcore")
 
 var Processor = Contract.Processor(nil,
-	FuncChainOwnerIDView.WithHandler(testChainOwnerIDView),
-	FuncChainOwnerIDFull.WithHandler(testChainOwnerIDFull),
+	FuncChainAdminView.WithHandler(testChainAdminView),
+	FuncChainAdminFull.WithHandler(testChainAdminFull),
 
 	FuncEventLogGenericData.WithHandler(testEventLogGenericData),
 	FuncEventLogEventData.WithHandler(testEventLogEventData),
@@ -61,10 +61,10 @@ var (
 	FuncEventLogDeploy    = coreutil.NewEP0(Contract, "testEventLogDeploy")
 
 	// Function sandbox test
-	FuncChainOwnerIDView = coreutil.NewViewEP01(Contract, "testChainOwnerIDView",
+	FuncChainAdminView = coreutil.NewViewEP01(Contract, "testChainAdminView",
 		coreutil.Field[isc.AgentID](""),
 	)
-	FuncChainOwnerIDFull = coreutil.NewEP01(Contract, "testChainOwnerIDFull",
+	FuncChainAdminFull = coreutil.NewEP01(Contract, "testChainAdminFull",
 		coreutil.Field[isc.AgentID](""),
 	)
 

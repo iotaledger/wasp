@@ -86,9 +86,9 @@ func (s *SandboxBase) ChainID() isc.ChainID {
 	return s.Ctx.ChainID()
 }
 
-func (s *SandboxBase) ChainOwnerID() isc.AgentID {
+func (s *SandboxBase) ChainAdmin() isc.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.Ctx.ChainOwnerID()
+	return s.Ctx.ChainAdmin()
 }
 
 func (s *SandboxBase) ChainInfo() *isc.ChainInfo {

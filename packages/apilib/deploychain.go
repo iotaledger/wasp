@@ -22,7 +22,7 @@ import (
 type CreateChainParams struct {
 	Layer1Client         clients.L1Client
 	CommitteeAPIHosts    []string
-	OriginatorKeyPair    cryptolib.Signer
+	Signer               cryptolib.Signer
 	Textout              io.Writer
 	Prefix               string
 	StateMetadata        transaction.StateMetadata
@@ -32,18 +32,14 @@ type CreateChainParams struct {
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr *cryptolib.Address) (isc.ChainID, error) {
+func DeployChain(ctx context.Context, par CreateChainParams, anchorOwner *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
 		textout = par.Textout
 	}
-	originatorAddr := par.OriginatorKeyPair.Address()
-
 	fmt.Fprint(textout, par.Prefix)
-	fmt.Fprintf(textout, "Creating new chain\n* Owner address:    %s\n* State controller: %s\n*",
-		originatorAddr, stateControllerAddr)
-	fmt.Fprint(textout, par.Prefix)
+	fmt.Fprintf(textout, "Creating new chain -- Anchor owner: %s\n*", anchorOwner)
 
 	referenceGasPrice, err := par.Layer1Client.GetReferenceGasPrice(ctx)
 	if err != nil {
@@ -53,12 +49,12 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 	anchor, err := par.Layer1Client.L2().StartNewChain(
 		ctx,
 		&iscmoveclient.StartNewChainRequest{
-			Signer:            par.OriginatorKeyPair,
-			ChainOwnerAddress: stateControllerAddr,
-			PackageID:         par.PackageID,
-			StateMetadata:     par.StateMetadata.Bytes(),
-			GasPrice:          referenceGasPrice.Uint64(),
-			GasBudget:         iotaclient.DefaultGasBudget * 10,
+			Signer:        par.Signer,
+			AnchorOwner:   anchorOwner,
+			PackageID:     par.PackageID,
+			StateMetadata: par.StateMetadata.Bytes(),
+			GasPrice:      referenceGasPrice.Uint64(),
+			GasBudget:     iotaclient.DefaultGasBudget * 10,
 		},
 	)
 	if err != nil {
@@ -67,7 +63,7 @@ func DeployChain(ctx context.Context, par CreateChainParams, stateControllerAddr
 
 	fmt.Fprint(textout, par.Prefix)
 	fmt.Fprintf(textout, "Chain has been created successfully on the Tangle.\n* ChainID: %s\n* State address: %s\n",
-		anchor.ObjectID.String(), stateControllerAddr.String())
+		anchor.ObjectID.String(), anchorOwner.String())
 
 	fmt.Fprintf(textout, "Make sure to activate the chain on all committee nodes\n")
 

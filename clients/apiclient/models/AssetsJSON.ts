@@ -11,11 +11,12 @@
  */
 
 import { CoinJSON } from '../models/CoinJSON';
+import { IotaObject } from '../models/IotaObject';
 import { HttpFile } from '../http/http';
 
 export class AssetsJSON {
     'coins': Array<CoinJSON>;
-    'objects': Array<Array<number>>;
+    'objects': Array<IotaObject>;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -31,8 +32,8 @@ export class AssetsJSON {
         {
             "name": "objects",
             "baseName": "objects",
-            "type": "Array<Array<number>>",
-            "format": "int32"
+            "type": "Array<IotaObject>",
+            "format": ""
         }    ];
 
     static getAttributeTypeMap() {

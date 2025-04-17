@@ -65,7 +65,7 @@ type ChainInfoResponse struct {
 	IsActive     bool                `json:"isActive" swagger:"desc(Whether or not the chain is active),required"`
 	ChainID      string              `json:"chainID" swagger:"desc(ChainID (Hex Address)),required"`
 	EVMChainID   uint16              `json:"evmChainId" swagger:"desc(The EVM chain ID),required,min(1)"`
-	ChainOwnerID string              `json:"chainOwnerId" swagger:"desc(The chain owner address (Hex Address)),required"`
+	ChainAdmin   string              `json:"chainAdmin" swagger:"desc(The chain admin address (Hex Address)),required"`
 	GasFeePolicy *gas.FeePolicy      `json:"gasFeePolicy" swagger:"desc(The gas fee policy),required"`
 	GasLimits    *gas.Limits         `json:"gasLimits" swagger:"desc(The gas limits),required"`
 	PublicURL    string              `json:"publicURL" swagger:"desc(The fully qualified public url leading to the chains metadata),required"`
@@ -113,8 +113,8 @@ func MapChainInfoResponse(chainInfo *dto.ChainInfo, evmChainID uint16) ChainInfo
 		},
 	}
 
-	if chainInfo.ChainOwnerID != nil {
-		chainInfoResponse.ChainOwnerID = chainInfo.ChainOwnerID.String()
+	if chainInfo.ChainAdmin != nil {
+		chainInfoResponse.ChainAdmin = chainInfo.ChainAdmin.String()
 	}
 
 	if chainInfo.GasFeePolicy != nil {

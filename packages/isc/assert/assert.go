@@ -36,8 +36,8 @@ func (a Assert) RequireNoError(err error, str ...string) {
 	}
 }
 
-func (a Assert) RequireChainOwner(ctx isc.Sandbox, name ...string) {
-	a.RequireCaller(ctx, ctx.ChainOwnerID(), name...)
+func (a Assert) RequireChainAdmin(ctx isc.Sandbox, name ...string) {
+	a.RequireCaller(ctx, ctx.ChainAdmin(), name...)
 }
 
 func (a Assert) RequireCaller(ctx isc.Sandbox, agentID isc.AgentID, name ...string) {

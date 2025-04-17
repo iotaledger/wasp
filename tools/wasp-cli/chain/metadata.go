@@ -60,7 +60,7 @@ type MetadataArgs struct {
 /*
 Sets the metadata for a given chain.
 
-The idea is to enable the chain owner to:
+The idea is to enable the chain admin to:
  1. Persist an url to the Tangle which returns metadata about the chain, which can be consumed by 3rd party software (like Firefly).
  2. Configure alternative urls for the EVM JSON and Websocket RPC in case a load balancer is providing those connections on other locations.
 
@@ -183,5 +183,5 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 
 	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{
 		GasBudget: iotaclient.DefaultGasBudget,
-	}, withOffLedger, true)
+	}, withOffLedger)
 }
