@@ -45,7 +45,7 @@ func MigrateAccountsContractMuts(
 	migrateBaseTokenBalances(v, oldStateMuts, newState, oldChainID)
 	migrateNativeTokenBalances(oldStateMuts, newState, oldChainID)
 	migrateFoundriesOutputs(oldStateMuts, newState)
-	//migrateFoundriesPerAccount(oldState, newState, oldChainID)
+	migrateFoundriesPerAccount(oldStateMuts, newState)
 	migrateNativeTokenOutputs(oldStateMuts, newState)
 	// migrateNFTs is done in MigrateAccountsContractFullState
 	// prefixNewlyMintedNFTs ignored
@@ -197,24 +197,13 @@ func migrateFoundriesOutputs(oldState old_kv.KVStoreReader, newState kv.KVStore)
 func migrateFoundriesPerAccount(
 	oldState old_kv.KVStoreReader,
 	newState kv.KVStore,
-	oldChainID old_isc.ChainID,
-	newChainID isc.ChainID,
 ) {
 	cli.DebugLogf("Migrating foundries of accounts...\n")
 
 	// old: PrefixFoundries + <agentID> stores a map of <foundrySN> (uint32) => true
 	// new: foundries not supported, just backup the maps
 
-	const sizeofFoundrySN = 4
-	count := BackupAccountMaps(
-		oldState,
-		newState,
-		old_accounts.PrefixFoundries,
-		sizeofFoundrySN,
-		oldChainID,
-		newChainID,
-	)
-
+	count := BackupByPrefix(oldState, newState, old_accounts.PrefixFoundries)
 	cli.DebugLogf("Migrated %v foundries of accounts\n", count)
 }
 

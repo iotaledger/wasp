@@ -78,7 +78,7 @@ func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toB
 		txByBlockStr = newTransactionsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
 		cli.DebugLogf("New transactions by block number preview:\n%v", utils.MultilinePreview(txByBlockStr))
 	}, func() {
-		blockHeaderStr = newBlockHeaderByBlockNumberToStr(contractState)
+		blockHeaderStr = newBlockHeaderByBlockNumberToStr(contractState, fromBlockIndex)
 		cli.DebugLogf("New block header by block number preview:\n%v", utils.MultilinePreview(blockHeaderStr))
 	}, func() {
 		receiptsStr = newReceiptsByBlockNumberToStr(contractState, fromBlockIndex, toBlockIndex)
@@ -327,7 +327,7 @@ func oldBlockHeaderByBlockNumberToStr(contractState old_kv.KVStoreReader) string
 	return res.String()
 }
 
-func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
+func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader, fromISCBlockIndex uint32) string {
 	cli.DebugLogf("Retrieving new BlockHeaderByBlockNumber...")
 	bcState := emulator.BlockchainDBSubrealmR(evm.EmulatorStateSubrealmR(contractState))
 
@@ -340,6 +340,11 @@ func newBlockHeaderByBlockNumberToStr(contractState kv.KVStoreReader) string {
 		keyWithoutPrefix := utils.MustRemovePrefix(k, emulator.KeyBlockHeaderByBlockNumber)
 
 		blockNumber := codec.MustDecode[uint64]([]byte(keyWithoutPrefix))
+		if blockNumber == 0 && fromISCBlockIndex > 0 {
+			// Block 0 is not deleted, when -i option is used. So we just ignore it here.
+			return true
+		}
+
 		newHeader := emulator.MustHeaderFromBytes(v)
 
 		// Reverse conversion

@@ -77,7 +77,7 @@ func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex 
 
 		cli.DebugLogf("Retrieved %v requests", reqCount)
 
-		if firstAvailableBlockIndex > 0 {
+		if firstAvailableBlockIndex > 0 && (lastIndex-firstAvailableBlockIndex) > blockRetentionPeriod {
 			firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
 			_, _, err := old_blocklog.GetRequestsInBlock(contractState, firstUnavailableBlockIndex)
 			if err == nil {
@@ -163,7 +163,7 @@ func newReceiptsToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint
 
 		cli.DebugLogf("Retrieved %v requests", reqCount)
 
-		if firstAvailableBlockIndex > 0 {
+		if firstAvailableBlockIndex > 0 && (lastIndex-firstAvailableBlockIndex) > blockRetentionPeriod {
 			firstUnavailableBlockIndex := firstAvailableBlockIndex - 1
 			_, _, err := blocklog.NewStateReader(contractState).GetRequestsInBlock(firstUnavailableBlockIndex)
 			requestStr.WriteString(fmt.Sprintf("Last pruned block (%v): %v\n",
@@ -222,7 +222,7 @@ func oldBlockRegistryToStr(contractState old_kv.KVStoreReader, firstIndex, lastI
 		}
 
 		cli.DebugLogf("Retrieved %v blocks", lastIndex-firstAvailBlockIndex)
-		if firstAvailBlockIndex > 0 {
+		if firstAvailBlockIndex > 0 && (lastIndex-firstAvailBlockIndex) > blockRetentionPeriod {
 			firstUnavailableBlockIndex := firstAvailBlockIndex - 1
 			blockBytes := blocks.GetAt(firstUnavailableBlockIndex)
 			if blockBytes != nil {
@@ -231,6 +231,11 @@ func oldBlockRegistryToStr(contractState old_kv.KVStoreReader, firstIndex, lastI
 			blocksStr.WriteString(fmt.Sprintf("Block (last pruned): %v: unavailable\n", firstUnavailableBlockIndex))
 		}
 	}, func() {
+		if firstAvailBlockIndex != 0 {
+			// Corresponding migration does not work with -i option, so just skipping it
+			return
+		}
+
 		cli.DebugLogf("Retrieving old block registry keys: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
 		printProgress, done := NewProgressPrinter("blocklog_old", "block registry (keys)", "keys", 0)
 		defer done()
@@ -282,13 +287,18 @@ func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex
 		}
 
 		cli.DebugLogf("Retrieved %v blocks", lastIndex-firstAvailBlockIndex)
-		if firstAvailBlockIndex > 0 {
+		if firstAvailBlockIndex > 0 && (lastIndex-firstAvailBlockIndex) > blockRetentionPeriod {
 			firstUnavailableBlockIndex := firstAvailBlockIndex - 1
 			blockBytes := blocks.GetAt(firstUnavailableBlockIndex)
 			blocksStr.WriteString(fmt.Sprintf("Block (last pruned): %v: %v\n",
 				firstUnavailableBlockIndex, lo.Ternary(blockBytes == nil, "unavailable", "AVAILABLE")))
 		}
 	}, func() {
+		if firstAvailBlockIndex != 0 {
+			// Corresponding migration does not work with -i option, so just skipping it
+			return
+		}
+
 		cli.DebugLogf("Retrieving new block registry keys: %v-%v => %v-%v", firstIndex, lastIndex, firstAvailBlockIndex, lastIndex)
 		printProgress, done := NewProgressPrinter("blocklog_new", "block registry (keys)", "keys", 0)
 		defer done()
