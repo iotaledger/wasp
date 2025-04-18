@@ -1,3 +1,4 @@
+// Package inccounter contains counter testing logic
 package inccounter
 
 import (

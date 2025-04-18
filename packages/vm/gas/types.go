@@ -1,3 +1,4 @@
+// Package gas implements gas fees for the vm
 package gas
 
 import (

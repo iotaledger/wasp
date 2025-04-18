@@ -1,4 +1,4 @@
-// smart contract for testing
+// Package sbtestsc defines a smart contract for testing
 package sbtestsc
 
 import (

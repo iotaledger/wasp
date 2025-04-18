@@ -2,6 +2,7 @@
 // - initial setup of the chain during chain deployment
 // - maintaining of core parameters of the chain
 
+// Package rootimpl implements the root core contract
 package rootimpl
 
 import (

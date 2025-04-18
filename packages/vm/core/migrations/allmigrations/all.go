@@ -1,3 +1,4 @@
+// Package allmigrations defines all migrations to be applied with rebased
 package allmigrations
 
 import (

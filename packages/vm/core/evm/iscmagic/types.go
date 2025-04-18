@@ -220,7 +220,7 @@ type IotaCoinInfo struct {
 	Name        string
 	Symbol      string
 	Description string
-	IconUrl     string
+	IconUrl     string //nolint:staticcheck
 	TotalSupply CoinValue
 }
 
