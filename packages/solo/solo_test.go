@@ -87,7 +87,7 @@ func TestDryRunForRequest(t *testing.T) {
 		l1starter.ISCPackageID(),
 		ch.ChainID.AsObjectID(),
 		argAssetsBag,
-		msg, allowance, 1074)
+		msg, bcs.MustMarshal(allowance), 1074)
 
 	tx := req.Finish()
 
@@ -110,7 +110,7 @@ func TestDryRunForRequest(t *testing.T) {
 	require.NoError(t, err)
 	dryRunRes2, err = bcs.Unmarshal[iotajsonrpc.DryRunTransactionBlockResponse](b)
 	require.NoError(t, err)
-	estimateGasL1, err := ch.EstimateGasL1(&dryRunRes2, msg)
+	estimateGasL1, err := ch.EstimateGasL1(&dryRunRes2)
 	require.NoError(t, err)
 	require.Nil(t, estimateGasL1.Receipt.Error)
 	require.Greater(t, estimateGasL1.Receipt.GasBurned, uint64(0))

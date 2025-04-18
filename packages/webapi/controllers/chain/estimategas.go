@@ -9,10 +9,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/net/context"
 
-	"github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -33,17 +29,6 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	msgBytes, err := hexutil.Decode(estimateGasRequest.RequestBytes)
-	if err != nil {
-		return err
-	}
-
-	var msg iscmove.Request
-	msg, err = bcs.Unmarshal[iscmove.Request](msgBytes)
-	if err != nil {
-		return apierrors.InvalidPropertyError("requestBytes", err)
-	}
-
 	dryRunResBytes, err := hexutil.Decode(estimateGasRequest.TransactionBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("transactionBytes", err)
@@ -54,7 +39,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 
 	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, dryRunResBytes)
 
-	req, err := isc.FakeEstimateOnLedger(dryRunResponse, msg)
+	req, err := isc.FakeEstimateOnLedger(dryRunResponse)
 	if err != nil {
 		return fmt.Errorf("cant generate fake request: %s", err)
 	}

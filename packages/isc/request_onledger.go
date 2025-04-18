@@ -1,22 +1,16 @@
 package isc
 
 import (
-	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/tidwall/gjson"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 )
 
 type OnLedgerRequestData struct {
@@ -60,117 +54,37 @@ func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], an
 	}, nil
 }
 
-func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse, msg *iscmove.Request) (OnLedgerRequest, error) {
-	assets := NewAssets(0)
-	allowance := NewAssets(0)
-	tx := dryRunRes.Input.Data.V1.Transaction.Data.ProgrammableTransaction
-	cmds := gjson.ParseBytes(tx.Commands)
-	var err error
-	cmds.ForEach(func(key, value gjson.Result) bool {
-		if moveCall := value.Get("MoveCall"); moveCall.Exists() {
-			var cmd iotago.ProgrammableMoveCall
-			err = json.Unmarshal([]byte(moveCall.String()), &cmd)
-			if err != nil {
-				err = fmt.Errorf("can't decode dry run response: %w", err)
-				return false
-			}
-
-			// take all placed coins into assets
-			if cmd.Function == "place_coin" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
-				err = json.Unmarshal(tx.Inputs, &inputs)
-				if err != nil {
-					err = fmt.Errorf("can't decode place_coin command: %w", err)
-					return false
-				}
-
-				if len(cmd.Arguments) < 1 {
-					err = fmt.Errorf("malformed PTB")
-					return false
-				}
-
-				var amountString string
-				err = json.Unmarshal(inputs[*cmd.Arguments[0].Result].Value, &amountString)
-				if err != nil {
-					err = fmt.Errorf("malformed PTB")
-					return false
-				}
-
-				amount, err := strconv.ParseUint(amountString, 10, 64)
-				if err != nil {
-					err = fmt.Errorf("can't decode value in place_coin command: %w", err)
-					return false
-				}
-				assets.AddCoin(coin.MustTypeFromString(cmd.TypeArguments[0].String()), coin.Value(amount))
-			}
-
-			if cmd.Function == "create_and_send_request" {
-				var inputs []iotajsonrpc.ProgrammableTransactionBlockPureInput
-				err = json.Unmarshal(tx.Inputs, &inputs)
-				if err != nil {
-					err = fmt.Errorf("can't decode place_coin command: %w", err)
-					return false
-				}
-
-				if len(cmd.Arguments) < 7 {
-					err = fmt.Errorf("malformed PTB")
-					return false
-				}
-
-				rawAllowanceBalance, err := json.Marshal(inputs[*cmd.Arguments[6].Input])
-				if err != nil {
-					err = fmt.Errorf("can't decode allowance of create_and_send_request command: %w", err)
-					return false
-				}
-				var allowanceInputRaw iotajsonrpc.ProgrammableTransactionBlockPureInput
-				err = json.Unmarshal(rawAllowanceBalance, &allowanceInputRaw)
-				if err != nil {
-					err = fmt.Errorf("can't decode allowance of create_and_send_request command: %w", err)
-					return false
-				}
-
-				var allowanceRaw []byte
-				err = json.Unmarshal(allowanceInputRaw.Value, &allowanceRaw)
-				if err != nil {
-					err = fmt.Errorf("can't decode allowance of create_and_send_request command: %w", err)
-					return false
-				}
-				allowanceTmp, err := bcs.Unmarshal[Assets](allowanceRaw)
-				if err != nil {
-					err = fmt.Errorf("can't decode allowance of create_and_send_request command: %w", err)
-					return false
-				}
-				*allowance = allowanceTmp
-			}
-		}
-		return true // Continue iteration
-	})
+func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (OnLedgerRequest, error) {
+	assets, request, sender, err := DecodeDryRunTransaction(dryRunRes)
 	if err != nil {
 		return nil, err
 	}
 
-	allowanceAsAssets, err := AssetsFromISCMove(&msg.Allowance)
+	gasBudget, err := request.GasBudget.Int64()
 	if err != nil {
 		return nil, err
 	}
 
 	r := &OnLedgerRequestData{
 		requestRef:    *iotatest.RandomObjectRef(),
-		senderAddress: cryptolib.NewRandomAddress(),
+		senderAddress: sender,
 		targetAddress: cryptolib.NewRandomAddress(),
 		assets:        assets,
-		assetsBag:     &iscmove.AssetsBagWithBalances{},
+		assetsBag: &iscmove.AssetsBagWithBalances{
+			Assets:    *assets.AsISCMove(),
+			AssetsBag: iscmove.AssetsBag{ID: iotago.ObjectID{}, Size: uint64(assets.Length())},
+		},
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
 			Message: Message{
 				Target: CallTarget{
-					Contract:   Hname(msg.Contract),
-					EntryPoint: Hname(msg.Function),
+					Contract:   Hname(request.Message.Contract),
+					EntryPoint: Hname(request.Message.Function),
 				},
-				Params: msg.Args,
+				Params: request.Message.Args,
 			},
-			Allowance: allowanceAsAssets,
-			GasBudget: iotaclient.DefaultGasBudget,
+			AllowanceBCS: request.AllowanceBCS,
+			GasBudget:    uint64(gasBudget),
 		},
 	}
 	return r, nil

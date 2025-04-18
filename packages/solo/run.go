@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
@@ -68,11 +67,11 @@ func (ch *Chain) EstimateGas(req isc.Request) (result *vm.RequestResult) {
 
 // Total Gas Fee is composed of L1 gas fee (user spent on creating onledger request)
 // and L2 gas fee (wasp gas fee for proccesing request on L2)
-func (ch *Chain) EstimateGasL1(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse, msg *iscmove.Message) (result *vm.RequestResult, err error) {
+func (ch *Chain) EstimateGasL1(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (result *vm.RequestResult, err error) {
 	ch.runVMMutex.Lock()
 	defer ch.runVMMutex.Unlock()
 
-	req, err := isc.FakeEstimateOnLedger(dryRunRes, msg)
+	req, err := isc.FakeEstimateOnLedger(dryRunRes)
 	if err != nil {
 		return nil, fmt.Errorf("cant generate fake request: %s", err)
 	}
