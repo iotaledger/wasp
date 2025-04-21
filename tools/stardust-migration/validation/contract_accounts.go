@@ -521,7 +521,7 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 			baseCount++
 			strBuilder.WriteString("\tBase balance: ")
 		} else {
-			ntID := coinTypeToOldNTID(coinType) // reverse conversion
+			ntID := CoinTypeToOldNTID(coinType) // reverse conversion
 			balanceStr = ntID.ToHex() + ": " + balance.String()
 			strBuilder = &nativeBalancesStr
 			nativeCount++
@@ -597,7 +597,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 			strBuilder.WriteString("\tBase balance: ")
 		} else {
 			strBuilder = &nativeBalancesStr
-			ntID := coinTypeToOldNTID(coinType) // reverse conversion
+			ntID := CoinTypeToOldNTID(coinType) // reverse conversion
 			balanceStr = ntID.ToHex() + ": " + balanceStr
 			nativeCount++
 			strBuilder.WriteString("\tNative balance: ")
@@ -643,7 +643,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 	return resBase, resNative
 }
 
-func coinTypeToOldNTID(t coin.Type) old_iotago.NativeTokenID {
+func CoinTypeToOldNTID(t coin.Type) old_iotago.NativeTokenID {
 	rt := t.ResourceType()
 	if rt.Module != "nt" || !strings.HasPrefix(rt.ObjectName, "NT") {
 		// Yes, raw comparison with magic strings. Intended - to make validation less dependant on bugs of the migration code.

@@ -164,7 +164,7 @@ func newISCMagicAllowanceToStr(contractState kv.KVStoreReader) string {
 			if coinType == coin.BaseTokenType {
 				return true
 			}
-			ntID := coinTypeToOldNTID(coinType)
+			ntID := CoinTypeToOldNTID(coinType)
 			allowanceStr.WriteString(fmt.Sprintf(", nt=(%v: %v)", ntID.ToHex(), amount))
 			return true
 		})

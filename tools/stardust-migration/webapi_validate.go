@@ -81,7 +81,10 @@ func validateWebAPI(c *cmd.Context) error {
 		}
 		chainValidation.Validate(i)
 		coreBlockValidation.Validate(i)
-		accountValidation.ValidateBaseTokenBalances(i)
+		accountValidation.ValidateAccountBalances(i)
+		accountValidation.ValidateNFTs(i)
+		accountValidation.ValidateNonce(i)
+		accountValidation.ValidateTotalAssets(i)
 	}
 
 	return nil
