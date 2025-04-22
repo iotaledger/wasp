@@ -123,6 +123,7 @@ type Settings struct {
 	MaxTimedInPool             int
 	MaxOnledgerToPropose       int // (including timed-requests)
 	MaxOffledgerToPropose      int
+	MaxOffledgerPerAccount     int
 }
 
 // This implementation tracks single branch of the chain only. I.e. all the consensus
@@ -228,7 +229,7 @@ func New(
 		chainID:                        chainID,
 		tangleTime:                     time.Time{},
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.NewChildLogger("ONL")),
-		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.NewChildLogger("OFF")),
+		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, settings.MaxOffledgerPerAccount, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.NewChildLogger("OFF")),
 		chainHeadAnchor:                nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},

@@ -20,7 +20,7 @@ import (
 
 func TestOffledgerMempoolAccountNonce(t *testing.T) {
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
-	pool := NewOffledgerPool(100, waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
+	pool := NewOffledgerPool(100, 10, waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
 
 	// generate a bunch of requests for the same account
 	kp, addr := testkey.GenKeyAddr()
@@ -63,7 +63,7 @@ func TestOffledgerMempoolAccountNonce(t *testing.T) {
 func TestOffledgerMempoolLimit(t *testing.T) {
 	waitReq := NewWaitReq(waitRequestCleanupEvery)
 	poolSizeLimit := 3
-	pool := NewOffledgerPool(poolSizeLimit, waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
+	pool := NewOffledgerPool(poolSizeLimit, poolSizeLimit, waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
 
 	// create requests with different gas prices
 	req0 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(1))

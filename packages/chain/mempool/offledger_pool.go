@@ -36,7 +36,7 @@ type OffLedgerPool struct {
 	log               log.Logger
 }
 
-func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log log.Logger) *OffLedgerPool {
+func NewOffledgerPool(maxPoolSize int, maxPerAccount int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log log.Logger) *OffLedgerPool {
 	return &OffLedgerPool{
 		waitReq:             waitReq,
 		refLUT:              shrinkingmap.New[isc.RequestRefKey, *OrderedPoolEntry](),
@@ -44,7 +44,7 @@ func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), ti
 		orderedByGasPrice:   []*OrderedPoolEntry{},
 		minGasPrice:         big.NewInt(1),
 		maxPoolSize:         maxPoolSize,
-		maxPerAccount:       5, // TODO: Take it from a config.
+		maxPerAccount:       maxPerAccount,
 		sizeMetric:          sizeMetric,
 		timeMetric:          timeMetric,
 		log:                 log,
