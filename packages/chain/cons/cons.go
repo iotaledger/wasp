@@ -9,6 +9,7 @@ package cons
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -537,7 +538,8 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		rotationPTB.RotationTransaction(aggr.DecidedRotateTo())
 		rotationPTX := rotationPTB.BuildTransactionEssence(bao.GetStateMetadata(), 0)
 		rotationTXD := c.makeTransactionData(&rotationPTX, aggr)
-		rotationTXB := c.makeTransactionBytes(rotationTXD)
+		rotationTXB := c.makeTransactionSigningBytes(rotationTXD)
+		c.log.LogDebugf("Rotation TxDataBytes=%s", hex.EncodeToString(c.makeTransactionDataBytes(rotationTXD)))
 		return gpa.NoMessages().
 			AddAll(c.subTX.UnsignedTXReceived(rotationTXD)).
 			AddAll(c.subTX.BlockSaved(nil)).
@@ -630,7 +632,8 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 	// Make sure all the fields in the TX are ordered properly.
 	unsignedTX := vmResult.UnsignedTransaction
 	txData := c.makeTransactionData(&unsignedTX, aggregatedProposals)
-	txBytes := c.makeTransactionBytes(txData)
+	txBytes := c.makeTransactionSigningBytes(txData)
+	c.log.LogDebugf("VM produced TxDataBytes=%s", hex.EncodeToString(c.makeTransactionDataBytes(txData)))
 	return gpa.NoMessages().
 		AddAll(c.subSM.BlockProduced(vmResult.StateDraft)).
 		AddAll(c.subTX.UnsignedTXReceived(txData)).
@@ -655,11 +658,16 @@ func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggre
 	return &tx
 }
 
-func (c *consImpl) makeTransactionBytes(txData *iotago.TransactionData) []byte {
+func (c *consImpl) makeTransactionDataBytes(txData *iotago.TransactionData) []byte {
 	txnBytes, err := bcs.Marshal(txData)
 	if err != nil {
 		panic(fmt.Errorf("uponVMOutputReceived: cannot serialize the tx: %w", err))
 	}
+	return txnBytes
+}
+
+func (c *consImpl) makeTransactionSigningBytes(txData *iotago.TransactionData) []byte {
+	txnBytes := c.makeTransactionDataBytes(txData)
 	txnBytes = iotasigner.MessageWithIntent(iotasigner.DefaultIntent(), txnBytes)
 	txnBytesHash := blake2b.Sum256(txnBytes)
 	return txnBytesHash[:]
