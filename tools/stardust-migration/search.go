@@ -6,15 +6,20 @@ import (
 	"os"
 	"sync/atomic"
 
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/samber/lo"
 	cmd "github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 
+	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
@@ -28,7 +33,24 @@ import (
 
 type StateContainsTargetCheckFunc func(state old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool)
 
-func search(name string, f StateContainsTargetCheckFunc) func(c *cmd.Context) error {
+type SearchOptions struct {
+	IncludeDeletions bool
+}
+
+type SearchOption func(*SearchOptions)
+
+func IncludeDeletions() SearchOption {
+	return func(opts *SearchOptions) {
+		opts.IncludeDeletions = true
+	}
+}
+
+func search(name string, f StateContainsTargetCheckFunc, opts ...SearchOption) func(c *cmd.Context) error {
+	options := &SearchOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	return func(c *cmd.Context) error {
 		chainDBDir := c.Args().Get(0)
 		fromIndex := uint32(c.Uint64("from-block"))
@@ -45,13 +67,15 @@ func search(name string, f StateContainsTargetCheckFunc) func(c *cmd.Context) er
 		}
 
 		cli.Logf("Searching for %v in blocks [%d ; %d]", name, fromIndex, toIndex)
-		searchLinear(c.Context, name, store, fromIndex, toIndex, findAll, threadsCount, f)
+		searchLinear(c.Context, name, store, fromIndex, toIndex, findAll, threadsCount, f, options)
 
 		return nil
 	}
 }
 
-func searchLinear(ctx context.Context, name string, store old_indexedstore.IndexedStore, fromIndex, toIndex uint32, findAll bool, threadsCount uint32, f StateContainsTargetCheckFunc) {
+func searchLinear(ctx context.Context, name string, store old_indexedstore.IndexedStore, fromIndex, toIndex uint32,
+	findAll bool, threadsCount uint32, f StateContainsTargetCheckFunc, opts *SearchOptions) {
+
 	indexer := blockindex.New(store)
 	e := errgroup.Group{}
 
@@ -72,11 +96,17 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 			for blockIndex := fromIndex + i; blockIndex <= toIndex; blockIndex += threadsCount {
 				block, _ := indexer.BlockByIndex(blockIndex)
 
-				state := old_dict.Dict(block.Mutations().Sets)
+				var state old_kv.KVStoreReader
+				if opts.IncludeDeletions {
+					state = utils.DictKvFromMuts(block.Mutations())
+				} else {
+					state = old_dict.Dict(block.Mutations().Sets)
+				}
+
 				f(state, func(k old_kv.Key, v []byte) bool {
 					found.Store(true)
 
-					if firstFoundValues[i] == nil {
+					if firstFoundKeys[i] == "" {
 						firstContainingBlockIndexes[i] = blockIndex
 						firstFoundKeys[i] = k
 						firstFoundValues[i] = v
@@ -116,7 +146,7 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 	}
 
 	_, earliestThreadIdx := lo.MinIndex(firstContainingBlockIndexes)
-	if firstFoundValues[earliestThreadIdx] == nil {
+	if firstFoundKeys[earliestThreadIdx] == "" {
 		cli.Logf("No %v found in blocks [%d; %d]\n", name, fromIndex, toIndex)
 		return
 	}
@@ -196,4 +226,34 @@ func searchBlockKeepAmountNot10000(chainState old_kv.KVStoreReader, onFound func
 func searchFoundies(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	contractState.Iterate(old_accounts.PrefixFoundries, onFound)
+}
+
+func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+	// Some of the records, which start with PrefixNativeToken, had previously invalid account key.
+	// Also, seemingly they always delete value, although there is nothing set.
+	var IsValidOldAccountKeyBytesLen = func(n int) bool {
+		return n == isc.HnameLength || n == common.AddressLength || n == iotago.AddressLen
+	}
+
+	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+	contractState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+		oldAccKey, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
+		if oldNtIDBytes == "" {
+			// not a map entry
+			return true
+		}
+
+		if oldAccKey == old_accounts.L2TotalsAccount {
+			return true
+		}
+
+		if !IsValidOldAccountKeyBytesLen(len(oldAccKey)) {
+			if v != nil {
+				// Are these records always deletions?
+				return onFound(k, v)
+			}
+		}
+
+		return true
+	})
 }

@@ -14,10 +14,14 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/debug"
+	"strconv"
+	"strings"
 	"time"
 
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
+	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
+	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 	"github.com/slack-go/slack"
@@ -27,6 +31,7 @@ import (
 	old_iotago "github.com/iotaledger/iota.go/v3"
 
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
@@ -37,6 +42,7 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/newstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 )
 
 func main() {
@@ -223,7 +229,18 @@ func main() {
 					searchCmd("nft", searchNFT),
 					searchCmd("block-keep-amount-change", searchBlockKeepAmountNot10000),
 					searchCmd("foundry", searchFoundies),
+					searchCmd("strange-native-tokens", searchStrangeNativeTokenRecords, IncludeDeletions()),
 				},
+			},
+			{
+				Name:      "get-block-muts",
+				ArgsUsage: "<chain-db-dir> <block-index>",
+				Action:    getBlockMuts,
+			},
+			{
+				Name:      "get-state-value",
+				ArgsUsage: "<chain-db-dir> <state-index> <key-hex",
+				Action:    getStateValue,
 			},
 		},
 	}
@@ -232,7 +249,7 @@ func main() {
 	lo.Must0(app.RunContext(programCtx, os.Args))
 }
 
-func searchCmd(entityName string, f StateContainsTargetCheckFunc) *cmd.Command {
+func searchCmd(entityName string, f StateContainsTargetCheckFunc, opts ...SearchOption) *cmd.Command {
 	return &cmd.Command{
 		Name:      entityName,
 		ArgsUsage: "<chain-db-dir>",
@@ -261,8 +278,54 @@ func searchCmd(entityName string, f StateContainsTargetCheckFunc) *cmd.Command {
 			},
 		},
 		Before: processCommonFlags,
-		Action: search(entityName, f),
+		Action: search(entityName, f, opts...),
 	}
+}
+
+func getBlockMuts(c *cmd.Context) error {
+	chainDBDir := c.Args().Get(0)
+	blockIndexStr := c.Args().Get(1)
+
+	blockIndex := lo.Must(strconv.Atoi(blockIndexStr))
+
+	kvs := db.ConnectOld(chainDBDir)
+	store := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(kvs))
+
+	b := lo.Must(store.BlockByIndex(uint32(blockIndex)))
+	for i, m := range b.Mutations().Sets {
+		fmt.Printf("SET %x: %x\n", i, m)
+	}
+	for i, m := range b.Mutations().Dels {
+		fmt.Printf("DEL %x: %x\n", i, m)
+	}
+
+	return nil
+}
+
+func getStateValue(c *cmd.Context) error {
+	chainDBDir := c.Args().Get(0)
+	stateIndexStr := c.Args().Get(1)
+	keyHex := c.Args().Get(2)
+
+	stateIndex := lo.Must(strconv.Atoi(stateIndexStr))
+	if !strings.HasPrefix(keyHex, "0x") {
+		keyHex = "0x" + keyHex
+	}
+	key := lo.Must(cryptolib.DecodeHex(keyHex))
+
+	kvs := db.ConnectOld(chainDBDir)
+	store := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(kvs))
+
+	s, err := store.StateByIndex(uint32(stateIndex))
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Key: %x\n", key)
+	fmt.Printf("Value: %x\n", s.Get(old_kv.Key(key)))
+	fmt.Printf("Has value: %v\n", s.Has(old_kv.Key(key)))
+
+	return nil
 }
 
 func processCommonFlags(c *cmd.Context) error {

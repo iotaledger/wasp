@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
+	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
+	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	"github.com/samber/lo"
 )
 
@@ -141,4 +144,17 @@ func GetMapElemPrefixes[T ~string | ~[]byte](key T) []T {
 	}
 
 	return prefixes
+}
+
+// Returns KVStoreReader, which will iterate by both Sets and Dels of mutations. For Dels, value will be nil.
+func DictKvFromMuts(muts *old_buffered.Mutations) old_kv.KVStoreReader {
+	d := old_kvdict.New()
+	for k, v := range muts.Sets {
+		d[k] = v
+	}
+	for k := range muts.Dels {
+		d[k] = nil
+	}
+
+	return d
 }

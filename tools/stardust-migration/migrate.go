@@ -22,7 +22,6 @@ import (
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_buffered "github.com/nnikolash/wasp-types-exported/packages/kv/buffered"
 	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
-	old_kvdict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	old_parameters "github.com/nnikolash/wasp-types-exported/packages/parameters"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
@@ -379,7 +378,7 @@ func migrateAllStates(c *cmd.Context) error {
 			cli.Logf("Migrating entire state. Reason: startBlockIndex = %v, blockIndex = %v, continueMigration = %v", startBlockIndex, blockIndex, continueMigration)
 			oldStateMutsOnly = oldState
 		} else {
-			oldStateMutsOnly = dictKvFromMuts(oldMuts)
+			oldStateMutsOnly = utils.DictKvFromMuts(oldMuts)
 		}
 
 		if blockIndex >= 9999 {
@@ -806,17 +805,4 @@ func forEachBlock(srcStore old_indexedstore.IndexedStore, startIndex, endIndex u
 			return
 		}
 	}
-}
-
-// Returns KVStoreReader, which will iterate by both Sets and Dels of mutations. For Dels, value will be nil.
-func dictKvFromMuts(muts *old_buffered.Mutations) old_kv.KVStoreReader {
-	d := old_kvdict.New()
-	for k, v := range muts.Sets {
-		d[k] = v
-	}
-	for k := range muts.Dels {
-		d[k] = nil
-	}
-
-	return d
 }
