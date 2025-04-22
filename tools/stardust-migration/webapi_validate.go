@@ -76,7 +76,7 @@ func validateWebAPI(c *cmd.Context) error {
 
 	log.Printf("Starting Stardust/Rebased WebAPI validation. From 1 => %d", latestBlock.BlockIndex)
 
-	for i := uint32(latestBlock.BlockIndex); i <= latestBlock.BlockIndex; i++ {
+	for i := uint32(1); i < latestBlock.BlockIndex; i++ {
 		if i%100 == 0 {
 			fmt.Printf("StateIndex: %d \n", i)
 		}
