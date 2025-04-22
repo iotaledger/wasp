@@ -10,7 +10,6 @@ jobs:
   build:
     name: Build only
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
@@ -35,7 +34,6 @@ jobs:
   test-short:
     name: Test (short)
     runs-on: ubuntu-latest
-    if: github.event.pull_request.draft == false
     steps:
       - name: Set up Go 1.x
         uses: actions/setup-go@v5
