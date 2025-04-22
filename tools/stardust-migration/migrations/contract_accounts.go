@@ -132,13 +132,13 @@ func migrateBaseTokenBalances(
 	cli.DebugLogf("Migrated %v base token balances\n", count)
 }
 
-func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
+func migrateNativeTokenBalances(oldStateMuts old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
 	cli.DebugLogf("Migrating native token balances...\n")
 
 	var count int
 
 	w := accounts.NewStateWriter(newSchema, newState)
-	oldState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+	oldStateMuts.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
 		count++
 		oldAccKey, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
 		if oldNtIDBytes == "" {

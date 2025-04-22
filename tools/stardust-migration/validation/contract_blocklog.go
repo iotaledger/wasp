@@ -71,8 +71,8 @@ func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex 
 			printProgress()
 		}
 
-		if uint32(reqCount) < (lastIndex - firstAvailableBlockIndex) {
-			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, reqCount))
+		if uint32(reqCount) < (lastIndex-firstAvailableBlockIndex)-1 {
+			panic(fmt.Sprintf("Not enough receipts found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, reqCount))
 		}
 
 		cli.DebugLogf("Retrieved %v requests", reqCount)
@@ -364,7 +364,7 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 			}
 		}
 
-		if uint32(requestsCount) < (lastIndex - firstAvailBlockIndex) {
+		if uint32(requestsCount) < (lastIndex-firstAvailBlockIndex)-1 {
 			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, requestsCount))
 		}
 

@@ -396,7 +396,7 @@ func oldReceiptsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromIndex
 
 		cli.DebugLogf("Found %v old receipts by block number", recCount)
 
-		if uint32(recCount) < (toIndex - fromIndex) {
+		if uint32(recCount) < (toIndex-fromIndex)-1 {
 			panic(fmt.Sprintf("Not enough receipts found in range [%v, %v]: %v", fromIndex, toIndex, recCount))
 		}
 	}, func() {
