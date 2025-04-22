@@ -1,3 +1,4 @@
+// Package testerrors contains helpers for contract error testing
 package testerrors
 
 import (

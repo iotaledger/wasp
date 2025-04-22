@@ -5,7 +5,6 @@ package evmtest
 
 import (
 	"bytes"
-	"crypto/ecdsa"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -977,6 +976,7 @@ func TestERC20BaseTokens(t *testing.T) {
 
 func TestERC20Coin(t *testing.T) {
 	t.Skip("TODO")
+	testERC20Coin(nil, nil, coin.Type{}, "", "", 0, nil, nil)
 	// env := InitEVM(t)
 	//
 	// const (
@@ -1047,38 +1047,6 @@ func TestERC20Coin(t *testing.T) {
 	// 	supply,
 	// 	ethAgentID,
 	// )
-}
-
-func checkTransferEventERC20(
-	t *testing.T,
-	log *types.Log,
-	contractAddress, from, to common.Address,
-	amount *big.Int,
-) {
-	require.Equal(t, contractAddress, log.Address)
-
-	require.Len(t, log.Topics, 3)
-	require.Equal(t, crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)")), log.Topics[0])
-	require.Equal(t, evmutil.AddressToIndexedTopic(from), log.Topics[1])
-	require.Equal(t, evmutil.AddressToIndexedTopic(to), log.Topics[2])
-	require.Equal(t, evmutil.PackUint256(amount), log.Data)
-}
-
-// helper to make sandbox calls via EVM in a more readable way
-func sandboxCall(
-	t *testing.T,
-	wallet *ecdsa.PrivateKey,
-	sandboxContract *IscContractInstance,
-	msg isc.Message,
-	allowance coin.Value,
-) {
-	_, err := sandboxContract.CallFn(
-		[]ethCallOptions{{sender: wallet}},
-		"call",
-		iscmagic.WrapISCMessage(msg),
-		iscmagic.WrapISCAssets(isc.NewAssets(allowance)),
-	)
-	require.NoError(t, err)
 }
 
 func TestERC20CoinWithExternalFoundry(t *testing.T) {

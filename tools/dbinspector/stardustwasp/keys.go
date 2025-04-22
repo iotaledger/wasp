@@ -1,4 +1,5 @@
-package stardust_wasp
+// Package stardustwasp provides legacy keys for the stardust network
+package stardustwasp
 
 const (
 	// KeyAllAccounts stores a map of <agentID> => true
@@ -96,18 +97,15 @@ var BlocklogKeys = map[string]string{
 	"U": "prefixNewUnprocessableRequests",
 }
 
-// Errors
 var ErrorKeys = map[string]string{
 	"a": "prefixErrorTemplateMap",
 }
 
-// EVM
 var EvmKeys = map[string]string{
 	"s": "keyEmulatorState",
 	"m": "keyISCMagic",
 }
 
-// Governance
 var GovernanceKeys = map[string]string{
 	"a":  "VarAllowedStateControllerAddresses",
 	"r":  "VarRotateToAddress",
@@ -125,7 +123,6 @@ var GovernanceKeys = map[string]string{
 	"b":  "VarBlockKeepAmount",
 }
 
-// Root
 var RootKeys = map[string]string{
 	"v": "VarSchemaVersion",
 	"r": "VarContractRegistry",

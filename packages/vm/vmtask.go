@@ -1,3 +1,4 @@
+// Package vm defines the types required for the vm
 package vm
 
 import (

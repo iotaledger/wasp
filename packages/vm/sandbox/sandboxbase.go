@@ -140,6 +140,7 @@ func (s *SandboxBase) EstimateGasMode() bool {
 }
 
 // -- helper methods
+
 func (s *SandboxBase) Requiref(cond bool, format string, args ...any) {
 	s.assert().Requiref(cond, format, args...)
 }

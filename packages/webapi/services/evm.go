@@ -35,7 +35,7 @@ type EVMService struct {
 	chainService    interfaces.ChainService
 	networkProvider peering.NetworkProvider
 	publisher       *publisher.Publisher
-	indexDbPath     string
+	indexDBPath     string
 	metrics         *metrics.ChainMetricsProvider
 	jsonrpcParams   *jsonrpc.Parameters
 	log             log.Logger
@@ -46,7 +46,7 @@ func NewEVMService(
 	chainService interfaces.ChainService,
 	networkProvider peering.NetworkProvider,
 	pub *publisher.Publisher,
-	indexDbPath string,
+	indexDBPath string,
 	metrics *metrics.ChainMetricsProvider,
 	jsonrpcParams *jsonrpc.Parameters,
 	log log.Logger,
@@ -60,7 +60,7 @@ func NewEVMService(
 		websocketContextMutex: sync.Mutex{},
 		networkProvider:       networkProvider,
 		publisher:             pub,
-		indexDbPath:           indexDbPath,
+		indexDBPath:           indexDBPath,
 		metrics:               metrics,
 		jsonrpcParams:         jsonrpcParams,
 		log:                   log,
@@ -94,7 +94,7 @@ func (e *EVMService) getEVMBackend() (*chainServer, error) {
 			e.publisher,
 			e.chainsProvider().IsArchiveNode(),
 			hivedb.EngineRocksDB,
-			e.indexDbPath,
+			e.indexDBPath,
 			e.log.NewChildLogger("EVMChain"),
 		),
 		jsonrpc.NewAccountManager(nil),

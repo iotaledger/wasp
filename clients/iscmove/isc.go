@@ -176,7 +176,7 @@ func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue,
 }
 
 func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
-	a.Coins[coinType] = iotajsonrpc.CoinValue(amount)
+	a.Coins[coinType] = amount
 	return a
 }
 

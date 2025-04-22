@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
-// By default each token pays for 100 units of gas
+// DefaultGasPerToken declares that each token pays for 100 units of gas
 var DefaultGasPerToken = util.Ratio32{A: 100, B: 1}
 
 type FeePolicy struct {

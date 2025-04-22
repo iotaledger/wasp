@@ -93,7 +93,7 @@ func Init(
 	authConfig authentication.AuthConfiguration,
 	requestCacheTTL time.Duration,
 	websocketService *websocket.Service,
-	indexDbPath string,
+	indexDBPath string,
 	accountDumpsPath string,
 	pub *publisher.Publisher,
 	l1ParamsFetcher parameters.L1ParamsFetcher,
@@ -109,7 +109,7 @@ func Init(
 	offLedgerService := services.NewOffLedgerService(chainService, networkProvider, requestCacheTTL)
 	metricsService := services.NewMetricsService(chainsProvider, chainMetricsProvider)
 	peeringService := services.NewPeeringService(chainsProvider, networkProvider, trustedNetworkManager)
-	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDbPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
+	evmService := services.NewEVMService(chainsProvider, chainService, networkProvider, pub, indexDBPath, chainMetricsProvider, jsonrpcParams, logger.NewChildLogger("EVMService"))
 	nodeService := services.NewNodeService(chainRecordRegistryProvider, nodeIdentityProvider, chainsProvider, shutdownHandler, trustedNetworkManager, l1ParamsFetcher)
 	dkgService := services.NewDKGService(dkShareRegistryProvider, dkgNodeProvider, trustedNetworkManager)
 	userService := services.NewUserService(userManager)

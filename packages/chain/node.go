@@ -172,7 +172,6 @@ type chainNodeImpl struct {
 	latestActiveAO         *isc.StateAnchor       // This is the AO the chain is build on.
 	latestActiveState      state.State            // State corresponding to latestActiveAO, for performance reasons.
 	latestActiveStateAO    *isc.StateAnchor       // Set only when the corresponding state is retrieved.
-	gasCoin                *coin.CoinWithRef      // Set only when the corresponding state is retrieved.
 	originDeposit          coin.Value             // Initial deposit of the chain.
 	rotateTo               *iotago.Address        // Non-nil, if the owner of the node want to rotate the chain to the specified address.
 	//

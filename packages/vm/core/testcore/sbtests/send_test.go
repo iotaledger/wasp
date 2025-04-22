@@ -33,7 +33,7 @@ func TestTooManyOutputsInASingleCall(t *testing.T) {
 }
 
 func TestSeveralOutputsInASingleCall(t *testing.T) {
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 
 	wallet, walletAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -140,7 +140,7 @@ func TestSplitTokensSuccess(t *testing.T) {
 
 func TestPingBaseTokens1(t *testing.T) {
 	// TestPingBaseTokens1 sends some base tokens to SC and receives the whole allowance sent back to L1 as on-ledger request
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 
 	user, userAddr := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -184,7 +184,7 @@ func TestPingBaseTokens1(t *testing.T) {
 
 func TestSendObjectsBack(t *testing.T) {
 	// Send object and receive it back (on-ledger request)
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))
@@ -217,7 +217,7 @@ func TestSendObjectsBack(t *testing.T) {
 
 func TestNFTOffledgerWithdraw(t *testing.T) {
 	// Deposit an NFT, then claim it back via offleger-request
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 
 	wallet, _ := ch.Env.NewKeyPairWithFunds(ch.Env.NewSeedFromTestNameAndTimestamp(t.Name()))

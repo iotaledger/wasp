@@ -1,3 +1,4 @@
+// Package vmexceptions contains exceptions thrown from the vm
 package vmexceptions
 
 import (

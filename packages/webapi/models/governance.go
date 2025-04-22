@@ -6,6 +6,7 @@ import "github.com/iotaledger/wasp/packages/vm/gas"
 Both Gov* structs should be removed at some point.
 The corecontract implementations should be moved outside the webapi, therefore using the webapi ChainInfo/Metadata structs should be avoided.
 */
+
 type GovPublicChainMetadata struct {
 	EVMJsonRPCURL   string `json:"evmJsonRpcURL" swagger:"desc(The EVM json rpc url),required"`
 	EVMWebSocketURL string `json:"evmWebSocketURL" swagger:"desc(The EVM websocket url)),required"`

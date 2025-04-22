@@ -85,7 +85,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		ch.L2TotalBaseTokens(),
 	)
 
-	gasCoinValueBefore := coin.Value(ch.GetLatestGasCoin().Value)
+	gasCoinValueBefore := ch.GetLatestGasCoin().Value
 
 	const depositedByUser = isc.GasCoinTargetValue * 4
 	someUserWallet, someUserAddr := env.NewKeyPairWithFunds()
@@ -100,7 +100,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	require.NoError(t, err)
 	ch.CheckChain()
 
-	gasCoinValueAfter := coin.Value(ch.GetLatestGasCoin().Value)
+	gasCoinValueAfter := ch.GetLatestGasCoin().Value
 	t.Logf("gasCoinValueBefore: %d, gasCoinValueAfter: %d", gasCoinValueBefore, gasCoinValueAfter)
 
 	// the common account is topped up to isc.GasCoinTargetValue,
@@ -124,7 +124,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 	totalDeposited := coin.Value(initialCommonAccountBalance + depositedByUser)
 	// the tokens that remain in L2
 	totalL2Tokens := totalDeposited - deductedForGasCoin
-	require.EqualValues(t, coin.Value(totalL2Tokens), ch.L2TotalBaseTokens())
+	require.EqualValues(t, totalL2Tokens, ch.L2TotalBaseTokens())
 
 	// the user pays for the L2 gas fee
 	require.EqualValues(t,
@@ -193,7 +193,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 			}
 			senderAgentID := isc.NewAddressAgentID(senderAddr)
 
-			gasCoinL1Before := coin.Value(ch.GetLatestGasCoin().Value)
+			gasCoinL1Before := ch.GetLatestGasCoin().Value
 			l2TotalBaseTokensBefore := ch.L2TotalBaseTokens()
 			senderL1BaseTokensBefore := env.L1BaseTokens(senderAddr)
 			senderL2BaseTokensBefore := ch.L2BaseTokens(senderAgentID)
@@ -211,7 +211,7 @@ func TestNoTargetPostOnLedger(t *testing.T) {
 
 			require.Contains(t, err.Error(), test.ExpectedError)
 
-			gasCoinL1After := coin.Value(ch.GetLatestGasCoin().Value)
+			gasCoinL1After := ch.GetLatestGasCoin().Value
 			t.Logf("gasCoinL1Before: %d, gasCoinL1After: %d", gasCoinL1Before, gasCoinL1After)
 			l2TotalBaseTokensAfter := ch.L2TotalBaseTokens()
 			t.Logf("l2TotalBaseTokensBefore: %d, l2TotalBaseTokensAfter: %d", l2TotalBaseTokensBefore, l2TotalBaseTokensAfter)

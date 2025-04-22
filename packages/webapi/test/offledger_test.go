@@ -37,5 +37,4 @@ func TestOffLedger(t *testing.T) {
 	require.NotNil(t, res.Receipt)
 	require.Nil(t, res.Receipt.Error)
 	require.Greater(t, res.Receipt.GasFeeCharged, uint64(0))
-
 }

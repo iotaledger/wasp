@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -21,10 +23,12 @@ func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f fu
 	if config.WaitForCompletion != config.DefaultWaitForCompletion {
 		timeout, err := time.ParseDuration(config.WaitForCompletion)
 		log.Check(err)
+		timeoutSeconds, err := safecast.Convert[int32](timeout / time.Second)
+		log.Check(err)
 		receipt, _, err := client.ChainsAPI.
 			WaitForRequest(ctx, req.ID().String()).
 			WaitForL1Confirmation(true).
-			TimeoutSeconds(int32(timeout / time.Second)).
+			TimeoutSeconds(timeoutSeconds).
 			Execute()
 
 		log.Check(err)
