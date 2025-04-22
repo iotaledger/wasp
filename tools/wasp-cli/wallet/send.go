@@ -3,7 +3,6 @@ package wallet
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -35,8 +34,7 @@ func initSendFundsCmd() *cobra.Command {
 
 			myWallet := wallet.Load()
 			senderAddress := myWallet.Address()
-			util.TryManageCoinsAmount(cmd.Context())
-			time.Sleep(3 * time.Second)
+			util.TryMergeAllCoins(cmd.Context())
 
 			client := cliclients.L1Client()
 
@@ -58,15 +56,28 @@ func initSendFundsCmd() *cobra.Command {
 			)
 			log.Check(err)
 			for cointype, balance := range tokens.Coins {
-				pickedCoin, err := iotajsonrpc.PickupCoinsWithCointype(
-					coinPage,
-					balance.BigInt(),
-					iotajsonrpc.MustCoinTypeFromString(cointype.String()),
-				)
-				log.Check(err)
+				if cointype.MatchesStringType(coin.BaseTokenType.String()) {
+					argSplitCoins := ptb.Command(iotago.Command{SplitCoins: &iotago.ProgrammableSplitCoins{
+						Coin:    iotago.GetArgumentGasCoin(),
+						Amounts: []iotago.Argument{ptb.MustForceSeparatePure(balance.Uint64())},
+					}})
+					ptb.Command(iotago.Command{TransferObjects: &iotago.ProgrammableTransferObjects{
+						Objects: []iotago.Argument{
+							iotago.Argument{NestedResult: &iotago.NestedResult{Cmd: *argSplitCoins.Result, Result: uint16(0)}},
+						},
+						Address: ptb.MustPure(targetAddress.AsIotaAddress()),
+					}})
+				} else {
+					pickedCoin, err := iotajsonrpc.PickupCoinsWithCointype(
+						coinPage,
+						balance.BigInt(),
+						iotajsonrpc.MustCoinTypeFromString(cointype.String()),
+					)
+					log.Check(err)
 
-				err = ptb.Pay(pickedCoin.CoinRefs(), []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
-				log.Check(err)
+					err = ptb.Pay(pickedCoin.CoinRefs(), []*iotago.Address{targetAddress.AsIotaAddress()}, []uint64{balance.Uint64()})
+					log.Check(err)
+				}
 			}
 
 			pt := ptb.Finish()

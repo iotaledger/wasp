@@ -136,12 +136,12 @@ func TestWaspCLIDeposit(t *testing.T) { // passed
 	// fund an alternative address to deposit from (so we can test the fees,
 	// since --address-index=0 is the chain admin / default payoutAddress)
 	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
-	w.MustRun("send-funds", "-s", alternativeAddress, "base|10000000", "--address-index=1")
+	w.MustRun("send-funds", alternativeAddress, "base|10000000", "--address-index=1")
 
 	outs = w.MustRun("balance")
 	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals)
 
-	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
+	outs, err := w.Run("chain", "info", "--node=0")
 	require.NoError(t, err)
 	t.Run("deposit directly to EVM", func(t *testing.T) {
 		_, eth := newEthereumAccount()
@@ -171,81 +171,6 @@ func TestWaspCLIDeposit(t *testing.T) { // passed
 		outs = w.MustRun("chain", "balance", "--node=0", "--address-index=1")
 		checkL2Balance(t, outs, 1000000-int(minFee)-int(l2GasFee))
 	})
-
-	// t.Run("mint and deposit native tokens to an ethereum account", func(t *testing.T) {
-	// 	_, eth := newEthereumAccount()
-	// 	// create foundry
-	// 	tokenScheme := codec.Encode[TokenScheme](&iotago.SimpleTokenScheme{
-	// 		MintedTokens:  big.NewInt(0),
-	// 		MeltedTokens:  big.NewInt(0),
-	// 		MaximumSupply: big.NewInt(1000),
-	// 	})
-
-	// 	out := w.PostRequestGetReceipt(
-	// 		"accounts", accounts.FuncNativeTokenCreate.Name,
-	// 		"string", accounts.ParamTokenScheme, "bytes", iotago.EncodeHex(tokenScheme),
-	// 		"-l", "base|1000000",
-	// 		"-t", "base|100000000",
-	// 		"string", accounts.ParamTokenName, "string", "TEST",
-	// 		"string", accounts.ParamTokenTickerSymbol, "string", "TS",
-	// 		"string", accounts.ParamTokenDecimals, "uint8", "8",
-	// 		"--node=0",
-	// 	)
-	// 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
-
-	// 	// mint 2 native tokens
-	// 	foundrySN := "1"
-	// 	out = w.PostRequestGetReceipt(
-	// 		"accounts", accounts.FuncNativeTokenModifySupply.Name,
-	// 		"string", accounts.ParamFoundrySN, "uint32", foundrySN,
-	// 		"string", accounts.ParamSupplyDeltaAbs, "bigint", "2",
-	// 		"string", accounts.ParamDestroyTokens, "bool", "false",
-	// 		"-l", "base|1000000",
-	// 		"--off-ledger",
-	// 		"--node=0",
-	// 	)
-	// 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
-
-	// 	out = w.MustRun("chain", "balance", "--node=0")
-	// 	tokenID := ""
-	// 	for _, line := range out {
-	// 		if strings.Contains(line, "0x") {
-	// 			tokenID = strings.Split(line, " ")[0]
-	// 		}
-	// 	}
-
-	// 	// withdraw this token to the wasp-cli L1 address
-	// 	out = w.PostRequestGetReceipt(
-	// 		"accounts", accounts.FuncWithdraw.Name,
-	// 		"-l", fmt.Sprintf("base|1000000, %s:2", tokenID),
-	// 		"--off-ledger",
-	// 		"--node=0",
-	// 	)
-	// 	require.Regexp(t, `.*Error: \(empty\).*`, strings.Join(out, ""))
-
-	// 	// deposit the native token to the chain (to an ethereum account)
-	// 	w.MustRun(
-	// 		"chain", "deposit", eth.String(),
-	// 		fmt.Sprintf("%s:1", tokenID),
-	// 		"--adjust-storage-deposit",
-	// 		"--node=0",
-	// 	)
-	// 	out = w.MustRun("chain", "balance", eth.String(), "--node=0")
-	// 	require.Contains(t, strings.Join(out, ""), tokenID)
-
-	// 	// deposit the native token to the chain (to the cli account)
-	// 	w.MustRun(
-	// 		"chain", "deposit",
-	// 		fmt.Sprintf("%s:1", tokenID),
-	// 		"--adjust-storage-deposit",
-	// 		"--node=0",
-	// 	)
-	// 	out = w.MustRun("chain", "balance", "--node=0")
-	// 	require.Contains(t, strings.Join(out, ""), tokenID)
-	// 	// no token balance on L1
-	// 	out = w.MustRun("balance")
-	// 	require.NotContains(t, strings.Join(out, ""), tokenID)
-	// })
 }
 
 func findRequestIDInOutput(out []string) string {
