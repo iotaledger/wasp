@@ -69,13 +69,14 @@ func validateWebAPI(c *cmd.Context) error {
 	chainValidation := webapi_validation.NewChainValidation(testContext)
 	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
 	accountValidation := webapi_validation.NewAccountValidation(testContext)
+	governanceValidation := webapi_validation.NewGovernanceValidation(testContext)
 
 	latestBlock, _, err := rClient.CorecontractsAPI.BlocklogGetLatestBlockInfo(ctx).Execute()
 	require.NoError(base.T, err)
 
 	log.Printf("Starting Stardust/Rebased WebAPI validation. From 1 => %d", latestBlock.BlockIndex)
 
-	for i := uint32(1); i < latestBlock.BlockIndex; i++ {
+	for i := uint32(latestBlock.BlockIndex); i <= latestBlock.BlockIndex; i++ {
 		if i%100 == 0 {
 			fmt.Printf("StateIndex: %d \n", i)
 		}
@@ -85,6 +86,7 @@ func validateWebAPI(c *cmd.Context) error {
 		accountValidation.ValidateNFTs(i)
 		accountValidation.ValidateNonce(i)
 		accountValidation.ValidateTotalAssets(i)
+		governanceValidation.ValidateGovernance(i)
 	}
 
 	return nil

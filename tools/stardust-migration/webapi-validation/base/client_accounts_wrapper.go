@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -23,14 +24,14 @@ type AccountsClientWrapper struct {
 func (c *AccountsClientWrapper) AccountsGetAccountBalance(stateIndex uint32, agentID string) (*stardust_client.AssetsResponse, *rebased_client.AssetsResponse) {
 	oldAgentIDStr := addHexPrefix(c.oldAgentIDFromHex(agentID).String())
 	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetAccountBalance(c.Ctx, MainnetChainID, oldAgentIDStr).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), oldAgentIDStr)
+	require.NoError(T, err, "response body: %s, agentId: %s", getResponseStr(rawResponse), oldAgentIDStr)
 	// baseTokens := lo.Must(strconv.Atoi(sRes.BaseTokens))
 	// if /*baseTokens > 0 || */ len(sRes.NativeTokens) > 0 {
 	// 	fmt.Printf("stardust: agent %s, base tokens: %s, native tokens: %s\n", agentID, sRes.BaseTokens, sRes.NativeTokens)
 	// }
 
 	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetAccountBalance(c.Ctx, addHexPrefix(agentID)).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), agentID)
+	require.NoError(T, err, "response body: %s, agentId: %s", getResponseStr(rawResponse), agentID)
 	// baseTokens = lo.Must(strconv.Atoi(rRes.BaseTokens))
 	// if /*baseTokens > 0 || */ len(rRes.NativeTokens) > 0 {
 	// 	fmt.Printf("rebased: agent %s, base tokens: %s, native tokens: %s\n", agentID, rRes.BaseTokens, rRes.NativeTokens)
@@ -43,10 +44,10 @@ func (c *AccountsClientWrapper) AccountsGetAccountBalance(stateIndex uint32, age
 func (c *AccountsClientWrapper) AccountsGetAccountNFTIDs(stateIndex uint32, agentID string) (*stardust_client.AccountNFTsResponse, *rebased_client.AccountNFTsResponse) {
 	oldAgentIDStr := addHexPrefix(c.oldAgentIDFromHex(agentID).String())
 	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetAccountNFTIDs(c.Ctx, MainnetChainID, oldAgentIDStr).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), oldAgentIDStr)
+	require.NoError(T, err, "response body: %s, agentId: %s", getResponseStr(rawResponse), oldAgentIDStr)
 
 	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetAccountNFTIDs(c.Ctx, addHexPrefix(agentID)).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), agentID)
+	require.NoError(T, err, "response body: %s, agentId: %s", getResponseStr(rawResponse), agentID)
 
 	return sRes, rRes
 }
@@ -60,10 +61,10 @@ func (c *AccountsClientWrapper) AccountsGetAccountNonce(stateIndex uint32, agent
 
 	oldAgentIDStr := addHexPrefix(c.oldAgentIDFromHex(agentID).String())
 	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetAccountNonce(c.Ctx, MainnetChainID, oldAgentIDStr).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), oldAgentIDStr)
+	require.NoError(T, err, "response body: %s, agentId: %s", getResponseStr(rawResponse), oldAgentIDStr)
 
 	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetAccountNonce(c.Ctx, addHexPrefix(agentID)).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s, agentId: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))), agentID)
+	require.NoError(T, err, "response body: %s, agentId: %s", getResponseStr(rawResponse), agentID)
 
 	return sRes, rRes
 }
@@ -71,12 +72,23 @@ func (c *AccountsClientWrapper) AccountsGetAccountNonce(stateIndex uint32, agent
 // AccountsGetTotalAssets wraps both API calls for getting total assets
 func (c *AccountsClientWrapper) AccountsGetTotalAssets(stateIndex uint32) (*stardust_client.AssetsResponse, *rebased_client.AssetsResponse) {
 	sRes, rawResponse, err := c.SClient.CorecontractsApi.AccountsGetTotalAssets(c.Ctx, MainnetChainID).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))))
+	require.NoError(T, err, "response body: %s", getResponseStr(rawResponse))
 
 	rRes, rawResponse, err := c.RClient.CorecontractsAPI.AccountsGetTotalAssets(c.Ctx).Block(Uint32ToString(stateIndex)).Execute()
-	require.NoError(T, err, "response body: %s", string(lo.Must1(io.ReadAll(rawResponse.Body))))
+	require.NoError(T, err, "response body: %s", getResponseStr(rawResponse))
 
 	return sRes, rRes
+}
+
+func getResponseStr(resp *http.Response) string {
+	if resp == nil {
+		return "nil response"
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "unable to read response body"
+	}
+	return string(body)
 }
 
 func isEVMAddress(s string) bool {
