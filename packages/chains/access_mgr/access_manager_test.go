@@ -6,6 +6,7 @@ package access_mgr_test
 import (
 	"context"
 	"fmt"
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
 
@@ -97,7 +98,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 		am.ChainAccessNodes(chainID, peerPubKeys)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(1*time.Minute))
 	defer cancel()
 
 	//

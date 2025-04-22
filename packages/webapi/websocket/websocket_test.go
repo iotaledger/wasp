@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
 
@@ -53,7 +54,7 @@ func TestWebsocketEvents(t *testing.T) {
 		t.Skip("Skipping WebSocket test, as the local node does not support WebSockets")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(5*time.Second))
 	ws, _, chain := InitWebsocket(ctx, t, []publisher.ISCEventType{publisher.ISCEventKindNewBlock})
 
 	// publisherEvent is the event that gets called from the websocket event handlers.
