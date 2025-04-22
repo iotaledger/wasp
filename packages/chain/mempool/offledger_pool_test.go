@@ -8,6 +8,9 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/testutil"
@@ -29,14 +32,18 @@ func TestOffledgerMempoolAccountNonce(t *testing.T) {
 	req2new := testutil.DummyOffledgerRequestForAccount(isctest.RandomChainID(), 2, kp)
 	pool.Add(req0)
 	pool.Add(req1)
-	pool.Add(req1) // try to add the same request many times
+	pool.Add(req1) // try to add the same request many times, old will be replaced.
 	pool.Add(req2)
 	pool.Add(req1)
 	require.EqualValues(t, 3, pool.refLUT.Size())
 	require.EqualValues(t, 1, pool.reqsByAcountOrdered.Size())
 	reqsInPoolForAccount, _ := pool.reqsByAcountOrdered.Get(agentID.String())
 	require.Len(t, reqsInPoolForAccount, 3)
-	pool.Add(req2new)
+	// Mark existing requests as proposed.
+	consLogIndex := cmt_log.NilLogIndex()
+	consID := consGR.NewConsensusID(cryptolib.NewEmptyAddress(), &consLogIndex)
+	lo.ForEach(pool.orderedByGasPrice, func(e *OrderedPoolEntry, _ int) { e.markProposed(consID) })
+	// Add it again. It should not be replaced, but appended instead.
 	pool.Add(req2new)
 	require.EqualValues(t, 4, pool.refLUT.Size())
 	require.EqualValues(t, 1, pool.reqsByAcountOrdered.Size())

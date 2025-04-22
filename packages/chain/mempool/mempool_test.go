@@ -630,7 +630,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 			te.chainID,
 			te.peerIdentities[i],
 			te.networkProviders[i],
-			te.log.NewChildLogger(fmt.Sprintf("N#%v", i)),
+			testlogger.WithLevel(te.log.NewChildLogger(fmt.Sprintf("N#%v", i)), log.LevelDebug, false),
 			chainMetrics.Mempool,
 			chainMetrics.Pipe,
 			chain.NewEmptyChainListener(),

@@ -611,7 +611,7 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 			//
 			// drop tx with expired TTL
 			if time.Since(e.ts) > mpi.settings.TTL { // stop proposing after TTL
-				if !lo.Some(mpi.consensusInstances, e.proposedFor) {
+				if !e.proposedForAny(mpi.consensusInstances) {
 					// request not used in active consensus anymore, remove it
 					mpi.log.LogDebugf("refsToPropose, request TTL expired, removing: %s", e.req.ID().String())
 					mpi.offLedgerPool.Remove(e.req)
@@ -647,7 +647,7 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 				// expected nonce, add it to the list to propose
 				mpi.log.LogDebugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", reqAccount, e.req.ID().String(), e.req.Nonce())
 				offLedgerReqs = append(offLedgerReqs, isc.RequestRefFromRequest(e.req))
-				e.proposedFor = append(e.proposedFor, consensusID)
+				e.markProposed(consensusID)
 				addedThisCycle = true
 				accountNonce++ // increment the account nonce to match the next valid request
 				accNonces[reqAccountKey] = accountNonce
@@ -909,7 +909,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 func (mpi *mempoolImpl) handleForceCleanMempool() {
 	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
 		for _, e := range entries {
-			if time.Since(e.ts) > mpi.settings.TTL && !lo.Some(mpi.consensusInstances, e.proposedFor) {
+			if time.Since(e.ts) > mpi.settings.TTL && !e.proposedForAny(mpi.consensusInstances) {
 				mpi.log.LogDebugf("handleForceCleanMempool, request TTL expired, removing: %s", e.req.ID().String())
 				mpi.offLedgerPool.Remove(e.req)
 			}
