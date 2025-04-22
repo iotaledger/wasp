@@ -88,21 +88,21 @@ func TestMoveCall(t *testing.T) {
 
 	packageID, err := txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
-	builderMode := iotaclient.IotaTransactionBlockBuilderModeCommit
+	execMode := iotaclient.IotaTransactionBlockBuilderModeCommit
 
 	// test MoveCall with byte array input
 	input := []string{"haha", "gogo"}
 	txnBytes, err = client.MoveCall(
 		context.Background(),
 		iotaclient.MoveCallRequest{
-			Signer:         signer.Address(),
-			PackageID:      packageID,
-			Module:         "sdk_verify",
-			Function:       "read_input_bytes_array",
-			TypeArgs:       []string{},
-			Arguments:      []any{input},
-			GasBudget:      iotajsonrpc.NewBigInt((iotaclient.DefaultGasBudget)),
-			TxnBuilderMode: &builderMode,
+			Signer:        signer.Address(),
+			PackageID:     packageID,
+			Module:        "sdk_verify",
+			Function:      "read_input_bytes_array",
+			TypeArgs:      []string{},
+			Arguments:     []any{input},
+			GasBudget:     iotajsonrpc.NewBigInt((iotaclient.DefaultGasBudget)),
+			ExecutionMode: &execMode,
 		},
 	)
 	require.NoError(t, err)

@@ -67,7 +67,7 @@ type MoveCallRequest struct {
 	Gas       *iotago.ObjectID // optional
 	GasBudget *iotajsonrpc.BigInt
 	// actually not enabled in iota
-	TxnBuilderMode *IotaTransactionBlockBuilderMode // optional
+	ExecutionMode *IotaTransactionBlockBuilderMode // optional
 }
 
 // MoveCall Create an unsigned transaction to execute a Move call on the network, by calling the specified function in the module of a given package.
@@ -90,7 +90,7 @@ func (c *Client) MoveCall(
 		req.Arguments,
 		req.Gas,
 		req.GasBudget,
-		req.TxnBuilderMode,
+		req.ExecutionMode,
 	)
 }
 

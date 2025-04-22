@@ -20,16 +20,15 @@ type DevInspectTransactionBlockRequest struct {
 }
 
 type DevInspectArgs struct {
-	/// The sponsor of the gas for the transaction, might be different from the
-	/// sender.
+	// The sponsor of the gas for the transaction, might be different from the sender.
 	GasSponsor *iotago.Address `json:"gasSponsor,omitempty"`
-	/// The gas budget for the transaction.
+	// The gas budget for the transaction.
 	GasBudget *iotajsonrpc.BigInt `json:"gasBudget,omitempty"`
-	/// The gas objects used to pay for the transaction.
+	// The gas objects used to pay for the transaction.
 	GasObjects *[]*iotago.ObjectRef `json:"gasObjects,omitempty"`
-	/// Whether to skip transaction checks for the transaction.
+	// Whether to skip transaction checks for the transaction.
 	SkipChecks *bool `json:"skipChecks,omitempty"`
-	/// Whether to return the raw transaction data and effects.
+	// Whether to return the raw transaction data and effects.
 	ShowRawTxnDataAndEffects *bool `json:"showRawTxnDataAndEffects,omitempty"`
 }
 
