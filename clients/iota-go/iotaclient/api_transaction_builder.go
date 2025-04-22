@@ -7,21 +7,28 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 )
 
+type IotaTransactionBlockBuilderMode string
+
+const (
+	IotaTransactionBlockBuilderModeCommit     = IotaTransactionBlockBuilderMode("Commit")
+	IotaTransactionBlockBuilderModeDevInspect = IotaTransactionBlockBuilderMode("DevInspect")
+)
+
 type BatchTransactionRequest struct {
 	Signer    *iotago.Address
 	TxnParams []map[string]interface{}
 	Gas       *iotago.ObjectID // optional
 	GasBudget uint64
-	// txnBuilderMode // optional // FIXME IotaTransactionBlockBuilderMode
+	// actually not enabled in iota
+	TxnBuilderMode *IotaTransactionBlockBuilderMode // optional
 }
 
-// TODO: execution_mode : <IotaTransactionBlockBuilderMode>
 func (c *Client) BatchTransaction(
 	ctx context.Context,
 	req BatchTransactionRequest,
 ) (*iotajsonrpc.TransactionBytes, error) {
 	resp := iotajsonrpc.TransactionBytes{}
-	return &resp, c.transport.Call(ctx, &resp, batchTransaction, req.Signer, req.TxnParams, req.Gas, req.GasBudget)
+	return &resp, c.transport.Call(ctx, &resp, batchTransaction, req.Signer, req.TxnParams, req.Gas, req.GasBudget, req.TxnBuilderMode)
 }
 
 type MergeCoinsRequest struct {
@@ -59,11 +66,11 @@ type MoveCallRequest struct {
 	Arguments []any
 	Gas       *iotago.ObjectID // optional
 	GasBudget *iotajsonrpc.BigInt
-	// txnBuilderMode // optional // FIXME IotaTransactionBlockBuilderMode
+	// actually not enabled in iota
+	TxnBuilderMode *IotaTransactionBlockBuilderMode // optional
 }
 
 // MoveCall Create an unsigned transaction to execute a Move call on the network, by calling the specified function in the module of a given package.
-// TODO: execution_mode : <IotaTransactionBlockBuilderMode>
 // `arguments: []any` *IotaAddress can be arguments here, it will automatically convert to Address in hex string.
 // [][]byte can't be passed. User should encode array of hex string.
 func (c *Client) MoveCall(
@@ -83,6 +90,7 @@ func (c *Client) MoveCall(
 		req.Arguments,
 		req.Gas,
 		req.GasBudget,
+		req.TxnBuilderMode,
 	)
 }
 

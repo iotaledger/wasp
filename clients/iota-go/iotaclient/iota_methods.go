@@ -39,7 +39,7 @@ const (
 	subscribeTransaction      IotaXMethod = "iotax_subscribeTransaction"
 
 	// Governance Read API
-	getCommitteeInfo         IotaXMethod = "iotax_getCommitteeInfo" // TODO
+	getCommitteeInfo         IotaXMethod = "iotax_getCommitteeInfo"
 	getLatestIotaSystemState IotaXMethod = "iotax_getLatestIotaSystemState"
 	getReferenceGasPrice     IotaXMethod = "iotax_getReferenceGasPrice"
 	getStakes                IotaXMethod = "iotax_getStakes"
