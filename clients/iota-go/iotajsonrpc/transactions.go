@@ -435,10 +435,12 @@ type (
 )
 
 type DevInspectResults struct {
-	Effects serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
-	Events  []IotaEvent                                        `json:"events"`
-	Results []ExecutionResultType                              `json:"results,omitempty"`
-	Error   string                                             `json:"error,omitempty"`
+	Effects    serialization.TagJson[IotaTransactionBlockEffects] `json:"effects"`
+	Events     []IotaEvent                                        `json:"events"`
+	Results    []ExecutionResultType                              `json:"results,omitempty"`
+	Error      string                                             `json:"error,omitempty"`
+	RawTxnData []byte                                             `json:"rawTxnData,omitempty"`
+	RawEffects []byte                                             `json:"rawEffects,omitempty"`
 }
 
 type TransactionFilter struct {

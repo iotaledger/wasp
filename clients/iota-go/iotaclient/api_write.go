@@ -13,8 +13,24 @@ type DevInspectTransactionBlockRequest struct {
 	SenderAddress *iotago.Address
 	TxKindBytes   iotago.Base64Data
 	GasPrice      *iotajsonrpc.BigInt // optional
-	Epoch         *uint64             // optional
-	// additional_args // optional // FIXME
+	// The epoch to perform the call. Will be set from the system state object if not provided
+	Epoch *uint64 // optional
+	// Additional arguments including gas_budget, gas_objects, gas_sponsor and skip_checks
+	AdditionalArgs *DevInspectArgs // optional
+}
+
+type DevInspectArgs struct {
+	/// The sponsor of the gas for the transaction, might be different from the
+	/// sender.
+	GasSponsor *iotago.Address `json:"gasSponsor,omitempty"`
+	/// The gas budget for the transaction.
+	GasBudget *iotajsonrpc.BigInt `json:"gasBudget,omitempty"`
+	/// The gas objects used to pay for the transaction.
+	GasObjects *[]*iotago.ObjectRef `json:"gasObjects,omitempty"`
+	/// Whether to skip transaction checks for the transaction.
+	SkipChecks *bool `json:"skipChecks,omitempty"`
+	/// Whether to return the raw transaction data and effects.
+	ShowRawTxnDataAndEffects *bool `json:"showRawTxnDataAndEffects,omitempty"`
 }
 
 // The txKindBytes is `TransactionKind` in base64.
@@ -34,6 +50,7 @@ func (c *Client) DevInspectTransactionBlock(
 		req.TxKindBytes,
 		req.GasPrice,
 		req.Epoch,
+		req.AdditionalArgs,
 	)
 }
 
