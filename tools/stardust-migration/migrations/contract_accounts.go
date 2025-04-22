@@ -150,13 +150,6 @@ func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVSto
 		if oldAccKey == old_accounts.L2TotalsAccount {
 			newAccKey = accounts.L2TotalsAccount
 		} else {
-			if !IsValidOldAccountKeyBytesLen(len(oldAccKey)) {
-				// TODO: what is that key on block 135355 with length 7?
-				//       oldAccKey = 6b79a90c08c1b
-				//		 k = 74e6b79a90c08c1b2edc0c0dd4357c3d8db0d7302f
-				return true
-			}
-
 			oldAgentID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(oldAccKey), oldChainID))
 			newAgentID := OldAgentIDtoNewAgentID(oldAgentID, oldChainID)
 			newAccKey = accounts.AccountKey(newAgentID)

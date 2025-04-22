@@ -6,7 +6,6 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	"github.com/samber/lo"
 
@@ -154,8 +153,4 @@ func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 	}
 
 	return newAssets
-}
-
-func IsValidOldAccountKeyBytesLen(n int) bool {
-	return n == isc.HnameLength || n == common.AddressLength || n == iotago.AddressLen
 }
