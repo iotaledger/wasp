@@ -288,9 +288,8 @@ type IotaTransactionBlockResponse struct {
 	ConfirmedLocalExecution *bool                                               `json:"confirmedLocalExecution,omitempty"`
 	ObjectChanges           []serialization.TagJson[ObjectChange]               `json:"objectChanges,omitempty"`
 	BalanceChanges          []BalanceChange                                     `json:"balanceChanges,omitempty"`
-	Errors                  []string                                            `json:"errors,omitempty"` // Errors that occurred in fetching/serializing the transaction.
-	// FIXME datatype may be wrong
-	RawEffects []int `json:"rawEffects,omitempty"` // enable by show_raw_effects
+	Errors                  []string                                            `json:"errors,omitempty"`     // Errors that occurred in fetching/serializing the transaction.
+	RawEffects              []byte                                              `json:"rawEffects,omitempty"` // enable by show_raw_effects
 }
 
 // requires to set 'IotaTransactionBlockResponseOptions.ShowObjectChanges' to true
