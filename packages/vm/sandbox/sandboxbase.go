@@ -7,9 +7,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/samber/lo"
-
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/assert"
@@ -65,14 +62,13 @@ func (s *SandboxBase) OwnedObjects() []isc.IotaObject {
 
 func (s *SandboxBase) HasInAccount(agentID isc.AgentID, assets *isc.Assets) bool {
 	s.Ctx.GasBurn(gas.BurnCodeGetBalance)
-	accountAssets := isc.Assets{
-		Coins: s.Ctx.GetCoinBalances(agentID),
-		Objects: lo.SliceToMap(s.Ctx.GetAccountObjects(agentID), func(o isc.IotaObject) (iotago.ObjectID, iotago.ObjectType) {
-			return o.ID, o.Type
-		}),
+	accountAssets := isc.NewAssets(0)
+	for coinType, balance := range s.Ctx.GetCoinBalances(agentID).Iterate() {
+		accountAssets.AddCoin(coinType, balance)
 	}
-	tokenBalance, _ := s.Ctx.GetBaseTokensBalance(agentID)
-	accountAssets.AddBaseTokens(tokenBalance)
+	for _, obj := range s.Ctx.GetAccountObjects(agentID) {
+		accountAssets.AddObject(obj)
+	}
 	return accountAssets.Spend(assets)
 }
 

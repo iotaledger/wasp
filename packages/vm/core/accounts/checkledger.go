@@ -25,11 +25,11 @@ func (s *StateReader) CheckLedgerConsistency() error {
 }
 
 func (s *StateReader) calcL2TotalFungibleTokens() isc.CoinBalances {
-	ret := isc.CoinBalances{}
+	ret := isc.NewCoinBalances()
 	totalWeiRemainder := big.NewInt(0)
 
 	s.allAccountsMapR().IterateKeys(func(accountKey []byte) bool {
-		// add all native tokens owned by each account
+		// add all coins owned by each account
 		s.accountCoinBalancesMapR(kv.Key(accountKey)).Iterate(func(coinType []byte, val []byte) bool {
 			ret.Add(
 				codec.MustDecode[coin.Type](coinType),

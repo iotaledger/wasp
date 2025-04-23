@@ -29,7 +29,7 @@ const (
 	// Covered in: TestFoundries
 	prefixAccountCoinBalances = "C"
 
-	// prefixAccountWeiRemainder | <accountID> stores the wei remainder (big.Int 18 decimals)
+	// prefixAccountWeiRemainder | <accountID> stores the remainder for the base coins, as a big.Int 18 decimals
 	prefixAccountWeiRemainder = "w"
 
 	// L2TotalsAccount is the special <accountID> storing the total coin balances
