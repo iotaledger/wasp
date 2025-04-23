@@ -1,3 +1,4 @@
+// Package panicutil provides utilities for handling and recovering from panics in a controlled manner.
 package panicutil
 
 import (

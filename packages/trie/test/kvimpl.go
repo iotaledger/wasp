@@ -1,3 +1,4 @@
+// Package test provides testing utilities for the trie package.
 package test
 
 import (

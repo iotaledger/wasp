@@ -1,4 +1,4 @@
-// This file contains functions for verification of the proofs of inclusion or absence
+// Package trie provides functions for verification of the proofs of inclusion or absence.
 // in the trie with trie_blake2b commitment model. The package only depends on the commitment model
 // implementation and the proof format it defines. The verification package is completely independent on
 // the implementation of the Merkle tree (the trie)

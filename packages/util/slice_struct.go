@@ -4,6 +4,7 @@ import (
 	"github.com/samber/lo"
 )
 
+// SliceStruct is a wrapper for slices that helps when storing slices in maps.
 // Putting slice into a map is not acceptable as if you want to append to slice,
 // you'll have to re-include the appended slice into the map.
 type SliceStruct[E any] struct {
@@ -47,12 +48,12 @@ func (s *SliceStruct[E]) ForEach(forEachFun func(int, E) bool) bool {
 	return true
 }
 
-// Returns a reference to new SliceStruct with exactly the same elements
+// Clone returns a reference to new SliceStruct with exactly the same elements.
 func (s *SliceStruct[E]) Clone() *SliceStruct[E] {
 	return s.CloneDeep(func(elem E) E { return elem }) // NOTE: this is not deep cloning as the passed function is a simple identity
 }
 
-// Returns a reference to new SliceStruct with every element of the old SliceStruct cloned using provided function
+// CloneDeep returns a reference to new SliceStruct with every element of the old SliceStruct cloned using provided function.
 func (s *SliceStruct[E]) CloneDeep(cloneFun func(E) E) *SliceStruct[E] {
 	result := make([]E, s.Length())
 	s.ForEach(func(index int, elem E) bool {
