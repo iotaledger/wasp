@@ -149,7 +149,6 @@ func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {
 var (
 	errEVMAccountAlreadyExists = coreerrors.Register("cannot register ERC20Coin contract: EVM account already exists").Create()
 	errUnknownCoin             = coreerrors.Register("unknown coin")
-	errUnknownObject           = coreerrors.Register("unknown object")
 )
 
 func registerERC20Coin(ctx isc.Sandbox, coinType coin.Type) {
@@ -344,7 +343,7 @@ func makeTransferEvents(
 ) []*types.Log {
 	logs := make([]*types.Log, 0)
 	stateDB := emulator.NewStateDB(newEmulatorContext(ctx))
-	for coinType, value := range assets.Coins {
+	for coinType, value := range assets.Coins.Iterate() {
 		if value == 0 {
 			continue
 		}

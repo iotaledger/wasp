@@ -110,19 +110,28 @@ func (reqctx *requestContext) consumeRequest() {
 
 	senderBaseTokens := req.Assets().BaseTokens() + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
-	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
-	if senderBaseTokens < minReqCost {
-		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
+	// check if the sender has enough balance to cover the minimum gas fee
+	if reqctx.shouldChargeGasFee() {
+		minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
+		if senderBaseTokens < minReqCost {
+			// TODO: this should probably not skip the request, and also the check
+			// should be done in L1 so the request is rejected before it reaches the mempool
+			panic(vmexceptions.ErrNotEnoughFundsForMinFee)
+		}
 	}
 
 	reqctx.creditObjectsToAccount(sender, req.Assets().Objects.Sorted())
 	reqctx.creditToAccount(sender, req.Assets().Coins)
 }
 
-// checkAllowance ensure there are enough funds to cover the specified allowance
-// panics if not enough funds
+// checkAllowance panics if the allowance is invalid or there are not enough
+// funds to cover it
 func (reqctx *requestContext) checkAllowance() {
-	if !reqctx.HasEnoughForAllowance(reqctx.req.SenderAccount(), reqctx.req.Allowance()) {
+	allowance, err := reqctx.req.Allowance()
+	if err != nil {
+		panic(vm.ErrInvalidAllowance)
+	}
+	if !reqctx.HasEnoughForAllowance(reqctx.req.SenderAccount(), allowance) {
 		panic(vm.ErrNotEnoughFundsForAllowance)
 	}
 }
@@ -271,7 +280,12 @@ func (reqctx *requestContext) callFromRequest() isc.CallArguments {
 		panic(vm.ErrSenderUnknown)
 	}
 
-	return reqctx.callProgram(req.Message(), req.Allowance(), req.SenderAccount())
+	allowance, err := req.Allowance()
+	if err != nil {
+		panic(vm.ErrInvalidAllowance)
+	}
+
+	return reqctx.callProgram(req.Message(), allowance, req.SenderAccount())
 }
 
 func (reqctx *requestContext) getGasBudget() uint64 {
@@ -345,8 +359,17 @@ func (reqctx *requestContext) calculateAffordableGasBudget() (budget uint64, max
 // taking into account allowance (which must be 'reserved')
 func (reqctx *requestContext) calcGuaranteedFeeTokens() coin.Value {
 	tokensGuaranteed := reqctx.GetBaseTokensBalanceDiscardRemainder(reqctx.req.SenderAccount())
+
 	// safely subtract the allowed from the sender to the target
-	allowed := reqctx.req.Allowance().BaseTokens()
+	allowance, err := reqctx.req.Allowance()
+	if err != nil {
+		reqctx.vm.task.Log.LogDebugf("error decoding allowance: %s", err.Error())
+		// ignore the error, since we cannot panic here. The request will fail
+		// anyway when checkAllowance is called.
+		allowance = isc.NewEmptyAssets()
+	}
+
+	allowed := allowance.BaseTokens()
 	if tokensGuaranteed < allowed {
 		tokensGuaranteed = 0
 	} else {

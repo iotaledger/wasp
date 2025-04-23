@@ -24,10 +24,6 @@ const (
 	// ISC.allow() from solidity).
 	// Covered in: TestSendBaseTokens
 	PrefixAllowance = "a"
-	// prefixERC20ExternalNativeTokens stores the directory of ERC20 contracts
-	// registered by calling ISC.registerERC20NativeToken() from solidity.
-	// Covered in: TestERC20CoinWithExternalFoundry
-	prefixERC20ExternalNativeTokens = "e"
 )
 
 // directory of EVM contracts that have access to the privileged methods of ISC magic
@@ -59,8 +55,6 @@ func getAllowance(ctx isc.SandboxBase, from, to common.Address) *isc.Assets {
 	}
 	return lo.Must(isc.AssetsFromBytes(b))
 }
-
-var errBaseTokensMustBeUint64 = coreerrors.Register("base tokens amount must be an uint64").Create()
 
 func setAllowanceBaseTokens(ctx isc.Sandbox, from, to common.Address, amount coin.Value) {
 	withAllowance(ctx, from, to, func(allowance *isc.Assets) {

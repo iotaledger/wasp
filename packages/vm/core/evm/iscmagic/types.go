@@ -58,27 +58,25 @@ type ISCAssets struct {
 
 func WrapISCAssets(a *isc.Assets) ISCAssets {
 	var ret ISCAssets
-	a.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
+	for coinType, amount := range a.Coins.Iterate() {
 		ret.Coins = append(ret.Coins, CoinBalance{
-			CoinType: CoinType(coinType.String()),
+			CoinType: coinType.String(),
 			Amount:   CoinValue(amount),
 		})
-		return true
-	})
-	a.Objects.IterateSorted(func(obj isc.IotaObject) bool {
+	}
+	for obj := range a.Objects.Iterate() {
 		ret.Objects = append(ret.Objects, IotaObject{
 			ID:         obj.ID,
 			ObjectType: obj.Type.String(),
 		})
-		return true
-	})
+	}
 	return ret
 }
 
 func (a ISCAssets) Unwrap() *isc.Assets {
 	assets := isc.NewEmptyAssets()
 	for _, b := range a.Coins {
-		assets.AddCoin(coin.MustTypeFromString(string(b.CoinType)), coin.Value(b.Amount))
+		assets.AddCoin(coin.MustTypeFromString(b.CoinType), coin.Value(b.Amount))
 	}
 	for _, o := range a.Objects {
 		assets.AddObject(isc.NewIotaObject(o.ID, iotago.MustTypeFromString(o.ObjectType)))
@@ -222,13 +220,13 @@ type IotaCoinInfo struct {
 	Name        string
 	Symbol      string
 	Description string
-	IconUrl     string
+	IconUrl     string //nolint:staticcheck
 	TotalSupply CoinValue
 }
 
 func WrapIotaCoinInfo(info *parameters.IotaCoinInfo) IotaCoinInfo {
 	return IotaCoinInfo{
-		CoinType:    CoinType(info.CoinType.String()),
+		CoinType:    info.CoinType.String(),
 		Decimals:    info.Decimals,
 		Name:        info.Name,
 		Symbol:      info.Symbol,

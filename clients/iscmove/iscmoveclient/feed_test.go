@@ -65,7 +65,7 @@ func TestRequestsFeed(t *testing.T) {
 			AnchorAddress: anchor.ObjectID,
 			AssetsBagRef:  assetsBagRef,
 			Message:       iscmovetest.RandomMessage(),
-			Allowance:     iscmove.NewAssets(100),
+			AllowanceBCS:  nil,
 			GasPrice:      iotaclient.DefaultGasPrice,
 			GasBudget:     iotaclient.DefaultGasBudget,
 		},

@@ -16,7 +16,7 @@ import (
 )
 
 func TestCounter(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).AddBaseTokens(1 * isc.Million).WithGasBudget(math.MaxUint64)
@@ -36,10 +36,10 @@ func TestManyRequests(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
-	gasCoinValueBefore := coin.Value(chain.GetLatestGasCoin().Value)
+	gasCoinValueBefore := chain.GetLatestGasCoin().Value
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
 		AddBaseTokens(1000).WithGasBudget(math.MaxUint64)
@@ -60,7 +60,7 @@ func TestManyRequests(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, N, counterResult)
 
-	gasCoinValueAfter := coin.Value(chain.GetLatestGasCoin().Value)
+	gasCoinValueAfter := chain.GetLatestGasCoin().Value
 	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 
 	contractAgentID := isc.NewContractAgentID(HScName) // SC has no funds (because it never claims funds from allowance)
@@ -71,10 +71,10 @@ func TestManyRequests2(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping in short mode")
 	}
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
-	gasCoinValueBefore := coin.Value(chain.GetLatestGasCoin().Value)
+	gasCoinValueBefore := chain.GetLatestGasCoin().Value
 
 	var baseTokensSentPerRequest coin.Value = 1 * isc.Million
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncIncCounter.Name).
@@ -117,6 +117,6 @@ func TestManyRequests2(t *testing.T) {
 		chain.Env.AssertL1BaseTokens(userAddr[i], iotaclient.FundsFromFaucetAmount-coin.Value(repeats[i])*baseTokensSentPerRequest-l1Gas[i])
 	}
 
-	gasCoinValueAfter := coin.Value(chain.GetLatestGasCoin().Value)
+	gasCoinValueAfter := chain.GetLatestGasCoin().Value
 	require.Greater(t, gasCoinValueAfter, gasCoinValueBefore)
 }

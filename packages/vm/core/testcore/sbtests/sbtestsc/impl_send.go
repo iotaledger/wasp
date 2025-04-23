@@ -33,7 +33,7 @@ func testSplitFundsNativeTokens(ctx isc.Sandbox) {
 	// claims all base tokens from allowance
 	accountID := ctx.AccountID()
 	ctx.TransferAllowedFunds(accountID, isc.NewAssets(ctx.AllowanceAvailable().BaseTokens()))
-	for coinType, coinValue := range ctx.AllowanceAvailable().Coins {
+	for coinType, coinValue := range ctx.AllowanceAvailable().Coins.Iterate() {
 		for coinValue > 0 {
 			// claim 1 token from allowance at a time
 			// send back to caller's address
@@ -84,10 +84,10 @@ func sendObjectsBack(ctx isc.Sandbox) {
 
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	for objID, t := range allowance.Objects {
+	for obj := range allowance.Objects.Iterate() {
 		ctx.Send(isc.RequestParameters{
 			TargetAddress: addr,
-			Assets:        isc.NewEmptyAssets().AddObject(isc.NewIotaObject(objID, t)),
+			Assets:        isc.NewEmptyAssets().AddObject(obj),
 		})
 	}
 }

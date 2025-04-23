@@ -2,6 +2,7 @@
 // - initial setup of the chain during chain deployment
 // - maintaining of core parameters of the chain
 
+// Package rootimpl implements the root core contract
 package rootimpl
 
 import (
@@ -9,7 +10,6 @@ import (
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 )
 
@@ -17,8 +17,6 @@ var Processor = root.Contract.Processor(nil,
 	root.ViewFindContract.WithHandler(findContract),
 	root.ViewGetContractRecords.WithHandler(getContractRecords),
 )
-
-var errInvalidContractName = coreerrors.Register("invalid contract name").Create()
 
 // findContract view finds and returns encoded record of the contract
 func findContract(ctx isc.SandboxView, hname isc.Hname) (bool, **root.ContractRecord) {

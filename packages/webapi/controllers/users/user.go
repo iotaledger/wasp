@@ -1,3 +1,4 @@
+// Package users implements the webapi user methods
 package users
 
 import (

@@ -96,6 +96,7 @@ func initDeployCmd() *cobra.Command {
 
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 			_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
+			defer header.Body.Close()
 
 			// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
 			if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {

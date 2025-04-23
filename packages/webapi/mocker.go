@@ -22,20 +22,6 @@ func NewMocker() *Mocker {
 	}
 }
 
-func getStructName(i interface{}) string {
-	t := reflect.TypeOf(i)
-
-	if t.Kind() == reflect.Array || t.Kind() == reflect.Slice {
-		return t.Elem().Name() + "[]"
-	}
-
-	if t.Kind() == reflect.Ptr {
-		return t.Elem().Name()
-	}
-
-	return t.Name()
-}
-
 func createNewInstance(i interface{}) reflect.Value {
 	t := reflect.TypeOf(i)
 

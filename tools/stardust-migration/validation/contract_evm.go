@@ -20,7 +20,6 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 
-	old_iotago "github.com/iotaledger/iota.go/v3"
 	old_evm_types "github.com/nnikolash/wasp-types-exported/packages/evm/evmtypes"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
@@ -29,6 +28,8 @@ import (
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_emulator "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/emulator"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
+
+	old_iotago "github.com/iotaledger/iota.go/v3"
 )
 
 // ISCMagicPrivileged - ignored (bytes just copied)
@@ -160,15 +161,17 @@ func newISCMagicAllowanceToStr(contractState kv.KVStoreReader) string {
 
 		var allowanceStr strings.Builder
 		allowanceStr.WriteString(fmt.Sprintf("base=%v", allowance.BaseTokens()))
-		allowance.Coins.IterateSorted(func(coinType coin.Type, amount coin.Value) bool {
+
+		for coinType, amount := range allowance.Coins.Iterate() {
 			if coinType == coin.BaseTokenType {
-				return true
+				continue
 			}
 			ntID := CoinTypeToOldNTID(coinType)
 			allowanceStr.WriteString(fmt.Sprintf(", nt=(%v: %v)", ntID.ToHex(), amount))
-			return true
-		})
-		allowance.Objects.IterateSorted(func(o isc.IotaObject) bool {
+			continue
+		}
+
+		for o := range allowance.Objects.Iterate() {
 			var nftIDFromObjID = old_iotago.NFTID(o.ID[:])
 			// TODO: uncomment after NFT validation is ready
 			// if nftIDFromObjType := oldNtfIDFromNewObjectType(o.Type); !nftIDFromObjType.Matches(nftIDFromObjID) {
@@ -178,8 +181,8 @@ func newISCMagicAllowanceToStr(contractState kv.KVStoreReader) string {
 			// }
 
 			allowanceStr.WriteString(fmt.Sprintf(", nft=%v", nftIDFromObjID.ToHex()))
-			return true
-		})
+			continue
+		}
 
 		res.WriteString("Magic allowance: ")
 		res.WriteString(from.Hex())

@@ -10,7 +10,7 @@ import (
 )
 
 func testPanicCallView(t *testing.T, funName string, gasBudget uint64, panicView string) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, funName).WithGasBudget(gasBudget)
@@ -23,7 +23,7 @@ func TestPanicFull(t *testing.T) {
 }
 
 func TestPanicViewCall(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	_, err := chain.CallViewEx(ScName, sbtestsc.FuncPanicViewEP.Name)
@@ -31,7 +31,7 @@ func TestPanicViewCall(t *testing.T) {
 }
 
 func TestCallPanicFull(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncCallPanicFullEP.Name).WithGasBudget(17000)
@@ -44,7 +44,7 @@ func TestCallPanicViewFromFull(t *testing.T) {
 }
 
 func TestCallPanicViewFromView(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	_, err := chain.CallViewEx(ScName, sbtestsc.FuncCallPanicViewEPFromView.Name)

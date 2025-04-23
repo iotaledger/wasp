@@ -9,6 +9,7 @@ import (
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
@@ -64,7 +65,7 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 	requestMetadata := &isc.RequestMetadata{
 		SenderContract: migrateOnLedgerContractIdentity(request),
 		Message:        migrateContractCall(oldChainID, request.CallTarget().Contract, request.CallTarget().EntryPoint, request.Params()),
-		Allowance:      OldAssetsToNewAssets(request.Allowance()),
+		AllowanceBCS:   bcs.MustMarshal(OldAssetsToNewAssets(request.Allowance())),
 		GasBudget:      gasBudget,
 	}
 

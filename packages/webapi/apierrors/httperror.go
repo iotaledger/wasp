@@ -1,3 +1,4 @@
+// Package apierrors provides errors for the webapi
 package apierrors
 
 import (

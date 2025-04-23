@@ -3,6 +3,9 @@ package iscmove
 import (
 	"bytes"
 	"errors"
+	"iter"
+	"maps"
+	"slices"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -173,7 +176,7 @@ func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue,
 }
 
 func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
-	a.Coins[coinType] = iotajsonrpc.CoinValue(amount)
+	a.Coins[coinType] = amount
 	return a
 }
 
@@ -194,14 +197,38 @@ func (a *Assets) BaseToken() uint64 {
 	return token.Uint64()
 }
 
+// Iterate returns a deterministic iterator
+func (c CoinBalances) Iterate() iter.Seq2[iotajsonrpc.CoinType, iotajsonrpc.CoinValue] {
+	return func(yield func(iotajsonrpc.CoinType, iotajsonrpc.CoinValue) bool) {
+		for _, k := range slices.Sorted(maps.Keys(c)) {
+			if !yield(k, c[k]) {
+				return
+			}
+		}
+	}
+}
+
+// Iterate returns a deterministic iterator
+func (o ObjectCollection) Iterate() iter.Seq2[iotago.ObjectID, iotago.ObjectType] {
+	return func(yield func(iotago.ObjectID, iotago.ObjectType) bool) {
+		for _, k := range slices.SortedFunc(maps.Keys(o), func(a, b iotago.ObjectID) int {
+			return bytes.Compare(a[:], b[:])
+		}) {
+			if !yield(k, o[k]) {
+				return
+			}
+		}
+	}
+}
+
 type Request struct {
-	ID     iotago.ObjectID
-	Sender *cryptolib.Address
-	// XXX balances are empty if we don't fetch the dynamic fields
-	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
+	AssetsBag AssetsBagWithBalances
 	Message   Message
-	Allowance Assets
-	GasBudget uint64
+	// AllowanceBCS is either empty or a BCS-encoded iscmove.Allowance
+	AllowanceBCS []byte
+	GasBudget    uint64
 }
 
 type RequestEvent struct {

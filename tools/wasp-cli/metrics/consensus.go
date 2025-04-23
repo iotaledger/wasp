@@ -62,7 +62,7 @@ func makeWorkflowTableRow(name string, value interface{}, timestamp time.Time) [
 	res := make([]string, 3)
 	res[0] = name
 	res[1] = fmt.Sprintf("%v", value)
-	if timestamp == timestampNeverConst {
+	if timestamp.Equal(timestampNeverConst) {
 		res[2] = ""
 	} else {
 		res[2] = timestamp.String()

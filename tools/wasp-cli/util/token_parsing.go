@@ -20,6 +20,8 @@ func TokenIDFromString(s string) []byte {
 }
 
 func ArgsToFungibleTokensStr(args []string) []string {
+	// TODO: "send-funds" and "chain deposit" pass tokens in different way.
+	// When there are multiple tokens, one command separates with comma, one doesn't
 	return strings.Split(strings.Join(args, ""), ",")
 }
 
@@ -29,7 +31,7 @@ func ParseFungibleTokens(args []string) *isc.Assets {
 	for _, tr := range args {
 		parts := strings.Split(tr, "|")
 		if len(parts) != 2 {
-			log.Fatal("fungible tokens syntax: <token-id>|<amount>, <token-id|amount>... -- Example: base|100")
+			log.Fatal("fungible tokens syntax: <token-id1>|<amount1>, <token-id2>|<amount2>... -- Example: base|100")
 		}
 
 		amount, err := coin.ValueFromString(parts[1])

@@ -512,8 +512,8 @@ func initDepositTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *a
 }
 
 // initWithdrawTest deploys TestCoin, mints 1M tokens and deposits 100 to user's account
-func initWithdrawTest(t *testing.T, initCommonAccountBaseTokens ...coin.Value) *accountsDepositTest {
-	v := initDepositTest(t, initCommonAccountBaseTokens...)
+func initWithdrawTest(t *testing.T) *accountsDepositTest {
+	v := initDepositTest(t)
 	v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
 	coinPackageID, treasuryCap := v.ch.Env.L1DeployCoinPackage(v.user)
 	v.coinType = coin.MustTypeFromString(fmt.Sprintf(
@@ -844,6 +844,7 @@ func checkChainNFTData(t *testing.T, ch *solo.Chain, obj isc.IotaObject, owner i
 
 func TestAccounts_TransferNFTAllowance(t *testing.T) {
 	t.Skip("!!! TODO")
+	checkChainNFTData(t, nil, isc.IotaObject{}, nil)
 	// env := solo.New(t, &solo.InitOptions{})
 	// ch := env.NewChain()
 	//

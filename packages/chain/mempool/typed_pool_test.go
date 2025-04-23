@@ -23,13 +23,13 @@ func TestTypedMempoolPoolLimit(t *testing.T) {
 	pool := NewTypedPool[isc.OnLedgerRequest](poolSizeLimit, waitReq, func(newSize int) { size = newSize }, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
 
 	anchorAddr := cryptolib.NewRandomAddress()
-	r0, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
+	r0, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
-	r1, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
+	r1, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
-	r2, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
+	r2, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
-	r3, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), anchorAddr)
+	r3, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), anchorAddr)
 	require.NoError(t, err)
 
 	pool.Add(r0)

@@ -9,7 +9,6 @@ import (
 	"github.com/samber/lo"
 	"golang.org/x/exp/maps"
 
-	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -18,12 +17,13 @@ import (
 )
 
 type CreateAndSendRequestRequest struct {
-	Signer           cryptolib.Signer
-	PackageID        iotago.PackageID
-	AnchorAddress    *iotago.ObjectID
-	AssetsBagRef     *iotago.ObjectRef
-	Message          *iscmove.Message
-	Allowance        *iscmove.Assets
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorAddress *iotago.ObjectID
+	AssetsBagRef  *iotago.ObjectRef
+	Message       *iscmove.Message
+	// AllowanceBCS is either empty or a BCS-encoded iscmove.Allowance
+	AllowanceBCS     []byte
 	OnchainGasBudget uint64
 	GasPayments      []*iotago.ObjectRef // optional
 	GasPrice         uint64
@@ -48,7 +48,7 @@ func (c *Client) CreateAndSendRequest(
 		*anchorRef.ObjectID,
 		ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AssetsBagRef}),
 		req.Message,
-		req.Allowance,
+		req.AllowanceBCS,
 		req.OnchainGasBudget,
 	)
 
@@ -63,12 +63,13 @@ func (c *Client) CreateAndSendRequest(
 }
 
 type CreateAndSendRequestWithAssetsRequest struct {
-	Signer           cryptolib.Signer
-	PackageID        iotago.PackageID
-	AnchorAddress    *iotago.ObjectID
-	Assets           *iscmove.Assets
-	Message          *iscmove.Message
-	Allowance        *iscmove.Assets
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorAddress *iotago.ObjectID
+	Assets        *iscmove.Assets
+	Message       *iscmove.Message
+	// AllowanceBCS is either empty or a BCS-encoded iscmove.Allowance
+	AllowanceBCS     []byte
 	OnchainGasBudget uint64
 	GasPayments      []*iotago.ObjectRef // optional
 	GasPrice         uint64
@@ -107,7 +108,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 	var placedCoins []lo.Tuple2[*iotajsonrpc.Coin, uint64]
 	// assume we can find it in the first page
-	for cointype, bal := range req.Assets.Coins {
+	for cointype, bal := range req.Assets.Coins.Iterate() {
 		if lo.Must(iotago.IsSameResource(cointype.String(), iotajsonrpc.IotaCoinType.String())) {
 			continue
 		}
@@ -163,7 +164,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	}
 
 	// Place the non-coin objects
-	for id, t := range req.Assets.Objects {
+	for id, t := range req.Assets.Objects.Iterate() {
 		objRes, err := c.GetObject(ctx, iotaclient.GetObjectRequest{ObjectID: &id})
 		if err != nil {
 			return nil, fmt.Errorf("failed to get object %s: %w", id, err)
@@ -184,7 +185,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		*anchorRef.ObjectID,
 		argAssetsBag,
 		req.Message,
-		req.Allowance,
+		req.AllowanceBCS,
 		req.OnchainGasBudget,
 	)
 	return c.SignAndExecutePTB(
@@ -240,16 +241,6 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 		return nil, fmt.Errorf("failed to fetch AssetsBag of Request: %w", err)
 	}
 
-	var allowance iscmove.Assets
-	if len(intermediateRequest.Allowance) > 0 {
-		allowance, err = bcs.Unmarshal[iscmove.Assets](intermediateRequest.Allowance)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal allowance: %w", err)
-		}
-	} else {
-		allowance = *iscmove.NewEmptyAssets()
-	}
-
 	req := MoveRequest{
 		ID:     intermediateRequest.ID,
 		Sender: intermediateRequest.Sender,
@@ -258,7 +249,7 @@ func (c *Client) parseRequestAndFetchAssetsBag(ctx context.Context, obj *iotajso
 			Value: bals,
 		},
 		Message:   intermediateRequest.Message,
-		Allowance: allowance,
+		Allowance: intermediateRequest.Allowance,
 		GasBudget: intermediateRequest.GasBudget,
 	}
 
