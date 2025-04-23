@@ -22,9 +22,7 @@ var _ MappedNullable = &EstimateGasRequestOnledger{}
 // EstimateGasRequestOnledger struct for EstimateGasRequestOnledger
 type EstimateGasRequestOnledger struct {
 	// The result of the DryRun encoded in BCS format and represented in hexadecimal
-	DryRunRes string `json:"dryRunRes"`
-	// The ISC Message encoded in BCS format and represented in hexadecimal
-	Msg string `json:"msg"`
+	TransactionBytes string `json:"transactionBytes"`
 }
 
 type _EstimateGasRequestOnledger EstimateGasRequestOnledger
@@ -33,10 +31,9 @@ type _EstimateGasRequestOnledger EstimateGasRequestOnledger
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEstimateGasRequestOnledger(dryRunRes string, msg string) *EstimateGasRequestOnledger {
+func NewEstimateGasRequestOnledger(transactionBytes string) *EstimateGasRequestOnledger {
 	this := EstimateGasRequestOnledger{}
-	this.DryRunRes = dryRunRes
-	this.Msg = msg
+	this.TransactionBytes = transactionBytes
 	return &this
 }
 
@@ -48,52 +45,28 @@ func NewEstimateGasRequestOnledgerWithDefaults() *EstimateGasRequestOnledger {
 	return &this
 }
 
-// GetDryRunRes returns the DryRunRes field value
-func (o *EstimateGasRequestOnledger) GetDryRunRes() string {
+// GetTransactionBytes returns the TransactionBytes field value
+func (o *EstimateGasRequestOnledger) GetTransactionBytes() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.DryRunRes
+	return o.TransactionBytes
 }
 
-// GetDryRunResOk returns a tuple with the DryRunRes field value
+// GetTransactionBytesOk returns a tuple with the TransactionBytes field value
 // and a boolean to check if the value has been set.
-func (o *EstimateGasRequestOnledger) GetDryRunResOk() (*string, bool) {
+func (o *EstimateGasRequestOnledger) GetTransactionBytesOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.DryRunRes, true
+	return &o.TransactionBytes, true
 }
 
-// SetDryRunRes sets field value
-func (o *EstimateGasRequestOnledger) SetDryRunRes(v string) {
-	o.DryRunRes = v
-}
-
-// GetMsg returns the Msg field value
-func (o *EstimateGasRequestOnledger) GetMsg() string {
-	if o == nil {
-		var ret string
-		return ret
-	}
-
-	return o.Msg
-}
-
-// GetMsgOk returns a tuple with the Msg field value
-// and a boolean to check if the value has been set.
-func (o *EstimateGasRequestOnledger) GetMsgOk() (*string, bool) {
-	if o == nil {
-		return nil, false
-	}
-	return &o.Msg, true
-}
-
-// SetMsg sets field value
-func (o *EstimateGasRequestOnledger) SetMsg(v string) {
-	o.Msg = v
+// SetTransactionBytes sets field value
+func (o *EstimateGasRequestOnledger) SetTransactionBytes(v string) {
+	o.TransactionBytes = v
 }
 
 func (o EstimateGasRequestOnledger) MarshalJSON() ([]byte, error) {
@@ -106,8 +79,7 @@ func (o EstimateGasRequestOnledger) MarshalJSON() ([]byte, error) {
 
 func (o EstimateGasRequestOnledger) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	toSerialize["dryRunRes"] = o.DryRunRes
-	toSerialize["msg"] = o.Msg
+	toSerialize["transactionBytes"] = o.TransactionBytes
 	return toSerialize, nil
 }
 
@@ -116,8 +88,7 @@ func (o *EstimateGasRequestOnledger) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
-		"dryRunRes",
-		"msg",
+		"transactionBytes",
 	}
 
 	allProperties := make(map[string]interface{})

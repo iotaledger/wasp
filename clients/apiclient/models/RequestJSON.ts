@@ -16,6 +16,7 @@ import { HttpFile } from '../http/http';
 
 export class RequestJSON {
     'allowance': AssetsJSON;
+    'allowanceError'?: string;
     'assets': AssetsJSON;
     'callTarget': CallTargetJSON;
     /**
@@ -38,6 +39,12 @@ export class RequestJSON {
             "baseName": "allowance",
             "type": "AssetsJSON",
             "format": ""
+        },
+        {
+            "name": "allowanceError",
+            "baseName": "allowanceError",
+            "type": "string",
+            "format": "string"
         },
         {
             "name": "assets",

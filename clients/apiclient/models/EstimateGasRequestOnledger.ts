@@ -16,11 +16,7 @@ export class EstimateGasRequestOnledger {
     /**
     * The result of the DryRun encoded in BCS format and represented in hexadecimal
     */
-    'dryRunRes': string;
-    /**
-    * The ISC Message encoded in BCS format and represented in hexadecimal
-    */
-    'msg': string;
+    'transactionBytes': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -28,14 +24,8 @@ export class EstimateGasRequestOnledger {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "dryRunRes",
-            "baseName": "dryRunRes",
-            "type": "string",
-            "format": "string"
-        },
-        {
-            "name": "msg",
-            "baseName": "msg",
+            "name": "transactionBytes",
+            "baseName": "transactionBytes",
             "type": "string",
             "format": "string"
         }    ];
