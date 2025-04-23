@@ -1,5 +1,12 @@
 package accounts
 
+// Package accounts implements a core contract that manages on-chain accounts and their assets.
+// It provides functionality for tracking, transferring, and managing various types of assets
+// (tokens, native tokens, NFTs) that belong to on-chain accounts identified by AgentIDs.
+//
+// The accounts contract maintains balances and handles transfers between accounts,
+// serves as the entry point for depositing assets to the chain, and provides
+// views for querying account information and balances.
 import (
 	"math/big"
 

@@ -28,8 +28,8 @@ type hookedStateDB struct {
 }
 
 // NewHookedState wraps the given stateDb with the given hooks
-func NewHookedState(stateDb *StateDB, hooks *tracing.Hooks) *hookedStateDB {
-	s := &hookedStateDB{stateDb, hooks}
+func NewHookedState(stateDB *StateDB, hooks *tracing.Hooks) *hookedStateDB {
+	s := &hookedStateDB{stateDB, hooks}
 	if s.hooks == nil {
 		s.hooks = new(tracing.Hooks)
 	}

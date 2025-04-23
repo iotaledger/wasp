@@ -99,7 +99,7 @@ func (rec *RequestReceipt) ToISCReceipt(resolvedError *isc.VMError) *isc.Receipt
 
 // region RequestLookupKey /////////////////////////////////////////////
 
-// RequestLookupReference globally unique reference to the request: block index and index of the request within block
+// RequestLookupKey globally unique reference to the request: block index and index of the request within block
 type RequestLookupKey [6]byte
 
 func NewRequestLookupKey(blockIndex uint32, requestIndex uint16) RequestLookupKey {
