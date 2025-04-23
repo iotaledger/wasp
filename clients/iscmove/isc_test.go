@@ -51,19 +51,14 @@ func TestUnmarshalBCS(t *testing.T) {
 			ID: *iotatest.RandomAddress(),
 			Value: &iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmovetest.RandomAssetsBag(),
-				Assets: iscmove.Assets{
-					Coins: make(iscmove.CoinBalances),
-					Objects: map[iotago.ObjectID]iotago.ObjectType{
-						iscmovetest.RandomAnchor().ID: iotago.MustTypeFromString("0x1::a::A"),
-					},
-				},
+				Assets: *iscmove.NewAssets(0).
+					AddObject(iscmovetest.RandomAnchor().ID, iotago.MustTypeFromString("0x1::a::A")),
 			},
 		},
 		Message: *iscmovetest.RandomMessage(),
-		Allowance: iscmove.Assets{
-			Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
-			Objects: iscmove.ObjectCollection{iotago.ObjectID{}: iotago.MustTypeFromString("0x1::a::A")},
-		},
+		Allowance: *iscmove.NewAssets(0).
+			SetCoin(iotajsonrpc.IotaCoinType, 100).
+			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A")),
 		GasBudget: 100,
 	}
 	b, err := bcs.Marshal(&req)
@@ -87,10 +82,9 @@ func TestUnmarshalInvalidRequestBCS(t *testing.T) {
 			},
 		},
 		Message: *iscmovetest.RandomMessage(),
-		Allowance: iscmove.Assets{
-			Coins:   iscmove.CoinBalances{"WRONG_TYPE": 100},
-			Objects: iscmove.ObjectCollection{iotago.ObjectID{}: iotago.MustTypeFromString("0x1::a::A")},
-		},
+		Allowance: *iscmove.NewAssets(0).
+			SetCoin("WRONG_TYPE", 100).
+			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A")),
 		GasBudget: 100,
 	}
 	_, err := bcs.Marshal(&req)

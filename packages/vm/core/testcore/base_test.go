@@ -35,7 +35,7 @@ func TestInitLoad(t *testing.T) {
 	require.EqualValues(t,
 		originAmount,
 		cassets.BaseTokens())
-	require.EqualValues(t, 1, len(cassets.Coins))
+	require.EqualValues(t, 1, cassets.Coins.Size())
 
 	testdbhash.VerifyDBHash(env, t.Name())
 }
