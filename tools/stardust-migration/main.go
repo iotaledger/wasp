@@ -206,6 +206,11 @@ func main() {
 				},
 			},
 			{
+				Name:      "create-index",
+				ArgsUsage: "path/to/rebased/db path/for/index/db",
+				Action:    createIndex,
+			},
+			{
 				Name:      "webapi-validate",
 				ArgsUsage: "http://stardust-isc:9090 http://rebased-isc:9090",
 				Flags: []cmd.Flag{
