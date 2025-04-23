@@ -89,13 +89,12 @@ func OldNFTIDtoNewObjectID(nftID old_iotago.NFTID) iotago.ObjectID {
 func OldNFTIDtoNewObjectRecord(nftID old_iotago.NFTID) *isc.IotaObject {
 	return &isc.IotaObject{
 		ID:   OldNFTIDtoNewObjectID(nftID),
-		Type: OldNFTIDtoNewObjectType(nftID),
+		Type: OldNFTIDtoNewObjectType(),
 	}
 }
 
-func OldNFTIDtoNewObjectType(nftID old_iotago.NFTID) coin.Type {
-	// TODO: Implement
-	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nft::NFT", nftID.ToHex())))
+func OldNFTIDtoNewObjectType() coin.Type {
+	return lo.Must(coin.TypeFromString("0x000000000000000000000000000000000000000000000000000000000000107a::nft::Nft"))
 }
 
 func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
@@ -105,9 +104,6 @@ func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
-	// TODO: Implement
-	//panic(fmt.Sprintf("Expected to never be used: %v", tokenID.ToHex()))
-
 	return parameters.IotaCoinInfo{
 		CoinType:    coin.BaseTokenType,
 		Decimals:    6,
@@ -145,7 +141,7 @@ func OldAssetsToNewAssets(oldAssets *old_isc.Assets) *isc.Assets {
 
 	for _, nftID := range oldAssets.NFTs {
 		nftObjID := OldNFTIDtoNewObjectID(nftID)
-		nftObjType := OldNFTIDtoNewObjectType(nftID)
+		nftObjType := OldNFTIDtoNewObjectType()
 		newAssets.Objects.Add(isc.IotaObject{
 			ID:   nftObjID,
 			Type: nftObjType,

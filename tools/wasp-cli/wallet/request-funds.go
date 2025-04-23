@@ -26,7 +26,7 @@ func initRequestFundsCmd() *cobra.Command {
 				Message: "success",
 			}
 
-			util.TryMergeAllCoins(context.Background())
+			util.TryManageCoinsAmount(context.Background())
 
 			log.PrintCLIOutput(model)
 		},

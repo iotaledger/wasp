@@ -25,7 +25,7 @@ func (i *MnemonicSeed) AddressIndex() uint32 {
 }
 
 func LoadMnemonicSeed() wallets.Wallet {
-	s, _ := iotasigner.KeyFromMnemonic(config.GetTestingMnemonic(), iotasigner.KeySchemeFlagIotaEd25519)
+	s, _ := iotasigner.KeyFromMnemonic(config.GetTestingMnemonic(), iotasigner.KeySchemeFlagDefault)
 	rawSeed := s.RawSeed()
 	kp := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes(rawSeed[:]))
 	return NewMnemonicSeed(kp)

@@ -139,7 +139,7 @@ func initDepositCmd() *cobra.Command {
 
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			util.TryMergeAllCoins(ctx)
+			util.TryManageCoinsAmount(ctx)
 			var res *iotajsonrpc.IotaTransactionBlockResponse
 			var err error
 			if strings.Contains(args[0], "|") {
