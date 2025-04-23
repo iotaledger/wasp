@@ -67,7 +67,7 @@ func TestGetDynamicFieldObject(t *testing.T) {
 
 func TestGetOwnedObjects(t *testing.T) {
 	client := l1starter.Instance().L1Client()
-	signer := iotasigner.NewSignerByIndex(testcommon.TestSeed, iotasigner.KeySchemeFlagEd25519, 0)
+	signer := iotasigner.NewSignerByIndex(testcommon.TestSeed, iotasigner.KeySchemeFlagDefault, 0)
 	t.Run(
 		"struct tag", func(t *testing.T) {
 			structTag, err := iotago.StructTagFromString("0x2::coin::Coin<0x2::iota::IOTA>")

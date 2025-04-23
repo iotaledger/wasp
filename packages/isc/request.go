@@ -42,8 +42,13 @@ func EVMCallDataFromTx(tx *types.Transaction) *ethereum.CallMsg {
 }
 
 type Calldata interface {
-	Allowance() *Assets // transfer of assets to the smart contract. Debited from sender's L2 account
-	Assets() *Assets    // attached assets for the on-ledger request, nil for off-ledger. All goes to sender.
+	// Assets returns the attached assets for the on-ledger request, empty for off-ledger.
+	// Attached assets are deposited in the sender's L2 account by default.
+	Assets() *Assets
+	// Allowance returns the assets that the sender allows to be debited
+	// from their L2 account and transferred to the target contract
+	// Returns error if there was an error decoding the allowance from the on-ledger request.
+	Allowance() (*Assets, error)
 	Message() Message
 	GasBudget() (gas uint64, isEVM bool)
 	ID() RequestID

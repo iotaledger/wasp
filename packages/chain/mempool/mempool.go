@@ -587,12 +587,12 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
 	// The case for matching ChainHeadAnchor and request BaseAO
-	reqRefs := []*isc.RequestRef{}
+	onLedgerReqs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
 		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
-			reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+			onLedgerReqs = append(onLedgerReqs, isc.RequestRefFromRequest(e.req))
 			e.proposedFor = append(e.proposedFor, consensusID)
-			return len(reqRefs) < mpi.settings.MaxOnledgerToPropose
+			return len(onLedgerReqs) < mpi.settings.MaxOnledgerToPropose
 		})
 	}
 
@@ -601,8 +601,8 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 	// stop iterating when either: got MaxOffledgerToPropose, or no requests were added during last iteration (there are gaps in nonces)
 	accNonces := make(map[string]uint64)                             // cache of account nonces so we don't propose gaps
 	orderedList := slices.Clone(mpi.offLedgerPool.orderedByGasPrice) // clone the ordered list of references to requests, so we can alter it safely
+	offLedgerReqs := []*isc.RequestRef{}
 	for {
-		added := 0
 		addedThisCycle := false
 		for i, e := range orderedList {
 			if e == nil {
@@ -646,17 +646,16 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 			if reqNonce == accountNonce {
 				// expected nonce, add it to the list to propose
 				mpi.log.LogDebugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", reqAccount, e.req.ID().String(), e.req.Nonce())
-				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+				offLedgerReqs = append(offLedgerReqs, isc.RequestRefFromRequest(e.req))
 				e.proposedFor = append(e.proposedFor, consensusID)
 				addedThisCycle = true
-				added++
 				accountNonce++ // increment the account nonce to match the next valid request
 				accNonces[reqAccountKey] = accountNonce
 				// delete from this list
 				orderedList[i] = nil
 			}
 
-			if added >= mpi.settings.MaxOffledgerToPropose {
+			if len(offLedgerReqs) >= mpi.settings.MaxOffledgerToPropose {
 				break // got enough requests
 			}
 
@@ -665,12 +664,12 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 				continue // skip request
 			}
 		}
-		if !addedThisCycle || (added >= mpi.settings.MaxOffledgerToPropose) {
+		if !addedThisCycle || len(offLedgerReqs) >= mpi.settings.MaxOffledgerToPropose {
 			break
 		}
 	}
 
-	return reqRefs
+	return slices.Concat(onLedgerReqs, offLedgerReqs)
 }
 
 func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {

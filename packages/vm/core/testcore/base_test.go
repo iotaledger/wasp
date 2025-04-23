@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/solo"
@@ -469,6 +471,35 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 
 	_, _, err := ch.RunOffLedgerRequest(req)
 	require.ErrorContains(t, err, "request was skipped")
+}
+
+func TestInvalidAllowance(t *testing.T) {
+	env := solo.New(t)
+	ch := env.NewChain()
+
+	_, err := ch.Env.ISCMoveClient().CreateAndSendRequestWithAssets(
+		ch.Env.Ctx(),
+		&iscmoveclient.CreateAndSendRequestWithAssetsRequest{
+			Signer:        ch.ChainAdmin,
+			PackageID:     ch.Env.ISCPackageID(),
+			AnchorAddress: ch.ID().AsAddress().AsIotaAddress(),
+			Assets:        isc.NewAssets(1 * isc.Million).AsISCMove(),
+			Message: &iscmove.Message{
+				Contract: uint32(accounts.Contract.Hname()),
+				Function: uint32(accounts.FuncDeposit.Hname()),
+				Args:     [][]byte{},
+			},
+			AllowanceBCS:     []byte{1, 2, 3}, // invalid allowance
+			OnchainGasBudget: math.MaxUint64,
+			GasPrice:         iotaclient.DefaultGasPrice,
+			GasBudget:        iotaclient.DefaultGasBudget,
+		},
+	)
+	require.NoError(t, err)
+	n := ch.RunAllReceivedRequests(1)
+	require.EqualValues(t, 1, n)
+	receipt := ch.LastReceipt()
+	require.ErrorContains(t, ch.ResolveVMError(receipt.Error).AsGoError(), "invalid allowance")
 }
 
 func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
