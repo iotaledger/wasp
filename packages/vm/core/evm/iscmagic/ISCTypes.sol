@@ -71,25 +71,6 @@ struct ISCMessage {
     bytes[] params;
 }
 
-/// Parameters for building an on-ledger request
-struct ISCSendMetadata {
-    ISCMessage message;
-    ISCAssets allowance;
-    uint64 gasBudget;
-}
-
-/// Options for building an on-ledger request
-struct ISCSendOptions {
-    int64 timelock;
-    ISCExpiration expiration;
-}
-
-/// Expiration of an on-ledger request
-struct ISCExpiration {
-    int64 time;
-    IotaAddress returnAddress;
-}
-
 /// A collection of coins and object IDs
 struct ISCAssets {
     CoinBalance[] coins;
@@ -140,7 +121,9 @@ library ISCTypes {
      * @param addr The IOTA address.
      * @return The newly created Agent ID.
      */
-    function newL1AgentID(IotaAddress addr) internal pure returns (ISCAgentID memory) {
+    function newL1AgentID(
+        IotaAddress addr
+    ) internal pure returns (ISCAgentID memory) {
         bytes memory addrBytes = abi.encodePacked(addr);
 
         ISCAgentID memory r;
@@ -156,7 +139,7 @@ library ISCTypes {
         return r;
     }
 
-    /** 
+    /**
      * @notice Check if an Agent ID is an Ethereum Agent ID.
      * @param a The Agent ID.
      * @return True if the Agent ID is an Ethereum Agent ID.
@@ -200,7 +183,7 @@ library ISCTypes {
         return 0;
     }
 
-    /** 
+    /**
      * @notice Compare two byte arrays for equality.
      * @param a The first byte array.
      * @param b The second byte array.
