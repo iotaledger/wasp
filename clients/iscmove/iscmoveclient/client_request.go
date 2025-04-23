@@ -78,17 +78,17 @@ type CreateAndSendRequestWithAssetsRequest struct {
 func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (*iotajsonrpc.Coin, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
-	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance, iotaclient.DefaultGasBudget)
+	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotaclient.DefaultGasBudget)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	coin, err := coinOptions.PickCoinNoLess(iotaBalance)
+	coin, err := coinOptions.PickCoinNoLess(iotaBalance.Uint64())
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return coin, iotaBalance, nil
+	return coin, iotaBalance.Uint64(), nil
 }
 
 func (c *Client) CreateAndSendRequestWithAssets(

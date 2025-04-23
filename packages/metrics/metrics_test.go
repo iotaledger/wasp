@@ -81,17 +81,9 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 					ID:   *iotatest.RandomAddress(),
 					Size: 1,
 				},
-				Assets: iscmove.Assets{
-					Coins: iscmove.CoinBalances{
-						iotajsonrpc.IotaCoinType: iotajsonrpc.CoinValue(tokensForGas),
-					},
-					Objects: make(iscmove.ObjectCollection),
-				},
+				Assets: *iscmove.NewAssets(iotajsonrpc.CoinValue(tokensForGas)),
 			},
-			Allowance: iscmove.Assets{
-				Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 1},
-				Objects: make(iscmove.ObjectCollection),
-			},
+			Allowance: *iscmove.NewAssets(1),
 			GasBudget: 1000,
 		},
 	}

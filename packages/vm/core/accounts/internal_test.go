@@ -61,7 +61,7 @@ func testCreditDebit1(t *testing.T, v isc.SchemaVersion) {
 	require.NotNil(t, total)
 	require.True(t, total.Equals(transfer))
 
-	transfer[coin.BaseTokenType] = 1
+	transfer.Set(coin.BaseTokenType, 1)
 	accounts.NewStateWriter(v, state).CreditToAccount(agentID1, transfer)
 	total = checkLedgerT(t, v, state)
 
@@ -70,13 +70,13 @@ func testCreditDebit1(t *testing.T, v isc.SchemaVersion) {
 
 	userAssets := accounts.NewStateReader(v, state).GetAccountFungibleTokens(agentID1)
 	require.EqualValues(t, 43, userAssets.BaseTokens())
-	require.EqualValues(t, 4, userAssets[dummyAssetID])
+	require.EqualValues(t, 4, userAssets.Get(dummyAssetID))
 	checkLedgerT(t, v, state)
 
 	accounts.NewStateWriter(v, state).DebitFromAccount(agentID1, expected)
 	total = checkLedgerT(t, v, state)
-	expected = isc.NewCoinBalances()
-	require.True(t, expected.Equals(total))
+	t.Log(total.String())
+	require.True(t, total.IsEmpty())
 }
 
 func testCreditDebit2(t *testing.T, v isc.SchemaVersion) {

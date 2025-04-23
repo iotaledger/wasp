@@ -18,7 +18,7 @@ func PTBCreateAndSendRequest(
 	allowance *iscmove.Assets,
 	onchainGasBudget uint64,
 ) *iotago.ProgrammableTransactionBuilder {
-	allowanceBCS := lo.Must(bcs.Marshal[iscmove.Assets](allowance))
+	allowanceBCS := lo.Must(bcs.Marshal(allowance))
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
