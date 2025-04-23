@@ -1,5 +1,15 @@
-// in the blocklog core contract the VM keeps indices of blocks and requests in an optimized way
-// for fast checking and timestamp access.
+// Package blocklog implements a core contract that maintains historical records of blocks and requests.
+// It provides functionality to store and retrieve information about processed blocks and requests
+// in an optimized way for efficient lookup and timestamp access.
+//
+// The blocklog contract maintains various indices including:
+// - Block registry mapping block indices to block information
+// - Request lookup indices for efficiently finding requests
+// - Request receipts storing the results of request processing
+// - Event storage for block and request-related events
+//
+// This contract provides views for retrieving block information, request IDs, receipts,
+// and events, making it possible to query the chain's historical activity.
 package blocklog
 
 import (

@@ -34,6 +34,7 @@ var Processor = Contract.Processor(nil,
 	ViewTotalAssets.WithHandler(viewTotalAssets),
 )
 
+// SetInitialState initializes the state with provided base tokens and coin information, associating them with the common account.
 // this expects the origin amount minus SD
 func (s *StateWriter) SetInitialState(baseTokensOnAnchor coin.Value, baseTokenCoinInfo *parameters.IotaCoinInfo) {
 	// initial load with base tokens from origin anchor output exceeding minimum storage deposit assumption

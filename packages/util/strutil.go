@@ -1,3 +1,5 @@
+// Package util provides general utility functions and structures,
+// including string manipulation utilities and time handling.
 package util
 
 import "time"
@@ -18,7 +20,7 @@ func GentleTruncate(s string, length int) string {
 
 func TimeOrNever2(t time.Time, never string) string {
 	timestampNever := time.Time{}
-	if t == timestampNever {
+	if t.Equal(timestampNever) {
 		return never
 	}
 	return t.UTC().Format(time.RFC3339)
