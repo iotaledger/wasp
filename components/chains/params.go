@@ -26,6 +26,7 @@ type ParametersChains struct {
 	MempoolMaxTimedInPool             int           `default:"100" usage:"Maximum number of timed on-ledger requests kept in the mempool"`
 	MempoolMaxOffledgerToPropose      int           `default:"500" usage:"Maximum number of off-ledger requests to propose for the next block"`
 	MempoolMaxOnledgerToPropose       int           `default:"100" usage:"Maximum number of on-ledger requests to propose for the next block (includes timed requests)"`
+	MempoolMaxOffledgerPerAccount     int           `default:"100" usage:"Maximum number of off-ledger requests per account in mempool"`
 	MempoolOnLedgerRefreshMinInterval time.Duration `default:"10m" usage:"Minimum interval to try to refresh the list of on-ledger requests after some have been dropped from the pool (this interval is introduced to avoid dropping/refreshing cycle if there are too many requests on L1 to process)"`
 }
 

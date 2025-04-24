@@ -30,12 +30,13 @@ type OffLedgerPool struct {
 	orderedByGasPrice []*OrderedPoolEntry // TODO use a better data structure instead!!! (probably RedBlackTree)
 	minGasPrice       *big.Int
 	maxPoolSize       int
+	maxPerAccount     int
 	sizeMetric        func(int)
 	timeMetric        func(time.Duration)
 	log               log.Logger
 }
 
-func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log log.Logger) *OffLedgerPool {
+func NewOffledgerPool(maxPoolSize int, maxPerAccount int, waitReq WaitReq, sizeMetric func(int), timeMetric func(time.Duration), log log.Logger) *OffLedgerPool {
 	return &OffLedgerPool{
 		waitReq:             waitReq,
 		refLUT:              shrinkingmap.New[isc.RequestRefKey, *OrderedPoolEntry](),
@@ -43,6 +44,7 @@ func NewOffledgerPool(maxPoolSize int, waitReq WaitReq, sizeMetric func(int), ti
 		orderedByGasPrice:   []*OrderedPoolEntry{},
 		minGasPrice:         big.NewInt(1),
 		maxPoolSize:         maxPoolSize,
+		maxPerAccount:       maxPerAccount,
 		sizeMetric:          sizeMetric,
 		timeMetric:          timeMetric,
 		log:                 log,
@@ -54,6 +56,26 @@ type OrderedPoolEntry struct {
 	old         bool
 	ts          time.Time
 	proposedFor []consGR.ConsensusID
+}
+
+func (ope *OrderedPoolEntry) markProposed(consID consGR.ConsensusID) {
+	ope.proposedFor = append(ope.proposedFor, consID)
+}
+
+func (ope *OrderedPoolEntry) proposedForAny(consInsts []consGR.ConsensusID) bool {
+	return lo.Some(consInsts, ope.proposedFor)
+}
+
+func cmpOrderedPoolEntryByNonce(a, b *OrderedPoolEntry) int {
+	aNonce := a.req.Nonce()
+	bNonce := b.req.Nonce()
+	if aNonce == bNonce {
+		return 0
+	}
+	if aNonce > bNonce {
+		return 1
+	}
+	return -1
 }
 
 func (p *OffLedgerPool) Has(reqRef *isc.RequestRef) bool {
@@ -89,32 +111,44 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 			p.reqsByAcountOrdered.Set(account, []*OrderedPoolEntry{entry})
 		} else {
 			// find the index where the new entry should be added
-			index, exists := slices.BinarySearchFunc(reqsForAcount, entry,
-				func(a, b *OrderedPoolEntry) int {
-					aNonce := a.req.Nonce()
-					bNonce := b.req.Nonce()
-					if aNonce == bNonce {
-						return 0
-					}
-					if aNonce > bNonce {
-						return 1
-					}
-					return -1
-				},
-			)
-			if exists {
-				// same nonce, mark the existing request with overlapping nonce as "old", place the new one
-				// NOTE: do not delete the request here, as it might already be part of an on-going consensus round
-				reqsForAcount[index].old = true
-			}
+			index, exists := slices.BinarySearchFunc(reqsForAcount, entry, cmpOrderedPoolEntryByNonce)
 
-			reqsForAcount = append(reqsForAcount, entry) // add to the end of the list (thus extending the array)
-
-			// make room if target position is not at the end
-			if index != len(reqsForAcount)-1 {
-				copy(reqsForAcount[index+1:], reqsForAcount[index:])
+			if exists && len(reqsForAcount[index].proposedFor) == 0 {
+				// Name nonce, but the existing request was not proposed yet.
+				// Thus we just replace it.
+				oldEntry := reqsForAcount[index]
 				reqsForAcount[index] = entry
+				p.orderedByGasPrice = lo.Filter(p.orderedByGasPrice, func(e *OrderedPoolEntry, _ int) bool {
+					return e.req.ID() != oldEntry.req.ID()
+				})
+			} else {
+				reqsInAccount := len(reqsForAcount)
+				if reqsInAccount >= p.maxPerAccount {
+					// User has too much requests pending.
+					// Reject the new ones, unless they replace the existing ones (the case above).
+					p.log.LogDebugf(
+						"Not accepting request %v, account %v already has %v requests in mempool.",
+						ref, account, reqsInAccount,
+					)
+					return false
+				}
+
+				if exists {
+					// same nonce, mark the existing request with overlapping nonce as "old", place the new one
+					// NOTE: do not delete the request here, as it might already be part of an on-going consensus round
+					reqsForAcount[index].old = true
+				}
+
+				// add to the end of the list (thus extending the array)
+				reqsForAcount = append(reqsForAcount, entry)
+
+				// make room if target position is not at the end
+				if index != len(reqsForAcount)-1 {
+					copy(reqsForAcount[index+1:], reqsForAcount[index:])
+					reqsForAcount[index] = entry
+				}
 			}
+
 			p.reqsByAcountOrdered.Set(account, reqsForAcount)
 		}
 	}
@@ -235,14 +269,14 @@ func (p *OffLedgerPool) Remove(request isc.OffLedgerRequest) {
 		account := entry.req.SenderAccount().String()
 		reqsByAccount, exists := p.reqsByAcountOrdered.Get(account)
 		if !exists {
-			p.log.LogError("inconsistency trying to DEL %v as key=%v, no request list for account %s", request.ID(), refKey, account)
+			p.log.LogErrorf("inconsistency trying to DEL %v as key=%v, no request list for account %s", request.ID(), refKey, account)
 			return
 		}
 		indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry) bool {
 			return refKey == isc.RequestRefFromRequest(e.req).AsKey()
 		})
 		if indexToDel == -1 {
-			p.log.LogError("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
+			p.log.LogErrorf("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
 			return
 		}
 		if len(reqsByAccount) == 1 { // just remove the entire array for the account
