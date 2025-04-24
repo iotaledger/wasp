@@ -71,28 +71,6 @@ func main() {
 				Name: "migrate",
 				Subcommands: []*cmd.Command{
 					{
-						Name:      "single-state",
-						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
-						Flags: []cmd.Flag{
-							&cmd.Uint64Flag{
-								Name:    "index",
-								Aliases: []string{"i"},
-								Usage:   "Specify block index to migrate. If not specified, latest state will be migrated.",
-							},
-							&cmd.BoolFlag{
-								Name:    "dry-run",
-								Aliases: []string{"d"},
-								Usage:   "Do not write destination database.",
-							},
-							&cmd.BoolFlag{
-								Name:  "hm-prefixes",
-								Usage: "Replace original prefixes in new dabase with human-readable strings.",
-							},
-						},
-						Before: processCommonFlags,
-						Action: migrateSingleState,
-					},
-					{
 						Name:      "all-states",
 						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
 						Flags: []cmd.Flag{
@@ -187,7 +165,7 @@ func main() {
 							},
 							&cmd.Uint64Flag{
 								Name:    "from-index",
-								Aliases: []string{"i", "f", "from-block", "from"},
+								Aliases: []string{"i", "from-block", "from"},
 								Usage:   "Specify block index to start from. This is used as hint in blocklog migration for cases, when database was generated not from first block.",
 							},
 							&cmd.Uint64Flag{
@@ -198,6 +176,11 @@ func main() {
 							&cmd.BoolFlag{
 								Name:  "no-hashing",
 								Usage: "Do not hash data before comparing. Will produce bigger but more user-friendly output.",
+							},
+							&cmd.BoolFlag{
+								Name:    "find-fail-block",
+								Aliases: []string{"f"},
+								Usage:   "Find the first block where validation fails using binary search.",
 							},
 						},
 						Before: processCommonFlags,
@@ -234,7 +217,8 @@ func main() {
 					searchCmd("nft", searchNFT),
 					searchCmd("block-keep-amount-change", searchBlockKeepAmountNot10000),
 					searchCmd("foundry", searchFoundies),
-					searchCmd("strange-native-tokens", searchStrangeNativeTokenRecords, IncludeDeletions()),
+					searchCmd("native-token", searchNativeTokens),
+					searchCmd("strange-native-token", searchStrangeNativeTokenRecords, IncludeDeletions()),
 				},
 			},
 			{

@@ -87,12 +87,22 @@ func (b *InMemoryKVStore) MutationsCountDiff() int {
 	return mutsCountDiff
 }
 
-func (b *InMemoryKVStore) StartMarking() {
+func (b *InMemoryKVStore) StartMarking(readOnlyUncommitted bool) {
 	b.marking = true
+	if readOnlyUncommitted {
+		b.uncommitted.SetKVStoreReader(NoopKVStoreReader[kv.Key]{})
+	} else {
+		b.uncommitted.SetKVStoreReader(b.committed)
+	}
 }
 
 func (b *InMemoryKVStore) StopMarking() {
 	b.marking = false
+	if b.readOnlyUncommitted {
+		b.uncommitted.SetKVStoreReader(NoopKVStoreReader[kv.Key]{})
+	} else {
+		b.uncommitted.SetKVStoreReader(b.committed)
+	}
 }
 
 // DeleteIfNotSet deletes marked entries if they where not set since the last commit

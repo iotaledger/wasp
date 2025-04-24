@@ -201,55 +201,6 @@ func writeMigrationResult(metadata *transaction.StateMetadata, stateIndex uint32
 	return os.WriteFile("migration_result.json", resultJson, os.ModePerm)
 }
 
-func migrateSingleState(c *cmd.Context) error {
-	srcChainDBDir := c.Args().Get(0)
-	destChainDBDir := c.Args().Get(1)
-	blockIndex, blockIndexSpecified := c.Uint64("index"), c.IsSet("index")
-	dryRun := c.Bool("dry-run")
-	chainOwner := cryptolib.NewEmptyAddress()
-
-	srcStore, destStore, oldChainID, stateMetadata, flush := initMigration(srcChainDBDir, destChainDBDir, &migrationOptions{
-		DryRun:              dryRun,
-		EnableRefCountCache: true,
-		ChainOwner:          chainOwner,
-	})
-	defer flush()
-
-	bot.Get().PostMessage(fmt.Sprintf(":running: *Executing Latest-State Migration*"), slack.MsgOptionIconEmoji(":running:"))
-
-	var srcState old_kv.KVStoreReader
-	if blockIndexSpecified {
-		cli.Logf("Migrating state #%v", blockIndex)
-		srcState = lo.Must(srcStore.StateByIndex(uint32(blockIndex)))
-	} else {
-		cli.Log("Migrating latest state")
-		srcState = lo.Must(srcStore.LatestState())
-	}
-
-	bot.Get().PostMessage(fmt.Sprintf("Migrating state index: %d", blockIndex))
-
-	stateDraft, err := destStore.NewStateDraft(time.Now(), stateMetadata.L1Commitment)
-	if err != nil {
-		panic(err)
-	}
-
-	cli.DebugLoggingEnabled = true
-
-	v := migrations.MigrateRootContract(srcState, stateDraft)
-	migrations.MigrateAccountsContractMuts(v, srcState, stateDraft, oldChainID)
-	migrations.MigrateAccountsContractFullState(srcState, stateDraft, oldChainID)
-	blockKeepAmount := migrations.MigrateGovernanceContract(srcState, stateDraft, oldChainID, chainOwner)
-	migrations.MigrateBlocklogContract(srcState, stateDraft, oldChainID, stateMetadata, chainOwner, blockKeepAmount)
-	migrations.MigrateEVMContract(srcState, stateDraft)
-
-	newBlock := destStore.Commit(stateDraft)
-	destStore.SetLatest(newBlock.TrieRoot())
-
-	bot.Get().PostMessage(fmt.Sprintf("Latest-State migration succeeded: %d", blockIndex))
-
-	return nil
-}
-
 type debugOptions struct {
 	DestKeyMustContain    string
 	DestValueMustContain  string
@@ -352,7 +303,6 @@ func migrateAllStates(c *cmd.Context) error {
 	lastProcessedBlockIndex := uint32(0)
 	recentlyBlocksProcessed := 0
 	oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed := 0, 0, 0, 0
-	rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, evmMutsProcessed, errMutsProcessed := 0, 0, 0, 0, 0, 0
 
 	forEachBlock(srcStore, startBlockIndex, endBlockIndex, func(blockIndex uint32, blockHash old_trie.Hash, block old_state.Block) bool {
 		defer func() {
@@ -370,7 +320,6 @@ func migrateAllStates(c *cmd.Context) error {
 
 		oldMuts := block.Mutations()
 		valuesBeforeMutation := oldState.W.ApplyMutations(oldMuts)
-		_ = valuesBeforeMutation // can be used to process deletes, but is not currently needed
 
 		var oldStateMutsOnly old_kv.KVStoreReader
 		migrateFullState := startBlockIndex != 0 && blockIndex == startBlockIndex && !continueMigration
@@ -385,39 +334,19 @@ func migrateAllStates(c *cmd.Context) error {
 			dumpMuts(oldMuts)
 		}
 
-		newState.W.StartMarking()
-		v := migrations.MigrateRootContract(oldState, newState)
-		rootMuts := newState.W.MutationsCountDiff()
-
-		migrations.MigrateAccountsContractFullState(oldState, newState, oldChainID)
-		accountsMuts := newState.W.MutationsCountDiff()
-
-		blockKeepAmount := migrations.MigrateGovernanceContract(oldState, newState, oldChainID, chainOwner)
-		governanceMuts := newState.W.MutationsCountDiff()
-
-		migrations.MigrateErrorsContract(oldState, newState)
-		errMuts := newState.W.MutationsCountDiff()
-
-		newState.W.StopMarking()
-
-		if !migrateFullState {
-			newState.W.DeleteMarkedIfNotSet()
-			_ = newState.W.MutationsCountDiff()
+		compositeOldState := struct {
+			old_kv.KVReader
+			old_kv.KVIterator
+		}{
+			KVReader:   oldState,
+			KVIterator: oldStateMutsOnly,
 		}
 
-		migrations.MigrateAccountsContractMuts(v, oldStateMutsOnly, newState, oldChainID)
-		accountsMuts += newState.W.MutationsCountDiff()
-
-		migratedBlock := migrations.MigrateBlocklogContract(oldStateMutsOnly, newState, oldChainID, stateMetadata, chainOwner, blockKeepAmount)
-		blocklogMuts := newState.W.MutationsCountDiff()
-
-		migrations.MigrateEVMContract(oldStateMutsOnly, newState)
-		evmMuts := newState.W.MutationsCountDiff()
-
+		migratedBlockTimestamp := migrateBlock(compositeOldState, utils.OnlyReader(valuesBeforeMutation), newState, oldChainID, stateMetadata, chainOwner, migrateFullState)
 		newMuts, _ := newState.W.Commit(true)
 
 		if !dryRun {
-			nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlock.Timestamp, stateMetadata.L1Commitment))
+			nextStateDraft := lo.Must(destStore.NewStateDraft(migratedBlockTimestamp, stateMetadata.L1Commitment))
 			newMuts.ApplyTo(nextStateDraft)
 			if !continueMigration || blockIndex > latestDestBlockIndex {
 				newBlock := destStore.Commit(nextStateDraft)
@@ -437,12 +366,6 @@ func migrateAllStates(c *cmd.Context) error {
 		oldDelsProcessed += len(oldMuts.Dels)
 		newSetsProcessed += len(newMuts.Sets)
 		newDelsProcessed += len(newMuts.Dels)
-		rootMutsProcessed += rootMuts
-		accountMutsProcessed += accountsMuts
-		blocklogMutsProcessed += blocklogMuts
-		govMutsProcessed += governanceMuts
-		evmMutsProcessed += evmMuts
-		errMutsProcessed += errMuts
 
 		if blockIndex%10000 == 0 && !dryRun {
 			cli.Logf("Block Index: %d\n", blockIndex)
@@ -462,15 +385,9 @@ func migrateAllStates(c *cmd.Context) error {
 				float64(oldSetsProcessed)/float64(recentlyBlocksProcessed), float64(oldDelsProcessed)/float64(recentlyBlocksProcessed),
 				float64(newSetsProcessed)/float64(recentlyBlocksProcessed), float64(newDelsProcessed)/float64(recentlyBlocksProcessed),
 			)
-			cli.Logf("New mutations per block by contracts:\n\tRoot: %.1f\n\tAccounts: %.1f\n\tBlocklog: %.1f\n\tGovernance: %.1f\n\tError: %.1f\n\tEVM: %.1f",
-				float64(rootMutsProcessed)/float64(recentlyBlocksProcessed), float64(accountMutsProcessed)/float64(recentlyBlocksProcessed),
-				float64(blocklogMutsProcessed)/float64(recentlyBlocksProcessed), float64(govMutsProcessed)/float64(recentlyBlocksProcessed),
-				float64(errMutsProcessed)/float64(recentlyBlocksProcessed), float64(evmMutsProcessed)/float64(recentlyBlocksProcessed),
-			)
 
 			recentlyBlocksProcessed = 0
 			oldSetsProcessed, oldDelsProcessed, newSetsProcessed, newDelsProcessed = 0, 0, 0, 0
-			rootMutsProcessed, accountMutsProcessed, blocklogMutsProcessed, govMutsProcessed, errMutsProcessed, evmMutsProcessed = 0, 0, 0, 0, 0, 0
 		})
 
 		if c.Err() != nil {
@@ -490,6 +407,17 @@ func migrateAllStates(c *cmd.Context) error {
 	saveInMemoryStates(oldStateStore, newState.W, lastProcessedBlockIndex, srcChainDBDir)
 
 	return nil
+}
+
+func migrateBlock(oldState, valuesBeforeMutation old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, chainOwner *cryptolib.Address, skipLoad bool) time.Time {
+	v := migrations.MigrateRootContract(oldState, newState)
+	blockKeepAmount := migrations.MigrateGovernanceContract(oldState, newState, oldChainID, chainOwner)
+	migrations.MigrateErrorsContract(oldState, newState)
+	migrations.MigrateAccountsContract(v, valuesBeforeMutation, oldState, newState, oldChainID)
+	migratedBlock := migrations.MigrateBlocklogContract(oldState, newState, oldChainID, stateMetadata, chainOwner, blockKeepAmount, !skipLoad)
+	migrations.MigrateEVMContract(oldState, newState)
+
+	return migratedBlock.Timestamp
 }
 
 type inMemoryStatesOptions struct {

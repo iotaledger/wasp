@@ -75,7 +75,9 @@ func EnsureEqual(comparisonName, leftStr, rightStr string) {
 		Context: 0,
 	}))
 
-	cli.DebugLogf("\n\n*********************  DIFF  **********************\n\n")
+	var diffStr string
+
+	diffStr = "\n\n*********************  DIFF  **********************\n\n"
 	diffLinesCount := strings.Count(diff, "\n")
 	cli.DebugLogf("Diff lines count: %v", diffLinesCount)
 	if diffLinesCount > 100 {
@@ -83,12 +85,12 @@ func EnsureEqual(comparisonName, leftStr, rightStr string) {
 		diffLines := strings.Split(diff, "\n")
 		diffFirstHalf := strings.Join(diffLines[:len(diffLines)/2], "\n")
 		diffLastHalf := strings.Join(diffLines[len(diffLines)/2:], "\n")
-		cli.DebugLogf("%v diff PREVIEW:\n%v\n%v", strings.Title(comparisonName),
+		diffStr += fmt.Sprintf("%v diff PREVIEW:\n%v\n%v", strings.Title(comparisonName),
 			utils.MultilinePreview(diffFirstHalf), utils.MultilinePreview(diffLastHalf))
 	} else {
-		cli.DebugLogf("%v diff:\n%v", strings.Title(comparisonName), diff)
+		diffStr += fmt.Sprintf("%v diff:\n%v", strings.Title(comparisonName), diff)
 	}
-	cli.DebugLogf("\n\n***************************************************\n\n")
+	diffStr += "\n\n***************************************************\n\n"
 
 	r := strings.NewReplacer(
 		" ", "-",
@@ -138,7 +140,7 @@ func EnsureEqual(comparisonName, leftStr, rightStr string) {
 		cli.Logf("ERROR writing right string to file: %v: %v", rightStateFilePath, err)
 	}
 
-	panic(fmt.Errorf("%v are NOT equal", strings.Title(comparisonName)))
+	panic(fmt.Errorf("%v are NOT equal:\n%v", strings.Title(comparisonName), diffStr))
 }
 
 func OldReadOnlyKVStore(r old_kv.KVStoreReader) old_kv.KVStore {

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"runtime/debug"
 	"strings"
 
 	"github.com/samber/lo"
@@ -36,8 +38,7 @@ func validateMigration(c *cmd.Context) error {
 	lastIndex := uint32(c.Uint64("to-block"))
 	validation.ConcurrentValidation = !c.Bool("no-parallel")
 	hashValues := !c.Bool("no-hashing")
-	cli.DebugLoggingEnabled = true
-
+	findFailureBlock := c.Bool("find-fail-block")
 	srcChainDBDir := c.Args().Get(0)
 	destChainDBDir := c.Args().Get(1)
 
@@ -83,11 +84,7 @@ func validateMigration(c *cmd.Context) error {
 		lastIndex = lo.Must(destStore.LatestBlockIndex())
 	}
 
-	cli.Logf("Reading old latest state for index #%v...", lastIndex)
-	oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
-
 	cli.Logf("State index to be validated: %v", lastIndex)
-	newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
 
 	old_parameters.InitL1(&old_parameters.L1Params{
 		Protocol: &old_iotago.ProtocolParameters{
@@ -95,16 +92,54 @@ func validateMigration(c *cmd.Context) error {
 		},
 	})
 
-	defer func() {
-		if err := recover(); err != nil {
-			cli.Logf("Validation panicked")
-			utils.PrintLastDBOperations(oldState, newState)
-			panic(err)
-		}
-	}()
+	var lastErr error
 
 	validation.HashValues = hashValues
-	validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, lastIndex)
+	if !findFailureBlock {
+		cli.DebugLoggingEnabled = true
+
+		cli.Logf("Reading old latest state for index #%v...", lastIndex)
+		oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
+
+		cli.Logf("Reading new latest state for index #%v...", lastIndex)
+		newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
+
+		defer func() {
+			if err := recover(); err != nil {
+				cli.Logf("Validation panicked")
+				utils.PrintLastDBOperations(oldState, newState)
+				panic(err)
+			}
+		}()
+
+		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, lastIndex)
+		return nil
+	}
+
+	cli.DebugLoggingEnabled = false
+
+	findBlockWithIssue(firstIndex, lastIndex, func(blockIndex uint32) bool {
+		cli.Logf("Reading old latest state for index #%v...", blockIndex)
+		oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(blockIndex)))
+
+		cli.Logf("Reading new latest state for index #%v...", blockIndex)
+		newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(blockIndex)))
+
+		defer func() {
+			if err := recover(); err != nil {
+				cli.Logf("Validation panicked")
+				lastErr = fmt.Errorf("%v\n%v", err, string(debug.Stack()))
+			}
+		}()
+
+		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
+		return true
+	})
+
+	if lastErr != nil {
+		cli.ClearStatusBar()
+		cli.Logf("Validation panicked: %v", lastErr)
+	}
 
 	return nil
 }
@@ -126,4 +161,47 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 
 	cli.ClearStatusBar()
 	cli.DebugLogf("States are equal\n")
+}
+
+func findBlockWithIssue(firstBlockIndex, lastBlockIndex uint32, runValidation func(lastBlockIndex uint32) bool) {
+	cli.Logf("Running validation for initial block range [%v, %v]", firstBlockIndex, lastBlockIndex)
+	if runValidation(lastBlockIndex) {
+		return
+	}
+
+	cli.Logf("Validation FAILED for block range [%v, %v]", firstBlockIndex, lastBlockIndex)
+
+	cli.Logf("Trying to find block with issue...")
+	lastFailedBlockIndex := lastBlockIndex
+	searchRangeFirstBlockIndex := firstBlockIndex
+	searchRangeLastBlockIndex := lastBlockIndex - 1
+
+	for {
+		cli.Logf("Searching in range [%v, %v]", searchRangeFirstBlockIndex, searchRangeLastBlockIndex)
+		lastBlockIndex = (searchRangeLastBlockIndex + searchRangeFirstBlockIndex) / 2
+
+		cli.Logf("Running validation for block range [%v, %v]", firstBlockIndex, lastBlockIndex)
+		if runValidation(lastBlockIndex) {
+			cli.Logf("Validation PASSED for block range [%v, %v]", searchRangeFirstBlockIndex, lastBlockIndex)
+			if searchRangeLastBlockIndex == searchRangeFirstBlockIndex {
+				break
+			}
+
+			searchRangeFirstBlockIndex = lastBlockIndex + 1
+		} else {
+			cli.Logf("Validation FAILED for block range [%v, %v]", searchRangeFirstBlockIndex, lastBlockIndex)
+			lastFailedBlockIndex = lastBlockIndex
+			if searchRangeLastBlockIndex == searchRangeFirstBlockIndex {
+				break
+			}
+
+			searchRangeLastBlockIndex = lastBlockIndex - 1
+		}
+
+		if searchRangeLastBlockIndex < searchRangeFirstBlockIndex {
+			break
+		}
+	}
+
+	cli.Logf("Found block with issue: %v", lastFailedBlockIndex)
 }

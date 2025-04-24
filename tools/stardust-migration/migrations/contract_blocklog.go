@@ -177,7 +177,7 @@ func migrateSingleReceipt(receipt *old_blocklog.RequestReceipt, oldChainID old_i
 	}
 }
 
-func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
+func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID, enableValidations bool) {
 	oldRequests := old_collections.NewMapReadOnly(oldState, old_blocklog.PrefixRequestReceipts)
 
 	progress := NewProgressPrinter(500)
@@ -240,7 +240,7 @@ func migrateRequestReceipts(oldState old_kv.KVStoreReader, newState kv.KVStore, 
 	}
 
 	newRequests := collections.NewMapReadOnly(newState, blocklog.PrefixRequestReceipts)
-	if oldRequests.Len() != newRequests.Len() {
+	if enableValidations && oldRequests.Len() != newRequests.Len() {
 		panic(fmt.Errorf("requestReceipts migration error: old and new receipts count mismatch: %v != %v", oldRequests.Len(), newRequests.Len()))
 	}
 }
@@ -300,7 +300,7 @@ func migrateGlobalVars(oldState old_kv.KVStoreReader, newState kv.KVStore) uint3
 	return oldBlockIndex
 }
 
-func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, chainOwner *cryptolib.Address, blockKeepAmount int32) blocklog.BlockInfo {
+func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState kv.KVStore, oldChainID old_isc.ChainID, stateMetadata *transaction.StateMetadata, chainOwner *cryptolib.Address, blockKeepAmount int32, enableValidations bool) blocklog.BlockInfo {
 	oldContractState := oldstate.GetContactStateReader(oldChainState, old_blocklog.Contract.Hname())
 	newContractState := newstate.GetContactState(newChainState, blocklog.Contract.Hname())
 
@@ -308,7 +308,7 @@ func MigrateBlocklogContract(oldChainState old_kv.KVStoreReader, newChainState k
 	blockIndex := migrateGlobalVars(oldChainState, newChainState)
 	blockInfo := migrateBlockRegistry(blockIndex, blockKeepAmount, chainOwner, stateMetadata, oldContractState, newContractState)
 	if blockIndex != 0 { // no requests on origin block
-		migrateRequestReceipts(oldContractState, newContractState, oldChainID)
+		migrateRequestReceipts(oldContractState, newContractState, oldChainID, enableValidations)
 	}
 
 	return blockInfo

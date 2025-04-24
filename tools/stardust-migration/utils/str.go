@@ -8,6 +8,15 @@ import (
 func SortLines(s string) string {
 	lines := strings.Split(s, "\n")
 	sort.Strings(lines)
+
+	for len(lines) > 0 {
+		if lines[0] == "" {
+			lines = lines[1:]
+		} else {
+			break
+		}
+	}
+
 	return strings.Join(lines, "\n")
 }
 

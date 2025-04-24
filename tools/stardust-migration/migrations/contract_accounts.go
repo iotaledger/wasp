@@ -31,43 +31,31 @@ type migratedAccount struct {
 	NewAgentID isc.AgentID
 }
 
-func MigrateAccountsContractMuts(
+func MigrateAccountsContract(
 	v old_isc.SchemaVersion,
-	oldChainStateMuts old_kv.KVStoreReader,
-	newChainState kv.KVStore,
-	oldChainID old_isc.ChainID,
-) {
-	cli.DebugLog("Migrating accounts contract (muts)...\n")
-	oldStateMuts := oldstate.GetContactStateReader(oldChainStateMuts, old_accounts.Contract.Hname())
-	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
-
-	migrateAccountsList(oldStateMuts, newState, oldChainID)
-	migrateBaseTokenBalances(v, oldStateMuts, newState, oldChainID)
-	migrateNativeTokenBalances(oldStateMuts, newState, oldChainID)
-	migrateFoundriesOutputs(oldStateMuts, newState)
-	migrateFoundriesPerAccount(oldStateMuts, newState)
-	migrateNativeTokenOutputs(oldStateMuts, newState)
-	// migrateNFTs is done in MigrateAccountsContractFullState
-	// prefixNewlyMintedNFTs ignored
-	// PrefixMintIDMap ignored
-	migrateNonce(oldStateMuts, newState, oldChainID)
-
-	cli.DebugLog("Migrated accounts contract (muts)\n")
-}
-
-func MigrateAccountsContractFullState(
+	prevChainState old_kv.KVStoreReader,
 	oldChainState old_kv.KVStoreReader,
 	newChainState kv.KVStore,
 	oldChainID old_isc.ChainID,
 ) {
-	// NOTE: See comment in migrateNFTs for reason why MigrateAccountsContract is split into two functions.
-	cli.DebugLog("Migrating accounts contract (full state)...\n")
+	cli.DebugLog("Migrating accounts contract (muts)...\n")
+	//prevOldState := oldstate.GetContactStateReader(prevChainState, old_accounts.Contract.Hname())
 	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
 	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
 
-	migrateNFTs(oldState, newState, oldChainID)
+	migrateAccountsList(oldState, newState, oldChainID)
+	migrateBaseTokenBalances(v, oldState, newState, oldChainID)
+	migrateNativeTokenBalances(oldState, newState, oldChainID)
+	migrateFoundriesOutputs(oldState, newState)
+	migrateFoundriesPerAccount(oldState, newState)
+	migrateNativeTokenOutputs(oldState, newState)
+	// TODO: Fix migrateNFTs
+	//migrateNFTs(prevOldState, oldState, newState, oldChainID)
+	// prefixNewlyMintedNFTs ignored
+	// PrefixMintIDMap ignored
+	migrateNonce(oldState, newState, oldChainID)
 
-	cli.DebugLog("Migrated accounts contract (full state)\n")
+	cli.DebugLog("Migrated accounts contract (muts)\n")
 }
 
 func migrateAccountsList(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChID old_isc.ChainID) {
@@ -132,13 +120,13 @@ func migrateBaseTokenBalances(
 	cli.DebugLogf("Migrated %v base token balances\n", count)
 }
 
-func migrateNativeTokenBalances(oldStateMuts old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
+func migrateNativeTokenBalances(oldState old_kv.KVStoreReader, newState kv.KVStore, oldChainID old_isc.ChainID) {
 	cli.DebugLogf("Migrating native token balances...\n")
 
 	var count int
 
 	w := accounts.NewStateWriter(newSchema, newState)
-	oldStateMuts.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+	oldState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
 		count++
 		oldAccKey, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
 		if oldNtIDBytes == "" {
@@ -221,28 +209,33 @@ func migrateNativeTokenOutputs(oldState old_kv.KVStoreReader, newState kv.KVStor
 }
 
 func migrateNFTs(
+	prevOldState old_kv.KVStoreReader,
 	oldState old_kv.KVStoreReader,
 	newState kv.KVStore,
 	oldChainID old_isc.ChainID,
 ) {
-	// NOTE: We cant use just mutations for this function, because GetNFTData() reads other stuff from the state.
-	// And even if we pass here both mutations and full state and iterate by mutations but read from full state,
-	// still it wouldn't work, because old state with applied mutations will not have the data read by GetNFTData().
-	// So to use mutations here, we need to have both mutations and PREV old state. That seems too complicated for now,
-	// just using full state here as special case of accounts contract migration.
-
 	cli.DebugLogf("Migrating NFTs...\n")
 
 	oldNFTOutputs := old_accounts.NftOutputMapR(oldState)
 	w := accounts.NewStateWriter(newSchema, newState)
 
 	var count uint32
-	oldNFTOutputs.IterateKeys(func(k []byte) bool {
+	oldNFTOutputs.Iterate(func(k, v []byte) bool {
 		nftID := old_codec.MustDecodeNFTID([]byte(k))
-		oldNFT := old_accounts.GetNFTData(oldState, nftID)
+
+		// If NFT was added, its data is stored in present in current state.
+		// If NFT was deleted, its data is stored in previous state.
+		stateContainingNFTData := lo.Ternary(v == nil, prevOldState, oldState)
+		oldNFT := old_accounts.GetNFTData(stateContainingNFTData, nftID)
 		owner := OldAgentIDtoNewAgentID(oldNFT.Owner, oldChainID)
 		newObjectRecord := OldNFTIDtoNewObjectRecord(nftID)
-		w.CreditObjectToAccount(owner, *newObjectRecord)
+
+		if v != nil {
+			w.CreditObjectToAccount(owner, *newObjectRecord)
+		} else {
+			w.DebitObjectFromAccount(owner, newObjectRecord.ID)
+		}
+
 		count++
 		return true
 	})

@@ -217,11 +217,17 @@ func (s *PrefixKVStore) ApplyMutations(muts *old_buffered.Mutations) (replacedVa
 	replacedValues = make(map[old_kv.Key][]byte, len(muts.Sets)+len(muts.Dels))
 
 	for k, v := range muts.Sets {
-		replacedValues[k] = s.Get(k)
+		replaced := s.Get(k)
+		if replaced != nil {
+			replacedValues[k] = replaced
+		}
 		s.Set(k, v)
 	}
 	for k := range muts.Dels {
-		replacedValues[k] = s.Get(k)
+		replaced := s.Get(k)
+		if replaced != nil {
+			replacedValues[k] = replaced
+		}
 		s.Del(k)
 	}
 

@@ -23,6 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
@@ -38,44 +39,47 @@ func oldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID ol
 
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	accsStr, accs := oldAccountsListToStr(contractState, chainID)
-	cli.DebugLogf("Old accounts preview:%v", utils.MultilinePreview(accsStr))
+	cli.DebugLogf("Old accounts preview:\n%v", utils.MultilinePreview(accsStr))
 
 	var baseTokenBalancesStr, nativeTokenBalancesStr, nftsStr string
 	GoAllAndWait(func() {
 		baseTokenBalancesStr = oldBaseTokenBalancesToStr(contractState, chainID, accs)
-		cli.DebugLogf("Old base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
+		cli.DebugLogf("Old base token balances preview:\n%v", utils.MultilinePreview(baseTokenBalancesStr))
 	}, func() {
 		nativeTokenBalancesStr = oldNativeTokenBalancesToStr(contractState, chainID, accs)
-		cli.DebugLogf("Old native token balances preview:%v", utils.MultilinePreview(nativeTokenBalancesStr))
+		cli.DebugLogf("Old native token balances preview:\n%v", utils.MultilinePreview(nativeTokenBalancesStr))
 	}, func() {
-		nftsStr = oldNftsToStr(contractState, chainID)
+		// TODO: Fix
+		//nftsStr = oldNftsToStr(contractState, chainID)
 		cli.DebugLogf("Old NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 
-	return accsStr + baseTokenBalancesStr + nativeTokenBalancesStr + nftsStr
+	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTokenBalancesStr + "\n" + nftsStr
 }
 
 func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID) string {
 	contractState := newstate.GetContactStateReader(chainState, accounts.Contract.Hname())
 	accsStr, accs := newAccountsListToStr(contractState, chainID)
-	cli.DebugLogf("New accounts preview:%v", utils.MultilinePreview(accsStr))
+	cli.DebugLogf("New accounts preview:\n%v", utils.MultilinePreview(accsStr))
 
 	var baseTokenBalancesStr, nativeTOkenBalancesStr, nftsStr string
 	GoAllAndWait(func() {
 		baseTokenBalancesStr, nativeTOkenBalancesStr = newTokenBalancesToStr(contractState, chainID, accs)
-		cli.DebugLogf("New base token balances preview:%v", utils.MultilinePreview(baseTokenBalancesStr))
-		cli.DebugLogf("New native token balances preview:%v", utils.MultilinePreview(nativeTOkenBalancesStr))
+		cli.DebugLogf("New base token balances preview:\n%v", utils.MultilinePreview(baseTokenBalancesStr))
+		cli.DebugLogf("New native token balances preview:\n%v", utils.MultilinePreview(nativeTOkenBalancesStr))
 	}, func() {
-		nftsStr = newNftsToStr(contractState, chainID)
+		// TODO: Fix
+		//nftsStr = newNftsToStr(contractState, chainID)
 		cli.DebugLogf("New NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 
-	return accsStr + baseTokenBalancesStr + nativeTOkenBalancesStr + nftsStr
+	return accsStr + "\n" + baseTokenBalancesStr + "\n" + nativeTOkenBalancesStr + "\n" + nftsStr
 }
 
 func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) (string, map[old_kv.Key]old_isc.AgentID) {
 	cli.DebugLogf("Reading old accounts list...")
 	accs := old_accounts.AllAccountsMapR(contractState)
+	var accsCount uint32
 
 	cli.DebugLogf("Found %v accounts", accs.Len())
 	cli.DebugLogf("Reading accounts...")
@@ -90,12 +94,19 @@ func oldAccountsListToStr(contractState old_kv.KVStoreReader, chainID old_isc.Ch
 		accsStr.WriteString(oldAgentIDToStr(accID))
 		accsStr.WriteString("\n")
 		agentIDs[old_kv.Key(accKey)] = accID
+		accsCount++
 		printProgress()
 		return true
 	})
 
+	if accsCount != accs.Len() {
+		panic(fmt.Errorf("map len does not match map elements count: %v != %v", accsCount, accs.Len()))
+	}
+
+	accsStr.WriteString(fmt.Sprintf("Accounts map len: %v\n", accs.Len()))
+
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v accounts:%v\n", accs.Len(), utils.SortLines(accsStr.String()))
+	res := utils.SortLines(accsStr.String())
 
 	return res, agentIDs
 }
@@ -122,7 +133,11 @@ func newAccountsListToStr(contractState kv.KVStoreReader, chainID isc.ChainID) (
 	})
 
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v accounts:%v\n", len(accs), utils.SortLines(accsStr.String()))
+	accsMap := collections.NewMapReadOnly(contractState, accounts.KeyAllAccounts)
+	accsStr.WriteString(fmt.Sprintf("Accounts map len: %v\n", accsMap.Len()))
+
+	cli.DebugLogf("Formatting lines...")
+	res := utils.SortLines(accsStr.String())
 
 	return res, agentIDs
 }
@@ -188,7 +203,7 @@ func oldBaseTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, cha
 
 	cli.DebugLogf("Found %v old base token balances", count)
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v base token balances:%v\n", count, utils.SortLines(balancesStr.String()))
+	res := fmt.Sprintf("Found %v base token balances:\n%v\n", count, utils.SortLines(balancesStr.String()))
 
 	return res
 }
@@ -227,7 +242,7 @@ func oldBaseTokenBalancesFromMapToStr(contractState old_kv.KVStoreReader, chainI
 
 	cli.DebugLogf("Found %v old base token balances", count)
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v base token balances:%v\n", count, utils.SortLines(balancesStr.String()))
+	res := fmt.Sprintf("Found %v base token balances:\n%v\n", count, utils.SortLines(balancesStr.String()))
 
 	return res
 }
@@ -246,6 +261,7 @@ func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, c
 
 	var balancesStr strings.Builder
 	count := 0
+	ntCountPerAcc := make(map[old_kv.Key]uint32)
 
 	contractState.IterateSorted(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
 		accKey, accStr, _, ntID, isMapElem := utils.MustSplitParseMapKeyAny(k, old_accounts.PrefixNativeTokens, func(accKey, ntIDBytes old_kv.Key) (string, old_iotago.NativeTokenID, error) {
@@ -300,15 +316,29 @@ func oldNativeTokenBalancesFromPrefixToStr(contractState old_kv.KVStoreReader, c
 		balancesStr.WriteString(": ")
 		balancesStr.WriteString(balance.String())
 		balancesStr.WriteString("\n")
-		printProgress()
 		count++
+		ntCountPerAcc[accKey]++
+		printProgress()
 
 		return true
 	})
 
 	cli.DebugLogf("Found %v old native token balances", count)
 	cli.DebugLogf("Formatting lines...")
-	res := fmt.Sprintf("Found %v native token balances:%v\n", count, utils.SortLines(balancesStr.String()))
+	res := fmt.Sprintf("Found %v native token balances:\n%v\n", count, utils.SortLines(balancesStr.String()))
+
+	printProgress, clearProgress = NewProgressPrinter("accounts_old", "native balances (check map lengths)", "accounts", len(knownAccs))
+	defer clearProgress()
+
+	for accKey, agentID := range knownAccs {
+		ntMap := old_accounts.NativeTokensMapR(contractState, accKey)
+		if ntMap.Len() != ntCountPerAcc[accKey] {
+			panic(fmt.Errorf("mismatch between native tokens map len and actual number of native tokens for account %x (%v): %v != %v",
+				[]byte(accKey), oldAgentIDToStr(agentID), ntMap.Len(), ntCountPerAcc[accKey]))
+		}
+
+		printProgress()
+	}
 
 	return res
 }
@@ -321,6 +351,8 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 		baseFromPrefix, nativeFromPrefix = newTokenBalancesFromPrefixToStr(contractState, chainID)
 	}, func() {
 		baseFromMap, nativeFromMap = newTokenBalancesFromMapToStr(contractState, chainID, accs)
+	}, func() {
+		checkNewBalancesMapLengths(contractState, chainID, accs)
 	})
 
 	GoAllAndWait(func() {
@@ -330,6 +362,34 @@ func newTokenBalancesToStr(contractState kv.KVStoreReader, chainID isc.ChainID, 
 	})
 
 	return baseFromPrefix, nativeFromPrefix
+}
+
+func checkNewBalancesMapLengths(contractState kv.KVStoreReader, chainID isc.ChainID, knownAccs map[kv.Key]isc.AgentID) {
+	cli.DebugLogf("Checking new balances map lengths...")
+
+	printProgress, clearProgress := NewProgressPrinter("accounts_new", "balances (map len check)", "accounts", len(knownAccs)+1)
+	defer clearProgress()
+
+	r := accounts.NewStateReader(newSchema, contractState)
+
+	for accKey, agentID := range knownAccs {
+		balancesFromIteration := r.GetCoins(agentID)
+		coinsCountFromIteration := uint32(len(balancesFromIteration.NativeTokens()))
+		if balancesFromIteration.BaseTokens() != 0 {
+			coinsCountFromIteration++
+		}
+
+		balancesMap := collections.NewMapReadOnly(contractState, accounts.AccountCoinBalancesKey(accKey))
+
+		if coinsCountFromIteration != balancesMap.Len() {
+			panic(fmt.Errorf("mismatch between balances map len and actual number of balances for account %x (%v): %v != %v",
+				[]byte(accKey), newAgentIDToStr(agentID), coinsCountFromIteration, balancesMap.Len()))
+		}
+
+		printProgress()
+	}
+
+	cli.DebugLogf("Checked new balances map lengths")
 }
 
 func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) string {
@@ -565,8 +625,8 @@ func newTokenBalancesFromPrefixToStr(contractState kv.KVStoreReader, chainID isc
 
 	cli.DebugLogf("Found %v new base token balances, %v new native token balances", baseCount, nativeCount)
 	cli.DebugLogf("Formatting lines...")
-	resBase := fmt.Sprintf("Found %v base token balances:%v\n", baseCount, utils.SortLines(baseBalancesStr.String()))
-	resNative := fmt.Sprintf("Found %v native token balances:%v\n", nativeCount, utils.SortLines(nativeBalancesStr.String()))
+	resBase := fmt.Sprintf("Found %v base token balances:\n%v\n", baseCount, utils.SortLines(baseBalancesStr.String()))
+	resNative := fmt.Sprintf("Found %v native token balances:\n%v\n", nativeCount, utils.SortLines(nativeBalancesStr.String()))
 
 	return resBase, resNative
 }
@@ -637,8 +697,8 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 
 	cli.DebugLogf("Found %v new base token balances, %v new native token balances", baseCount, nativeCount)
 	cli.DebugLogf("Formatting lines...")
-	resBase := fmt.Sprintf("Found %v base token balances:%v\n", baseCount, utils.SortLines(baseBalancesStr.String()))
-	resNative := fmt.Sprintf("Found %v native token balances:%v\n", nativeCount, utils.SortLines(nativeBalancesStr.String()))
+	resBase := fmt.Sprintf("Found %v base token balances:\n%v\n", baseCount, utils.SortLines(baseBalancesStr.String()))
+	resNative := fmt.Sprintf("Found %v native token balances:\n%v\n", nativeCount, utils.SortLines(nativeBalancesStr.String()))
 
 	return resBase, resNative
 }

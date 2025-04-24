@@ -228,6 +228,11 @@ func searchFoundies(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, 
 	contractState.Iterate(old_accounts.PrefixFoundries, onFound)
 }
 
+func searchNativeTokens(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+	contractState.Iterate(old_accounts.PrefixNativeTokens, onFound)
+}
+
 func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
 	// Some of the records, which start with PrefixNativeToken, had previously invalid account key.
 	// Also, seemingly they always delete value, although there is nothing set.
@@ -248,10 +253,7 @@ func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, onFound fu
 		}
 
 		if !IsValidOldAccountKeyBytesLen(len(oldAccKey)) {
-			if v != nil {
-				// Are these records always deletions?
-				return onFound(k, v)
-			}
+			return onFound(k, v)
 		}
 
 		return true

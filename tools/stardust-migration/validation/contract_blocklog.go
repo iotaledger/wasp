@@ -36,7 +36,7 @@ func oldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, firstIndex
 		cli.DebugLogf("Old request lookup index preview:\n%v", utils.MultilinePreview(requestLookupIndexStr))
 	})
 
-	return receiptsStr + blockRegistryStr + requestLookupIndexStr
+	return receiptsStr + "\n" + blockRegistryStr + "\n" + requestLookupIndexStr
 }
 
 func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
@@ -71,7 +71,7 @@ func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex 
 			printProgress()
 		}
 
-		if uint32(reqCount) < (lastIndex-firstAvailableBlockIndex)-1 {
+		if uint32(reqCount) < max(lastIndex-firstAvailableBlockIndex, 1)-1 {
 			panic(fmt.Sprintf("Not enough receipts found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, reqCount))
 		}
 
@@ -109,6 +109,9 @@ func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex 
 
 	requestStr.WriteString(fmt.Sprintf("Receipts keys: %v\n", receiptKeysCount))
 
+	receipts := old_collections.NewMapReadOnly(contractState, old_blocklog.PrefixRequestReceipts)
+	requestStr.WriteString(fmt.Sprintf("Receipts map len: %v\n", receipts.Len()))
+
 	return requestStr.String()
 }
 
@@ -127,7 +130,7 @@ func newBlocklogContractContentToStr(chainState kv.KVStoreReader, firstIndex, la
 		cli.DebugLogf("New request lookup index preview:\n%v", utils.MultilinePreview(requestLookupIndexStr))
 	})
 
-	return receiptsStr + blockRegistryStr + requestLookupIndexStr
+	return receiptsStr + "\n" + blockRegistryStr + "\n" + requestLookupIndexStr
 }
 
 func newReceiptsToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
@@ -185,6 +188,9 @@ func newReceiptsToStr(contractState kv.KVStoreReader, firstIndex, lastIndex uint
 	})
 
 	requestStr.WriteString(fmt.Sprintf("Receipts keys: %v\n", receiptKeysCount))
+
+	receipts := collections.NewMapReadOnly(contractState, blocklog.PrefixRequestReceipts)
+	requestStr.WriteString(fmt.Sprintf("Receipts map len: %v\n", receipts.Len()))
 
 	return requestStr.String()
 }
@@ -329,7 +335,8 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 	// plus gathering general statistics
 
 	var indexStr = strings.Builder{}
-	var elementsCount = 0
+	var keysCount uint32 = 0
+	var listElementsCount = 0
 
 	GoAllAndWait(func() {
 		requestsCount := 0
@@ -364,8 +371,8 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 			}
 		}
 
-		if uint32(requestsCount) < (lastIndex-firstAvailBlockIndex)-1 {
-			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstIndex, lastIndex, requestsCount))
+		if uint32(requestsCount) < max(lastIndex-firstAvailBlockIndex, 1)-1 {
+			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstAvailBlockIndex, lastIndex, requestsCount))
 		}
 
 		cli.DebugLogf("Retrieved %v old request lookup entries", requestsCount)
@@ -377,23 +384,29 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 			printProgress()
 			key = utils.MustRemovePrefix(key, old_blocklog.PrefixRequestLookupIndex)
 			if key == "" {
-				elementsCount++
+				keysCount++
+				listElementsCount++
 			} else if key[0] == '.' {
+				keysCount++
 				lookupKeyList := lo.Must(old_blocklog.RequestLookupKeyListFromBytes(value))
-				elementsCount += len(lookupKeyList)
+				listElementsCount += len(lookupKeyList)
 			}
 			return true
 		})
 
-		if uint32(elementsCount) < (lastIndex - firstAvailBlockIndex) {
+		if keysCount != lookupTable.Len()+1 { // +1 because of length key
+			panic(fmt.Sprintf("Request lookup index keys count mismatch: %v != %v", keysCount, lookupTable.Len()+1))
+		}
+		if uint32(listElementsCount) < (lastIndex - firstAvailBlockIndex) {
 			panic(fmt.Sprintf("Not enough request lookup index keys found in the blocks range [%v; %v]: %v",
-				firstIndex, lastIndex, elementsCount))
+				firstIndex, lastIndex, listElementsCount))
 		}
 
-		cli.DebugLogf("Retrieved %v old request lookup index keys", elementsCount)
+		cli.DebugLogf("Retrieved %v old request lookup index keys", listElementsCount)
 	})
 
-	indexStr.WriteString(fmt.Sprintf("Request lookup index keys: %v\n", elementsCount))
+	indexStr.WriteString(fmt.Sprintf("Request lookup index keys: %v\n", listElementsCount))
+	indexStr.WriteString(fmt.Sprintf("Request lookup index map len: %v\n", lookupTable.Len()))
 
 	return indexStr.String()
 }
@@ -468,6 +481,7 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 	})
 
 	indexStr.WriteString(fmt.Sprintf("Request lookup index keys: %v\n", elementsCount))
+	indexStr.WriteString(fmt.Sprintf("Request lookup index map len: %v\n", lookupTable.Len()))
 
 	return indexStr.String()
 }

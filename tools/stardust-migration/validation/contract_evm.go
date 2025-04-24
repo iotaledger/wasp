@@ -64,7 +64,7 @@ func oldEVMContractContentToStr(chainState old_kv.KVStoreReader, fromBlockIndex,
 		cli.DebugLogf("Old receipts by block number preview:\n%v", utils.MultilinePreview(receiptsStr))
 	})
 
-	return allowanceStr + txByBlockStr + blockHeaderStr + receiptsStr
+	return allowanceStr + "\n" + txByBlockStr + "\n" + blockHeaderStr + "\n" + receiptsStr
 }
 
 func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toBlockIndex uint32) string {
@@ -86,7 +86,7 @@ func newEVMContractContentToStr(chainState kv.KVStoreReader, fromBlockIndex, toB
 		cli.DebugLogf("New receipts by block number preview:\n%v", utils.MultilinePreview(receiptsStr))
 	})
 
-	return allowanceStr + txByBlockStr + blockHeaderStr + receiptsStr
+	return allowanceStr + "\n" + txByBlockStr + "\n" + blockHeaderStr + "\n" + receiptsStr
 }
 
 func oldISCMagicAllowanceToStr(contractState old_kv.KVStoreReader) string {
@@ -399,7 +399,7 @@ func oldReceiptsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromIndex
 
 		cli.DebugLogf("Found %v old receipts by block number", recCount)
 
-		if uint32(recCount) < (toIndex-fromIndex)-1 {
+		if uint32(recCount) < max(toIndex-fromIndex, 1)-1 {
 			panic(fmt.Sprintf("Not enough receipts found in range [%v, %v]: %v", fromIndex, toIndex, recCount))
 		}
 	}, func() {
