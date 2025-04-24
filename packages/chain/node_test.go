@@ -124,7 +124,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	for i := range incCount {
 		const baseTokens = 10000000
 		assets := iscmove.NewAssets(baseTokens)
-		allowanceBCS := lo.Must(bcs.Marshal(assets))
+		allowanceBCS := lo.Must(bcs.Marshal(iscmove.NewAssets(baseTokens - 100000)))
 		one := int64(1)
 		mmm := inccounter.FuncIncCounter.Message(&one)
 		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
@@ -138,7 +138,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				Args:     mmm.Params,
 			},
 			AllowanceBCS:     allowanceBCS,
-			OnchainGasBudget: 100000,
+			OnchainGasBudget: 1000000,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
 		})
