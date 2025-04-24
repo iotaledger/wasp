@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
@@ -113,14 +114,11 @@ func TestRequestDataSerialization(t *testing.T) {
 					Function: uint32(isc.Hn("entrypoint")),
 					Args:     [][]byte{},
 				},
-				Allowance: iscmove.Assets{
-					Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
-					Objects: make(iscmove.ObjectCollection),
-				},
-				GasBudget: 1000,
+				AllowanceBCS: lo.Must(bcs.Marshal(isc.NewAssets(100).AsISCMove())),
+				GasBudget:    1000,
 			},
 		}
-		req, err := isc.OnLedgerFromRequest(&onledgerReq, cryptolib.NewRandomAddress())
+		req, err := isc.OnLedgerFromMoveRequest(&onledgerReq, cryptolib.NewRandomAddress())
 		require.NoError(t, err)
 		bcs.TestCodec(t, isc.Request(req))
 		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {

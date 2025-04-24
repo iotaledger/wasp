@@ -456,15 +456,9 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 			AnchorAddress: anchor.ObjectID,
 			AssetsBagRef:  &tmpAssetsBagRef,
 			Message:       iscmovetest.RandomMessage(),
-			Allowance: &iscmove.Assets{
-				Coins: iscmove.CoinBalances{
-					iotajsonrpc.CoinType("0x1::iota::IOTA"):    11,
-					iotajsonrpc.CoinType("0xa::testa::TEST_A"): 12,
-				},
-				Objects: make(iscmove.ObjectCollection),
-			},
-			GasPrice:  iotaclient.DefaultGasPrice,
-			GasBudget: iotaclient.DefaultGasBudget,
+			AllowanceBCS:  []byte{1, 2, 3},
+			GasPrice:      iotaclient.DefaultGasPrice,
+			GasBudget:     iotaclient.DefaultGasBudget,
 		},
 	)
 	require.NoError(t, err)
@@ -481,6 +475,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	bal, ok := assetsBag.Coins[testCointype]
 	require.True(t, ok)
 	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
+	require.Equal(t, []byte{1, 2, 3}, reqWithObj.Object.AllowanceBCS)
 }
 
 func newAssetsBag(

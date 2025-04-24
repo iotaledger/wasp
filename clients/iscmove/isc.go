@@ -222,13 +222,13 @@ func (o ObjectCollection) Iterate() iter.Seq2[iotago.ObjectID, iotago.ObjectType
 }
 
 type Request struct {
-	ID     iotago.ObjectID
-	Sender *cryptolib.Address
-	// XXX balances are empty if we don't fetch the dynamic fields
-	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
+	AssetsBag AssetsBagWithBalances
 	Message   Message
-	Allowance Assets
-	GasBudget uint64
+	// AllowanceBCS is either empty or a BCS-encoded iscmove.Allowance
+	AllowanceBCS []byte
+	GasBudget    uint64
 }
 
 type RequestEvent struct {

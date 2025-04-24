@@ -123,21 +123,15 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			Allowance: iscmove.Assets{
-				Coins: iscmove.CoinBalances{
-					iotajsonrpc.IotaCoinType:                                111,
-					iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"): 222,
-				},
-				Objects: make(iscmove.ObjectCollection),
-			},
-			GasBudget: 1000,
+			AllowanceBCS: []byte{},
+			GasBudget:    1000,
 		},
 	}
 }
 
 func RandomOnLedgerRequest() isc.OnLedgerRequest {
 	req := RandomRequestWithRef()
-	onReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewRandomAddress())
+	onReq, err := isc.OnLedgerFromMoveRequest(req, cryptolib.NewRandomAddress())
 	if err != nil {
 		panic(err)
 	}
@@ -165,14 +159,11 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance: iscmove.Assets{
-				Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 10000},
-				Objects: make(iscmove.ObjectCollection),
-			},
-			GasBudget: 100000,
+			AllowanceBCS: nil,
+			GasBudget:    100000,
 		},
 	}
-	onReq, err := isc.OnLedgerFromRequest(&req, sender)
+	onReq, err := isc.OnLedgerFromMoveRequest(&req, sender)
 	if err != nil {
 		panic(err)
 	}

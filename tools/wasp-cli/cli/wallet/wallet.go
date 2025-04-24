@@ -76,7 +76,6 @@ func Load() wallets.Wallet {
 		switch walletProvider {
 		case ProviderLedger, ProviderLedgerDebug:
 			loadedWallet = providers.NewExternalWallet(initializeLedger(walletProvider), AddressIndex, iotasigner.IotaCoinType)
-
 		case ProviderKeyChain:
 			loadedWallet = providers.LoadKeyChain(AddressIndex)
 		case ProviderUnsafeInMemoryTestingSeed:

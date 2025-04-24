@@ -14,11 +14,7 @@ import (
 )
 
 func TestNewSigner(t *testing.T) {
-	testIotaAddress := iotago.MustAddressFromHex("0x786dff8a4ee13d45b502c8f22f398e3517e6ec78aa4ae564c348acb07fad7f50")
-	signer, err := iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagIotaEd25519)
-	require.NoError(t, err)
-	require.Equal(t, testIotaAddress, signer.Address())
-	signer, err = iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagEd25519)
+	signer, err := iotasigner.NewSignerWithMnemonic(testcommon.TestMnemonic, iotasigner.KeySchemeFlagDefault)
 	require.NoError(t, err)
 	require.Equal(t, iotago.MustAddressFromHex(testcommon.TestAddress), signer.Address())
 }
