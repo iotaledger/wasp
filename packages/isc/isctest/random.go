@@ -123,7 +123,7 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			AllowanceBCS: nil,
+			AllowanceBCS: []byte{},
 			GasBudget:    1000,
 		},
 	}
