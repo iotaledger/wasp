@@ -54,6 +54,8 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	fmt.Print("Start index block")
+
 	state, err := c.stateByTrieRoot(trieRoot)
 	if err != nil {
 		return fmt.Errorf("stateByTrieRoot: %w", err)
@@ -87,6 +89,10 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 
 	for i := blockIndexToCache; i >= cacheUntil; i-- {
 		// walk back and save all blocks between [lastBlockIndexCached...blockIndexToCache]
+
+		if i%1000 == 0 {
+			fmt.Printf("indexing block %d, cacheUntil: %d \n", i, cacheUntil)
+		}
 
 		blockinfo, found := blocklog.NewStateReaderFromChainState(activeStateToCache).GetBlockInfo(i)
 		if !found {

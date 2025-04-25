@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	cmd "github.com/urfave/cli/v2"
@@ -30,28 +31,30 @@ func createIndex(c *cmd.Context) error {
 		}
 	}()
 
-	destKVS := db.ConnectNew(c.Args().Get(0))
-	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
+	rebasedDB := db.ConnectNew(c.Args().Get(0))
+	rebasedDBStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(rebasedDB))
 
-	latestIndex, err := destStore.LatestBlockIndex()
+	indexerDBPath := c.Args().Get(1)
+
+	latestIndex, err := rebasedDBStore.LatestBlockIndex()
 	if err != nil {
 		return err
 	}
 
+	fmt.Printf("Latest block index: %d\n", latestIndex)
+
 	index := jsonrpc.NewIndex(func(trieRoot trie.Hash) (state.State, error) {
-		return destStore.StateByTrieRoot(trieRoot)
-	}, hivedb.EngineRocksDB, c.Args().Get(1))
+		return rebasedDBStore.StateByTrieRoot(trieRoot)
+	}, hivedb.EngineRocksDB, indexerDBPath)
 
-	for i := uint32(0); i < latestIndex; i += 10000 {
-		block, err := destStore.StateByIndex(latestIndex - i)
-		if err != nil {
-			return err
-		}
+	block, err := rebasedDBStore.StateByIndex(latestIndex)
+	if err != nil {
+		return err
+	}
 
-		err = index.IndexBlock(block.TrieRoot())
-		if err != nil {
-			return err
-		}
+	err = index.IndexBlock(block.TrieRoot())
+	if err != nil {
+		return err
 	}
 
 	return nil
