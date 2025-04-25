@@ -219,7 +219,7 @@ func searchISCMagicAllowance(chainState old_kv.KVStoreReader, args []string, onF
 
 func searchNFT(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
-	nfts := old_collections.NewMapReadOnly(contractState, old_accounts.KeyNFTOutputRecords)
+	nfts := old_collections.NewMapReadOnly(contractState, old_accounts.KeyNFTOwner)
 	nfts.Iterate(func(k, v []byte) bool { onFound(old_kv.Key(k), v); return false })
 }
 

@@ -39,7 +39,7 @@ func MigrateAccountsContract(
 	oldChainID old_isc.ChainID,
 ) {
 	cli.DebugLog("Migrating accounts contract (muts)...\n")
-	//prevOldState := oldstate.GetContactStateReader(prevChainState, old_accounts.Contract.Hname())
+	prevOldState := oldstate.GetContactStateReader(prevChainState, old_accounts.Contract.Hname())
 	oldState := oldstate.GetContactStateReader(oldChainState, old_accounts.Contract.Hname())
 	newState := newstate.GetContactState(newChainState, accounts.Contract.Hname())
 
@@ -49,8 +49,7 @@ func MigrateAccountsContract(
 	migrateFoundriesOutputs(oldState, newState)
 	migrateFoundriesPerAccount(oldState, newState)
 	migrateNativeTokenOutputs(oldState, newState)
-	// TODO: Fix migrateNFTs
-	//migrateNFTs(prevOldState, oldState, newState, oldChainID)
+	migrateNFTs(prevOldState, oldState, newState, oldChainID)
 	// prefixNewlyMintedNFTs ignored
 	// PrefixMintIDMap ignored
 	migrateNonce(oldState, newState, oldChainID)
@@ -216,24 +215,26 @@ func migrateNFTs(
 ) {
 	cli.DebugLogf("Migrating NFTs...\n")
 
-	oldNFTOutputs := old_accounts.NftOutputMapR(oldState)
+	prevOldNFTToOwner := old_accounts.NftToOwnerMapR(prevOldState)
+	oldNFTToOwner := old_accounts.NftToOwnerMapR(oldState)
 	w := accounts.NewStateWriter(newSchema, newState)
 
 	var count uint32
-	oldNFTOutputs.Iterate(func(k, v []byte) bool {
+	oldNFTToOwner.Iterate(func(k, v []byte) bool {
 		nftID := old_codec.MustDecodeNFTID([]byte(k))
 
 		// If NFT was added, its data is stored in present in current state.
 		// If NFT was deleted, its data is stored in previous state.
-		stateContainingNFTData := lo.Ternary(v == nil, prevOldState, oldState)
-		oldNFT := old_accounts.GetNFTData(stateContainingNFTData, nftID)
-		owner := OldAgentIDtoNewAgentID(oldNFT.Owner, oldChainID)
+		oldOwnerBytes := lo.Ternary(v != nil, v, prevOldNFTToOwner.GetAt(k))
+		oldOwner := lo.Must(old_isc.AgentIDFromBytes(oldOwnerBytes))
+
+		newOwner := OldAgentIDtoNewAgentID(oldOwner, oldChainID)
 		newObjectRecord := OldNFTIDtoNewObjectRecord(nftID)
 
 		if v != nil {
-			w.CreditObjectToAccount(owner, *newObjectRecord)
+			w.CreditObjectToAccount(newOwner, *newObjectRecord)
 		} else {
-			w.DebitObjectFromAccount(owner, newObjectRecord.ID)
+			w.DebitObjectFromAccount(newOwner, newObjectRecord.ID)
 		}
 
 		count++
