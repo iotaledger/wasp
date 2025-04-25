@@ -116,6 +116,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.GET("chain/dump-accounts", c.dumpAccounts).
 		AddResponse(http.StatusOK, "Accounts dump will be produced", nil, nil).
+		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		SetOperationId("dump-accounts").
 		SetSummary("dump accounts information into a humanly-readable format")
 }

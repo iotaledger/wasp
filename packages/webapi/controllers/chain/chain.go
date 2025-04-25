@@ -3,6 +3,7 @@ package chain
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
@@ -12,6 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
@@ -104,7 +106,24 @@ type dumpAccountsResponse struct {
 
 func (c *Controller) dumpAccounts(e echo.Context) error {
 	ch := lo.Must(c.chainService.GetChain())
-	chainState := lo.Must(ch.LatestState(chain.ActiveOrCommittedState))
+
+	blockIndex := e.QueryParam(params.ParamBlockIndexOrTrieRoot)
+	var chainState state.State
+
+	if blockIndex == "" {
+		chainState = lo.Must(ch.LatestState(chain.ActiveOrCommittedState))
+	} else {
+		var blockIndexNum uint64
+		blockIndexNum, err := strconv.ParseUint(blockIndex, 10, 64)
+		if err != nil {
+			return apierrors.InvalidPropertyError(params.ParamBlockIndexOrTrieRoot, err)
+		}
+
+		chainState, err = ch.Store().StateByIndex(uint32(blockIndexNum))
+		if err != nil {
+			return apierrors.InvalidPropertyError(params.ParamBlockIndexOrTrieRoot, err)
+		}
+	}
 
 	res := &dumpAccountsResponse{
 		StateIndex: chainState.BlockIndex(),
