@@ -1,0 +1,20 @@
+# (Work in progress)
+# This file can be used to run validation tool for multiple blocks at once.
+# Or this is just a reference for manually running validation.
+# Syntax: <block_number> # <explanation/comment>
+
+71 # Before first NFT added
+72 # First NFT added
+73 # First NFT Deleted
+74 # After first NFT deleted
+
+25287 # See next
+25288 # Cross-chain NFT or something like that (was problematic)
+25289 # See prev
+
+134051 # Before another NFT added
+134052 # Another NFT added
+134053 # Before another NFT deleted
+134054 # Another NFT deleted
+134054 # After another NFT deleted
+

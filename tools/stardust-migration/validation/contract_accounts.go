@@ -49,8 +49,7 @@ func oldAccountsContractContentToStr(chainState old_kv.KVStoreReader, chainID ol
 		nativeTokenBalancesStr = oldNativeTokenBalancesToStr(contractState, chainID, accs)
 		cli.DebugLogf("Old native token balances preview:\n%v", utils.MultilinePreview(nativeTokenBalancesStr))
 	}, func() {
-		// TODO: Fix
-		//nftsStr = oldNftsToStr(contractState, chainID)
+		nftsStr = oldNftsToStr(contractState, chainID)
 		cli.DebugLogf("Old NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 
@@ -68,8 +67,7 @@ func newAccountsContractContentToStr(chainState kv.KVStoreReader, chainID isc.Ch
 		cli.DebugLogf("New base token balances preview:\n%v", utils.MultilinePreview(baseTokenBalancesStr))
 		cli.DebugLogf("New native token balances preview:\n%v", utils.MultilinePreview(nativeTOkenBalancesStr))
 	}, func() {
-		// TODO: Fix
-		//nftsStr = newNftsToStr(contractState, chainID)
+		nftsStr = newNftsToStr(contractState, chainID)
 		cli.DebugLogf("New NFTs preview:\n%v\n", utils.MultilinePreview(nftsStr))
 	})
 
@@ -410,6 +408,10 @@ func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) s
 
 	nftOwners := map[string]old_isc.AgentID{}
 	objectsToOwner := []objectToOwner{}
+
+	printProgress, clearProgress := NewProgressPrinter("accounts_old", "nfts", "nfts", ownerToNft.Len())
+	defer clearProgress()
+
 	ownerToNft.Iterate(func(k []byte, v []byte) bool {
 		nftID := old_codec.MustDecodeNFTID([]byte(k))
 		objID := iotago.ObjectID(nftID[:])
@@ -417,6 +419,7 @@ func oldNftsToStr(contractState old_kv.KVStoreReader, chainID old_isc.ChainID) s
 		nftOwners[oldAgentID.String()] = oldAgentID
 		oldAgentIDStr := oldAgentIDToStr(oldAgentID)
 		objectsToOwner = append(objectsToOwner, objectToOwner{objID, oldAgentIDStr})
+		printProgress()
 		return true
 	})
 
@@ -475,13 +478,18 @@ func newNftsToStr(accountsState kv.KVStoreReader, chainID isc.ChainID) string {
 		owner isc.AgentID
 	}
 	objectsToOwner := []objectToOwner{}
+
+	printProgress, clearProgress := NewProgressPrinter("accounts_new", "nfts", "nfts", 0)
+	defer clearProgress()
+
 	for objID, owner := range sr.GetObjectsToOwnerMap() {
 		nftOwners[owner.String()] = owner
-		if !allAccounts.Has(kv.Key(owner.String())) {
+		if !allAccounts.Has(accounts.AccountKey(owner)) {
 			// cli.Logf("account not found in all accounts map: %v", owner)
 			panic(fmt.Errorf("account not found in all accounts map: %v", owner))
 		}
 		objectsToOwner = append(objectsToOwner, objectToOwner{objID, owner})
+		printProgress()
 	}
 
 	sort.Slice(objectsToOwner, func(i, j int) bool {

@@ -174,6 +174,10 @@ func main() {
 								Aliases: []string{"t", "to-block", "to"},
 								Usage:   "Specify block to validate. If not specified, latest available block is validated.",
 							},
+							&cmd.StringFlag{
+								Name:  "blocks-list",
+								Usage: "Specify file with list of blocks to validate. It's like running the tool multiple times with -t/--to-index option. See blocks_to_validate.txt file as example of syntax.",
+							},
 							&cmd.BoolFlag{
 								Name:  "no-hashing",
 								Usage: "Do not hash data before comparing. Will produce bigger but more user-friendly output.",

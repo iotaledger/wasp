@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 
 	"github.com/samber/lo"
@@ -36,6 +37,7 @@ func validateMigration(c *cmd.Context) error {
 
 	firstIndex := uint32(c.Uint64("from-block"))
 	lastIndex := uint32(c.Uint64("to-block"))
+	blocksListFile := c.String("blocks-list")
 	validation.ConcurrentValidation = !c.Bool("no-parallel")
 	hashValues := !c.Bool("no-hashing")
 	findFailureBlock := c.Bool("find-fail-block")
@@ -78,6 +80,7 @@ func validateMigration(c *cmd.Context) error {
 	// 7. Into each of new state validations add some basic "integration" tests - use business logic funcs to retrieve data.
 	// 8. Perform ALL callviews at least once for each of business entity type.
 	// 9. Ensure hash of EVM transaction tracing is same for transactions with Native Tokens and NFTs
+	// 10. Validate that commitments does not change between multiple migration runs
 
 	if lastIndex == 0 {
 		cli.Logf("Using latest new state index")
@@ -95,7 +98,8 @@ func validateMigration(c *cmd.Context) error {
 	var lastErr error
 
 	validation.HashValues = hashValues
-	if !findFailureBlock {
+	switch {
+	case !findFailureBlock && blocksListFile == "":
 		cli.DebugLoggingEnabled = true
 
 		cli.Logf("Reading old latest state for index #%v...", lastIndex)
@@ -114,31 +118,58 @@ func validateMigration(c *cmd.Context) error {
 
 		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, lastIndex)
 		return nil
-	}
+	case findFailureBlock && blocksListFile == "":
+		cli.DebugLoggingEnabled = false
 
-	cli.DebugLoggingEnabled = false
+		findBlockWithIssue(firstIndex, lastIndex, func(blockIndex uint32) bool {
+			cli.Logf("Reading old latest state for index #%v...", blockIndex)
+			oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(blockIndex)))
 
-	findBlockWithIssue(firstIndex, lastIndex, func(blockIndex uint32) bool {
-		cli.Logf("Reading old latest state for index #%v...", blockIndex)
-		oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(blockIndex)))
+			cli.Logf("Reading new latest state for index #%v...", blockIndex)
+			newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(blockIndex)))
 
-		cli.Logf("Reading new latest state for index #%v...", blockIndex)
-		newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(blockIndex)))
+			defer func() {
+				if err := recover(); err != nil {
+					cli.Logf("Validation panicked")
+					lastErr = fmt.Errorf("%v\n%v", err, string(debug.Stack()))
+				}
+			}()
 
-		defer func() {
-			if err := recover(); err != nil {
-				cli.Logf("Validation panicked")
-				lastErr = fmt.Errorf("%v\n%v", err, string(debug.Stack()))
-			}
-		}()
+			validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
+			return true
+		})
 
-		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
-		return true
-	})
+		if lastErr != nil {
+			cli.ClearStatusBar()
+			cli.Logf("Validation panicked: %v", lastErr)
+		}
+	case blocksListFile != "" && !findFailureBlock:
+		panic("Not implemented yet")
+		// // Could be done in parallel, but for now I just dont care.
+		// cli.DebugLoggingEnabled = false
 
-	if lastErr != nil {
-		cli.ClearStatusBar()
-		cli.Logf("Validation panicked: %v", lastErr)
+		// blocks := lo.Must(readBlocksList(blocksListFile))
+		// failedBlocks := make([]uint32, 0)
+
+		// for _, blockIndex := range blocks {
+		// 	cli.Logf("****************************  BLOCK %v  ****************************", blockIndex)
+		// 	cli.Logf("Reading old latest state for index #%v...", blockIndex)
+		// 	oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(blockIndex)))
+
+		// 	cli.Logf("Reading new latest state for index #%v...", blockIndex)
+		// 	newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(blockIndex)))
+
+		// 	defer func() {
+		// 		if err := recover(); err != nil {
+		// 			cli.Logf("Validation panicked for block %v", blockIndex)
+		// 			failedBlocks = append(failedBlocks, blockIndex)
+		// 		}
+		// 	}()
+
+		// 	validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
+		// }
+	default:
+		cli.Logf("Invalid command line arguments: --blocks-list and --find-fail-block are mutually exclusive")
 	}
 
 	return nil
@@ -204,4 +235,31 @@ func findBlockWithIssue(firstBlockIndex, lastBlockIndex uint32, runValidation fu
 	}
 
 	cli.Logf("Found block with issue: %v", lastFailedBlockIndex)
+}
+
+func readBlocksList(filePath string) ([]uint32, error) {
+	text := lo.Must(os.ReadFile(filePath))
+	lines := strings.Split(string(text), "\n")
+
+	blockIndexes := make([]uint32, 0, len(lines))
+	for lineIndex, line := range lines {
+		commentPos := strings.Index(line, "#")
+		if commentPos != -1 {
+			line = line[:commentPos]
+		}
+
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		blockIndex, err := strconv.Atoi(line)
+		if err != nil {
+			return nil, fmt.Errorf("invalid block index in file %s: line %v: %s", filePath, lineIndex+1, line)
+		}
+
+		blockIndexes = append(blockIndexes, uint32(blockIndex))
+	}
+
+	return blockIndexes, nil
 }
