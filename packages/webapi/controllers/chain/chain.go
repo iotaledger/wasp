@@ -1,13 +1,8 @@
 package chain
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
-	"sync"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
@@ -15,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
@@ -96,68 +92,39 @@ func (c *Controller) getState(e echo.Context) error {
 	return e.JSON(http.StatusOK, response)
 }
 
-var dumpAccountsMutex = sync.Mutex{}
+type accountBalance struct {
+	Coins   isc.CoinBalances
+	Objects []isc.IotaObject
+}
+
+type dumpAccountsResponse struct {
+	StateIndex uint32                    `json:"state_index"`
+	Accounts   map[string]accountBalance `json:"accounts"`
+}
 
 func (c *Controller) dumpAccounts(e echo.Context) error {
 	ch := lo.Must(c.chainService.GetChain())
+	chainState := lo.Must(ch.LatestState(chain.ActiveOrCommittedState))
 
-	if !dumpAccountsMutex.TryLock() {
-		return e.String(http.StatusLocked, "account dump in progress")
+	res := &dumpAccountsResponse{
+		StateIndex: chainState.BlockIndex(),
+		Accounts:   make(map[string]accountBalance),
 	}
 
-	go func() {
-		defer dumpAccountsMutex.Unlock()
-		chainState := lo.Must(ch.LatestState(chain.ActiveOrCommittedState))
-		blockIndex := chainState.BlockIndex()
-		stateRoot := chainState.TrieRoot()
-		filename := fmt.Sprintf("block_%d_stateroot_%s.json", blockIndex, stateRoot.String())
+	sa := accounts.NewStateReaderFromChainState(allmigrations.DefaultScheme.LatestSchemaVersion(), chainState)
 
-		err := os.MkdirAll(filepath.Join(c.accountDumpsPath, ch.ID().String()), os.ModePerm)
-		if err != nil {
-			c.log.LogErrorf("dumpAccounts - Creating dir failed: %s", err.Error())
-			return
-		}
-		f, err := os.Create(filepath.Join(c.accountDumpsPath, ch.ID().String(), filename))
-		if err != nil {
-			c.log.LogErrorf("dumpAccounts - Creating account dump file failed: %s", err.Error())
-			return
-		}
-		_, err = f.WriteString("{")
-		if err != nil {
-			c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
-			return
-		}
-		sa := accounts.NewStateReaderFromChainState(allmigrations.DefaultScheme.LatestSchemaVersion(), chainState)
+	sa.AllAccountsAsDict().ForEach(func(key kv.Key, value []byte) bool {
+		agentID := lo.Must(accounts.AgentIDFromKey(key))
+		accountAssets := sa.GetAccountFungibleTokens(agentID)
+		accountObjects := sa.GetAccountObjects(agentID)
 
-		// because we don't know when the last account will be, we save each account string and write it in the next iteration
-		// this way we can remove the trailing comma, thus getting a valid JSON
-		prevString := ""
-
-		sa.AllAccountsAsDict().ForEach(func(key kv.Key, value []byte) bool {
-			if prevString != "" {
-				_, err2 := f.WriteString(prevString)
-				if err2 != nil {
-					c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err2.Error())
-					return false
-				}
-			}
-			agentID := lo.Must(accounts.AgentIDFromKey(key))
-			accountAssets := sa.GetAccountFungibleTokens(agentID)
-			assetsJSON, err2 := json.Marshal(accountAssets)
-			if err2 != nil {
-				c.log.LogErrorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
-				return false
-			}
-			prevString = fmt.Sprintf("%q:%s,", agentID.String(), string(assetsJSON))
-			return true
-		})
-		// delete last ',' for a valid json
-		prevString = prevString[:len(prevString)-1]
-		_, err = fmt.Fprintf(f, "%s}\n", prevString)
-		if err != nil {
-			c.log.LogErrorf("dumpAccounts - writing to account dump file failed: %s", err.Error())
+		res.Accounts[agentID.String()] = accountBalance{
+			Coins:   accountAssets,
+			Objects: accountObjects,
 		}
-	}()
 
-	return e.NoContent(http.StatusAccepted)
+		return true
+	})
+
+	return e.JSON(http.StatusOK, res)
 }

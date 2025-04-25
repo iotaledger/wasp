@@ -113,6 +113,11 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddResponse(http.StatusNotFound, "The chain or request id not found", nil, nil).
 		AddResponse(http.StatusRequestTimeout, "The waiting time has reached the defined limit", nil, nil).
 		AddResponse(http.StatusOK, "The request receipt", mocker.Get(models.ReceiptResponse{}), nil)
+
+	publicAPI.GET("chain/dump-accounts", c.dumpAccounts).
+		AddResponse(http.StatusOK, "Accounts dump will be produced", nil, nil).
+		SetOperationId("dump-accounts").
+		SetSummary("dump accounts information into a humanly-readable format")
 }
 
 func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfaces.Mocker) {
@@ -172,8 +177,4 @@ func (c *Controller) RegisterAdmin(adminAPI echoswagger.ApiGroup, mocker interfa
 		SetSummary("Get the contents of the mempool.").
 		SetOperationId("getMempoolContents")
 
-	adminAPI.POST("chain/dump-accounts", c.dumpAccounts, authentication.ValidatePermissions([]string{permissions.Write})).
-		AddResponse(http.StatusOK, "Accounts dump will be produced", nil, nil).
-		SetOperationId("dump-accounts").
-		SetSummary("dump accounts information into a humanly-readable format")
 }
