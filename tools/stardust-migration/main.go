@@ -65,7 +65,8 @@ func main() {
 	}()
 
 	app := &cmd.App{
-		Name: "Stardust migration tool",
+		Name:        "stardust-migrator",
+		Description: "Stardust migration tool",
 		Commands: []*cmd.Command{
 			{
 				Name: "migrate",
@@ -214,11 +215,12 @@ func main() {
 				Name: "search",
 				Subcommands: []*cmd.Command{
 					searchCmd("iscmagic-allowance", searchISCMagicAllowance),
-					searchCmd("nft", searchNFT),
+					searchCmd("nft", searchNFT, IncludeDeletions()),
 					searchCmd("block-keep-amount-change", searchBlockKeepAmountNot10000),
 					searchCmd("foundry", searchFoundies),
 					searchCmd("native-token", searchNativeTokens),
 					searchCmd("strange-native-token", searchStrangeNativeTokenRecords, IncludeDeletions()),
+					searchCmd("key", searchKey, ArgsUsage("<key-hex>"), IncludeDeletions()),
 				},
 			},
 			{
@@ -228,7 +230,7 @@ func main() {
 			},
 			{
 				Name:      "get-state-value",
-				ArgsUsage: "<chain-db-dir> <state-index> <key-hex",
+				ArgsUsage: "<chain-db-dir> <state-index> <key-hex>",
 				Action:    getStateValue,
 			},
 		},
@@ -239,9 +241,18 @@ func main() {
 }
 
 func searchCmd(entityName string, f StateContainsTargetCheckFunc, opts ...SearchOption) *cmd.Command {
+	options := SearchOptions{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	if options.ArgsUsage == "" {
+		options.ArgsUsage = "[<custom_arg1>] [<custom_arg2>] ..."
+	}
+
 	return &cmd.Command{
 		Name:      entityName,
-		ArgsUsage: "<chain-db-dir>",
+		ArgsUsage: "<chain-db-dir> " + options.ArgsUsage,
 		Flags: []cmd.Flag{
 			&cmd.Uint64Flag{
 				Name:    "from-index",
@@ -267,7 +278,7 @@ func searchCmd(entityName string, f StateContainsTargetCheckFunc, opts ...Search
 			},
 		},
 		Before: processCommonFlags,
-		Action: search(entityName, f, opts...),
+		Action: search(entityName, f, options),
 	}
 }
 

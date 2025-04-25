@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"os"
+	"strings"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -12,6 +14,7 @@ import (
 	cmd "github.com/urfave/cli/v2"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
@@ -31,10 +34,11 @@ import (
 	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
 )
 
-type StateContainsTargetCheckFunc func(state old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool)
+type StateContainsTargetCheckFunc func(state old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool)
 
 type SearchOptions struct {
 	IncludeDeletions bool
+	ArgsUsage        string
 }
 
 type SearchOption func(*SearchOptions)
@@ -45,18 +49,20 @@ func IncludeDeletions() SearchOption {
 	}
 }
 
-func search(name string, f StateContainsTargetCheckFunc, opts ...SearchOption) func(c *cmd.Context) error {
-	options := &SearchOptions{}
-	for _, opt := range opts {
-		opt(options)
+func ArgsUsage(usage string) SearchOption {
+	return func(opts *SearchOptions) {
+		opts.ArgsUsage = usage
 	}
+}
 
+func search(name string, f StateContainsTargetCheckFunc, options SearchOptions) func(c *cmd.Context) error {
 	return func(c *cmd.Context) error {
 		chainDBDir := c.Args().Get(0)
 		fromIndex := uint32(c.Uint64("from-block"))
 		toIndex := uint32(c.Uint64("to-block"))
 		findAll := c.Bool("all")
 		threadsCount := uint32(c.Uint("parallel"))
+		args := c.Args().Slice()[1:]
 
 		kvs := db.ConnectOld(chainDBDir)
 		store := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(kvs))
@@ -67,14 +73,14 @@ func search(name string, f StateContainsTargetCheckFunc, opts ...SearchOption) f
 		}
 
 		cli.Logf("Searching for %v in blocks [%d ; %d]", name, fromIndex, toIndex)
-		searchLinear(c.Context, name, store, fromIndex, toIndex, findAll, threadsCount, f, options)
+		searchLinear(c.Context, name, store, fromIndex, toIndex, findAll, threadsCount, f, args, &options)
 
 		return nil
 	}
 }
 
 func searchLinear(ctx context.Context, name string, store old_indexedstore.IndexedStore, fromIndex, toIndex uint32,
-	findAll bool, threadsCount uint32, f StateContainsTargetCheckFunc, opts *SearchOptions) {
+	findAll bool, threadsCount uint32, f StateContainsTargetCheckFunc, args []string, opts *SearchOptions) {
 
 	indexer := blockindex.New(store)
 	e := errgroup.Group{}
@@ -103,7 +109,7 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 					state = old_dict.Dict(block.Mutations().Sets)
 				}
 
-				f(state, func(k old_kv.Key, v []byte) bool {
+				f(state, args, func(k old_kv.Key, v []byte) bool {
 					found.Store(true)
 
 					if firstFoundKeys[i] == "" {
@@ -113,7 +119,8 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 					}
 
 					if findAll {
-						cli.Logf("Found %v: block = %v, key = %x", name, blockIndex, []byte(k))
+						oper := lo.Ternary(v != nil, "SET", "DEL")
+						cli.Logf("%v: Block %v: %v %x", name, blockIndex, oper, []byte(k))
 					}
 
 					return findAll
@@ -155,8 +162,9 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 		earliestBlockIndex := firstContainingBlockIndexes[earliestThreadIdx]
 		earliestKey := firstFoundKeys[earliestThreadIdx]
 		earliestValue := firstFoundValues[earliestThreadIdx]
-
-		cli.Logf("Found %v FIRST occurrence:\nBlock index: %v\nKey = %x\nValue = %x", name, earliestBlockIndex, []byte(earliestKey), earliestValue)
+		oper := lo.Ternary(earliestValue != nil, "SET", "DEL")
+		vStr := lo.Ternary(earliestValue != nil, fmt.Sprintf("\nValue: %x", earliestValue), "")
+		cli.Logf("Found FIRST occurrence:\n%v: Block %v: %v %x%v", name, earliestBlockIndex, oper, []byte(earliestKey), vStr)
 	}
 }
 
@@ -204,18 +212,18 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 // 	return nil
 // }
 
-func searchISCMagicAllowance(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+func searchISCMagicAllowance(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := old_evm.ISCMagicSubrealmR(old_evm.ContractPartitionR(chainState))
 	contractState.Iterate(old_evmimpl.PrefixAllowance, onFound)
 }
 
-func searchNFT(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+func searchNFT(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	nfts := old_collections.NewMapReadOnly(contractState, old_accounts.KeyNFTOutputRecords)
 	nfts.Iterate(func(k, v []byte) bool { onFound(old_kv.Key(k), v); return false })
 }
 
-func searchBlockKeepAmountNot10000(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+func searchBlockKeepAmountNot10000(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := oldstate.GetContactStateReader(chainState, old_governance.Contract.Hname())
 	blockKeepAmount := old_governance.NewStateAccess(contractState).GetBlockKeepAmount()
 	if blockKeepAmount != 10000 {
@@ -223,17 +231,17 @@ func searchBlockKeepAmountNot10000(chainState old_kv.KVStoreReader, onFound func
 	}
 }
 
-func searchFoundies(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+func searchFoundies(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	contractState.Iterate(old_accounts.PrefixFoundries, onFound)
 }
 
-func searchNativeTokens(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+func searchNativeTokens(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
 	contractState.Iterate(old_accounts.PrefixNativeTokens, onFound)
 }
 
-func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
 	// Some of the records, which start with PrefixNativeToken, had previously invalid account key.
 	// Also, seemingly they always delete value, although there is nothing set.
 	var IsValidOldAccountKeyBytesLen = func(n int) bool {
@@ -256,6 +264,21 @@ func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, onFound fu
 			return onFound(k, v)
 		}
 
+		return true
+	})
+}
+
+func searchKey(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
+	targetKey := args[0]
+	if !strings.HasPrefix(targetKey, "0x") {
+		targetKey = "0x" + targetKey
+	}
+	targetKey = string(lo.Must(cryptolib.DecodeHex(targetKey)))
+
+	chainState.Iterate(old_kv.Key(targetKey), func(key old_kv.Key, value []byte) bool {
+		if key == old_kv.Key(targetKey) {
+			return onFound(key, value)
+		}
 		return true
 	})
 }
