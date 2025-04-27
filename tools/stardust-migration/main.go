@@ -216,6 +216,12 @@ func main() {
 				Action: validateWebAPI,
 			},
 			{
+				Name:      "account-dump-validate",
+				ArgsUsage: "stardust-isc-account-dump.json rebased-isc-account-dump.json",
+				Flags:     []cmd.Flag{},
+				Action:    validateAccountDumps,
+			},
+			{
 				Name: "search",
 				Subcommands: []*cmd.Command{
 					searchCmd("iscmagic-allowance", searchISCMagicAllowance),

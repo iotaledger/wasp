@@ -2,14 +2,14 @@ package base
 
 import "fmt"
 
-type mockT struct{}
+type MockT struct{}
 
-func (m mockT) Errorf(format string, args ...interface{}) {
+func (m MockT) Errorf(format string, args ...interface{}) {
 	fmt.Printf(format, args...)
 }
 
-func (m mockT) FailNow() {
+func (m MockT) FailNow() {
 	panic("Test failed")
 }
 
-var T *mockT = &mockT{}
+var T *MockT = &MockT{}

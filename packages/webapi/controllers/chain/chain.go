@@ -11,12 +11,12 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
+	models2 "github.com/iotaledger/wasp/packages/webapi/controllers/chain/models"
 	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/packages/webapi/interfaces"
 	"github.com/iotaledger/wasp/packages/webapi/models"
@@ -94,16 +94,6 @@ func (c *Controller) getState(e echo.Context) error {
 	return e.JSON(http.StatusOK, response)
 }
 
-type accountBalance struct {
-	Coins   isc.CoinBalances
-	Objects []isc.IotaObject
-}
-
-type dumpAccountsResponse struct {
-	StateIndex uint32                    `json:"state_index"`
-	Accounts   map[string]accountBalance `json:"accounts"`
-}
-
 func (c *Controller) dumpAccounts(e echo.Context) error {
 	ch := lo.Must(c.chainService.GetChain())
 
@@ -125,9 +115,9 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 		}
 	}
 
-	res := &dumpAccountsResponse{
+	res := &models2.DumpAccountsResponse{
 		StateIndex: chainState.BlockIndex(),
-		Accounts:   make(map[string]accountBalance),
+		Accounts:   make(map[string]models2.AccountBalance),
 	}
 
 	sa := accounts.NewStateReaderFromChainState(allmigrations.DefaultScheme.LatestSchemaVersion(), chainState)
@@ -137,7 +127,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 		accountAssets := sa.GetAccountFungibleTokens(agentID)
 		accountObjects := sa.GetAccountObjects(agentID)
 
-		res.Accounts[agentID.String()] = accountBalance{
+		res.Accounts[agentID.String()] = models2.AccountBalance{
 			Coins:   accountAssets,
 			Objects: accountObjects,
 		}
