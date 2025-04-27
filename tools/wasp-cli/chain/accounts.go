@@ -90,7 +90,7 @@ func initAccountObjectsCmd() *cobra.Command {
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
 //
 //nolint:unused
-func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
+func baseTokensForDepositFee(client *apiclient.APIClient) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
 		apiResult, _, err := client.ChainsAPI.CallView(context.Background()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
@@ -121,13 +121,12 @@ func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Val
 }
 
 func initDepositCmd() *cobra.Command {
-	var adjustStorageDeposit bool
 	var printReceipt bool
 	var node string
 	var chain string
 
 	cmd := &cobra.Command{
-		Use:   "deposit [<agentid>] <token-id>:<amount>, [<token-id>:amount ...]",
+		Use:   "deposit [<agentid>] <token-id1>|<amount1>, [<token-id2>|<amount2> ...]",
 		Short: "Deposit L1 funds into the given L2 account (default: own account, `common`: chain common account)",
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -200,7 +199,6 @@ func initDepositCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 	cmd.Flags().BoolVarP(&printReceipt, "print-receipt", "p", false, "print tx recetip")
 	waspcmd.WithWaspNodeFlag(cmd, &node)
 	withChainFlag(cmd, &chain)

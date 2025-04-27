@@ -110,9 +110,14 @@ func (reqctx *requestContext) consumeRequest() {
 
 	senderBaseTokens := req.Assets().BaseTokens() + reqctx.GetBaseTokensBalanceDiscardRemainder(sender)
 
-	minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
-	if senderBaseTokens < minReqCost {
-		panic(vmexceptions.ErrNotEnoughFundsForMinFee)
+	// check if the sender has enough balance to cover the minimum gas fee
+	if reqctx.shouldChargeGasFee() {
+		minReqCost := reqctx.ChainInfo().GasFeePolicy.MinFee(isc.RequestGasPrice(reqctx.req), parameters.BaseTokenDecimals)
+		if senderBaseTokens < minReqCost {
+			// TODO: this should probably not skip the request, and also the check
+			// should be done in L1 so the request is rejected before it reaches the mempool
+			panic(vmexceptions.ErrNotEnoughFundsForMinFee)
+		}
 	}
 
 	reqctx.creditObjectsToAccount(sender, req.Assets().Objects.Sorted())

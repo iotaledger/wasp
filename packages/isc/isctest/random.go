@@ -3,6 +3,7 @@ package isctest
 import (
 	"time"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -107,24 +108,23 @@ func RandomChainID(seed ...[]byte) isc.ChainID {
 
 func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 	ref := iotatest.RandomObjectRef()
-	a := iscmove.AssetsBagWithBalances{
-		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Assets:    *iscmove.NewEmptyAssets(),
-	}
-	a.Coins[iotajsonrpc.IotaCoinType] = 1000
 	return &iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{
-			ID:        *ref.ObjectID,
-			Sender:    cryptolib.NewRandomAddress(),
-			AssetsBag: a,
+			ID:     *ref.ObjectID,
+			Sender: cryptolib.NewRandomAddress(),
+			AssetsBag: iscmove.AssetsBagWithBalances{
+				AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
+				Assets:    *iscmove.NewAssets(1000),
+			},
 			Message: iscmove.Message{
 				Contract: 123,
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			AllowanceBCS: []byte{},
-			GasBudget:    1000,
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(111).
+				SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"), 222)),
+			GasBudget: 1000,
 		},
 	}
 }
@@ -144,22 +144,20 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 		sender = senders[0]
 	}
 	ref := iotatest.RandomObjectRef()
-	a := iscmove.AssetsBagWithBalances{
-		AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-		Assets:    *iscmove.NewEmptyAssets(),
-	}
-	a.Coins[iotajsonrpc.IotaCoinType] = 1000
 	req := iscmove.RefWithObject[iscmove.Request]{
 		ObjectRef: *ref,
 		Object: &iscmove.Request{
-			ID:        *ref.ObjectID,
-			Sender:    sender,
-			AssetsBag: a,
+			ID:     *ref.ObjectID,
+			Sender: sender,
+			AssetsBag: iscmove.AssetsBagWithBalances{
+				AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
+				Assets:    *iscmove.NewAssets(1000),
+			},
 			Message: iscmove.Message{
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			AllowanceBCS: nil,
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(10000)),
 			GasBudget:    100000,
 		},
 	}

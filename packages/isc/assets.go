@@ -19,17 +19,21 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 )
 
-type CoinBalances map[coin.Type]coin.Value
+type CoinBalances struct {
+	items map[coin.Type]coin.Value `bcs:"export"`
+}
 
 func NewCoinBalances() CoinBalances {
-	return make(CoinBalances)
+	return CoinBalances{
+		items: make(map[coin.Type]coin.Value),
+	}
 }
 
 // Iterate returns a deterministic iterator
 func (c CoinBalances) Iterate() iter.Seq2[coin.Type, coin.Value] {
 	return func(yield func(coin.Type, coin.Value) bool) {
-		for _, k := range slices.SortedFunc(maps.Keys(c), coin.CompareTypes) {
-			if !yield(k, c[k]) {
+		for _, k := range slices.SortedFunc(maps.Keys(c.items), coin.CompareTypes) {
+			if !yield(k, c.items[k]) {
 				return
 			}
 		}
@@ -50,11 +54,11 @@ func (c CoinBalances) Add(coinType coin.Type, amount coin.Value) CoinBalances {
 
 func (c CoinBalances) Set(coinType coin.Type, amount coin.Value) CoinBalances {
 	if amount == 0 {
-		delete(c, coinType)
+		delete(c.items, coinType)
 		return c
 	}
 
-	c[coinType] = amount
+	c.items[coinType] = amount
 	return c
 }
 
@@ -78,27 +82,31 @@ func (c CoinBalances) ToAssets() *Assets {
 }
 
 func (c CoinBalances) Get(coinType coin.Type) coin.Value {
-	return c[coinType]
+	return c.items[coinType]
 }
 
 func (c CoinBalances) BaseTokens() coin.Value {
-	return c[coin.BaseTokenType]
+	return c.items[coin.BaseTokenType]
 }
 
 func (c CoinBalances) NativeTokens() CoinBalances {
-	ret := CoinBalances{}
-	for t, v := range c {
+	ret := NewCoinBalances()
+	for t, v := range c.items {
 		// Exclude BaseTokens
 		if coin.BaseTokenType.MatchesStringType(t.String()) {
 			continue
 		}
-		ret[t] = v
+		ret.items[t] = v
 	}
 	return ret
 }
 
 func (c CoinBalances) IsEmpty() bool {
-	return len(c) == 0
+	return len(c.items) == 0
+}
+
+func (c CoinBalances) Size() int {
+	return len(c.items)
 }
 
 type CoinJSON struct {
@@ -136,11 +144,11 @@ func (c CoinBalances) MarshalJSON() ([]byte, error) {
 }
 
 func (c CoinBalances) Equals(b CoinBalances) bool {
-	if len(c) != len(b) {
+	if len(c.items) != len(b.items) {
 		return false
 	}
-	for coinType, amount := range c {
-		bal := b[coinType]
+	for coinType, amount := range c.items {
+		bal := b.items[coinType]
 		if bal != amount {
 			return false
 		}
@@ -149,7 +157,7 @@ func (c CoinBalances) Equals(b CoinBalances) bool {
 }
 
 func (c CoinBalances) String() string {
-	s := lo.MapToSlice(c, func(coinType coin.Type, amount coin.Value) string {
+	s := lo.MapToSlice(c.items, func(coinType coin.Type, amount coin.Value) string {
 		return fmt.Sprintf("%s: %d", coinType, amount)
 	})
 	return fmt.Sprintf("CoinBalances{%s}", strings.Join(s, ", "))
@@ -157,7 +165,7 @@ func (c CoinBalances) String() string {
 
 func (c CoinBalances) Clone() CoinBalances {
 	r := NewCoinBalances()
-	for coinType, amount := range c {
+	for coinType, amount := range c.items {
 		r.Add(coinType, amount)
 	}
 	return r
@@ -173,23 +181,35 @@ func NewIotaObject(id iotago.ObjectID, t iotago.ObjectType) IotaObject {
 	return IotaObject{id, t}
 }
 
-type ObjectSet map[iotago.ObjectID]iotago.ObjectType
+type ObjectSet struct {
+	items map[iotago.ObjectID]iotago.ObjectType `bcs:"export"`
+}
 
 func NewObjectSet() ObjectSet {
-	return make(ObjectSet)
+	return ObjectSet{
+		items: make(map[iotago.ObjectID]iotago.ObjectType),
+	}
+}
+
+func (o ObjectSet) IsEmpty() bool {
+	return len(o.items) == 0
+}
+
+func (o ObjectSet) Size() int {
+	return len(o.items)
 }
 
 func (o ObjectSet) Add(obj IotaObject) {
-	o[obj.ID] = obj.Type
+	o.items[obj.ID] = obj.Type
 }
 
 func (o ObjectSet) Has(id iotago.ObjectID) bool {
-	_, ok := o[id]
+	_, ok := o.items[id]
 	return ok
 }
 
 func (o ObjectSet) KeysSorted() []iotago.ObjectID {
-	ids := lo.Keys(o)
+	ids := lo.Keys(o.items)
 	slices.SortFunc(ids, func(a, b iotago.ObjectID) int { return bytes.Compare(a[:], b[:]) })
 	return ids
 }
@@ -197,7 +217,7 @@ func (o ObjectSet) KeysSorted() []iotago.ObjectID {
 func (o ObjectSet) Sorted() []IotaObject {
 	var ret []IotaObject
 	for _, id := range o.KeysSorted() {
-		ret = append(ret, NewIotaObject(id, o[id]))
+		ret = append(ret, NewIotaObject(id, o.items[id]))
 	}
 	return ret
 }
@@ -205,17 +225,25 @@ func (o ObjectSet) Sorted() []IotaObject {
 // Iterate returns a deterministic iterator
 func (c ObjectSet) Iterate() iter.Seq[IotaObject] {
 	return func(yield func(IotaObject) bool) {
-		for _, k := range slices.SortedFunc(maps.Keys(c), func(a, b iotago.ObjectID) int {
+		for _, k := range slices.SortedFunc(maps.Keys(c.items), func(a, b iotago.ObjectID) int {
 			return bytes.Compare(a[:], b[:])
 		}) {
 			if !yield(IotaObject{
 				ID:   k,
-				Type: c[k],
+				Type: c.items[k],
 			}) {
 				return
 			}
 		}
 	}
+}
+
+func (o ObjectSet) Clone() ObjectSet {
+	r := NewObjectSet()
+	for id, t := range o.items {
+		r.Add(NewIotaObject(id, t))
+	}
+	return r
 }
 
 func (o *ObjectSet) JSON() []IotaObject {
@@ -240,11 +268,11 @@ func (o ObjectSet) MarshalJSON() ([]byte, error) {
 }
 
 func (o ObjectSet) Equals(b ObjectSet) bool {
-	if len(o) != len(b) {
+	if len(o.items) != len(b.items) {
 		return false
 	}
-	for id := range o {
-		_, ok := b[id]
+	for id := range o.items {
+		_, ok := b.items[id]
 		if !ok {
 			return false
 		}
@@ -272,10 +300,10 @@ func NewAssets(baseTokens coin.Value) *Assets {
 
 func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (*Assets, error) {
 	assets := NewEmptyAssets()
-	for cointype, coinval := range assetsBag.Coins {
+	for cointype, coinval := range assetsBag.Coins.Iterate() {
 		assets.Coins.Add(coin.MustTypeFromString(cointype.String()), coin.Value(coinval))
 	}
-	for objectID, t := range assetsBag.Objects {
+	for objectID, t := range assetsBag.Objects.Iterate() {
 		assets.Objects.Add(NewIotaObject(objectID, t))
 	}
 	return assets, nil
@@ -283,14 +311,14 @@ func AssetsFromAssetsBagWithBalances(assetsBag *iscmove.AssetsBagWithBalances) (
 
 func AssetsFromISCMove(assets *iscmove.Assets) (*Assets, error) {
 	ret := NewEmptyAssets()
-	for k, v := range assets.Coins {
+	for k, v := range assets.Coins.Iterate() {
 		coinType, err := coin.TypeFromString(k.String())
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse string to coin.Type: %w", err)
 		}
 		ret.Coins.Add(coinType, coin.Value(v))
 	}
-	for id, t := range assets.Objects {
+	for id, t := range assets.Objects.Iterate() {
 		ret.Objects.Add(NewIotaObject(id, t))
 	}
 	return ret, nil
@@ -300,13 +328,18 @@ func AssetsFromBytes(b []byte) (*Assets, error) {
 	return bcs.Unmarshal[*Assets](b)
 }
 
+// Size returns the number of coins and objects in the assets
+func (a *Assets) Size() int {
+	return len(a.Coins.items) + len(a.Objects.items)
+}
+
 func (a *Assets) Clone() *Assets {
-	r := NewEmptyAssets()
 	if a == nil {
 		return nil
 	}
+	r := NewEmptyAssets()
 	r.Coins = a.Coins.Clone()
-	r.Objects = maps.Clone(a.Objects)
+	r.Objects = a.Objects.Clone()
 	return r
 }
 
@@ -325,10 +358,10 @@ func (a *Assets) CoinBalance(coinType coin.Type) coin.Value {
 }
 
 func (a *Assets) String() string {
-	s := lo.MapToSlice(a.Coins, func(coinType coin.Type, amount coin.Value) string {
+	s := lo.MapToSlice(a.Coins.items, func(coinType coin.Type, amount coin.Value) string {
 		return fmt.Sprintf("%s: %d", coinType, amount)
 	})
-	s = append(s, lo.MapToSlice(a.Objects, func(id iotago.ObjectID, t iotago.ObjectType) string {
+	s = append(s, lo.MapToSlice(a.Objects.items, func(id iotago.ObjectID, t iotago.ObjectType) string {
 		return fmt.Sprintf("%s: %s", t, id)
 	})...)
 	return fmt.Sprintf("Assets{%s}", strings.Join(s, ", "))
@@ -355,40 +388,40 @@ func (a *Assets) Equals(b *Assets) bool {
 // If the budget is not enough, returns false and leaves receiver untouched.
 func (a *Assets) Spend(toSpend *Assets) bool {
 	// check budget
-	for coinType, spendAmount := range toSpend.Coins {
-		available, ok := a.Coins[coinType]
+	for coinType, spendAmount := range toSpend.Coins.items {
+		available, ok := a.Coins.items[coinType]
 		if !ok || available < spendAmount {
 			return false
 		}
 	}
-	for id := range toSpend.Objects {
+	for id := range toSpend.Objects.items {
 		if !a.Objects.Has(id) {
 			return false
 		}
 	}
 
 	// budget is enough
-	for coinType, spendAmount := range toSpend.Coins {
+	for coinType, spendAmount := range toSpend.Coins.items {
 		a.Coins.Sub(coinType, spendAmount)
 	}
-	for id := range toSpend.Objects {
-		delete(a.Objects, id)
+	for id := range toSpend.Objects.items {
+		delete(a.Objects.items, id)
 	}
 	return true
 }
 
 func (a *Assets) Add(b *Assets) *Assets {
-	for coinType, amount := range b.Coins {
+	for coinType, amount := range b.Coins.items {
 		a.Coins.Add(coinType, amount)
 	}
-	for id, t := range b.Objects {
+	for id, t := range b.Objects.items {
 		a.Objects.Add(NewIotaObject(id, t))
 	}
 	return a
 }
 
 func (a *Assets) IsEmpty() bool {
-	return len(a.Coins) == 0 && len(a.Objects) == 0
+	return len(a.Coins.items) == 0 && len(a.Objects.items) == 0
 }
 
 func (a *Assets) AddBaseTokens(amount coin.Value) *Assets {
@@ -410,30 +443,25 @@ func (a *Assets) BaseTokens() coin.Value {
 
 func (a *Assets) AsISCMove() *iscmove.Assets {
 	r := iscmove.NewEmptyAssets()
-	for coinType, amount := range a.Coins {
+	for coinType, amount := range a.Coins.items {
 		if amount > 0 {
-			r.AddCoin(
+			r.SetCoin(
 				iotajsonrpc.CoinType(coinType.String()),
 				iotajsonrpc.CoinValue(amount),
 			)
 		}
 	}
-	for objectID, t := range a.Objects {
+	for objectID, t := range a.Objects.items {
 		r.AddObject(objectID, t)
 	}
 	return r
 }
 
 func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBagWithBalances {
-	ret := &iscmove.AssetsBagWithBalances{
+	return &iscmove.AssetsBagWithBalances{
 		AssetsBag: *b,
-		Assets:    *iscmove.NewEmptyAssets(),
+		Assets:    *a.AsISCMove(),
 	}
-	for cointype, coinval := range a.Coins {
-		ret.Coins[iotajsonrpc.CoinType(cointype.String())] = iotajsonrpc.CoinValue(coinval)
-	}
-	maps.Copy(ret.Objects, a.Objects)
-	return ret
 }
 
 // JsonTokenScheme is for now a 1:1 copy of the Stardusts version

@@ -1,3 +1,4 @@
+// Package inccounter contains counter testing logic
 package inccounter
 
 import (
@@ -20,8 +21,6 @@ func InitParams(initialValue int64) dict.Dict {
 }
 
 const (
-	incCounterKey = "incCounter"
-
 	VarNumRepeats = "numRepeats"
 	VarCounter    = "counter"
 	VarName       = "name"

@@ -8,7 +8,6 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 )
 
 // NodeOwnershipCertificate is a proof that a specified address is an owner of the specified node.
@@ -61,8 +60,6 @@ type AccessNodeInfo struct {
 	NodePubKey *cryptolib.PublicKey // Public Key of the node. Stored as a key in the SC State and Params.
 	AccessNodeData
 }
-
-var errInvalidCertificate = coreerrors.Register("invalid certificate").Create()
 
 func (a *AccessNodeInfo) AddCertificate(nodeKeyPair *cryptolib.KeyPair, ownerAddress *cryptolib.Address) *AccessNodeInfo {
 	a.Certificate = NewNodeOwnershipCertificate(nodeKeyPair, ownerAddress).Bytes()

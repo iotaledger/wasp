@@ -122,8 +122,6 @@ func (h *magicContractHandler) Call(
 	return h.call(msg.Unwrap(), allowance.Unwrap())
 }
 
-var errBaseTokensNotEnoughForStorageDeposit = coreerrors.Register("base tokens (%d) not enough to cover storage deposit (%d)")
-
 // moveAssetsToCommonAccount moves the assets from the caller's L2 account to the common
 // account before sending to L1
 func (h *magicContractHandler) moveAssetsToCommonAccount(assets *isc.Assets) {

@@ -91,11 +91,10 @@ func initMetadataCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			node = waspcmd.DefaultWaspNodeFallback(node)
 			chainAliasName = defaultChainFallback(chainAliasName)
-			chainID := config.GetChain(chainAliasName)
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			updateMetadata(ctx, client, node, chainAliasName, chainID, withOffLedger, useCliURL, metadataArgs)
+			updateMetadata(ctx, client, node, chainAliasName, withOffLedger, useCliURL, metadataArgs)
 		},
 	}
 
@@ -147,7 +146,7 @@ func validateAndPushURL(target *string, urlValue nilableString) {
 	*target = urlValue.String()
 }
 
-func updateMetadata(ctx context.Context, client *apiclient.APIClient, node string, chainAliasName string, chainID isc.ChainID, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
+func updateMetadata(ctx context.Context, client *apiclient.APIClient, node string, chainAliasName string, withOffLedger bool, useCliURL bool, metadataArgs MetadataArgs) {
 	chainInfo, _, err := client.CorecontractsAPI.GovernanceGetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
 	if err != nil {
 		log.Fatal("Chain not found")
@@ -183,5 +182,5 @@ func updateMetadata(ctx context.Context, client *apiclient.APIClient, node strin
 
 	postRequest(ctx, client, chainAliasName, governance.FuncSetMetadata.Message(&publicURL, &chainMetadata), chainclient.PostRequestParams{
 		GasBudget: iotaclient.DefaultGasBudget,
-	}, withOffLedger, true)
+	}, withOffLedger)
 }

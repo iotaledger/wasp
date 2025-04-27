@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/bcs-go"
@@ -20,10 +22,8 @@ import (
 )
 
 func initSendFundsCmd() *cobra.Command {
-	var adjustStorageDeposit bool
-
 	cmd := &cobra.Command{
-		Use:   "send-funds <target-address> <token-id>:<amount> <token-id2>:<amount> ...",
+		Use:   "send-funds <target-address> <token-id1>|<amount1> <token-id2>|<amount2> ...",
 		Short: "Transfer L1 tokens",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -45,8 +45,11 @@ func initSendFundsCmd() *cobra.Command {
 			balances, err := client.GetAllBalances(context.Background(), senderAddress.AsIotaAddress())
 			log.Check(err)
 			for _, balance := range balances {
-				requestedAmt := tokens.Coins[coin.MustTypeFromString(balance.CoinType.String())]
-				if coin.Value(balance.TotalBalance.Int64()) < requestedAmt {
+				requestedAmt := tokens.Coins.Get(coin.MustTypeFromString(balance.CoinType.String()))
+				var coinValue uint64
+				coinValue, err = safecast.Convert[uint64](balance.TotalBalance.Int64())
+				log.Check(err)
+				if coin.Value(coinValue) < requestedAmt {
 					panic("not enough balance")
 				}
 			}
@@ -59,8 +62,9 @@ func initSendFundsCmd() *cobra.Command {
 				},
 			)
 			log.Check(err)
-			for cointype, balance := range tokens.Coins {
-				pickedCoin, err := iotajsonrpc.PickupCoinsWithCointype(
+			for cointype, balance := range tokens.Coins.Iterate() {
+				var pickedCoin *iotajsonrpc.PickedCoins
+				pickedCoin, err = iotajsonrpc.PickupCoinsWithCointype(
 					coinPage,
 					balance.BigInt(),
 					iotajsonrpc.MustCoinTypeFromString(cointype.String()),
@@ -106,8 +110,6 @@ func initSendFundsCmd() *cobra.Command {
 			fmt.Printf("%v", res)
 		},
 	}
-
-	cmd.Flags().BoolVarP(&adjustStorageDeposit, "adjust-storage-deposit", "s", false, "adjusts the amount of base tokens sent, if it's lower than the min storage deposit required")
 
 	return cmd
 }

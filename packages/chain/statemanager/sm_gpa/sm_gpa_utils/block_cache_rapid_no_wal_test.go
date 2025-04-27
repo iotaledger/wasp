@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/util/timeutil"
 )
 
 type blockCacheNoWALTestSM struct { // State machine for block cache no WAL property based Rapid tests
@@ -39,7 +39,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) initStateMachine(t *rapid.T, bcms int, wa
 	bcnwtsmT.lastBlockCommitment = bcnwtsmT.factory.GetOriginBlock().L1Commitment()
 	bcnwtsmT.log = testlogger.NewLogger(t)
 	bcnwtsmT.blockCacheMaxSize = bcms
-	bcnwtsmT.bc, err = NewBlockCache(time_util.NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, mockStateManagerMetrics(), bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(timeutil.NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, wal, mockStateManagerMetrics(), bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)
 	bcnwtsmT.blocks = make(map[BlockKey]state.Block)
@@ -112,7 +112,7 @@ func (bcnwtsmT *blockCacheNoWALTestSM) tstGetBlockFromCache(t *rapid.T, blockKey
 
 func (bcnwtsmT *blockCacheNoWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bcnwtsmT.bc, err = NewBlockCache(time_util.NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, mockStateManagerMetrics(), bcnwtsmT.log)
+	bcnwtsmT.bc, err = NewBlockCache(timeutil.NewDefaultTimeProvider(), bcnwtsmT.blockCacheMaxSize, bcnwtsmT.bc.(*blockCache).wal, mockStateManagerMetrics(), bcnwtsmT.log)
 	require.NoError(t, err)
 	bcnwtsmT.blocksInCache = make([]BlockKey, 0)
 	bcnwtsmT.blockTimes = make([]*blockTime, 0)

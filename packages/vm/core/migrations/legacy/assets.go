@@ -15,7 +15,8 @@ const (
 )
 
 /*
-Recreating the old Stardust assets encoding. This should only ever be needed for the internal EVM Fake Transactions.
+AssetsToBytes recreates the old Stardust assets encoding.
+This should only ever be needed for the internal EVM Fake Transactions.
 This works very well for BaseToken and NFTs, not for NativeToken.
 This needs some validation regarding the compatibility between IDs.
 */
@@ -31,8 +32,9 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	}
 
 	hasBaseToken := assets.BaseTokens() > 0
-	hasNFTs := len(assets.Objects) > 0
-	hasNativeTokens := len(assets.Coins.NativeTokens()) > 0
+	hasNFTs := !assets.Objects.IsEmpty()
+	nts := assets.Coins.NativeTokens()
+	hasNativeTokens := !nts.IsEmpty()
 
 	var flags byte
 
@@ -53,8 +55,7 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	}
 
 	if (flags & assetFlagHasNativeTokens) != 0 {
-		nts := assets.Coins.NativeTokens()
-		w.WriteSize16(len(nts))
+		w.WriteSize16(nts.Size())
 		for t, v := range nts.Iterate() {
 			w.WriteN(t.Bytes()[:])
 			n := v.BigInt().Div(v.BigInt(), new(big.Int).SetUint64(1000))
@@ -63,7 +64,7 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	}
 
 	if (flags & assetFlagHasNFTs) != 0 {
-		w.WriteSize16(len(assets.Objects))
+		w.WriteSize16(assets.Objects.Size())
 		for obj := range assets.Objects.Iterate() {
 			w.WriteN(obj.ID[:])
 		}

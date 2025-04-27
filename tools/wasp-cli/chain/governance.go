@@ -72,7 +72,6 @@ func initChangeAccessNodesCmd() *cobra.Command {
 					GasBudget: iotaclient.DefaultGasBudget,
 				},
 				offLedger,
-				true,
 			)
 		},
 	}
@@ -128,7 +127,6 @@ func initDisableFeePolicyCmd() *cobra.Command {
 					L2GasBudget: 1 * isc.Million,
 				},
 				offLedger,
-				true,
 			)
 		},
 	}

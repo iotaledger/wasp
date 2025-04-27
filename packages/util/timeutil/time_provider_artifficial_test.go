@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package time_util_test
+package timeutil_test
 
 import (
 	"testing"
@@ -9,12 +9,12 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/util/timeutil"
 )
 
 func TestArtificialTimeProvider(t *testing.T) {
 	now := time.Now()
-	tp := time_util.NewArtificialTimeProvider(now)
+	tp := timeutil.NewArtificialTimeProvider(now)
 	ch30s := tp.After(30 * time.Second)
 	ch40s := tp.After(40 * time.Second)
 	ch20s := tp.After(20 * time.Second)

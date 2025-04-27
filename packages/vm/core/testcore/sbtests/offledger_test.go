@@ -15,7 +15,7 @@ import (
 func TestOffLedgerFailNoAccount(t *testing.T) {
 	t.SkipNow() // TODO EMPTY BLOCKS NOT SUPPORTED IN SOLO
 
-	env, chain := setupChain(t, nil)
+	env, chain := setupChain(t)
 	cAID := setupTestSandboxSC(t, chain, nil)
 
 	user, userAddr := env.NewKeyPairWithFunds()
@@ -35,7 +35,7 @@ func TestOffLedgerFailNoAccount(t *testing.T) {
 }
 
 func TestOffLedgerSuccess(t *testing.T) {
-	env, ch := setupChain(t, nil)
+	env, ch := setupChain(t)
 	cAID := setupTestSandboxSC(t, ch, nil)
 
 	user, userAddr := env.NewKeyPairWithFunds()

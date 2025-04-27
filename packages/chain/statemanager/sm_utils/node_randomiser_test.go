@@ -23,7 +23,7 @@ func TestGetRandomOtherNodeIDs(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(8) // 7 nodes and self
 	me := nodeIDs[meIndex]
 	randomiser := NewNodeRandomiser(me, nodeIDs, log)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, nodeIDsToGet, iterationCount, nodeIDs, me)
+	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, iterationCount, nodeIDs, me)
 }
 
 func TestGetRandomOtherNodeIDsToFew(t *testing.T) {
@@ -31,13 +31,12 @@ func TestGetRandomOtherNodeIDsToFew(t *testing.T) {
 	defer log.Shutdown()
 
 	meIndex := 3
-	nodeIDsToGet := 5
 	iterationCount := 1
 
 	nodeIDs := gpa.MakeTestNodeIDs(4) // 3 nodes and self
 	me := nodeIDs[meIndex]
 	randomiser := NewNodeRandomiser(me, nodeIDs, log)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, 3, iterationCount, nodeIDs, me)
+	testGetRandomOtherNodeIDs(t, randomiser, 3, iterationCount, nodeIDs, me)
 }
 
 func TestGetRandomOtherNodeIDsAfterChanges(t *testing.T) {
@@ -55,22 +54,22 @@ func TestGetRandomOtherNodeIDsAfterChanges(t *testing.T) {
 	nodeIDs4 := []gpa.NodeID{nib[0], nib[2], nib[3], nib[4], nib[5], nib[6], nib[7], nib[9]}
 	me := nodeIDs0[0]
 	randomiser := NewNodeRandomiser(me, nodeIDs0, log)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, nodeIDsToGet, iterationCount, nodeIDs0, me)
+	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, iterationCount, nodeIDs0, me)
 	randomiser.UpdateNodeIDs(nodeIDs1)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, nodeIDsToGet, iterationCount, nodeIDs1, me)
+	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, iterationCount, nodeIDs1, me)
 	randomiser.UpdateNodeIDs(nodeIDs2)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, nodeIDsToGet, iterationCount, nodeIDs2, me)
+	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, iterationCount, nodeIDs2, me)
 	randomiser.UpdateNodeIDs(nodeIDs3)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, nodeIDsToGet, iterationCount, nodeIDs3, me)
+	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, iterationCount, nodeIDs3, me)
 	randomiser.UpdateNodeIDs(nodeIDs4)
-	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, nodeIDsToGet, iterationCount, nodeIDs4, me)
+	testGetRandomOtherNodeIDs(t, randomiser, nodeIDsToGet, iterationCount, nodeIDs4, me)
 }
 
-func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsToGet, nodeIDsGot, iterationCount int, nodeIDs []gpa.NodeID, me gpa.NodeID) {
+func testGetRandomOtherNodeIDs(t *testing.T, randomiser NodeRandomiser, nodeIDsGot int, iterationCount int, nodeIDs []gpa.NodeID, me gpa.NodeID) {
 	nodeIDFounds := make(map[gpa.NodeID]bool)
 	for i := 0; i < iterationCount; i++ {
 		t.Logf("Iteration %v...", i)
-		randomNodeIDs := randomiser.GetRandomOtherNodeIDs(nodeIDsToGet)
+		randomNodeIDs := randomiser.GetRandomOtherNodeIDs(5)
 		require.Equal(t, nodeIDsGot, len(randomNodeIDs))
 		for j := range randomNodeIDs {
 			nodeIDFounds[randomNodeIDs[j]] = true

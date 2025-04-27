@@ -11,7 +11,7 @@ import (
 func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (isc.CoinBalances, error) {
 	ret, err := common.CallView(ch, accounts.ViewTotalAssets.Message(), blockIndexOrTrieRoot)
 	if err != nil {
-		return nil, err
+		return isc.CoinBalances{}, err
 	}
 	return accounts.ViewTotalAssets.DecodeOutput(ret)
 }
@@ -19,7 +19,7 @@ func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (isc.CoinBalanc
 func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (isc.CoinBalances, error) {
 	ret, err := common.CallView(ch, accounts.ViewBalance.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
-		return nil, err
+		return isc.CoinBalances{}, err
 	}
 	return accounts.ViewBalance.DecodeOutput(ret)
 }

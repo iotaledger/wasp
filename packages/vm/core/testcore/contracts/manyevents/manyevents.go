@@ -1,3 +1,4 @@
+// Package manyevents contains test helpers for contract events
 package manyevents
 
 import (

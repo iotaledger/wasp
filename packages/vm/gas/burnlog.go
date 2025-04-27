@@ -30,7 +30,7 @@ func (l *BurnLog) UnmarshalBCS(d *bcs.Decoder) error {
 	recordLen := d.ReadLen()
 	l.Records = make([]BurnRecord, recordLen)
 
-	for i := 0; i < int(recordLen); i++ {
+	for i := 0; i < recordLen; i++ {
 		name := d.ReadString()
 		if err := d.Err(); err != nil {
 			return err

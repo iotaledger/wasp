@@ -29,8 +29,6 @@ import (
 )
 
 const (
-	l1NodeSyncWaitTimeout = 2 * time.Minute
-
 	chainsCleanupThresholdRatio = 50.0
 	chainsCleanupThresholdCount = 10
 )
@@ -62,7 +60,6 @@ type nodeConnection struct {
 	wsURL               string
 	httpURL             string
 	maxNumberOfRequests int
-	synced              sync.WaitGroup
 	chainsLock          sync.RWMutex
 	chainsMap           *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
 
