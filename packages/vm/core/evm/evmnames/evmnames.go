@@ -1,4 +1,4 @@
-// package evmnames provides the names of EVM core contract functions and other
+// Package evmnames provides the names of EVM core contract functions and other
 // constants.
 // It is separated from the evm interface to avoid import loops (the names are used
 // in the isc package.

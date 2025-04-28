@@ -11,7 +11,6 @@ import (
 
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -71,10 +70,7 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 
 	return isc.NewOnLedgerRequestData(requestRef, senderAddress, targetAddress, assets, &iscmove.AssetsBagWithBalances{
 		AssetsBag: *fakeAssetsBag,
-		Assets: iscmove.Assets{
-			Coins:   map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue{},
-			Objects: map[iotago.ObjectID]iotago.ObjectType{},
-		},
+		Assets:    *iscmove.NewEmptyAssets(),
 	}, requestMetadata)
 }
 

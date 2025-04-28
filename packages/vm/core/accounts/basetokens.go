@@ -51,11 +51,8 @@ func (s *StateWriter) UnsafeSetBaseTokensFullDecimals(accKey kv.Key, wei *big.In
 
 func (s *StateWriter) AdjustAccountBaseTokens(account isc.AgentID, adjustment coin.Value) {
 	b := isc.NewCoinBalances().AddBaseTokens(adjustment)
-	switch {
-	case adjustment > 0:
+	if adjustment > 0 {
 		s.CreditToAccount(account, b)
-	case adjustment < 0:
-		s.DebitFromAccount(account, b)
 	}
 }
 

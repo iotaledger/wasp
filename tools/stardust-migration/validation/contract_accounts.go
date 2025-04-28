@@ -372,7 +372,7 @@ func checkNewBalancesMapLengths(contractState kv.KVStoreReader, chainID isc.Chai
 
 	for accKey, agentID := range knownAccs {
 		balancesFromIteration := r.GetCoins(agentID)
-		coinsCountFromIteration := uint32(len(balancesFromIteration.NativeTokens()))
+		coinsCountFromIteration := uint32(balancesFromIteration.NativeTokens().Size())
 		if balancesFromIteration.BaseTokens() != 0 {
 			coinsCountFromIteration++
 		}
@@ -684,7 +684,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 		addBalanceStr(accKey, newAgentIDToStr(agentID), baseBalance.String(), coin.BaseTokenType)
 
 		nativeTokens := r.GetAccountFungibleTokens(agentID).NativeTokens()
-		for coinType, ntBalance := range nativeTokens {
+		for coinType, ntBalance := range nativeTokens.Iterate() {
 			if coinType == coin.BaseTokenType {
 				continue
 			}
@@ -696,7 +696,7 @@ func newTokenBalancesFromMapToStr(contractState kv.KVStoreReader, chainID isc.Ch
 	addBalanceStr(accounts.L2TotalsAccount, "L2TotalsAccount", totalBaseTokens.String(), coin.BaseTokenType)
 
 	totalNativeTokens := r.GetTotalL2FungibleTokens()
-	for coinType, ntBalance := range totalNativeTokens {
+	for coinType, ntBalance := range totalNativeTokens.Iterate() {
 		if coinType == coin.BaseTokenType {
 			continue
 		}

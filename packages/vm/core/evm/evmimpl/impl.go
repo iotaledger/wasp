@@ -297,22 +297,22 @@ func AddDummyTxWithTransferEvents(
 	callTracerHooks := func() {
 		tracer := ctx.EVMTracer()
 		if tracer != nil {
-			if tracer.Hooks.OnTxStart != nil {
-				tracer.Hooks.OnTxStart(nil, tx, common.Address{})
+			if tracer.OnTxStart != nil {
+				tracer.OnTxStart(nil, tx, common.Address{})
 			}
-			if tracer.Hooks.OnEnter != nil {
-				tracer.Hooks.OnEnter(0, byte(vm.CALL), common.Address{}, toAddress, txData, 0, wei)
+			if tracer.OnEnter != nil {
+				tracer.OnEnter(0, byte(vm.CALL), common.Address{}, toAddress, txData, 0, wei)
 			}
-			if tracer.Hooks.OnLog != nil {
+			if tracer.OnLog != nil {
 				for _, log := range logs {
-					tracer.Hooks.OnLog(log)
+					tracer.OnLog(log)
 				}
 			}
-			if tracer.Hooks.OnExit != nil {
-				tracer.Hooks.OnExit(0, nil, receipt.GasUsed, nil, false)
+			if tracer.OnExit != nil {
+				tracer.OnExit(0, nil, receipt.GasUsed, nil, false)
 			}
-			if tracer.Hooks.OnTxEnd != nil {
-				tracer.Hooks.OnTxEnd(receipt, nil)
+			if tracer.OnTxEnd != nil {
+				tracer.OnTxEnd(receipt, nil)
 			}
 		}
 	}

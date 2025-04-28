@@ -169,7 +169,7 @@ func (r *CallParams) WithSender(sender *cryptolib.Address) *CallParams {
 	return r
 }
 
-// onLedgerRequestFromParams creates an on-ledger request without sending it to L1. It is intended
+// NewRequestOnLedger creates an on-ledger request without sending it to L1. It is intended
 // mainly for estimating gas.
 func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (isc.OnLedgerRequest, error) {
 	if keyPair == nil {
@@ -184,7 +184,7 @@ func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (
 			Sender: keyPair.Address(),
 			AssetsBag: *r.assets.AsAssetsBagWithBalances(&iscmove.AssetsBag{
 				ID:   *assetsBagRef.ObjectID,
-				Size: uint64(len(r.assets.Coins)),
+				Size: uint64(r.assets.Size()),
 			}),
 			Message: iscmove.Message{
 				Contract: uint32(r.msg.Target.Contract),

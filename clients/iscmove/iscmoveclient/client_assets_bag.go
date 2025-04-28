@@ -103,14 +103,14 @@ func (c *Client) GetAssetsBagWithBalances(
 				return nil, fmt.Errorf("failed to convert cointype from iotajsonrpc: %w", err)
 			}
 
-			bag.Coins[cointype] = iotajsonrpc.CoinValue(coinBalance.Value.Uint64())
+			bag.SetCoin(cointype, iotajsonrpc.CoinValue(coinBalance.Value.Uint64()))
 		} else {
 			// non-coin asset (i.e. an "object", nft, etc)
 			typ, err := iotago.ObjectTypeFromString(data.ObjectType)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse ObjectType: %w", err)
 			}
-			bag.Objects[data.ObjectID] = typ
+			bag.AddObject(data.ObjectID, typ)
 		}
 	}
 

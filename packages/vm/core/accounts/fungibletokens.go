@@ -9,11 +9,12 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/samber/lo"
 )
 
 // CreditToAccount brings new funds to the on chain ledger
 func (s *StateWriter) CreditToAccount(agentID isc.AgentID, coins isc.CoinBalances) {
-	if len(coins) == 0 {
+	if coins.IsEmpty() {
 		return
 	}
 	s.creditToAccount(AccountKey(agentID), coins)
@@ -23,7 +24,7 @@ func (s *StateWriter) CreditToAccount(agentID isc.AgentID, coins isc.CoinBalance
 
 // creditToAccount adds coins to the internal account map
 func (s *StateWriter) creditToAccount(accountKey kv.Key, coins isc.CoinBalances) {
-	if len(coins) == 0 {
+	if coins.IsEmpty() {
 		return
 	}
 
@@ -52,7 +53,7 @@ func (s *StateWriter) creditToAccountFullDecimals(accountKey kv.Key, wei *big.In
 
 // DebitFromAccount takes out coins balance the on chain ledger. If not enough it panics
 func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalances) {
-	if len(coins) == 0 {
+	if coins.IsEmpty() {
 		return
 	}
 	if !s.debitFromAccount(AccountKey(agentID), coins) {
@@ -66,12 +67,12 @@ func (s *StateWriter) DebitFromAccount(agentID isc.AgentID, coins isc.CoinBalanc
 
 // debitFromAccount debits coins from the internal accounts map
 func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances) bool {
-	if len(coins) == 0 {
+	if coins.IsEmpty() {
 		return true
 	}
 
 	// first check, then mutate
-	coinMutations := isc.NewCoinBalances()
+	var coinMutations []lo.Tuple2[coin.Type, coin.Value]
 	for coinType, amount := range coins.Iterate() {
 		if amount == 0 {
 			continue
@@ -80,11 +81,11 @@ func (s *StateWriter) debitFromAccount(accountKey kv.Key, coins isc.CoinBalances
 		if balance < amount {
 			return false
 		}
-		coinMutations[coinType] = balance - amount
+		coinMutations = append(coinMutations, lo.T2(coinType, balance-amount))
 	}
 
-	for coinType, amount := range coinMutations.Iterate() {
-		s.setCoinBalance(accountKey, coinType, amount)
+	for _, mut := range coinMutations {
+		s.setCoinBalance(accountKey, mut.A, mut.B)
 	}
 	return true
 }

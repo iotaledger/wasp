@@ -50,7 +50,7 @@ func (s *StateReader) GetCoinBalanceTotal(coinID coin.Type) coin.Value {
 }
 
 func (s *StateReader) GetCoins(agentID isc.AgentID) isc.CoinBalances {
-	ret := isc.CoinBalances{}
+	ret := isc.NewCoinBalances()
 	s.accountCoinBalancesMapR(AccountKey(agentID)).Iterate(func(coinType []byte, val []byte) bool {
 		ret.Add(
 			codec.MustDecode[coin.Type](coinType),

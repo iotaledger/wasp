@@ -24,7 +24,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/util/timeutil"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 )
 
@@ -44,7 +44,7 @@ func newTestEnv(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(origStore, nodeStore state.Store, tp time_util.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager,
+	createSnapMFun func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
 	result := newTestEnvNoNodes(t, parametersOpt...)
@@ -82,7 +82,7 @@ func newTestEnvNoNodes(
 	}
 
 	log := testlogger.NewLogger(t)
-	parameters.TimeProvider = time_util.NewArtificialTimeProvider()
+	parameters.TimeProvider = timeutil.NewArtificialTimeProvider()
 	return &testEnv{
 		t:          t,
 		bf:         bf,
@@ -94,12 +94,12 @@ func newTestEnvNoNodes(
 func (teT *testEnv) addNodes(
 	nodeIDs []gpa.NodeID,
 	createWALFun func() sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(origStore, nodeStore state.Store, tp time_util.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager,
+	createSnapMFun func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager,
 ) {
 	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
 		return createWALFun()
 	}
-	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp time_util.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager {
+	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager {
 		return createSnapMFun(origStore, nodeStore, tp, log)
 	}
 	teT.addVariedNodes(nodeIDs, createWALVariedFun, createSnapMVariedFun)
@@ -108,7 +108,7 @@ func (teT *testEnv) addNodes(
 func (teT *testEnv) addVariedNodes(
 	nodeIDs []gpa.NodeID,
 	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp time_util.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager,
 ) {
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)

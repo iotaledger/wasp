@@ -50,16 +50,14 @@ func TestUnmarshalBCS(t *testing.T) {
 			ID: *iotatest.RandomAddress(),
 			Value: &iscmove.AssetsBagWithBalances{
 				AssetsBag: iscmovetest.RandomAssetsBag(),
-				Assets: iscmove.Assets{
-					Coins: make(iscmove.CoinBalances),
-					Objects: map[iotago.ObjectID]iotago.ObjectType{
-						iscmovetest.RandomAnchor().ID: iotago.MustTypeFromString("0x1::a::A"),
-					},
-				},
+				Assets: *iscmove.NewAssets(0).
+					AddObject(iscmovetest.RandomAnchor().ID, iotago.MustTypeFromString("0x1::a::A")),
 			},
 		},
-		Message:   *iscmovetest.RandomMessage(),
-		Allowance: []byte{1, 2, 3},
+		Message: *iscmovetest.RandomMessage(),
+		Allowance: bcs.MustMarshal(iscmove.NewAssets(0).
+			SetCoin(iotajsonrpc.IotaCoinType, 100).
+			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A"))),
 		GasBudget: 100,
 	}
 	b, err := bcs.Marshal(&req)

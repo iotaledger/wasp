@@ -45,7 +45,7 @@ func initSendFundsCmd() *cobra.Command {
 			balances, err := client.GetAllBalances(context.Background(), senderAddress.AsIotaAddress())
 			log.Check(err)
 			for _, balance := range balances {
-				requestedAmt := tokens.Coins[coin.MustTypeFromString(balance.CoinType.String())]
+				requestedAmt := tokens.Coins.Get(coin.MustTypeFromString(balance.CoinType.String()))
 				var coinValue uint64
 				coinValue, err = safecast.Convert[uint64](balance.TotalBalance.Int64())
 				log.Check(err)
@@ -62,7 +62,7 @@ func initSendFundsCmd() *cobra.Command {
 				},
 			)
 			log.Check(err)
-			for cointype, balance := range tokens.Coins {
+			for cointype, balance := range tokens.Coins.Iterate() {
 				var pickedCoin *iotajsonrpc.PickedCoins
 				pickedCoin, err = iotajsonrpc.PickupCoinsWithCointype(
 					coinPage,
