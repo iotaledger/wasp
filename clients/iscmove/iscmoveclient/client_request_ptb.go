@@ -1,9 +1,6 @@
 package iscmoveclient
 
 import (
-	"github.com/samber/lo"
-
-	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iscmove"
 )
@@ -14,11 +11,9 @@ func PTBCreateAndSendRequest(
 	anchorID iotago.ObjectID,
 	argAssetsBag iotago.Argument,
 	msg *iscmove.Message,
-	// the order of the allowance will be reversed after processed by move
-	allowance *iscmove.Assets,
+	allowanceBCS []byte,
 	onchainGasBudget uint64,
 ) *iotago.ProgrammableTransactionBuilder {
-	allowanceBCS := lo.Must(bcs.Marshal(allowance))
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{

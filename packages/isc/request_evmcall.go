@@ -30,8 +30,8 @@ func NewEVMOffLedgerCallRequest(chainID ChainID, callMsg ethereum.CallMsg) OffLe
 	}
 }
 
-func (req *evmOffLedgerCallRequest) Allowance() *Assets {
-	return NewEmptyAssets()
+func (req *evmOffLedgerCallRequest) Allowance() (*Assets, error) {
+	return NewEmptyAssets(), nil
 }
 
 func (req *evmOffLedgerCallRequest) Assets() *Assets {

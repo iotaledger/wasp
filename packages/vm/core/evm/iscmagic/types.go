@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package iscmagic contains the logic for implementing the magic contract
 package iscmagic
 
 import (

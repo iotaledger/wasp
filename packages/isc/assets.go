@@ -443,7 +443,7 @@ func (a *Assets) BaseTokens() coin.Value {
 
 func (a *Assets) AsISCMove() *iscmove.Assets {
 	r := iscmove.NewEmptyAssets()
-	for coinType, amount := range a.Coins.items {
+	for coinType, amount := range a.Coins.Iterate() {
 		if amount > 0 {
 			r.SetCoin(
 				iotajsonrpc.CoinType(coinType.String()),
@@ -451,8 +451,8 @@ func (a *Assets) AsISCMove() *iscmove.Assets {
 			)
 		}
 	}
-	for objectID, t := range a.Objects.items {
-		r.AddObject(objectID, t)
+	for o := range a.Objects.Iterate() {
+		r.AddObject(o.ID, o.Type)
 	}
 	return r
 }
