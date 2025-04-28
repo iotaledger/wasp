@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"math"
@@ -23,18 +24,22 @@ import (
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
+	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
 	old_dict "github.com/nnikolash/wasp-types-exported/packages/kv/dict"
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_indexedstore "github.com/nnikolash/wasp-types-exported/packages/state/indexedstore"
+	old_vm "github.com/nnikolash/wasp-types-exported/packages/vm"
 	old_accounts "github.com/nnikolash/wasp-types-exported/packages/vm/core/accounts"
+	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	old_evm "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm"
 	old_evmimpl "github.com/nnikolash/wasp-types-exported/packages/vm/core/evm/evmimpl"
 	old_governance "github.com/nnikolash/wasp-types-exported/packages/vm/core/governance"
 )
 
-type StateContainsTargetCheckFunc func(state old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool)
+type SearchFunc func(state old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool)
+type SearchFuncConstructor func(store old_indexedstore.IndexedStore, args []string) SearchFunc
 
 type SearchOptions struct {
 	IncludeDeletions bool
@@ -55,7 +60,7 @@ func ArgsUsage(usage string) SearchOption {
 	}
 }
 
-func search(name string, f StateContainsTargetCheckFunc, options SearchOptions) func(c *cmd.Context) error {
+func search(name string, f SearchFuncConstructor, options SearchOptions) func(c *cmd.Context) error {
 	return func(c *cmd.Context) error {
 		chainDBDir := c.Args().Get(0)
 		fromIndex := uint32(c.Uint64("from-block"))
@@ -79,8 +84,15 @@ func search(name string, f StateContainsTargetCheckFunc, options SearchOptions) 
 	}
 }
 
-func searchLinear(ctx context.Context, name string, store old_indexedstore.IndexedStore, fromIndex, toIndex uint32,
-	findAll bool, threadsCount uint32, f StateContainsTargetCheckFunc, args []string, opts *SearchOptions) {
+func searchLinear(
+	ctx context.Context,
+	name string,
+	store old_indexedstore.IndexedStore,
+	fromIndex, toIndex uint32, findAll bool, threadsCount uint32,
+	createHandler SearchFuncConstructor,
+	args []string,
+	opts *SearchOptions,
+) {
 
 	indexer := blockindex.New(store)
 	e := errgroup.Group{}
@@ -94,6 +106,7 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 	printProgress, done := cli.NewProgressPrinter("blocks", totalBlocks)
 
 	cli.Logf("Starting %v search threads", threadsCount)
+	f := createHandler(store, args)
 
 	for i := uint32(0); i < threadsCount; i++ {
 		i := i
@@ -109,7 +122,7 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 					state = old_dict.Dict(block.Mutations().Sets)
 				}
 
-				f(state, args, func(k old_kv.Key, v []byte) bool {
+				f(state, func(k old_kv.Key, v []byte) bool {
 					found.Store(true)
 
 					if firstFoundKeys[i] == "" {
@@ -212,73 +225,173 @@ func searchLinear(ctx context.Context, name string, store old_indexedstore.Index
 // 	return nil
 // }
 
-func searchISCMagicAllowance(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
-	contractState := old_evm.ISCMagicSubrealmR(old_evm.ContractPartitionR(chainState))
-	contractState.Iterate(old_evmimpl.PrefixAllowance, onFound)
-}
-
-func searchNFT(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
-	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
-	nfts := old_collections.NewMapReadOnly(contractState, old_accounts.KeyNFTOwner)
-	nfts.Iterate(func(k, v []byte) bool { onFound(old_kv.Key(k), v); return false })
-}
-
-func searchBlockKeepAmountNot10000(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
-	contractState := oldstate.GetContactStateReader(chainState, old_governance.Contract.Hname())
-	blockKeepAmount := old_governance.NewStateAccess(contractState).GetBlockKeepAmount()
-	if blockKeepAmount != 10000 {
-		onFound(old_kv.Key(""), []byte{0})
+func searchISCMagicAllowance(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		contractState := old_evm.ISCMagicSubrealmR(old_evm.ContractPartitionR(chainState))
+		contractState.Iterate(old_evmimpl.PrefixAllowance, onFound)
 	}
 }
 
-func searchFoundies(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
-	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
-	contractState.Iterate(old_accounts.PrefixFoundries, onFound)
-}
-
-func searchNativeTokens(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
-	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
-	contractState.Iterate(old_accounts.PrefixNativeTokens, onFound)
-}
-
-func searchStrangeNativeTokenRecords(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
-	// Some of the records, which start with PrefixNativeToken, had previously invalid account key.
-	// Also, seemingly they always delete value, although there is nothing set.
-	var IsValidOldAccountKeyBytesLen = func(n int) bool {
-		return n == isc.HnameLength || n == common.AddressLength || n == iotago.AddressLen
+func searchNFT(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+		nfts := old_collections.NewMapReadOnly(contractState, old_accounts.KeyNFTOwner)
+		nfts.Iterate(func(k, v []byte) bool { onFound(old_kv.Key(k), v); return false })
 	}
-
-	contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
-	contractState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
-		oldAccKey, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
-		if oldNtIDBytes == "" {
-			// not a map entry
-			return true
-		}
-
-		if oldAccKey == old_accounts.L2TotalsAccount {
-			return true
-		}
-
-		if !IsValidOldAccountKeyBytesLen(len(oldAccKey)) {
-			return onFound(k, v)
-		}
-
-		return true
-	})
 }
 
-func searchKey(chainState old_kv.KVStoreReader, args []string, onFound func(k old_kv.Key, v []byte) bool) {
+func searchBlockKeepAmountNot10000(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		contractState := oldstate.GetContactStateReader(chainState, old_governance.Contract.Hname())
+		blockKeepAmount := old_governance.NewStateAccess(contractState).GetBlockKeepAmount()
+		if blockKeepAmount != 10000 {
+			onFound(old_kv.Key(""), []byte{0})
+		}
+	}
+}
+
+func searchFoundies(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+		contractState.Iterate(old_accounts.PrefixFoundries, onFound)
+	}
+}
+
+func searchNativeTokens(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+		contractState.Iterate(old_accounts.PrefixNativeTokens, onFound)
+	}
+}
+
+func searchStrangeNativeTokenRecords(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		// Some of the records, which start with PrefixNativeToken, had previously invalid account key.
+		// Also, seemingly they always delete value, although there is nothing set.
+		var IsValidOldAccountKeyBytesLen = func(n int) bool {
+			return n == isc.HnameLength || n == common.AddressLength || n == iotago.AddressLen
+		}
+
+		contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+		contractState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+			oldAccKey, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
+			if oldNtIDBytes == "" {
+				// not a map entry
+				return true
+			}
+
+			if oldAccKey == old_accounts.L2TotalsAccount {
+				return true
+			}
+
+			if !IsValidOldAccountKeyBytesLen(len(oldAccKey)) {
+				return onFound(k, v)
+			}
+
+			return true
+		})
+	}
+}
+
+func searchKey(store old_indexedstore.IndexedStore, args []string) SearchFunc {
 	targetKey := args[0]
 	if !strings.HasPrefix(targetKey, "0x") {
 		targetKey = "0x" + targetKey
 	}
 	targetKey = string(lo.Must(cryptolib.DecodeHex(targetKey)))
 
-	chainState.Iterate(old_kv.Key(targetKey), func(key old_kv.Key, value []byte) bool {
-		if key == old_kv.Key(targetKey) {
-			return onFound(key, value)
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		chainState.Iterate(old_kv.Key(targetKey), func(key old_kv.Key, value []byte) bool {
+			if key == old_kv.Key(targetKey) {
+				return onFound(key, value)
+			}
+			return true
+		})
+	}
+}
+
+func searchGasFeePolicyChange(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		oldContractState := oldstate.GetContactStateReader(chainState, old_governance.Contract.Hname())
+		policyBytes := oldContractState.Get(old_governance.VarGasFeePolicyBytes)
+		if policyBytes != nil {
+			onFound(old_governance.VarGasFeePolicyBytes, policyBytes)
 		}
-		return true
-	})
+	}
+}
+
+func searchGasBudgetExceeded(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		oldContractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
+		oldRequests := old_collections.NewMapReadOnly(oldContractState, old_blocklog.PrefixRequestReceipts)
+
+		oldRequests.Iterate(func(k, v []byte) bool {
+			rec := lo.Must(old_blocklog.RequestReceiptFromBytes(v, 0, 0))
+			if rec.Error != nil && rec.Error.ErrorCode == old_vm.ErrGasBudgetExceeded.Code() {
+				cli.Println("Request result error: ", rec.Error.AsGoError())
+				return onFound(old_kv.Key(k), v)
+			}
+			return true
+		})
+	}
+}
+
+func searchNicoleCoin(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	const nicoleCoinID = "0x08971dc160d5ae8c457f7eddc15a39035b6190130b4dbb5663550795575ae19db50100000000"
+	nicoleCoinIDBytes := lo.Must(cryptolib.DecodeHex(nicoleCoinID))
+
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		oldContractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+		oldContractState.Iterate("", func(k old_kv.Key, v []byte) bool {
+			if bytes.Contains([]byte(k), nicoleCoinIDBytes) {
+				return onFound(k, v)
+			}
+			return true
+		})
+	}
+}
+
+func searchCrossChain(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	ownChainID := old_isc.ChainID(GetAnchorOutput(lo.Must(store.LatestState())).AliasID)
+
+	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
+		oldContractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
+		old_accounts.AllAccountsMapR(oldContractState).Iterate(func(accKey, v []byte) bool {
+			accID := lo.Must(old_accounts.AgentIDFromKey(old_kv.Key(accKey), ownChainID))
+			//if !accID.BelongsToChain(ownChainID) {
+			if isCrossChainAgentID(accID, ownChainID) {
+				return onFound(old_kv.Key(accKey), v)
+			}
+			return true
+		})
+
+		// oldContractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
+		// oldRequests := old_collections.NewMapReadOnly(oldContractState, old_blocklog.PrefixRequestReceipts)
+
+		// oldRequests.Iterate(func(k, v []byte) bool {
+		// 	rec := lo.Must(old_blocklog.RequestReceiptFromBytes(v, 0, 0))
+
+		// 	sender := rec.Request.SenderAccount()
+		// 	if !sender.BelongsToChain(ownChainID) {
+		// 		return onFound(old_kv.Key(k), v)
+		// 	}
+
+		// 	return true
+		// })
+	}
+}
+
+func isCrossChainAgentID(agentID old_isc.AgentID, ownChainID old_isc.ChainID) bool {
+	switch agentID.Kind() {
+	case old_isc.AgentIDKindContract:
+		agentID := agentID.(*old_isc.ContractAgentID)
+		oldAgentChainID := agentID.ChainID()
+		return !bytes.Equal(ownChainID.Bytes(), oldAgentChainID.Bytes())
+	case old_isc.AgentIDKindEthereumAddress:
+		oldAgentID := agentID.(*old_isc.EthereumAddressAgentID)
+		oldAgentChainID := oldAgentID.ChainID()
+		return !oldAgentChainID.Equals(ownChainID)
+	default:
+		return false
+	}
 }

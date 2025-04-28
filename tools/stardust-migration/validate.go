@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -144,30 +145,54 @@ func validateMigration(c *cmd.Context) error {
 			cli.Logf("Validation panicked: %v", lastErr)
 		}
 	case blocksListFile != "" && !findFailureBlock:
-		panic("Not implemented yet")
-		// // Could be done in parallel, but for now I just dont care.
-		// cli.DebugLoggingEnabled = false
+		// Could be done in parallel, but it may use too much ram, so not risking.
+		cli.DebugLoggingEnabled = false
+		validation.ProgressEnabled = false
 
-		// blocks := lo.Must(readBlocksList(blocksListFile))
-		// failedBlocks := make([]uint32, 0)
+		cli.Logf("Reading blocks list from %s...", blocksListFile)
+		blocks := lo.Must(readBlocksList(blocksListFile))
+		failedBlocks := make([]uint32, 0)
 
-		// for _, blockIndex := range blocks {
-		// 	cli.Logf("****************************  BLOCK %v  ****************************", blockIndex)
-		// 	cli.Logf("Reading old latest state for index #%v...", blockIndex)
-		// 	oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(blockIndex)))
+		cli.Logf("Validating %v blocks", len(blocks))
 
-		// 	cli.Logf("Reading new latest state for index #%v...", blockIndex)
-		// 	newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(blockIndex)))
+		for _, blockIndex := range blocks {
+			cli.Logf("Validating block %v...", blockIndex)
+			srcState, err := srcStore.StateByIndex(blockIndex)
+			if err != nil {
+				cli.Logf("Failed to read old state for block %v: %v", blockIndex, err)
+				failedBlocks = append(failedBlocks, blockIndex)
+				continue
+			}
 
-		// 	defer func() {
-		// 		if err := recover(); err != nil {
-		// 			cli.Logf("Validation panicked for block %v", blockIndex)
-		// 			failedBlocks = append(failedBlocks, blockIndex)
-		// 		}
-		// 	}()
+			destState, err := destStore.StateByIndex(blockIndex)
+			if err != nil {
+				cli.Logf("Failed to read new state for block %v: %v", blockIndex, err)
+				failedBlocks = append(failedBlocks, blockIndex)
+				continue
+			}
 
-		// 	validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
-		// }
+			oldState := utils.NewRecordingKVStoreReadOnly(srcState)
+			newState := utils.NewRecordingKVStoreReadOnly(destState)
+
+			succeded := true
+
+			func() {
+				defer func() {
+					if err := recover(); err != nil {
+						succeded = false
+						failedBlocks = append(failedBlocks, blockIndex)
+					}
+				}()
+
+				validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
+			}()
+
+			cli.Logf("Block %v: %v", blockIndex, lo.Ternary(succeded, "OK", "FAILED"))
+		}
+
+		if len(failedBlocks) > 0 {
+			cli.Logf("Validation failed for blocks: %v", failedBlocks)
+		}
 	default:
 		cli.Logf("Invalid command line arguments: --blocks-list and --find-fail-block are mutually exclusive")
 	}
@@ -260,6 +285,9 @@ func readBlocksList(filePath string) ([]uint32, error) {
 
 		blockIndexes = append(blockIndexes, uint32(blockIndex))
 	}
+
+	slices.Sort(blockIndexes)
+	blockIndexes = lo.Uniq(blockIndexes)
 
 	return blockIndexes, nil
 }

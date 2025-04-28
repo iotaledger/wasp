@@ -12,11 +12,17 @@ import (
 	"golang.org/x/exp/constraints"
 )
 
+var ProgressEnabled = true
+
 var progresses = make(map[string]map[string][]*entityProgress)
 var progressMutex = &sync.RWMutex{}
 var progressPrintingThreadStarted = false
 
 func NewProgressPrinter[Count constraints.Integer](contractName, migrationName, entityPluralName string, totalCount Count) (printProgress, done func()) {
+	if !ProgressEnabled {
+		return func() {}, func() {}
+	}
+
 	if !ConcurrentValidation {
 		p, d := cli.NewProgressPrinter(entityPluralName, totalCount)
 		return func() { p() }, d

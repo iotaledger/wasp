@@ -175,8 +175,9 @@ func main() {
 								Usage:   "Specify block to validate. If not specified, latest available block is validated.",
 							},
 							&cmd.StringFlag{
-								Name:  "blocks-list",
-								Usage: "Specify file with list of blocks to validate. It's like running the tool multiple times with -t/--to-index option. See blocks_to_validate.txt file as example of syntax.",
+								Name:    "blocks-list",
+								Aliases: []string{"l"},
+								Usage:   "Specify file with list of blocks to validate. It's like running the tool multiple times with -t/--to-index option. See blocks_to_validate.txt file as example of syntax.",
 							},
 							&cmd.BoolFlag{
 								Name:  "no-hashing",
@@ -231,6 +232,10 @@ func main() {
 					searchCmd("native-token", searchNativeTokens),
 					searchCmd("strange-native-token", searchStrangeNativeTokenRecords, IncludeDeletions()),
 					searchCmd("key", searchKey, ArgsUsage("<key-hex>"), IncludeDeletions()),
+					searchCmd("gas-fee-policy", searchGasFeePolicyChange),
+					searchCmd("gas-budget-exceeded", searchGasBudgetExceeded),
+					searchCmd("nicole-coin", searchNicoleCoin),
+					searchCmd("cross-chain", searchCrossChain),
 				},
 			},
 			{
@@ -250,7 +255,7 @@ func main() {
 	lo.Must0(app.RunContext(programCtx, os.Args))
 }
 
-func searchCmd(entityName string, f StateContainsTargetCheckFunc, opts ...SearchOption) *cmd.Command {
+func searchCmd(entityName string, f SearchFuncConstructor, opts ...SearchOption) *cmd.Command {
 	options := SearchOptions{}
 	for _, opt := range opts {
 		opt(&options)

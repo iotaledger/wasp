@@ -3,18 +3,49 @@
 # Or this is just a reference for manually running validation.
 # Syntax: <block_number> # <explanation/comment>
 
-71 # Before first NFT added
+0 # Origin block
+
+71
 72 # First NFT added
-73 # First NFT Deleted
-74 # After first NFT deleted
-
-25287 # See next
-25288 # Cross-chain NFT or something like that (was problematic)
-25289 # See prev
-
-134051 # Before another NFT added
+73 # First NFT deleted
+74
+134051
 134052 # Another NFT added
-134053 # Before another NFT deleted
+134053
 134054 # Another NFT deleted
-134054 # After another NFT deleted
+134054
 
+5    # Gas budger exceeded before Gas Fee Policy changed
+1701 # ...
+1950
+2014
+2092
+2101
+2133
+2321
+2369
+2449
+2739 
+2740 # Gas Fee Policy change
+2741
+22979 # Gas Budget Exceeded after Gas Fee Policy changed
+22996 # ...
+23162
+24183
+24565
+388922
+855370
+3961283
+5821311
+
+25287
+25288 # Cross-chain with NFT or something like that (was problematic)
+25289
+2916815 # Cross-chain request (by Lukas)
+2927296 # Cross-chain request
+2927170 # Cross-chain request
+
+132713 # Nicole coin
+132714
+132717
+132718
