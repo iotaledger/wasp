@@ -1,3 +1,4 @@
+// Package statetest provides testing utilities for state package
 package statetest
 
 import (

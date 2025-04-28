@@ -1,3 +1,6 @@
+// Package buffered provides buffered implementations of the key-value store
+// interfaces. It allows for batch operations and in-memory caching of key-value
+// operations before committing them to the underlying storage.
 package buffered
 
 import (
@@ -57,7 +60,7 @@ func (b *BufferedKVStore) DangerouslyDumpToDict() dict.Dict {
 	return ret
 }
 
-// iterates over all key-value pairs in KVStore
+// DangerouslyDumpToString iterates over all key-value pairs in KVStore
 func (b *BufferedKVStore) DangerouslyDumpToString() string {
 	ret := "         BufferedKVStore:\n"
 	for k, v := range b.DangerouslyDumpToDict() {

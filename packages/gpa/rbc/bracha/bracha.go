@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package bracha implements Bracha's Reliable Broadcast.
+// Package bracha implements Bracha's Reliable Broadcast.
 // The original version of this RBC can be found here (see "FIG. 1. The broadcast primitive"):
 //
 //	Gabriel Bracha. 1987. Asynchronous byzantine agreement protocols. Inf. Comput.
@@ -70,7 +70,7 @@ type rbc struct {
 
 var _ gpa.GPA = &rbc{}
 
-// Create new instance of the RBC.
+// New creates new instance of the RBC.
 func New(peers []gpa.NodeID, f int, me, broadcaster gpa.NodeID, maxMsgSize int, predicate func([]byte) bool, log gpa.Logger) gpa.GPA {
 	r := &rbc{
 		n:           len(peers),

@@ -1,3 +1,4 @@
+// Package testconfig provides utilities for test configuration management
 package testconfig
 
 import (

@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// nodeconn package provides an interface to the L1 node (Hornet).
+// Package nodeconn provides an interface to the L1 node (Hornet).
 package nodeconn
 
 import (

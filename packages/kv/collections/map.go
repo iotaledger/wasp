@@ -1,3 +1,6 @@
+// Package collections provides high-level data structures built on top of
+// the kv package. It implements common collection types such as maps, arrays,
+// and other data structures with a key-value store backend.
 package collections
 
 import (

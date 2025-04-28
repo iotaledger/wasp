@@ -223,14 +223,14 @@ func (o ObjectSet) Sorted() []IotaObject {
 }
 
 // Iterate returns a deterministic iterator
-func (c ObjectSet) Iterate() iter.Seq[IotaObject] {
+func (o ObjectSet) Iterate() iter.Seq[IotaObject] {
 	return func(yield func(IotaObject) bool) {
-		for _, k := range slices.SortedFunc(maps.Keys(c.items), func(a, b iotago.ObjectID) int {
+		for _, k := range slices.SortedFunc(maps.Keys(o.items), func(a, b iotago.ObjectID) int {
 			return bytes.Compare(a[:], b[:])
 		}) {
 			if !yield(IotaObject{
 				ID:   k,
-				Type: c.items[k],
+				Type: o.items[k],
 			}) {
 				return
 			}
@@ -464,8 +464,8 @@ func (a *Assets) AsAssetsBagWithBalances(b *iscmove.AssetsBag) *iscmove.AssetsBa
 	}
 }
 
-// JsonTokenScheme is for now a 1:1 copy of the Stardusts version
-type JsonTokenScheme struct {
+// JSONTokenScheme is for now a 1:1 copy of the Stardusts version
+type JSONTokenScheme struct {
 	Type          int    `json:"type"`
 	MintedSupply  string `json:"mintedTokens"`
 	MeltedTokens  string `json:"meltedTokens"`

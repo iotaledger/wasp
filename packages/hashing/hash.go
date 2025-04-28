@@ -1,3 +1,4 @@
+// Package hashing provides hashing utilities for the IOTA Smart Contract platform.
 package hashing
 
 import (

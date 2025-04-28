@@ -38,12 +38,12 @@ func RequestFromBytes(data []byte) (Request, error) {
 
 type RequestID iotago.ObjectID
 
-func (id *RequestID) AsIotaObjectID() iotago.ObjectID {
-	return iotago.ObjectID(*id)
+func (rid *RequestID) AsIotaObjectID() iotago.ObjectID {
+	return iotago.ObjectID(*rid)
 }
 
-func (id *RequestID) AsIotaAddress() iotago.Address {
-	return iotago.Address(*id)
+func (rid *RequestID) AsIotaAddress() iotago.Address {
+	return iotago.Address(*rid)
 }
 
 const RequestIDDigestLen = 6
@@ -168,7 +168,7 @@ func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
 	return bcs.Unmarshal[*RequestMetadata](data)
 }
 
-// returns nil if nil pointer receiver is cloned
+// Clone returns nil if nil pointer receiver is cloned
 func (meta *RequestMetadata) Clone() *RequestMetadata {
 	if meta == nil {
 		return nil

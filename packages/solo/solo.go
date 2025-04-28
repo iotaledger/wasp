@@ -602,7 +602,7 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 	return coin.Value(r.TotalBalance.Uint64())
 }
 
-// L1Assets returns all ftokens of the address contained in the UTXODB ledger
+// L1CoinBalances returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
 	require.NoError(env.T, err)

@@ -1,3 +1,4 @@
+// Package testdbhash provides utilities for calculating and verifying hash values of database contents
 package testdbhash
 
 import (
@@ -94,7 +95,7 @@ func verifyHash(
 		lo.Must(h.Write(k))
 		lo.Must(h.Write(v))
 		if dbDump != nil {
-			lo.Must(dbDump.WriteString(fmt.Sprintf("%s: [%d] %x\n", stringifyKey(k, isState), len(v), v)))
+			lo.Must(fmt.Fprintf(dbDump, "%s: [%d] %x\n", stringifyKey(k, isState), len(v), v))
 		}
 	})
 

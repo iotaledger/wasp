@@ -1,3 +1,4 @@
+// Package assert provides assertion utilities for the IOTA Smart Contract platform.
 package assert
 
 import (
