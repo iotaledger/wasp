@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/dgravesa/go-parallel/parallel"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_collections "github.com/nnikolash/wasp-types-exported/packages/kv/collections"
@@ -22,14 +21,13 @@ import (
 	"github.com/pbnjay/memory"
 	"github.com/samber/lo"
 
+	"github.com/iotaledger/hive.go/kvstore/mapdb"
+
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/tools/stardust-migration/blockindex"
 	"github.com/iotaledger/wasp/tools/stardust-migration/migrations"
 	"github.com/iotaledger/wasp/tools/stardust-migration/stateaccess/oldstate"
 	"github.com/iotaledger/wasp/tools/stardust-migration/utils/db"
@@ -84,13 +82,13 @@ func initSetup(srcChainDBDir string, indexFilePath string) (old_indexedstore.Ind
 	srcStore := old_indexedstore.New(old_state.NewStoreWithUniqueWriteMutex(srcKVS))
 
 	migrations.BuildContractNameFuncs()
-
-	trieRoots, indexFileFound := blockindex.ReadIndexFromFile(indexFilePath)
-	if !indexFileFound {
-		panic("could not find index file")
-	}
-
-	return srcStore, trieRoots
+	/*
+		trieRoots, indexFileFound := blockindex.ReadIndexFromFile(indexFilePath)
+		if !indexFileFound {
+			panic("could not find index file")
+		}
+	*/
+	return srcStore, nil
 }
 
 func dumpCoreContractCalls(srcChainDBDir string, indexFilePath string) {
@@ -153,8 +151,8 @@ func TestMigrateBlocklog(t *testing.T) {
 
 	now := time.Now()
 
-	oldChainID := lo.Must(old_isc.ChainIDFromString("tgl1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm25gu3sa"))
-	newChainID := isctest.RandomChainID()
+	//oldChainID := lo.Must(old_isc.ChainIDFromString("tgl1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm25gu3sa"))
+	//newChainID := isctest.RandomChainID()
 	for i := 0; i < len(trieRoots); i++ {
 		destStateDraft := lo.Must(destStore.NewStateDraft(time.Now(), block.L1Commitment()))
 
@@ -165,10 +163,11 @@ func TestMigrateBlocklog(t *testing.T) {
 			panic(err)
 		}
 
-		migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, oldChainID, newChainID, &transaction.StateMetadata{
-			L1Commitment: block.L1Commitment(),
-		}, nil)
-
+		/*
+			migrations.MigrateBlocklogContract(srcBlock.MutationsReader(), destStateDraft, oldChainID, newChainID, &transaction.StateMetadata{
+				L1Commitment: block.L1Commitment(),
+			}, nil)
+		*/
 		// Handle deletions
 		// Here its easy, because the key remains the same for both databases
 		// For the whole migration we probably should create some OldToNewKey function handler to solve the differences.

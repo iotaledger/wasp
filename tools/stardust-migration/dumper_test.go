@@ -75,6 +75,31 @@ func TestDumpAccountKeys(t *testing.T) {
 	})
 }
 
+func TestDumpTries(t *testing.T) {
+	dbPath := "/mnt/dev/Coding/iota/isc-rebased-migration/waspdb/chains/data/0xecadd251cfd00e65b1b742822e5b8c3ce1b7a4e427316a49797955753e1f3b20"
+	destKVS := db.ConnectNew(dbPath)
+	destStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(destKVS))
+	s, _ := destStore.LatestState()
+	blockIdx, _ := destStore.LatestBlockIndex()
+
+	fmt.Printf("Latest block index: %d\n", blockIdx)
+	fmt.Printf("Block: %d, TrieRoot: %s\n", s.BlockIndex(), s.TrieRoot())
+
+	count := 0
+	for {
+		blockIdx--
+		childs, _ := destStore.StateByIndex(blockIdx)
+		fmt.Printf("Block: %d, TrieRoot: %s\n", childs.BlockIndex(), childs.TrieRoot())
+
+		count++
+
+		if count > 1000 {
+			break
+		}
+	}
+
+}
+
 func TestGetAccountBalance(t *testing.T) {
 	const stateIndex = 3
 	srcState, dstState := OpenDBs(5)
@@ -94,7 +119,7 @@ func TestGetAccountBalance(t *testing.T) {
 
 	fmt.Print(newBlockInfo.String())
 	a, _ := accounts.FuncTransferAllowanceTo.Input1.Decode(newRequests[0].Message().Params.MustAt(0))
-	fmt.Printf("Allowance:%v\nAssets:%v\nCallTarget:%v\nTarget:%s\n", newRequests[0].Allowance(), newRequests[0].Assets(), newRequests[0].Message(), a.String())
+	fmt.Printf("Allowance:%v\nAssets:%v\nCallTarget:%v\nTarget:%s\n", lo.Must(newRequests[0].Allowance()), newRequests[0].Assets(), newRequests[0].Message(), a.String())
 
 	newAccountsState := newstate.GetContactStateReader(dstState, accounts.Contract.Hname())
 	baseTokenNew, remainder := accounts.NewStateReader(5, newAccountsState).GetBaseTokensBalance(migrations.OldAgentIDtoNewAgentID(targetAddress, old_isc.ChainID{}))

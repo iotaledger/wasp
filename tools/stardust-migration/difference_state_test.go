@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/cryptolib"
+
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 	old_blocklog "github.com/nnikolash/wasp-types-exported/packages/vm/core/blocklog"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -40,7 +41,7 @@ func TestDifferences(t *testing.T) {
 	})
 
 	destStateDraft := destStore.NewOriginStateDraft()
-	migrations.MigrateBlocklogContract(oldState, destStateDraft, old_isc.ChainID{}, isc.ChainID{}, &transaction.StateMetadata{}, nil)
+	migrations.MigrateBlocklogContract(oldState, destStateDraft, old_isc.ChainID{}, &transaction.StateMetadata{}, cryptolib.NewRandomAddress(), 10000, false)
 	newContractState := newstate.GetContactState(destStateDraft, blocklog.Contract.Hname())
 
 	fmt.Println("NEW STATE")
