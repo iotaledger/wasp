@@ -7,13 +7,13 @@ import (
 	old_kv "github.com/nnikolash/wasp-types-exported/packages/kv"
 )
 
-func OldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32) string {
+func OldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.ChainID, firstIndex, lastIndex uint32, short bool) string {
 	var accountsContractStr, blocklogContractStr, evmContractStr string
 
 	GoAllAndWait(func() {
 		accountsContractStr = oldAccountsContractContentToStr(chainState, chainID)
 	}, func() {
-		blocklogContractStr = oldBlocklogContractContentToStr(chainState, firstIndex, lastIndex)
+		blocklogContractStr = oldBlocklogContractContentToStr(chainState, firstIndex, lastIndex, short)
 	}, func() {
 		evmContractStr = oldEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})
@@ -22,12 +22,12 @@ func OldStateContentToStr(chainState old_kv.KVStoreReader, chainID old_isc.Chain
 	return accountsContractStr + blocklogContractStr + evmContractStr
 }
 
-func NewStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32) string {
+func NewStateContentToStr(chainState kv.KVStoreReader, chainID isc.ChainID, firstIndex, lastIndex uint32, short bool) string {
 	var accountsContractStr, blocklogContractStr, evmContractStr string
 	GoAllAndWait(func() {
 		accountsContractStr = newAccountsContractContentToStr(chainState, chainID)
 	}, func() {
-		blocklogContractStr = newBlocklogContractContentToStr(chainState, firstIndex, lastIndex)
+		blocklogContractStr = newBlocklogContractContentToStr(chainState, firstIndex, lastIndex, short)
 	}, func() {
 		evmContractStr = newEVMContractContentToStr(chainState, firstIndex, lastIndex)
 	})

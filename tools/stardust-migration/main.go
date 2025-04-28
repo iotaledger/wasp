@@ -157,6 +157,11 @@ func main() {
 						ArgsUsage: "<src-chain-db-dir> <dest-chain-db-dir>",
 						Flags: []cmd.Flag{
 							&cmd.BoolFlag{
+								Name:    "short",
+								Aliases: []string{"s"},
+								Usage:   "Skip some of long validations.",
+							},
+							&cmd.BoolFlag{
 								Name:    "no-parallel",
 								Aliases: []string{"p"},
 								Usage:   "Do not run validation in parallel.",

@@ -21,7 +21,7 @@ import (
 
 const blockRetentionPeriod = 10000
 
-func oldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
+func oldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, firstIndex, lastIndex uint32, short bool) string {
 	contractState := oldstate.GetContactStateReader(chainState, old_blocklog.Contract.Hname())
 
 	var receiptsStr, blockRegistryStr, requestLookupIndexStr string
@@ -32,7 +32,7 @@ func oldBlocklogContractContentToStr(chainState old_kv.KVStoreReader, firstIndex
 		blockRegistryStr = oldBlockRegistryToStr(contractState, firstIndex, lastIndex)
 		cli.DebugLogf("Old block registry preview:\n%v", utils.MultilinePreview(blockRegistryStr))
 	}, func() {
-		requestLookupIndexStr = oldRequestLookupIndex(contractState, firstIndex, lastIndex)
+		requestLookupIndexStr = oldRequestLookupIndex(contractState, firstIndex, lastIndex, short)
 		cli.DebugLogf("Old request lookup index preview:\n%v", utils.MultilinePreview(requestLookupIndexStr))
 	})
 
@@ -115,7 +115,7 @@ func oldReceiptsToStr(contractState old_kv.KVStoreReader, firstIndex, lastIndex 
 	return requestStr.String()
 }
 
-func newBlocklogContractContentToStr(chainState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
+func newBlocklogContractContentToStr(chainState kv.KVStoreReader, firstIndex, lastIndex uint32, short bool) string {
 	contractState := newstate.GetContactStateReader(chainState, blocklog.Contract.Hname())
 
 	var receiptsStr, blockRegistryStr, requestLookupIndexStr string
@@ -126,7 +126,7 @@ func newBlocklogContractContentToStr(chainState kv.KVStoreReader, firstIndex, la
 		blockRegistryStr = newBlockRegistryToStr(contractState, firstIndex, lastIndex)
 		cli.DebugLogf("New block registry preview:\n%v", utils.MultilinePreview(blockRegistryStr))
 	}, func() {
-		requestLookupIndexStr = newRequestLookupIndex(contractState, firstIndex, lastIndex)
+		requestLookupIndexStr = newRequestLookupIndex(contractState, firstIndex, lastIndex, short)
 		cli.DebugLogf("New request lookup index preview:\n%v", utils.MultilinePreview(requestLookupIndexStr))
 	})
 
@@ -326,7 +326,7 @@ func newBlockRegistryToStr(contractState kv.KVStoreReader, firstIndex, lastIndex
 	return blocksStr.String()
 }
 
-func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32) string {
+func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastIndex uint32, short bool) string {
 	firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
 	lookupTable := old_collections.NewMapReadOnly(contractState, old_blocklog.PrefixRequestLookupIndex)
 	cli.DebugLogf("Retrieving old request lookup index: blocks = [%v; %v]", firstAvailBlockIndex, lastIndex)
@@ -377,6 +377,11 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 
 		cli.DebugLogf("Retrieved %v old request lookup entries", requestsCount)
 	}, func() {
+		if short {
+			cli.DebugLogf("Skipping old request lookup index keys retrieval")
+			return
+		}
+
 		printProgress, done := NewProgressPrinter("blocklog_old", "lookup (elements)", "keys", 0)
 		defer done()
 
@@ -413,7 +418,7 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 	return indexStr.String()
 }
 
-func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex uint32) string {
+func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex uint32, short bool) string {
 	firstAvailBlockIndex := max(getFirstAvailableBlockIndex(firstIndex, lastIndex), 1)
 	lookupTable := collections.NewMapReadOnly(contractState, old_blocklog.PrefixRequestLookupIndex)
 	cli.DebugLogf("Retrieving new request lookup index: blocks = [%v; %v]", firstAvailBlockIndex, lastIndex)
@@ -461,6 +466,11 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 
 		cli.DebugLogf("Retrieved %v new request lookup entries", requestsCount)
 	}, func() {
+		if short {
+			cli.DebugLogf("Skipping old request lookup index keys retrieval")
+			return
+		}
+
 		printProgress, done := NewProgressPrinter("blocklog_new", "lookup (elements)", "keys", 0)
 		defer done()
 

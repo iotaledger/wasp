@@ -39,6 +39,7 @@ func validateMigration(c *cmd.Context) error {
 
 	firstIndex := uint32(c.Uint64("from-block"))
 	lastIndex := c.Uint64("to-block")
+	short := c.Bool("short")
 	blocksListFile := c.String("blocks-list")
 	validation.ConcurrentValidation = !c.Bool("no-parallel")
 	hashValues := !c.Bool("no-hashing")
@@ -118,7 +119,7 @@ func validateMigration(c *cmd.Context) error {
 			}
 		}()
 
-		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, uint32(lastIndex))
+		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, uint32(lastIndex), short)
 		return nil
 	case findFailureBlock && blocksListFile == "":
 		cli.DebugLoggingEnabled = false
@@ -137,7 +138,7 @@ func validateMigration(c *cmd.Context) error {
 				}
 			}()
 
-			validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
+			validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex, short)
 			return true
 		})
 
@@ -207,7 +208,7 @@ func validateMigration(c *cmd.Context) error {
 					}
 				}()
 
-				validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex)
+				validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, blockIndex, short)
 			}()
 
 			cli.Logf("Block %v: %v", blockIndex, lo.Ternary(succeded, "OK", "FAILED"))
@@ -223,15 +224,20 @@ func validateMigration(c *cmd.Context) error {
 	return nil
 }
 
-func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID, firstIndex, lastIndex uint32) {
+func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReader, oldChainID old_isc.ChainID, newChainID isc.ChainID, firstIndex, lastIndex uint32, short bool) {
 	cli.DebugLogf("Validating states equality...\n")
 	var oldStateContentStr, newStateContentStr string
 	validation.GoAllAndWait(func() {
-		oldStateContentStr = validation.OldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex)
+		oldStateContentStr = validation.OldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex, short)
 		cli.DebugLogf("Replacing old chain ID with constant placeholder for comparison...")
 		oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
+		// TODO: review this
+		cli.DebugLogf("Ignoring cross-chain agent ID for comparison...")
+		const crossChainAgentID = "ContractAgentID(0x05204969, iota1pphx6hnmxqdqd2u4m59e7nvmcyulm3lfm58yex5gmud9qlt3v9crs9sah6m)"
+		const crossChainAgentIDReplaced = "ContractAgentID(0x05204969, <chain-id>)"
+		oldStateContentStr = strings.Replace(oldStateContentStr, crossChainAgentID, crossChainAgentIDReplaced, -1)
 	}, func() {
-		newStateContentStr = validation.NewStateContentToStr(newState, newChainID, firstIndex, lastIndex)
+		newStateContentStr = validation.NewStateContentToStr(newState, newChainID, firstIndex, lastIndex, short)
 		cli.DebugLogf("Replacing new chain ID with constant placeholder for comparison...")
 		newStateContentStr = strings.Replace(newStateContentStr, newChainID.String(), "<chain-id>", -1)
 	})
