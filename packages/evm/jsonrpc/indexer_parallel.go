@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
+	_ "github.com/samber/lo"
 
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -109,13 +110,13 @@ type blockData struct {
 	transactionHashes []common.Hash
 }
 
-func (c *Index) IndexBlockParallel(store indexedstore.IndexedStore, trieRoot trie.Hash, numWorkers int) error {
+func (c *Index) IndexBlockParallel(store func() indexedstore.IndexedStore, trieRoot trie.Hash, numWorkers int) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	fmt.Println("Starting parallel block indexing")
 
-	state, err := c.stateByTrieRoot(trieRoot)
+	state, err := store().StateByTrieRoot(trieRoot)
 	if err != nil {
 		return fmt.Errorf("stateByTrieRoot: %w", err)
 	}
@@ -124,9 +125,9 @@ func (c *Index) IndexBlockParallel(store indexedstore.IndexedStore, trieRoot tri
 
 	fmt.Printf("Indexing %d blocks \n", blockIndexToCache)
 
-	const checkpointInterval = 10000
+	const checkpointInterval = 9999
 
-	checkpoints, err := c.loadOrCreateCheckpoints(store, blockIndexToCache, checkpointInterval)
+	checkpoints, err := c.loadOrCreateCheckpoints(store(), blockIndexToCache, checkpointInterval)
 	if err != nil {
 		return fmt.Errorf("loadOrCreateCheckpoints: %w", err)
 	}
@@ -149,7 +150,7 @@ func (c *Index) IndexBlockParallel(store indexedstore.IndexedStore, trieRoot tri
 
 			fmt.Printf("Processing checkpoint from block %d to %d\n", cp.StartBlock, cp.EndBlock)
 
-			batchResults, err := c.processCheckpoint(cp)
+			batchResults, err := c.processCheckpoint(store, cp)
 			if err != nil {
 				fmt.Printf("Error processing checkpoint %d: %v\n", cp.StartBlock, err)
 				errChan <- fmt.Errorf("processCheckpoint: %w", err)
@@ -191,13 +192,18 @@ func (c *Index) IndexBlockParallel(store indexedstore.IndexedStore, trieRoot tri
 	}
 
 	c.setLastBlockIndexed(blockIndexToCache)
-	c.store.Flush()
+	err = c.store.Flush()
+	if err != nil {
+		return fmt.Errorf("store.Flush: %w", err)
+	}
+
 	fmt.Printf("Successfully indexed blocks from %d to 0\n", blockIndexToCache)
 	return nil
 }
 
-func (c *Index) processCheckpoint(cp Checkpoint) ([]blockData, error) {
-	checkpointState, err := c.stateByTrieRoot(cp.TrieRoot)
+func (c *Index) processCheckpoint(store func() indexedstore.IndexedStore, cp Checkpoint) ([]blockData, error) {
+	readStore := store()
+	checkpointState, err := readStore.StateByTrieRoot(cp.TrieRoot)
 	if err != nil {
 		return nil, fmt.Errorf("stateByTrieRoot for checkpoint %d: %w", cp.StartBlock, err)
 	}
@@ -224,9 +230,12 @@ func (c *Index) processCheckpoint(cp Checkpoint) ([]blockData, error) {
 		}
 
 		evmBlock := db.GetBlockByNumber(uint64(blockIdx))
+
 		if evmBlock == nil {
 			return nil, fmt.Errorf("block %d not found in checkpoint range", blockIdx)
 		}
+
+		blockHash := evmBlock.Hash().Hex()
 
 		txHashes := make([]common.Hash, 0, len(evmBlock.Transactions()))
 		for _, tx := range evmBlock.Transactions() {
@@ -236,7 +245,7 @@ func (c *Index) processCheckpoint(cp Checkpoint) ([]blockData, error) {
 		results = append(results, blockData{
 			blockIndex:        blockIdx,
 			blockTrieRoot:     trieRoot,
-			blockHash:         evmBlock.Hash(),
+			blockHash:         common.HexToHash(blockHash),
 			transactionHashes: txHashes,
 		})
 
@@ -259,17 +268,19 @@ func (c *Index) writeResultsToIndex(results []blockData, blockIndexToCache uint3
 
 	// Write all results to the index
 	for _, data := range results {
-		fmt.Printf("Writing block: %d\n	TrieRoot: %s\n	BlockHash: %s\n", data.blockIndex, data.blockTrieRoot.String(), data.blockHash.String())
-
 		c.setBlockTrieRootByIndex(data.blockIndex, data.blockTrieRoot)
 		c.setBlockIndexByHash(data.blockHash, data.blockIndex)
 
 		for _, txHash := range data.transactionHashes {
 			c.setBlockIndexByTxHash(txHash, data.blockIndex)
-			fmt.Printf("		TX Hash for Block: %d: %s\n", data.blockIndex, txHash.String())
 		}
 
 		processed[data.blockIndex] = true
+
+		if data.blockIndex%10000 == 0 {
+			c.setLastBlockIndexed(blockIndexToCache)
+			c.store.Flush()
+		}
 	}
 
 	// Verify all blocks were processed
@@ -283,6 +294,7 @@ func (c *Index) writeResultsToIndex(results []blockData, blockIndexToCache uint3
 			break
 		}
 
+		blockIdx--
 	}
 
 	return nil
