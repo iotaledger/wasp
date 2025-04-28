@@ -226,9 +226,15 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 
 		cli.DebugLogf("Found %v old transactions by block number", txsCount)
 
-		if uint32(txsCount) < (toBlockIndex-firstAvailBlockIndex) && toBlockIndex != 0 {
-			panic(fmt.Sprintf("Not enough transactions found in range [%v, %v]: %v", firstAvailBlockIndex, toBlockIndex, txsCount))
-		}
+		// Check disabled. There 9997 txs found instead of 9999 in blocks range [13163, 23162]
+		// Per Lukas, the reason for that is:
+		// Plain onLedger requests don't add TX into the EVM Transaction chain
+		// Only if you deposit funds via an OnLedger request, then we create these FakeTXs
+		// So it can very much be, that evm blocks have 0 tx inside
+		//
+		// if uint32(txsCount) < max(toBlockIndex-firstAvailBlockIndex, 1)-1 && toBlockIndex != 0 {
+		// 	panic(fmt.Sprintf("Not enough transactions found in range [%v, %v]: %v", firstAvailBlockIndex, toBlockIndex, txsCount))
+		// }
 	}, func() {
 		cli.DebugLogf("Retrieving all old keys of transactions by block number...")
 		bcState := old_emulator.BlockchainDBSubrealmR(old_evm.EmulatorStateSubrealmR(contractState))
@@ -399,9 +405,15 @@ func oldReceiptsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromIndex
 
 		cli.DebugLogf("Found %v old receipts by block number", recCount)
 
-		if uint32(recCount) < max(toIndex-fromIndex, 1)-1 && toIndex != 0 {
-			panic(fmt.Sprintf("Not enough receipts found in range [%v, %v]: %v", fromIndex, toIndex, recCount))
-		}
+		// Check disabled. There 9997 txs found instead of 9999 in blocks range [13163, 23162]
+		// Per Lukas, the reason for that is:
+		// Plain onLedger requests don't add TX into the EVM Transaction chain
+		// Only if you deposit funds via an OnLedger request, then we create these FakeTXs
+		// So it can very much be, that evm blocks have 0 tx inside
+		//
+		// if uint32(recCount) < max(toIndex-fromIndex, 1)-1 && toIndex != 0 {
+		// 	panic(fmt.Sprintf("Not enough receipts found in range [%v, %v]: %v", fromIndex, toIndex, recCount))
+		// }
 	}, func() {
 		printProgress, done := NewProgressPrinter("evm_old", "receipts by block (keys)", "keys", 0)
 		defer done()
