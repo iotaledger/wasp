@@ -446,8 +446,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.NoError(t, err)
 	tmpAssetsBagRef := assetsBagGetObjectRes.Data.Ref()
 	allowance := iscmove.NewAssets(0).
-		SetCoin(iotajsonrpc.CoinType("0x1::iota::IOTA"), 11).
-		SetCoin(iotajsonrpc.CoinType("0xa::testa::TEST_A"), 12)
+		SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA"), 11).
+		SetCoin(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A"), 12)
 
 	createAndSendRequestRes, err := client.CreateAndSendRequest(
 		context.Background(),
@@ -477,9 +477,8 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	require.Equal(t, iotajsonrpc.CoinValue(1000000), bal)
 
 	decodedAllowance := bcs.MustUnmarshal[iscmove.Assets](reqWithObj.Object.AllowanceBCS)
-	require.Equal(t, decodedAllowance.Coins.Get("0x1::iota::IOTA"), allowance.Coins.Get("0x1::iota::IOTA"))
-	require.Equal(t, decodedAllowance.Coins.Get("0xa::testa::TEST_A"), allowance.Coins.Get("0xa::testa::TEST_A"))
-
+	require.Equal(t, decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA")), allowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA")))
+	require.Equal(t, decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")), allowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")))
 }
 
 func newAssetsBag(

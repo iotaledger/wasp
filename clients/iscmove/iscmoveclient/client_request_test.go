@@ -352,6 +352,6 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	decodedAllowance := bcs.MustUnmarshal[iscmove.Assets](req.Object.AllowanceBCS)
 
-	require.Equal(t, iotajsonrpc.CoinValue(12), decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")))
 	require.Equal(t, iotajsonrpc.CoinValue(21), decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0x1::iota::IOTA")))
+	require.Equal(t, iotajsonrpc.CoinValue(12), decodedAllowance.Coins.Get(iotajsonrpc.MustCoinTypeFromString("0xa::testa::TEST_A")))
 }
