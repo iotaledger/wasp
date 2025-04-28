@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"runtime/debug"
 	"slices"
@@ -37,7 +38,7 @@ func validateMigration(c *cmd.Context) error {
 	}()
 
 	firstIndex := uint32(c.Uint64("from-block"))
-	lastIndex := uint32(c.Uint64("to-block"))
+	lastIndex := c.Uint64("to-block")
 	blocksListFile := c.String("blocks-list")
 	validation.ConcurrentValidation = !c.Bool("no-parallel")
 	hashValues := !c.Bool("no-hashing")
@@ -83,9 +84,9 @@ func validateMigration(c *cmd.Context) error {
 	// 9. Ensure hash of EVM transaction tracing is same for transactions with Native Tokens and NFTs
 	// 10. Validate that commitments does not change between multiple migration runs
 
-	if lastIndex == 0 {
+	if lastIndex == math.MaxUint64 {
 		cli.Logf("Using latest new state index")
-		lastIndex = lo.Must(destStore.LatestBlockIndex())
+		lastIndex = uint64(lo.Must(destStore.LatestBlockIndex()))
 	}
 
 	cli.Logf("State index to be validated: %v", lastIndex)
@@ -104,10 +105,10 @@ func validateMigration(c *cmd.Context) error {
 		cli.DebugLoggingEnabled = true
 
 		cli.Logf("Reading old latest state for index #%v...", lastIndex)
-		oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(lastIndex)))
+		oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(uint32(lastIndex))))
 
 		cli.Logf("Reading new latest state for index #%v...", lastIndex)
-		newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(lastIndex)))
+		newState := utils.NewRecordingKVStoreReadOnly(lo.Must(destStore.StateByIndex(uint32(lastIndex))))
 
 		defer func() {
 			if err := recover(); err != nil {
@@ -117,12 +118,12 @@ func validateMigration(c *cmd.Context) error {
 			}
 		}()
 
-		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, lastIndex)
+		validateStatesEqual(oldState, newState, oldChainID, newChainID, firstIndex, uint32(lastIndex))
 		return nil
 	case findFailureBlock && blocksListFile == "":
 		cli.DebugLoggingEnabled = false
 
-		findBlockWithIssue(firstIndex, lastIndex, func(blockIndex uint32) bool {
+		findBlockWithIssue(firstIndex, uint32(lastIndex), func(blockIndex uint32) bool {
 			cli.Logf("Reading old latest state for index #%v...", blockIndex)
 			oldState := utils.NewRecordingKVStoreReadOnly(lo.Must(srcStore.StateByIndex(blockIndex)))
 
@@ -155,8 +156,30 @@ func validateMigration(c *cmd.Context) error {
 
 		cli.Logf("Validating %v blocks", len(blocks))
 
-		for _, blockIndex := range blocks {
-			cli.Logf("Validating block %v...", blockIndex)
+		i := 0
+		if firstIndex != 0 {
+			for len(blocks) != 0 {
+				if blocks[i] >= firstIndex {
+					break
+				}
+				cli.Logf("Skipping block %v (%v/%v) because it is before the first index %v", blocks[i], i+1, len(blocks), firstIndex)
+				i++
+			}
+
+			if len(blocks) == 0 {
+				cli.Logf("Start block %v not found in the list", firstIndex)
+				return nil
+			}
+			if blocks[i] != firstIndex {
+				cli.Logf("Incorrect start block index in the list: asked = %v, next in list = %v", firstIndex, blocks[i])
+				return nil
+			}
+		}
+
+		for ; i < len(blocks); i++ {
+			blockIndex := blocks[i]
+
+			cli.Logf("Validating block %v (%v/%v)...", blockIndex, i+1, len(blocks))
 			srcState, err := srcStore.StateByIndex(blockIndex)
 			if err != nil {
 				cli.Logf("Failed to read old state for block %v: %v", blockIndex, err)

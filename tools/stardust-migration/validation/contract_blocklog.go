@@ -371,7 +371,7 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 			}
 		}
 
-		if uint32(requestsCount) < max(lastIndex-firstAvailBlockIndex, 1)-1 {
+		if uint32(requestsCount) < max(lastIndex-firstAvailBlockIndex, 1)-1 && lastIndex != 0 {
 			panic(fmt.Sprintf("Not enough requests found in the blocks range [%v; %v]: %v", firstAvailBlockIndex, lastIndex, requestsCount))
 		}
 
@@ -394,12 +394,14 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 			return true
 		})
 
-		if keysCount != lookupTable.Len()+1 { // +1 because of length key
-			panic(fmt.Sprintf("Request lookup index keys count mismatch: %v != %v", keysCount, lookupTable.Len()+1))
-		}
-		if uint32(listElementsCount) < (lastIndex - firstAvailBlockIndex) {
-			panic(fmt.Sprintf("Not enough request lookup index keys found in the blocks range [%v; %v]: %v",
-				firstIndex, lastIndex, listElementsCount))
+		if lastIndex != 0 {
+			if keysCount != lookupTable.Len()+1 { // +1 because of length key
+				panic(fmt.Sprintf("Request lookup index keys count mismatch: %v != %v", keysCount, lookupTable.Len()+1))
+			}
+			if uint32(listElementsCount) < (lastIndex - firstAvailBlockIndex) {
+				panic(fmt.Sprintf("Not enough request lookup index keys found in the blocks range [%v; %v]: %v",
+					firstIndex, lastIndex, listElementsCount))
+			}
 		}
 
 		cli.DebugLogf("Retrieved %v old request lookup index keys", listElementsCount)
@@ -473,7 +475,7 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 			return true
 		})
 
-		if elementsCount == 0 {
+		if lastIndex != 0 && elementsCount == 0 {
 			panic(fmt.Sprintf("No request lookup index keys found in the blocks range [%v; %v]", firstIndex, lastIndex))
 		}
 

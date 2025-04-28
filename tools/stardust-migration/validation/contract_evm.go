@@ -226,7 +226,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 
 		cli.DebugLogf("Found %v old transactions by block number", txsCount)
 
-		if uint32(txsCount) < (toBlockIndex - firstAvailBlockIndex) {
+		if uint32(txsCount) < (toBlockIndex-firstAvailBlockIndex) && toBlockIndex != 0 {
 			panic(fmt.Sprintf("Not enough transactions found in range [%v, %v]: %v", firstAvailBlockIndex, toBlockIndex, txsCount))
 		}
 	}, func() {
@@ -243,7 +243,7 @@ func oldTransactionsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromB
 
 		cli.DebugLogf("Found %v old keys for transactions by block number", keysCount)
 
-		if uint32(keysCount) < (toBlockIndex - firstAvailBlockIndex) {
+		if uint32(keysCount) < (toBlockIndex-firstAvailBlockIndex) && toBlockIndex != 0 {
 			panic(fmt.Sprintf("Not enough transaction keys found in range [%v, %v]: %v", firstAvailBlockIndex, toBlockIndex, keysCount))
 		}
 	})
@@ -399,7 +399,7 @@ func oldReceiptsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromIndex
 
 		cli.DebugLogf("Found %v old receipts by block number", recCount)
 
-		if uint32(recCount) < max(toIndex-fromIndex, 1)-1 {
+		if uint32(recCount) < max(toIndex-fromIndex, 1)-1 && toIndex != 0 {
 			panic(fmt.Sprintf("Not enough receipts found in range [%v, %v]: %v", fromIndex, toIndex, recCount))
 		}
 	}, func() {
@@ -425,7 +425,7 @@ func oldReceiptsByBlockNumberToStr(contractState old_kv.KVStoreReader, fromIndex
 
 		cli.DebugLogf("Found %v keys of old receipts by block number", keysCount)
 
-		if uint32(keysCount) < (toIndex - fromIndex) {
+		if uint32(keysCount) < (toIndex-fromIndex) && toIndex != 0 {
 			panic(fmt.Sprintf("Not enough keys found in range [%v, %v]: %v", fromIndex, toIndex, keysCount))
 		}
 	})

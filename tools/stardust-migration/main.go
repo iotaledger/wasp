@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -172,6 +173,7 @@ func main() {
 							&cmd.Uint64Flag{
 								Name:    "to-index",
 								Aliases: []string{"t", "to-block", "to"},
+								Value:   math.MaxUint64,
 								Usage:   "Specify block to validate. If not specified, latest available block is validated.",
 							},
 							&cmd.StringFlag{
