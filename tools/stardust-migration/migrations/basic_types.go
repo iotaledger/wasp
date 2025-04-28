@@ -114,10 +114,9 @@ func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.
 }
 
 func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {
-	// TODO: There is no conversion rate, right?
 	if !oldNativeTokenAmount.IsUint64() {
 		fmt.Println(fmt.Errorf("\n** ERROR old native token amount cannot be represented as uint64: balance = %v", oldNativeTokenAmount))
-		return coin.Value(math.MaxUint64)
+		return coin.Value(math.MaxUint64 - 1)
 	}
 
 	return coin.Value(oldNativeTokenAmount.Uint64())
