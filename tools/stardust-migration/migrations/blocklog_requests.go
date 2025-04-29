@@ -64,7 +64,7 @@ func migrateOnLedgerRequest(request old_isc.OnLedgerRequest, oldChainID old_isc.
 	requestMetadata := &isc.RequestMetadata{
 		SenderContract: migrateOnLedgerContractIdentity(request),
 		Message:        migrateContractCall(oldChainID, request.CallTarget().Contract, request.CallTarget().EntryPoint, request.Params()),
-		AllowanceBCS:   bcs.MustMarshal(OldAssetsToNewAssets(request.Allowance())),
+		AllowanceBCS:   bcs.MustMarshal(OldAssetsToNewAssets(request.Allowance()).AsISCMove()),
 		GasBudget:      gasBudget,
 	}
 
