@@ -54,13 +54,20 @@ func (v *EvmValidation) ValidateEvm(blockNumber uint64) error {
 			return fmt.Errorf("failed to cast stardust trace for block %d: %w", blockNumber, err)
 		}
 
-		from := sTrace["from"].(string)
-		to := sTrace["to"].(string)
+		from, ok := sTrace["from"].(string)
+		if !ok {
+			return fmt.Errorf("failed to cast 'from' to string for tx %s in block %d: %s, %w", rebasedTraces[i].TxHash, blockNumber, sTrace["from"], err)
+		}
 
-		// require.Equal(base.T, sFrom, rFrom, "transaction origins for block %d are not equal, index %d, stardust: %s, rebased: %s", blockNumber, i, sFrom, rFrom)
-		// require.Equal(base.T, sTo, rTo, "transaction destinations for block %d are not equal, index %d, stardust: %s, rebased: %s", blockNumber, i, sTo, rTo)
+		var to string
+		if sTrace["to"] != nil {
+			to, ok = sTrace["to"].(string)
+			if !ok {
+				return fmt.Errorf("failed to cast 'to' to string for tx %s in block %d: %s, %w", rebasedTraces[i].TxHash, blockNumber, sTrace["to"], err)
+			}
+		}
 
-		if !assert.EqualValues(base.T, sTrace, rTrace, "traces for block %d are not equal", blockNumber) {
+		if !assert.EqualValues(base.T, sTrace, rTrace, "traces for tx %s in block %d are not equal", rebasedTraces[i].TxHash, blockNumber) {
 			sTraceJson, err := json.MarshalIndent(sTrace, "", "  ")
 			if err != nil {
 				return fmt.Errorf("failed to marshal stardust trace for block %d: %w", blockNumber, err)
@@ -74,7 +81,7 @@ func (v *EvmValidation) ValidateEvm(blockNumber uint64) error {
 			os.WriteFile(fmt.Sprintf("%s_stardust_trace_(block=%d)_(index=%d).json", rebasedTraces[i].TxHash, blockNumber, i), sTraceJson, 0644)
 			os.WriteFile(fmt.Sprintf("%s_rebased_trace_(block=%d)_(index=%d).json", rebasedTraces[i].TxHash, blockNumber, i), rTraceJson, 0644)
 
-			return fmt.Errorf("traces for block %d are not equal", blockNumber)
+			return fmt.Errorf("traces for tx %s in block %d are not equal", rebasedTraces[i].TxHash, blockNumber)
 		}
 
 		stardustBalance, rebasedBalance, err := v.client.GetBalances(common.HexToAddress(from), blockNumber)
@@ -86,13 +93,16 @@ func (v *EvmValidation) ValidateEvm(blockNumber uint64) error {
 			return fmt.Errorf("balances for address %s in block %d are not equal, index %d, stardust: %s, rebased: %s", from, blockNumber, i, stardustBalance, rebasedBalance)
 		}
 
-		stardustBalance, rebasedBalance, err = v.client.GetBalances(common.HexToAddress(to), blockNumber)
-		if err != nil {
-			return fmt.Errorf("failed to get balances for address %s in block %d: %w", to, blockNumber, err)
-		}
+		// 'to' might be empty for contract creation
+		if to != "" {
+			stardustBalance, rebasedBalance, err = v.client.GetBalances(common.HexToAddress(to), blockNumber)
+			if err != nil {
+				return fmt.Errorf("failed to get balances for address %s in block %d: %w", to, blockNumber, err)
+			}
 
-		if !assert.Equal(base.T, stardustBalance, rebasedBalance, "balances for address %s in block %d are not equal, index %d, stardust: %s, rebased: %s", to, blockNumber, i, stardustBalance, rebasedBalance) {
-			return fmt.Errorf("balances for address %s in block %d are not equal, index %d, stardust: %s, rebased: %s", to, blockNumber, i, stardustBalance, rebasedBalance)
+			if !assert.Equal(base.T, stardustBalance, rebasedBalance, "balances for address %s in block %d are not equal, index %d, stardust: %s, rebased: %s", to, blockNumber, i, stardustBalance, rebasedBalance) {
+				return fmt.Errorf("balances for address %s in block %d are not equal, index %d, stardust: %s, rebased: %s", to, blockNumber, i, stardustBalance, rebasedBalance)
+			}
 		}
 	}
 
