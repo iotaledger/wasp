@@ -1,3 +1,4 @@
+// Package bls implements BLS (Boneh-Lynn-Shacham) signature functionality
 package bls
 
 import (
@@ -160,7 +161,7 @@ func (s SignatureWithPublicKey) Encode() ([]byte, error) {
 	return s.Bytes(), nil
 }
 
-// Encode returns the signature in bytes.
+// Decode parses the signature from bytes.
 func (s *SignatureWithPublicKey) Decode(b []byte) error {
 	decoded, err := SignatureWithPublicKeyFromBytes(b)
 	if err != nil {

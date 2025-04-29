@@ -1,3 +1,4 @@
+// Package pipe provides data structures and utilities for pipe-based data processing.
 package pipe
 
 // dequeImpl is a double sided list, which can be limited in size.

@@ -1,3 +1,4 @@
+// Package testmisc provides miscellaneous utility functions for testing
 package testmisc
 
 import (

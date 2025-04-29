@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package domain provides domain-specific functionality for peer-to-peer communication.
 package domain
 
 import (

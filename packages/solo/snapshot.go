@@ -14,7 +14,7 @@ type ChainSnapshot struct {
 	DB                     [][]byte
 }
 
-// SaveSnapshot generates a snapshot of the Solo environment
+// TakeSnapshot generates a snapshot of the Solo environment
 func (env *Solo) TakeSnapshot() *Snapshot {
 	panic("TODO")
 	// env.chainsMutex.Lock()
@@ -43,7 +43,7 @@ func (env *Solo) TakeSnapshot() *Snapshot {
 	// return snapshot
 }
 
-// LoadSnapshot restores the Solo environment from the given snapshot
+// RestoreSnapshot restores the Solo environment from the given snapshot
 func (env *Solo) RestoreSnapshot(snapshot *Snapshot) {
 	panic("TODO")
 	// env.chainsMutex.Lock()

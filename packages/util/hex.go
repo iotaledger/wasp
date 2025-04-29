@@ -53,7 +53,7 @@ func DecodeSliceHexBinaryMarshaled[M encoding.BinaryUnmarshaler](dataHex []strin
 	return nil
 }
 
-// Mostly for logging.
+// PrefixHex formats byte data with a hex prefix, mostly for logging.
 func PrefixHex(data []byte, prefixLen int) string {
 	if data == nil {
 		return "<nil>"

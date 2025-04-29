@@ -81,7 +81,7 @@ func (p *DKSharesRegistry) loadDKSharesJSONFromFolder(nodePrivKey *cryptolib.Pri
 			return nil
 		}
 
-		sharedAddressHex := strings.Replace(file.Name(), ".json", "", -1)
+		sharedAddressHex := strings.ReplaceAll(file.Name(), ".json", "")
 		sharedAddress, err := cryptolib.NewAddressFromHexString(sharedAddressHex)
 		if err != nil {
 			return fmt.Errorf("unable to parse shared hex address (%s), error: %w", sharedAddressHex, err)

@@ -1,3 +1,4 @@
+// Package testkey provides utilities for generating and managing test keys
 package testkey
 
 import (

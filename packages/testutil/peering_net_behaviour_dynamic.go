@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-// peeringNetDynamic provides a behavior of a network with dynamically
+// PeeringNetDynamic provides a behavior of a network with dynamically
 // changeable working conditions. It works as peeringNetReliable without any
 // handlers set.
 type PeeringNetDynamic struct {

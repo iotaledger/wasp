@@ -1,3 +1,4 @@
+// Package multicall provides utilities for calling functions in parallel with timeout handling.
 package multicall
 
 import (

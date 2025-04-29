@@ -167,7 +167,7 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 			return nil
 		}
 
-		committeeAddressHex := strings.Replace(subFolderFile.Name(), ".json", "", -1)
+		committeeAddressHex := strings.ReplaceAll(subFolderFile.Name(), ".json", "")
 		committeeAddress, err := cryptolib.NewAddressFromHexString(committeeAddressHex)
 		if err != nil {
 			return fmt.Errorf("unable to parse committee hex address (%s), error: %w", committeeAddressHex, err)
@@ -293,7 +293,7 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 	return nil
 }
 
-// Can return cmtLog.ErrCmtLogStateNotFound.
+// Get retrieves the consensus state for the given key. Can return cmtLog.ErrCmtLogStateNotFound.
 func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*cmt_log.State, error) {
 	state, err := p.onChangeMap.Get(newComparableChainCommitteeID(chainID, committeeAddress))
 	if err != nil {

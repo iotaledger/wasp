@@ -390,7 +390,7 @@ type StateAnchor struct {
 	iscPackage iotago.Address
 }
 
-// Every time changing the L1 state of the Anchor object, the nodes should create
+// NewStateAnchor creates a new state anchor. Every time changing the L1 state of the Anchor object, the nodes should create it.
 // a latest StateAnchor, and remember to update the latest ObjectRef of GasCoin
 // "changing the L1 state of the Anchor object" includes the following 'txbuilder' operations
 // * BuildTransactionEssence (update the anchor commitment)

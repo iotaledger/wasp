@@ -1,3 +1,4 @@
+// Package origin provides functionality for chain origination and initialization.
 package origin
 
 import (

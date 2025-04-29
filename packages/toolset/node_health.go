@@ -1,3 +1,4 @@
+// Package toolset provides utility functions and command line tools for interacting with the Wasp node.
 package toolset
 
 import (

@@ -1,5 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
+
+// Package registry provides functionality for managing chain records, consensus state,
+// and distributed key shares in the system.
 package registry
 
 import (

@@ -13,7 +13,7 @@ type Permutation16 struct {
 	random      *rand.Rand
 }
 
-// HINT: Seed should only be provided in tests to obtain predicted test results.
+// NewPermutation16 creates a new permutation of specified size. Seed should only be provided in tests to obtain predicted test results.
 // If used in production, the seed should not be set, because it will be generated
 // using cryptographically secure random number generator.
 // The seed itself will be used to initialize a pseudo random number generator
@@ -70,7 +70,7 @@ func (perm *Permutation16) Next() uint16 {
 	return ret
 }
 
-// If the whole permutation is obtained, reshuffles it to avoid cycles
+// NextNoCycles returns the next element in the permutation. If the whole permutation is obtained, reshuffles it to avoid cycles.
 func (perm *Permutation16) NextNoCycles() uint16 {
 	ret := perm.Next()
 	if perm.curSeqIndex == 0 {

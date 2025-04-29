@@ -1,3 +1,4 @@
+// Package parameterstest provides testing utilities for the parameters package.
 package parameterstest
 
 import (

@@ -68,7 +68,7 @@ type TrustedNetworkManager interface {
 	TrustedPeersListener(callback func([]*TrustedPeer)) context.CancelFunc
 }
 
-// Basic checks, to be used in all the implementations.
+// ValidateTrustedPeerParams performs basic checks on trusted peer parameters, to be used in all the implementations.
 func ValidateTrustedPeerParams(name string, pubKey *cryptolib.PublicKey, peeringURL string) error {
 	if name != pubKey.String() && strings.HasPrefix(name, "0x") {
 		return fmt.Errorf("name cannot start with '0x' unless it is equal to pubKey")
@@ -79,7 +79,7 @@ func ValidateTrustedPeerParams(name string, pubKey *cryptolib.PublicKey, peering
 	return nil
 }
 
-// Resolves pubKeysOrNames to TrustedPeers. Fails if any of the names/keys cannot be resolved.
+// QueryByPubKeyOrName resolves pubKeysOrNames to TrustedPeers. Fails if any of the names/keys cannot be resolved.
 func QueryByPubKeyOrName(trustedPeers []*TrustedPeer, pubKeysOrNames []string) ([]*TrustedPeer, error) {
 	result := make([]*TrustedPeer, len(pubKeysOrNames))
 	for i, pubKeyOrName := range pubKeysOrNames {

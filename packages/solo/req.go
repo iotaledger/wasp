@@ -243,7 +243,7 @@ func (env *Solo) makeBaseTokenCoin(
 	require.NoError(env.T, err)
 	require.NotNil(env.T, pickedCoin)
 
-	var tx *iotajsonrpc.TransactionBytes = lo.Must(env.L1Client().PayIota(
+	var tx = lo.Must(env.L1Client().PayIota(
 		env.ctx,
 		iotaclient.PayIotaRequest{
 			Signer:     keyPair.Address().AsIotaAddress(),

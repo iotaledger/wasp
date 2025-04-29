@@ -1,3 +1,4 @@
+// Package transaction provides functionality for creating and managing transactions in the Wasp ecosystem.
 package transaction
 
 import (
