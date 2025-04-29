@@ -1,3 +1,4 @@
+// Package legacy defines legacy migrations
 package legacy
 
 import (
@@ -6,7 +7,7 @@ import (
 )
 
 /*
-*
+AgentIDToBytes returns the correct formatting of an AgentID based on the specified SchemaVersion
 Stardust AgentID (For ED25519 addresses) was
   - AgentIDKind (Ethereum, ED25519, Contract) (byte)
   - AdressKind (User address, Alias, NFT, Native) (byte)

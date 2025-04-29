@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"reflect"
 	"strings"
 )
@@ -62,7 +64,8 @@ func getQualifiedTypeName(t reflect.Type) string {
 	if t.PkgPath() != "" {
 		pkgName := t.PkgPath()[strings.LastIndex(t.PkgPath(), "/")+1:]
 		typeName := cleanGenericTypeName(t)
-		return fmt.Sprintf("%s%s", strings.Title(cleanName(pkgName)), typeName)
+		caser := cases.Title(language.English)
+		return fmt.Sprintf("%s%s", caser.String(cleanName(pkgName)), typeName) //strings.Title(cleanName(pkgName))
 	}
 	return cleanGenericTypeName(t)
 }

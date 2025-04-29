@@ -97,5 +97,5 @@ func claimAllowance(ctx isc.Sandbox) {
 	initialObjects := ctx.OwnedObjects()
 	allowance := ctx.AllowanceAvailable()
 	ctx.TransferAllowedFunds(ctx.AccountID())
-	ctx.Requiref(len(ctx.OwnedObjects())-len(initialObjects) == len(allowance.Objects), "must get all objects from allowance")
+	ctx.Requiref(len(ctx.OwnedObjects())-len(initialObjects) == allowance.Objects.Size(), "must get all objects from allowance")
 }

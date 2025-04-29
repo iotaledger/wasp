@@ -8,13 +8,6 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
-func (c *Controller) getNodeMessageMetrics(e echo.Context) error {
-	metricsReport := c.metricsService.GetNodeMessageMetrics()
-	mappedMetrics := models.MapNodeMessageMetrics(metricsReport)
-
-	return e.JSON(http.StatusOK, mappedMetrics)
-}
-
 func (c *Controller) getChainMessageMetrics(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
 	if err != nil {

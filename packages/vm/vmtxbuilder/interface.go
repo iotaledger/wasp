@@ -5,8 +5,9 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-// TODO maybe we dont need this interface
 type TransactionBuilder interface {
+	// TODO maybe we dont need this interface
+
 	Clone() TransactionBuilder
 	ConsumeRequest(req isc.OnLedgerRequest)
 

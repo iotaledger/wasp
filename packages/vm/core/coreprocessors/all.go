@@ -1,3 +1,8 @@
+// Package coreprocessors provides a registry of core VM processors for IOTA Smart Contracts.
+// It manages mappings between contract hnames and their processor implementations for both
+// production core contracts and test-only contracts. The package allows creating processor
+// configurations for different environments and ensures integrity between core contract
+// definitions and their processor implementations.
 package coreprocessors
 
 import (
@@ -53,6 +58,6 @@ func NewConfigWithTestContracts() *processors.Config {
 	for k, v := range Test {
 		combined[k] = v
 	}
-	
+
 	return processors.NewConfig().WithCoreContracts(combined)
 }

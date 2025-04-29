@@ -11,7 +11,7 @@ import (
 )
 
 func TestChainAdminView(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	chainOwnderID, err := sbtestsc.FuncChainAdminView.Call(func(msg isc.Message) (isc.CallArguments, error) {
@@ -22,7 +22,7 @@ func TestChainAdminView(t *testing.T) {
 }
 
 func TestChainAdminFull(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	chainOwnderID, err := sbtestsc.FuncChainAdminFull.Call(func(msg isc.Message) (isc.CallArguments, error) {
@@ -35,7 +35,7 @@ func TestChainAdminFull(t *testing.T) {
 }
 
 func TestSandboxCall(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	ret, err := chain.CallViewEx(ScName, sbtestsc.FuncSandboxCall.Name)
@@ -44,7 +44,7 @@ func TestSandboxCall(t *testing.T) {
 }
 
 func TestCustomError(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 	setupTestSandboxSC(t, chain, nil)
 
 	req := solo.NewCallParamsEx(ScName, sbtestsc.FuncTestCustomError.Name).

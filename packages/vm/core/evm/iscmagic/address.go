@@ -4,10 +4,7 @@
 package iscmagic
 
 import (
-	"bytes"
 	_ "embed"
-	"errors"
-
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/coin"
@@ -50,16 +47,4 @@ func packMagicAddress(kind addressKind, payload []byte) common.Address {
 	}
 	copy(ret[headerLength:], payload)
 	return ret
-}
-
-func unpackMagicAddress(addr common.Address) (addressKind, []byte, error) {
-	if !bytes.Equal(addr[0:len(AddressPrefix)], AddressPrefix) {
-		return 0, nil, errors.New("unpackMagicAddress: expected magic address prefix")
-	}
-	kind := addressKind(addr[kindByteIndex])
-	if kind >= addressKindInvalid {
-		return 0, nil, errors.New("unpackMagicAddress: unknown address kind")
-	}
-	payload := addr[headerLength:]
-	return kind, payload, nil
 }

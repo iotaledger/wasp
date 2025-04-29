@@ -1,3 +1,4 @@
+// Package websocket implements the webapi websocket connection
 package websocket
 
 import (

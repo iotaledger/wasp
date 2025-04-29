@@ -54,42 +54,6 @@ func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], an
 	}, nil
 }
 
-func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (OnLedgerRequest, error) {
-	assets, request, sender, err := DecodeDryRunTransaction(dryRunRes)
-	if err != nil {
-		return nil, err
-	}
-
-	gasBudget, err := request.GasBudget.Int64()
-	if err != nil {
-		return nil, err
-	}
-
-	r := &OnLedgerRequestData{
-		requestRef:    *iotatest.RandomObjectRef(),
-		senderAddress: sender,
-		targetAddress: cryptolib.NewRandomAddress(),
-		assets:        assets,
-		assetsBag: &iscmove.AssetsBagWithBalances{
-			Assets:    *assets.AsISCMove(),
-			AssetsBag: iscmove.AssetsBag{ID: iotago.ObjectID{}, Size: uint64(assets.Length())},
-		},
-		requestMetadata: &RequestMetadata{
-			SenderContract: ContractIdentity{},
-			Message: Message{
-				Target: CallTarget{
-					Contract:   Hname(request.Message.Contract),
-					EntryPoint: Hname(request.Message.Function),
-				},
-				Params: request.Message.Args,
-			},
-			AllowanceBCS: request.AllowanceBCS,
-			GasBudget:    uint64(gasBudget),
-		},
-	}
-	return r, nil
-}
-
 func (req *OnLedgerRequestData) Allowance() (*Assets, error) {
 	if req.requestMetadata == nil || len(req.requestMetadata.AllowanceBCS) == 0 {
 		return NewEmptyAssets(), nil

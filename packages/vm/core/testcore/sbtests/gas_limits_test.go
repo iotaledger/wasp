@@ -29,7 +29,7 @@ func infiniteLoopRequest(ch *solo.Chain, gasBudget ...uint64) (*solo.CallParams,
 
 func TestTxWithGasOverLimit(t *testing.T) {
 	// create a TX that would use more than max gas limit, assert that only the maximum will be used
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 
 	req, wallet := infiniteLoopRequest(ch)
@@ -48,7 +48,7 @@ func TestBlockGasOverflow(t *testing.T) {
 	}
 
 	// queue many transactions with enough gas to fill a block, assert that they are split across blocks
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 	initialBlockInfo := ch.GetLatestBlockInfo()
 
@@ -82,7 +82,7 @@ func TestBlockGasOverflow(t *testing.T) {
 
 func TestGasBudget(t *testing.T) {
 	// create a TX with not enough gas, assert the receipt is as expected
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 
 	limits := ch.GetGasLimits()
@@ -105,7 +105,7 @@ func TestGasBudget(t *testing.T) {
 }
 
 func TestViewGasLimit(t *testing.T) {
-	_, ch := setupChain(t, nil)
+	_, ch := setupChain(t)
 	setupTestSandboxSC(t, ch, nil)
 	_, err := ch.CallViewEx(sbtestsc.Contract.Name, sbtestsc.FuncInfiniteLoopView.Name)
 	require.Error(t, err)

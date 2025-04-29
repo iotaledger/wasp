@@ -90,7 +90,7 @@ func initAccountObjectsCmd() *cobra.Command {
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
 //
 //nolint:unused
-func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
+func baseTokensForDepositFee(client *apiclient.APIClient) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
 		apiResult, _, err := client.ChainsAPI.CallView(context.Background()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{

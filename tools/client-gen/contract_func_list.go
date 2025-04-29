@@ -8,10 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"testing"
 )
 
-func generateContractFuncs(t *testing.T) {
+func generateContractFuncs() {
 	fset := token.NewFileSet()
 
 	output := "var contractFuncs []CoreContractFunction = []CoreContractFunction{\n"

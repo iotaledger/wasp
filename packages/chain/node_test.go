@@ -124,7 +124,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 	for i := range incCount {
 		const baseTokens = 10000000
 		assets := iscmove.NewAssets(baseTokens)
-		allowanceBCS := lo.Must(bcs.Marshal(assets))
+		allowanceBCS := lo.Must(bcs.Marshal(iscmove.NewAssets(baseTokens - 100000)))
 		one := int64(1)
 		mmm := inccounter.FuncIncCounter.Message(&one)
 		req, err := te.l2Client.CreateAndSendRequestWithAssets(ctxTimeout, &iscmoveclient.CreateAndSendRequestWithAssetsRequest{
@@ -138,7 +138,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 				Args:     mmm.Params,
 			},
 			AllowanceBCS:     allowanceBCS,
-			OnchainGasBudget: 100000,
+			OnchainGasBudget: 1000000,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
 		})
@@ -588,12 +588,13 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			accounts.CommonAccount(),
 			sm_gpa.NewStateManagerParameters(),
 			mempool.Settings{
-				TTL:                   24 * time.Hour,
-				MaxOffledgerInPool:    1000,
-				MaxOnledgerInPool:     1000,
-				MaxTimedInPool:        1000,
-				MaxOnledgerToPropose:  1000,
-				MaxOffledgerToPropose: 1000,
+				TTL:                    24 * time.Hour,
+				MaxOffledgerInPool:     1000,
+				MaxOnledgerInPool:      1000,
+				MaxTimedInPool:         1000,
+				MaxOnledgerToPropose:   1000,
+				MaxOffledgerToPropose:  1000,
+				MaxOffledgerPerAccount: 1000,
 			},
 			1*time.Second,
 			originDeposit,

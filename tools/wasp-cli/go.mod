@@ -11,6 +11,7 @@ replace (
 )
 
 require (
+	fortio.org/safecast v1.0.0
 	github.com/99designs/keyring v1.2.2
 	github.com/awnumar/memguard v0.22.5
 	github.com/dvsekhvalnov/jose2go v1.8.0
@@ -32,7 +33,6 @@ require (
 require (
 	al.essio.dev/pkg/shellescape v1.5.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	fortio.org/safecast v1.0.0 // indirect
 	github.com/99designs/go-keychain v0.0.0-20191008050251-8e49817e8af4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect

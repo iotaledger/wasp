@@ -12,7 +12,7 @@ import (
 )
 
 func TestMainCallsFromFullEP(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 
 	user, userAgentID := setupDeployer(t, chain)
 
@@ -29,7 +29,7 @@ func TestMainCallsFromFullEP(t *testing.T) {
 }
 
 func TestMainCallsFromViewEP(t *testing.T) {
-	_, chain := setupChain(t, nil)
+	_, chain := setupChain(t)
 
 	user, _ := setupDeployer(t, chain)
 

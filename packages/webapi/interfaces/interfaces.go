@@ -1,3 +1,4 @@
+// Package interfaces defines interfaces for various webapi systems
 package interfaces
 
 import (

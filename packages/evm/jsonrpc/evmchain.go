@@ -437,6 +437,9 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 		return nil, common.Hash{}, 0, err
 	}
 	txs := block.Transactions()
+	if index >= uint64(len(txs)) {
+		return nil, common.Hash{}, 0, fmt.Errorf("given index exceeds the amount of txs in block")
+	}
 	return txs[index], block.Hash(), bn, nil
 }
 

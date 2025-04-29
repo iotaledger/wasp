@@ -1,3 +1,4 @@
+// Package webapi provides types and methods for implementing the wasp http and websocket api
 package webapi
 
 import (
