@@ -48,7 +48,7 @@ func (h *magicContractHandler) GetAllowance(from, to common.Address) iscmagic.IS
 
 // handler for ISCSandbox::getBaseTokenInfo
 func (h *magicContractHandler) GetBaseTokenInfo() iscmagic.IotaCoinInfo {
-	return h.GetCoinInfo(iscmagic.CoinType(coin.BaseTokenType.String()))
+	return h.GetCoinInfo(coin.BaseTokenType.String())
 }
 
 // handler for ISCSandbox::getCoinInfo

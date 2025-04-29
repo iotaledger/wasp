@@ -99,23 +99,18 @@ func makeOnLedgerRequest(
 					ID:   *requestAssetsBagRef.ObjectID,
 					Size: 1,
 				},
-				Assets: iscmove.Assets{
-					Coins: iscmove.CoinBalances{
-						iotajsonrpc.IotaCoinType: iotajsonrpc.CoinValue(baseTokens),
-					},
-					Objects: iscmove.ObjectCollection{},
-				},
+				Assets: *iscmove.NewAssets(iotajsonrpc.CoinValue(baseTokens)),
 			},
 			Message: iscmove.Message{
 				Contract: uint32(msg.Target.Contract),
 				Function: uint32(msg.Target.EntryPoint),
 				Args:     msg.Params,
 			},
-			Allowance: *iscmove.NewEmptyAssets(),
-			GasBudget: 1000,
+			AllowanceBCS: nil,
+			GasBudget:    1000,
 		},
 	}
-	req, err := isc.OnLedgerFromRequest(request, chainID.AsAddress())
+	req, err := isc.OnLedgerFromMoveRequest(request, chainID.AsAddress())
 	require.NoError(t, err)
 	return req
 }

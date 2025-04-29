@@ -33,16 +33,16 @@ func initBlockCmd() *cobra.Command {
 			ctx := context.Background()
 			client := cliclients.WaspClientWithVersionCheck(ctx, node)
 
-			bi := fetchBlockInfo(ctx, client, args, chain)
+			bi := fetchBlockInfo(ctx, client, args)
 			log.Printf("Block index: %d\n", bi.BlockIndex)
 			log.Printf("Timestamp: %s\n", bi.Timestamp.UTC().Format(time.RFC3339))
 			log.Printf("Total requests: %d\n", bi.TotalRequests)
 			log.Printf("Successful requests: %d\n", bi.NumSuccessfulRequests)
 			log.Printf("Off-ledger requests: %d\n", bi.NumOffLedgerRequests)
 			log.Printf("\n")
-			logRequestsInBlock(ctx, client, bi.BlockIndex, chain)
+			logRequestsInBlock(ctx, client, bi.BlockIndex)
 			log.Printf("\n")
-			logEventsInBlock(ctx, client, bi.BlockIndex, chain)
+			logEventsInBlock(ctx, client, bi.BlockIndex)
 		},
 	}
 	waspcmd.WithWaspNodeFlag(cmd, &node)
@@ -50,7 +50,7 @@ func initBlockCmd() *cobra.Command {
 	return cmd
 }
 
-func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []string, chain string) *apiclient.BlockInfoResponse {
+func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []string) *apiclient.BlockInfoResponse {
 	if len(args) == 0 {
 		blockInfo, _, err := client.
 			CorecontractsAPI.
@@ -75,7 +75,7 @@ func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []str
 	return blockInfo
 }
 
-func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32, chain string) {
+func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) {
 	receipts, _, err := client.CorecontractsAPI.
 		BlocklogGetRequestReceiptsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
@@ -89,7 +89,7 @@ func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index 
 	}
 }
 
-func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32, chain string) {
+func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) {
 	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
@@ -148,7 +148,7 @@ func initRequestCmd() *cobra.Command {
 			util.LogReceipt(*receipt)
 
 			log.Printf("\n")
-			logEventsInRequest(ctx, client, reqID, chain)
+			logEventsInRequest(ctx, client, reqID)
 			log.Printf("\n")
 		},
 	}
@@ -157,7 +157,7 @@ func initRequestCmd() *cobra.Command {
 	return cmd
 }
 
-func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID, chain string) {
+func logEventsInRequest(ctx context.Context, client *apiclient.APIClient, reqID isc.RequestID) {
 	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfRequest(ctx, reqID.String()).
 		Execute() //nolint:bodyclose // false positive

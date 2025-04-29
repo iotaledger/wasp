@@ -26,7 +26,7 @@ import (
 
 func getName(p reflect.Type) string {
 	// Regex to run
-	r := regexp.MustCompile("([a-zA-Z]+)\\[")
+	r := regexp.MustCompile(`([a-zA-Z]+)\[`)
 
 	// Return capture
 	str := p.String()
@@ -50,24 +50,6 @@ type AccountSettings struct {
 	Foo string
 	Bar uint64
 	Baz uint32
-}
-
-var testf = CoreContractFunction{
-	FunctionName: "TestFunction",
-	InputArgs: []CompiledField{
-		{
-			Name: "maxAmount",
-			Type: reflect.TypeOf(uint64(0)),
-		},
-		{
-			Name: "accountName",
-			Type: reflect.TypeOf(string("ASDASDASD")),
-		},
-		{
-			Name: "accountSettings",
-			Type: reflect.TypeOf(AccountSettings{}),
-		},
-	},
 }
 
 func extractFields(fields []coreutil.FieldArg) []CompiledField {
@@ -103,7 +85,7 @@ func constructCoreContractFunction(f CoreContractFunctionStructure) CoreContract
 func TestGenerateVariables(t *testing.T) {
 	t.Skip()
 
-	generateContractFuncs(t)
+	generateContractFuncs()
 }
 
 func TestBCSConversion(t *testing.T) {
@@ -304,6 +286,6 @@ func TestTypes(t *testing.T) {
 	objectRef := iotatest.RandomObjectRef()
 	b := bcs.MustMarshal(objectRef)
 
-	fmt.Println(b, hexutil.Encode(b))
+	fmt.Println(string(b), hexutil.Encode(b))
 	fmt.Println(objectRef)
 }

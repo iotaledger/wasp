@@ -146,22 +146,90 @@ type Assets struct {
 }
 
 type (
-	CoinBalances     map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue
-	ObjectCollection map[iotago.ObjectID]iotago.ObjectType
+	CoinBalances struct {
+		items map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue `bcs:"export"`
+	}
+	ObjectCollection struct {
+		items map[iotago.ObjectID]iotago.ObjectType `bcs:"export"`
+	}
 )
 
 func NewEmptyAssets() *Assets {
-	return &Assets{Coins: make(CoinBalances), Objects: make(ObjectCollection)}
+	return &Assets{
+		Coins:   NewCoinBalances(),
+		Objects: NewObjectCollection(),
+	}
 }
 
-func NewAssets(baseTokens uint64) *Assets {
-	return NewEmptyAssets().AddCoin(iotajsonrpc.IotaCoinType, iotajsonrpc.CoinValue(baseTokens))
+func NewAssets(baseTokens iotajsonrpc.CoinValue) *Assets {
+	r := NewEmptyAssets()
+	if baseTokens > 0 {
+		r.SetCoin(iotajsonrpc.IotaCoinType, baseTokens)
+	}
+	return r
+}
+
+func NewCoinBalances() CoinBalances {
+	return CoinBalances{
+		items: make(map[iotajsonrpc.CoinType]iotajsonrpc.CoinValue),
+	}
+}
+
+func (c CoinBalances) Set(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) {
+	c.items[coinType] = amount
+}
+
+func (c CoinBalances) Get(coinType iotajsonrpc.CoinType) iotajsonrpc.CoinValue {
+	return c.items[coinType]
+}
+
+// Iterate returns a deterministic iterator
+func (c CoinBalances) Iterate() iter.Seq2[iotajsonrpc.CoinType, iotajsonrpc.CoinValue] {
+	return func(yield func(iotajsonrpc.CoinType, iotajsonrpc.CoinValue) bool) {
+		for _, k := range slices.Sorted(maps.Keys(c.items)) {
+			if !yield(k, c.items[k]) {
+				return
+			}
+		}
+	}
+}
+
+func NewObjectCollection() ObjectCollection {
+	return ObjectCollection{
+		items: make(map[iotago.ObjectID]iotago.ObjectType),
+	}
+}
+
+func (o ObjectCollection) Add(objectID iotago.ObjectID, t iotago.ObjectType) {
+	o.items[objectID] = t
+}
+
+func (o ObjectCollection) Get(objectID iotago.ObjectID) (iotago.ObjectType, bool) {
+	t, ok := o.items[objectID]
+	return t, ok
+}
+
+func (o ObjectCollection) MustGet(objectID iotago.ObjectID) iotago.ObjectType {
+	return o.items[objectID]
+}
+
+// Iterate returns a deterministic iterator
+func (o ObjectCollection) Iterate() iter.Seq2[iotago.ObjectID, iotago.ObjectType] {
+	return func(yield func(iotago.ObjectID, iotago.ObjectType) bool) {
+		for _, k := range slices.SortedFunc(maps.Keys(o.items), func(a, b iotago.ObjectID) int {
+			return bytes.Compare(a[:], b[:])
+		}) {
+			if !yield(k, o.items[k]) {
+				return
+			}
+		}
+	}
 }
 
 var ErrCoinNotFound = errors.New("coin not found")
 
 func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue, error) {
-	for k, coin := range a.Coins {
+	for k, coin := range a.Coins.Iterate() {
 		isSame, err := iotago.IsSameResource(k.String(), coinType.String())
 		if err != nil {
 			return 0, err
@@ -175,60 +243,35 @@ func (a *Assets) FindCoin(coinType iotajsonrpc.CoinType) (iotajsonrpc.CoinValue,
 	return 0, ErrCoinNotFound
 }
 
-func (a *Assets) AddCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
-	a.Coins[coinType] = iotajsonrpc.CoinValue(amount)
+func (a *Assets) SetCoin(coinType iotajsonrpc.CoinType, amount iotajsonrpc.CoinValue) *Assets {
+	a.Coins.Set(coinType, amount)
 	return a
 }
 
-func (a *Assets) AddObject(objectID iotago.ObjectID, t iotago.ObjectType) {
-	a.Objects[objectID] = t
+func (a *Assets) AddObject(objectID iotago.ObjectID, t iotago.ObjectType) *Assets {
+	a.Objects.Add(objectID, t)
+	return a
 }
 
-func (a *Assets) BaseToken() uint64 {
+func (a *Assets) BaseToken() iotajsonrpc.CoinValue {
 	token, err := a.FindCoin(iotajsonrpc.IotaCoinType)
 	if err != nil {
 		if errors.Is(err, ErrCoinNotFound) {
 			return 0
 		}
-
 		panic(err)
 	}
-
-	return token.Uint64()
-}
-
-// Iterate returns a deterministic iterator
-func (c CoinBalances) Iterate() iter.Seq2[iotajsonrpc.CoinType, iotajsonrpc.CoinValue] {
-	return func(yield func(iotajsonrpc.CoinType, iotajsonrpc.CoinValue) bool) {
-		for _, k := range slices.Sorted(maps.Keys(c)) {
-			if !yield(k, c[k]) {
-				return
-			}
-		}
-	}
-}
-
-// Iterate returns a deterministic iterator
-func (o ObjectCollection) Iterate() iter.Seq2[iotago.ObjectID, iotago.ObjectType] {
-	return func(yield func(iotago.ObjectID, iotago.ObjectType) bool) {
-		for _, k := range slices.SortedFunc(maps.Keys(o), func(a, b iotago.ObjectID) int {
-			return bytes.Compare(a[:], b[:])
-		}) {
-			if !yield(k, o[k]) {
-				return
-			}
-		}
-	}
+	return token
 }
 
 type Request struct {
-	ID     iotago.ObjectID
-	Sender *cryptolib.Address
-	// XXX balances are empty if we don't fetch the dynamic fields
-	AssetsBag AssetsBagWithBalances // Need to decide if we want to use this Referent wrapper as well. Could probably be of *AssetsBag with `bcs:"optional`
+	ID        iotago.ObjectID
+	Sender    *cryptolib.Address
+	AssetsBag AssetsBagWithBalances
 	Message   Message
-	Allowance Assets
-	GasBudget uint64
+	// AllowanceBCS is either empty or a BCS-encoded iscmove.Allowance
+	AllowanceBCS []byte
+	GasBudget    uint64
 }
 
 type RequestEvent struct {

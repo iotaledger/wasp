@@ -129,7 +129,6 @@ type NewNativeTokenParams struct {
 	tokenName     string
 	tokenSymbol   string
 	tokenDecimals uint8
-	coinType      coin.Type
 }
 
 // CreateFoundryGasBudgetBaseTokens always takes 100000 base tokens as gas budget and ftokens for the call
@@ -174,11 +173,6 @@ func (fp *NewNativeTokenParams) WithTokenDecimals(tokenDecimals uint8) *NewNativ
 	fp.tokenDecimals = tokenDecimals
 	return fp
 }
-
-const (
-	allowanceForFoundryStorageDeposit = 1 * isc.Million
-	allowanceForModifySupply          = 1 * isc.Million
-)
 
 func (fp *NewNativeTokenParams) CreateFoundry() (uint32, coin.Type, error) {
 	panic("refactor me: 'CreateFoundry'")

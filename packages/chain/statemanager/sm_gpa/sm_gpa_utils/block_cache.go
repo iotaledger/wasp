@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/util/timeutil"
 )
 
 type blockTime struct {
@@ -24,13 +24,13 @@ type blockCache struct {
 	maxCacheSize int
 	wal          BlockWAL
 	times        []*blockTime
-	timeProvider time_util.TimeProvider
+	timeProvider timeutil.TimeProvider
 	metrics      *metrics.ChainStateManagerMetrics
 }
 
 var _ BlockCache = &blockCache{}
 
-func NewBlockCache(tp time_util.TimeProvider, maxCacheSize int, wal BlockWAL, metrics *metrics.ChainStateManagerMetrics, log log.Logger) (BlockCache, error) {
+func NewBlockCache(tp timeutil.TimeProvider, maxCacheSize int, wal BlockWAL, metrics *metrics.ChainStateManagerMetrics, log log.Logger) (BlockCache, error) {
 	return &blockCache{
 		log:          log.NewChildLogger("BC"),
 		blocks:       shrinkingmap.New[BlockKey, state.Block](),

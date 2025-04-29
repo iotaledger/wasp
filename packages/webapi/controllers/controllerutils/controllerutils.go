@@ -1,3 +1,4 @@
+// Package controllerutils provides utility functions for webapi controllers
 package controllerutils
 
 import (
@@ -24,7 +25,7 @@ func ChainIDFromParams(c echo.Context) (isc.ChainID, error) {
 	return chainID, nil
 }
 
-// sets the label of the operation (endpoint being called) to be used by the prometheus metrics middleware
+// SetOperation sets the label of the operation (endpoint being called) to be used by the prometheus metrics middleware
 func SetOperation(c echo.Context, op string) {
 	c.Set(EchoContextKeyOperation, op)
 }

@@ -30,7 +30,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 	}
 	{
 		sender := cryptolib.NewRandomAddress()
-		req, err := isc.OnLedgerFromRequest(isctest.RandomRequestWithRef(), sender)
+		req, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), sender)
 		require.NoError(t, err)
 
 		msg := &msgShareRequest{

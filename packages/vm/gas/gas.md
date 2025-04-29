@@ -9,19 +9,17 @@ Current gas costs are still experimental and will change.
 | GetCallerData                      | 10        | get caller data                                                      |
 | GetStateAnchorInfo                 | 10        | get state anchor data                                                |
 | GetBalance                         | 20        | get balance of account on the chain                                  |
-| BurnCodeGetNFTData                 | 10        | get data about the NFT (issuer/metadata)                             |
-| CallContract                       | 10        | call a target (another SC in the same chain)                         |
+| GetCoinInfo                        | 10        | get coin info                                                        |
+| CallContract                       | 10        | call a SC target                                                     |
 | EmitEvent                          | 1*B       | emit event (B = number of bytes)                                     |
 | GetAllowance                       | 10        | get allowance                                                        |
 | TransferAllowance                  | 10        | transfer allowance                                                   |
-| BurnCodeEstimateStorageDepositCost | 5         | estimate the storage deposit cost of a L1 request to be sent         |
 | SendL1Request                      | 200*N     | send a L1 transaction (N = number of issued txs in the current call) |
-| DeployContract                     | 10        | deploy a contract                                                    |
 | Storage                            | 55*B      | storage (B = number of bytes)                                        |
 | ReadFromState                      | 1*(B/100) | read from state (B = number of bytes, adjusted in the call)          |
-| UtilsHashingBlake2b                | 5*B       | blake2b hash function (B = number of bytes)                          |
-| UtilsHashingSha3                   | 8*B       | sha3 hash function (B = number of bytes)                             |
-| UtilsHashingHname                  | 5*B       | get hname from string (hash function, B = number of bytes)           |
+| UtilsHashingBlake2b                | 50        | blake2b hash function (B = number of bytes)                          |
+| UtilsHashingSha3                   | 80        | sha3 hash function (B = number of bytes)                             |
+| UtilsHashingHname                  | 50        | get hname from string (hash function, B = number of bytes)           |
 | UtilsHexEncode                     | 50*B      | encode data into hex (B = number of bytes)                           |
 | UtilsHexDecode                     | 5*B       | decode data from hex (B = number of bytes)                           |
 | UtilsED25519ValidSig               | 200       | validates a ed25517 signature                                        |
@@ -29,3 +27,4 @@ Current gas costs are still experimental and will change.
 | UtilsBLSValidSignature             | 2000      | validates a bls signature valid (to be deprecated)                   |
 | UtilsBLSAddrFromPubKey             | 50        | get bls address from public key (to be deprecated)                   |
 | UtilsBLSAggregateBLS               | 400*B     | bls aggregate (to be deprecated, B = number of bytes)                |
+| EVM                                | 1*B       | Burn gas from EVM                                                    |

@@ -1,3 +1,9 @@
+// Package errors provides state management functionality for handling error templates
+// and collections in smart contracts. It implements interfaces for both reading and
+// writing error states, allowing contracts to register, store, and retrieve custom
+// error templates with associated message formats. The package supports both read-only
+// and write operations through StateErrorCollectionReader and StateErrorCollectionWriter
+// implementations respectively.
 package errors
 
 import (

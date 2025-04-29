@@ -48,22 +48,6 @@ func (tg *TypeGenerator) generateArgsStruct(funcName string, suffix string, args
 	}
 }
 
-func (tg *TypeGenerator) generateDependencies(args []CompiledField) {
-	for _, arg := range args {
-		argType := dereferenceType(arg.Type)
-
-		if _, isOverride := tg.isOverriddenType(argType); isOverride {
-			continue
-		}
-
-		if _, isEnum := bcs.EnumTypes[argType]; isEnum {
-			tg.GenerateType(argType)
-		} else if argType.Kind() == reflect.Struct {
-			tg.GenerateType(argType)
-		}
-	}
-}
-
 func (tg *TypeGenerator) generateStructFields(args []CompiledField) []string {
 	fields := make([]string, 0, len(args))
 	for _, arg := range args {
