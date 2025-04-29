@@ -1,3 +1,4 @@
+// Package params defines parameters for webapi keys
 package params
 
 const (

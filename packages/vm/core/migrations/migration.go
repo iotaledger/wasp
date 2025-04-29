@@ -1,3 +1,4 @@
+// Package migrations defines ISC schema migrations
 package migrations
 
 import (

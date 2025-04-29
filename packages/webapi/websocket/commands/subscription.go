@@ -1,3 +1,4 @@
+// Package commands defines websocket commands
 package commands
 
 import (

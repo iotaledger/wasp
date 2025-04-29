@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package accounts implements the accounts core contract which maintains ledger state for the chain
 package accounts
 
 import (

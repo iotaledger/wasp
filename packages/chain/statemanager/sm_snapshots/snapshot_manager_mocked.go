@@ -14,7 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/time_util"
+	"github.com/iotaledger/wasp/packages/util/timeutil"
 )
 
 type MockedSnapshotManager struct {
@@ -28,7 +28,7 @@ type MockedSnapshotManager struct {
 	readySnapshotsMutex sync.Mutex
 
 	snapshotCommitTime time.Duration
-	timeProvider       time_util.TimeProvider
+	timeProvider       timeutil.TimeProvider
 
 	origStore      state.Store
 	nodeStore      state.Store
@@ -52,7 +52,7 @@ func NewMockedSnapshotManager(
 	nodeStore state.Store,
 	snapshotToLoad SnapshotInfo,
 	snapshotCommitTime time.Duration,
-	timeProvider time_util.TimeProvider,
+	timeProvider timeutil.TimeProvider,
 	log log.Logger,
 ) *MockedSnapshotManager {
 	result := &MockedSnapshotManager{

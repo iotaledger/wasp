@@ -46,8 +46,8 @@ func (req *evmOffLedgerTxRequest) BCSInit() error {
 	return nil
 }
 
-func (req *evmOffLedgerTxRequest) Allowance() *Assets {
-	return NewEmptyAssets()
+func (req *evmOffLedgerTxRequest) Allowance() (*Assets, error) {
+	return NewEmptyAssets(), nil
 }
 
 func (req *evmOffLedgerTxRequest) Assets() *Assets {

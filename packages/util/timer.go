@@ -1,3 +1,5 @@
+// Package util provides general utility functions and structures,
+// including timing utilities for measuring operation durations.
 package util
 
 import (

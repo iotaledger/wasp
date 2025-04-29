@@ -1,3 +1,4 @@
+// Package chain defines the methods evm chain in the webapi
 package chain
 
 import (

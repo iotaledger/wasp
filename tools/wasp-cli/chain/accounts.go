@@ -92,7 +92,7 @@ func initAccountObjectsCmd() *cobra.Command {
 // baseTokensForDepositFee calculates the amount of tokens needed to pay for a deposit
 //
 //nolint:unused
-func baseTokensForDepositFee(client *apiclient.APIClient, chain string) coin.Value {
+func baseTokensForDepositFee(client *apiclient.APIClient) coin.Value {
 	callGovView := func(viewName string) isc.CallResults {
 		apiResult, _, err := client.ChainsAPI.CallView(context.Background()).
 			ContractCallViewRequest(apiclient.ContractCallViewRequest{
@@ -161,8 +161,6 @@ func initDepositCmd() *cobra.Command {
 						},
 					)
 				})
-
-				log.Printf("Posted TX: %s\n", res.Digest)
 			} else {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0])
@@ -185,12 +183,11 @@ func initDepositCmd() *cobra.Command {
 
 				log.Check(err)
 			}
-			log.Printf("Posted TX: %s\n", res.Digest)
+
 			if printReceipt {
 				log.Printf("L1 Gas Fee: %d\n", res.Effects.Data.GasFee())
 				ref, err := res.GetCreatedObjectInfo("request", "Request")
 				log.Check(err)
-				log.Printf("Requet ID: %s\n", ref.ObjectID.String())
 				receipt, _, err := client.ChainsAPI.
 					GetReceipt(ctx, ref.ObjectID.String()).
 					Execute() //nolint:bodyclose // false positive

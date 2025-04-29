@@ -1,3 +1,4 @@
+// Package metrics provides methods for getting chain metrics
 package metrics
 
 import (

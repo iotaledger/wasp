@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package iscutils contains utilities for working with ISC contracts
 package iscutils
 
 import (

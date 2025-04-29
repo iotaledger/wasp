@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -172,7 +171,7 @@ func (s *contractSandbox) totalGasTokens() *isc.Assets {
 		return isc.NewEmptyAssets()
 	}
 	amount := s.reqctx.gas.maxTokensToSpendForGasFee
-	return isc.NewAssets(coin.Value(amount))
+	return isc.NewAssets(amount)
 }
 
 func (s *contractSandbox) CallOnBehalfOf(caller isc.AgentID, msg isc.Message, transfer *isc.Assets) isc.CallArguments {

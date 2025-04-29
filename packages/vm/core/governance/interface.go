@@ -3,6 +3,8 @@
 
 // in the blocklog core contract the VM keeps indices of blocks and requests in an optimized way
 // for fast checking and timestamp access.
+
+// Package governance defines the governance core contract
 package governance
 
 import (

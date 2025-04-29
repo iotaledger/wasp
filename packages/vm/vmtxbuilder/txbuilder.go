@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/samber/lo"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -88,10 +89,9 @@ func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *i
 		txb.ptb = iscmoveclient.PTBTakeAndPlaceToAssetsBag(txb.ptb, txb.iscPackage, argAnchor, argAssetsBag, coinBalance.Uint64(), coinType.String())
 	}
 
-	allowance := &iscmove.Assets{}
-
+	var allowanceBCS []byte
 	if metadata.Allowance != nil {
-		allowance = metadata.Allowance.AsISCMove()
+		allowanceBCS = lo.Must(bcs.Marshal(metadata.Allowance.AsISCMove()))
 	}
 
 	txb.ptb = iscmoveclient.PTBCreateAndSendRequest(
@@ -100,7 +100,7 @@ func (txb *AnchorTransactionBuilder) SendRequest(assets *isc.Assets, metadata *i
 		*txb.anchor.GetObjectID(),
 		argAssetsBag,
 		metadata.Message.AsISCMove(),
-		allowance,
+		allowanceBCS,
 		metadata.GasBudget,
 	)
 }

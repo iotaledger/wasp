@@ -1,3 +1,4 @@
+// Package models implements VM models for the webapi
 package models
 
 import (
