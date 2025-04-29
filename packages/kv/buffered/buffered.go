@@ -93,7 +93,8 @@ func (b *BufferedKVStore) Set(key kv.Key, value []byte) {
 }
 
 func (b *BufferedKVStore) Del(key kv.Key) {
-	b.muts.Del(key)
+	baseExists := b.r.Has(key)
+	b.muts.Del(key, baseExists)
 }
 
 func (b *BufferedKVStore) Get(key kv.Key) []byte {

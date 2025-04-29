@@ -59,7 +59,8 @@ func TestSetThenGet(t *testing.T) {
 	// contract deletes variable x
 	s.Del("x")
 	require.Equal(t, map[kv.Key][]byte{}, reqctx.uncommittedState.Mutations().Sets)
-	require.Equal(t, map[kv.Key]struct{}{subpartitionedKey: {}}, reqctx.uncommittedState.Mutations().Dels)
+	// DEL mutation is not recorded since SET and DEL happen in the same block.
+	require.Equal(t, map[kv.Key]struct{}{}, reqctx.uncommittedState.Mutations().Dels)
 
 	// contract sees variable x does not exist
 	v = s.Get("x")

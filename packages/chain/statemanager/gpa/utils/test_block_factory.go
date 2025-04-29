@@ -203,7 +203,7 @@ func (bfT *BlockFactory) GetNextBlock(
 		increment = 1
 	}
 	counterBin = codec.Encode(counter + increment)
-	stateDraft.Mutations().Set(counterKey, counterBin)
+	stateDraft.Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
 	newCommitment := block.L1Commitment()
 

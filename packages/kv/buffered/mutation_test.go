@@ -17,7 +17,7 @@ func TestEmptyMutations(t *testing.T) {
 func TestMutationsMarshalling(t *testing.T) {
 	ms := NewMutations()
 	ms.Set("k1", []byte("v1"))
-	ms.Del("k2")
+	ms.Del("k2", true)
 
 	ms2, err := MutationsFromBytes(ms.Bytes())
 	require.NoError(t, err)
@@ -27,10 +27,10 @@ func TestMutationsMarshalling(t *testing.T) {
 func TestMutationsMisc(t *testing.T) {
 	m := NewMutations()
 	require.True(t, !m.Contains("kuku"))
-	m.Del("kuku")
+	m.Del("kuku", true)
 	require.True(t, m.Contains("kuku"))
 	m.Set("kuku", []byte("v"))
 	require.True(t, m.Contains("kuku"))
-	m.Del("kuku")
-	require.True(t, m.Contains("kuku"))
+	m.Del("kuku", false)
+	require.False(t, m.Contains("kuku"))
 }
