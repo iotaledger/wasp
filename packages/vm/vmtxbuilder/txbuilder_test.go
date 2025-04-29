@@ -4,22 +4,22 @@ import (
 	"context"
 	"testing"
 
+	"github.com/samber/lo"
+	"github.com/stretchr/testify/require"
+
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient/iscmoveclienttest"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-
-	"github.com/stretchr/testify/require"
-
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
-	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/vm/vmtxbuilder"
 )
 
@@ -295,7 +295,7 @@ func createIscmoveReq(
 			AnchorAddress:    anchor.ObjectID,
 			Assets:           iscmove.NewAssets(111),
 			Message:          iscmovetest.RandomMessage(),
-			Allowance:        iscmove.NewAssets(100),
+			AllowanceBCS:     nil,
 			OnchainGasBudget: 100,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
@@ -306,7 +306,7 @@ func createIscmoveReq(
 	require.NoError(t, err)
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
-	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
+	req, err := isc.OnLedgerFromMoveRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
 	require.NoError(t, err)
 
 	return req
@@ -331,7 +331,7 @@ func createIscmoveReqWithAssets(
 			AnchorAddress:    anchor.ObjectID,
 			Assets:           assets,
 			Message:          iscmovetest.RandomMessage(),
-			Allowance:        assets,
+			AllowanceBCS:     lo.Must(bcs.Marshal(assets)),
 			OnchainGasBudget: 100,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
@@ -342,7 +342,7 @@ func createIscmoveReqWithAssets(
 	require.NoError(t, err)
 	reqWithObj, err := client.L2().GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 	require.NoError(t, err)
-	req, err := isc.OnLedgerFromRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
+	req, err := isc.OnLedgerFromMoveRequest(reqWithObj, cryptolib.NewAddressFromIota(anchor.ObjectID))
 	require.NoError(t, err)
 
 	return req

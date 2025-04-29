@@ -28,18 +28,18 @@ type MoveRequest struct {
 	Sender    *cryptolib.Address
 	AssetsBag iscmove.Referent[iscmove.AssetsBagWithBalances]
 	Message   iscmove.Message
-	Allowance iscmove.Assets
+	Allowance []byte
 	GasBudget uint64
 }
 
 func (mr *MoveRequest) ToRequest() *iscmove.Request {
 	return &iscmove.Request{
-		ID:        mr.ID,
-		Sender:    mr.Sender,
-		AssetsBag: *mr.AssetsBag.Value,
-		Message:   mr.Message,
-		Allowance: mr.Allowance,
-		GasBudget: mr.GasBudget,
+		ID:           mr.ID,
+		Sender:       mr.Sender,
+		AssetsBag:    *mr.AssetsBag.Value,
+		Message:      mr.Message,
+		AllowanceBCS: mr.Allowance,
+		GasBudget:    mr.GasBudget,
 	}
 }
 

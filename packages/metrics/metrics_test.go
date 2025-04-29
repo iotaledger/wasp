@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -83,12 +84,12 @@ func createOnLedgerRequest() isc.OnLedgerRequest {
 				},
 				Assets: *iscmove.NewAssets(iotajsonrpc.CoinValue(tokensForGas)),
 			},
-			Allowance: *iscmove.NewAssets(1),
-			GasBudget: 1000,
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(1)),
+			GasBudget:    1000,
 		},
 	}
 
-	onLedgerRequest1, _ := isc.OnLedgerFromRequest(request, cryptolib.NewRandomAddress())
+	onLedgerRequest1, _ := isc.OnLedgerFromMoveRequest(request, cryptolib.NewRandomAddress())
 	return onLedgerRequest1
 }
 

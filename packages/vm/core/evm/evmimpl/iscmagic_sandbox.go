@@ -8,6 +8,7 @@ import (
 	"github.com/holiman/uint256"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -76,29 +77,20 @@ func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Valu
 	return adjustedTxValue
 }
 
-// handler for ISCSandbox::send
-func (h *magicContractHandler) Send(
+// handler for ISCSandbox::transferToL1
+func (h *magicContractHandler) TransferToL1(
 	targetAddress iotago.Address,
 	assets iscmagic.ISCAssets,
-	// For now both args are kept for legacy reasons. Removing those would be the "right choice", but will break tracing
-	// for migrated blocks. We need to estimate how many requests would be affected and assess if we can remove those.
-	metadata iscmagic.ISCSendMetadata,
-	sendOptions iscmagic.ISCSendOptions,
 ) {
 	req := isc.RequestParameters{
 		TargetAddress: cryptolib.NewAddressFromIota(&targetAddress),
 		Assets:        assets.Unwrap(),
 	}
 
+	// also send any base tokens included as call value
 	if h.callValue.BitLen() > 0 {
 		additionalCallValue := h.handleCallValue(h.callValue)
 		req.Assets.AddBaseTokens(additionalCallValue)
-	}
-
-	// make sure that allowance <= sent tokens, so that the target contract does not
-	// spend from the common account
-	if metadata.Unwrap() != nil {
-		panic(errMetadataUnsupported)
 	}
 
 	h.moveAssetsToCommonAccount(req.Assets)
@@ -112,6 +104,37 @@ func (h *magicContractHandler) Send(
 		isc.ContractIdentityFromEVMAddress(h.caller),
 		req,
 	)
+}
+
+// Deprecated: This is included to support calls to the legacy function ISCSandbox::send.
+// It is necessary for tracing past blocks.
+func (h *magicContractHandler) Send(
+	legacyTarget iscmagic.LegacyL1Address,
+	legacyAssets iscmagic.LegacyISCAssets,
+	_ bool,
+	_ iscmagic.LegacyISCSendMetadata,
+	_ iscmagic.LegacyISCSendOptions,
+) {
+	if len(legacyTarget.Data) != 33 {
+		panic("cannot decode legacy address")
+	}
+	var target iotago.Address
+	copy(target[:], legacyTarget.Data[1:])
+
+	assets := iscmagic.ISCAssets{}
+	if legacyAssets.BaseTokens > 0 {
+		assets.Coins = append(assets.Coins, iscmagic.CoinBalance{
+			CoinType: iscmagic.CoinType(iotajsonrpc.IotaCoinType),
+			Amount:   legacyAssets.BaseTokens,
+		})
+	}
+	for _ = range legacyAssets.NativeTokens {
+		panic("cannot send legacy native tokens")
+	}
+	for _ = range legacyAssets.Nfts {
+		panic("cannot send legacy NFTs")
+	}
+	h.TransferToL1(target, assets)
 }
 
 // handler for ISCSandbox::call
