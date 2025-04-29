@@ -231,11 +231,6 @@ func validateStatesEqual(oldState old_kv.KVStoreReader, newState kv.KVStoreReade
 		oldStateContentStr = validation.OldStateContentToStr(oldState, oldChainID, firstIndex, lastIndex, short)
 		cli.DebugLogf("Replacing old chain ID with constant placeholder for comparison...")
 		oldStateContentStr = strings.Replace(oldStateContentStr, oldChainID.String(), "<chain-id>", -1)
-		// TODO: review this
-		cli.DebugLogf("Ignoring cross-chain agent ID for comparison...")
-		const crossChainAgentID = "ContractAgentID(0x05204969, iota1pphx6hnmxqdqd2u4m59e7nvmcyulm3lfm58yex5gmud9qlt3v9crs9sah6m)"
-		const crossChainAgentIDReplaced = "ContractAgentID(0x05204969, <chain-id>)"
-		oldStateContentStr = strings.Replace(oldStateContentStr, crossChainAgentID, crossChainAgentIDReplaced, -1)
 	}, func() {
 		newStateContentStr = validation.NewStateContentToStr(newState, newChainID, firstIndex, lastIndex, short)
 		cli.DebugLogf("Replacing new chain ID with constant placeholder for comparison...")

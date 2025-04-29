@@ -54,19 +54,23 @@ func OldAgentIDtoNewAgentID(oldAgentID old_isc.AgentID, oldChainID old_isc.Chain
 		oldAgentID := oldAgentID.(*old_isc.ContractAgentID)
 		oldAgentChainID := oldAgentID.ChainID()
 
-		if !bytes.Equal(oldChainID.Bytes(), oldAgentChainID.Bytes()) {
-			// NOTE: We don't care about cross-chain requests
-		}
 		hname := OldHnameToNewHname(oldAgentID.Hname())
+		if !bytes.Equal(oldChainID.Bytes(), oldAgentChainID.Bytes()) {
+			//NOTE: We cannot migrate cross-chain agent ID, so we "shift" it to not overlap with local chain ID
+			hname++
+		}
+
 		return isc.NewContractAgentID(hname)
 
 	case old_isc.AgentIDKindEthereumAddress:
 		oldAgentID := oldAgentID.(*old_isc.EthereumAddressAgentID)
 		oldAgentChainID := oldAgentID.ChainID()
-		if !oldAgentChainID.Equals(oldChainID) {
-			// NOTE: We don't care about cross-chain requests
-		}
 		ethAddr := oldAgentID.EthAddress()
+		if !oldAgentChainID.Equals(oldChainID) {
+			//NOTE: We cannot migrate cross-chain agent ID, so we "shift" it to not overlap with local chain ID
+			ethAddr[0]++
+		}
+
 		return isc.NewEthereumAddressAgentID(ethAddr)
 
 	case old_isc.AgentIDIsNil:

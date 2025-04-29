@@ -413,7 +413,9 @@ func oldRequestLookupIndex(contractState old_kv.KVStoreReader, firstIndex, lastI
 	})
 
 	indexStr.WriteString(fmt.Sprintf("Request lookup index keys: %v\n", listElementsCount))
-	indexStr.WriteString(fmt.Sprintf("Request lookup index map len: %v\n", lookupTable.Len()))
+	if firstIndex == 0 {
+		indexStr.WriteString(fmt.Sprintf("Request lookup index map len: %v\n", lookupTable.Len()))
+	}
 
 	return indexStr.String()
 }
@@ -493,7 +495,9 @@ func newRequestLookupIndex(contractState kv.KVStoreReader, firstIndex, lastIndex
 	})
 
 	indexStr.WriteString(fmt.Sprintf("Request lookup index keys: %v\n", elementsCount))
-	indexStr.WriteString(fmt.Sprintf("Request lookup index map len: %v\n", lookupTable.Len()))
+	if firstIndex == 0 {
+		indexStr.WriteString(fmt.Sprintf("Request lookup index map len: %v\n", lookupTable.Len()))
+	}
 
 	return indexStr.String()
 }

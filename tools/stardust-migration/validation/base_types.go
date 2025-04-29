@@ -25,7 +25,17 @@ func oldAgentIDToStr(agentID old_isc.AgentID) string {
 	case *old_isc.AddressAgentID:
 		return fmt.Sprintf("AddressAgentID(%v)", agentID.Address().String())
 	case *old_isc.ContractAgentID:
-		return fmt.Sprintf("ContractAgentID(0x%v, %v)", agentID.Hname(), agentID.ChainID().String())
+		res := fmt.Sprintf("ContractAgentID(0x%v, %v)", agentID.Hname(), agentID.ChainID().String())
+
+		// This is the one cross-agent ID, which we cannot migrate but need to handle.
+		const crossChainAgentID = "ContractAgentID(0x05204969, iota1pphx6hnmxqdqd2u4m59e7nvmcyulm3lfm58yex5gmud9qlt3v9crs9sah6m)"
+		const crossChainAgentIDReplaced = "ContractAgentID(0x0520496a, <chain-id>)"
+
+		if res == crossChainAgentID {
+			return crossChainAgentIDReplaced
+		}
+
+		return res
 	case *old_isc.EthereumAddressAgentID:
 		return fmt.Sprintf("EthereumAddressAgentID(%v, %v)", agentID.EthAddress().String(), agentID.ChainID().String())
 	case *old_isc.NilAgentID:
