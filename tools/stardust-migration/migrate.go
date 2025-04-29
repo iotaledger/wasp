@@ -39,7 +39,6 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
 	isc_migration "github.com/iotaledger/wasp/packages/migration"
@@ -373,8 +372,8 @@ func migrateAllStates(c *cmd.Context) error {
 		}
 		if periodStateSave && blockIndex != 0 && blockIndex%inMemoryStatesSavingPeriodBlocks == 0 {
 			cli.Logf("Pre-saving in-memory states at block index %v", blockIndex)
-			saveInMemoryStates(oldStateStore, newState.W, blockIndex, srcChainDBDir)
-			deleteInMemoryStateFiles(srcChainDBDir, (blockIndex - inMemoryStatesSavingPeriodBlocks))
+			saveInMemoryStates(oldStateStore, newState.W, blockIndex)
+			deleteInMemoryStateFiles(blockIndex - inMemoryStatesSavingPeriodBlocks)
 		}
 
 		utils.PeriodicAction(3*time.Second, &lastPrintTime, func() {
@@ -404,7 +403,7 @@ func migrateAllStates(c *cmd.Context) error {
 
 	bot.Get().PostMessage(fmt.Sprintf("All-States migration succeeded at index %d", lastProcessedBlockIndex))
 
-	saveInMemoryStates(oldStateStore, newState.W, lastProcessedBlockIndex, srcChainDBDir)
+	saveInMemoryStates(oldStateStore, newState.W, lastProcessedBlockIndex)
 
 	return nil
 }
@@ -527,15 +526,15 @@ func initInMemoryStates(
 
 	if o.StartBlockIndex != 0 {
 		cli.Logf("Saving in-memory states to disk to avoid loading them next time")
-		saveInMemoryStates(oldStateStore, newState, o.StartBlockIndex-1, srcChainDBDir)
+		saveInMemoryStates(oldStateStore, newState, o.StartBlockIndex-1)
 	}
 
 	return oldStateStore, utils.NewRecordingKVStore(oldState), utils.NewRecordingKVStore(newState), o.StartBlockIndex
 }
 
-func saveInMemoryStates(oldState old_dict.Dict, newState *utils.InMemoryKVStore, lastProcessedBlockIndex uint32, srcChainDBDir string) {
-	cli.Logf("Saving in-memory states to disk: blockIndex = %v, srcChainDBDir = %v", lastProcessedBlockIndex, srcChainDBDir)
-	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, lastProcessedBlockIndex)
+func saveInMemoryStates(oldState old_dict.Dict, newState *utils.InMemoryKVStore, lastProcessedBlockIndex uint32) {
+	cli.Logf("Saving in-memory states to disk: blockIndex = %v", lastProcessedBlockIndex)
+	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(lastProcessedBlockIndex)
 
 	// Doing this in separate steps to avoid too high memory usage (maybe its too naive, but won't hurt)
 	cli.Logf("Marshaling old in-memory state: size = %v", len(oldState))
@@ -559,8 +558,8 @@ func saveInMemoryStates(oldState old_dict.Dict, newState *utils.InMemoryKVStore,
 }
 
 func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestState bool) (old_dict.Dict, *utils.PrefixKVStore, *utils.InMemoryKVStore, bool) {
-	cli.Logf("Trying to load in-memory states from disk: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
-	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
+	cli.Logf("Trying to load in-memory states from disk: blockIndex = %v", blockIndex)
+	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(blockIndex)
 
 	cli.Logf("Read old in-memory state from disk: path = %v", oldStateFilePath)
 	oldStateBytes, err := os.ReadFile(oldStateFilePath)
@@ -613,9 +612,9 @@ func tryLoadInMemoryStates(srcChainDBDir string, blockIndex uint32, loadDestStat
 	return oldStateStore, oldState, newState, true
 }
 
-func deleteInMemoryStateFiles(srcChainDBDir string, blockIndex uint32) {
-	cli.Logf("Deleting obsolete files of in-memory states: blockIndex = %v, srcChainDBDir = %v", blockIndex, srcChainDBDir)
-	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(srcChainDBDir, blockIndex)
+func deleteInMemoryStateFiles(blockIndex uint32) {
+	cli.Logf("Deleting obsolete files of in-memory states: blockIndex = %v", blockIndex)
+	oldStateFilePath, newStateFilePath := getInMemoryStateFilePaths(blockIndex)
 	if err := os.Remove(oldStateFilePath); err != nil {
 		if !os.IsNotExist(err) {
 			panic(err)
@@ -693,11 +692,9 @@ func setDestStateKeyValidator(s *utils.InMemoryKVStore, o debugOptions) {
 	})
 }
 
-func getInMemoryStateFilePaths(srcChainDBDir string, blockIndex uint32) (string, string) {
-	srcChainDBDir = lo.Must(filepath.Abs(srcChainDBDir))
-	fileNameHash := hashing.HashStrings(srcChainDBDir)
-	oldStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_old_state_%v.bin", os.TempDir(), blockIndex, fileNameHash.Hex())
-	newStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_new_state_%v.bin", os.TempDir(), blockIndex, fileNameHash.Hex())
+func getInMemoryStateFilePaths(blockIndex uint32) (string, string) {
+	oldStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_old_state.bin", os.TempDir(), blockIndex)
+	newStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_new_state.bin", os.TempDir(), blockIndex)
 
 	return oldStateFilePath, newStateFilePath
 }
