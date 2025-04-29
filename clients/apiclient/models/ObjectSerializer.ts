@@ -1,6 +1,5 @@
-export * from '../models/AccountFoundriesResponse';
-export * from '../models/AccountNFTsResponse';
 export * from '../models/AccountNonceResponse';
+export * from '../models/AccountObjectsResponse';
 export * from '../models/AddUserRequest';
 export * from '../models/AnchorMetricItem';
 export * from '../models/AssetsJSON';
@@ -19,7 +18,6 @@ export * from '../models/CommitteeNode';
 export * from '../models/ConsensusPipeMetrics';
 export * from '../models/ConsensusWorkflowMetrics';
 export * from '../models/ContractCallViewRequest';
-export * from '../models/ContractInfoResponse';
 export * from '../models/ControlAddressesResponse';
 export * from '../models/DKSharesInfo';
 export * from '../models/DKSharesPostRequest';
@@ -29,7 +27,6 @@ export * from '../models/EstimateGasRequestOnledger';
 export * from '../models/EventJSON';
 export * from '../models/EventsResponse';
 export * from '../models/FeePolicy';
-export * from '../models/FoundryOutputResponse';
 export * from '../models/GovChainAdminResponse';
 export * from '../models/GovChainInfoResponse';
 export * from '../models/GovPublicChainMetadata';
@@ -41,7 +38,6 @@ export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
 export * from '../models/LoginResponse';
-export * from '../models/NativeTokenIDRegistryResponse';
 export * from '../models/NodeOwnerCertificateResponse';
 export * from '../models/ObjectType';
 export * from '../models/OffLedgerRequest';
@@ -69,9 +65,8 @@ export * from '../models/User';
 export * from '../models/ValidationError';
 export * from '../models/VersionResponse';
 
-import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
+import { AccountObjectsResponse } from '../models/AccountObjectsResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AnchorMetricItem } from '../models/AnchorMetricItem';
 import { AssetsJSON } from '../models/AssetsJSON';
@@ -90,7 +85,6 @@ import { CommitteeNode } from '../models/CommitteeNode';
 import { ConsensusPipeMetrics } from '../models/ConsensusPipeMetrics';
 import { ConsensusWorkflowMetrics } from '../models/ConsensusWorkflowMetrics';
 import { ContractCallViewRequest } from '../models/ContractCallViewRequest';
-import { ContractInfoResponse } from '../models/ContractInfoResponse';
 import { ControlAddressesResponse } from '../models/ControlAddressesResponse';
 import { DKSharesInfo } from '../models/DKSharesInfo';
 import { DKSharesPostRequest } from '../models/DKSharesPostRequest';
@@ -100,7 +94,6 @@ import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger
 import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
-import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
 import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
@@ -112,7 +105,6 @@ import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
-import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -156,9 +148,8 @@ let enumsMap: Set<string> = new Set<string>([
 ]);
 
 let typeMap: {[index: string]: any} = {
-    "AccountFoundriesResponse": AccountFoundriesResponse,
-    "AccountNFTsResponse": AccountNFTsResponse,
     "AccountNonceResponse": AccountNonceResponse,
+    "AccountObjectsResponse": AccountObjectsResponse,
     "AddUserRequest": AddUserRequest,
     "AnchorMetricItem": AnchorMetricItem,
     "AssetsJSON": AssetsJSON,
@@ -177,7 +168,6 @@ let typeMap: {[index: string]: any} = {
     "ConsensusPipeMetrics": ConsensusPipeMetrics,
     "ConsensusWorkflowMetrics": ConsensusWorkflowMetrics,
     "ContractCallViewRequest": ContractCallViewRequest,
-    "ContractInfoResponse": ContractInfoResponse,
     "ControlAddressesResponse": ControlAddressesResponse,
     "DKSharesInfo": DKSharesInfo,
     "DKSharesPostRequest": DKSharesPostRequest,
@@ -187,7 +177,6 @@ let typeMap: {[index: string]: any} = {
     "EventJSON": EventJSON,
     "EventsResponse": EventsResponse,
     "FeePolicy": FeePolicy,
-    "FoundryOutputResponse": FoundryOutputResponse,
     "GovChainAdminResponse": GovChainAdminResponse,
     "GovChainInfoResponse": GovChainInfoResponse,
     "GovPublicChainMetadata": GovPublicChainMetadata,
@@ -199,7 +188,6 @@ let typeMap: {[index: string]: any} = {
     "Limits": Limits,
     "LoginRequest": LoginRequest,
     "LoginResponse": LoginResponse,
-    "NativeTokenIDRegistryResponse": NativeTokenIDRegistryResponse,
     "NodeOwnerCertificateResponse": NodeOwnerCertificateResponse,
     "ObjectType": ObjectType,
     "OffLedgerRequest": OffLedgerRequest,

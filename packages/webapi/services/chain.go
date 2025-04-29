@@ -5,8 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -17,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/packages/webapi/common"
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
@@ -126,21 +123,6 @@ func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error
 	return evm.ViewGetChainID.DecodeOutput(ret)
 }
 
-func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
-	records, err := c.chainRecordRegistryProvider.ChainRecords()
-	if err != nil {
-		return nil, err
-	}
-
-	chainIDs := make([]isc.ChainID, 0, len(records))
-
-	for _, chainRecord := range records {
-		chainIDs = append(chainIDs, chainRecord.ChainID())
-	}
-
-	return chainIDs, nil
-}
-
 func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
 	ch, err := c.GetChain()
 	if err != nil {
@@ -164,18 +146,6 @@ func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo
 	chainInfo := dto.MapChainInfo(governanceChainInfo, chainRecord.Active)
 
 	return chainInfo, nil
-}
-
-func (c *ChainService) GetContracts(blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error) {
-	ch, err := c.GetChain()
-	if err != nil {
-		return nil, err
-	}
-	res, err := common.CallView(ch, root.ViewGetContractRecords.Message(), blockIndexOrTrieRoot)
-	if err != nil {
-		return nil, err
-	}
-	return root.ViewGetContractRecords.DecodeOutput(res)
 }
 
 func (c *ChainService) GetState(stateKey []byte) (state []byte, err error) {

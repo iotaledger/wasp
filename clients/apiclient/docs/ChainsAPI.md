@@ -11,9 +11,8 @@ Method | HTTP request | Description
 [**DumpAccounts**](ChainsAPI.md#DumpAccounts) | **Post** /v1/chain/dump-accounts | dump accounts information into a humanly-readable format
 [**EstimateGasOffledger**](ChainsAPI.md#EstimateGasOffledger) | **Post** /v1/chain/estimategas-offledger | Estimates gas for a given off-ledger ISC request
 [**EstimateGasOnledger**](ChainsAPI.md#EstimateGasOnledger) | **Post** /v1/chain/estimategas-onledger | Estimates gas for a given on-ledger ISC request
-[**GetChainInfo**](ChainsAPI.md#GetChainInfo) | **Get** /v1/chain | Get information about a specific chain
+[**GetChainInfo**](ChainsAPI.md#GetChainInfo) | **Get** /v1/chain | Get information about the chain
 [**GetCommitteeInfo**](ChainsAPI.md#GetCommitteeInfo) | **Get** /v1/chain/committee | Get information about the deployed committee
-[**GetContracts**](ChainsAPI.md#GetContracts) | **Get** /v1/chain/contracts | Get all available chain contracts
 [**GetMempoolContents**](ChainsAPI.md#GetMempoolContents) | **Get** /v1/chain/mempool | Get the contents of the mempool.
 [**GetReceipt**](ChainsAPI.md#GetReceipt) | **Get** /v1/chain/receipts/{requestID} | Get a receipt from a request ID
 [**GetStateValue**](ChainsAPI.md#GetStateValue) | **Get** /v1/chain/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
@@ -470,7 +469,7 @@ No authorization required
 
 > ChainInfoResponse GetChainInfo(ctx).Block(block).Execute()
 
-Get information about a specific chain
+Get information about the chain
 
 ### Example
 
@@ -579,70 +578,6 @@ Name | Type | Description  | Notes
 ### Return type
 
 [**CommitteeInfoResponse**](CommitteeInfoResponse.md)
-
-### Authorization
-
-[Authorization](../README.md#Authorization)
-
-### HTTP request headers
-
-- **Content-Type**: Not defined
-- **Accept**: application/json
-
-[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
-[[Back to Model list]](../README.md#documentation-for-models)
-[[Back to README]](../README.md)
-
-
-## GetContracts
-
-> []ContractInfoResponse GetContracts(ctx).Block(block).Execute()
-
-Get all available chain contracts
-
-### Example
-
-```go
-package main
-
-import (
-	"context"
-	"fmt"
-	"os"
-	openapiclient "github.com/GIT_USER_ID/GIT_REPO_ID"
-)
-
-func main() {
-	block := "block_example" // string | Block index or trie root (optional)
-
-	configuration := openapiclient.NewConfiguration()
-	apiClient := openapiclient.NewAPIClient(configuration)
-	resp, r, err := apiClient.ChainsAPI.GetContracts(context.Background()).Block(block).Execute()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.GetContracts``: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-	}
-	// response from `GetContracts`: []ContractInfoResponse
-	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.GetContracts`: %v\n", resp)
-}
-```
-
-### Path Parameters
-
-
-
-### Other Parameters
-
-Other parameters are passed through a pointer to a apiGetContractsRequest struct via the builder pattern
-
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **block** | **string** | Block index or trie root | 
-
-### Return type
-
-[**[]ContractInfoResponse**](ContractInfoResponse.md)
 
 ### Authorization
 

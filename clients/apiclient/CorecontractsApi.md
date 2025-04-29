@@ -5,12 +5,8 @@ All URIs are relative to *http://localhost*
 Method | HTTP request | Description
 ------------- | ------------- | -------------
 [**accountsGetAccountBalance**](CorecontractsApi.md#accountsGetAccountBalance) | **GET** /v1/chain/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-[**accountsGetAccountFoundries**](CorecontractsApi.md#accountsGetAccountFoundries) | **GET** /v1/chain/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
-[**accountsGetAccountNFTIDs**](CorecontractsApi.md#accountsGetAccountNFTIDs) | **GET** /v1/chain/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
 [**accountsGetAccountNonce**](CorecontractsApi.md#accountsGetAccountNonce) | **GET** /v1/chain/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-[**accountsGetFoundryOutput**](CorecontractsApi.md#accountsGetFoundryOutput) | **GET** /v1/chain/core/accounts/foundry_output/{serialNumber} | Get the foundry output
-[**accountsGetNFTData**](CorecontractsApi.md#accountsGetNFTData) | **GET** /v1/chain/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
-[**accountsGetNativeTokenIDRegistry**](CorecontractsApi.md#accountsGetNativeTokenIDRegistry) | **GET** /v1/chain/core/accounts/token_registry | Get a list of all registries
+[**accountsGetAccountObjectIDs**](CorecontractsApi.md#accountsGetAccountObjectIDs) | **GET** /v1/chain/core/accounts/account/{agentID}/objects | Get all object ids belonging to an account
 [**accountsGetTotalAssets**](CorecontractsApi.md#accountsGetTotalAssets) | **GET** /v1/chain/core/accounts/total_assets | Get all stored assets
 [**blocklogGetBlockInfo**](CorecontractsApi.md#blocklogGetBlockInfo) | **GET** /v1/chain/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
 [**blocklogGetControlAddresses**](CorecontractsApi.md#blocklogGetControlAddresses) | **GET** /v1/chain/core/blocklog/controladdresses | Get the control addresses
@@ -85,121 +81,6 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **accountsGetAccountFoundries**
-> AccountFoundriesResponse accountsGetAccountFoundries()
-
-
-### Example
-
-
-```typescript
-import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiAccountsGetAccountFoundriesRequest } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new CorecontractsApi(configuration);
-
-const request: CorecontractsApiAccountsGetAccountFoundriesRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-    // AgentID (Hex Address for L1 accounts, Hex for EVM)
-  agentID: "agentID_example",
-    // Block index or trie root (optional)
-  block: "block_example",
-};
-
-const data = await apiInstance.accountsGetAccountFoundries(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
- **agentID** | [**string**] | AgentID (Hex Address for L1 accounts, Hex for EVM) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**AccountFoundriesResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | All foundries owned by an account |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **accountsGetAccountNFTIDs**
-> AccountNFTsResponse accountsGetAccountNFTIDs()
-
-
-### Example
-
-
-```typescript
-import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiAccountsGetAccountNFTIDsRequest } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new CorecontractsApi(configuration);
-
-const request: CorecontractsApiAccountsGetAccountNFTIDsRequest = {
-    // AgentID (Hex Address for L1 accounts | Hex for EVM)
-  agentID: "agentID_example",
-    // Block index or trie root (optional)
-  block: "block_example",
-};
-
-const data = await apiInstance.accountsGetAccountNFTIDs(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**AccountNFTsResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | All NFT ids belonging to an account |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
 # **accountsGetAccountNonce**
 > AccountNonceResponse accountsGetAccountNonce()
 
@@ -256,8 +137,8 @@ No authorization required
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
 
-# **accountsGetFoundryOutput**
-> FoundryOutputResponse accountsGetFoundryOutput()
+# **accountsGetAccountObjectIDs**
+> AccountObjectsResponse accountsGetAccountObjectIDs()
 
 
 ### Example
@@ -265,21 +146,19 @@ No authorization required
 
 ```typescript
 import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiAccountsGetFoundryOutputRequest } from '';
+import type { CorecontractsApiAccountsGetAccountObjectIDsRequest } from '';
 
 const configuration = createConfiguration();
 const apiInstance = new CorecontractsApi(configuration);
 
-const request: CorecontractsApiAccountsGetFoundryOutputRequest = {
-    // ChainID (Hex Address)
-  chainID: "chainID_example",
-    // Serial Number (uint32)
-  serialNumber: 1,
+const request: CorecontractsApiAccountsGetAccountObjectIDsRequest = {
+    // AgentID (Hex Address for L1 accounts | Hex for EVM)
+  agentID: "agentID_example",
     // Block index or trie root (optional)
   block: "block_example",
 };
 
-const data = await apiInstance.accountsGetFoundryOutput(request);
+const data = await apiInstance.accountsGetAccountObjectIDs(request);
 console.log('API called successfully. Returned data:', data);
 ```
 
@@ -288,14 +167,13 @@ console.log('API called successfully. Returned data:', data);
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **chainID** | [**string**] | ChainID (Hex Address) | defaults to undefined
- **serialNumber** | [**number**] | Serial Number (uint32) | defaults to undefined
+ **agentID** | [**string**] | AgentID (Hex Address for L1 accounts | Hex for EVM) | defaults to undefined
  **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
 
 
 ### Return type
 
-**FoundryOutputResponse**
+**AccountObjectsResponse**
 
 ### Authorization
 
@@ -310,115 +188,7 @@ No authorization required
 ### HTTP response details
 | Status code | Description | Response headers |
 |-------------|-------------|------------------|
-**200** | The foundry output |  -  |
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **accountsGetNFTData**
-> accountsGetNFTData()
-
-
-### Example
-
-
-```typescript
-import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiAccountsGetNFTDataRequest } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new CorecontractsApi(configuration);
-
-const request: CorecontractsApiAccountsGetNFTDataRequest = {
-    // NFT ID (Hex)
-  nftID: "nftID_example",
-    // Block index or trie root (optional)
-  block: "block_example",
-};
-
-const data = await apiInstance.accountsGetNFTData(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **nftID** | [**string**] | NFT ID (Hex) | defaults to undefined
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-void (empty response body)
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**401** | Unauthorized (Wrong permissions, missing token) |  -  |
-
-[[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
-
-# **accountsGetNativeTokenIDRegistry**
-> NativeTokenIDRegistryResponse accountsGetNativeTokenIDRegistry()
-
-
-### Example
-
-
-```typescript
-import { createConfiguration, CorecontractsApi } from '';
-import type { CorecontractsApiAccountsGetNativeTokenIDRegistryRequest } from '';
-
-const configuration = createConfiguration();
-const apiInstance = new CorecontractsApi(configuration);
-
-const request: CorecontractsApiAccountsGetNativeTokenIDRegistryRequest = {
-    // Block index or trie root (optional)
-  block: "block_example",
-};
-
-const data = await apiInstance.accountsGetNativeTokenIDRegistry(request);
-console.log('API called successfully. Returned data:', data);
-```
-
-
-### Parameters
-
-Name | Type | Description  | Notes
-------------- | ------------- | ------------- | -------------
- **block** | [**string**] | Block index or trie root | (optional) defaults to undefined
-
-
-### Return type
-
-**NativeTokenIDRegistryResponse**
-
-### Authorization
-
-No authorization required
-
-### HTTP request headers
-
- - **Content-Type**: Not defined
- - **Accept**: application/json
-
-
-### HTTP response details
-| Status code | Description | Response headers |
-|-------------|-------------|------------------|
-**200** | A list of all registries |  -  |
+**200** | All object ids belonging to an account |  -  |
 **401** | Unauthorized (Wrong permissions, missing token) |  -  |
 
 [[Back to top]](#) [[Back to API list]](README.md#documentation-for-api-endpoints) [[Back to Model list]](README.md#documentation-for-models) [[Back to README]](README.md)
@@ -1252,7 +1022,7 @@ No authorization required
 # **governanceGetChainInfo**
 > GovChainInfoResponse governanceGetChainInfo()
 
-If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+If you are using the common API functions, you most likely rather want to use \'/v1/chain\' to get information about the chain.
 
 ### Example
 

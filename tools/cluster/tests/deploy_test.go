@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
 )
 
 // executed in cluster_test.go
@@ -23,9 +22,5 @@ func testDeployChain(t *testing.T, env *ChainEnv) {
 		blockIndex, err := env.Chain.BlockIndex(i)
 		require.NoError(t, err)
 		require.Greater(t, blockIndex, uint32(1))
-
-		contractRegistry, err := env.Chain.ContractRegistry(i)
-		require.NoError(t, err)
-		require.EqualValues(t, len(corecontracts.All), len(contractRegistry))
 	}
 }

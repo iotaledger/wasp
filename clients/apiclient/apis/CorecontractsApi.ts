@@ -8,18 +8,15 @@ import {canConsumeForm, isCodeInRange} from '../util';
 import {SecurityAuthentication} from '../auth/auth';
 
 
-import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
+import { AccountObjectsResponse } from '../models/AccountObjectsResponse';
 import { AssetsResponse } from '../models/AssetsResponse';
 import { BlockInfoResponse } from '../models/BlockInfoResponse';
 import { ControlAddressesResponse } from '../models/ControlAddressesResponse';
 import { ErrorMessageFormatResponse } from '../models/ErrorMessageFormatResponse';
 import { EventsResponse } from '../models/EventsResponse';
-import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
 import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
-import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RequestIDsResponse } from '../models/RequestIDsResponse';
 import { RequestProcessedResponse } from '../models/RequestProcessedResponse';
@@ -47,90 +44,6 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
 
         // Path Params
         const localVarPath = '/v1/chain/core/accounts/account/{agentID}/balance'
-            .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
-
-        // Make Request Context
-        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
-        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
-
-        // Query Params
-        if (block !== undefined) {
-            requestContext.setQueryParam("block", ObjectSerializer.serialize(block, "string", "string"));
-        }
-
-
-        
-        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
-        if (defaultAuth?.applySecurityAuthentication) {
-            await defaultAuth?.applySecurityAuthentication(requestContext);
-        }
-
-        return requestContext;
-    }
-
-    /**
-     * Get all foundries owned by an account
-     * @param chainID ChainID (Hex Address)
-     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
-     * @param block Block index or trie root
-     */
-    public async accountsGetAccountFoundries(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
-        let _config = _options || this.configuration;
-
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetAccountFoundries", "chainID");
-        }
-
-
-        // verify required parameter 'agentID' is not null or undefined
-        if (agentID === null || agentID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetAccountFoundries", "agentID");
-        }
-
-
-
-        // Path Params
-        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/foundries'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
-            .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
-
-        // Make Request Context
-        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
-        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
-
-        // Query Params
-        if (block !== undefined) {
-            requestContext.setQueryParam("block", ObjectSerializer.serialize(block, "string", "string"));
-        }
-
-
-        
-        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
-        if (defaultAuth?.applySecurityAuthentication) {
-            await defaultAuth?.applySecurityAuthentication(requestContext);
-        }
-
-        return requestContext;
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-     * @param block Block index or trie root
-     */
-    public async accountsGetAccountNFTIDs(agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
-        let _config = _options || this.configuration;
-
-        // verify required parameter 'agentID' is not null or undefined
-        if (agentID === null || agentID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetAccountNFTIDs", "agentID");
-        }
-
-
-
-        // Path Params
-        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/nfts'
             .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
 
         // Make Request Context
@@ -191,99 +104,23 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * Get the foundry output
-     * @param chainID ChainID (Hex Address)
-     * @param serialNumber Serial Number (uint32)
+     * Get all object ids belonging to an account
+     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param block Block index or trie root
      */
-    public async accountsGetFoundryOutput(chainID: string, serialNumber: number, block?: string, _options?: Configuration): Promise<RequestContext> {
+    public async accountsGetAccountObjectIDs(agentID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
         let _config = _options || this.configuration;
 
-        // verify required parameter 'chainID' is not null or undefined
-        if (chainID === null || chainID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetFoundryOutput", "chainID");
-        }
-
-
-        // verify required parameter 'serialNumber' is not null or undefined
-        if (serialNumber === null || serialNumber === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetFoundryOutput", "serialNumber");
+        // verify required parameter 'agentID' is not null or undefined
+        if (agentID === null || agentID === undefined) {
+            throw new RequiredError("CorecontractsApi", "accountsGetAccountObjectIDs", "agentID");
         }
 
 
 
         // Path Params
-        const localVarPath = '/v1/chain/core/accounts/foundry_output/{serialNumber}'
-            .replace('{' + 'chainID' + '}', encodeURIComponent(String(chainID)))
-            .replace('{' + 'serialNumber' + '}', encodeURIComponent(String(serialNumber)));
-
-        // Make Request Context
-        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
-        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
-
-        // Query Params
-        if (block !== undefined) {
-            requestContext.setQueryParam("block", ObjectSerializer.serialize(block, "string", "string"));
-        }
-
-
-        
-        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
-        if (defaultAuth?.applySecurityAuthentication) {
-            await defaultAuth?.applySecurityAuthentication(requestContext);
-        }
-
-        return requestContext;
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param nftID NFT ID (Hex)
-     * @param block Block index or trie root
-     */
-    public async accountsGetNFTData(nftID: string, block?: string, _options?: Configuration): Promise<RequestContext> {
-        let _config = _options || this.configuration;
-
-        // verify required parameter 'nftID' is not null or undefined
-        if (nftID === null || nftID === undefined) {
-            throw new RequiredError("CorecontractsApi", "accountsGetNFTData", "nftID");
-        }
-
-
-
-        // Path Params
-        const localVarPath = '/v1/chain/core/accounts/nftdata/{nftID}'
-            .replace('{' + 'nftID' + '}', encodeURIComponent(String(nftID)));
-
-        // Make Request Context
-        const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
-        requestContext.setHeaderParam("Accept", "application/json, */*;q=0.8")
-
-        // Query Params
-        if (block !== undefined) {
-            requestContext.setQueryParam("block", ObjectSerializer.serialize(block, "string", "string"));
-        }
-
-
-        
-        const defaultAuth: SecurityAuthentication | undefined = _options?.authMethods?.default || this.configuration?.authMethods?.default
-        if (defaultAuth?.applySecurityAuthentication) {
-            await defaultAuth?.applySecurityAuthentication(requestContext);
-        }
-
-        return requestContext;
-    }
-
-    /**
-     * Get a list of all registries
-     * @param block Block index or trie root
-     */
-    public async accountsGetNativeTokenIDRegistry(block?: string, _options?: Configuration): Promise<RequestContext> {
-        let _config = _options || this.configuration;
-
-
-        // Path Params
-        const localVarPath = '/v1/chain/core/accounts/token_registry';
+        const localVarPath = '/v1/chain/core/accounts/account/{agentID}/objects'
+            .replace('{' + 'agentID' + '}', encodeURIComponent(String(agentID)));
 
         // Make Request Context
         const requestContext = _config.baseServer.makeRequestContext(localVarPath, HttpMethod.GET);
@@ -836,7 +673,7 @@ export class CorecontractsApiRequestFactory extends BaseAPIRequestFactory {
     }
 
     /**
-     * If you are using the common API functions, you most likely rather want to use \'/v1/chains/:chainID\' to get information about a chain.
+     * If you are using the common API functions, you most likely rather want to use \'/v1/chain\' to get information about the chain.
      * Get the chain info
      * @param block Block index or trie root
      */
@@ -910,78 +747,6 @@ export class CorecontractsApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
-     * @params response Response returned by the server for a request to accountsGetAccountFoundries
-     * @throws ApiException if the response code was not in [200, 299]
-     */
-     public async accountsGetAccountFoundriesWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AccountFoundriesResponse >> {
-        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: AccountFoundriesResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "AccountFoundriesResponse", ""
-            ) as AccountFoundriesResponse;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-        if (isCodeInRange("401", response.httpStatusCode)) {
-            const body: ValidationError = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ValidationError", ""
-            ) as ValidationError;
-            throw new ApiException<ValidationError>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", body, response.headers);
-        }
-
-        // Work around for missing responses in specification, e.g. for petstore.yaml
-        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: AccountFoundriesResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "AccountFoundriesResponse", ""
-            ) as AccountFoundriesResponse;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-
-        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
-    }
-
-    /**
-     * Unwraps the actual response sent by the server from the response context and deserializes the response content
-     * to the expected objects
-     *
-     * @params response Response returned by the server for a request to accountsGetAccountNFTIDs
-     * @throws ApiException if the response code was not in [200, 299]
-     */
-     public async accountsGetAccountNFTIDsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AccountNFTsResponse >> {
-        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: AccountNFTsResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "AccountNFTsResponse", ""
-            ) as AccountNFTsResponse;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-        if (isCodeInRange("401", response.httpStatusCode)) {
-            const body: ValidationError = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ValidationError", ""
-            ) as ValidationError;
-            throw new ApiException<ValidationError>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", body, response.headers);
-        }
-
-        // Work around for missing responses in specification, e.g. for petstore.yaml
-        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: AccountNFTsResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "AccountNFTsResponse", ""
-            ) as AccountNFTsResponse;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-
-        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
-    }
-
-    /**
-     * Unwraps the actual response sent by the server from the response context and deserializes the response content
-     * to the expected objects
-     *
      * @params response Response returned by the server for a request to accountsGetAccountNonce
      * @throws ApiException if the response code was not in [200, 299]
      */
@@ -1018,16 +783,16 @@ export class CorecontractsApiResponseProcessor {
      * Unwraps the actual response sent by the server from the response context and deserializes the response content
      * to the expected objects
      *
-     * @params response Response returned by the server for a request to accountsGetFoundryOutput
+     * @params response Response returned by the server for a request to accountsGetAccountObjectIDs
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async accountsGetFoundryOutputWithHttpInfo(response: ResponseContext): Promise<HttpInfo<FoundryOutputResponse >> {
+     public async accountsGetAccountObjectIDsWithHttpInfo(response: ResponseContext): Promise<HttpInfo<AccountObjectsResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: FoundryOutputResponse = ObjectSerializer.deserialize(
+            const body: AccountObjectsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "FoundryOutputResponse", ""
-            ) as FoundryOutputResponse;
+                "AccountObjectsResponse", ""
+            ) as AccountObjectsResponse;
             return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
         if (isCodeInRange("401", response.httpStatusCode)) {
@@ -1040,71 +805,10 @@ export class CorecontractsApiResponseProcessor {
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: FoundryOutputResponse = ObjectSerializer.deserialize(
+            const body: AccountObjectsResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "FoundryOutputResponse", ""
-            ) as FoundryOutputResponse;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-
-        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
-    }
-
-    /**
-     * Unwraps the actual response sent by the server from the response context and deserializes the response content
-     * to the expected objects
-     *
-     * @params response Response returned by the server for a request to accountsGetNFTData
-     * @throws ApiException if the response code was not in [200, 299]
-     */
-     public async accountsGetNFTDataWithHttpInfo(response: ResponseContext): Promise<HttpInfo< void>> {
-        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("401", response.httpStatusCode)) {
-            const body: ValidationError = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ValidationError", ""
-            ) as ValidationError;
-            throw new ApiException<ValidationError>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", body, response.headers);
-        }
-
-        // Work around for missing responses in specification, e.g. for petstore.yaml
-        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, undefined);
-        }
-
-        throw new ApiException<string | Blob | undefined>(response.httpStatusCode, "Unknown API Status Code!", await response.getBodyAsAny(), response.headers);
-    }
-
-    /**
-     * Unwraps the actual response sent by the server from the response context and deserializes the response content
-     * to the expected objects
-     *
-     * @params response Response returned by the server for a request to accountsGetNativeTokenIDRegistry
-     * @throws ApiException if the response code was not in [200, 299]
-     */
-     public async accountsGetNativeTokenIDRegistryWithHttpInfo(response: ResponseContext): Promise<HttpInfo<NativeTokenIDRegistryResponse >> {
-        const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
-        if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: NativeTokenIDRegistryResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "NativeTokenIDRegistryResponse", ""
-            ) as NativeTokenIDRegistryResponse;
-            return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
-        }
-        if (isCodeInRange("401", response.httpStatusCode)) {
-            const body: ValidationError = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "ValidationError", ""
-            ) as ValidationError;
-            throw new ApiException<ValidationError>(response.httpStatusCode, "Unauthorized (Wrong permissions, missing token)", body, response.headers);
-        }
-
-        // Work around for missing responses in specification, e.g. for petstore.yaml
-        if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: NativeTokenIDRegistryResponse = ObjectSerializer.deserialize(
-                ObjectSerializer.parse(await response.body.text(), contentType),
-                "NativeTokenIDRegistryResponse", ""
-            ) as NativeTokenIDRegistryResponse;
+                "AccountObjectsResponse", ""
+            ) as AccountObjectsResponse;
             return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 

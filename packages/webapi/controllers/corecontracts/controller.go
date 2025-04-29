@@ -41,22 +41,13 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		SetOperationId("accountsGetAccountBalance").
 		SetSummary("Get all assets belonging to an account")
 
-	api.GET("chain/core/accounts/account/:agentID/nfts", c.getAccountNFTs).
+	api.GET("chain/core/accounts/account/:agentID/objects", c.getAccountObjects).
 		AddParamPath("", params.ParamAgentID, params.DescriptionAgentID).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All NFT ids belonging to an account", mocker.Get(models.AccountNFTsResponse{}), nil).
-		SetOperationId("accountsGetAccountNFTIDs").
-		SetSummary("Get all NFT ids belonging to an account")
-
-	api.GET("chain/core/accounts/account/:agentID/foundries", c.getAccountFoundries).
-		AddParamPath("", "chainID", "ChainID (Hex Address)").
-		AddParamPath("", "agentID", "AgentID (Hex Address for L1 accounts, Hex for EVM)").
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "All foundries owned by an account", mocker.Get(models.AccountFoundriesResponse{}), nil).
-		SetOperationId("accountsGetAccountFoundries").
-		SetSummary("Get all foundries owned by an account")
+		AddResponse(http.StatusOK, "All object ids belonging to an account", mocker.Get(models.AccountObjectsResponse{}), nil).
+		SetOperationId("accountsGetAccountObjectIDs").
+		SetSummary("Get all object ids belonging to an account")
 
 	api.GET("chain/core/accounts/account/:agentID/nonce", c.getAccountNonce).
 		AddParamPath("", params.ParamAgentID, params.DescriptionAgentID).
@@ -65,35 +56,6 @@ func (c *Controller) addAccountContractRoutes(api echoswagger.ApiGroup, mocker i
 		AddResponse(http.StatusOK, "The current nonce of an account", mocker.Get(models.AccountNonceResponse{}), nil).
 		SetOperationId("accountsGetAccountNonce").
 		SetSummary("Get the current nonce of an account")
-
-	api.GET("chain/core/accounts/nftdata/:nftID", c.getNFTData).
-		AddParamPath("", params.ParamNFTID, params.DescriptionNFTID).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		// AddResponse(http.StatusOK, "The NFT data", mocker.Get(isc.NFTJSON{}), nil).
-		SetOperationId("accountsGetNFTData").
-		SetSummary("Get the NFT data by an ID")
-
-	api.GET("chain/core/accounts/token_registry", c.getNativeTokenIDRegistry).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "A list of all registries", mocker.Get(models.NativeTokenIDRegistryResponse{}), nil).
-		SetOperationId("accountsGetNativeTokenIDRegistry").
-		SetSummary("Get a list of all registries")
-
-	//nolint:unused
-	type foundryOutputParams struct {
-		chainID      string `swagger:"required,desc(ChainID (Hex Address))"`
-		serialNumber uint32 `swagger:"required,min(1),desc(Serial Number (uint32))"`
-	}
-
-	api.GET("chain/core/accounts/foundry_output/:serialNumber", c.getFoundryOutput).
-		AddParamPathNested(foundryOutputParams{}).
-		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
-		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
-		AddResponse(http.StatusOK, "The foundry output", mocker.Get(models.FoundryOutputResponse{}), nil).
-		SetOperationId("accountsGetFoundryOutput").
-		SetSummary("Get the foundry output")
 
 	api.GET("chain/core/accounts/total_assets", c.getTotalAssets).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
@@ -126,7 +88,7 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 		AddResponse(http.StatusUnauthorized, "Unauthorized (Wrong permissions, missing token)", authentication.ValidationError{}, nil).
 		AddResponse(http.StatusOK, "The chain info", mocker.Get(models.GovChainInfoResponse{}), nil).
 		SetOperationId("governanceGetChainInfo").
-		SetDescription("If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.").
+		SetDescription("If you are using the common API functions, you most likely rather want to use '/v1/chain' to get information about the chain.").
 		SetSummary("Get the chain info")
 
 	api.GET("chain/core/governance/chainadmin", c.getChainAdmin).

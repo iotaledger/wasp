@@ -84,48 +84,38 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *AuthApi* | [**AuthInfo**](docs/AuthApi.md#authinfo) | **Get** /auth/info | Get information about the current authentication mode
 *AuthApi* | [**Authenticate**](docs/AuthApi.md#authenticate) | **Post** /auth | Authenticate towards the node
-*ChainsApi* | [**ActivateChain**](docs/ChainsApi.md#activatechain) | **Post** /v1/chains/{chainID}/activate | Activate a chain
-*ChainsApi* | [**AddAccessNode**](docs/ChainsApi.md#addaccessnode) | **Put** /v1/chains/{chainID}/access-node/{peer} | Configure a trusted node to be an access node.
-*ChainsApi* | [**DeactivateChain**](docs/ChainsApi.md#deactivatechain) | **Post** /v1/chains/{chainID}/deactivate | Deactivate a chain
-*ChainsApi* | [**GetChainInfo**](docs/ChainsApi.md#getchaininfo) | **Get** /v1/chains/{chainID} | Get information about a specific chain
-*ChainsApi* | [**GetChains**](docs/ChainsApi.md#getchains) | **Get** /v1/chains | Get a list of all chains
-*ChainsApi* | [**GetCommitteeInfo**](docs/ChainsApi.md#getcommitteeinfo) | **Get** /v1/chains/{chainID}/committee | Get information about the deployed committee
-*ChainsApi* | [**GetContracts**](docs/ChainsApi.md#getcontracts) | **Get** /v1/chains/{chainID}/contracts | Get all available chain contracts
-*ChainsApi* | [**GetRequestIDFromEVMTransactionID**](docs/ChainsApi.md#getrequestidfromevmtransactionid) | **Get** /v1/chains/{chainID}/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
-*ChainsApi* | [**GetStateValue**](docs/ChainsApi.md#getstatevalue) | **Get** /v1/chains/{chainID}/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
-*ChainsApi* | [**RemoveAccessNode**](docs/ChainsApi.md#removeaccessnode) | **Delete** /v1/chains/{chainID}/access-node/{peer} | Remove an access node.
-*ChainsApi* | [**SetChainRecord**](docs/ChainsApi.md#setchainrecord) | **Post** /v1/chains/{chainID}/chainrecord | Sets the chain record.
-*ChainsApi* | [**V1ChainsChainIDEvmGet**](docs/ChainsApi.md#v1chainschainidevmget) | **Get** /v1/chains/{chainID}/evm | Ethereum JSON-RPC
-*ChainsApi* | [**V1ChainsChainIDEvmWsGet**](docs/ChainsApi.md#v1chainschainidevmwsget) | **Get** /v1/chains/{chainID}/evm/ws | Ethereum JSON-RPC (Websocket transport)
-*CorecontractsApi* | [**AccountsGetAccountBalance**](docs/CorecontractsApi.md#accountsgetaccountbalance) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
-*CorecontractsApi* | [**AccountsGetAccountFoundries**](docs/CorecontractsApi.md#accountsgetaccountfoundries) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/foundries | Get all foundries owned by an account
-*CorecontractsApi* | [**AccountsGetAccountNFTIDs**](docs/CorecontractsApi.md#accountsgetaccountnftids) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nfts | Get all NFT ids belonging to an account
-*CorecontractsApi* | [**AccountsGetAccountNonce**](docs/CorecontractsApi.md#accountsgetaccountnonce) | **Get** /v1/chains/{chainID}/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
-*CorecontractsApi* | [**AccountsGetAccounts**](docs/CorecontractsApi.md#accountsgetaccounts) | **Get** /v1/chains/{chainID}/core/accounts | Get a list of all accounts
-*CorecontractsApi* | [**AccountsGetFoundryOutput**](docs/CorecontractsApi.md#accountsgetfoundryoutput) | **Get** /v1/chains/{chainID}/core/accounts/foundry_output/{serialNumber} | Get the foundry output
-*CorecontractsApi* | [**AccountsGetNFTData**](docs/CorecontractsApi.md#accountsgetnftdata) | **Get** /v1/chains/{chainID}/core/accounts/nftdata/{nftID} | Get the NFT data by an ID
-*CorecontractsApi* | [**AccountsGetNativeTokenIDRegistry**](docs/CorecontractsApi.md#accountsgetnativetokenidregistry) | **Get** /v1/chains/{chainID}/core/accounts/token_registry | Get a list of all registries
-*CorecontractsApi* | [**AccountsGetTotalAssets**](docs/CorecontractsApi.md#accountsgettotalassets) | **Get** /v1/chains/{chainID}/core/accounts/total_assets | Get all stored assets
-*CorecontractsApi* | [**BlobsGetAllBlobs**](docs/CorecontractsApi.md#blobsgetallblobs) | **Get** /v1/chains/{chainID}/core/blobs | Get all stored blobs
-*CorecontractsApi* | [**BlobsGetBlobInfo**](docs/CorecontractsApi.md#blobsgetblobinfo) | **Get** /v1/chains/{chainID}/core/blobs/{blobHash} | Get all fields of a blob
-*CorecontractsApi* | [**BlobsGetBlobValue**](docs/CorecontractsApi.md#blobsgetblobvalue) | **Get** /v1/chains/{chainID}/core/blobs/{blobHash}/data/{fieldKey} | Get the value of the supplied field (key)
-*CorecontractsApi* | [**BlocklogGetBlockInfo**](docs/CorecontractsApi.md#blockloggetblockinfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
-*CorecontractsApi* | [**BlocklogGetControlAddresses**](docs/CorecontractsApi.md#blockloggetcontroladdresses) | **Get** /v1/chains/{chainID}/core/blocklog/controladdresses | Get the control addresses
-*CorecontractsApi* | [**BlocklogGetEventsOfBlock**](docs/CorecontractsApi.md#blockloggeteventsofblock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/{blockIndex} | Get events of a block
-*CorecontractsApi* | [**BlocklogGetEventsOfContract**](docs/CorecontractsApi.md#blockloggeteventsofcontract) | **Get** /v1/chains/{chainID}/core/blocklog/events/contract/{contractHname} | Get events of a contract
-*CorecontractsApi* | [**BlocklogGetEventsOfLatestBlock**](docs/CorecontractsApi.md#blockloggeteventsoflatestblock) | **Get** /v1/chains/{chainID}/core/blocklog/events/block/latest | Get events of the latest block
-*CorecontractsApi* | [**BlocklogGetEventsOfRequest**](docs/CorecontractsApi.md#blockloggeteventsofrequest) | **Get** /v1/chains/{chainID}/core/blocklog/events/request/{requestID} | Get events of a request
-*CorecontractsApi* | [**BlocklogGetLatestBlockInfo**](docs/CorecontractsApi.md#blockloggetlatestblockinfo) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest | Get the block info of the latest block
-*CorecontractsApi* | [**BlocklogGetRequestIDsForBlock**](docs/CorecontractsApi.md#blockloggetrequestidsforblock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
-*CorecontractsApi* | [**BlocklogGetRequestIDsForLatestBlock**](docs/CorecontractsApi.md#blockloggetrequestidsforlatestblock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
-*CorecontractsApi* | [**BlocklogGetRequestIsProcessed**](docs/CorecontractsApi.md#blockloggetrequestisprocessed) | **Get** /v1/chains/{chainID}/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
-*CorecontractsApi* | [**BlocklogGetRequestReceipt**](docs/CorecontractsApi.md#blockloggetrequestreceipt) | **Get** /v1/chains/{chainID}/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
-*CorecontractsApi* | [**BlocklogGetRequestReceiptsOfBlock**](docs/CorecontractsApi.md#blockloggetrequestreceiptsofblock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
-*CorecontractsApi* | [**BlocklogGetRequestReceiptsOfLatestBlock**](docs/CorecontractsApi.md#blockloggetrequestreceiptsoflatestblock) | **Get** /v1/chains/{chainID}/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
-*CorecontractsApi* | [**ErrorsGetErrorMessageFormat**](docs/CorecontractsApi.md#errorsgeterrormessageformat) | **Get** /v1/chains/{chainID}/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
-*CorecontractsApi* | [**GovernanceGetAllowedStateControllerAddresses**](docs/CorecontractsApi.md#governancegetallowedstatecontrolleraddresses) | **Get** /v1/chains/{chainID}/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
-*CorecontractsApi* | [**GovernanceGetChainInfo**](docs/CorecontractsApi.md#governancegetchaininfo) | **Get** /v1/chains/{chainID}/core/governance/chaininfo | Get the chain info
-*CorecontractsApi* | [**GovernanceGetChainOwner**](docs/CorecontractsApi.md#governancegetchainowner) | **Get** /v1/chains/{chainID}/core/governance/chainowner | Get the chain owner
+*ChainsApi* | [**ActivateChain**](docs/ChainsApi.md#activatechain) | **Post** /v1/chain/activate/{chainID} | Activate a chain
+*ChainsApi* | [**AddAccessNode**](docs/ChainsApi.md#addaccessnode) | **Put** /v1/chain/access-node/{peer} | Configure a trusted node to be an access node.
+*ChainsApi* | [**DeactivateChain**](docs/ChainsApi.md#deactivatechain) | **Post** /v1/chain/deactivate | Deactivate the chain
+*ChainsApi* | [**GetChainInfo**](docs/ChainsApi.md#getchaininfo) | **Get** /v1/chain | Get information about the chain
+*ChainsApi* | [**GetCommitteeInfo**](docs/ChainsApi.md#getcommitteeinfo) | **Get** /v1/chain/committee | Get information about the deployed committee
+*ChainsApi* | [**GetRequestIDFromEVMTransactionID**](docs/ChainsApi.md#getrequestidfromevmtransactionid) | **Get** /v1/chain/evm/tx/{txHash} | Get the ISC request ID for the given Ethereum transaction hash
+*ChainsApi* | [**GetStateValue**](docs/ChainsApi.md#getstatevalue) | **Get** /v1/chain/state/{stateKey} | Fetch the raw value associated with the given key in the chain state
+*ChainsApi* | [**RemoveAccessNode**](docs/ChainsApi.md#removeaccessnode) | **Delete** /v1/chain/access-node/{peer} | Remove an access node.
+*ChainsApi* | [**SetChainRecord**](docs/ChainsApi.md#setchainrecord) | **Post** /v1/chain/chainrecord | Sets the chain record.
+*ChainsApi* | [**V1ChainsChainIDEvmGet**](docs/ChainsApi.md#v1chainschainidevmget) | **Get** /v1/chain/evm | Ethereum JSON-RPC
+*ChainsApi* | [**V1ChainsChainIDEvmWsGet**](docs/ChainsApi.md#v1chainschainidevmwsget) | **Get** /v1/chain/evm/ws | Ethereum JSON-RPC (Websocket transport)
+*CorecontractsApi* | [**AccountsGetAccountBalance**](docs/CorecontractsApi.md#accountsgetaccountbalance) | **Get** /v1/chain/core/accounts/account/{agentID}/balance | Get all assets belonging to an account
+*CorecontractsApi* | [**AccountsGetAccountNonce**](docs/CorecontractsApi.md#accountsgetaccountnonce) | **Get** /v1/chain/core/accounts/account/{agentID}/nonce | Get the current nonce of an account
+*CorecontractsApi* | [**AccountsGetAccounts**](docs/CorecontractsApi.md#accountsgetaccounts) | **Get** /v1/chain/core/accounts | Get a list of all accounts
+*CorecontractsApi* | [**AccountsGetTotalAssets**](docs/CorecontractsApi.md#accountsgettotalassets) | **Get** /v1/chain/core/accounts/total_assets | Get all stored assets
+*CorecontractsApi* | [**BlocklogGetBlockInfo**](docs/CorecontractsApi.md#blockloggetblockinfo) | **Get** /v1/chain/core/blocklog/blocks/{blockIndex} | Get the block info of a certain block index
+*CorecontractsApi* | [**BlocklogGetControlAddresses**](docs/CorecontractsApi.md#blockloggetcontroladdresses) | **Get** /v1/chain/core/blocklog/controladdresses | Get the control addresses
+*CorecontractsApi* | [**BlocklogGetEventsOfBlock**](docs/CorecontractsApi.md#blockloggeteventsofblock) | **Get** /v1/chain/core/blocklog/events/block/{blockIndex} | Get events of a block
+*CorecontractsApi* | [**BlocklogGetEventsOfContract**](docs/CorecontractsApi.md#blockloggeteventsofcontract) | **Get** /v1/chain/core/blocklog/events/contract/{contractHname} | Get events of a contract
+*CorecontractsApi* | [**BlocklogGetEventsOfLatestBlock**](docs/CorecontractsApi.md#blockloggeteventsoflatestblock) | **Get** /v1/chain/core/blocklog/events/block/latest | Get events of the latest block
+*CorecontractsApi* | [**BlocklogGetEventsOfRequest**](docs/CorecontractsApi.md#blockloggeteventsofrequest) | **Get** /v1/chain/core/blocklog/events/request/{requestID} | Get events of a request
+*CorecontractsApi* | [**BlocklogGetLatestBlockInfo**](docs/CorecontractsApi.md#blockloggetlatestblockinfo) | **Get** /v1/chain/core/blocklog/blocks/latest | Get the block info of the latest block
+*CorecontractsApi* | [**BlocklogGetRequestIDsForBlock**](docs/CorecontractsApi.md#blockloggetrequestidsforblock) | **Get** /v1/chain/core/blocklog/blocks/{blockIndex}/requestids | Get the request ids for a certain block index
+*CorecontractsApi* | [**BlocklogGetRequestIDsForLatestBlock**](docs/CorecontractsApi.md#blockloggetrequestidsforlatestblock) | **Get** /v1/chain/core/blocklog/blocks/latest/requestids | Get the request ids for the latest block
+*CorecontractsApi* | [**BlocklogGetRequestIsProcessed**](docs/CorecontractsApi.md#blockloggetrequestisprocessed) | **Get** /v1/chain/core/blocklog/requests/{requestID}/is_processed | Get the request processing status
+*CorecontractsApi* | [**BlocklogGetRequestReceipt**](docs/CorecontractsApi.md#blockloggetrequestreceipt) | **Get** /v1/chain/core/blocklog/requests/{requestID} | Get the receipt of a certain request id
+*CorecontractsApi* | [**BlocklogGetRequestReceiptsOfBlock**](docs/CorecontractsApi.md#blockloggetrequestreceiptsofblock) | **Get** /v1/chain/core/blocklog/blocks/{blockIndex}/receipts | Get all receipts of a certain block
+*CorecontractsApi* | [**BlocklogGetRequestReceiptsOfLatestBlock**](docs/CorecontractsApi.md#blockloggetrequestreceiptsoflatestblock) | **Get** /v1/chain/core/blocklog/blocks/latest/receipts | Get all receipts of the latest block
+*CorecontractsApi* | [**ErrorsGetErrorMessageFormat**](docs/CorecontractsApi.md#errorsgeterrormessageformat) | **Get** /v1/chain/core/errors/{contractHname}/message/{errorID} | Get the error message format of a specific error id
+*CorecontractsApi* | [**GovernanceGetAllowedStateControllerAddresses**](docs/CorecontractsApi.md#governancegetallowedstatecontrolleraddresses) | **Get** /v1/chain/core/governance/allowedstatecontrollers | Get the allowed state controller addresses
+*CorecontractsApi* | [**GovernanceGetChainInfo**](docs/CorecontractsApi.md#governancegetchaininfo) | **Get** /v1/chain/core/governance/chaininfo | Get the chain info
+*CorecontractsApi* | [**GovernanceGetChainOwner**](docs/CorecontractsApi.md#governancegetchainowner) | **Get** /v1/chain/core/governance/chainowner | Get the chain owner
 *DefaultApi* | [**GetHealth**](docs/DefaultApi.md#gethealth) | **Get** /health | Returns 200 if the node is healthy.
 *DefaultApi* | [**V1WsGet**](docs/DefaultApi.md#v1wsget) | **Get** /v1/ws | The websocket connection service
 *MetricsApi* | [**GetChainMessageMetrics**](docs/MetricsApi.md#getchainmessagemetrics) | **Get** /v1/metrics/chain/{chainID}/messages | Get chain specific message metrics.
@@ -145,9 +135,9 @@ Class | Method | HTTP request | Description
 *NodeApi* | [**ShutdownNode**](docs/NodeApi.md#shutdownnode) | **Post** /v1/node/shutdown | Shut down the node
 *NodeApi* | [**TrustPeer**](docs/NodeApi.md#trustpeer) | **Post** /v1/node/peers/trusted | Trust a peering node
 *RequestsApi* | [**CallView**](docs/RequestsApi.md#callview) | **Post** /v1/requests/callview | Call a view function on a contract by Hname
-*RequestsApi* | [**GetReceipt**](docs/RequestsApi.md#getreceipt) | **Get** /v1/chains/{chainID}/receipts/{requestID} | Get a receipt from a request ID
+*RequestsApi* | [**GetReceipt**](docs/RequestsApi.md#getreceipt) | **Get** /v1/chain/receipts/{requestID} | Get a receipt from a request ID
 *RequestsApi* | [**OffLedger**](docs/RequestsApi.md#offledger) | **Post** /v1/requests/offledger | Post an off-ledger request
-*RequestsApi* | [**WaitForRequest**](docs/RequestsApi.md#waitforrequest) | **Get** /v1/chains/{chainID}/requests/{requestID}/wait | Wait until the given request has been processed by the node
+*RequestsApi* | [**WaitForRequest**](docs/RequestsApi.md#waitforrequest) | **Get** /v1/chain/requests/{requestID}/wait | Wait until the given request has been processed by the node
 *UsersApi* | [**AddUser**](docs/UsersApi.md#adduser) | **Post** /v1/users | Add a user
 *UsersApi* | [**ChangeUserPassword**](docs/UsersApi.md#changeuserpassword) | **Put** /v1/users/{username}/password | Change user password
 *UsersApi* | [**ChangeUserPermissions**](docs/UsersApi.md#changeuserpermissions) | **Put** /v1/users/{username}/permissions | Change user permissions
@@ -158,23 +148,11 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
- - [AccountFoundriesResponse](docs/AccountFoundriesResponse.md)
- - [AccountListResponse](docs/AccountListResponse.md)
- - [AccountNFTsResponse](docs/AccountNFTsResponse.md)
  - [AccountNonceResponse](docs/AccountNonceResponse.md)
  - [AddUserRequest](docs/AddUserRequest.md)
- - [Assets](docs/Assets.md)
  - [AssetsResponse](docs/AssetsResponse.md)
  - [AuthInfoModel](docs/AuthInfoModel.md)
- - [BaseToken](docs/BaseToken.md)
- - [Blob](docs/Blob.md)
- - [BlobInfoResponse](docs/BlobInfoResponse.md)
- - [BlobListResponse](docs/BlobListResponse.md)
- - [BlobValueResponse](docs/BlobValueResponse.md)
  - [BlockInfoResponse](docs/BlockInfoResponse.md)
- - [BlockReceiptError](docs/BlockReceiptError.md)
- - [BlockReceiptsResponse](docs/BlockReceiptsResponse.md)
- - [BurnLog](docs/BurnLog.md)
  - [BurnRecord](docs/BurnRecord.md)
  - [CallTarget](docs/CallTarget.md)
  - [ChainInfoResponse](docs/ChainInfoResponse.md)
@@ -190,60 +168,35 @@ Class | Method | HTTP request | Description
  - [DKSharesInfo](docs/DKSharesInfo.md)
  - [DKSharesPostRequest](docs/DKSharesPostRequest.md)
  - [ErrorMessageFormatResponse](docs/ErrorMessageFormatResponse.md)
- - [ErrorParameter](docs/ErrorParameter.md)
  - [EventsResponse](docs/EventsResponse.md)
  - [FeePolicy](docs/FeePolicy.md)
- - [FoundryOutputResponse](docs/FoundryOutputResponse.md)
  - [GovAllowedStateControllerAddressesResponse](docs/GovAllowedStateControllerAddressesResponse.md)
  - [GovChainInfoResponse](docs/GovChainInfoResponse.md)
  - [GovChainOwnerResponse](docs/GovChainOwnerResponse.md)
- - [InOutput](docs/InOutput.md)
- - [InOutputMetricItem](docs/InOutputMetricItem.md)
- - [InStateOutput](docs/InStateOutput.md)
- - [InStateOutputMetricItem](docs/InStateOutputMetricItem.md)
  - [InfoResponse](docs/InfoResponse.md)
- - [InterfaceMetricItem](docs/InterfaceMetricItem.md)
- - [Item](docs/Item.md)
- - [JSONDict](docs/JSONDict.md)
  - [L1Params](docs/L1Params.md)
  - [Limits](docs/Limits.md)
  - [LoginRequest](docs/LoginRequest.md)
  - [LoginResponse](docs/LoginResponse.md)
- - [MilestoneInfo](docs/MilestoneInfo.md)
- - [MilestoneMetricItem](docs/MilestoneMetricItem.md)
- - [NFTDataResponse](docs/NFTDataResponse.md)
- - [NativeToken](docs/NativeToken.md)
- - [NativeTokenIDRegistryResponse](docs/NativeTokenIDRegistryResponse.md)
  - [NodeMessageMetrics](docs/NodeMessageMetrics.md)
  - [NodeOwnerCertificateRequest](docs/NodeOwnerCertificateRequest.md)
  - [NodeOwnerCertificateResponse](docs/NodeOwnerCertificateResponse.md)
  - [OffLedgerRequest](docs/OffLedgerRequest.md)
  - [OnLedgerRequest](docs/OnLedgerRequest.md)
  - [OnLedgerRequestMetricItem](docs/OnLedgerRequestMetricItem.md)
- - [Output](docs/Output.md)
- - [OutputID](docs/OutputID.md)
  - [PeeringNodeIdentityResponse](docs/PeeringNodeIdentityResponse.md)
  - [PeeringNodeStatusResponse](docs/PeeringNodeStatusResponse.md)
  - [PeeringTrustRequest](docs/PeeringTrustRequest.md)
  - [ProtocolParameters](docs/ProtocolParameters.md)
  - [PublisherStateTransactionItem](docs/PublisherStateTransactionItem.md)
  - [Ratio32](docs/Ratio32.md)
- - [ReceiptError](docs/ReceiptError.md)
  - [ReceiptResponse](docs/ReceiptResponse.md)
- - [RentStructure](docs/RentStructure.md)
- - [RequestDetail](docs/RequestDetail.md)
- - [RequestIDResponse](docs/RequestIDResponse.md)
  - [RequestIDsResponse](docs/RequestIDsResponse.md)
  - [RequestProcessedResponse](docs/RequestProcessedResponse.md)
  - [RequestReceiptResponse](docs/RequestReceiptResponse.md)
  - [StateResponse](docs/StateResponse.md)
  - [StateTransaction](docs/StateTransaction.md)
- - [Transaction](docs/Transaction.md)
- - [TransactionIDMetricItem](docs/TransactionIDMetricItem.md)
  - [TransactionMetricItem](docs/TransactionMetricItem.md)
- - [TxInclusionStateMsg](docs/TxInclusionStateMsg.md)
- - [TxInclusionStateMsgMetricItem](docs/TxInclusionStateMsgMetricItem.md)
- - [UTXOInputMetricItem](docs/UTXOInputMetricItem.md)
  - [UpdateUserPasswordRequest](docs/UpdateUserPasswordRequest.md)
  - [UpdateUserPermissionsRequest](docs/UpdateUserPermissionsRequest.md)
  - [User](docs/User.md)

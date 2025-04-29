@@ -2,7 +2,6 @@ package corecontracts
 
 import (
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/webapi/common"
@@ -32,23 +31,10 @@ func GetAccountObjects(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	return accounts.ViewAccountObjects.DecodeOutput(ret)
 }
 
-func GetAccountFoundries(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]coin.Type, error) {
-	panic("minting on L2 is currently unsupported")
-}
-
 func GetAccountNonce(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (uint64, error) {
 	ret, err := common.CallView(ch, accounts.ViewGetAccountNonce.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
 		return 0, err
 	}
 	return accounts.ViewGetAccountNonce.DecodeOutput(ret)
-}
-
-func GetNativeTokenIDRegistry(ch chain.Chain, blockIndexOrTrieRoot string) ([]coin.Type, error) {
-	panic("TODO")
-	// ret, err := common.CallView(ch, accounts.ViewGetNativeTokenIDRegistry.Message(), blockIndexOrTrieRoot)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return accounts.ViewGetNativeTokenIDRegistry.DecodeOutput(ret)
 }
