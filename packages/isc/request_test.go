@@ -9,7 +9,6 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -103,24 +102,18 @@ func TestRequestDataSerialization(t *testing.T) {
 						ID:   *iotatest.RandomAddress(),
 						Size: 1,
 					},
-					Assets: iscmove.Assets{
-						Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 200},
-						Objects: iscmove.ObjectCollection{},
-					},
+					Assets: *iscmove.NewAssets(200),
 				},
 				Message: iscmove.Message{
 					Contract: uint32(isc.Hn("target_contract")),
 					Function: uint32(isc.Hn("entrypoint")),
 					Args:     [][]byte{},
 				},
-				Allowance: iscmove.Assets{
-					Coins:   iscmove.CoinBalances{iotajsonrpc.IotaCoinType: 100},
-					Objects: make(iscmove.ObjectCollection),
-				},
-				GasBudget: 1000,
+				AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(100)),
+				GasBudget:    1000,
 			},
 		}
-		req, err := isc.OnLedgerFromRequest(&onledgerReq, cryptolib.NewRandomAddress())
+		req, err := isc.OnLedgerFromMoveRequest(&onledgerReq, cryptolib.NewRandomAddress())
 		require.NoError(t, err)
 		bcs.TestCodec(t, isc.Request(req))
 		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {

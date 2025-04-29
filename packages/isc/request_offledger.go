@@ -88,8 +88,8 @@ func (req *OffLedgerRequestData) EVMCallMsg() *ethereum.CallMsg {
 }
 
 // Allowance from the sender's account to the target smart contract. Nil mean no Allowance
-func (req *OffLedgerRequestData) Allowance() *Assets {
-	return req.allowance
+func (req *OffLedgerRequestData) Allowance() (*Assets, error) {
+	return req.allowance, nil
 }
 
 // Assets is attached assets to the UTXO. Nil for off-ledger

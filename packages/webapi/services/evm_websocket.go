@@ -151,24 +151,24 @@ func newRateLimitedConn(conn net.Conn, logger log.Logger, r *activityRateLimiter
 
 func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 	if rlc.limiter == nil {
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	if rlc.limiter.Canceled() {
 		rlc.logger.LogWarnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	if !rlc.limiter.Allow() {
 		rlc.logger.LogWarnf("[EVM WS Conn/Read] rate limit exceeded for ip:[%v], lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	numBytes, err := rlc.Conn.Read(b)
 
 	if rlc.limiter.Canceled() {
 		rlc.logger.LogWarnf("[EVM WS Conn/Read] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	return numBytes, err
@@ -176,19 +176,19 @@ func (rlc *rateLimitedConn) Read(b []byte) (int, error) {
 
 func (rlc *rateLimitedConn) Write(b []byte) (int, error) {
 	if rlc.limiter == nil {
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	if rlc.limiter.Canceled() {
 		rlc.logger.LogWarnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	numBytes, err := rlc.Conn.Write(b)
 
 	if rlc.limiter.Canceled() {
 		rlc.logger.LogWarnf("[EVM WS Conn/Write] connections for ip:[%v] canceled, lastActivity:[%v]", rlc.realIP, rlc.limiter.LastActivity())
-		return 0, rlc.Conn.Close()
+		return 0, rlc.Close()
 	}
 
 	return numBytes, err

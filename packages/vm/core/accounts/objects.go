@@ -1,3 +1,4 @@
+// Package accounts implements the accounts core contract which maintains ledger state for the chain
 package accounts
 
 import (
@@ -39,7 +40,7 @@ func (s *StateReader) hasObject(agentID isc.AgentID, objectID iotago.ObjectID) b
 func (s *StateWriter) removeObjectOwner(objectID iotago.ObjectID, agentID isc.AgentID) (iotago.ObjectType, bool) {
 	// remove the mapping of ObjectID => owner
 	objectMap := s.objectToOwnerMap()
-	if bytes.Compare(objectMap.GetAt(objectID[:]), agentID.Bytes()) != 0 {
+	if !bytes.Equal(objectMap.GetAt(objectID[:]), agentID.Bytes()) {
 		return iotago.ObjectType{}, false
 	}
 

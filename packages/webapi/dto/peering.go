@@ -1,3 +1,4 @@
+// Package dto implements the webapi dto
 package dto
 
 import "github.com/iotaledger/wasp/packages/cryptolib"

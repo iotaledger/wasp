@@ -22,9 +22,6 @@ const SignatureSize = ed25519.SignatureSize
 
 // Signature defines an Ed25519 signature.
 type Signature struct {
-	// The signature schema (0 == ED25519)
-	signatureScheme byte `bcs:"export"`
-
 	// The public key used to verify the given signature.
 	publicKey *PublicKey `bcs:"optional,export"`
 	// The signature.

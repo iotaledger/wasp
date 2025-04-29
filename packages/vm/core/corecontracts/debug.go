@@ -1,3 +1,8 @@
+// Package corecontracts defines and manages the core smart contracts that are built into the
+// IOTA Wasp node. These contracts provide essential system functionality such as chain governance,
+// account management, block logging, error handling, and EVM compatibility.
+// The package maintains a registry of core contracts and provides utilities for accessing
+// and verifying these contracts across the IOTA Smart Contract platform.
 package corecontracts
 
 import (
@@ -11,7 +16,7 @@ func init() {
 	// printWellKnownHnames()
 }
 
-// for debugging
+// PrintWellKnownHnames prints all well-known contract hnames and their corresponding names in a sorted manner.
 func PrintWellKnownHnames() {
 	fmt.Printf("--------------- well known hnames ------------------\n")
 	hnames := make([]isc.Hname, 0)

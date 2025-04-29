@@ -267,13 +267,7 @@ func (env *Solo) WithWaitForNextVersion(currentRef *iotago.ObjectRef, cb func())
 	return env.L1Client().WaitForNextVersionForTesting(context.Background(), 30*time.Second, env.logger, currentRef, cb)
 }
 
-func (env *Solo) deployChain(
-	chainAdmin *cryptolib.KeyPair,
-	initCommonAccountBaseTokens coin.Value,
-	name string,
-	evmChainID uint16,
-	blockKeepAmount int32,
-) (chainData, *isc.StateAnchor) {
+func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBaseTokens coin.Value, name string, evmChainID uint16, blockKeepAmount int32) chainData {
 	env.logger.LogDebugf("deploying new chain '%s'", name)
 
 	if chainAdmin == nil {
@@ -371,7 +365,7 @@ func (env *Solo) deployChain(
 		ChainAdmin:      chainAdmin,
 		db:              db,
 		migrationScheme: allmigrations.DefaultScheme,
-	}, nil
+	}
 }
 
 // NewChainExt returns also origin and init transactions. Used for core testing
@@ -395,7 +389,7 @@ func (env *Solo) NewChainExt(
 	evmChainID uint16,
 	blockKeepAmount int32,
 ) (*Chain, *isc.StateAnchor) {
-	chData, anchorRef := env.deployChain(
+	chData := env.deployChain(
 		chainOriginator,
 		initCommonAccountBaseTokens,
 		name,
@@ -408,7 +402,7 @@ func (env *Solo) NewChainExt(
 	ch := env.addChain(chData)
 
 	ch.log.LogInfof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
-	return ch, anchorRef
+	return ch, nil
 }
 
 func (env *Solo) addChain(chData chainData) *Chain {
@@ -506,7 +500,7 @@ func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
 	})
 	require.NoError(ch.Env.T, err)
 	return lo.Map(reqs, func(req *iscmove.RefWithObject[iscmove.Request], _ int) isc.Request {
-		r, err := isc.OnLedgerFromRequest(req, ch.ChainID.AsAddress())
+		r, err := isc.OnLedgerFromMoveRequest(req, ch.ChainID.AsAddress())
 		require.NoError(ch.Env.T, err)
 		return r
 	})

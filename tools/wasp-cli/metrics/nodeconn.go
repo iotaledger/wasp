@@ -73,6 +73,6 @@ func makeMessagesMetricsTableRow(name string, isIn bool, ncmm *apiclient.Interfa
 	if len(res[4]) > maxMessageLen {
 		res[4] = res[4][:maxMessageLen]
 	}
-	res[4] = strings.Replace(res[4], "\n", " ", -1)
+	res[4] = strings.ReplaceAll(res[4], "\n", " ")
 	return res
 }

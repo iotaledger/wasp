@@ -69,12 +69,12 @@ func (reqctx *requestContext) getCallContext() *callContext {
 	return reqctx.callStack[len(reqctx.callStack)-1]
 }
 
-func (vm *vmContext) accountsStateWriterFromChainState(chainState kv.KVStore) *accounts.StateWriter {
-	return vm.accountsStateWriter(accounts.Contract.StateSubrealm(chainState))
+func (vmctx *vmContext) accountsStateWriterFromChainState(chainState kv.KVStore) *accounts.StateWriter {
+	return vmctx.accountsStateWriter(accounts.Contract.StateSubrealm(chainState))
 }
 
-func (vm *vmContext) accountsStateWriter(contractState kv.KVStore) *accounts.StateWriter {
-	return accounts.NewStateWriter(vm.schemaVersion, contractState)
+func (vmctx *vmContext) accountsStateWriter(contractState kv.KVStore) *accounts.StateWriter {
+	return accounts.NewStateWriter(vmctx.schemaVersion, contractState)
 }
 
 func (reqctx *requestContext) accountsStateWriter(gasBurn bool) *accounts.StateWriter {

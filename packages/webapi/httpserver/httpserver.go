@@ -1,6 +1,5 @@
-// An almost 1:1 copy (few removals) from inx-app https://github.com/iotaledger/inx-app/blob/428f260abc503227439635b4a9aea5b12b0317c2/pkg/httpserver/http_server.go
+// Package httpserver is an almost 1:1 copy (few removals) from inx-app https://github.com/iotaledger/inx-app/blob/428f260abc503227439635b4a9aea5b12b0317c2/pkg/httpserver/http_server.go
 // To get around the additional dependencies
-
 package httpserver
 
 import (

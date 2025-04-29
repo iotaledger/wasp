@@ -1,3 +1,4 @@
+// Package viewcontext implements a lighter version of the vm context used for view calls
 package viewcontext
 
 import (
@@ -200,7 +201,7 @@ func (ctx *ViewContext) Panicf(format string, params ...any) {
 	ctx.log.LogPanicf(format, params...)
 }
 
-// only for debugging
+// GasBurnLog returns the burnlog from ViewContext. Note: only for debugging
 func (ctx *ViewContext) GasBurnLog() *gas.BurnLog {
 	return ctx.gasBurnLog
 }

@@ -19,9 +19,9 @@ func TokenIDFromString(s string) []byte {
 	return ret
 }
 
-// TODO "send-funds" and "chain deposit" pass tokens in different way.
-// When there are multiple tokens, one command separates with comma, one doesn't
 func ArgsToFungibleTokensStr(args []string) []string {
+	// TODO: "send-funds" and "chain deposit" pass tokens in different way.
+	// When there are multiple tokens, one command separates with comma, one doesn't
 	return strings.Split(strings.Join(args, ""), ",")
 }
 

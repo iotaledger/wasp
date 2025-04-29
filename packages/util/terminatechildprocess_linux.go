@@ -1,5 +1,7 @@
 //go:build linux
 
+// Package util provides general utility functions and structures,
+// including operating system specific utilities for process management.
 package util
 
 import (
