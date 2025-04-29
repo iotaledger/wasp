@@ -44,7 +44,6 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func(
 	ref, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	log.Check(err)
 	log.Printf("Request ID: %s\n", ref.ObjectID.String())
-	log.Printf("TX Digest: %s\n", tx.Digest)
 
 	if len(forceWait) > 0 {
 		log.Printf("Waiting for tx requests to be processed...\n")
@@ -57,6 +56,8 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func(
 		_, err2 := apiextensions.APIWaitUntilAllRequestsProcessed(ctx, client, tx, true, timeout)
 		log.Check(err2)
 	}
+
+	log.Printf("osted TX: %s\n", tx.Digest)
 
 	return tx
 }
