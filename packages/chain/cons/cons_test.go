@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	hivelog "github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -732,12 +732,12 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance: *iscmove.NewAssets(10000),
-			GasBudget: 100000,
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(10000)),
+			GasBudget:    100000,
 		},
 		Owner: sender.AsIotaAddress(),
 	}
-	onReq, err := isc.OnLedgerFromRequest(&req, sender)
+	onReq, err := isc.OnLedgerFromMoveRequest(&req, sender)
 	if err != nil {
 		panic(err)
 	}

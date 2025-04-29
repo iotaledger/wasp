@@ -125,7 +125,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance:        iscmove.NewAssets(100_000_000),
+			AllowanceBCS:     nil,
 			OnchainGasBudget: 1000,
 			GasPrice:         iotaclient.DefaultGasPrice,
 			GasBudget:        iotaclient.DefaultGasBudget,
@@ -142,7 +142,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 	if err != nil {
 		return nil, err
 	}
-	return isc.OnLedgerFromRequest(req, tcl.chainID.AsAddress())
+	return isc.OnLedgerFromMoveRequest(req, tcl.chainID.AsAddress())
 }
 
 func (tcl *TestChainLedger) RunOnChainStateTransition(anchor *isc.StateAnchor, pt iotago.ProgrammableTransaction) (*isc.StateAnchor, error) {

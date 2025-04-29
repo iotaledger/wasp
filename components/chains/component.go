@@ -138,6 +138,7 @@ func provide(c *dig.Container) error {
 					MaxTimedInPool:             ParamsChains.MempoolMaxTimedInPool,
 					MaxOnledgerToPropose:       ParamsChains.MempoolMaxOnledgerToPropose,
 					MaxOffledgerToPropose:      ParamsChains.MempoolMaxOffledgerToPropose,
+					MaxOffledgerPerAccount:     ParamsChains.MempoolMaxOffledgerPerAccount,
 				},
 				ParamsChains.BroadcastInterval,
 				shutdown.NewCoordinator("chains", Component.Logger.NewChildLogger("Shutdown")),

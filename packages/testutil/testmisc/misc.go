@@ -4,13 +4,24 @@ package testmisc
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/iotaledger/wasp/packages/isc"
 )
+
+// GetTimeout returns a Duration that is three times longer than the localTimeout if the tests are being run via GitHub
+// Actions.
+func GetTimeout(localTimeout time.Duration) time.Duration {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		localTimeout *= 3
+	}
+	return localTimeout
+}
 
 func RequireErrorToBe(t *testing.T, err error, target interface{}) {
 	if err == nil {

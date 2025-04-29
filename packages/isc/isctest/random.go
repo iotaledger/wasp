@@ -5,6 +5,7 @@ package isctest
 import (
 	"time"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -123,8 +124,8 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 				Function: 456,
 				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
 			},
-			Allowance: *iscmove.NewAssets(111).
-				SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"), 222),
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(111).
+				SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"), 222)),
 			GasBudget: 1000,
 		},
 	}
@@ -132,7 +133,7 @@ func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
 
 func RandomOnLedgerRequest() isc.OnLedgerRequest {
 	req := RandomRequestWithRef()
-	onReq, err := isc.OnLedgerFromRequest(req, cryptolib.NewRandomAddress())
+	onReq, err := isc.OnLedgerFromMoveRequest(req, cryptolib.NewRandomAddress())
 	if err != nil {
 		panic(err)
 	}
@@ -158,11 +159,11 @@ func RandomOnLedgerDepositRequest(senders ...*cryptolib.Address) isc.OnLedgerReq
 				Contract: uint32(isc.Hn("accounts")),
 				Function: uint32(isc.Hn("deposit")),
 			},
-			Allowance: *iscmove.NewAssets(10000),
-			GasBudget: 100000,
+			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(10000)),
+			GasBudget:    100000,
 		},
 	}
-	onReq, err := isc.OnLedgerFromRequest(&req, sender)
+	onReq, err := isc.OnLedgerFromMoveRequest(&req, sender)
 	if err != nil {
 		panic(err)
 	}
