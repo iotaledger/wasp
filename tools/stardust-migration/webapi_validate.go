@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
+	"sync/atomic"
 
 	"github.com/stretchr/testify/require"
 	cmd "github.com/urfave/cli/v2"
@@ -70,7 +72,7 @@ func validateWebAPI(c *cmd.Context) error {
 	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
 	accountValidation := webapi_validation.NewAccountValidation(testContext)
 	governanceValidation := webapi_validation.NewGovernanceValidation(testContext)
-
+	evmValidation := webapi_validation.NewEvmValidation(stardustEndPoint, rebasedEndpoint, testContext)
 	latestBlock, _, err := rClient.CorecontractsAPI.BlocklogGetLatestBlockInfo(ctx).Execute()
 	require.NoError(base.T, err)
 
@@ -80,6 +82,7 @@ func validateWebAPI(c *cmd.Context) error {
 		if i%100 == 0 {
 			fmt.Printf("StateIndex: %d \n", i)
 		}
+
 		chainValidation.Validate(i)
 		coreBlockValidation.Validate(i)
 		accountValidation.ValidateAccountBalances(i)
@@ -88,6 +91,34 @@ func validateWebAPI(c *cmd.Context) error {
 		accountValidation.ValidateTotalAssets(i)
 		governanceValidation.ValidateGovernance(i)
 	}
+
+	evmResults, err := os.Create("evm_validation_results.log")
+	if err != nil {
+		return fmt.Errorf("failed to create evm_validation_results file: %v", err)
+	}
+	defer evmResults.Close()
+
+	lastNBlocks := 50000
+	blockCount := atomic.Int64{}
+	sem := make(chan struct{}, 20)
+	wg := sync.WaitGroup{}
+	wg.Add(lastNBlocks)
+	for i := uint32(latestBlock.BlockIndex - uint32(lastNBlocks) + 1); i <= latestBlock.BlockIndex; i++ {
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}
+			err := evmValidation.ValidateEvm(uint64(i))
+			if err != nil {
+				evmResults.WriteString(fmt.Sprintf("block %d: %v\n", i, err))
+			}
+			blockCount.Add(1)
+			fmt.Printf("processed %d blocks\r", blockCount.Load())
+			<-sem
+		}()
+	}
+
+	wg.Wait()
+	fmt.Printf("processed %d evm blocks\n", blockCount.Load())
 
 	return nil
 }

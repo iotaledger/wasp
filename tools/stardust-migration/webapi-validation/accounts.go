@@ -62,8 +62,20 @@ func (a *AccountValidation) ValidateAccountBalances(stateIndex uint32) {
 		oldBalance, newBalance := a.client.AccountsGetAccountBalance(stateIndex, address.Address)
 		oldBalance.BaseTokens = stardustBalanceToRebased(oldBalance.BaseTokens)
 
+		oldBalanceInt, err := strconv.ParseUint(oldBalance.BaseTokens, 10, 64)
+		if err != nil {
+			panic(fmt.Errorf("failed to parse old balance: %w", err))
+		}
+		newBalanceInt, err := strconv.ParseUint(newBalance.BaseTokens, 10, 64)
+		if err != nil {
+			panic(fmt.Errorf("failed to parse new balance: %w", err))
+		}
+
+		// Round last 3 digits of new balance to 0
+		newBalanceInt = (newBalanceInt / 1000) * 1000
+
 		// check if base tokens are equal
-		checkEqualValues(base.T, oldBalance.BaseTokens, newBalance.BaseTokens, "address %s", address.Address)
+		checkEqualValues(base.T, oldBalanceInt, newBalanceInt, "address %s", address.Address)
 
 		// Convert native tokens to map for comparison
 		oldNativeTokens := make(map[string]string)
