@@ -123,6 +123,7 @@ type Settings struct {
 	MaxTimedInPool             int
 	MaxOnledgerToPropose       int // (including timed-requests)
 	MaxOffledgerToPropose      int
+	MaxOffledgerPerAccount     int
 }
 
 // This implementation tracks single branch of the chain only. I.e. all the consensus
@@ -228,7 +229,7 @@ func New(
 		chainID:                        chainID,
 		tangleTime:                     time.Time{},
 		onLedgerPool:                   NewTypedPool[isc.OnLedgerRequest](settings.MaxOnledgerInPool, waitReq, metrics.SetOnLedgerPoolSize, metrics.SetOnLedgerReqTime, log.NewChildLogger("ONL")),
-		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.NewChildLogger("OFF")),
+		offLedgerPool:                  NewOffledgerPool(settings.MaxOffledgerInPool, settings.MaxOffledgerPerAccount, waitReq, metrics.SetOffLedgerPoolSize, metrics.SetOffLedgerReqTime, log.NewChildLogger("OFF")),
 		chainHeadAnchor:                nil,
 		serverNodesUpdatedPipe:         pipe.NewInfinitePipe[*reqServerNodesUpdated](),
 		serverNodes:                    []*cryptolib.PublicKey{},
@@ -587,12 +588,12 @@ func (mpi *mempoolImpl) handleConsensusProposal(recv *reqConsensusProposal) {
 func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.RequestRef {
 	//
 	// The case for matching ChainHeadAnchor and request BaseAO
-	reqRefs := []*isc.RequestRef{}
+	onLedgerReqs := []*isc.RequestRef{}
 	if !mpi.tangleTime.IsZero() { // Wait for tangle-time to process the on ledger requests.
 		mpi.onLedgerPool.Iterate(func(e *typedPoolEntry[isc.OnLedgerRequest]) bool {
-			reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
+			onLedgerReqs = append(onLedgerReqs, isc.RequestRefFromRequest(e.req))
 			e.proposedFor = append(e.proposedFor, consensusID)
-			return len(reqRefs) < mpi.settings.MaxOnledgerToPropose
+			return len(onLedgerReqs) < mpi.settings.MaxOnledgerToPropose
 		})
 	}
 
@@ -601,8 +602,8 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 	// stop iterating when either: got MaxOffledgerToPropose, or no requests were added during last iteration (there are gaps in nonces)
 	accNonces := make(map[string]uint64)                             // cache of account nonces so we don't propose gaps
 	orderedList := slices.Clone(mpi.offLedgerPool.orderedByGasPrice) // clone the ordered list of references to requests, so we can alter it safely
+	offLedgerReqs := []*isc.RequestRef{}
 	for {
-		added := 0
 		addedThisCycle := false
 		for i, e := range orderedList {
 			if e == nil {
@@ -611,7 +612,7 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 			//
 			// drop tx with expired TTL
 			if time.Since(e.ts) > mpi.settings.TTL { // stop proposing after TTL
-				if !lo.Some(mpi.consensusInstances, e.proposedFor) {
+				if !e.proposedForAny(mpi.consensusInstances) {
 					// request not used in active consensus anymore, remove it
 					mpi.log.LogDebugf("refsToPropose, request TTL expired, removing: %s", e.req.ID().String())
 					mpi.offLedgerPool.Remove(e.req)
@@ -646,17 +647,16 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 			if reqNonce == accountNonce {
 				// expected nonce, add it to the list to propose
 				mpi.log.LogDebugf("refsToPropose, account: %s, proposing reqID %s with nonce: %d", reqAccount, e.req.ID().String(), e.req.Nonce())
-				reqRefs = append(reqRefs, isc.RequestRefFromRequest(e.req))
-				e.proposedFor = append(e.proposedFor, consensusID)
+				offLedgerReqs = append(offLedgerReqs, isc.RequestRefFromRequest(e.req))
+				e.markProposed(consensusID)
 				addedThisCycle = true
-				added++
 				accountNonce++ // increment the account nonce to match the next valid request
 				accNonces[reqAccountKey] = accountNonce
 				// delete from this list
 				orderedList[i] = nil
 			}
 
-			if added >= mpi.settings.MaxOffledgerToPropose {
+			if len(offLedgerReqs) >= mpi.settings.MaxOffledgerToPropose {
 				break // got enough requests
 			}
 
@@ -665,12 +665,12 @@ func (mpi *mempoolImpl) refsToPropose(consensusID consGR.ConsensusID) []*isc.Req
 				continue // skip request
 			}
 		}
-		if !addedThisCycle || (added >= mpi.settings.MaxOffledgerToPropose) {
+		if !addedThisCycle || len(offLedgerReqs) >= mpi.settings.MaxOffledgerToPropose {
 			break
 		}
 	}
 
-	return reqRefs
+	return slices.Concat(onLedgerReqs, offLedgerReqs)
 }
 
 func (mpi *mempoolImpl) handleConsensusProposalForChainHead(recv *reqConsensusProposal) {
@@ -910,7 +910,7 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 func (mpi *mempoolImpl) handleForceCleanMempool() {
 	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
 		for _, e := range entries {
-			if time.Since(e.ts) > mpi.settings.TTL && !lo.Some(mpi.consensusInstances, e.proposedFor) {
+			if time.Since(e.ts) > mpi.settings.TTL && !e.proposedForAny(mpi.consensusInstances) {
 				mpi.log.LogDebugf("handleForceCleanMempool, request TTL expired, removing: %s", e.req.ID().String())
 				mpi.offLedgerPool.Remove(e.req)
 			}

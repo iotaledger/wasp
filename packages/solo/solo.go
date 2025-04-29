@@ -500,7 +500,7 @@ func (ch *Chain) collateBatch(maxRequestsInBlock int) []isc.Request {
 	})
 	require.NoError(ch.Env.T, err)
 	return lo.Map(reqs, func(req *iscmove.RefWithObject[iscmove.Request], _ int) isc.Request {
-		r, err := isc.OnLedgerFromRequest(req, ch.ChainID.AsAddress())
+		r, err := isc.OnLedgerFromMoveRequest(req, ch.ChainID.AsAddress())
 		require.NoError(ch.Env.T, err)
 		return r
 	})

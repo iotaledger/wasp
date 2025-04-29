@@ -7,7 +7,7 @@ import (
 
 type KeySchemeFlag byte
 
-var KeySchemeFlagDefault = KeySchemeFlagIotaEd25519
+var KeySchemeFlagDefault = KeySchemeFlagEd25519
 
 const (
 	KeySchemeFlagEd25519 KeySchemeFlag = iota
@@ -17,8 +17,7 @@ const (
 	KeySchemeFlagBLS12381
 	KeySchemeFlagZkLoginAuthenticator
 
-	KeySchemeFlagIotaEd25519 KeySchemeFlag = math.MaxUint8 - 1 // special case for iotago ed25519
-	KeySchemeFlagError                     = math.MaxUint8
+	KeySchemeFlagError = math.MaxUint8
 )
 
 func (k KeySchemeFlag) Byte() byte {

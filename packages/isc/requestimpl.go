@@ -158,28 +158,14 @@ func (rid RequestID) Short() string {
 type RequestMetadata struct {
 	SenderContract ContractIdentity `json:"senderContract"`
 	Message        Message          `json:"message"`
-	// Allowance intended to the target contract to take. Nil means zero allowance
-	Allowance *Assets `json:"allowance"`
+	// AllowanceBCS is either empty or a BCS-encoded iscmove.Allowance.
+	AllowanceBCS []byte `json:"allowanceBcs"`
 	// gas budget
 	GasBudget uint64 `json:"gasBudget"`
 }
 
 func RequestMetadataFromBytes(data []byte) (*RequestMetadata, error) {
 	return bcs.Unmarshal[*RequestMetadata](data)
-}
-
-// returns nil if nil pointer receiver is cloned
-func (meta *RequestMetadata) Clone() *RequestMetadata {
-	if meta == nil {
-		return nil
-	}
-
-	return &RequestMetadata{
-		SenderContract: meta.SenderContract,
-		Message:        meta.Message.Clone(),
-		Allowance:      meta.Allowance.Clone(),
-		GasBudget:      meta.GasBudget,
-	}
 }
 
 func (meta *RequestMetadata) Bytes() []byte {
