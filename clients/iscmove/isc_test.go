@@ -56,9 +56,9 @@ func TestUnmarshalBCS(t *testing.T) {
 			},
 		},
 		Message: *iscmovetest.RandomMessage(),
-		Allowance: *iscmove.NewAssets(0).
+		Allowance: bcs.MustMarshal(iscmove.NewAssets(0).
 			SetCoin(iotajsonrpc.IotaCoinType, 100).
-			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A")),
+			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A"))),
 		GasBudget: 100,
 	}
 	b, err := bcs.Marshal(&req)
@@ -68,26 +68,4 @@ func TestUnmarshalBCS(t *testing.T) {
 
 	err = iotaclient.UnmarshalBCS(b, &targetReq)
 	require.Nil(t, err)
-}
-
-func TestUnmarshalInvalidRequestBCS(t *testing.T) {
-	req := iscmoveclient.MoveRequest{
-		ID:     *iotatest.RandomAddress(),
-		Sender: cryptolib.NewAddressFromIota(iotatest.RandomAddress()),
-		AssetsBag: iscmove.Referent[iscmove.AssetsBagWithBalances]{
-			ID: *iotatest.RandomAddress(),
-			Value: &iscmove.AssetsBagWithBalances{
-				AssetsBag: iscmovetest.RandomAssetsBag(),
-				Assets:    *iscmove.NewEmptyAssets(),
-			},
-		},
-		Message: *iscmovetest.RandomMessage(),
-		Allowance: *iscmove.NewAssets(0).
-			SetCoin("WRONG_TYPE", 100).
-			AddObject(iotago.ObjectID{}, iotago.MustTypeFromString("0x1::a::A")),
-		GasBudget: 100,
-	}
-	_, err := bcs.Marshal(&req)
-	require.Error(t, err)
-	require.ErrorContains(t, err, "encoding")
 }
