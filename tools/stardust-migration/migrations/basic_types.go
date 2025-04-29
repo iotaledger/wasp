@@ -105,16 +105,64 @@ func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nt::NT%v", h[:66], h[66:])))
 }
 
-func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
-	return parameters.IotaCoinInfo{
-		CoinType:    coin.BaseTokenType,
+// Taken from here: https://explorer.iota.org/mainnet/addr/iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5?tab=NativeTokens
+var knownCoinInfos = map[string]parameters.IotaCoinInfo{
+	"0x08b4db42a2f13195b19c0f8b16e1928b297f677d7678f3121acb6524f8e8f8b21e0100000000": {
+		Name:        "TUDITI",
+		Symbol:      "TUD",
+		Decimals:    1,
+		TotalSupply: 1234,
+	},
+	"0x08971dc160d5ae8c457f7eddc15a39035b6190130b4dbb5663550795575ae19db50100000000": {
+		Name:        "Nicole Coin",
+		Symbol:      "NICO",
+		Decimals:    18,
+		TotalSupply: math.MaxUint64 - 1,
+	},
+	"0x08c7c5eac5ac0ffb8dc0f1f555d8150e45f220547a7ec02c43d3dc43c95a2888580200000000": {
+		Name:        "SDV",
+		Symbol:      "SDV",
+		Decimals:    18,
+		Description: "SDV token",
+		IconURL:     "https://sdvconsulting.it/wp-content/uploads/2023/10/Logo-chiaro-quadrato-1.jpg",
+		TotalSupply: 100000,
+	},
+	"0x08fc7819ec252ade5d3e51beee9b28a156073d9c4a1d30ba2e3f6720036abdb6430100000000": {
+		Name:        "House Token",
+		Symbol:      "HOUSE",
 		Decimals:    6,
-		Name:        "DUMMY",
-		Symbol:      "DUMMY",
-		Description: "DUMMY",
-		IconURL:     "DUMMY",
-		TotalSupply: 123456,
+		Description: "The House token represents everyone that is building and supporting the IOTA eco system.We have built the first quality NFT houses on soonaverse (IOTA).\n\nBenefits holding  $house tokens:\n\n🏠Metaverse game\n🏠Staking your iotahouse nft's to earn passive income\n🏠Buying real estate in the future with your $HOUSE tokens. \n\n\n\"The global real estate market size was valued at USD 3.69 trillion in 2021 and is expected to expand at a compound annual growth rate (CAGR) of 5.2% from 2022 to 2030.\" You will be able to buy with crypto  real estate and is happening already. We want to be the first feeless  leader where you can buy with your $House tokens  real estate.\n\n\n\n",
+		IconURL:     "ipfs://bafkreif5leoegqkdu4564fpg3vm6dhfwhfl4ohx2qhso6y7wdi754rcrhy",
+		TotalSupply: 1000000000000000,
+	},
+	"0x083c55be0f034673cef16a7553f42a7928d998ccc1e970968ea0965608de2c6a440100000000": {
+		Name:        "Raguguys",
+		Symbol:      "RDG",
+		Decimals:    0,
+		IconURL:     "https://gurutom.github.io/raguguys/logo512.png",
+		TotalSupply: 10000000000,
+	},
+	"0x084fbbb31eb49ae1c2416fdd97d675d94b280cbd88ebf0c13c93a4f6f01cba5fdf0100000000": {
+		Name:        "Ape token",
+		Symbol:      "APE",
+		Decimals:    6,
+		Description: "The $Ape token is created to  give everyone passive income by staking it or our NFT collection\nBuying our $Ape token will have the following benefits:\n✅$Ape tokens (will  give you a free upgraded NFT to play in the metaverse/game) \n✅Unlocking the metaverse/game\n✅Play to earn game. Earning $ape tokens by  playing game competition with a score board.\n✅Being an OG hodler on our telegram/discord\n✅Representing womenDAO (i.e. educating more women to the crypto and NFT market , since we've done a research that crypto/NFT world  is male dominated. \n\nTo make sure we get the best trust from the community and being fair,we recommend everyone to check our up-to-date roadmap on our website or our Twitter page.\n\nWe hope we can get the best support from our lovely $ape community and everyone that likes our vision. We've a strong team and dedication to bring this project beyond the moon.\n\nAnd like always, it's not always about the product , but how much utility  you'll bring in the long-term to your community.",
+		IconURL:     "ipfs://bafkreihtdy5o5ck6owan6iw26dbootexfloih6ecs3oydxeteiabfgtdju",
+		TotalSupply: 100000000000000,
+	},
+}
+
+func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
+	coinInfo, known := knownCoinInfos[tokenID.ToHex()]
+	if !known {
+		panic(fmt.Sprintf("Unknown token ID: %v", tokenID.ToHex()))
 	}
+
+	if coinInfo.CoinType.String() == "" {
+		coinInfo.CoinType = OldNativeTokenIDtoNewCoinType(tokenID)
+	}
+
+	return coinInfo
 }
 
 func OldNativeTokenBalanceToNewCoinValue(oldNativeTokenAmount *big.Int) coin.Value {
