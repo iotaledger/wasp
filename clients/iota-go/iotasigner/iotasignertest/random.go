@@ -14,7 +14,7 @@ func RandomSigner() iotasigner.Signer {
 	if err != nil {
 		panic(err)
 	}
-	return iotasigner.NewSigner(b, iotasigner.KeySchemeFlagIotaEd25519)
+	return iotasigner.NewSigner(b, iotasigner.KeySchemeFlagDefault)
 }
 
 func RandomSignedTransaction(signers ...iotasigner.Signer) iotasigner.SignedTransaction {

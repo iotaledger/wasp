@@ -191,7 +191,7 @@ func (c *Index) TxByBlockHashAndIndex(blockHash common.Hash, txIndex uint64) (tx
 		return nil, 0
 	}
 	txs := block.Transactions()
-	if txIndex > uint64(len(txs)) {
+	if txIndex >= uint64(len(txs)) {
 		return nil, 0
 	}
 	return txs[txIndex], block.NumberU64()
@@ -213,7 +213,7 @@ func (c *Index) TxByBlockNumberAndIndex(blockNumber *big.Int, txIndex uint64) (t
 		return nil, common.Hash{}
 	}
 	txs := block.Transactions()
-	if txIndex > uint64(len(txs)) {
+	if txIndex >= uint64(len(txs)) {
 		return nil, common.Hash{}
 	}
 	return txs[txIndex], block.Hash()

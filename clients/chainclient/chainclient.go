@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/clients/apiextensions"
@@ -128,13 +129,12 @@ func (c *Client) postSingleRequest(
 		Function: uint32(iscmsg.Target.EntryPoint),
 		Args:     iscmsg.Params,
 	}
-	allowances := iscmove.NewAssets(0)
+	var allowanceBCS []byte
 	if params.Allowance != nil {
-		for coinType, coinBalance := range params.Allowance.Coins.Iterate() {
-			allowances.SetCoin(iotajsonrpc.CoinType(coinType.String()), iotajsonrpc.CoinValue(coinBalance.Uint64()))
-		}
-		for obj := range params.Allowance.Objects.Iterate() {
-			allowances.AddObject(obj.ID, obj.Type)
+		var err error
+		allowanceBCS, err = bcs.Marshal(params.Allowance.AsISCMove())
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal allowance: %w", err)
 		}
 	}
 	return c.L1Client.L2().CreateAndSendRequestWithAssets(
@@ -145,7 +145,7 @@ func (c *Client) postSingleRequest(
 			AnchorAddress:    c.ChainID.AsAddress().AsIotaAddress(),
 			Assets:           transferAssets,
 			Message:          msg,
-			Allowance:        allowances,
+			AllowanceBCS:     allowanceBCS,
 			OnchainGasBudget: params.GetL2GasBudget(),
 			GasPrice:         params.GetGasPrice(),
 			GasBudget:        params.GetGasBudget(),

@@ -37,7 +37,7 @@ contract ISCTest {
     function emitDummyEvent() public {
         emit DummyEvent("foobar");
     }
- 
+
 
     event SenderAccountEvent(ISCAgentID sender);
 
@@ -65,9 +65,7 @@ contract ISCTest {
         assets.coins[0].coinType = allowance.coins[0].coinType;
         assets.coins[0].amount = allowance.coins[0].amount;
 
-        ISCSendMetadata memory metadata;
-        ISCSendOptions memory options;
-        ISC.sandbox.send(receiver, assets, metadata, options);
+        ISC.sandbox.transferToL1(receiver, assets);
     }
 
     function callInccounter() public {
@@ -177,7 +175,7 @@ contract ISCTest {
     function testSelfDestruct6780() public{
         // deploy a new contract instance
         SelfDestruct6780 c = new SelfDestruct6780();
-        emit TestSelfDestruct6780ContractCreated(address(c)); 
+        emit TestSelfDestruct6780ContractCreated(address(c));
         // call selfdestruct in the same tx
         c.testSelfDestruct(payable(msg.sender));
     }
