@@ -22,14 +22,14 @@ type Checkpoint struct {
 	TrieRoot   trie.Hash
 }
 
-func (c *Index) loadOrCreateCheckpoints(store indexedstore.IndexedStore, blockIndexToCache, checkpointInterval uint32) ([]Checkpoint, error) {
+func (c *Index) loadOrCreateCheckpoints(store indexedstore.IndexedStore, latestBlockIndex, checkpointInterval uint32) ([]Checkpoint, error) {
 	checkpointFilePath := filepath.Join("/tmp/checkpoints.bin")
 
 	// Calculate checkpoint blocks
 	var checkpointBlocks []uint32
 
 	// Start with the highest block and go down in intervals
-	blockIdx := blockIndexToCache
+	blockIdx := latestBlockIndex
 	for {
 		if blockIdx != 0 {
 			checkpointBlocks = append(checkpointBlocks, blockIdx)
@@ -58,6 +58,11 @@ func (c *Index) loadOrCreateCheckpoints(store indexedstore.IndexedStore, blockIn
 		if err == nil {
 			// Try to unmarshal
 			checkpoints = bcs.MustUnmarshal[[]Checkpoint](data)
+
+			if checkpoints[0].StartBlock != latestBlockIndex {
+				panic(fmt.Sprintf("Invalid checkpoint db (Unexpected amount of hashes). Remove '%s' and try again.", checkpointFilePath))
+			}
+
 			return checkpoints, nil
 		} else {
 			fmt.Printf("Warning: could not read checkpoint file: %v\n", err)
@@ -121,18 +126,23 @@ func (c *Index) IndexBlockParallel(store func() indexedstore.IndexedStore, trieR
 		return fmt.Errorf("stateByTrieRoot: %w", err)
 	}
 
-	blockIndexToCache := state.BlockIndex()
+	latestBlockIndex := state.BlockIndex()
 
-	fmt.Printf("Indexing %d blocks \n", blockIndexToCache)
+	fmt.Printf("Indexing %d blocks \n", latestBlockIndex)
 
 	const checkpointInterval = 9999
 
-	checkpoints, err := c.loadOrCreateCheckpoints(store(), blockIndexToCache, checkpointInterval)
+	fmt.Println("Loading/Creating checkpoints..")
+
+	checkpoints, err := c.loadOrCreateCheckpoints(store(), latestBlockIndex, checkpointInterval)
 	if err != nil {
 		return fmt.Errorf("loadOrCreateCheckpoints: %w", err)
 	}
 
+	fmt.Println("Collected checkpoints.")
+	
 	fmt.Printf("Using %d checkpoints for processing\n", len(checkpoints))
+	fmt.Println("Starting workers..")
 
 	resultChan := make(chan []blockData, len(checkpoints))
 	errChan := make(chan error, len(checkpoints))
@@ -168,13 +178,11 @@ func (c *Index) IndexBlockParallel(store func() indexedstore.IndexedStore, trieR
 		close(errChan)
 	}()
 
-	// Collect all results
 	var allResults []blockData
 	for batchResults := range resultChan {
 		allResults = append(allResults, batchResults...)
 	}
 
-	// Check for errors
 	for err := range errChan {
 		if err != nil {
 			return err
@@ -186,18 +194,18 @@ func (c *Index) IndexBlockParallel(store func() indexedstore.IndexedStore, trieR
 		return allResults[i].blockIndex > allResults[j].blockIndex
 	})
 
-	err = c.writeResultsToIndex(allResults, blockIndexToCache)
+	err = c.writeResultsToIndex(allResults, latestBlockIndex)
 	if err != nil {
 		return fmt.Errorf("writeResultsToIndex: %w", err)
 	}
 
-	c.setLastBlockIndexed(blockIndexToCache)
+	c.setLastBlockIndexed(latestBlockIndex)
 	err = c.store.Flush()
 	if err != nil {
 		return fmt.Errorf("store.Flush: %w", err)
 	}
 
-	fmt.Printf("Successfully indexed blocks from %d to 0\n", blockIndexToCache)
+	fmt.Printf("Successfully indexed blocks from %d to 0\n", latestBlockIndex)
 	return nil
 }
 
@@ -259,7 +267,6 @@ func (c *Index) processCheckpoint(store func() indexedstore.IndexedStore, cp Che
 	return results, nil
 }
 
-// writeResultsToIndex writes all collected data to the index
 func (c *Index) writeResultsToIndex(results []blockData, blockIndexToCache uint32) error {
 	fmt.Println("Writing collected data to index...")
 
@@ -283,7 +290,9 @@ func (c *Index) writeResultsToIndex(results []blockData, blockIndexToCache uint3
 		}
 	}
 
-	// Verify all blocks were processed
+	fmt.Println("Finished writing collected data to index")
+	fmt.Println("Validating included blocks .. ")
+
 	blockIdx := blockIndexToCache
 	for {
 		if !processed[blockIdx] {
