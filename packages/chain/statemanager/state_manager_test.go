@@ -14,7 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -62,7 +62,7 @@ func TestCruelWorld(t *testing.T) {
 		log.NewChildLogger("net"),
 	)
 	netProviders := network.NetworkProviders()
-	bf := sm_gpa_utils.NewBlockFactory(t)
+	bf := utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
 	snapMs := make([]snapshots.SnapshotManager, nodeCount)
@@ -95,7 +95,7 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys[i],
 			peerPubKeys,
 			netProviders[i],
-			sm_gpa_utils.NewMockedTestBlockWAL(),
+			utils.NewMockedTestBlockWAL(),
 			snapMs[i],
 			stores[i],
 			nil,

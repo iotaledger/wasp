@@ -29,7 +29,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -567,7 +567,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			false,
-			sm_gpa_utils.NewMockedTestBlockWAL(),
+			utils.NewMockedTestBlockWAL(),
 			snapshots.NewEmptySnapshotManager(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.

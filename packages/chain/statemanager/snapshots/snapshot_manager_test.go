@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/state"
@@ -166,7 +166,7 @@ func testSnapshotManagerAny(
 	snapshotToLoadStateIndex := numberOfBlocks - snapshotCreatePeriod*(numberBeforeLast+int(math.Ceil(float64(snapshotDelayPeriod)/float64(snapshotCreatePeriod))))
 
 	var err error
-	factory := sm_gpa_utils.NewBlockFactory(t)
+	factory := utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	storeOrig := factory.GetStore()
 	snapshotManagerOrig, err := NewSnapshotManager(
@@ -220,8 +220,8 @@ func testSnapshotManagerAny(
 	for i := 0; i < len(blocks); i++ {
 		if i == snapshotToLoadStateIndex-1 {
 			require.True(t, storeNew.HasTrieRoot(blocks[i].TrieRoot()))
-			sm_gpa_utils.CheckBlockInStore(t, storeNew, blocks[i])
-			sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, blocks[i].L1Commitment())
+			utils.CheckBlockInStore(t, storeNew, blocks[i])
+			utils.CheckStateInStores(t, storeOrig, storeNew, blocks[i].L1Commitment())
 		} else {
 			require.False(t, storeNew.HasTrieRoot(blocks[i].TrieRoot()))
 		}

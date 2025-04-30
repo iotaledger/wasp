@@ -14,7 +14,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	gpautils "github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -30,7 +30,7 @@ import (
 
 type testEnv struct {
 	t          *testing.T
-	bf         *sm_gpa_utils.BlockFactory
+	bf         *gpautils.BlockFactory
 	nodeIDs    []gpa.NodeID
 	parameters StateManagerParameters
 	sms        map[gpa.NodeID]gpa.GPA
@@ -43,7 +43,7 @@ type testEnv struct {
 func newTestEnv(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
-	createWALFun func() sm_gpa_utils.TestBlockWAL,
+	createWALFun func() gpautils.TestBlockWAL,
 	createSnapMFun func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
@@ -56,8 +56,8 @@ func newTestEnv(
 /*func newTestEnvVariedNodes(
 	t *testing.T,
 	nodeIDs []gpa.NodeID,
-	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
-	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp sm_gpa_utils.TimeProvider, log log.Logger) snapshots.SnapshotManager,
+	createWALFun func(gpa.NodeID) utils.TestBlockWAL,
+	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp utils.TimeProvider, log log.Logger) snapshots.SnapshotManager,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
 	result := newTestEnvNoNodes(t, parametersOpt...)
@@ -69,16 +69,16 @@ func newTestEnvNoNodes(
 	t *testing.T,
 	parametersOpt ...StateManagerParameters,
 ) *testEnv {
-	var bf *sm_gpa_utils.BlockFactory
+	var bf *gpautils.BlockFactory
 	var parameters StateManagerParameters
-	var chainInitParameters sm_gpa_utils.BlockFactoryCallArguments
+	var chainInitParameters gpautils.BlockFactoryCallArguments
 	if len(parametersOpt) > 0 {
 		parameters = parametersOpt[0]
-		chainInitParameters = sm_gpa_utils.BlockFactoryCallArguments{BlockKeepAmount: int32(parameters.PruningMinStatesToKeep)}
-		bf = sm_gpa_utils.NewBlockFactory(t, chainInitParameters)
+		chainInitParameters = gpautils.BlockFactoryCallArguments{BlockKeepAmount: int32(parameters.PruningMinStatesToKeep)}
+		bf = gpautils.NewBlockFactory(t, chainInitParameters)
 	} else {
 		parameters = NewStateManagerParameters()
-		bf = sm_gpa_utils.NewBlockFactory(t)
+		bf = gpautils.NewBlockFactory(t)
 	}
 
 	log := testlogger.NewLogger(t)
@@ -93,10 +93,10 @@ func newTestEnvNoNodes(
 
 func (teT *testEnv) addNodes(
 	nodeIDs []gpa.NodeID,
-	createWALFun func() sm_gpa_utils.TestBlockWAL,
+	createWALFun func() gpautils.TestBlockWAL,
 	createSnapMFun func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager,
 ) {
-	createWALVariedFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL {
+	createWALVariedFun := func(gpa.NodeID) gpautils.TestBlockWAL {
 		return createWALFun()
 	}
 	createSnapMVariedFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager {
@@ -107,7 +107,7 @@ func (teT *testEnv) addNodes(
 
 func (teT *testEnv) addVariedNodes(
 	nodeIDs []gpa.NodeID,
-	createWALFun func(gpa.NodeID) sm_gpa_utils.TestBlockWAL,
+	createWALFun func(gpa.NodeID) gpautils.TestBlockWAL,
 	createSnapMFun func(nodeID gpa.NodeID, origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager,
 ) {
 	sms := make(map[gpa.NodeID]gpa.GPA)
@@ -152,7 +152,7 @@ func (teT *testEnv) finalize() {
 func (teT *testEnv) checkBlock(nodeID gpa.NodeID, origBlock state.Block) {
 	store, ok := teT.stores[nodeID]
 	require.True(teT.t, ok)
-	sm_gpa_utils.CheckBlockInStore(teT.t, store, origBlock)
+	gpautils.CheckBlockInStore(teT.t, store, origBlock)
 }
 
 func (teT *testEnv) doesNotContainBlock(nodeID gpa.NodeID, block state.Block) {
@@ -249,7 +249,7 @@ func (teT *testEnv) ensureCompletedConsensusDecidedState(respChan <-chan state.S
 	return teT.ensureTrue("response from ConsensusDecidedState", func() bool {
 		select {
 		case s := <-respChan:
-			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), s)
+			gpautils.CheckStateInStore(teT.t, teT.bf.GetStore(), s)
 			require.True(teT.t, expectedCommitment.TrieRoot().Equals(s.TrieRoot()))
 			return true
 		default:
@@ -279,7 +279,7 @@ func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *inputs.C
 			lastNewBlockTrieRoot := expectedNewBlocks[len(expectedNewBlocks)-1].TrieRoot()
 			teT.t.Logf("Checking trie roots: expected %s, obtained %s", lastNewBlockTrieRoot, newStateTrieRoot)
 			require.True(teT.t, newStateTrieRoot.Equals(lastNewBlockTrieRoot))
-			sm_gpa_utils.CheckStateInStore(teT.t, teT.bf.GetStore(), cfsdr.GetNewState())
+			gpautils.CheckStateInStore(teT.t, teT.bf.GetStore(), cfsdr.GetNewState())
 			requireEqualsFun := func(expected, received []state.Block) {
 				teT.t.Logf("\tExpected %v elements, obtained %v elements", len(expected), len(received))
 				require.Equal(teT.t, len(expected), len(received))

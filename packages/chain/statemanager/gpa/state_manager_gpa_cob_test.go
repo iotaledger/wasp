@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
@@ -21,11 +21,11 @@ import (
 
 func initTestChainOfBlocks(t *testing.T) (
 	log.Logger,
-	*sm_gpa_utils.BlockFactory,
+	*utils.BlockFactory,
 	state.Store,
 	*stateManagerGPA,
 ) {
-	bf := sm_gpa_utils.NewBlockFactory(t)
+	bf := utils.NewBlockFactory(t)
 	log := testlogger.NewLogger(t)
 	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	smGPA, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
@@ -36,7 +36,7 @@ func initTestChainOfBlocks(t *testing.T) (
 	return log, bf, store, sm
 }
 
-func prependOriginBlock(bf *sm_gpa_utils.BlockFactory, blocks []state.Block) []state.Block {
+func prependOriginBlock(bf *utils.BlockFactory, blocks []state.Block) []state.Block {
 	originBlock := bf.GetOriginBlock()
 	return append([]state.Block{originBlock}, blocks...)
 }
@@ -53,7 +53,7 @@ func blocksToBlockInfos(blocks []state.Block) []*blockInfo {
 func runTestChainOfBlocks(
 	t *testing.T,
 	log log.Logger,
-	bf *sm_gpa_utils.BlockFactory,
+	bf *utils.BlockFactory,
 	store state.Store,
 	sm *stateManagerGPA,
 	blocksToCommit []state.Block,

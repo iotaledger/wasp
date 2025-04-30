@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -14,7 +14,7 @@ type blockFetcherWithTime struct {
 }
 
 type blockFetchersImpl struct {
-	fetchers *shrinkingmap.ShrinkingMap[sm_gpa_utils.BlockKey, *blockFetcherWithTime]
+	fetchers *shrinkingmap.ShrinkingMap[utils.BlockKey, *blockFetcherWithTime]
 	metrics  blockFetchersMetrics
 }
 
@@ -22,7 +22,7 @@ var _ blockFetchers = &blockFetchersImpl{}
 
 func newBlockFetchers(metrics blockFetchersMetrics) blockFetchers {
 	return &blockFetchersImpl{
-		fetchers: shrinkingmap.New[sm_gpa_utils.BlockKey, *blockFetcherWithTime](),
+		fetchers: shrinkingmap.New[utils.BlockKey, *blockFetcherWithTime](),
 		metrics:  metrics,
 	}
 }
@@ -33,7 +33,7 @@ func (bfiT *blockFetchersImpl) getSize() int {
 
 func (bfiT *blockFetchersImpl) getCallbacksCount() int {
 	result := 0
-	bfiT.fetchers.ForEach(func(_ sm_gpa_utils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
+	bfiT.fetchers.ForEach(func(_ utils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
 		result += fetcherWithTime.fetcher.getCallbacksCount()
 		return true
 	})
@@ -41,7 +41,7 @@ func (bfiT *blockFetchersImpl) getCallbacksCount() int {
 }
 
 func (bfiT *blockFetchersImpl) addFetcher(fetcher blockFetcher) {
-	key := sm_gpa_utils.NewBlockKey(fetcher.getCommitment())
+	key := utils.NewBlockKey(fetcher.getCommitment())
 	_, exists := bfiT.fetchers.Get(key)
 	if !exists {
 		bfiT.metrics.inc()
@@ -53,7 +53,7 @@ func (bfiT *blockFetchersImpl) addFetcher(fetcher blockFetcher) {
 }
 
 func (bfiT *blockFetchersImpl) takeFetcher(commitment *state.L1Commitment) blockFetcher {
-	blockKey := sm_gpa_utils.NewBlockKey(commitment)
+	blockKey := utils.NewBlockKey(commitment)
 	fetcherWithTime, exists := bfiT.fetchers.Get(blockKey)
 	if !exists {
 		return nil
@@ -65,7 +65,7 @@ func (bfiT *blockFetchersImpl) takeFetcher(commitment *state.L1Commitment) block
 }
 
 func (bfiT *blockFetchersImpl) addCallback(commitment *state.L1Commitment, callback blockRequestCallback) bool {
-	fetcherWithTime, exists := bfiT.fetchers.Get(sm_gpa_utils.NewBlockKey(commitment))
+	fetcherWithTime, exists := bfiT.fetchers.Get(utils.NewBlockKey(commitment))
 	if !exists {
 		return false
 	}
@@ -74,7 +74,7 @@ func (bfiT *blockFetchersImpl) addCallback(commitment *state.L1Commitment, callb
 }
 
 func (bfiT *blockFetchersImpl) addRelatedFetcher(commitment *state.L1Commitment, relatedFetcher blockFetcher) bool {
-	fetcherWithTime, exists := bfiT.fetchers.Get(sm_gpa_utils.NewBlockKey(commitment))
+	fetcherWithTime, exists := bfiT.fetchers.Get(utils.NewBlockKey(commitment))
 	if !exists {
 		return false
 	}
@@ -85,7 +85,7 @@ func (bfiT *blockFetchersImpl) addRelatedFetcher(commitment *state.L1Commitment,
 func (bfiT *blockFetchersImpl) getCommitments() []*state.L1Commitment {
 	result := make([]*state.L1Commitment, bfiT.getSize())
 	i := 0
-	bfiT.fetchers.ForEach(func(_ sm_gpa_utils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
+	bfiT.fetchers.ForEach(func(_ utils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
 		result[i] = fetcherWithTime.fetcher.getCommitment()
 		i++
 		return true
@@ -94,7 +94,7 @@ func (bfiT *blockFetchersImpl) getCommitments() []*state.L1Commitment {
 }
 
 func (bfiT *blockFetchersImpl) cleanCallbacks() {
-	bfiT.fetchers.ForEach(func(_ sm_gpa_utils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
+	bfiT.fetchers.ForEach(func(_ utils.BlockKey, fetcherWithTime *blockFetcherWithTime) bool {
 		fetcherWithTime.fetcher.cleanCallbacks()
 		return true
 	})

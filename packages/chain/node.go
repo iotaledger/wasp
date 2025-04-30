@@ -38,7 +38,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -149,7 +149,7 @@ type chainNodeImpl struct {
 	awaitReceiptCnfCh  chan *awaitReceiptReq
 	stateTrackerAct    StateTracker
 	stateTrackerCnf    StateTracker
-	blockWAL           sm_gpa_utils.BlockWAL
+	blockWAL           utils.BlockWAL
 	//
 	// Configuration values.
 	consensusDelay   time.Duration
@@ -251,7 +251,7 @@ func New(
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	recoverFromWAL bool,
-	blockWAL sm_gpa_utils.BlockWAL,
+	blockWAL utils.BlockWAL,
 	snapshotManager snapshots.SnapshotManager,
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
@@ -1230,7 +1230,7 @@ func (cni *chainNodeImpl) GetMempoolContents() io.Reader {
 	return cni.mempool.GetContents()
 }
 
-func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL sm_gpa_utils.BlockWAL) {
+func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL utils.BlockWAL) {
 	//
 	// Load all the existing blocks from the WAL.
 	blocksAdded := 0

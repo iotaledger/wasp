@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/messages"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	gpautils "github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -31,7 +31,7 @@ type blockInfo struct {
 type stateManagerGPA struct {
 	log                      log.Logger
 	chainID                  isc.ChainID
-	blockCache               sm_gpa_utils.BlockCache
+	blockCache               gpautils.BlockCache
 	blocksToFetch            blockFetchers
 	blocksFetched            blockFetchers
 	loadedSnapshotStateIndex uint32
@@ -53,7 +53,7 @@ func New(
 	chainID isc.ChainID,
 	loadedSnapshotStateIndex uint32,
 	nr utils.NodeRandomiser,
-	wal sm_gpa_utils.BlockWAL,
+	wal gpautils.BlockWAL,
 	store state.Store,
 	metrics *metrics.ChainStateManagerMetrics,
 	log log.Logger,
@@ -61,7 +61,7 @@ func New(
 ) (gpa.GPA, error) {
 	var err error
 	smLog := log.NewChildLogger("GPA")
-	blockCache, err := sm_gpa_utils.NewBlockCache(parameters.TimeProvider, parameters.BlockCacheMaxSize, wal, metrics, smLog)
+	blockCache, err := gpautils.NewBlockCache(parameters.TimeProvider, parameters.BlockCacheMaxSize, wal, metrics, smLog)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block cache: %v", err)
 	}

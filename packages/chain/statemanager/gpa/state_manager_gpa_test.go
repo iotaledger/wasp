@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
@@ -26,7 +26,7 @@ var newEmptySnapshotManagerFun = func(_, _ state.Store, _ timeutil.TimeProvider,
 // of the blocks.
 func TestBasic(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -47,7 +47,7 @@ func TestManyNodes(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(10)
 	smParameters := NewStateManagerParameters()
 	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	blocks := env.bf.GetBlocks(16, 1)
@@ -115,7 +115,7 @@ func TestFull(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	smParameters := NewStateManagerParameters()
 	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	lastCommitment := env.bf.GetOriginBlock().L1Commitment()
@@ -198,7 +198,7 @@ func TestMempoolRequest(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(nodeCount)
 	smParameters := NewStateManagerParameters()
 	smParameters.StateManagerGetBlockRetry = 100 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	mainBlocks := env.bf.GetBlocks(mainSize, 1)
@@ -227,7 +227,7 @@ func TestMempoolRequest(t *testing.T) {
 //     and block 0 as an old block.
 func TestMempoolRequestFirstStep(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -250,7 +250,7 @@ func TestMempoolRequestNoBranch(t *testing.T) {
 	middleBlock := 4
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -276,7 +276,7 @@ func TestMempoolRequestBranchFromOrigin(t *testing.T) {
 	branchSize := 8
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
+	env := newTestEnv(t, nodeIDs, utils.NewMockedTestBlockWAL, newEmptySnapshotManagerFun)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]
@@ -320,7 +320,7 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 	newSnapshottedBlock := newBlocks[snapshottedIndex-branchIndex-1]
 
 	nodeIDs := gpa.MakeTestNodeIDs(3)
-	newMockedTestBlockWALFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL { return sm_gpa_utils.NewMockedTestBlockWAL() }
+	newMockedTestBlockWALFun := func(gpa.NodeID) utils.TestBlockWAL { return utils.NewMockedTestBlockWAL() }
 	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager {
 		var snapshotToLoad snapshots.SnapshotInfo
 		if nodeID.Equals(nodeIDs[0]) {
@@ -360,7 +360,7 @@ func TestPruningSequentially(t *testing.T) {
 	nodeID := nodeIDs[0]
 	smParameters := NewStateManagerParameters()
 	smParameters.PruningMinStatesToKeep = blocksToKeep
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	blocks := env.bf.GetBlocks(blockCount, 1)
@@ -399,7 +399,7 @@ func TestPruningMany(t *testing.T) {
 	smParameters := NewStateManagerParameters()
 	smParameters.PruningMinStatesToKeep = blocksToKeep // Also initializes chain with this value in governance contract
 	smParameters.PruningMaxStatesToDelete = 100
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	sm, ok := env.sms[nodeID]
@@ -440,7 +440,7 @@ func TestPruningTooMuch(t *testing.T) {
 	smParameters := NewStateManagerParameters()
 	smParameters.PruningMinStatesToKeep = blocksToKeep // Also initializes chain with this value in governance contract
 	smParameters.PruningMaxStatesToDelete = blocksToPrune
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	sm, ok := env.sms[nodeID]
@@ -489,7 +489,7 @@ func TestSnapshots(t *testing.T) {
 	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager {
 		return snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, snapshotDelayPeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
 	}
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newMockedSnapshotManagerFun)
+	env := newTestEnv(t, nodeIDs, utils.NewEmptyTestBlockWAL, newMockedSnapshotManagerFun)
 	defer env.finalize()
 
 	blocks := env.bf.GetBlocks(blockCount, 1)
@@ -542,7 +542,7 @@ func TestBlockCacheCleaningAuto(t *testing.T) {
 	smParameters := NewStateManagerParameters()
 	smParameters.BlockCacheBlocksInCacheDuration = 300 * time.Millisecond
 	smParameters.BlockCacheBlockCleaningPeriod = 70 * time.Millisecond
-	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
+	env := newTestEnv(t, nodeIDs, utils.NewEmptyTestBlockWAL, newEmptySnapshotManagerFun, smParameters)
 	defer env.finalize()
 
 	nodeID := nodeIDs[0]

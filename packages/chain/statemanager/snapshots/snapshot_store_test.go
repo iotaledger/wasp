@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -62,8 +62,8 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 			require.True(t, blocks[i].Hash().Equals(block.Hash()))
 		}
 		for i := 1; i < len(blocks)-1; i++ { // blocks[i] and blocsk[len(blocks)-1] will be checked in `twoSnapshotsCheckEnds`
-			sm_gpa_utils.CheckBlockInStore(t, storeNew, blocks[i])
-			sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, blocks[i].L1Commitment())
+			utils.CheckBlockInStore(t, storeNew, blocks[i])
+			utils.CheckStateInStores(t, storeOrig, storeNew, blocks[i].L1Commitment())
 		}
 	})
 }
@@ -72,7 +72,7 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 	numberOfBlocks := 10
 	intermediateBlockIndex := 4
 
-	factory := sm_gpa_utils.NewBlockFactory(t)
+	factory := utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	storeOrig := factory.GetStore()
 	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
@@ -91,8 +91,8 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 
 	performTestFun(t, storeOrig, storeNew, intermediateSnapshot, lastSnapshot, blocks[intermediateBlockIndex:])
 
-	sm_gpa_utils.CheckBlockInStore(t, storeNew, intermediateBlock)
-	sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, intermediateCommitment)
-	sm_gpa_utils.CheckBlockInStore(t, storeNew, lastBlock)
-	sm_gpa_utils.CheckStateInStores(t, storeOrig, storeNew, lastCommitment)
+	utils.CheckBlockInStore(t, storeNew, intermediateBlock)
+	utils.CheckStateInStores(t, storeOrig, storeNew, intermediateCommitment)
+	utils.CheckBlockInStore(t, storeNew, lastBlock)
+	utils.CheckStateInStores(t, storeOrig, storeNew, lastCommitment)
 }

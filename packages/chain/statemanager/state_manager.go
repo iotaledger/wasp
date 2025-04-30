@@ -12,7 +12,7 @@ import (
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	gpautils "github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -88,7 +88,7 @@ type stateManager struct {
 	nodePubKeysPipe      pipe.Pipe[*reqChainNodesUpdated]
 	preliminaryBlockPipe pipe.Pipe[*reqPreliminaryBlock]
 	snapshotManager      snapshots.SnapshotManager
-	wal                  sm_gpa_utils.BlockWAL
+	wal                  gpautils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
 	parameters           smgpa.StateManagerParameters
@@ -113,7 +113,7 @@ func New(
 	me *cryptolib.PublicKey,
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
-	wal sm_gpa_utils.BlockWAL,
+	wal gpautils.BlockWAL,
 	snapshotManager snapshots.SnapshotManager,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,

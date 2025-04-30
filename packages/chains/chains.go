@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chains/accessmanager"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -341,14 +341,14 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 
 	// Initialize WAL
 	chainLog := c.log.NewChildLogger(chainID.ShortString())
-	var chainWAL sm_gpa_utils.BlockWAL
+	var chainWAL utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
+		chainWAL, err = utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
 	} else {
-		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
+		chainWAL = utils.NewEmptyBlockWAL()
 	}
 
 	stateManagerParameters := gpa.NewStateManagerParameters()

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -18,7 +18,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 
 	var err error
 	numberOfBlocks := 10
-	factory := sm_gpa_utils.NewBlockFactory(t)
+	factory := utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	lastBlock := blocks[numberOfBlocks-1]
 	lastCommitment := lastBlock.L1Commitment()
@@ -43,6 +43,6 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	err = os.Remove(fileName)
 	require.NoError(t, err)
 
-	sm_gpa_utils.CheckBlockInStore(t, store, lastBlock)
-	sm_gpa_utils.CheckStateInStores(t, factory.GetStore(), store, lastCommitment)
+	utils.CheckBlockInStore(t, store, lastBlock)
+	utils.CheckStateInStores(t, factory.GetStore(), store, lastCommitment)
 }

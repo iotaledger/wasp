@@ -1,4 +1,4 @@
-package sm_gpa_utils
+package utils
 
 import (
 	"github.com/iotaledger/wasp/packages/state"
