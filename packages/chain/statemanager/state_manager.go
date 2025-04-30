@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	gpautils "github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"

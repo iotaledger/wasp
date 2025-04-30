@@ -1,4 +1,4 @@
-package cons_gr
+package gr
 
 import (
 	"testing"

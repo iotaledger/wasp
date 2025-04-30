@@ -10,7 +10,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -65,7 +65,7 @@ type NodeConnection interface {
 	ConsensusL1InfoProposal(
 		ctx context.Context,
 		anchor *isc.StateAnchor,
-	) <-chan cons_gr.NodeConnL1Info
+	) <-chan gr.NodeConnL1Info
 }
 
 type StateFreshness byte

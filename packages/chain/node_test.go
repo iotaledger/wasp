@@ -26,7 +26,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
@@ -420,8 +420,8 @@ func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 func (tnc *testNodeConn) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan cons_gr.NodeConnL1Info {
-	t := make(chan cons_gr.NodeConnL1Info)
+) <-chan gr.NodeConnL1Info {
+	t := make(chan gr.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -450,7 +450,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 		}
 
 		ref := gasCoin.Data.Ref()
-		var l1Info cons_gr.NodeConnL1Info = &testNodeConnL1Info{
+		var l1Info gr.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(moveBalance.Balance),

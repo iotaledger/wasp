@@ -34,7 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/cons"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"

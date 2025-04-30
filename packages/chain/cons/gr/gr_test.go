@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cons_gr_test
+package gr_test
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
