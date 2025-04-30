@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -87,7 +87,7 @@ type stateManager struct {
 	messagePipe          pipe.Pipe[*peering.PeerMessageIn]
 	nodePubKeysPipe      pipe.Pipe[*reqChainNodesUpdated]
 	preliminaryBlockPipe pipe.Pipe[*reqPreliminaryBlock]
-	snapshotManager      sm_snapshots.SnapshotManager
+	snapshotManager      snapshots.SnapshotManager
 	wal                  sm_gpa_utils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
@@ -114,7 +114,7 @@ func New(
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
 	wal sm_gpa_utils.BlockWAL,
-	snapshotManager sm_snapshots.SnapshotManager,
+	snapshotManager snapshots.SnapshotManager,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
 	metrics *metrics.ChainStateManagerMetrics,

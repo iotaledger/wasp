@@ -39,7 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -252,7 +252,7 @@ func New(
 	consensusStateRegistry cmt_log.ConsensusStateRegistry,
 	recoverFromWAL bool,
 	blockWAL sm_gpa_utils.BlockWAL,
-	snapshotManager sm_snapshots.SnapshotManager,
+	snapshotManager snapshots.SnapshotManager,
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,

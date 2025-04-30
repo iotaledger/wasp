@@ -3,14 +3,14 @@ package sm_gpa
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
 )
 
 type StateManagerOutput interface {
 	addBlockCommitted(uint32, *state.L1Commitment)
-	TakeBlocksCommitted() []sm_snapshots.SnapshotInfo
+	TakeBlocksCommitted() []snapshots.SnapshotInfo
 	addBlocksToCommit([]*state.L1Commitment)
 	TakeNextInputs() []gpa.Input
 }

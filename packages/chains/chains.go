@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chains/accessmanager"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
@@ -378,7 +378,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	} else {
 		snapshotToLoad = c.defaultSnapshotToLoad
 	}
-	chainSnapshotManager, err := sm_snapshots.NewSnapshotManager(
+	chainSnapshotManager, err := snapshots.NewSnapshotManager(
 		chainCtx,
 		chainShutdownCoordinator.Nested("SnapMgr"),
 		chainID,

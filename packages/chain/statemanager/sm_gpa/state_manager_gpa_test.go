@@ -11,14 +11,14 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/util/timeutil"
 )
 
-var newEmptySnapshotManagerFun = func(_, _ state.Store, _ timeutil.TimeProvider, _ log.Logger) sm_snapshots.SnapshotManager {
-	return sm_snapshots.NewEmptySnapshotManager()
+var newEmptySnapshotManagerFun = func(_, _ state.Store, _ timeutil.TimeProvider, _ log.Logger) snapshots.SnapshotManager {
+	return snapshots.NewEmptySnapshotManager()
 }
 
 // Single node network. 8 blocks are sent to state manager. The result is checked
@@ -321,16 +321,16 @@ func TestMempoolSnapshotInTheMiddle(t *testing.T) {
 
 	nodeIDs := gpa.MakeTestNodeIDs(3)
 	newMockedTestBlockWALFun := func(gpa.NodeID) sm_gpa_utils.TestBlockWAL { return sm_gpa_utils.NewMockedTestBlockWAL() }
-	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider timeutil.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager {
-		var snapshotToLoad sm_snapshots.SnapshotInfo
+	newMockedSnapshotManagerFun := func(nodeID gpa.NodeID, origStore, nodeStore state.Store, timeProvider timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager {
+		var snapshotToLoad snapshots.SnapshotInfo
 		if nodeID.Equals(nodeIDs[0]) {
 			snapshotToLoad = nil
 		} else if nodeID.Equals(nodeIDs[1]) {
-			snapshotToLoad = sm_snapshots.NewSnapshotInfo(oldSnapshottedBlock.StateIndex(), oldSnapshottedBlock.L1Commitment())
+			snapshotToLoad = snapshots.NewSnapshotInfo(oldSnapshottedBlock.StateIndex(), oldSnapshottedBlock.L1Commitment())
 		} else {
-			snapshotToLoad = sm_snapshots.NewSnapshotInfo(newSnapshottedBlock.StateIndex(), newSnapshottedBlock.L1Commitment())
+			snapshotToLoad = snapshots.NewSnapshotInfo(newSnapshottedBlock.StateIndex(), newSnapshottedBlock.L1Commitment())
 		}
-		return sm_snapshots.NewMockedSnapshotManager(t, 0, 0, origStore, nodeStore, snapshotToLoad, 0*time.Second, timeProvider, log)
+		return snapshots.NewMockedSnapshotManager(t, 0, 0, origStore, nodeStore, snapshotToLoad, 0*time.Second, timeProvider, log)
 	}
 	env.addVariedNodes(nodeIDs, newMockedTestBlockWALFun, newMockedSnapshotManagerFun)
 
@@ -486,22 +486,22 @@ func TestSnapshots(t *testing.T) {
 
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	nodeID := nodeIDs[0]
-	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) sm_snapshots.SnapshotManager {
-		return sm_snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, snapshotDelayPeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
+	newMockedSnapshotManagerFun := func(origStore, nodeStore state.Store, tp timeutil.TimeProvider, log log.Logger) snapshots.SnapshotManager {
+		return snapshots.NewMockedSnapshotManager(t, snapshotCreatePeriod, snapshotDelayPeriod, origStore, nodeStore, nil, snapshotCreateTime, tp, log)
 	}
 	env := newTestEnv(t, nodeIDs, sm_gpa_utils.NewEmptyTestBlockWAL, newMockedSnapshotManagerFun)
 	defer env.finalize()
 
 	blocks := env.bf.GetBlocks(blockCount, 1)
-	snapshotInfos := make([]sm_snapshots.SnapshotInfo, len(blocks))
+	snapshotInfos := make([]snapshots.SnapshotInfo, len(blocks))
 	for i := range snapshotInfos {
-		snapshotInfos[i] = sm_snapshots.NewSnapshotInfo(blocks[i].StateIndex(), blocks[i].L1Commitment())
+		snapshotInfos[i] = snapshots.NewSnapshotInfo(blocks[i].StateIndex(), blocks[i].L1Commitment())
 	}
 	snapshotsReady := make([]bool, len(blocks))
 	blocksCommitted := make([]bool, len(blocks))
 	snapMGeneral, ok := env.snapms[nodeID]
 	require.True(env.t, ok)
-	snapM, ok := snapMGeneral.(*sm_snapshots.MockedSnapshotManager)
+	snapM, ok := snapMGeneral.(*snapshots.MockedSnapshotManager)
 	require.True(env.t, ok)
 	store, ok := env.stores[nodeID]
 	require.True(env.t, ok)

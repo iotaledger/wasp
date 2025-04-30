@@ -1,4 +1,4 @@
-package sm_snapshots
+package snapshots
 
 import (
 	"os"
