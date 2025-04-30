@@ -54,7 +54,7 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	fmt.Print("Start index block")
+	fmt.Println("Start index block")
 
 	state, err := c.stateByTrieRoot(trieRoot)
 	if err != nil {

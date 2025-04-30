@@ -205,6 +205,13 @@ func main() {
 				Name:      "create-index",
 				ArgsUsage: "path/to/rebased/db path/for/index/db",
 				Action:    createIndex,
+				Flags: []cmd.Flag{
+					&cmd.BoolFlag{
+						Name:    "parallel",
+						Aliases: []string{"p"},
+						Usage:   "Create index in parallel.",
+					},
+				},
 			},
 			{
 				Name:      "webapi-validate",

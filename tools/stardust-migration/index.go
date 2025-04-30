@@ -25,6 +25,7 @@ func startIndexerSequential(rebasedDBPath string, indexerDBPath string) error {
 		return err
 	}
 
+	fmt.Println("Creating index in sequential mode.")
 	fmt.Printf("Latest block index: %d\n", latestIndex)
 
 	index := jsonrpc.NewIndex(func(trieRoot trie.Hash) (state.State, error) {
@@ -57,6 +58,7 @@ func startIndexerParallelized(rebasedDBPath string, indexerDBPath string) error 
 		return err
 	}
 
+	fmt.Println("Creating index in parallel mode.")
 	fmt.Printf("Latest block index: %d\n", latestIndex)
 
 	index := jsonrpc.NewIndex(rebasedDBStoreP.StateByTrieRoot, hivedb.EngineRocksDB, indexerDBPath)
@@ -66,9 +68,9 @@ func startIndexerParallelized(rebasedDBPath string, indexerDBPath string) error 
 		return err
 	}
 
-	// Taking your cores and moving them somewhere else.
-	// Good luck, may god have mercy on your soul
-	numCPU := runtime.NumCPU()
+	numCPU := runtime.NumCPU() - 2
+	fmt.Printf("Indexing with %d cores.\n", numCPU)
+
 	err = index.IndexBlockParallel(storeProvider, block.TrieRoot(), numCPU)
 	if err != nil {
 		return err
@@ -93,5 +95,10 @@ func createIndex(c *cmd.Context) error {
 		}
 	}()
 
-	return startIndexerParallelized(c.Args().Get(0), c.Args().Get(1))
+	runInParallel := c.Bool("parallel")
+	if runInParallel {
+		return startIndexerParallelized(c.Args().Get(0), c.Args().Get(1))
+	}
+
+	return startIndexerSequential(c.Args().Get(0), c.Args().Get(1))
 }
