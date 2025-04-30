@@ -1,4 +1,4 @@
-package sm_gpa
+package gpa
 
 import "time"
 

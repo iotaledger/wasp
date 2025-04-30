@@ -1,4 +1,4 @@
-package sm_gpa
+package gpa
 
 import (
 	"slices"
@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"

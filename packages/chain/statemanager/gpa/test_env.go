@@ -1,4 +1,4 @@
-package sm_gpa
+package gpa
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"

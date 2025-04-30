@@ -28,8 +28,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -582,7 +582,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			10*time.Millisecond,
 			10*time.Second,
 			accounts.CommonAccount(),
-			sm_gpa.NewStateManagerParameters(),
+			smgpa.NewStateManagerParameters(),
 			mempool.Settings{
 				TTL:                    24 * time.Hour,
 				MaxOffledgerInPool:     1000,

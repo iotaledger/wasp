@@ -10,9 +10,9 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -91,7 +91,7 @@ type stateManager struct {
 	wal                  sm_gpa_utils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
-	parameters           sm_gpa.StateManagerParameters
+	parameters           smgpa.StateManagerParameters
 	ctx                  context.Context
 	cleanupFun           func()
 	shutdownCoordinator  *shutdown.Coordinator
@@ -120,11 +120,11 @@ func New(
 	metrics *metrics.ChainStateManagerMetrics,
 	pipeMetrics *metrics.ChainPipeMetrics,
 	log log.Logger,
-	parameters sm_gpa.StateManagerParameters,
+	parameters smgpa.StateManagerParameters,
 ) (StateMgr, error) {
 	smLog := log.NewChildLogger("SM")
 	nr := utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
-	stateManagerGPA, err := sm_gpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
+	stateManagerGPA, err := smgpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
 		smLog.LogErrorf("failed to create state manager GPA: %w", err)
 		return nil, err
@@ -322,7 +322,7 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 }
 
 func (smT *stateManager) handleOutput() {
-	output := smT.stateManagerGPA.Output().(sm_gpa.StateManagerOutput)
+	output := smT.stateManagerGPA.Output().(smgpa.StateManagerOutput)
 	for _, snapshotInfo := range output.TakeBlocksCommitted() {
 		smT.snapshotManager.BlockCommittedAsync(snapshotInfo)
 	}

@@ -13,8 +13,8 @@ import (
 	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -66,7 +66,7 @@ func TestCruelWorld(t *testing.T) {
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
 	snapMs := make([]snapshots.SnapshotManager, nodeCount)
-	parameters := sm_gpa.NewStateManagerParameters()
+	parameters := gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
 	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log hivelog.Logger) snapshots.SnapshotManager {

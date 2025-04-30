@@ -9,7 +9,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/state"
 )

@@ -37,8 +37,8 @@ import (
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -266,7 +266,7 @@ func New(
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
-	smParameters sm_gpa.StateManagerParameters,
+	smParameters smgpa.StateManagerParameters,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 	originDeposit coin.Value,

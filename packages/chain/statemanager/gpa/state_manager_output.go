@@ -1,7 +1,7 @@
-package sm_gpa
+package gpa
 
 import (
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"

@@ -8,7 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	wasputil "github.com/iotaledger/wasp/packages/util"

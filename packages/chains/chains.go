@@ -18,8 +18,8 @@ import (
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chains/accessmanager"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -351,7 +351,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
 	}
 
-	stateManagerParameters := sm_gpa.NewStateManagerParameters()
+	stateManagerParameters := gpa.NewStateManagerParameters()
 	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
 	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
 	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
