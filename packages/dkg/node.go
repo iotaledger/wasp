@@ -22,7 +22,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/byz_quorum"
+	"github.com/iotaledger/wasp/packages/util/byzquorum"
 )
 
 type NodeProvider func() *Node
@@ -120,7 +120,7 @@ func (n *Node) GenerateDistributedKey(
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}
 
-	if threshold < uint16(byz_quorum.MinQuorum(int(peerCount))) {
+	if threshold < uint16(byzquorum.MinQuorum(int(peerCount))) {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: for N = %d value T must be at least %d", peerCount, peerCount/2+1))
 	}
 	//

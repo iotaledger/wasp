@@ -1,6 +1,7 @@
 // Copyright 2022 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package indexedstore provides functionality to search blocks by index within the state store
 package indexedstore
 
 import (

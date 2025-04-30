@@ -1,3 +1,6 @@
+// Package kv provides key-value storage interfaces and implementations
+// for IOTA Smart Contracts. It defines the core functionality for storing,
+// retrieving, and streaming key-value pairs.
 package kv
 
 import (

@@ -1,3 +1,4 @@
+// Package users provides functionality for managing users and their permissions within the system.
 package users
 
 import (

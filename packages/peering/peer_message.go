@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
-// PeerMessage is an envelope for all the messages exchanged via the peering module.
+// PeerMessageData is an envelope for all the messages exchanged via the peering module.
 type PeerMessageData struct {
 	PeeringID   PeeringID
 	MsgReceiver byte

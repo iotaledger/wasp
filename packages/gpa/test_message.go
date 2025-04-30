@@ -5,7 +5,7 @@ package gpa
 
 const msgTypeTest MessageType = 0xff
 
-// Just a message for test cases.
+// TestMessage is just a message for test cases.
 type TestMessage struct {
 	recipient NodeID
 	sender    NodeID

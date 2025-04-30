@@ -1,4 +1,4 @@
-// Package time_util provides utilities for time-related operations,
+// Package timeutil provides utilities for time-related operations,
 // including implementations of time providers for testing and production use.
 package timeutil
 

@@ -55,7 +55,7 @@ func NewTestChainLedger(
 	}
 }
 
-// Only set after MakeTxChainOrigin.
+// ChainID returns the chain identifier. Only set after MakeTxChainOrigin.
 func (tcl *TestChainLedger) ChainID() isc.ChainID {
 	return tcl.chainID
 }

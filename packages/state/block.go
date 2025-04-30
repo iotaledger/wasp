@@ -27,6 +27,12 @@ type block struct {
 
 var _ Block = &block{}
 
+// BlockHashCreate needs to be public for bcs to function
+type BlockHashCreate struct {
+	Sets kv.Items
+	Dels []kv.Key
+}
+
 func NewBlock() Block {
 	return new(block)
 }
@@ -41,12 +47,6 @@ func (b *block) Bytes() []byte {
 
 func (b *block) Equals(other Block) bool {
 	return b.Hash().Equals(other.Hash())
-}
-
-// This needs to be public for bcs to function
-type BlockHashCreate struct {
-	Sets kv.Items
-	Dels []kv.Key
 }
 
 // Hash calculates a hash from the mutations and previousL1Commitment
@@ -95,7 +95,7 @@ func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
 }
 
-// test only function
+// RandomBlock is a test only function
 func RandomBlock() Block {
 	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()

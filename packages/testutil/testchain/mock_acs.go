@@ -1,3 +1,4 @@
+// Package testchain provides utilities for testing chain operations and behaviors
 package testchain
 
 import (

@@ -1,6 +1,7 @@
 // Copyright 2022 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package state implements the core state management functionality for the IOTA ledger
 package state
 
 import (
@@ -37,6 +38,7 @@ func NewStore(db kvstore.KVStore, writeMutex *sync.Mutex) Store {
 	return NewStoreWithMetrics(db, writeMutex, nil)
 }
 
+// NewStoreWithUniqueWriteMutex creates a store with a unique write mutex.
 // Use only for testing -- writes will not be protected from parallel execution
 func NewStoreWithUniqueWriteMutex(db kvstore.KVStore) Store {
 	return NewStoreWithMetrics(db, new(sync.Mutex), nil)

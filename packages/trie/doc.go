@@ -1,4 +1,4 @@
-// package trie implements an immutable Merkle Patricia Trie,
+// Package trie implements an immutable Merkle Patricia Trie.
 // used by the state package to store the chain state.
 //
 // The code is based on the trie.go package by Evaldas Drasutis:

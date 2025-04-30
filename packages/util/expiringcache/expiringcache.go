@@ -1,3 +1,4 @@
+// Package expiringcache implements a cache with automatic expiration of entries.
 package expiringcache
 
 import (

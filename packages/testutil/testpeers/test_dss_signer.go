@@ -1,3 +1,4 @@
+// Package testpeers provides utilities for testing peer-related functionality
 package testpeers
 
 import (

@@ -30,7 +30,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util/byz_quorum"
+	"github.com/iotaledger/wasp/packages/util/byzquorum"
 )
 
 // Public interface for this algorithm.
@@ -117,7 +117,7 @@ func New(
 	// Construct the object.
 	n := len(nodeIDs)
 	f := dkShare.DSS().MaxFaulty()
-	if f > byz_quorum.MaxF(n) {
+	if f > byzquorum.MaxF(n) {
 		log.LogPanicf("invalid f=%v for n=%v", f, n)
 	}
 	//

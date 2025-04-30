@@ -116,7 +116,7 @@ func (a *Array) PruneAt(index uint32) {
 	a.kvw.Del(a.getArrayElemKey(index))
 }
 
-// adds to the end of the list
+// Push adds to the end of the list
 func (a *Array) Push(value []byte) {
 	index := a.addToSize(1)
 	key := a.getArrayElemKey(index)

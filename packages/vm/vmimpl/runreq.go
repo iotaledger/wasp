@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 	"github.com/iotaledger/wasp/packages/vm/processors"
@@ -154,6 +155,12 @@ func (reqctx *requestContext) shouldChargeGasFee() bool {
 	if reqctx.req.SenderAccount().Equals(reqctx.vm.ChainAdmin()) && reqctx.req.Message().Target.Contract == governance.Contract.Hname() {
 		return false
 	}
+
+	// No gas estimation for migrated blocks.
+	if reqctx.SchemaVersion() == allmigrations.SchemaVersionMigratedRebased {
+		return false
+	}
+
 	return true
 }
 

@@ -159,8 +159,6 @@ func initDepositCmd() *cobra.Command {
 						},
 					)
 				})
-
-				log.Printf("Posted TX: %s\n", res.Digest)
 			} else {
 				// deposit to some other agentID
 				agentID := util.AgentIDFromString(args[0])
@@ -183,12 +181,11 @@ func initDepositCmd() *cobra.Command {
 
 				log.Check(err)
 			}
-			log.Printf("Posted TX: %s\n", res.Digest)
+
 			if printReceipt {
 				log.Printf("L1 Gas Fee: %d\n", res.Effects.Data.GasFee())
 				ref, err := res.GetCreatedObjectInfo("request", "Request")
 				log.Check(err)
-				log.Printf("Requet ID: %s\n", ref.ObjectID.String())
 				receipt, _, err := client.ChainsAPI.
 					GetReceipt(ctx, ref.ObjectID.String()).
 					Execute() //nolint:bodyclose // false positive
