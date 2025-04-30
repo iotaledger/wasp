@@ -191,6 +191,8 @@ linters:
         text: Error return value of `e.Encode` is not checked
       - path: (.+)\.go$
         text: may want to add detail/ assignee to this TODO/ FIXME/ BUG comment
+      - path: 'packages/evm/jsonrpc/service.go'
+        text: 'ST1003: method ChainId should be ChainID'  # casing required for evm
     paths:
       - contracts/wasm
       - tools/cluster
