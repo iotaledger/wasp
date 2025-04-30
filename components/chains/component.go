@@ -141,7 +141,7 @@ func provide(c *dig.Container) error {
 					MaxOffledgerPerAccount:     ParamsChains.MempoolMaxOffledgerPerAccount,
 				},
 				ParamsChains.BroadcastInterval,
-				shutdown.NewCoordinator("chains", Component.Logger.NewChildLogger("Shutdown")),
+				shutdown.NewCoordinator("chains", Component.NewChildLogger("Shutdown")),
 				deps.ChainMetricsProvider,
 			),
 		}

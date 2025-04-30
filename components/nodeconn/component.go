@@ -56,7 +56,7 @@ func provide(c *dig.Container) error {
 			chains.ParamsChains.MempoolMaxOnledgerInPool,
 			ParamsL1.WebsocketURL,
 			ParamsL1.HTTPURL,
-			Component.Logger.NewChildLogger("nc"),
+			Component.NewChildLogger("nc"),
 			deps.ShutdownHandler,
 		)
 		if err != nil {

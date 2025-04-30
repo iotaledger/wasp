@@ -138,7 +138,6 @@ func (c *Controller) addGovernanceContractRoutes(api echoswagger.ApiGroup, mocke
 		SetSummary("Get the chain admin")
 }
 
-//nolint:funlen
 func (c *Controller) addBlockLogContractRoutes(api echoswagger.ApiGroup, mocker interfaces.Mocker) {
 	api.GET("chain/core/blocklog/controladdresses", c.getControlAddresses).
 		AddParamQuery("", params.ParamBlockIndexOrTrieRoot, params.DescriptionBlockIndexOrTrieRoot, false).
