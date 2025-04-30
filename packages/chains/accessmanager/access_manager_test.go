@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package access_mgr_test
+package accessmanager_test
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivelog "github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/chains/access_mgr"
+	"github.com/iotaledger/wasp/packages/chains/accessmanager"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
@@ -76,7 +76,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	networkProviders := peeringNetwork.NetworkProviders()
 	defer peeringNetwork.Close()
 
-	accessMgrs := make([]access_mgr.AccessMgr, len(peerIdentities))
+	accessMgrs := make([]accessmanager.AccessMgr, len(peerIdentities))
 	nodeServers := make([][]*cryptolib.PublicKey, len(peerIdentities)) // That's the output.
 	for i := range accessMgrs {
 		ii := i
@@ -84,7 +84,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 			t.Logf("servers updated, ChainID=%v, servers=%+v", chainID, servers)
 			nodeServers[ii] = servers
 		}
-		accessMgrs[i] = access_mgr.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.NewChildLogger(fmt.Sprintf("N#%v", i)))
+		accessMgrs[i] = accessmanager.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.NewChildLogger(fmt.Sprintf("N#%v", i)))
 	}
 	//
 	// Make all of them trusted.
