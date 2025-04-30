@@ -9,9 +9,9 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/messages"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -93,17 +93,17 @@ func New(
 
 func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 	switch inputCasted := input.(type) {
-	case *sm_inputs.ConsensusStateProposal: // From consensus
+	case *inputs.ConsensusStateProposal: // From consensus
 		return smT.handleConsensusStateProposal(inputCasted)
-	case *sm_inputs.ConsensusDecidedState: // From consensus
+	case *inputs.ConsensusDecidedState: // From consensus
 		return smT.handleConsensusDecidedState(inputCasted)
-	case *sm_inputs.ConsensusBlockProduced: // From consensus
+	case *inputs.ConsensusBlockProduced: // From consensus
 		return smT.handleConsensusBlockProduced(inputCasted)
-	case *sm_inputs.ChainFetchStateDiff: // From mempool
+	case *inputs.ChainFetchStateDiff: // From mempool
 		return smT.handleChainFetchStateDiff(inputCasted)
-	case *sm_inputs.StateManagerBlocksToCommit: // From state manager gpa
+	case *inputs.StateManagerBlocksToCommit: // From state manager gpa
 		return smT.handleStateManagerBlocksToCommit(inputCasted.GetCommitments())
-	case *sm_inputs.StateManagerTimerTick: // From state manager go routine
+	case *inputs.StateManagerTimerTick: // From state manager go routine
 		return smT.handleStateManagerTimerTick(inputCasted.GetTime())
 	default:
 		smT.log.LogWarnf("Unknown input received, ignoring it: type=%T, message=%v", input, input)
@@ -184,7 +184,7 @@ func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) 
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusStateProposal(csp *sm_inputs.ConsensusStateProposal) gpa.OutMessages {
+func (smT *stateManagerGPA) handleConsensusStateProposal(csp *inputs.ConsensusStateProposal) gpa.OutMessages {
 	start := time.Now()
 	smT.log.LogDebugf("Input consensus state proposal index %v %s received...", csp.GetStateIndex(), csp.GetL1Commitment())
 	callback := newBlockRequestCallback(
@@ -202,7 +202,7 @@ func (smT *stateManagerGPA) handleConsensusStateProposal(csp *sm_inputs.Consensu
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusDecidedState(cds *sm_inputs.ConsensusDecidedState) gpa.OutMessages {
+func (smT *stateManagerGPA) handleConsensusDecidedState(cds *inputs.ConsensusDecidedState) gpa.OutMessages {
 	start := time.Now()
 	smT.log.LogDebugf("Input consensus decided state index %v %s received...", cds.GetStateIndex(), cds.GetL1Commitment())
 	callback := newBlockRequestCallback(
@@ -226,7 +226,7 @@ func (smT *stateManagerGPA) handleConsensusDecidedState(cds *sm_inputs.Consensus
 	return messages
 }
 
-func (smT *stateManagerGPA) handleConsensusBlockProduced(input *sm_inputs.ConsensusBlockProduced) gpa.OutMessages {
+func (smT *stateManagerGPA) handleConsensusBlockProduced(input *inputs.ConsensusBlockProduced) gpa.OutMessages {
 	start := time.Now()
 	stateIndex := input.GetStateDraft().BlockIndex() - 1 // NOTE: as this state draft is complete, the returned index is the one of the next state (which will be obtained, once this state draft is committed); to get the index of the base state, we need to subtract one
 	commitment := input.GetStateDraft().BaseL1Commitment()
@@ -251,7 +251,7 @@ func (smT *stateManagerGPA) handleConsensusBlockProduced(input *sm_inputs.Consen
 	return result // No messages to send
 }
 
-func (smT *stateManagerGPA) handleChainFetchStateDiff(input *sm_inputs.ChainFetchStateDiff) gpa.OutMessages {
+func (smT *stateManagerGPA) handleChainFetchStateDiff(input *inputs.ChainFetchStateDiff) gpa.OutMessages {
 	start := time.Now()
 	smT.log.LogDebugf("Input mempool state request for state index %v %s is received compared to state index %v %s...",
 		input.GetNewStateIndex(), input.GetNewL1Commitment(), input.GetOldStateIndex(), input.GetOldL1Commitment())
@@ -283,7 +283,7 @@ func (smT *stateManagerGPA) handleChainFetchStateDiff(input *sm_inputs.ChainFetc
 	return result
 }
 
-func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.ChainFetchStateDiff, start time.Time) { //nolint:funlen
+func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *inputs.ChainFetchStateDiff, start time.Time) { //nolint:funlen
 	makeCallbackFun := func(part string) blockRequestCallback {
 		return newBlockRequestCallback(
 			func() bool { return input.IsValid() },
@@ -366,7 +366,7 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.Ch
 			input.GetNewStateIndex(), input.GetNewL1Commitment(), err)
 		return
 	}
-	input.Respond(sm_inputs.NewChainFetchStateDiffResults(newState, newChainOfBlocks, oldChainOfBlocks))
+	input.Respond(inputs.NewChainFetchStateDiffResults(newState, newChainOfBlocks, oldChainOfBlocks))
 	smT.log.LogDebugf("Input mempool state request for state index %v %s: responded to chain with requested state, "+
 		"and block chains of length %v (requested) and %v (old) with common ancestor index %v %s",
 		input.GetNewStateIndex(), input.GetNewL1Commitment(), len(newChainOfBlocks), len(oldChainOfBlocks),

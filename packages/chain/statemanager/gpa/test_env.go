@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -190,7 +190,7 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusBlockProduced(block state.Blo
 }
 
 func (teT *testEnv) sendConsensusBlockProduced(block state.Block, nodeID gpa.NodeID) <-chan state.Block {
-	input, responseCh := sm_inputs.NewConsensusBlockProduced(context.Background(), teT.bf.GetStateDraft(block))
+	input, responseCh := inputs.NewConsensusBlockProduced(context.Background(), teT.bf.GetStateDraft(block))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
@@ -215,7 +215,7 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusStateProposal(commitment *sta
 }
 
 func (teT *testEnv) sendConsensusStateProposal(commitment *state.L1Commitment, nodeID gpa.NodeID) <-chan any {
-	input, responseCh := sm_inputs.NewConsensusStateProposal(context.Background(), teT.bf.GetAnchor(commitment))
+	input, responseCh := inputs.NewConsensusStateProposal(context.Background(), teT.bf.GetAnchor(commitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
@@ -240,7 +240,7 @@ func (teT *testEnv) sendAndEnsureCompletedConsensusDecidedState(commitment *stat
 }
 
 func (teT *testEnv) sendConsensusDecidedState(commitment *state.L1Commitment, nodeID gpa.NodeID) <-chan state.State {
-	input, responseCh := sm_inputs.NewConsensusDecidedState(context.Background(), teT.bf.GetAnchor(commitment))
+	input, responseCh := inputs.NewConsensusDecidedState(context.Background(), teT.bf.GetAnchor(commitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
@@ -265,13 +265,13 @@ func (teT *testEnv) sendAndEnsureCompletedChainFetchStateDiff(oldCommitment, new
 	return teT.ensureCompletedChainFetchStateDiff(responseCh, expectedOldBlocks, expectedNewBlocks, maxTimeIterations, timeStep)
 }
 
-func (teT *testEnv) sendChainFetchStateDiff(oldCommitment, newCommitment *state.L1Commitment, nodeID gpa.NodeID) <-chan *sm_inputs.ChainFetchStateDiffResults {
-	input, responseCh := sm_inputs.NewChainFetchStateDiff(context.Background(), teT.bf.GetAnchor(oldCommitment), teT.bf.GetAnchor(newCommitment))
+func (teT *testEnv) sendChainFetchStateDiff(oldCommitment, newCommitment *state.L1Commitment, nodeID gpa.NodeID) <-chan *inputs.ChainFetchStateDiffResults {
+	input, responseCh := inputs.NewChainFetchStateDiff(context.Background(), teT.bf.GetAnchor(oldCommitment), teT.bf.GetAnchor(newCommitment))
 	teT.tc.WithInputs(map[gpa.NodeID]gpa.Input{nodeID: input}).RunAll()
 	return responseCh
 }
 
-func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *sm_inputs.ChainFetchStateDiffResults, expectedOldBlocks, expectedNewBlocks []state.Block, maxTimeIterations int, timeStep time.Duration) bool {
+func (teT *testEnv) ensureCompletedChainFetchStateDiff(respChan <-chan *inputs.ChainFetchStateDiffResults, expectedOldBlocks, expectedNewBlocks []state.Block, maxTimeIterations int, timeStep time.Duration) bool {
 	return teT.ensureTrue("response from ChainFetchStateDiff", func() bool {
 		select {
 		case cfsdr := <-respChan:
@@ -340,7 +340,7 @@ func (teT *testEnv) sendTimerTickToNodes(delay time.Duration) {
 	teT.parameters.TimeProvider.SetNow(now)
 	teT.t.Logf("Time %v is sent to nodes %s", now, util.SliceShortString(teT.nodeIDs))
 	teT.sendInputToNodes(func(_ gpa.NodeID) gpa.Input {
-		return sm_inputs.NewStateManagerTimerTick(now)
+		return inputs.NewStateManagerTimerTick(now)
 	})
 }
 

@@ -1,4 +1,4 @@
-package sm_inputs
+package inputs
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"

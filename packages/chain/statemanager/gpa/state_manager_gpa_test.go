@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
@@ -69,7 +69,7 @@ func TestManyNodes(t *testing.T) {
 	cspRespChans := make(map[gpa.NodeID]<-chan interface{})
 	for i := 1; i < len(nodeIDs); i++ {
 		nodeID := nodeIDs[i]
-		cspInputs[nodeID], cspRespChans[nodeID] = sm_inputs.NewConsensusStateProposal(context.Background(), lastOutput)
+		cspInputs[nodeID], cspRespChans[nodeID] = inputs.NewConsensusStateProposal(context.Background(), lastOutput)
 	}
 	env.tc.WithInputs(cspInputs).RunAll()
 	for nodeID, cspRespChan := range cspRespChans {
@@ -80,7 +80,7 @@ func TestManyNodes(t *testing.T) {
 	cdsRespChans := make(map[gpa.NodeID]<-chan state.State)
 	for i := 1; i < len(nodeIDs); i++ {
 		nodeID := nodeIDs[i]
-		cdsInputs[nodeID], cdsRespChans[nodeID] = sm_inputs.NewConsensusDecidedState(context.Background(), lastOutput)
+		cdsInputs[nodeID], cdsRespChans[nodeID] = inputs.NewConsensusDecidedState(context.Background(), lastOutput)
 	}
 	env.tc.WithInputs(cdsInputs).RunAll()
 	for nodeID, cdsRespChan := range cdsRespChans {

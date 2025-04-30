@@ -1,7 +1,7 @@
 package gpa
 
 import (
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/state"
@@ -35,7 +35,7 @@ func (smoi *smOutputImpl) TakeBlocksCommitted() []snapshots.SnapshotInfo {
 }
 
 func (smoi *smOutputImpl) addBlocksToCommit(commitments []*state.L1Commitment) {
-	smoi.nextInputs = append(smoi.nextInputs, sm_inputs.NewStateManagerBlocksToCommit(commitments))
+	smoi.nextInputs = append(smoi.nextInputs, inputs.NewStateManagerBlocksToCommit(commitments))
 }
 
 func (smoi *smOutputImpl) TakeNextInputs() []gpa.Input {

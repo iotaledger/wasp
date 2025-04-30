@@ -1,4 +1,4 @@
-package sm_inputs
+package inputs
 
 import (
 	"context"

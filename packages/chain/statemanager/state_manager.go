@@ -11,8 +11,8 @@ import (
 
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
 	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -35,7 +35,7 @@ type StateMgr interface {
 	ChainFetchStateDiff(
 		ctx context.Context,
 		prevAnchor, nextAnchor *isc.StateAnchor,
-	) <-chan *sm_inputs.ChainFetchStateDiffResults
+	) <-chan *inputs.ChainFetchStateDiffResults
 	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
 	ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey)
@@ -186,8 +186,8 @@ func New(
 // Implementations for chain package
 // -------------------------------------
 
-func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.StateAnchor) <-chan *sm_inputs.ChainFetchStateDiffResults {
-	input, resultCh := sm_inputs.NewChainFetchStateDiff(ctx, prevAnchor, nextAnchor)
+func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.StateAnchor) <-chan *inputs.ChainFetchStateDiffResults {
+	input, resultCh := inputs.NewChainFetchStateDiff(ctx, prevAnchor, nextAnchor)
 	smT.addInput(input)
 	return resultCh
 }
@@ -216,20 +216,20 @@ func (smT *stateManager) PreliminaryBlock(block state.Block) error {
 // ConsensusStateProposal asks State manager to ensure that all the blocks for aliasOutput are available.
 // `nil` is sent via the returned channel upon successful retrieval of every block for aliasOutput.
 func (smT *stateManager) ConsensusStateProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan interface{} {
-	input, resultCh := sm_inputs.NewConsensusStateProposal(ctx, anchor)
+	input, resultCh := inputs.NewConsensusStateProposal(ctx, anchor)
 	smT.addInput(input)
 	return resultCh
 }
 
 // ConsensusDecidedState asks State manager to return a virtual state with stateCommitment as its state commitment
 func (smT *stateManager) ConsensusDecidedState(ctx context.Context, anchor *isc.StateAnchor) <-chan state.State {
-	input, resultCh := sm_inputs.NewConsensusDecidedState(ctx, anchor)
+	input, resultCh := inputs.NewConsensusDecidedState(ctx, anchor)
 	smT.addInput(input)
 	return resultCh
 }
 
 func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan state.Block {
-	input, resultCh := sm_inputs.NewConsensusBlockProduced(ctx, stateDraft)
+	input, resultCh := inputs.NewConsensusBlockProduced(ctx, stateDraft)
 	smT.addInput(input)
 	return resultCh
 }
@@ -382,7 +382,7 @@ func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 }
 
 func (smT *stateManager) handleTimerTick(now time.Time) {
-	smT.handleInput(sm_inputs.NewStateManagerTimerTick(now))
+	smT.handleInput(inputs.NewStateManagerTimerTick(now))
 }
 
 func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {
