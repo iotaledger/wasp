@@ -96,6 +96,17 @@ func (c *EvmClient) GetBlockTraces(ctx context.Context, blockNumber uint64, ep e
 	return traces, nil
 }
 
+func (c *EvmClient) GetBlockTracesVia1Call(ctx context.Context, blockNumber uint64, ep evmEp) (any, error) {
+	var result interface{}
+	err := c.getClient(ep).Client().CallContext(ctx, &result, "debug_traceBlockByNumber", hexutil.EncodeUint64(blockNumber), map[string]interface{}{
+		"tracer": "callTracer",
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func (c *EvmClient) GetBalance(ctx context.Context, address common.Address, blockNumber uint64, ep evmEp) (*big.Int, error) {
 	return c.getClient(ep).BalanceAt(ctx, address, big.NewInt(int64(blockNumber)))
 }

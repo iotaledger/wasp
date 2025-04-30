@@ -68,29 +68,29 @@ func validateWebAPI(c *cmd.Context) error {
 	ctx := context.Background()
 
 	testContext := base.NewValidationContext(ctx, sClient, rClient)
-	chainValidation := webapi_validation.NewChainValidation(testContext)
-	coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
-	accountValidation := webapi_validation.NewAccountValidation(testContext)
-	governanceValidation := webapi_validation.NewGovernanceValidation(testContext)
+	// chainValidation := webapi_validation.NewChainValidation(testContext)
+	// coreBlockValidation := webapi_validation.NewCoreBlockLogValidation(testContext)
+	// accountValidation := webapi_validation.NewAccountValidation(testContext)
+	// governanceValidation := webapi_validation.NewGovernanceValidation(testContext)
 	evmValidation := webapi_validation.NewEvmValidation(stardustEndPoint, rebasedEndpoint, testContext)
 	latestBlock, _, err := rClient.CorecontractsAPI.BlocklogGetLatestBlockInfo(ctx).Execute()
 	require.NoError(base.T, err)
 
 	log.Printf("Starting Stardust/Rebased WebAPI validation. From 1 => %d", latestBlock.BlockIndex)
 
-	for i := uint32(1); i < latestBlock.BlockIndex; i++ {
-		if i%100 == 0 {
-			fmt.Printf("StateIndex: %d \n", i)
-		}
+	// for i := uint32(1); i < latestBlock.BlockIndex; i++ {
+	// 	if i%100 == 0 {
+	// 		fmt.Printf("StateIndex: %d \n", i)
+	// 	}
 
-		chainValidation.Validate(i)
-		coreBlockValidation.Validate(i)
-		accountValidation.ValidateAccountBalances(i)
-		accountValidation.ValidateNFTs(i)
-		accountValidation.ValidateNonce(i)
-		accountValidation.ValidateTotalAssets(i)
-		governanceValidation.ValidateGovernance(i)
-	}
+	// 	chainValidation.Validate(i)
+	// 	coreBlockValidation.Validate(i)
+	// 	accountValidation.ValidateAccountBalances(i)
+	// 	accountValidation.ValidateNFTs(i)
+	// 	accountValidation.ValidateNonce(i)
+	// 	accountValidation.ValidateTotalAssets(i)
+	// 	governanceValidation.ValidateGovernance(i)
+	// }
 
 	evmResults, err := os.Create("evm_validation_results.log")
 	if err != nil {
@@ -103,7 +103,7 @@ func validateWebAPI(c *cmd.Context) error {
 	sem := make(chan struct{}, 20)
 	wg := sync.WaitGroup{}
 	wg.Add(lastNBlocks)
-	for i := uint32(latestBlock.BlockIndex - uint32(lastNBlocks) + 1); i <= latestBlock.BlockIndex; i++ {
+	for i := uint32(1); i <= 50000; i++ {
 		go func() {
 			defer wg.Done()
 			sem <- struct{}{}

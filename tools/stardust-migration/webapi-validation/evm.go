@@ -106,5 +106,33 @@ func (v *EvmValidation) ValidateEvm(blockNumber uint64) error {
 		}
 	}
 
+	// validate block traces via debug_traceBlockByNumber
+	return v.validateBlockTraces(blockNumber)
+}
+
+func (v *EvmValidation) validateBlockTraces(blockNumber uint64) error {
+	stardustTraces, rebasedTraces, err := v.client.GetBlockTraces1Call(blockNumber)
+	if err != nil {
+		return fmt.Errorf("failed to get traces for block %d: %w", blockNumber, err)
+	}
+
+	if !assert.EqualValues(base.T, stardustTraces, rebasedTraces, "traces for block %d are not equal", blockNumber) {
+
+		stardustTracesJson, err := json.MarshalIndent(stardustTraces, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal stardust traces for block %d: %w", blockNumber, err)
+		}
+
+		rebasedTracesJson, err := json.MarshalIndent(rebasedTraces, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal rebased traces for block %d: %w", blockNumber, err)
+		}
+
+		os.WriteFile(fmt.Sprintf("%d_stardust_block_traces.json", blockNumber), stardustTracesJson, 0644)
+		os.WriteFile(fmt.Sprintf("%d_rebased_block_traces.json", blockNumber), rebasedTracesJson, 0644)
+
+		return fmt.Errorf("traces (debug_traceBlockByNumber) for block %d are not equal", blockNumber)
+	}
+
 	return nil
 }

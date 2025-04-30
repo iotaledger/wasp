@@ -25,12 +25,11 @@ func NewEvmClientWrapper(s_clientUri string, r_clientUri string, ctx ValidationC
 }
 
 func (c *EvmClientWrapper) GetTxTraces(blockNumber uint64) ([]TxTrace, []TxTrace, error) {
-
 	stardustTraces := make([]TxTrace, 0)
 	rebasedTraces := make([]TxTrace, 0)
+
 	var sErr error
 	var rErr error
-
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
@@ -52,6 +51,38 @@ func (c *EvmClientWrapper) GetTxTraces(blockNumber uint64) ([]TxTrace, []TxTrace
 
 	if rErr != nil {
 		return nil, nil, fmt.Errorf("failed to get rebased traces for block %d: %w", blockNumber, rErr)
+	}
+
+	return stardustTraces, rebasedTraces, nil
+}
+
+func (c *EvmClientWrapper) GetBlockTraces1Call(blockNumber uint64) (any, any, error) {
+	var stardustTraces any
+	var rebasedTraces any
+
+	var sErr error
+	var rErr error
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		stardustTraces, sErr = c.GetBlockTracesVia1Call(c.Ctx, blockNumber, stardust)
+	}()
+
+	go func() {
+		defer wg.Done()
+		rebasedTraces, rErr = c.GetBlockTracesVia1Call(c.Ctx, blockNumber, rebased)
+	}()
+
+	wg.Wait()
+
+	if sErr != nil {
+		return nil, nil, fmt.Errorf("failed to get stardust traces for block %d: %w via debug_traceBlockByNumber", blockNumber, sErr)
+	}
+
+	if rErr != nil {
+		return nil, nil, fmt.Errorf("failed to get rebased traces for block %d: %w via debug_traceBlockByNumber", blockNumber, rErr)
 	}
 
 	return stardustTraces, rebasedTraces, nil
