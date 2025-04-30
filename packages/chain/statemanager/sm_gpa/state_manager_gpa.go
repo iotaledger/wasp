@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/samber/lo"
+	"github.com/samber/lo/mutable"
 
 	"github.com/iotaledger/hive.go/log"
 
@@ -354,8 +355,11 @@ func (smT *stateManagerGPA) handleChainFetchStateDiffRespond(input *sm_inputs.Ch
 	}
 	commonIndex := lastBlockFun(oldChainOfBlocks).StateIndex()
 	commonCommitment := lastBlockFun(oldChainOfBlocks).L1Commitment()
-	oldChainOfBlocks = lo.Reverse(oldChainOfBlocks[:len(oldChainOfBlocks)-1])
-	newChainOfBlocks = lo.Reverse(newChainOfBlocks[:len(newChainOfBlocks)-1])
+	oldChainOfBlocks = oldChainOfBlocks[:len(oldChainOfBlocks)-1]
+	mutable.Reverse(oldChainOfBlocks)
+
+	newChainOfBlocks = newChainOfBlocks[:len(newChainOfBlocks)-1]
+	mutable.Reverse(newChainOfBlocks)
 	newState, err := smT.store.StateByTrieRoot(input.GetNewL1Commitment().TrieRoot())
 	if err != nil {
 		smT.log.LogErrorf("Input mempool state request for state index %v %s: error obtaining state: %w",
