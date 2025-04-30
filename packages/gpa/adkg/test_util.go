@@ -103,7 +103,7 @@ func MakeTestDistributedKey(
 	return pubKey, dkss
 }
 
-// For tests only.
+// VerifyPriShares is for tests only.
 func VerifyPriShares(
 	t *testing.T,
 	suite suites.Suite,
