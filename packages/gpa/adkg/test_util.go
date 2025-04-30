@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package adkg implements Asynchronous Distributed Key Generation algorithms
 package adkg
 
 import (
@@ -18,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/tcrypto"
 )
 
-// For tests only.
+// MakeTestDistributedKey is for tests only.
 func MakeTestDistributedKey(
 	t *testing.T,
 	suite suites.Suite,

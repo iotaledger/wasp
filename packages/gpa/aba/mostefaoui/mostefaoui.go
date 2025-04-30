@@ -76,7 +76,7 @@ import (
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
-// This structure is provided as an output of the algorithm.
+// Output is the structure provided as an output of the algorithm.
 // If the value is undecided, untyped nil is returned.
 // The Terminate field indicates, if this algorithm can be
 // dropped (no other peers need any messages from this node).
@@ -85,7 +85,7 @@ type Output struct {
 	Terminated bool
 }
 
-// Public API for this protocol.
+// ABA is the public API for this protocol.
 type ABA interface {
 	AsGPA() gpa.GPA
 }
@@ -116,7 +116,7 @@ var (
 	_ ABA     = &abaImpl{}
 )
 
-// Creates a single node for a consensus.
+// New creates a single node for a consensus.
 //
 // Here `ccCreateFun` is used as a factory function to create Common Coin instances for each round.
 // This way this implementation is made independent of particular CC instance. The created CC

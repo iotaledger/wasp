@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Here we implement the Asynchronous Common Subset algorithm
+// Package acs implements the Asynchronous Common Subset algorithm
 // from the HBBFT paper:
 //
 // > Miller, A., Xia, Y., Croman, K., Shi, E., and Song, D. (2016). The Honey Badger of
