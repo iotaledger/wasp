@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package jsonrpc implements JSON-RPC endpoints according to
+// Package jsonrpc implements JSON-RPC endpoints according to
 // https://eth.wiki/json-rpc/API
 package jsonrpc
 
@@ -383,9 +383,7 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 	})
 }
 
-// ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-//
-
+// ChainId implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
 func (e *EthService) ChainId() (hexutil.Uint, error) {
 	return withMetrics(e.metrics, "eth_chainId", func() (hexutil.Uint, error) {
 		chainID := e.evmChain.ChainID()

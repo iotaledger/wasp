@@ -117,7 +117,7 @@ func (msmT *MockedSnapshotManager) createSnapshot(snapshotInfo SnapshotInfo) {
 		msmT.snapshotReady(snapshotInfo)
 		msmT.log.LogDebugf("Creating snapshot %s: completed", snapshotInfo)
 		msmT.snapshotCreateFinalisedCount.Add(1)
-		msmT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
+		msmT.snapshotCreated(snapshotInfo)
 	}()
 }
 

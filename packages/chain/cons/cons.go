@@ -644,11 +644,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 // TX
 
 func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
-	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
-	var l1params *parameters.L1Params = aggregatedProposals.AggregatedL1Params()
+	var sender = c.dkShare.GetAddress().AsIotaAddress()
+	var l1params = aggregatedProposals.AggregatedL1Params()
 	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
-	var gasBudget uint64 = pt.EstimateGasBudget(gasPrice)
-	var gasPaymentCoinRef []*coin.CoinWithRef = aggregatedProposals.AggregatedGasCoins()
+	var gasBudget = pt.EstimateGasBudget(gasPrice)
+	var gasPaymentCoinRef = aggregatedProposals.AggregatedGasCoins()
 	gasPayment := make([]*iotago.ObjectRef, len(gasPaymentCoinRef))
 	for i, coinRef := range gasPaymentCoinRef {
 		gasPayment[i] = coinRef.Ref

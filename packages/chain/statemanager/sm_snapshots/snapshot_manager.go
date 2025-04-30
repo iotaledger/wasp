@@ -138,7 +138,7 @@ func (smiT *snapshotManagerImpl) createSnapshot(snapshotInfo SnapshotInfo) {
 				stateIndex, commitment, tmpFilePath, finalFilePath, err)
 			return
 		}
-		smiT.snapshotManagerRunner.snapshotCreated(snapshotInfo)
+		smiT.snapshotCreated(snapshotInfo)
 		smiT.log.LogInfof("Creating snapshot %v %s: snapshot created in %s", stateIndex, commitment, finalFilePath)
 		smiT.metrics.SnapshotCreated(time.Since(start), stateIndex)
 	}()
@@ -345,7 +345,7 @@ func (smiT *snapshotManagerImpl) loadSnapshotFromPath(snapshotInfo SnapshotInfo,
 
 	scheme, path, err := smiT.splitURL(url)
 	if err != nil {
-		return fmt.Errorf("Loading snapshot %s failed: %v", snapshotInfo, err)
+		return fmt.Errorf("loading snapshot %s failed: %v", snapshotInfo, err)
 	}
 	switch scheme {
 	case constSchemeHTTP:
@@ -355,7 +355,7 @@ func (smiT *snapshotManagerImpl) loadSnapshotFromPath(snapshotInfo SnapshotInfo,
 		smiT.log.LogDebugf("Loading snapshot %s from file %s...", snapshotInfo, path)
 		return loadLocalFun(path)
 	default:
-		return fmt.Errorf("Loading snapshot %s failed: unknown scheme %s in %s", snapshotInfo, scheme, url)
+		return fmt.Errorf("loading snapshot %s failed: unknown scheme %s in %s", snapshotInfo, scheme, url)
 	}
 }
 

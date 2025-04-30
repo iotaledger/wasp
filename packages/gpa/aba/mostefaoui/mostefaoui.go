@@ -1,4 +1,6 @@
 // Copyright 2020 IOTA Stiftung
+
+// Package mostefaoui implements the Mostefaoui ABA consensus algorithm
 // SPDX-License-Identifier: Apache-2.0
 //
 // Here we implement the Asynchronous Byzantine Binary Agreement by

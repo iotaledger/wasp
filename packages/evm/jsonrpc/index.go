@@ -31,10 +31,10 @@ type Index struct {
 
 func NewIndex(
 	stateByTrieRoot func(trieRoot trie.Hash) (state.State, error),
-	indexDbEngine hivedb.Engine,
-	indexDbPath string,
+	indexDBEngine hivedb.Engine,
+	indexDBPath string,
 ) *Index {
-	db, err := database.NewDatabase(indexDbEngine, indexDbPath, true, false, database.CacheSizeDefault)
+	db, err := database.NewDatabase(indexDBEngine, indexDBPath, true, false, database.CacheSizeDefault)
 	if err != nil {
 		panic(err)
 	}

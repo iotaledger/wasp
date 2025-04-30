@@ -71,8 +71,8 @@ func NewEVMChain(
 	backend ChainBackend,
 	pub *publisher.Publisher,
 	isArchiveNode bool,
-	indexDbEngine hivedb.Engine,
-	indexDbPath string,
+	indexDBEngine hivedb.Engine,
+	indexDBPath string,
 	log log.Logger,
 ) *EVMChain {
 	e := &EVMChain{
@@ -81,8 +81,8 @@ func NewEVMChain(
 		log:      log,
 		index: NewIndex(
 			backend.ISCStateByTrieRoot,
-			indexDbEngine,
-			path.Join(indexDbPath, backend.ISCChainID().String()),
+			indexDBEngine,
+			path.Join(indexDBPath, backend.ISCChainID().String()),
 		),
 	}
 

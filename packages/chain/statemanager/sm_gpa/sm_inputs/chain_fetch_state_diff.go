@@ -28,11 +28,11 @@ func NewChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.Sta
 	}
 	oldCommitment, err := transaction.L1CommitmentFromAnchor(prevAnchor)
 	if err != nil {
-		panic(fmt.Errorf("Cannot make L1 commitment from previous anchor, error: %w", err))
+		panic(fmt.Errorf("cannot make L1 commitment from previous anchor, error: %w", err))
 	}
 	newCommitment, err := transaction.L1CommitmentFromAnchor(nextAnchor)
 	if err != nil {
-		panic(fmt.Errorf("Cannot make L1 commitment from next anchor, error: %w", err))
+		panic(fmt.Errorf("cannot make L1 commitment from next anchor, error: %w", err))
 	}
 	resultChannel := make(chan *ChainFetchStateDiffResults, 1)
 	return &ChainFetchStateDiff{

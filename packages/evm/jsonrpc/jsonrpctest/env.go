@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package jsonrpctest provides testing utilities for the jsonrpc package
 package jsonrpctest
 
 import (

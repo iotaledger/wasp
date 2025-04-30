@@ -24,13 +24,13 @@ func (*hiveLogHandler) Enabled(context.Context, slog.Level) bool {
 func (h *hiveLogHandler) Handle(ctx context.Context, r slog.Record) error {
 	switch {
 	case r.Level >= slog.LevelError:
-		h.Logger.LogError(r.Message)
+		h.LogError(r.Message)
 	case r.Level <= slog.LevelDebug:
-		h.Logger.LogDebug(r.Message)
+		h.LogDebug(r.Message)
 	case r.Level == slog.LevelWarn:
-		h.Logger.LogWarn(r.Message)
+		h.LogWarn(r.Message)
 	default:
-		h.Logger.LogInfo(r.Message)
+		h.LogInfo(r.Message)
 	}
 	return nil
 }

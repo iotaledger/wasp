@@ -76,6 +76,7 @@ var (
 	_ ACS     = &acsImpl{}
 )
 
+// New creates a new instance of the ACS protocol.
 // > Let {RBC_i}_N refer to N instances of the reliable broadcast protocol,
 // > where P_i is the sender of RBC_i. Let {BA_i}_N refer to N instances
 // > of the binary byzantine agreement protocol.

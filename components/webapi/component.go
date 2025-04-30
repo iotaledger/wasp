@@ -294,7 +294,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.Auth,
 			deps.APICacheTTL,
 			websocketService,
-			ParamsWebAPI.IndexDbPath,
+			ParamsWebAPI.IndexDBPath,
 			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
 			deps.NodeConn.L1ParamsFetcher(),

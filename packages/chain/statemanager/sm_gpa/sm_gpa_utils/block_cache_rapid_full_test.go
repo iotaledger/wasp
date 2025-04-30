@@ -26,7 +26,7 @@ func newblockCacheTestSM(t *rapid.T) *blockCacheTestSM {
 	bctsmT.blockCacheNoWALTestSM = &blockCacheNoWALTestSM{}
 	bctsmT.blocksNotInWAL = []BlockKey{}
 	bctsmT.wal = NewMockedTestBlockWAL()
-	bctsmT.blockCacheNoWALTestSM.initStateMachine(t, 10, bctsmT.wal, func(block state.Block) {
+	bctsmT.initStateMachine(t, 10, bctsmT.wal, func(block state.Block) {
 		bctsmT.blocksNotInWAL = lo.Without(bctsmT.blocksNotInWAL, NewBlockKey(block.L1Commitment()))
 	})
 	return bctsmT
