@@ -36,12 +36,15 @@ import (
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 	vmerrors "github.com/iotaledger/wasp/packages/vm/core/errors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -681,12 +684,31 @@ func (e *EVMChain) SubscribeLogs(q *ethereum.FilterQuery, ch chan<- []*types.Log
 	}).Unhook
 }
 
-func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInfo, []isc.Request, error) {
+func (e *EVMChain) iscRequestsInBlock(evmBlockNumber uint64) (*blocklog.BlockInfo, []isc.Request, []vm.EnforceGasBurned, error) {
 	iscState, err := e.iscStateFromEVMBlockNumber(new(big.Int).SetUint64(evmBlockNumber))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return blocklog.NewStateReaderFromChainState(iscState).GetRequestsInBlock(iscState.BlockIndex())
+	bi, receipts, err := blocklog.NewStateReaderFromChainState(iscState).GetRequestReceiptsInBlock(iscState.BlockIndex())
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	var requests []isc.Request
+	var enforceGasBurned []vm.EnforceGasBurned
+	v := root.NewStateReaderFromChainState(iscState).GetSchemaVersion()
+	for _, rec := range receipts {
+		requests = append(requests, rec.Request)
+
+		// in order to correctly trace stardust requests we need to be
+		// sure to charge exactly the same amount of gas units
+		if v < allmigrations.SchemaVersionIotaRebased {
+			enforceGasBurned = append(enforceGasBurned, vm.EnforceGasBurned{
+				Error:     rec.Error,
+				GasBurned: rec.GasBurned,
+			})
+		}
+	}
+	return bi, requests, enforceGasBurned, nil
 }
 
 // traceTransaction allows the tracing of a single EVM transaction.
@@ -695,6 +717,7 @@ func (e *EVMChain) traceTransaction(
 	config *tracers.TraceConfig,
 	blockInfo *blocklog.BlockInfo,
 	requestsInBlock []isc.Request,
+	enforceGasBurned []vm.EnforceGasBurned,
 	tx *types.Transaction,
 	txIndex uint64,
 	blockHash common.Hash,
@@ -722,6 +745,7 @@ func (e *EVMChain) traceTransaction(
 		blockInfo.PreviousAnchor,
 		blockInfo.Timestamp,
 		requestsInBlock,
+		enforceGasBurned,
 		tracer,
 		blockInfo.L1Params,
 	)
@@ -751,7 +775,7 @@ func (e *EVMChain) traceTransaction(
 }
 
 func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Block) (any, error) {
-	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(block.NumberU64())
+	iscBlock, iscRequestsInBlock, enforceGasBurned, err := e.iscRequestsInBlock(block.NumberU64())
 	if err != nil {
 		return nil, err
 	}
@@ -777,6 +801,7 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		iscBlock.PreviousAnchor,
 		iscBlock.Timestamp,
 		iscRequestsInBlock,
+		enforceGasBurned,
 		tracer,
 		iscBlock.L1Params,
 	)
@@ -797,7 +822,7 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 		return nil, errors.New("transaction not found")
 	}
 
-	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(blockNumber)
+	iscBlock, iscRequestsInBlock, enforceGasBurned, err := e.iscRequestsInBlock(blockNumber)
 	if err != nil {
 		return nil, err
 	}
@@ -806,6 +831,7 @@ func (e *EVMChain) TraceTransaction(txHash common.Hash, config *tracers.TraceCon
 		config,
 		iscBlock,
 		iscRequestsInBlock,
+		enforceGasBurned,
 		tx,
 		txIndex,
 		blockHash,
@@ -891,7 +917,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	if err != nil {
 		return nil, err
 	}
-	iscBlock, iscRequestsInBlock, err := e.iscRequestsInBlock(block.NumberU64())
+	iscBlock, iscRequestsInBlock, enforceGasBurned, err := e.iscRequestsInBlock(block.NumberU64())
 	if err != nil {
 		return nil, err
 	}
@@ -912,6 +938,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 			&tracers.TraceConfig{},
 			iscBlock,
 			iscRequestsInBlock,
+			enforceGasBurned,
 			tx,
 			uint64(i),
 			block.Hash(),
