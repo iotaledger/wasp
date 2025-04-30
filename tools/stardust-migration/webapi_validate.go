@@ -109,7 +109,9 @@ func validateWebAPI(c *cmd.Context) error {
 			sem <- struct{}{}
 			err := evmValidation.ValidateEvm(uint64(i))
 			if err != nil {
-				evmResults.WriteString(fmt.Sprintf("block %d: %v\n", i, err))
+				e := fmt.Sprintf("block %d: %v\n", i, err)
+				evmResults.WriteString(e)
+				fmt.Println(e)
 			}
 			blockCount.Add(1)
 			fmt.Printf("processed %d blocks\r", blockCount.Load())
