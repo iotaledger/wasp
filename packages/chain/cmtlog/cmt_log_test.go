@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmt_log_test
+package cmtlog_test
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -61,7 +61,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-		cmtLogInst, err := cmt_log.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
+		cmtLogInst, err := cmtlog.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}
@@ -77,14 +77,14 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	t.Logf("AO1=%v", ao1)
 	gpaTC.WithInputs(inputAnchorConfirmed(gpaNodes, ao1)).RunAll()
 	gpaTC.PrintAllStatusStrings("After AO1Recv", t.Logf)
-	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(cmt_log.Output)
-	cons1Outs := map[gpa.NodeID]cmt_log.Output{}
+	cons1 := gpaNodes[gpaNodeIDs[0]].Output().(cmtlog.Output)
+	cons1Outs := map[gpa.NodeID]cmtlog.Output{}
 	for nid, n := range gpaNodes {
 		require.NotNil(t, n.Output())
 		require.Equal(t, cons1, n.Output())
-		cons1Outs[nid] = n.Output().(cmt_log.Output)
+		cons1Outs[nid] = n.Output().(cmtlog.Output)
 		require.Equal(t, 1, len(cons1Outs[nid]))
-		require.Nil(t, cons1Outs[nid][cmt_log.LogIndex(1)])
+		require.Nil(t, cons1Outs[nid][cmtlog.LogIndex(1)])
 	}
 	//
 	// Consensus results received (consumed ao1, produced ao2).
@@ -93,15 +93,15 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 	t.Logf("AO2=%v", ao2)
 	gpaTC.WithInputs(inputConsensusOutput(cons1Outs, ao2)).RunAll()
 	gpaTC.PrintAllStatusStrings("After gpaMsgsAO2Cons", t.Logf)
-	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(cmt_log.Output)
+	cons2 := gpaNodes[gpaNodeIDs[0]].Output().(cmtlog.Output)
 	t.Logf("cons2=%v", cons2)
 	for _, n := range gpaNodes {
-		out := n.Output().(cmt_log.Output)
+		out := n.Output().(cmtlog.Output)
 		require.NotNil(t, out)
 		require.Equal(t, cons2, out)
 		require.Equal(t, 2, len(out))
-		require.Nil(t, out[cmt_log.LogIndex(1)])
-		require.Equal(t, ao2, out[cmt_log.LogIndex(2)])
+		require.Nil(t, out[cmtlog.LogIndex(1)])
+		require.Equal(t, ao2, out[cmtlog.LogIndex(2)])
 	}
 	//
 	// AO Confirmed received (nothing changes, we are ahead of it)
@@ -119,21 +119,21 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 func inputAnchorConfirmed(gpaNodes map[gpa.NodeID]gpa.GPA, ao *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for n := range gpaNodes {
-		inputs[n] = cmt_log.NewInputAnchorConfirmed(ao)
+		inputs[n] = cmtlog.NewInputAnchorConfirmed(ao)
 	}
 	return inputs
 }
 
-func inputConsensusOutput(consReq map[gpa.NodeID]cmt_log.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
+func inputConsensusOutput(consReq map[gpa.NodeID]cmtlog.Output, nextAO *isc.StateAnchor) map[gpa.NodeID]gpa.Input {
 	inputs := map[gpa.NodeID]gpa.Input{}
 	for nid, outs := range consReq {
-		maxLI := cmt_log.NilLogIndex()
+		maxLI := cmtlog.NilLogIndex()
 		for li := range outs {
 			if li <= maxLI {
 				break
 			}
 			maxLI = li
-			inputs[nid] = cmt_log.NewInputConsensusOutputConfirmed(nextAO, li)
+			inputs[nid] = cmtlog.NewInputConsensusOutputConfirmed(nextAO, li)
 		}
 	}
 	return inputs

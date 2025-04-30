@@ -1,11 +1,11 @@
-package cmt_log_test
+package cmtlog_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 )
@@ -15,16 +15,16 @@ func TestQuorumCounter(t *testing.T) {
 	n := 7
 	f := 2
 	nodeIDs := gpa.MakeTestNodeIDs(n)
-	lin := cmt_log.NilLogIndex()
-	li7 := cmt_log.LogIndex(7)
-	li8 := cmt_log.LogIndex(8)
+	lin := cmtlog.NilLogIndex()
+	li7 := cmtlog.LogIndex(7)
+	li8 := cmtlog.LogIndex(8)
 
-	qc := cmt_log.NewQuorumCounter(cmt_log.MsgNextLogIndexCauseStarted, nodeIDs, log)
+	qc := cmtlog.NewQuorumCounter(cmtlog.MsgNextLogIndexCauseStarted, nodeIDs, log)
 
 	require.Equal(t, lin, qc.EnoughVotes(f+1))
 
-	makeVote := func(from gpa.NodeID, li cmt_log.LogIndex) *cmt_log.MsgNextLogIndex {
-		vote := cmt_log.NewMsgNextLogIndex(nodeIDs[0], li, cmt_log.MsgNextLogIndexCauseStarted, false)
+	makeVote := func(from gpa.NodeID, li cmtlog.LogIndex) *cmtlog.MsgNextLogIndex {
+		vote := cmtlog.NewMsgNextLogIndex(nodeIDs[0], li, cmtlog.MsgNextLogIndexCauseStarted, false)
 		vote.SetSender(from)
 		return vote
 	}

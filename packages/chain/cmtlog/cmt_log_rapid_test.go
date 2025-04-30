@@ -1,4 +1,4 @@
-package cmt_log_test
+package cmtlog_test
 
 // import (
 // 	"fmt"
@@ -9,7 +9,7 @@ package cmt_log_test
 
 // 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 // 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-// 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+// 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 // 	"github.com/iotaledger/wasp/packages/cryptolib"
 // 	"github.com/iotaledger/wasp/packages/gpa"
 // 	"github.com/iotaledger/wasp/packages/isc"
@@ -59,7 +59,7 @@ package cmt_log_test
 // 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 // 		require.NoError(t, err)
 // 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-// 		cmtLogInst, err := cmt_log.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
+// 		cmtLogInst, err := cmtlog.New(gpaNodeIDs[i], sm.chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, 1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
 // 		require.NoError(t, err)
 // 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 // 	}
@@ -143,7 +143,7 @@ package cmt_log_test
 // 	deliverIdx := rapid.IntRange(sm.l1Delivered[nodeID]+1, len(sm.l1Chain)-1).Draw(t, "deliverIdx")
 // 	ao := sm.l1Chain[deliverIdx]
 // 	sm.l1Delivered[nodeID] = deliverIdx
-// 	sm.tc.WithInput(nodeID, cmt_log.NewInputAnchorConfirmed(ao))
+// 	sm.tc.WithInput(nodeID, cmtlog.NewInputAnchorConfirmed(ao))
 // 	sm.tc.RunAll()
 // }
 

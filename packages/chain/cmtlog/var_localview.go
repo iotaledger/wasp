@@ -41,7 +41,7 @@
 // Note on the AO as an input for a consensus. The provided AO is just a proposal. After ACS
 // is completed, the participants will select the actual AO, which can differ from the one
 // proposed by this node.
-package cmt_log
+package cmtlog
 
 import (
 	"fmt"

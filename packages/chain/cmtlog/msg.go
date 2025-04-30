@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmt_log
+package cmtlog
 
 import (
 	"github.com/iotaledger/wasp/packages/gpa"

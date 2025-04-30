@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmt_log_test
+package cmtlog_test
 
 // TODO: Re-enable this test.
 
@@ -17,7 +17,7 @@ package cmt_log_test
 // 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 // 	"github.com/iotaledger/wasp/clients/iscmove"
 // 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-// 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+// 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 // 	"github.com/iotaledger/wasp/packages/cryptolib"
 // 	"github.com/iotaledger/wasp/packages/isc"
 // 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -29,7 +29,7 @@ package cmt_log_test
 // type varLocalViewSM struct {
 // 	//
 // 	// The actual instance to test.
-// 	lv cmt_log.VarLocalView
+// 	lv cmtlog.VarLocalView
 // 	//
 // 	// Following stands for the model.
 // 	confirmed []*isc.StateAnchor // A chain of confirmed AOs.
@@ -45,7 +45,7 @@ package cmt_log_test
 
 // func newVarLocalViewSM(t *rapid.T) *varLocalViewSM {
 // 	sm := new(varLocalViewSM)
-// 	sm.lv = cmt_log.NewVarLocalView(-1, func(ao *isc.StateAnchor) {}, testlogger.NewLogger(t))
+// 	sm.lv = cmtlog.NewVarLocalView(-1, func(ao *isc.StateAnchor) {}, testlogger.NewLogger(t))
 // 	sm.confirmed = []*isc.StateAnchor{}
 // 	sm.pending = []*isc.StateAnchor{}
 // 	sm.rejected = []*isc.StateAnchor{}
@@ -152,7 +152,7 @@ package cmt_log_test
 // 	prevAO := sm.lv.Value()
 // 	require.NotNil(t, prevAO)
 // 	newAO := sm.nextAO(prevAO)
-// 	tipAO, tipChanged := sm.lv.ConsensusOutputDone(cmt_log.NilLogIndex(), prevAO.GetObjectRef()) // TODO: LogIndex.
+// 	tipAO, tipChanged := sm.lv.ConsensusOutputDone(cmtlog.NilLogIndex(), prevAO.GetObjectRef()) // TODO: LogIndex.
 // 	require.True(t, tipChanged)
 // 	require.Equal(t, newAO, tipAO)
 // 	require.Equal(t, newAO, sm.lv.Value())

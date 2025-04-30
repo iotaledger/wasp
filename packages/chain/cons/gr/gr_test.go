@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -131,7 +131,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		Ref:   iotatest.RandomObjectRef(),
 	}
 
-	logIndex := cmt_log.LogIndex(0)
+	logIndex := cmtlog.LogIndex(0)
 	chainMetricsProvider := metrics.NewChainMetricsProvider()
 	for i := range peerIdentities {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)

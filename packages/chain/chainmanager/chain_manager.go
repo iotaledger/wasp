@@ -85,7 +85,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/hashing"
@@ -139,7 +139,7 @@ func (nck NeedConsensusKey) String() string {
 
 type NeedConsensusMap = shrinkingmap.ShrinkingMap[NeedConsensusKey, *NeedConsensus]
 
-func MakeConsensusKey(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) NeedConsensusKey {
+func MakeConsensusKey(committeeAddr cryptolib.Address, logIndex cmtlog.LogIndex) NeedConsensusKey {
 	var buf [NeedConsensusKeySize]byte
 	cak := committeeAddr.Key()
 	lib := logIndex.Bytes()
@@ -151,7 +151,7 @@ func MakeConsensusKey(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex
 type NeedConsensus struct {
 	CommitteeAddr   cryptolib.Address
 	DKShare         tcrypto.DKShare
-	LogIndex        cmt_log.LogIndex
+	LogIndex        cmtlog.LogIndex
 	BaseStateAnchor *isc.StateAnchor
 }
 
@@ -168,7 +168,7 @@ type NeedPublishTXMap = shrinkingmap.ShrinkingMap[hashing.HashValue, *NeedPublis
 
 type NeedPublishTX struct {
 	CommitteeAddr cryptolib.Address
-	LogIndex      cmt_log.LogIndex
+	LogIndex      cmtlog.LogIndex
 	Tx            *iotasigner.SignedTransaction
 	BaseAnchorRef *iotago.ObjectRef // The consumed Anchor object/version.
 }
@@ -197,7 +197,7 @@ type chainMgrImpl struct {
 	chainID                    isc.ChainID                                             // This instance is responsible for this chain.
 	chainStore                 state.Store                                             // Store of the chain state.
 	cmtLogs                    map[cryptolib.AddressKey]*cmtLogInst                    // All the committee log instances for this chain.
-	consensusStateRegistry     cmt_log.ConsensusStateRegistry                          // Persistent store for log indexes.
+	consensusStateRegistry     cmtlog.ConsensusStateRegistry                           // Persistent store for log indexes.
 	latestActiveCmt            *cryptolib.Address                                      // The latest active committee.
 	latestConfirmedAO          *isc.StateAnchor                                        // The latest confirmed AO (follows Active AO).
 	activeNodesCB              func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) // All the nodes authorized for being access nodes (for the ActiveAO).
@@ -230,7 +230,7 @@ func New(
 	me gpa.NodeID,
 	chainID isc.ChainID,
 	chainStore state.Store,
-	consensusStateRegistry cmt_log.ConsensusStateRegistry,
+	consensusStateRegistry cmtlog.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
 	needConsensusCB func(upd *NeedConsensusMap),
@@ -352,7 +352,7 @@ func (cmi *chainMgrImpl) handleInputAnchorConfirmed(input *inputAnchorConfirmed)
 	// >         Pass it to the corresponding CmtLog; HandleCmtLogOutput.
 	msgs.AddAll(cmi.handleCmtLogOutput(
 		committeeLog,
-		committeeLog.gpaInstance.Input(cmt_log.NewInputAnchorConfirmed(input.anchor)),
+		committeeLog.gpaInstance.Input(cmtlog.NewInputAnchorConfirmed(input.anchor)),
 	))
 	return msgs
 }
@@ -374,13 +374,13 @@ func (cmi *chainMgrImpl) handleInputChainTxPublishResult(input *inputChainTxPubl
 		// >     If result.confirmed = false THEN ... ELSE
 		// >         NOP // AO has to be received as Confirmed AO. // TODO: Not true, anymore.
 		return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-			return cl.Input(cmt_log.NewInputConsensusOutputConfirmed(input.aliasOutput, input.logIndex))
+			return cl.Input(cmtlog.NewInputConsensusOutputConfirmed(input.aliasOutput, input.logIndex))
 		})
 	}
 	// >     If result.confirmed = false THEN
 	// >         Forward it to ChainMgr; HandleCmtLogOutput.
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusOutputRejected(input.aliasOutput, input.logIndex))
+		return cl.Input(cmtlog.NewInputConsensusOutputRejected(input.aliasOutput, input.logIndex))
 	})
 }
 
@@ -432,7 +432,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 	//
 	// TODO: This event is not needed anymore.
 	// msgs.AddAll(cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-	// 	return cl.Input(cmt_log.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult))
+	// 	return cl.Input(cmtlog.NewInputConsensusOutputDone(input.logIndex, input.proposedBaseAO, input.consensusResult))
 	// }))
 	return msgs
 }
@@ -441,7 +441,7 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputDone(input *inputConsensusOut
 // >     Forward the message to the corresponding CmtLog; HandleCmtLogOutput.
 func (cmi *chainMgrImpl) handleInputConsensusOutputSkip(input *inputConsensusOutputSkip) gpa.OutMessages {
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusOutputSkip(input.logIndex))
+		return cl.Input(cmtlog.NewInputConsensusOutputSkip(input.logIndex))
 	})
 }
 
@@ -450,14 +450,14 @@ func (cmi *chainMgrImpl) handleInputConsensusOutputSkip(input *inputConsensusOut
 func (cmi *chainMgrImpl) handleInputConsensusTimeout(input *inputConsensusTimeout) gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputConsensusTimeout: %+v", input)
 	return cmi.withCmtLog(input.committeeAddr, func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputConsensusTimeout(input.logIndex))
+		return cl.Input(cmtlog.NewInputConsensusTimeout(input.logIndex))
 	})
 }
 
 func (cmi *chainMgrImpl) handleInputCanPropose() gpa.OutMessages {
 	cmi.log.LogDebugf("handleInputCanPropose")
 	return cmi.withAllCmtLogs(func(cl gpa.GPA) gpa.OutMessages {
-		return cl.Input(cmt_log.NewInputCanPropose())
+		return cl.Input(cmtlog.NewInputCanPropose())
 	})
 }
 
@@ -547,7 +547,7 @@ func (cmi *chainMgrImpl) ensureNeedConsensus(cli *cmtLogInst, outputUntyped gpa.
 		}
 		return
 	}
-	output := outputUntyped.(cmt_log.Output)
+	output := outputUntyped.(cmtlog.Output)
 	// if cmi.needConsensus != nil && cmi.needConsensus.IsFor(output) {
 	// 	// Not changed, keep it.
 	// 	return
@@ -625,7 +625,7 @@ func (cmi *chainMgrImpl) suspendCommittee(committeeAddr *cryptolib.Address) gpa.
 		if !cli.committeeAddr.Equals(committeeAddr) {
 			continue
 		}
-		return cmi.wrapCmtLogMsgs(cli, cli.gpaInstance.Input(cmt_log.NewInputSuspend()))
+		return cmi.wrapCmtLogMsgs(cli, cli.gpaInstance.Input(cmtlog.NewInputSuspend()))
 	}
 	return nil
 }
@@ -662,7 +662,7 @@ func (cmi *chainMgrImpl) ensureCmtLog(committeeAddr cryptolib.Address) (*cmtLogI
 		return nil, fmt.Errorf("ensureCmtLog cannot load DKShare for committeeAddress=%v: %w", committeeAddr, err)
 	}
 
-	clInst, err := cmt_log.New(
+	clInst, err := cmtlog.New(
 		cmi.me,
 		cmi.chainID,
 		dkShare,

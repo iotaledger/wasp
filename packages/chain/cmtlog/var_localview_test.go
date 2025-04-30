@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package cmt_log_test
+package cmtlog_test
 
 // TODO: Re-enable this test.
 
@@ -10,7 +10,7 @@ package cmt_log_test
 
 // 	"github.com/stretchr/testify/require"
 
-// 	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+// 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 // 	"github.com/iotaledger/wasp/packages/isc"
 // 	"github.com/iotaledger/wasp/packages/isc/isctest"
 // 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
@@ -19,7 +19,7 @@ package cmt_log_test
 // func TestVarLocalView(t *testing.T) {
 // 	log := testlogger.NewLogger(t)
 // 	defer log.Shutdown()
-// 	j := cmt_log.NewVarLocalView(-1, func(anchor *isc.StateAnchor) {}, log)
+// 	j := cmtlog.NewVarLocalView(-1, func(anchor *isc.StateAnchor) {}, log)
 // 	require.Nil(t, j.Value())
 // 	randAnchor := isctest.RandomStateAnchor()
 // 	tipAO, ok, _ := j.AliasOutputConfirmed(&randAnchor)

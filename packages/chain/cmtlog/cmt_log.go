@@ -1,4 +1,4 @@
-// package cmt_log is responsible for producing a log of chain's block decisions
+// package cmtlog is responsible for producing a log of chain's block decisions
 // for a particular committee. The main functions:
 //
 //   - Propose to start a consensus instance at a specific LI.
@@ -17,7 +17,7 @@
 //
 //   - A lagging node will join LI-1 instance with ⊥ and then will input its
 //     output to the round LI. This assumes the latest round is LI.
-package cmt_log
+package cmtlog
 
 import (
 	"errors"

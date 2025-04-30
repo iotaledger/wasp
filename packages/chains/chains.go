@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
@@ -80,7 +80,7 @@ type Chains struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateRegistry      cmt_log.ConsensusStateRegistry
+	consensusStateRegistry      cmtlog.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
 	mutex     *sync.RWMutex
@@ -137,7 +137,7 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateRegistry cmt_log.ConsensusStateRegistry,
+	consensusStateRegistry cmtlog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,

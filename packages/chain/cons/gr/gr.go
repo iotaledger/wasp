@@ -17,7 +17,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/chain/cons"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -44,7 +44,7 @@ const (
 
 type ConsensusID [iotago.AddressLen + 4]byte
 
-func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) ConsensusID {
+func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmtlog.LogIndex) ConsensusID {
 	ret := ConsensusID{}
 	copy(ret[:], cmtAddr.Bytes())
 	copy(ret[iotago.AddressLen:], codec.Encode[uint32](logIndex.AsUint32()))
@@ -160,7 +160,7 @@ func New(
 	chainID isc.ChainID,
 	chainStore state.Store,
 	dkShare tcrypto.DKShare,
-	logIndex *cmt_log.LogIndex,
+	logIndex *cmtlog.LogIndex,
 	myNodeIdentity *cryptolib.KeyPair,
 	procCache *processors.Config,
 	mempool Mempool,

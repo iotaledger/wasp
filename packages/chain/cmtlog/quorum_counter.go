@@ -1,4 +1,4 @@
-package cmt_log
+package cmtlog
 
 import (
 	"github.com/iotaledger/hive.go/log"
