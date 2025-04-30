@@ -139,11 +139,12 @@ func TestFull(t *testing.T) {
 	for i := 0; i < iterationCount; i++ {
 		blocks := testIterationFun(i, lastCommitment, 1)
 		lastCommitment = blocks[iterationSize-1].L1Commitment()
-		if i == 1 {
+		switch i {
+		case 1:
 			branchIndex := rand.Intn(iterationSize)
 			branchCommitment = blocks[branchIndex].L1Commitment()
 			oldBlocks = append(oldBlocks, blocks[branchIndex+1:]...)
-		} else if i == 2 {
+		case 2:
 			oldBlocks = append(oldBlocks, blocks...)
 		}
 		allBlocks = append(allBlocks, blocks...)
