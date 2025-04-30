@@ -7,6 +7,7 @@ import (
 	"math"
 	"os"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -258,9 +259,27 @@ func searchFoundies(store old_indexedstore.IndexedStore, args []string) SearchFu
 }
 
 func searchNativeTokens(store old_indexedstore.IndexedStore, args []string) SearchFunc {
+	var m sync.Map
 	return func(chainState old_kv.KVStoreReader, onFound func(k old_kv.Key, v []byte) bool) {
 		contractState := oldstate.GetContactStateReader(chainState, old_accounts.Contract.Hname())
-		contractState.Iterate(old_accounts.PrefixNativeTokens, onFound)
+		contractState.Iterate(old_accounts.PrefixNativeTokens, func(k old_kv.Key, v []byte) bool {
+			_, oldNtIDBytes := utils.MustSplitMapKey(k, -old_iotago.FoundryIDLength-1, old_accounts.PrefixNativeTokens)
+			if oldNtIDBytes == "" {
+				// not a map entry
+				return true
+			}
+
+			ntID := lo.Must(old_isc.NativeTokenIDFromBytes([]byte(oldNtIDBytes)))
+			ntIDStr := ntID.ToHex()
+
+			_, alreadyKnown := m.LoadOrStore(ntIDStr, struct{}{})
+			if !alreadyKnown {
+				cli.Printf("Native token ID: %s\n", ntIDStr)
+				return onFound(k, v)
+			}
+
+			return true
+		})
 	}
 }
 

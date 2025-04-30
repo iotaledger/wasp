@@ -4,6 +4,14 @@
 # Syntax: <block_number> # <explanation/comment>
 
 0 # Origin block
+1 
+
+70 # Ineffective DEL in blocks
+2257
+22759
+132243
+259700
+1694481
 
 71
 72 # First NFT added

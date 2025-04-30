@@ -166,6 +166,24 @@ var knownCoinInfos = map[string]parameters.IotaCoinInfo{
 		IconURL:     "ipfs://bafkreihtdy5o5ck6owan6iw26dbootexfloih6ecs3oydxeteiabfgtdju",
 		TotalSupply: 100000000000000,
 	},
+	"0x082fa6abc860d421b851c943d517dac9fe1a1e77e9332aaffe7f19a69ddf1797880100000000": {
+		Name:        "CPL",
+		Symbol:      "CPL",
+		Decimals:    0,
+		TotalSupply: 121,
+	},
+	"0x0828d5d3c7378f2a4aee66168cfbd70320b1ff9fab5a459019bf9c6f064b8f42f70100000000": {
+		Name:        "NJK",
+		Symbol:      "NJK",
+		Decimals:    15,
+		TotalSupply: 10000000000,
+	},
+	"0x08cfd6b4b60e0aba2ecdd4877bdb8caa73a1df98f32a18492ad7d9dc82e6b99d500100000000": {
+		Name:        "Pathin's Test Token",
+		Symbol:      "PTT",
+		Decimals:    18,
+		TotalSupply: 1000000,
+	},
 }
 
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
