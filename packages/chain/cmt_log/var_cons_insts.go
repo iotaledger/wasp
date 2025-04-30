@@ -39,7 +39,7 @@ type varConsInstsImpl struct {
 
 var _ VarConsInsts = &varConsInstsImpl{}
 
-// Constructor.
+// NewVarConsInsts is a constructor.
 func NewVarConsInsts(
 	minLI LogIndex,
 	persistCB func(li LogIndex),

@@ -13,7 +13,7 @@ type inputConsensusOutputSkip struct {
 	logIndex LogIndex
 }
 
-// This message is internal one, but should be sent by other components (e.g. consensus or the chain).
+// NewInputConsensusOutputSkip creates an internal message that should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusOutputSkip(
 	logIndex LogIndex,
 ) gpa.Input {

@@ -13,7 +13,7 @@ type inputConsensusTimeout struct {
 	logIndex LogIndex
 }
 
-// This message is internal one, but should be sent by other components (e.g. consensus or the chain).
+// NewInputConsensusTimeout creates an internal message that should be sent by other components (e.g. consensus or the chain).
 func NewInputConsensusTimeout(logIndex LogIndex) gpa.Input {
 	return &inputConsensusTimeout{
 		logIndex: logIndex,

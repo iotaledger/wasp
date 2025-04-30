@@ -4,7 +4,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-// Type for block identifier to be used when putting blocks in maps.
+// BlockKey is a type for block identifier to be used when putting blocks in maps.
 type BlockKey state.BlockHash
 
 func NewBlockKey(commitment *state.L1Commitment) BlockKey {

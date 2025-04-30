@@ -33,7 +33,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util/byzquorum"
 )
 
-// Public interface for this algorithm.
+// CmtLog is the public interface for this algorithm.
 type CmtLog interface {
 	AsGPA() gpa.GPA
 }
@@ -42,7 +42,7 @@ type State struct {
 	LogIndex LogIndex
 }
 
-// Interface used to store and recover the existing persistent state.
+// ConsensusStateRegistry is the interface used to store and recover the existing persistent state.
 // To be implemented by the registry.
 type ConsensusStateRegistry interface {
 	Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
@@ -51,7 +51,7 @@ type ConsensusStateRegistry interface {
 
 var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
 
-// The output is a set of log indexes for which we should run the consensus with
+// Output is a set of log indexes for which we should run the consensus with
 // the values indicated here. Nil means ⊥ here. The output might change AO to ⊥
 // for a particular LI, but not opposite. The updated value should only be used if
 // the previous value was not yet proposed to the consensus (unlikely), otherwise
@@ -75,7 +75,7 @@ type cmtLogImpl struct {
 
 var _ gpa.GPA = &cmtLogImpl{}
 
-// Construct new node instance for this protocol.
+// New constructs a new node instance for this protocol.
 //
 // > ON Startup:
 // >     Let prevLI <- TRY restoring the last started LogIndex ELSE 0

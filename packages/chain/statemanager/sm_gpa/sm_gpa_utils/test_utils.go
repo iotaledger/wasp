@@ -15,7 +15,7 @@ func CheckBlockInStore(t require.TestingT, store state.Store, origBlock state.Bl
 	require.True(t, origBlock.Equals(blockFromStore))
 }
 
-// -----------------------------------------------------------------------------
+// CheckStateInStores validates state consistency across stores
 func CheckStateInStores(t require.TestingT, storeOrig, storeNew state.Store, commitment *state.L1Commitment) {
 	origState, err := storeOrig.StateByTrieRoot(commitment.TrieRoot())
 	require.NoError(t, err)

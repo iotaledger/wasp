@@ -127,7 +127,7 @@ func (o *Output) String() string {
 	)
 }
 
-// =============================================================================
+// NeedConsensusKeySize is the required consensus key size in bytes
 // We use NeedConsensusKey to address the the instances in a map.
 const NeedConsensusKeySize = cryptolib.AddressSize + 4
 

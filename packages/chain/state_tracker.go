@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-// Tracks a single chain of state transitions. We will have 2 instances of it:
+// StateTracker tracks a single chain of state transitions. We will have 2 instances of it:
 //   - one for tracking the active state. It is needed for mempool to clear the requests.
 //   - one for the committed state to await for committed request receipts.
 type StateTracker interface {

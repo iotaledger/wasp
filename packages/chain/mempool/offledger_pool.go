@@ -20,7 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-// keeps a map of requests ordered by nonce for each account
+// OffLedgerPool keeps a map of requests ordered by nonce for each account
 type OffLedgerPool struct {
 	waitReq WaitReq
 	refLUT  *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *OrderedPoolEntry]

@@ -32,7 +32,7 @@ const (
 	tempFileSuffixConst   = ".part"
 )
 
-// Downloader is a reader, which reads from network URL in chunks (if webserver
+// NewDownloader creates a Downloader which is a reader that reads from network URL in chunks (if webserver
 // supports that). Only request to read the first chunk is made on downloader
 // creation. Requests to read other chunks are made once they are needed by
 // `Read` calls. The user of downloader can use `Read` independently of how many
@@ -162,7 +162,7 @@ func (d *downloaderImpl) GetLength() uint64 {
 	return d.fileSize
 }
 
-// Use downloader to download data to file. Temporary file is created while
+// DownloadToFile uses downloader to download data to file. Temporary file is created while
 // download is in progress and only on finishing the download, the file is
 // renamed to provided name. Progress reporter wrapped in `TeeReader` (or any
 // other reader) can be wrapped around downloader (provided by parameter of the

@@ -42,7 +42,7 @@ func NewMsgNextLogIndex(recipient gpa.NodeID, nextLogIndex LogIndex, cause MsgNe
 	}
 }
 
-// Make a copy for re-sending the message.
+// AsResent makes a copy for re-sending the message.
 // We set pleaseResend to false to avoid accidental loops.
 func (msg *MsgNextLogIndex) AsResent() *MsgNextLogIndex {
 	return &MsgNextLogIndex{

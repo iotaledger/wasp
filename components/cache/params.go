@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 )
 
-// ParametersDatabase contains the definition of the parameters used by the ParametersDatabase.
+// ParametersCache contains the definition of the parameters used by the ParametersDatabase.
 type ParametersCache struct {
 	// CacheSize defines the maximum cache size
 	CacheSize string `default:"64MiB" usage:"cache size"`

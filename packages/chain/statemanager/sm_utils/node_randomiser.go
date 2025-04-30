@@ -22,7 +22,7 @@ func NewNodeRandomiser(me gpa.NodeID, nodeIDs []gpa.NodeID, log log.Logger) Node
 	return result
 }
 
-// Before using the returned NodeRandomiser, it must be initted: UpdateNodeIDs
+// NewNodeRandomiserNoInit creates a NodeRandomiser. Before using the returned NodeRandomiser, it must be initted: UpdateNodeIDs
 // method must be called.
 func NewNodeRandomiserNoInit(me gpa.NodeID, log log.Logger) NodeRandomiser {
 	return &nodeRandomiser{

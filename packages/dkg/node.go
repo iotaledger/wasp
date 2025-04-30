@@ -45,7 +45,7 @@ type Node struct {
 	log                     log.Logger
 }
 
-// Init creates new node, that can participate in the DKG procedure.
+// NewNode creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
 	identity *cryptolib.KeyPair,

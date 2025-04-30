@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-// This object provides the synchronization between the functions asking for requests
+// WaitReq provides the synchronization between the functions asking for requests
 // and the arriving requests. The former have to be notified upon reception of the latter.
 type WaitReq interface {
 	WaitMany(ctx context.Context, reqRefs []*isc.RequestRef, cb func(req isc.Request)) // Called per block.

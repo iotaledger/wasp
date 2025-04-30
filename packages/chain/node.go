@@ -116,7 +116,7 @@ type PeerStatus struct {
 
 type RequestHandler = func(req isc.OnLedgerRequest)
 
-// The Anchor versions must be passed here in-order. The last one
+// AnchorHandler handles anchors. The Anchor versions must be passed here in-order. The last one
 // is the current one.
 type AnchorHandler = func(anchor *isc.StateAnchor, l1Params *parameters.L1Params)
 

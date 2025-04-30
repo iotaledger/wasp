@@ -52,7 +52,7 @@ func init() {
 	}
 }
 
-// Used in packages/chain/cons/bp/batch_proposal_set as key of a map
+// Hash returns the byte representation. Used in packages/chain/cons/bp/batch_proposal_set as key of a map
 func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
 	return rwo.Digest.HashValue()
 }

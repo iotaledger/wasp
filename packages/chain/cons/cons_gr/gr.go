@@ -56,7 +56,7 @@ type Mempool interface {
 	ConsensusRequestsAsync(ctx context.Context, requestRefs []*isc.RequestRef) <-chan []isc.Request
 }
 
-// State manager has to implement this interface.
+// StateMgr is an interface that state managers have to implement.
 type StateMgr interface {
 	// State manager has to return a signal via the return channel when it
 	// ensures all the needed blocks for the specified AliasOutput is present
