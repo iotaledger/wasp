@@ -7,10 +7,12 @@ import (
 	"math/big"
 
 	old_isc "github.com/nnikolash/wasp-types-exported/packages/isc"
+	old_gas "github.com/nnikolash/wasp-types-exported/packages/vm/gas"
 	"github.com/samber/lo"
 
 	old_iotago "github.com/iotaledger/iota.go/v3"
 	"github.com/iotaledger/wasp/packages/parameters"
+	new_util "github.com/iotaledger/wasp/packages/util"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -105,6 +107,20 @@ func OldNativeTokenIDtoNewCoinType(tokenID old_iotago.NativeTokenID) coin.Type {
 	return lo.Must(coin.TypeFromString(fmt.Sprintf("%v::nt::NT%v", h[:66], h[66:])))
 }
 
+func OldGasPerTokenToNew(oldFeePolicy *old_gas.FeePolicy) new_util.Ratio32 {
+	newGasPerToken := new_util.Ratio32{}
+
+	if oldFeePolicy.GasPerToken.A == 1 && oldFeePolicy.GasPerToken.B == 1 {
+		newGasPerToken = new_util.Ratio32{A: 1, B: 1000}
+	} else if oldFeePolicy.GasPerToken.A == 100 && oldFeePolicy.GasPerToken.B == 1 {
+		newGasPerToken = new_util.Ratio32{A: 1, B: 10}
+	} else {
+		panic(fmt.Sprintf("Unknown gas per token: %v", oldFeePolicy.GasPerToken))
+	}
+
+	return newGasPerToken
+}
+
 // Taken from here: https://explorer.iota.org/mainnet/addr/iota1pzt3mstq6khgc3tl0mwuzk3eqddkryqnpdxmk4nr25re2466uxwm28qqxu5?tab=NativeTokens
 var knownCoinInfos = map[string]parameters.IotaCoinInfo{
 	"0x08b4db42a2f13195b19c0f8b16e1928b297f677d7678f3121acb6524f8e8f8b21e0100000000": {
@@ -155,7 +171,10 @@ var knownCoinInfos = map[string]parameters.IotaCoinInfo{
 func OldNativeTokenIDtoNewCoinInfo(tokenID old_iotago.NativeTokenID) parameters.IotaCoinInfo {
 	coinInfo, known := knownCoinInfos[tokenID.ToHex()]
 	if !known {
-		panic(fmt.Sprintf("Unknown token ID: %v", tokenID.ToHex()))
+		//panic(fmt.Sprintf("Unknown token ID: %v", tokenID.ToHex()))
+		return parameters.IotaCoinInfo{
+			CoinType: coin.BaseTokenType,
+		}
 	}
 
 	if coinInfo.CoinType.String() == "" {

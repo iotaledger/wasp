@@ -3,13 +3,15 @@ package blockindex
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"slices"
 	"time"
 
-	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/tools/stardust-migration/utils/cli"
 
 	old_state "github.com/nnikolash/wasp-types-exported/packages/state"
 	old_trie "github.com/nnikolash/wasp-types-exported/packages/trie"
@@ -120,8 +122,13 @@ func NewOnTheFlyIndexer(db old_state.Store) *OnTheFlyBlockIndexer {
 }
 
 func onTheFlyIdexerCacheFilePath(db old_state.Store) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+
 	trieRoot := lo.Must(db.LatestTrieRoot())
-	return path.Join(os.TempDir(), "stardust-migration-blockindex-"+trieRoot.String()+".json")
+	return path.Join(cwd, "stardust-migration-blockindex-"+trieRoot.String()+".json")
 }
 
 type OnTheFlyBlockIndexer struct {

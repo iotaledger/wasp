@@ -693,8 +693,13 @@ func setDestStateKeyValidator(s *utils.InMemoryKVStore, o debugOptions) {
 }
 
 func getInMemoryStateFilePaths(blockIndex uint32) (string, string) {
-	oldStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_old_state.bin", os.TempDir(), blockIndex)
-	newStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_new_state.bin", os.TempDir(), blockIndex)
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Println(err)
+	}
+
+	oldStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_old_state.bin", cwd, blockIndex)
+	newStateFilePath := fmt.Sprintf("%v/stardust_migration_block_%v_new_state.bin", cwd, blockIndex)
 
 	return oldStateFilePath, newStateFilePath
 }

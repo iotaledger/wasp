@@ -93,9 +93,11 @@ func migrateGasFeePolicy(oldContractState old_kv.KVStoreReader, newContractState
 	cli.DebugLog("Migrating gas fee policy...\n")
 
 	oldPolicy := old_governance.MustGetGasFeePolicy(oldContractState)
+	newGasPerToken := OldGasPerTokenToNew(oldPolicy)
+
 	newPolicy := gas.FeePolicy{
 		EVMGasRatio:       lo.Must(util.Ratio32FromString(oldPolicy.EVMGasRatio.String())),
-		GasPerToken:       lo.Must(util.Ratio32FromString(oldPolicy.GasPerToken.String())),
+		GasPerToken:       newGasPerToken,
 		ValidatorFeeShare: oldPolicy.ValidatorFeeShare,
 	}
 

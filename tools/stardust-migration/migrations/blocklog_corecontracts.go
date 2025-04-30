@@ -24,15 +24,14 @@ import (
 func migrateGovernanceSetFeePolicy(args old_kv.Dict) new_isc.Message {
 	oldFeePolicy := lo.Must(old_gas.FeePolicyFromBytes(args.Get(old_governance.ParamFeePolicyBytes)))
 
+	newGasPerToken := OldGasPerTokenToNew(oldFeePolicy)
+
 	newFeePolicy := new_governance.FuncSetFeePolicy.Message(&new_gas.FeePolicy{
 		EVMGasRatio: new_util.Ratio32{
 			A: oldFeePolicy.EVMGasRatio.A,
 			B: oldFeePolicy.EVMGasRatio.B,
 		},
-		GasPerToken: new_util.Ratio32{
-			A: oldFeePolicy.GasPerToken.A,
-			B: oldFeePolicy.GasPerToken.B,
-		},
+		GasPerToken:       newGasPerToken,
 		ValidatorFeeShare: oldFeePolicy.ValidatorFeeShare,
 	})
 
