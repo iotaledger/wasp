@@ -1,4 +1,4 @@
-package sm_messages
+package messages
 
 import (
 	bcs "github.com/iotaledger/bcs-go"

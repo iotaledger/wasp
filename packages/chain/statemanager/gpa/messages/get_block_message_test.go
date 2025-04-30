@@ -1,4 +1,4 @@
-package sm_messages
+package messages
 
 import (
 	"testing"

@@ -9,9 +9,9 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/messages"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/sm_messages"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -113,9 +113,9 @@ func (smT *stateManagerGPA) Input(input gpa.Input) gpa.OutMessages {
 
 func (smT *stateManagerGPA) Message(msg gpa.Message) gpa.OutMessages {
 	switch msgCasted := msg.(type) {
-	case *sm_messages.GetBlockMessage:
+	case *messages.GetBlockMessage:
 		return smT.handlePeerGetBlock(msgCasted.Sender(), msgCasted.GetL1Commitment())
-	case *sm_messages.BlockMessage:
+	case *messages.BlockMessage:
 		return smT.handlePeerBlock(msgCasted.Sender(), msgCasted.GetBlock())
 	default:
 		smT.log.LogWarnf("Unknown message received, ignoring it: type=%T, message=%v", msg, msg)
@@ -146,8 +146,8 @@ func (smT *stateManagerGPA) StatusString() string {
 
 func (smT *stateManagerGPA) UnmarshalMessage(data []byte) (gpa.Message, error) {
 	return gpa.UnmarshalMessage(data, gpa.Mapper{
-		sm_messages.MsgTypeBlockMessage:    func() gpa.Message { return sm_messages.NewEmptyBlockMessage() },
-		sm_messages.MsgTypeGetBlockMessage: func() gpa.Message { return sm_messages.NewEmptyGetBlockMessage() },
+		messages.MsgTypeBlockMessage:    func() gpa.Message { return messages.NewEmptyBlockMessage() },
+		messages.MsgTypeGetBlockMessage: func() gpa.Message { return messages.NewEmptyGetBlockMessage() },
 	})
 }
 
@@ -165,7 +165,7 @@ func (smT *stateManagerGPA) handlePeerGetBlock(from gpa.NodeID, commitment *stat
 		return nil // No messages to send
 	}
 	smT.log.LogDebugf("Message GetBlock %s: block index %v found, sending it to peer %s", commitment, block.StateIndex(), fromLog)
-	return gpa.NoMessages().Add(sm_messages.NewBlockMessage(block, from))
+	return gpa.NoMessages().Add(messages.NewBlockMessage(block, from))
 }
 
 func (smT *stateManagerGPA) handlePeerBlock(from gpa.NodeID, block state.Block) gpa.OutMessages {
@@ -551,7 +551,7 @@ func (smT *stateManagerGPA) makeGetBlockRequestMessages(commitment *state.L1Comm
 	nodeIDs := smT.nodeRandomiser.GetRandomOtherNodeIDs(smT.parameters.StateManagerGetBlockNodeCount)
 	response := gpa.NoMessages()
 	for _, nodeID := range nodeIDs {
-		response.Add(sm_messages.NewGetBlockMessage(commitment, nodeID))
+		response.Add(messages.NewGetBlockMessage(commitment, nodeID))
 	}
 	return response
 }
