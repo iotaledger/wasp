@@ -11,7 +11,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/chains/accessmanager/am_dist"
+	"github.com/iotaledger/wasp/packages/chains/accessmanager/dist"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -87,7 +87,7 @@ func New(
 	me := ami.pubKeyAsNodeID(nodeIdentity.GetPublicKey())
 	ami.dist = gpa.NewAckHandler(me, gpa.NewOwnHandler(
 		me,
-		am_dist.NewAccessMgr(ami.pubKeyAsNodeID, serversUpdatedCB, ami.dismissPeerCB, log).AsGPA(),
+		dist.NewAccessMgr(ami.pubKeyAsNodeID, serversUpdatedCB, ami.dismissPeerCB, log).AsGPA(),
 	), resendPeriod)
 
 	netRecvPipeInCh := ami.netRecvPipe.In()
@@ -175,17 +175,17 @@ func (ami *accessMgrImpl) run(ctx context.Context, cleanupFunc context.CancelFun
 
 func (ami *accessMgrImpl) handleReqTrustedNodes(recv *reqTrustedNodes) {
 	ami.log.LogDebugf("handleReqTrustedNodes: trusted=%v", recv.trusted)
-	ami.sendMessages(ami.dist.Input(am_dist.NewInputTrustedNodes(recv.trusted)))
+	ami.sendMessages(ami.dist.Input(dist.NewInputTrustedNodes(recv.trusted)))
 }
 
 func (ami *accessMgrImpl) handleReqChainAccessNodes(recv *reqChainAccessNodes) {
 	ami.log.LogDebugf("handleReqChainAccessNodes: chainID=%v, access=%v", recv.chainID, recv.accessNodes)
-	ami.sendMessages(ami.dist.Input(am_dist.NewInputAccessNodes(recv.chainID, recv.accessNodes)))
+	ami.sendMessages(ami.dist.Input(dist.NewInputAccessNodes(recv.chainID, recv.accessNodes)))
 }
 
 func (ami *accessMgrImpl) handleReqChainDismissed(recv *reqChainDismissed) {
 	ami.log.LogDebugf("handleReqChainDismissed: chainID=%v", recv.chainID)
-	ami.sendMessages(ami.dist.Input(am_dist.NewInputChainDisabled(recv.chainID)))
+	ami.sendMessages(ami.dist.Input(dist.NewInputChainDisabled(recv.chainID)))
 }
 
 func (ami *accessMgrImpl) handleDistDebugTick() {
