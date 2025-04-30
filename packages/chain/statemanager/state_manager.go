@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -81,7 +81,7 @@ type stateManager struct {
 	log                  log.Logger
 	chainID              isc.ChainID
 	stateManagerGPA      gpa.GPA
-	nodeRandomiser       sm_utils.NodeRandomiser
+	nodeRandomiser       utils.NodeRandomiser
 	nodeIDToPubKey       map[gpa.NodeID]*cryptolib.PublicKey
 	inputPipe            pipe.Pipe[gpa.Input]
 	messagePipe          pipe.Pipe[*peering.PeerMessageIn]
@@ -123,7 +123,7 @@ func New(
 	parameters sm_gpa.StateManagerParameters,
 ) (StateMgr, error) {
 	smLog := log.NewChildLogger("SM")
-	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
+	nr := utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
 	stateManagerGPA, err := sm_gpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
 		smLog.LogErrorf("failed to create state manager GPA: %w", err)

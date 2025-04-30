@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -117,7 +117,7 @@ func (teT *testEnv) addVariedNodes(
 	for _, nodeID := range nodeIDs {
 		var err error
 		smLog := teT.log.NewChildLogger(nodeID.ShortString())
-		nr := sm_utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
+		nr := utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
 		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)

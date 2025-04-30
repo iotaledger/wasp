@@ -12,7 +12,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_messages"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -35,7 +35,7 @@ type stateManagerGPA struct {
 	blocksToFetch            blockFetchers
 	blocksFetched            blockFetchers
 	loadedSnapshotStateIndex uint32
-	nodeRandomiser           sm_utils.NodeRandomiser
+	nodeRandomiser           utils.NodeRandomiser
 	store                    state.Store
 	output                   StateManagerOutput
 	parameters               StateManagerParameters
@@ -52,7 +52,7 @@ var _ gpa.GPA = &stateManagerGPA{}
 func New(
 	chainID isc.ChainID,
 	loadedSnapshotStateIndex uint32,
-	nr sm_utils.NodeRandomiser,
+	nr utils.NodeRandomiser,
 	wal sm_gpa_utils.BlockWAL,
 	store state.Store,
 	metrics *metrics.ChainStateManagerMetrics,

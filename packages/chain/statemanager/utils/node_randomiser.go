@@ -1,4 +1,4 @@
-package sm_utils
+package utils
 
 import (
 	"github.com/samber/lo"
