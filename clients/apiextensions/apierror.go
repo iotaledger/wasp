@@ -1,3 +1,4 @@
+// Package apiextensions provides extended API functionality for interacting with the Wasp node API.
 package apiextensions
 
 import (

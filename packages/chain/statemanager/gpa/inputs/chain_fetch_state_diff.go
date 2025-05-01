@@ -1,3 +1,4 @@
+// Package inputs defines input structures and handlers for the state manager's general purpose algorithm.
 package inputs
 
 import (

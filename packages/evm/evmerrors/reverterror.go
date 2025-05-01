@@ -1,3 +1,4 @@
+// Package evmerrors defines error types and handling for EVM operations.
 package evmerrors
 
 import (

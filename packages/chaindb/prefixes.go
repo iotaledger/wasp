@@ -1,3 +1,4 @@
+// Package chaindb provides database functionality and operations for blockchain data storage.
 package chaindb
 
 const (

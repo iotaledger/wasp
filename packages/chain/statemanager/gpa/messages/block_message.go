@@ -1,3 +1,4 @@
+// Package messages defines message types used in the state manager's communication protocol.
 package messages
 
 import (

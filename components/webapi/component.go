@@ -1,3 +1,4 @@
+// Package webapi implements the REST API server component for the Wasp node.
 package webapi
 
 import (

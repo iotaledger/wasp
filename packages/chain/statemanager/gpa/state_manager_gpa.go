@@ -1,3 +1,4 @@
+// Package gpa implements the general purpose algorithm for state management in distributed systems.
 package gpa
 
 import (

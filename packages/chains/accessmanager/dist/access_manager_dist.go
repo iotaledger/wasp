@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// The algorithm here follows the specification `WaspChainAccessNodesV4.tla`.
+// Package dist implements chain access management following the specification `WaspChainAccessNodesV4.tla`.
 // The specification actions are mapped to GPA inputs here as follows:
 //
 //   - ChainActivate  -- first reception of inputAccessNodes.

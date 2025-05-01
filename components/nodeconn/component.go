@@ -1,3 +1,4 @@
+// Package nodeconn provides functionality for connecting to and communicating with nodes.
 package nodeconn
 
 import (

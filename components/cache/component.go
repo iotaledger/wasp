@@ -1,3 +1,4 @@
+// Package cache implements caching functionality for the application.
 package cache
 
 import (

@@ -1,3 +1,4 @@
+// Package snapshots provides functionality for managing state snapshots and synchronization.
 package snapshots
 
 import (

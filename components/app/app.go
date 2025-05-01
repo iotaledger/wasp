@@ -1,3 +1,4 @@
+// Package app provides core application functionality and lifecycle management.
 package app
 
 import (

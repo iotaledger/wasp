@@ -3,7 +3,7 @@
 
 // TODO: Cleanup the committees not used for a long time.
 
-// This package implements a protocol for running a chain in a node.
+// Package chainmanager implements a protocol for running a chain in a node.
 // Its main responsibilities:
 //   - Track, which branch is the latest/correct one.
 //   - Maintain a set of committee logs (1 for each committee this node participates in).

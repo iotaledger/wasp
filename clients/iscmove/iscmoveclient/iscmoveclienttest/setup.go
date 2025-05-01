@@ -1,3 +1,4 @@
+// Package iscmoveclienttest provides testing utilities for the ISC move client.
 package iscmoveclienttest
 
 import (

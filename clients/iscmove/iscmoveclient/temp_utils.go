@@ -1,3 +1,4 @@
+// Package iscmoveclient implements client functionality for ISC move operations.
 package iscmoveclient
 
 import (

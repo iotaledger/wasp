@@ -1,3 +1,4 @@
+// Package statemanager implements the state management functionality for blockchain state.
 package statemanager
 
 import (

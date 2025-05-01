@@ -1,4 +1,4 @@
-// package cmtlog is responsible for producing a log of chain's block decisions
+// Package cmtlog is responsible for producing a log of chain's block decisions.
 // for a particular committee. The main functions:
 //
 //   - Propose to start a consensus instance at a specific LI.

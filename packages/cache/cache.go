@@ -1,3 +1,4 @@
+// Package cache provides caching mechanisms for improving performance across the application.
 package cache
 
 import (

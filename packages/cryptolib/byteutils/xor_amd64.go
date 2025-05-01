@@ -1,6 +1,7 @@
 // 3rd-party code from: https://github.com/golang/go/blob/master/src/crypto/cipher/xor_amd64.go
 //go:build amd64
 
+// Package byteutils provides byte manipulation utilities optimized for cryptographic operations.
 package byteutils
 
 // XORBytes xors the bytes in a and b. The destination should have enough space, otherwise XOR will panic.

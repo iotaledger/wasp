@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package chains provides functionality for managing multiple blockchain instances.
 package chains
 
 import (

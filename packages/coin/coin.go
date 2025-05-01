@@ -1,3 +1,4 @@
+// Package coin implements cryptocurrency units and operations for the platform.
 package coin
 
 import (

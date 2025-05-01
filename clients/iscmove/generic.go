@@ -1,3 +1,4 @@
+// Package iscmove implements ISC move operations and related functionality.
 package iscmove
 
 type Bag = map[any]any

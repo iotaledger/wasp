@@ -1,3 +1,4 @@
+// Package iscmovetest provides testing utilities for ISC move operations.
 package iscmovetest
 
 // Everything in this file should be test only

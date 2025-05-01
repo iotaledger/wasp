@@ -1,4 +1,5 @@
-// Consensus. A single instance of it.
+// Package cons implements consensus functionality for IOTA Smart Contracts.
+// A single instance of it.
 //
 // We move all the synchronization logic to separate objects (upon_...). They are
 // responsible for waiting specific data and then triggering the next state action

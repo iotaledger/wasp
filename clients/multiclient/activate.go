@@ -1,3 +1,4 @@
+// Package multiclient provides functionality for managing multiple client connections.
 package multiclient
 
 import (

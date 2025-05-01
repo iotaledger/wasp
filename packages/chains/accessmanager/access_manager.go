@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package accessmanager implements chain access control and permission management.
 package accessmanager
 
 import (

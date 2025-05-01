@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// This runs single chain will all the committees, mempool, state mgr etc.
+// Package chain runs a single chain with all the committees, mempool, state mgr etc.
 // The main task for this package to run the protocol as in a threaded environment,
 // communicate between ChainMgr, Mempool, StateMgr, NodeConn and ConsensusInstances.
 //
