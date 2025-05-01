@@ -39,8 +39,8 @@ func getContractStats(contract *coreutil.ContractInfo, keyMap map[string]string,
 
 	// Check for Accounts
 	state.IterateKeys(kv.Key(contract.Hname().Bytes()), func(key kv.Key) bool {
-		//hn, _ := isc.HnameFromBytes([]byte(key[:4]))
-		//name := corecontracts.All[hn]
+		// hn, _ := isc.HnameFromBytes([]byte(key[:4]))
+		// name := corecontracts.All[hn]
 
 		keyName := compareKey(keyMap, key[4:])
 		if keyName == "" {
@@ -57,7 +57,7 @@ func getContractStats(contract *coreutil.ContractInfo, keyMap map[string]string,
 			}
 
 			seenKeys[keyName]++
-			//fmt.Printf("KEY:	%s, contract: %s, keyName: %s ->%x\n", accounts.Contract.Hname().String(), name.Name, keyName, key[4:])
+			// fmt.Printf("KEY:	%s, contract: %s, keyName: %s ->%x\n", accounts.Contract.Hname().String(), name.Name, keyName, key[4:])
 		}
 
 		return true

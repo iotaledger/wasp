@@ -19,8 +19,8 @@ func TestBlockSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, block1, block2)
 
-	var block3 = state.RandomBlock()
+	block3 := state.RandomBlock()
 	vEnc := bcs.MustMarshal(&block3)
-	var block3Dec = state.NewBlock()
+	block3Dec := state.NewBlock()
 	bcs.MustUnmarshalInto(vEnc, &block3Dec)
 }

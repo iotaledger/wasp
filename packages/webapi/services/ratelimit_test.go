@@ -1,10 +1,11 @@
 package services
 
 import (
+	"testing"
+
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 // TestWebsocketContext_RateLimitDisabled ensures no rate limiting occurs when

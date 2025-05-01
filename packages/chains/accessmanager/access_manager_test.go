@@ -6,9 +6,10 @@ package accessmanager_test
 import (
 	"context"
 	"fmt"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/stretchr/testify/require"
 

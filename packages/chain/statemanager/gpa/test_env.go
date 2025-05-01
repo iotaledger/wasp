@@ -2,10 +2,11 @@ package gpa
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 
 	"github.com/stretchr/testify/require"
 

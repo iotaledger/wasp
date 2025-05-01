@@ -15,7 +15,6 @@ type ErrorMessageFormatResponse struct {
 
 func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
-
 	if err != nil {
 		return c.handleViewCallError(err)
 	}

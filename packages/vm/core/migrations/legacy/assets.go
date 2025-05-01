@@ -57,7 +57,7 @@ func AssetsToBytes(v isc.SchemaVersion, assets *isc.Assets) []byte {
 	if (flags & assetFlagHasNativeTokens) != 0 {
 		w.WriteSize16(nts.Size())
 		for t, v := range nts.Iterate() {
-			w.WriteN(t.Bytes()[:])
+			w.WriteN(t.Bytes())
 			n := v.BigInt().Div(v.BigInt(), new(big.Int).SetUint64(1000))
 			w.WriteUint256(n)
 		}
