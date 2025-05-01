@@ -226,6 +226,7 @@ type SentAssets struct {
 	Assets iscmove.Assets
 }
 
+//nolint:funlen
 func PTBReceiveRequestsAndTransition(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	packageID iotago.PackageID,

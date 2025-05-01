@@ -154,7 +154,6 @@ func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, erro
 	return registry, nil
 }
 
-//nolint:gocyclo,funlen
 func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 	if p.folderPath == "" {
 		// do not load entries if no path is given

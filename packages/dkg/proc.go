@@ -531,7 +531,6 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	return sentMsgs, nil
 }
 
-//nolint:gocyclo,funlen
 func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	step byte,
 	initRecv *peering.PeerMessageGroupIn,
@@ -798,7 +797,7 @@ func (s *procStep) recv(msg *peering.PeerMessageGroupIn) {
 	s.recvCh <- msg
 }
 
-//nolint:gocyclo,funlen
+//nolint:gocyclo
 func (s *procStep) run() {
 	var err error
 	for {

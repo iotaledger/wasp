@@ -672,7 +672,7 @@ func (smT *stateManagerGPA) pruneStore(commitment *state.L1Commitment, stateInde
 // place to merge it with already known chain. After the merge it checks if the
 // end of the merged chain is still what it should be.
 // This function is extensively tested in `state_manager_gpa_cob_test.go` file.
-func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, stateIndex uint32) { //nolint:funlen,gocyclo
+func (smT *stateManagerGPA) updateChainOfBlocks(commitment *state.L1Commitment, stateIndex uint32) { //nolint:gocyclo
 	GetPreviousBlockInfoFun := func(bi *blockInfo) (*blockInfo, error) {
 		block, err := smT.store.BlockByTrieRoot(bi.trieRoot)
 		if err != nil {
