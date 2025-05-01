@@ -193,8 +193,6 @@ linters:
         text: may want to add detail/ assignee to this TODO/ FIXME/ BUG comment
       - path: 'packages/evm/jsonrpc/service.go'
         text: 'ST1003: method ChainId should be ChainID'  # casing required for evm
-      - path: (.+)\.go$
-        text: 'ST1000: package comment should be of the form'
     paths:
       - contracts/wasm
       - tools/cluster
