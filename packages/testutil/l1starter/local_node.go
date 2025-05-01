@@ -93,13 +93,19 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 	webAPIPort, err := container.MappedPort(ctxTimeout, "9000")
 	if err != nil {
-		container.Terminate(ctxTimeout)
+		tErr := container.Terminate(ctxTimeout)
+		if tErr != nil {
+			panic(fmt.Errorf("failed to terminate container: %w", tErr))
+		}
 		panic(fmt.Errorf("failed to get web API port: %w", err))
 	}
 
 	faucetPort, err := container.MappedPort(ctxTimeout, "9123")
 	if err != nil {
-		container.Terminate(ctxTimeout)
+		tErr := container.Terminate(ctxTimeout)
+		if tErr != nil {
+			panic(fmt.Errorf("failed to terminate container: %w", tErr))
+		}
 		panic(fmt.Errorf("failed to get faucet port: %w", err))
 	}
 
@@ -122,7 +128,10 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 
 func (in *LocalIotaNode) stop(ctx context.Context) {
 	in.logf("Stopping...")
-	in.container.Terminate(ctx, testcontainers.StopTimeout(0))
+	err := in.container.Terminate(ctx, testcontainers.StopTimeout(0))
+	if err != nil {
+		in.logf("Failed to stop container: %s", err)
+	}
 	instance.Store(nil)
 }
 
