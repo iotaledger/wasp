@@ -343,10 +343,6 @@ func (a *Assets) Clone() *Assets {
 	return r
 }
 
-func (a *Assets) Length() int {
-	return len(a.Coins) + len(a.Objects)
-}
-
 func (a *Assets) AddCoin(coinType coin.Type, amount coin.Value) *Assets {
 	a.Coins.Add(coinType, amount)
 	return a
