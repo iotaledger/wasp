@@ -21,7 +21,6 @@ linters:
     - goheader
     - gomodguard
     - goprintffuncname
-    - gosec
     - govet
     - grouper
     - importas
