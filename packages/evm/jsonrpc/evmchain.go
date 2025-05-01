@@ -735,6 +735,7 @@ func (e *EVMChain) traceTransaction(
 	err = e.backend.EVMTrace(
 		blockInfo.PreviousAnchor,
 		blockInfo.Timestamp,
+		blockInfo.Entropy,
 		requestsInBlock,
 		enforceGasBurned,
 		tracer,
@@ -791,6 +792,7 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 	err = e.backend.EVMTrace(
 		iscBlock.PreviousAnchor,
 		iscBlock.Timestamp,
+		iscBlock.Entropy,
 		iscRequestsInBlock,
 		enforceGasBurned,
 		tracer,

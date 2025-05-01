@@ -8,6 +8,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -16,7 +17,10 @@ import (
 )
 
 const (
-	BlockInfoLatestSchemaVersion = 0
+	blockInfoSchemaVersion0 = iota
+	blockInfoSchemaVersionAddedEntropy
+
+	BlockInfoLatestSchemaVersion = blockInfoSchemaVersionAddedEntropy
 )
 
 type BlockInfo struct {
@@ -30,6 +34,46 @@ type BlockInfo struct {
 	NumOffLedgerRequests  uint16
 	GasBurned             uint64     `bcs:"compact"`
 	GasFeeCharged         coin.Value `bcs:"compact"`
+	Entropy               hashing.HashValue
+}
+
+func init() {
+	bcs.AddCustomEncoder(func(e *bcs.Encoder, bi *BlockInfo) error {
+		e.Encode(bi.SchemaVersion)
+		e.Encode(bi.BlockIndex)
+		e.Encode(bi.Timestamp)
+		e.EncodeOptional(bi.PreviousAnchor)
+		e.Encode(bi.L1Params)
+		e.Encode(bi.TotalRequests)
+		e.Encode(bi.NumSuccessfulRequests)
+		e.Encode(bi.NumOffLedgerRequests)
+		e.WriteCompactUint64(bi.GasBurned)
+		e.WriteCompactUint64(bi.GasFeeCharged.Uint64())
+		if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
+			e.Encode(bi.Entropy)
+		}
+		return e.Err()
+	})
+
+	bcs.AddCustomDecoder(func(d *bcs.Decoder, bi *BlockInfo) error {
+		d.Decode(&bi.SchemaVersion)
+		d.Decode(&bi.BlockIndex)
+		d.Decode(&bi.Timestamp)
+		_ = d.DecodeOptional(&bi.PreviousAnchor)
+		d.Decode(&bi.L1Params)
+		d.Decode(&bi.TotalRequests)
+		d.Decode(&bi.NumSuccessfulRequests)
+		d.Decode(&bi.NumOffLedgerRequests)
+		bi.GasBurned = d.ReadCompactUint64()
+		bi.GasFeeCharged = coin.Value(d.ReadCompactUint64())
+		if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
+			d.Decode(&bi.Entropy)
+		} else {
+			// we are missing entropy information; assign some unique hash for the given block index
+			bi.Entropy = hashing.HashData(bcs.MustMarshal(&bi.BlockIndex))
+		}
+		return d.Err()
+	})
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index
