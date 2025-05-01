@@ -220,8 +220,7 @@ func TestBlocklog_Pruning(t *testing.T) {
 }
 
 func TestBlocklog_FoundriesWithPruning(t *testing.T) {
-	t.SkipNow() // TODO
-	// test that foundries can be accessed even after the block is pruned
+	t.SkipNow() // TODO: test that foundries can be accessed even after the block is pruned
 
 	env := solo.New(t, &solo.InitOptions{Debug: true})
 	ch, _ := env.NewChainExt(nil, 10*isc.Million, "chain1", 0, 10)
