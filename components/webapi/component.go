@@ -121,14 +121,6 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 
 			status := c.Response().Status
 			if err != nil {
-				var httpError *echo.HTTPError
-				if errors.As(err, &httpError) {
-					status = httpError.Code
-				}
-				if status == 0 || status == http.StatusOK {
-					status = http.StatusInternalServerError
-				}
-
 				return err
 			}
 
