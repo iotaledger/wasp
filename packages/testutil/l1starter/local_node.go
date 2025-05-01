@@ -81,10 +81,13 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 		ContainerRequest: req,
 	})
 	if err != nil {
-		panic(fmt.Errorf("failed to start container: %w", err))
+		panic(fmt.Errorf("failed to create container: %w", err))
 	}
 
 	err = container.Start(ctxTimeout)
+	if err != nil {
+		panic(fmt.Errorf("failed to start container: %w", err))
+	}
 
 	in.container = container
 
