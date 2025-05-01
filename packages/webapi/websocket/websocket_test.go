@@ -41,7 +41,7 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 
 	ws.EventHandler().AttachToEvents()
 
-	chain := env.NewChain()
+	chain := env.NewChain() //nolint:contextcheck
 
 	go func() {
 		websocketHub.Run(ctx)

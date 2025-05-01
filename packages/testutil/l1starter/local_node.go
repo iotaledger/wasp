@@ -120,9 +120,9 @@ func (in *LocalIotaNode) start(ctx context.Context) {
 	in.logf("LocalIotaNode started successfully")
 }
 
-func (in *LocalIotaNode) stop() {
+func (in *LocalIotaNode) stop(ctx context.Context) {
 	in.logf("Stopping...")
-	in.container.Terminate(context.Background(), testcontainers.StopTimeout(0))
+	in.container.Terminate(ctx, testcontainers.StopTimeout(0))
 	instance.Store(nil)
 }
 
