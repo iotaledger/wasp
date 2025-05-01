@@ -176,7 +176,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
 			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
-			_, err = PTBTestWrapper(
+			_, assetErr = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
 					Signer:    cryptolibSigner,
