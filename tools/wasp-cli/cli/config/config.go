@@ -1,3 +1,5 @@
+// Package config handles configuration management for the wasp-cli tool,
+// including reading, writing, and manipulating configuration settings.
 package config
 
 import (

@@ -1,3 +1,5 @@
+// Package util provides utility functions and common helper methods
+// used throughout the wasp-cli tool.
 package util
 
 import (
