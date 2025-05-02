@@ -103,7 +103,7 @@ func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), deb
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 				errString := ""
 				if v.Error != nil {
-					errString = fmt.Sprintf("error: \"%s\", ", v.Error.Error())
+					errString = fmt.Sprintf("error: %q, ", v.Error.Error())
 				}
 
 				logger.LogDebugf("%d %s \"%s\", %sagent: \"%s\", remoteIP: %s, responseSize: %s, took: %v", v.Status, v.Method, v.URI, errString, v.UserAgent, v.RemoteIP, humanize.Bytes(uint64(v.ResponseSize)), v.Latency.Truncate(time.Millisecond))
