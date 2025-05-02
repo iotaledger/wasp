@@ -154,7 +154,7 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 	}
 
 	if len(maxValue) > 0 {
-		if uint32(value) > maxValue[0] {
+		if value > uint64(maxValue[0]) {
 			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}
