@@ -1,3 +1,5 @@
+// Package waspcmd provides core command functionality for interacting with
+// Wasp nodes through the command-line interface.
 package waspcmd
 
 import (

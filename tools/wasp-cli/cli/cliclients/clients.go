@@ -1,3 +1,5 @@
+// Package cliclients provides client implementations for interacting with various APIs
+// within the wasp-cli tool, managing connections and API access.
 package cliclients
 
 import (

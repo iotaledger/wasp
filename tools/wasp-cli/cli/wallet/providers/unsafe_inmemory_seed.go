@@ -1,3 +1,5 @@
+// Package providers implements different wallet provider implementations
+// that can be used by the wasp-cli wallet commands.
 package providers
 
 import (

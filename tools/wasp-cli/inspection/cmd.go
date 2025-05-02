@@ -1,3 +1,5 @@
+// Package inspection provides tools for inspecting and analyzing various
+// aspects of the IOTA smart contract system through wasp-cli.
 package inspection
 
 import (

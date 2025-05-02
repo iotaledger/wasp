@@ -1,3 +1,5 @@
+// Package authentication provides functionality for authenticating with Wasp nodes,
+// allowing users to login, set tokens, and manage authentication information.
 package authentication
 
 import (
