@@ -71,13 +71,17 @@ func (vmctx *vmContext) runRequest(req isc.Request, requestIndex uint16, mainten
 }
 
 func (vmctx *vmContext) newRequestContext(req isc.Request, requestIndex uint16) *requestContext {
-	return &requestContext{
+	reqctx := &requestContext{
 		vm:               vmctx,
 		req:              req,
 		requestIndex:     requestIndex,
 		entropy:          hashing.HashData(append(codec.Encode(requestIndex), vmctx.task.Entropy[:]...)),
 		uncommittedState: buffered.NewBufferedKVStore(vmctx.stateDraft),
 	}
+	if vmctx.task.EnforceGasBurned != nil {
+		reqctx.gas.enforceGasBurned = &vmctx.task.EnforceGasBurned[requestIndex]
+	}
+	return reqctx
 }
 
 func (vmctx *vmContext) payoutAgentID() isc.AgentID {
@@ -212,6 +216,16 @@ func (reqctx *requestContext) callTheContract() (*vm.RequestResult, error) {
 
 		reqctx.GasBurnEnable(true)
 		result.Return = reqctx.callFromRequest()
+
+		if reqctx.gas.enforceGasBurned != nil {
+			// this is a stardust request being traced; we must make sure that we charge
+			// the exact same amount of gas units
+			if reqctx.gas.enforceGasBurned.Error != nil {
+				panic(reqctx.gas.enforceGasBurned.Error)
+			}
+			reqctx.gas.burned = reqctx.gas.enforceGasBurned.GasBurned
+		}
+
 		// ensure at least the minimum amount of gas is charged
 		reqctx.GasBurn(gas.BurnCodeMinimumGasPerRequest1P, reqctx.GasBurned())
 	}()
