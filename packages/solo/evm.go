@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -78,6 +79,7 @@ func (b *jsonRPCSoloBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
+	enforceGasBurned []vm.EnforceGasBurned,
 	tracer *tracers.Tracer,
 	l1Params *parameters.L1Params,
 ) error {
@@ -89,6 +91,7 @@ func (b *jsonRPCSoloBackend) EVMTrace(
 		b.Chain.log,
 		blockTime,
 		iscRequestsInBlock,
+		enforceGasBurned,
 		tracer,
 	)
 }

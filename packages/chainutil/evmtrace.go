@@ -9,6 +9,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/processors"
 )
 
@@ -20,6 +21,7 @@ func EVMTrace(
 	log log.Logger,
 	blockTime time.Time,
 	iscRequestsInBlock []isc.Request,
+	enforceGasBurned []vm.EnforceGasBurned,
 	tracer *tracers.Tracer,
 ) error {
 	_, err := runISCTask(
@@ -30,6 +32,7 @@ func EVMTrace(
 		log,
 		blockTime,
 		iscRequestsInBlock,
+		enforceGasBurned,
 		false,
 		tracer,
 	)
