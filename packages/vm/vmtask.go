@@ -37,6 +37,7 @@ type VMTask struct {
 	EstimateGasMode      bool
 	EVMTracer            *tracers.Tracer
 	EnableGasBurnLogging bool // for testing and Solo only
+	EnforceGasBurned     []EnforceGasBurned
 
 	Migrations *migrations.MigrationScheme // for testing and Solo only
 
@@ -71,4 +72,9 @@ func (task *VMTask) WillProduceBlock() bool {
 
 func (task *VMTask) FinalStateTimestamp() time.Time {
 	return task.Timestamp.Add(time.Duration(len(task.Requests)+1) * time.Nanosecond)
+}
+
+type EnforceGasBurned struct {
+	Error     *isc.UnresolvedVMError
+	GasBurned uint64
 }

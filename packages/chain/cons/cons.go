@@ -530,7 +530,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		return nil
 	}
 	bao := aggr.DecidedBaseAliasOutput()
-	baoID := bao.GetObjectID()
+	baoID := bao.GetObjectRef()
 	reqs := aggr.DecidedRequestRefs()
 	c.log.LogDebugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
 	if aggr.DecidedRotateTo() != nil {

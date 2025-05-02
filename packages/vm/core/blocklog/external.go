@@ -4,19 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 )
-
-func (s *StateReader) GetRequestsInBlock(blockIndex uint32) (*BlockInfo, []isc.Request, error) {
-	bi, recs, err := s.GetRequestReceiptsInBlock(blockIndex)
-	if err != nil {
-		return nil, nil, err
-	}
-	return bi, lo.Map(recs, func(rec *RequestReceipt, _ int) isc.Request { return rec.Request }), nil
-}
 
 func (s *StateReader) GetRequestReceiptsInBlock(blockIndex uint32) (*BlockInfo, []*RequestReceipt, error) {
 	blockInfo, ok := s.GetBlockInfo(blockIndex)

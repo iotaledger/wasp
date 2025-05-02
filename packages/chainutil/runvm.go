@@ -8,7 +8,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -31,6 +30,7 @@ func runISCTask(
 	log log.Logger,
 	blockTime time.Time,
 	reqs []isc.Request,
+	enforceGasBurned []vm.EnforceGasBurned,
 	estimateGasMode bool,
 	evmTracer *tracers.Tracer,
 ) ([]*vm.RequestResult, error) {
@@ -50,6 +50,7 @@ func runISCTask(
 		ValidatorFeeTarget:   accounts.CommonAccount(),
 		EnableGasBurnLogging: estimateGasMode,
 		EstimateGasMode:      estimateGasMode,
+		EnforceGasBurned:     enforceGasBurned,
 		EVMTracer:            evmTracer,
 		Log:                  log,
 		Migrations:           migs,
@@ -99,6 +100,7 @@ func runISCRequest(
 		log,
 		blockTime,
 		[]isc.Request{req},
+		nil,
 		estimateGasMode,
 		nil,
 	)

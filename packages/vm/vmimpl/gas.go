@@ -25,7 +25,7 @@ func (reqctx *requestContext) gasSetBudget(gasBudget uint64, maxTokensToSpendFor
 }
 
 func (reqctx *requestContext) GasBurn(burnCode gas.BurnCode, par ...uint64) {
-	if !reqctx.gas.burnEnabled {
+	if !reqctx.gas.burnEnabled || reqctx.gas.enforceGasBurned != nil {
 		return
 	}
 	g := burnCode.Cost(par...)
