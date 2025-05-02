@@ -30,6 +30,9 @@ func cleanGenericTypeName(t reflect.Type) string {
 
 func formatGenericType(typeName string) string {
 	idx := strings.Index(typeName, "[")
+	if idx == -1 {
+		return typeName // Return the original type name if no bracket is found
+	}
 	baseName := typeName[:idx]
 	params := typeName[idx+1 : len(typeName)-1]
 
