@@ -1,3 +1,4 @@
+// Package solidity provides utilities for working with Solidity contracts
 package solidity
 
 import (

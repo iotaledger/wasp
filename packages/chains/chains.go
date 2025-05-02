@@ -16,12 +16,12 @@ import (
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
-	"github.com/iotaledger/wasp/packages/chains/access_mgr"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
+	"github.com/iotaledger/wasp/packages/chains/accessmanager"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -80,12 +80,12 @@ type Chains struct {
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider
 	dkShareRegistryProvider     registry.DKShareRegistryProvider
 	nodeIdentityProvider        registry.NodeIdentityProvider
-	consensusStateRegistry      cmt_log.ConsensusStateRegistry
+	consensusStateRegistry      cmtlog.ConsensusStateRegistry
 	chainListener               chain.ChainListener
 
 	mutex     *sync.RWMutex
 	allChains *shrinkingmap.ShrinkingMap[isc.ChainID, *activeChain]
-	accessMgr access_mgr.AccessMgr
+	accessMgr accessmanager.AccessMgr
 
 	cleanupFunc         context.CancelFunc
 	shutdownCoordinator *shutdown.Coordinator
@@ -137,7 +137,7 @@ func New(
 	chainRecordRegistryProvider registry.ChainRecordRegistryProvider,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
 	nodeIdentityProvider registry.NodeIdentityProvider,
-	consensusStateRegistry cmt_log.ConsensusStateRegistry,
+	consensusStateRegistry cmtlog.ConsensusStateRegistry,
 	chainListener chain.ChainListener,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
@@ -240,7 +240,7 @@ func (c *Chains) Run(ctx context.Context) error {
 	}
 	c.ctx = ctx
 
-	c.accessMgr = access_mgr.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.NewChildLogger("AM"))
+	c.accessMgr = accessmanager.New(ctx, c.chainServersUpdatedCB, c.nodeIdentityProvider.NodeIdentity(), c.networkProvider, c.log.NewChildLogger("AM"))
 	c.trustedNetworkListenerCancel = c.trustedNetworkManager.TrustedPeersListener(c.trustedPeersUpdatedCB)
 
 	unhook := c.chainRecordRegistryProvider.Events().ChainRecordModified.Hook(func(event *registry.ChainRecordModifiedEvent) {
@@ -341,17 +341,17 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 
 	// Initialize WAL
 	chainLog := c.log.NewChildLogger(chainID.ShortString())
-	var chainWAL sm_gpa_utils.BlockWAL
+	var chainWAL utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = sm_gpa_utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
+		chainWAL, err = utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}
 	} else {
-		chainWAL = sm_gpa_utils.NewEmptyBlockWAL()
+		chainWAL = utils.NewEmptyBlockWAL()
 	}
 
-	stateManagerParameters := sm_gpa.NewStateManagerParameters()
+	stateManagerParameters := gpa.NewStateManagerParameters()
 	stateManagerParameters.BlockCacheMaxSize = c.smBlockCacheMaxSize
 	stateManagerParameters.BlockCacheBlocksInCacheDuration = c.smBlockCacheBlocksInCacheDuration
 	stateManagerParameters.BlockCacheBlockCleaningPeriod = c.smBlockCacheBlockCleaningPeriod
@@ -378,7 +378,7 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	} else {
 		snapshotToLoad = c.defaultSnapshotToLoad
 	}
-	chainSnapshotManager, err := sm_snapshots.NewSnapshotManager(
+	chainSnapshotManager, err := snapshots.NewSnapshotManager(
 		chainCtx,
 		chainShutdownCoordinator.Nested("SnapMgr"),
 		chainID,

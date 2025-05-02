@@ -11,7 +11,7 @@ import (
 	"github.com/iotaledger/wasp/packages/state"
 )
 
-// Implementation of this interface will receive events in the chain.
+// ChainListener is an interface whose implementation will receive events in the chain.
 // Initial intention was to provide info to the published/WebSocket endpoint.
 // All the function MUST NOT BLOCK.
 type ChainListener interface {

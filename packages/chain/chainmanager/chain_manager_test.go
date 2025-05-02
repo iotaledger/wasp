@@ -15,7 +15,7 @@ import (
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -133,7 +133,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	}
 	tc.WithInputs(initAOInputs).RunAll()
 	tc.PrintAllStatusStrings("Initial AO received", t.Logf)
-	initAOLogIndex := cmt_log.NilLogIndex()
+	initAOLogIndex := cmtlog.NilLogIndex()
 	for nid, n := range nodes {
 		out := n.Output().(*chainmanager.Output)
 		ncm := needCons[nid]
@@ -192,7 +192,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	tc.WithInputs(lo.SliceToMap(nodeIDs, func(nid gpa.NodeID) (gpa.NodeID, gpa.Input) {
 		return nid, chainmanager.NewInputChainTxPublishResult(
 			*cmtAddrA,
-			cmt_log.LogIndex(2),
+			cmtlog.LogIndex(2),
 			*tx1Digest,
 			&tx1OutAO,
 			true,

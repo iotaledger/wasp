@@ -6,17 +6,17 @@ package chainmanager
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusTimeout struct {
 	committeeAddr cryptolib.Address
-	logIndex      cmt_log.LogIndex
+	logIndex      cmtlog.LogIndex
 }
 
-func NewInputConsensusTimeout(committeeAddr cryptolib.Address, logIndex cmt_log.LogIndex) gpa.Input {
+func NewInputConsensusTimeout(committeeAddr cryptolib.Address, logIndex cmtlog.LogIndex) gpa.Input {
 	return &inputConsensusTimeout{
 		committeeAddr: committeeAddr,
 		logIndex:      logIndex,

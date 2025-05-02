@@ -38,7 +38,7 @@ func EVMEstimateGas(
 		return 0, err
 	}
 	var (
-		lo     uint64 = intrinsicGas - 1
+		lo     = intrinsicGas - 1
 		hi     uint64
 		gasCap uint64
 	)

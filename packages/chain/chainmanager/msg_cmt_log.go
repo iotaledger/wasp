@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
@@ -58,7 +58,7 @@ func (msg *msgCmtLog) UnmarshalBCS(d *bcs.Decoder) error {
 	wrappedBytes := bcs.Decode[[]byte](d)
 
 	var err error
-	msg.wrapped, err = cmt_log.UnmarshalMessage(wrappedBytes)
+	msg.wrapped, err = cmtlog.UnmarshalMessage(wrappedBytes)
 	if err != nil {
 		return fmt.Errorf("unmarshaling wrapped message: %w", err)
 	}

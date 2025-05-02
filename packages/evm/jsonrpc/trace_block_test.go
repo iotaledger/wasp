@@ -107,8 +107,8 @@ func TestConvertToTrace(t *testing.T) {
 		expectedGasUint64, _ := hexutil.DecodeUint64(expectedGas.(string))
 		expectedGasUsedUint64, _ := hexutil.DecodeUint64(expectedGasUsed.(string))
 
-		var diffGas int64 = int64(uint64(actualGas)) - int64(expectedGasUint64)
-		var diffGasUsed int64 = int64(uint64(actualGasUsed)) - int64(expectedGasUsedUint64)
+		var diffGas = int64(uint64(actualGas)) - int64(expectedGasUint64)
+		var diffGasUsed = int64(uint64(actualGasUsed)) - int64(expectedGasUsedUint64)
 
 		// Skip gas and gasUsed verification for now
 		_ = diffGas

@@ -23,7 +23,7 @@ type StartNewChainRequest struct {
 	GasBudget     uint64
 }
 
-// the only exception which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// StartNewChain is the only exception which doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
 // this func automatically pick a coin
 func (c *Client) StartNewChain(
 	ctx context.Context,

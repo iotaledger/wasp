@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package gpa stands for generic pure (distributed) algorithm.
+// Package gpa stands for generic pure (distributed) algorithm.
 package gpa
 
 import (
@@ -79,7 +79,7 @@ type Input interface{}
 
 type Output interface{}
 
-// A buffer for collecting out messages.
+// OutMessages is a buffer for collecting out messages.
 // It is used to decrease array reallocations, if a slice would be used directly.
 // Additionally, you can safely append to the OutMessages while you iterate over it.
 // It should be implemented as a deep-list, allowing efficient appends and iterations.
@@ -113,7 +113,7 @@ type OutMessages interface {
 	AsArray() []Message
 }
 
-// Generic interface for functional style distributed algorithms.
+// GPA is a generic interface for functional style distributed algorithms.
 // GPA stands for Generic Pure Algorithm.
 type GPA interface {
 	Input(inp Input) OutMessages     // Can return nil for NoMessages.

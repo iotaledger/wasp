@@ -53,7 +53,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -80,7 +80,7 @@ const (
 	forceCleanMempoolTick   = 1 * time.Minute
 )
 
-// Partial interface for providing chain events to the outside.
+// ChainListener is a partial interface for providing chain events to the outside.
 // This interface is in the mempool part only because it tracks
 // the actual state for checking the consumed requests.
 type ChainListener interface {

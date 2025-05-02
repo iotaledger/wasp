@@ -314,7 +314,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	for i := range prevMsgs {
 		peerResponseMsg := &rabinResponseMsg{}
 		if err = msgFromBytes(prevMsgs[i].MsgData, peerResponseMsg); err != nil {
-			err = fmt.Errorf("Response: decoding failed: %w", err)
+			err = fmt.Errorf("response: decoding failed: %w", err)
 			return nil, err
 		}
 		recvResponses[i] = peerResponseMsg
@@ -365,7 +365,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	for i := range prevMsgs {
 		peerJustificationMsg := &rabinJustificationMsg{blsSuite: p.keySetSuite(kst)}
 		if err = msgFromBytes(prevMsgs[i].MsgData, peerJustificationMsg); err != nil {
-			return nil, fmt.Errorf("Justification: decoding failed: %w", err)
+			return nil, fmt.Errorf("justification: decoding failed: %w", err)
 		}
 		recvJustifications[i] = peerJustificationMsg
 	}
@@ -376,7 +376,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 		for _, j := range recvJustifications[i].justifications {
 			if err = p.dkgImpl[kst].ProcessJustification(j); err != nil {
 				p.dkgLock.Unlock()
-				return nil, fmt.Errorf("Justification: processing failed: %w", err)
+				return nil, fmt.Errorf("justification: processing failed: %w", err)
 			}
 		}
 	}
@@ -880,12 +880,12 @@ func (s *procStep) run() {
 					// Here we received a message from the peer first time in this round.
 					// Parse and store it and wait until we have messages from all the peers.
 					multiKSTMsg := &multiKeySetMsg{
-						peeringID: recv.PeerMessageData.PeeringID,
-						receiver:  recv.PeerMessageData.MsgReceiver,
-						msgType:   recv.PeerMessageData.MsgType,
+						peeringID: recv.PeeringID,
+						receiver:  recv.MsgReceiver,
+						msgType:   recv.MsgType,
 					}
-					if err := msgFromBytes(recv.PeerMessageData.MsgData, multiKSTMsg); err != nil {
-						s.log.LogDebugf("failed to parse peer message, peeringID: %s, msgType: %d, msgData: %s, error: %w", recv.PeerMessageData.PeeringID, recv.PeerMessageData.MsgType, hex.EncodeToString(recv.PeerMessageData.MsgData), err)
+					if err := msgFromBytes(recv.MsgData, multiKSTMsg); err != nil {
+						s.log.LogDebugf("failed to parse peer message, peeringID: %s, msgType: %d, msgData: %s, error: %w", recv.PeeringID, recv.MsgType, hex.EncodeToString(recv.MsgData), err)
 						continue
 					}
 

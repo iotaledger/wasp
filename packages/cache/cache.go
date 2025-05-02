@@ -25,13 +25,13 @@ type CacheInterface interface {
 	Add(key []byte, value []byte)
 }
 
-// cache using the fastcache instance
+// CachePartition is a cache using the fastcache instance
 type CachePartition struct {
 	CacheInterface
 	partition *partition
 }
 
-// cache doing nothing
+// CacheNoop is a cache doing nothing
 type CacheNoop struct {
 	CacheInterface
 }
@@ -53,7 +53,7 @@ var (
 	cache *fastcache.Cache
 )
 
-// set Cache size
+// SetCacheSize sets the cache size
 // called from cache component to set parameter
 // before first use
 func SetCacheSize(size int) error {
@@ -67,7 +67,7 @@ func SetCacheSize(size int) error {
 	return nil
 }
 
-// get fastcache statistics
+// GetStats returns fastcache statistics
 func GetStats() *Stats {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -85,7 +85,7 @@ func GetStats() *Stats {
 	}
 }
 
-// create a new cache partition
+// NewCacheParition creates a new cache partition
 // initializes the cache if not already happened
 func NewCacheParition() (CacheInterface, error) {
 	mutex.Lock()

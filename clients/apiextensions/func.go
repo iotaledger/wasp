@@ -68,7 +68,7 @@ func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.API
 			WaitForL1Confirmation(waitForL1Confirmation).
 			Execute()
 		if err != nil {
-			return nil, fmt.Errorf("Error in WaitForRequest, reqID=%v: %w", req.String(), err)
+			return nil, fmt.Errorf("error in WaitForRequest, reqID=%v: %w", req.String(), err)
 		}
 
 		ret[i] = receipt

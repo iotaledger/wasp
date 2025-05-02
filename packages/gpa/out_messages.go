@@ -19,7 +19,7 @@ type outMessagesImpl struct {
 
 var _ OutMessages = &outMessagesImpl{}
 
-// A convenience function to return from the Input or Message functions in GPA.
+// NoMessages is a convenience function to return from the Input or Message functions in GPA.
 func NoMessages() OutMessages {
 	return &outMessagesImpl{count: 0, head: nil, tail: nil}
 }

@@ -174,7 +174,7 @@ type L1Client interface {
 	GetCoins(ctx context.Context, req iotaclient.GetCoinsRequest) (*iotajsonrpc.CoinPage, error)
 	GetTotalSupply(ctx context.Context, coinType string) (*iotajsonrpc.Supply, error)
 	GetChainIdentifier(ctx context.Context) (string, error)
-	GetCheckpoint(ctx context.Context, checkpointId *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error)
+	GetCheckpoint(ctx context.Context, checkpointID *iotajsonrpc.BigInt) (*iotajsonrpc.Checkpoint, error)
 	GetCheckpoints(ctx context.Context, req iotaclient.GetCheckpointsRequest) (*iotajsonrpc.CheckpointPage, error)
 	GetEvents(ctx context.Context, digest *iotago.TransactionDigest) ([]*iotajsonrpc.IotaEvent, error)
 	GetLatestCheckpointSequenceNumber(ctx context.Context) (string, error)
@@ -247,7 +247,7 @@ func (c *l1Client) RequestFunds(ctx context.Context, address cryptolib.Address) 
 }
 
 func (c *l1Client) Health(ctx context.Context) error {
-	_, err := c.Client.GetLatestIotaSystemState(ctx)
+	_, err := c.GetLatestIotaSystemState(ctx)
 	return err
 }
 
