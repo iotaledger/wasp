@@ -1,6 +1,8 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package peering implements functionality for managing peer connections
+// between Wasp nodes in the IOTA smart contract network.
 package peering
 
 import (

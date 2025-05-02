@@ -1,3 +1,5 @@
+// Package log provides logging functionality for the wasp-cli tool,
+// supporting various log levels and output formats.
 package log
 
 import (

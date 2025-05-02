@@ -1,3 +1,5 @@
+// Package disrec implements disaster recovery functionality for the wasp-cli tool,
+// allowing users to recover from various failure scenarios.
 package disrec
 
 import (

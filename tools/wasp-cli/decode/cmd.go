@@ -1,3 +1,6 @@
+// Package decode provides utilities for decoding various data formats
+// used in the IOTA smart contract ecosystem, including metadata, gas policies,
+// and transaction outputs.
 package decode
 
 import (
