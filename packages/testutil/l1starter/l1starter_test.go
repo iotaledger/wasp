@@ -28,6 +28,7 @@ func TestStart(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, state.PendingActiveValidatorsSize.Uint64())
 
-	w, _ := context.WithTimeout(context.Background(), testmisc.GetTimeout(2*time.Second))
+	w, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(2*time.Second))
+	defer cancel()
 	<-w.Done()
 }

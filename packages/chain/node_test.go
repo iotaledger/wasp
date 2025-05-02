@@ -430,7 +430,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoin, err := tnc.l1Client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 		})

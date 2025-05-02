@@ -110,8 +110,7 @@ func (vli *varLogIndexImpl) tryOutput(li LogIndex, cause MsgNextLogIndexCause) g
 	vli.agreedLI = li
 	vli.log.LogDebugf("⊢ Output, li=%v", vli.agreedLI)
 	if vli.metrics != nil {
-		switch cause {
-		case MsgNextLogIndexCauseStarted:
+		if cause == MsgNextLogIndexCauseStarted {
 			vli.metrics.NextLogIndexCauseStarted()
 		}
 	}

@@ -144,6 +144,6 @@ func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 	in.start(ctx)
 
 	return in, func() {
-		in.stop()
+		in.stop(ctx)
 	}
 }

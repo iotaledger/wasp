@@ -19,6 +19,9 @@ import (
 
 func (c *Controller) getControlAddresses(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	controlAddresses, err := corecontracts.GetControlAddresses(ch)
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -35,6 +38,9 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	var blockInfo *blocklog.BlockInfo
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -60,6 +66,9 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	var requestIDs []isc.RequestID
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -122,6 +131,9 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	var blocklogReceipts *blocklog.RequestReceiptsResponse
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -229,6 +241,9 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 
 func (c *Controller) getRequestEvents(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
 		return err

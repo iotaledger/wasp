@@ -27,7 +27,7 @@ func NewParameters(
 	websocketRateLimitBurst int,
 	websocketConnectionCleanupDuration time.Duration,
 	websocketClientBlockDuration time.Duration,
-	WebsocketRateLimitEnabled bool,
+	websocketRateLimitEnabled bool,
 ) *Parameters {
 	return &Parameters{
 		Logs: LogsLimits{
@@ -36,7 +36,7 @@ func NewParameters(
 		},
 		WebsocketRateLimitMessagesPerSecond: websocketRateLimitMessagesPerSecond,
 		WebsocketRateLimitBurst:             websocketRateLimitBurst,
-		WebsocketRateLimitEnabled:           WebsocketRateLimitEnabled,
+		WebsocketRateLimitEnabled:           websocketRateLimitEnabled,
 		WebsocketConnectionCleanupDuration:  websocketConnectionCleanupDuration,
 		WebsocketClientBlockDuration:        websocketClientBlockDuration,
 	}
