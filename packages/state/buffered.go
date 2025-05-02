@@ -38,7 +38,11 @@ func (*bufferedKVStore) Close() error {
 }
 
 func (b *bufferedKVStore) Delete(key []byte) error {
-	b.muts.Del(kv.Key(key))
+	baseExists, err := b.db.Has(key)
+	if err != nil {
+		return err
+	}
+	b.muts.Del(kv.Key(key), baseExists)
 	return nil
 }
 
