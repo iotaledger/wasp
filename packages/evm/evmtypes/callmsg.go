@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package evmtypes defines data structures and types for EVM compatibility and operations.
 package evmtypes
 
 import (

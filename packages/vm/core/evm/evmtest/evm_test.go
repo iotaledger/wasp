@@ -82,8 +82,7 @@ func TestStorageContract(t *testing.T) {
 		require.NoError(t, storage.callView("retrieve", nil, &v, rpc.BlockNumberOrHashWithNumber(rpc.LatestBlockNumber)))
 		require.EqualValues(t, 46, v)
 	}
-	// try the view call explicitly passing the EVM block
-	// TODO
+	// TODO: try the view call explicitly passing the EVM block
 	// blockNumber := rpc.BlockNumber(env.getBlockNumber())
 	// for _, i := range []uint32{0, 1, 2, 3} {
 	// 	var v uint32

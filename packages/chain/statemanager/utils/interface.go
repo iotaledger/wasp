@@ -1,3 +1,4 @@
+// Package utils provides utility functions and interfaces for state management operations.
 package utils
 
 import (

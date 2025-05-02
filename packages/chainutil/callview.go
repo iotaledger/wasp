@@ -1,3 +1,4 @@
+// Package chainutil provides utility functions for blockchain operations and interactions.
 package chainutil
 
 import (

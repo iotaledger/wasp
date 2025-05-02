@@ -1,3 +1,4 @@
+// Package users provides user management and authentication functionality for the Wasp node.
 package users
 
 import (

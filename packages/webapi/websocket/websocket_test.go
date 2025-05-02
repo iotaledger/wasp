@@ -1,9 +1,10 @@
 package websocket
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	websocketserver "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"

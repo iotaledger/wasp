@@ -141,8 +141,7 @@ func (vmctx *vmContext) init() {
 		vmctx.runMigrations(chainState, vmctx.task.Migrations)
 		vmctx.schemaVersion = root.NewStateReaderFromChainState(chainState).GetSchemaVersion()
 
-		// TODO
-		// save the ObjectID of the newly created tokens, foundries and objects in the previous block
+		// TODO: save the ObjectID of the newly created tokens, foundries and objects in the previous block
 		/*
 			accountsState := vmctx.accountsStateWriterFromChainState(chainState)
 			newNFTIDs := accountsState.

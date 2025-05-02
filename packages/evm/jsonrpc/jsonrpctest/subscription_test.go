@@ -5,10 +5,11 @@ package jsonrpctest
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"

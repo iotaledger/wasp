@@ -194,7 +194,10 @@ linters:
       - path: 'packages/evm/jsonrpc/service.go'
         text: 'ST1003: method ChainId should be ChainID'  # casing required for evm
       - path: (.+)\.go$
-        text: 'ST1000: package comment should be of the form'
+        text: "consider `optionalAgentID' to be of non-pointer type"
+      - linters:
+          - misspell
+        text: "`Finalise` is a misspelling of `Finalize`"
     paths:
       - contracts/wasm
       - tools/cluster

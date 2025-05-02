@@ -1,3 +1,4 @@
+// Package peering implements peer-to-peer networking functionality.
 package peering
 
 import (

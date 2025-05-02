@@ -125,10 +125,10 @@ func (h *magicContractHandler) Send(
 			Amount:   legacyAssets.BaseTokens,
 		})
 	}
-	for _ = range legacyAssets.NativeTokens {
+	for range legacyAssets.NativeTokens {
 		panic("cannot send legacy native tokens")
 	}
-	for _ = range legacyAssets.Nfts {
+	for range legacyAssets.Nfts {
 		panic("cannot send legacy NFTs")
 	}
 	h.TransferToL1(target, assets)

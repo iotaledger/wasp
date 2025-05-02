@@ -1,3 +1,4 @@
+// Package utils provides utility functions and structures for the state manager's GPA implementation.
 package utils
 
 import (

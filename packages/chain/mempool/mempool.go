@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package mempool manages transaction pools for IOTA Smart Contracts.
 // A mempool basically does these functions:
 //   - Provide a proposed set of requests (refs) for the consensus.
 //   - Provide a set of requests for a TX as decided by the consensus.

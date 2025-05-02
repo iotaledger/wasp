@@ -2,9 +2,10 @@ package l1starter_test
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 

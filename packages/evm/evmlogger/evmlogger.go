@@ -1,3 +1,4 @@
+// Package evmlogger provides logging functionality specific to EVM operations.
 package evmlogger
 
 import (

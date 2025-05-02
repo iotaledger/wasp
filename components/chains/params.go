@@ -1,3 +1,6 @@
+// Package chains provides functionality for managing IOTA Smart Contract chains,
+// including chain configuration parameters, write-ahead logging, validator settings,
+// state management, and snapshot capabilities.
 package chains
 
 import (

@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package bp implements batch proposal functionality for consensus operations.
 package bp
 
 import (

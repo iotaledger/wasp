@@ -1,4 +1,5 @@
-// Consensus. A single instance of it.
+// Package cons implements consensus functionality for IOTA Smart Contracts.
+// A single instance of it.
 //
 // We move all the synchronization logic to separate objects (upon_...). They are
 // responsible for waiting specific data and then triggering the next state action
@@ -644,11 +645,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 // TX
 
 func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
-	var sender = c.dkShare.GetAddress().AsIotaAddress()
-	var l1params = aggregatedProposals.AggregatedL1Params()
+	sender := c.dkShare.GetAddress().AsIotaAddress()
+	l1params := aggregatedProposals.AggregatedL1Params()
 	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
-	var gasBudget = pt.EstimateGasBudget(gasPrice)
-	var gasPaymentCoinRef = aggregatedProposals.AggregatedGasCoins()
+	gasBudget := pt.EstimateGasBudget(gasPrice)
+	gasPaymentCoinRef := aggregatedProposals.AggregatedGasCoins()
 	gasPayment := make([]*iotago.ObjectRef, len(gasPaymentCoinRef))
 	for i, coinRef := range gasPaymentCoinRef {
 		gasPayment[i] = coinRef.Ref

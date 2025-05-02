@@ -1,3 +1,4 @@
+// Package daemon provides functionality for managing long-running background processes.
 package daemon
 
 // Please add the dependencies if you add your own priority here.

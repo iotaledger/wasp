@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package registry implements node identity and chain record management functionality.
 package registry
 
 import (

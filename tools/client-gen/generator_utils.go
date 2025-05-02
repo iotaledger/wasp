@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"reflect"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 func dereferenceType(t reflect.Type) reflect.Type {
@@ -65,7 +66,7 @@ func getQualifiedTypeName(t reflect.Type) string {
 		pkgName := t.PkgPath()[strings.LastIndex(t.PkgPath(), "/")+1:]
 		typeName := cleanGenericTypeName(t)
 		caser := cases.Title(language.English)
-		return fmt.Sprintf("%s%s", caser.String(cleanName(pkgName)), typeName) //strings.Title(cleanName(pkgName))
+		return fmt.Sprintf("%s%s", caser.String(cleanName(pkgName)), typeName) // strings.Title(cleanName(pkgName))
 	}
 	return cleanGenericTypeName(t)
 }

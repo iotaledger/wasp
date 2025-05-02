@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// Here we implement the local view of a chain, maintained by a committee to decide which
+// Package cmtlog implements the local view of a chain, maintained by a committee to decide which
 // achor object to propose to the ACS. The achor object decided by the ACS will be used
 // as an input for TX we build.
 //

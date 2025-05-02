@@ -1,3 +1,4 @@
+// Package database provides interfaces and implementations for persistent data storage.
 package database
 
 import (
