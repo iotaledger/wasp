@@ -146,19 +146,19 @@ jobs:
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
 
        # Push wasp-cli README to Docker Hub
-      - name: git checkout
-        uses: actions/checkout@v4
+#      - name: git checkout
+#        uses: actions/checkout@v4#
 
-      - name: push README to Dockerhub
-        uses: christian-korneck/update-container-description-action@v1
-        env:
-          DOCKER_USER: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
-          DOCKER_PASS: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-        with:
-          destination_container_repo: iotaledger/sandbox-wasp-cli
-          provider: dockerhub
-          short_description: 'wasp-cli is a command line tool for interacting with IOTA Wasp and its smart contracts.'
-          readme_file: 'tools/wasp-cli/README.md'
+#      - name: push README to Dockerhub
+#        uses: christian-korneck/update-container-description-action@v1
+#        env:
+#          DOCKER_USER: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+#          DOCKER_PASS: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+#        with:
+#          destination_container_repo: iotaledger/sandbox-wasp-cli
+#          provider: dockerhub
+#          short_description: 'wasp-cli is a command line tool for interacting with IOTA Wasp and its smart contracts.'
+#          readme_file: 'tools/wasp-cli/README.md'
 
   release-iscmagic:
     uses: ./.github/workflows/publish-iscmagic.yml
