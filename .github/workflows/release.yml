@@ -147,7 +147,7 @@ jobs:
 
        # Push wasp-cli README to Docker Hub
       - name: git checkout
-        uses: actions/checkout@v4#
+        uses: actions/checkout@v4
 
       - name: push README to Dockerhub
         uses: christian-korneck/update-container-description-action@v1
