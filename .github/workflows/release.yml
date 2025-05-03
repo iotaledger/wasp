@@ -115,7 +115,6 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-          registry: ${{ secrets.DOCKER_REGISTRY_URL }}
 
       - name: Build and push WASP to Dockerhub
         uses: docker/build-push-action@v6
@@ -126,8 +125,8 @@ jobs:
           push: true
 
           tags: |
-            ${{ secrets.DOCKER_REGISTRY_URL }}/wasp-rebased:latest
-            ${{ secrets.DOCKER_REGISTRY_URL }}/wasp-rebased:${{ steps.tagger.outputs.tag }}
+            iotaledger/wasp:latest
+            iotaledger/wasp:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
@@ -140,8 +139,8 @@ jobs:
           platforms: linux/amd64 #,linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:latest
-            ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli:${{ steps.tagger.outputs.tag }}
+            iotaledger/sandbox-wasp-cli:latest
+            iotaledger/sandbox-wasp-cli:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
@@ -155,9 +154,8 @@ jobs:
 #        env:
 #          DOCKER_USER: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
 #          DOCKER_PASS: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
-#          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY_URL }}
 #        with:
-#          destination_container_repo: ${{ secrets.DOCKER_REGISTRY_URL }}/sandbox-wasp-cli
+#          destination_container_repo: iotaledger/sandbox-wasp-cli
 #          provider: dockerhub
 #          short_description: 'wasp-cli is a command line tool for interacting with IOTA Wasp and its smart contracts.'
 #          readme_file: 'tools/wasp-cli/README.md'
