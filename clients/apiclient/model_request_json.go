@@ -22,6 +22,7 @@ var _ MappedNullable = &RequestJSON{}
 // RequestJSON struct for RequestJSON
 type RequestJSON struct {
 	Allowance AssetsJSON `json:"allowance"`
+	AllowanceError *string `json:"allowanceError,omitempty"`
 	Assets AssetsJSON `json:"assets"`
 	CallTarget CallTargetJSON `json:"callTarget"`
 	// The gas budget (uint64 as string)
@@ -83,6 +84,38 @@ func (o *RequestJSON) GetAllowanceOk() (*AssetsJSON, bool) {
 // SetAllowance sets field value
 func (o *RequestJSON) SetAllowance(v AssetsJSON) {
 	o.Allowance = v
+}
+
+// GetAllowanceError returns the AllowanceError field value if set, zero value otherwise.
+func (o *RequestJSON) GetAllowanceError() string {
+	if o == nil || IsNil(o.AllowanceError) {
+		var ret string
+		return ret
+	}
+	return *o.AllowanceError
+}
+
+// GetAllowanceErrorOk returns a tuple with the AllowanceError field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *RequestJSON) GetAllowanceErrorOk() (*string, bool) {
+	if o == nil || IsNil(o.AllowanceError) {
+		return nil, false
+	}
+	return o.AllowanceError, true
+}
+
+// HasAllowanceError returns a boolean if a field has been set.
+func (o *RequestJSON) HasAllowanceError() bool {
+	if o != nil && !IsNil(o.AllowanceError) {
+		return true
+	}
+
+	return false
+}
+
+// SetAllowanceError gets a reference to the given string and assigns it to the AllowanceError field.
+func (o *RequestJSON) SetAllowanceError(v string) {
+	o.AllowanceError = &v
 }
 
 // GetAssets returns the Assets field value
@@ -288,6 +321,9 @@ func (o RequestJSON) MarshalJSON() ([]byte, error) {
 func (o RequestJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["allowance"] = o.Allowance
+	if !IsNil(o.AllowanceError) {
+		toSerialize["allowanceError"] = o.AllowanceError
+	}
 	toSerialize["assets"] = o.Assets
 	toSerialize["callTarget"] = o.CallTarget
 	toSerialize["gasBudget"] = o.GasBudget

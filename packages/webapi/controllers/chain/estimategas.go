@@ -3,9 +3,11 @@ package chain
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
+	"golang.org/x/net/context"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -16,43 +18,40 @@ import (
 )
 
 func (c *Controller) estimateGasOnLedger(e echo.Context) error {
-	panic("TODO")
-	// controllerutils.SetOperation(e, "estimate_gas_onledger")
-	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
-	// if err != nil {
-	// 	return err
-	// }
+	controllerutils.SetOperation(e, "estimate_gas_onledger")
+	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 
-	// var estimateGasRequest models.EstimateGasRequestOnledger
-	// if err = e.Bind(&estimateGasRequest); err != nil {
-	// 	return apierrors.InvalidPropertyError("body", err)
-	// }
+	var estimateGasRequest models.EstimateGasRequestOnledger
+	if err = e.Bind(&estimateGasRequest); err != nil {
+		return apierrors.InvalidPropertyError("body", err)
+	}
 
-	// outputBytes, err := cryptolib.DecodeHex(estimateGasRequest.Output)
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("Request", err)
-	// }
-	// output, err := util.OutputFromBytes(outputBytes)
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("Output", err)
-	// }
+	dryRunResBytes, err := hexutil.Decode(estimateGasRequest.TransactionBytes)
+	if err != nil {
+		return apierrors.InvalidPropertyError("transactionBytes", err)
+	}
 
-	// req, err := isc.OnLedgerFromUTXO(
-	// 	output,
-	// 	iotago.OutputID{}, // empty outputID for estimation
-	// )
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("Output", err)
-	// }
-	// if !req.TargetAddress().Equals(chainID.AsAddress()) {
-	// 	return apierrors.InvalidPropertyError("Request", errors.New("wrong chainID"))
-	// }
+	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
-	// rec, err := common.EstimateGas(ch, req)
-	// if err != nil {
-	// 	return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
-	// }
-	// return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, dryRunResBytes)
+
+	req, err := isc.FakeEstimateOnLedger(dryRunResponse)
+	if err != nil {
+		return fmt.Errorf("cant generate fake request: %s", err)
+	}
+
+	rec, err := common.EstimateGas(ch, req)
+	if err != nil {
+		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
+	}
+	res := rec.DeserializedRequest()
+	fmt.Printf("RequestBytes: %s\n", hexutil.Encode(rec.Request))
+	fmt.Printf("Request data: %v %v", res, res.Message())
+	return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
 }
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {

@@ -11,10 +11,14 @@ type ObjectOwnerInternal struct {
 	} `json:"Shared,omitempty"`
 }
 
+func (o ObjectOwnerInternal) IsBcsEnum() {}
+
 type ObjectOwner struct {
 	*ObjectOwnerInternal
 	*string
 }
+
+func (o ObjectOwner) IsBcsEnum() {}
 
 type Page[T IotaTransactionBlockResponse | IotaEvent | Coin | *Coin | IotaObjectResponse | DynamicFieldInfo | string | *Checkpoint,
 	C iotago.TransactionDigest | EventId | iotago.ObjectID | BigInt] struct {
