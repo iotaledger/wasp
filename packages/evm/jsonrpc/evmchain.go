@@ -281,6 +281,9 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
 	}
 
+	fmt.Printf("iscAnchorFromEVM: Anchor: %d\n", latest.Anchor().Object.StateIndex)
+	fmt.Printf("iscAnchorFromEVM: StateIndex: %d\n", state.BlockIndex())
+	
 	if blockNumberOrHash == nil {
 		return latest, nil
 	}
