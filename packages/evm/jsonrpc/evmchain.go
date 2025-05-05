@@ -988,6 +988,7 @@ func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.Bloc
 
 	tempState := blocklog.NewStateReaderFromChainState(state)
 	blockInfo, ok := tempState.GetLatestBlockInfo()
+	fmt.Printf("getBlockInfoByAnchor: anchor: %d, blockindex: %d\n", anchor.GetStateIndex(), blockInfo.BlockIndex)
 	if !ok {
 		return nil, fmt.Errorf("blockinfo not found")
 	}

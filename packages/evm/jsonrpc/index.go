@@ -88,6 +88,8 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 	for i := blockIndexToCache; i >= cacheUntil; i-- {
 		// walk back and save all blocks between [lastBlockIndexCached...blockIndexToCache]
 
+		fmt.Printf("Index: blockIndexToCache: %d, cacheUntil: %d\n", i, cacheUntil)
+
 		blockinfo, found := blocklog.NewStateReaderFromChainState(activeStateToCache).GetBlockInfo(i)
 		if !found {
 			return fmt.Errorf("block %d not found on active state %d", i, state.BlockIndex())
@@ -114,6 +116,8 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 			return fmt.Errorf("stateByTrieRoot: %w", err)
 		}
 	}
+	fmt.Printf("Done indexer!\n")
+
 	c.setLastBlockIndexed(blockIndexToCache)
 	c.store.Flush()
 	return nil
