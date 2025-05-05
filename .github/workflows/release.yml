@@ -125,8 +125,8 @@ jobs:
           push: true
 
           tags: |
-            iotaledger/wasp-rebased:latest
-            iotaledger/wasp-rebased:${{ steps.tagger.outputs.tag }}
+            iotaledger/wasp:latest
+            iotaledger/wasp:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
