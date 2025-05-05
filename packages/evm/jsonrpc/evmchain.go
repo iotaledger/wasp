@@ -275,6 +275,12 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 	if err != nil {
 		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
 	}
+
+	state, err := e.backend.ISCLatestState()
+	if err != nil {
+		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
+	}
+
 	if blockNumberOrHash == nil {
 		return latest, nil
 	}
@@ -292,14 +298,15 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 		block := e.BlockByHash(blockHash)
 		stateIndex = blockNumberToStateIndex(block.Number())
 		fmt.Printf("!blockNumberOrHash.Number: %d\n", stateIndex)
-
 	}
-	if stateIndex == latest.GetStateIndex() {
-		fmt.Printf("stateIndex == latest.GetStateIndex: %d\n", stateIndex)
 
+	latestBlock, _ := blocklog.NewStateReaderFromChainState(state).GetLatestBlockInfo()
+	if stateIndex == latestBlock.BlockIndex {
+		fmt.Printf("stateIndex == latest.GetStateIndex: %d\n", stateIndex)
 		return latest, nil
 	}
-	if stateIndex > latest.GetStateIndex() {
+
+	if stateIndex > latestBlock.BlockIndex {
 		fmt.Printf("block %d not found\n", stateIndex)
 		return nil, fmt.Errorf("block %d not found", stateIndex)
 	}
