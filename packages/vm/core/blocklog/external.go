@@ -84,6 +84,10 @@ func (s *StateReader) GetEventsByBlockIndex(blockIndex uint32, totalRequests uin
 	return ret
 }
 
+func (s *StateReader) GetLatestBlockInfo() (*BlockInfo, bool) {
+	return s.GetBlockInfo(s.GetBlockRegistry().Len() - 1)
+}
+
 func (s *StateReader) GetBlockInfo(blockIndex uint32) (*BlockInfo, bool) {
 	data := s.getBlockInfoBytes(blockIndex)
 	if data == nil {
