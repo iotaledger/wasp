@@ -285,18 +285,27 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 			return e.backend.ISCLatestAnchor()
 		}
 		stateIndex = blockNumberToStateIndex(bn)
+		fmt.Printf("blockNumberOrHash.Number: %d\n", stateIndex)
+
 	} else {
 		blockHash, _ := blockNumberOrHash.Hash()
 		block := e.BlockByHash(blockHash)
 		stateIndex = blockNumberToStateIndex(block.Number())
+		fmt.Printf("!blockNumberOrHash.Number: %d\n", stateIndex)
+
 	}
 	if stateIndex == latest.GetStateIndex() {
+		fmt.Printf("stateIndex == latest.GetStateIndex: %d\n", stateIndex)
+
 		return latest, nil
 	}
 	if stateIndex > latest.GetStateIndex() {
+		fmt.Printf("block %d not found\n", stateIndex)
 		return nil, fmt.Errorf("block %d not found", stateIndex)
 	}
-	return e.previousAnchor(stateIndex + 1)
+
+	fmt.Printf("At previous anchor: %d\n", stateIndex)
+	return e.previousAnchor(stateIndex)
 }
 
 // Returns the anchor, which was used to form state of given index.
