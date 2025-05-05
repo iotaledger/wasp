@@ -283,7 +283,7 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 
 	fmt.Printf("iscAnchorFromEVM: Anchor: %d\n", latest.Anchor().Object.StateIndex)
 	fmt.Printf("iscAnchorFromEVM: StateIndex: %d\n", state.BlockIndex())
-	
+
 	if blockNumberOrHash == nil {
 		return latest, nil
 	}
@@ -315,7 +315,7 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 	}
 
 	fmt.Printf("At previous anchor: %d\n", stateIndex)
-	return e.previousAnchor(stateIndex)
+	return e.previousAnchor(stateIndex + 1)
 }
 
 // Returns the anchor, which was used to form state of given index.
