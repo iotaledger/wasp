@@ -281,8 +281,10 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
 	}
 
-	fmt.Printf("iscAnchorFromEVM: Anchor: %d\n", latest.Anchor().Object.StateIndex)
-	fmt.Printf("iscAnchorFromEVM: StateIndex: %d\n", state.BlockIndex())
+	statemetadata, _ := transaction.StateMetadataFromBytes(latest.Anchor().Object.StateMetadata)
+
+	fmt.Printf("iscAnchorFromEVM: Anchor: %d: StateMetadata: %s\n", latest.Anchor().Object.StateIndex, statemetadata.L1Commitment.TrieRoot())
+	fmt.Printf("iscAnchorFromEVM: StateIndex: %d, trieRoot: %s\n", state.BlockIndex(), state.TrieRoot())
 
 	if blockNumberOrHash == nil {
 		return latest, nil
