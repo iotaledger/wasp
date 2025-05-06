@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"fortio.org/safecast"
+
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -221,7 +223,11 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return err
 		}
 
-		_, events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, err := safecast.Convert[uint32](blockIndexNum)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		_, events, err = corecontracts.GetEventsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return c.handleViewCallError(err)
 		}
