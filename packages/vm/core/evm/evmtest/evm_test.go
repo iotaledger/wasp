@@ -2061,3 +2061,85 @@ func TestEVMEventOnFailedL1Deposit(t *testing.T) {
 	// logs := env.LastBlockEVMLogs()
 	// require.Len(t, logs, 0)
 }
+
+func TestEVM_WithdrawWithFailedTxAfter(t *testing.T) {
+	env := InitEVM(t)
+
+	env.Chain.DepositAssetsToL2(isc.NewAssets(1*isc.Million), env.Chain.ChainAdmin)
+
+	ethKey, senderEthAddress := env.Chain.NewEthereumAccountWithL2Funds()
+	senderAgentID := isc.NewEthereumAddressAgentID(senderEthAddress)
+
+	_, receiver := env.solo.NewKeyPair()
+
+	l1Balance := env.Chain.Env.L1BaseTokens(receiver)
+	l2Balance := env.Chain.L2BaseTokens(senderAgentID)
+	const tokensWithdrawn = 10_000
+
+	value := util.BaseTokensDecimalsToEthereumDecimals(tokensWithdrawn, parameters.BaseTokenDecimals)
+	tx, err := env.ISCMagicSandbox(ethKey).MakeCallFn(
+		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
+		"transferToL1",
+		receiver,
+		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
+	)
+	require.NoError(t, err)
+	withdrawRequest, err := isc.NewEVMOffLedgerTxRequest(env.Chain.ChainID, tx)
+	require.NoError(t, err)
+
+	failingRequest := solo.NewCallParams(accounts.FuncWithdraw.Message()).
+		AddAllowance(isc.NewAssets(env.Chain.L2BaseTokens(env.Chain.AdminAgentID())*2)).
+		WithMaxAffordableGasBudget().NewRequestOffLedger(env.Chain, env.Chain.ChainAdmin)
+
+	// run both requests in a single block:
+	_, res := env.Chain.RunOffLedgerRequests([]isc.Request{withdrawRequest, failingRequest})
+
+	require.Len(t, res, 2)
+	require.Nil(t, res[0].Receipt.Error)
+	require.NotNil(t, res[1].Receipt.Error)
+
+	gasFee := env.Chain.GetRequestReceiptsForBlock(env.Chain.LatestBlockIndex())[0].GasFeeCharged
+	require.EqualValues(t, l2Balance-tokensWithdrawn-gasFee, env.Chain.L2BaseTokens(senderAgentID))
+	require.EqualValues(t, l1Balance+tokensWithdrawn, env.Chain.Env.L1BaseTokens(receiver))
+}
+
+func TestEVM_WithdrawWithFailedTxBefore(t *testing.T) {
+	env := InitEVM(t)
+
+	env.Chain.DepositAssetsToL2(isc.NewAssets(1*isc.Million), env.Chain.ChainAdmin)
+
+	ethKey, senderEthAddress := env.Chain.NewEthereumAccountWithL2Funds()
+	senderAgentID := isc.NewEthereumAddressAgentID(senderEthAddress)
+
+	_, receiver := env.solo.NewKeyPair()
+
+	l1Balance := env.Chain.Env.L1BaseTokens(receiver)
+	l2Balance := env.Chain.L2BaseTokens(senderAgentID)
+	const tokensWithdrawn = 10_000
+
+	value := util.BaseTokensDecimalsToEthereumDecimals(tokensWithdrawn, parameters.BaseTokenDecimals)
+	tx, err := env.ISCMagicSandbox(ethKey).MakeCallFn(
+		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
+		"transferToL1",
+		receiver,
+		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
+	)
+	require.NoError(t, err)
+	withdrawRequest, err := isc.NewEVMOffLedgerTxRequest(env.Chain.ChainID, tx)
+	require.NoError(t, err)
+
+	failingRequest := solo.NewCallParams(accounts.FuncWithdraw.Message()).
+		AddAllowance(isc.NewAssets(env.Chain.L2BaseTokens(env.Chain.AdminAgentID())*2)).
+		WithMaxAffordableGasBudget().NewRequestOffLedger(env.Chain, env.Chain.ChainAdmin)
+
+	// run both requests in a single block:
+	_, res := env.Chain.RunOffLedgerRequests([]isc.Request{failingRequest, withdrawRequest})
+
+	require.Len(t, res, 2)
+	require.NotNil(t, res[0].Receipt.Error)
+	require.Nil(t, res[1].Receipt.Error)
+
+	gasFee := env.Chain.GetRequestReceiptsForBlock(env.Chain.LatestBlockIndex())[1].GasFeeCharged
+	require.EqualValues(t, l2Balance-tokensWithdrawn-gasFee, env.Chain.L2BaseTokens(senderAgentID))
+	require.EqualValues(t, l1Balance+tokensWithdrawn, env.Chain.Env.L1BaseTokens(receiver))
+}
