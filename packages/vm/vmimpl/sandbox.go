@@ -6,6 +6,7 @@ package vmimpl
 import (
 	"math/big"
 
+	"fortio.org/safecast"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
@@ -36,7 +37,11 @@ func (s *contractSandbox) Call(msg isc.Message, allowance *isc.Assets) isc.CallA
 }
 
 func (s *contractSandbox) Event(topic string, payload []byte) {
-	s.Ctx.GasBurn(gas.BurnCodeEmitEvent1P, uint64(len(topic)+len(payload)))
+	totalLen, err := safecast.Convert[uint64](len(topic) + len(payload))
+	if err != nil {
+		panic(err)
+	}
+	s.Ctx.GasBurn(gas.BurnCodeEmitEvent1P, totalLen)
 	hContract := s.reqctx.CurrentContractHname()
 	hex := hexutil.Encode(payload)
 	if len(hex) > 80 {
@@ -67,7 +72,14 @@ func (s *contractSandbox) Request() isc.Calldata {
 }
 
 func (s *contractSandbox) Send(par isc.RequestParameters) {
-	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, uint64(s.reqctx.numPostedOutputs))
+	numOutputs := s.reqctx.numPostedOutputs
+	if numOutputs < 0 {
+		panic("negative number of posted outputs")
+	}
+
+	// Now that we've verified numOutputs is non-negative, convert to uint64
+	outputsCount := uint64(numOutputs)
+	s.Ctx.GasBurn(gas.BurnCodeSendL1Request, outputsCount)
 	s.reqctx.send(par)
 }
 
