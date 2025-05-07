@@ -55,7 +55,11 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 			return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
 		}
 
-		_, blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		_, blockInfo, err = corecontracts.GetBlockInfo(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -83,7 +87,11 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 			return err
 		}
 
-		_, requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		_, requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 
 	if err != nil {
@@ -154,7 +162,11 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 			return err
 		}
 
-		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -223,8 +235,8 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return err
 		}
 
-		blockIndexUint32, err := safecast.Convert[uint32](blockIndexNum)
-		if err != nil {
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
 		}
 		_, events, err = corecontracts.GetEventsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
