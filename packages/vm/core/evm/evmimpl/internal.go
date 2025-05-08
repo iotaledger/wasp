@@ -68,7 +68,11 @@ func gasLimits(chainInfo *isc.ChainInfo) emulator.GasLimits {
 
 // timestamp returns the current timestamp in seconds since epoch
 func timestamp(t time.Time) uint64 {
-	return uint64(t.Unix())
+	unixTime := t.Unix()
+	if unixTime < 0 {
+		unixTime = 0
+	}
+	return uint64(unixTime)
 }
 
 type emulatorContext struct {
