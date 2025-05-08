@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -306,7 +308,7 @@ func (bc *BlockchainDB) getReceiptByBlockNumberAndIndex(
 		log.TxIndex = uint(txIndex)
 		log.BlockHash = r.BlockHash
 		log.BlockNumber = blockNumber
-		log.Index = logIndex + uint(i)
+		log.Index = logIndex + safecast.MustConvert[uint](i)
 	}
 	if tx.To() == nil {
 		from, _ := types.Sender(evmutil.Signer(big.NewInt(int64(bc.GetChainID()))), tx)
@@ -459,7 +461,7 @@ func (bc *BlockchainDB) GetTransactionsByBlockNumber(blockNumber uint64) []*type
 	txArray := bc.getTxArray(blockNumber)
 	txs := make([]*types.Transaction, txArray.Len())
 	for i := range txs {
-		txs[i] = bc.GetTransactionByBlockNumberAndIndex(blockNumber, uint32(i))
+		txs[i] = bc.GetTransactionByBlockNumberAndIndex(blockNumber, safecast.MustConvert[uint32](i))
 	}
 	return txs
 }
@@ -472,7 +474,7 @@ func (bc *BlockchainDB) GetReceiptsByBlockNumber(blockNumber uint64) []*types.Re
 	for i := range receipts {
 		receipts[i] = bc.getReceiptByBlockNumberAndIndex(
 			blockNumber,
-			uint32(i),
+			safecast.MustConvert[uint32](i),
 			cumulativeGasUsed,
 			logIndex,
 		)
