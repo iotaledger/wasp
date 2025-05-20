@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"reflect"
 
+	"fortio.org/safecast"
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -155,7 +156,12 @@ func (OutputRequestReceipts) Decode(r []byte) (*RequestReceiptsResponse, error) 
 
 	for i := range res.Receipts {
 		res.Receipts[i].BlockIndex = res.BlockIndex
-		res.Receipts[i].RequestIndex = uint16(i)
+
+		requestIndex, err := safecast.Convert[uint16](i)
+		if err != nil {
+			return nil, err
+		}
+		res.Receipts[i].RequestIndex = requestIndex
 	}
 
 	return res, nil
