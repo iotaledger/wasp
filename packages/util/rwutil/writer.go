@@ -12,6 +12,8 @@ import (
 	"math/big"
 	"runtime/debug"
 	"time"
+
+	"fortio.org/safecast"
 )
 
 type Writer struct {
@@ -140,7 +142,13 @@ func (ww *Writer) WriteBytes(data []byte) *Writer {
 }
 
 func (ww *Writer) WriteDuration(val time.Duration) *Writer {
-	return ww.WriteUint64(uint64(val))
+	uint64Val, err := safecast.Convert[uint64](val)
+	if err != nil {
+		ww.Err = err
+		return ww
+	}
+
+	return ww.WriteUint64(uint64Val)
 }
 
 func (ww *Writer) WriteFromBytes(obj interface{ Bytes() []byte }) *Writer {
@@ -165,19 +173,43 @@ func (ww *Writer) WriteGas64(val uint64) *Writer {
 }
 
 func (ww *Writer) WriteInt8(val int8) *Writer {
-	return ww.WriteUint8(uint8(val))
+	uint8Val, err := safecast.Convert[uint8](val)
+	if err != nil {
+		ww.Err = err
+		return ww
+	}
+
+	return ww.WriteUint8(uint8Val)
 }
 
 func (ww *Writer) WriteInt16(val int16) *Writer {
-	return ww.WriteUint16(uint16(val))
+	uint16Val, err := safecast.Convert[uint16](val)
+	if err != nil {
+		ww.Err = err
+		return ww
+	}
+
+	return ww.WriteUint16(uint16Val)
 }
 
 func (ww *Writer) WriteInt32(val int32) *Writer {
-	return ww.WriteUint32(uint32(val))
+	uint32Val, err := safecast.Convert[uint32](val)
+	if err != nil {
+		ww.Err = err
+		return ww
+	}
+
+	return ww.WriteUint32(uint32Val)
 }
 
 func (ww *Writer) WriteInt64(val int64) *Writer {
-	return ww.WriteUint64(uint64(val))
+	uint64Val, err := safecast.Convert[uint64](val)
+	if err != nil {
+		ww.Err = err
+		return ww
+	}
+
+	return ww.WriteUint64(uint64Val)
 }
 
 func (ww *Writer) WriteKind(msgType Kind) *Writer {
