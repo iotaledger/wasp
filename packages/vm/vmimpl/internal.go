@@ -168,7 +168,7 @@ func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, p
 		ContractID: hContract,
 		Topic:      topic,
 		Payload:    payload,
-		Timestamp:  uint64(reqctx.Timestamp().UnixNano()),
+		Timestamp:  uint64(reqctx.Timestamp().UnixNano()), //nolint: gosec //todo: verify fixing this wont break everything
 	}
 	eventKey := reqctx.eventLookupKey().Bytes()
 	reqctx.callCore(blocklog.Contract, func(s kv.KVStore) {
