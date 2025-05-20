@@ -17,7 +17,7 @@ import (
 
 func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	// estimate on-ledger request, then send the same request, assert the gas used/fees match
-	// TODO: Fix me
+	t.Skip("TODO: Fix me")
 	/*panic("refactor me: transaction.BasicOutputFromPostData")
 	var output iotago.Output
 
