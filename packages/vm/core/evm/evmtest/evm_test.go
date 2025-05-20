@@ -2061,7 +2061,11 @@ func TestEVMEventOnFailedL1Deposit(t *testing.T) {
 	// require.Len(t, logs, 0)
 }
 
-func TestEVM_WithdrawWithFailedTxAfter(t *testing.T) {
+// testEVMWithdrawWithFailedTx is a helper function that tests the withdraw functionality
+// with a failing transaction in the same block.
+// If withdrawFirst is true, the withdraw request is run before the failing request,
+// otherwise the failing request is run first.
+func testEVMWithdrawWithFailedTx(t *testing.T, withdrawFirst bool) {
 	env := InitEVM(t)
 
 	env.Chain.DepositAssetsToL2(isc.NewAssets(1*isc.Million), env.Chain.ChainAdmin)
@@ -2090,55 +2094,40 @@ func TestEVM_WithdrawWithFailedTxAfter(t *testing.T) {
 		AddAllowance(isc.NewAssets(env.Chain.L2BaseTokens(env.Chain.AdminAgentID())*2)).
 		WithMaxAffordableGasBudget().NewRequestOffLedger(env.Chain, env.Chain.ChainAdmin)
 
-	// run both requests in a single block:
-	_, res := env.Chain.RunOffLedgerRequests([]isc.Request{withdrawRequest, failingRequest})
+	// run both requests in a single block in the specified order
+	var requests []isc.Request
+	if withdrawFirst {
+		requests = []isc.Request{withdrawRequest, failingRequest}
+	} else {
+		requests = []isc.Request{failingRequest, withdrawRequest}
+	}
+	_, res := env.Chain.RunOffLedgerRequests(requests)
 
 	require.Len(t, res, 2)
-	require.Nil(t, res[0].Receipt.Error)
-	require.NotNil(t, res[1].Receipt.Error)
 
-	gasFee := env.Chain.GetRequestReceiptsForBlock(env.Chain.LatestBlockIndex())[0].GasFeeCharged
-	require.EqualValues(t, l2Balance-tokensWithdrawn-gasFee, env.Chain.L2BaseTokens(senderAgentID))
+	// Check that the correct receipt has the error
+	if withdrawFirst {
+		require.Nil(t, res[0].Receipt.Error)
+		require.NotNil(t, res[1].Receipt.Error)
+		// Gas fee is from the first receipt (withdraw request)
+		gasFee := env.Chain.GetRequestReceiptsForBlock(env.Chain.LatestBlockIndex())[0].GasFeeCharged
+		require.EqualValues(t, l2Balance-tokensWithdrawn-gasFee, env.Chain.L2BaseTokens(senderAgentID))
+	} else {
+		require.NotNil(t, res[0].Receipt.Error)
+		require.Nil(t, res[1].Receipt.Error)
+		// Gas fee is from the second receipt (withdraw request)
+		gasFee := env.Chain.GetRequestReceiptsForBlock(env.Chain.LatestBlockIndex())[1].GasFeeCharged
+		require.EqualValues(t, l2Balance-tokensWithdrawn-gasFee, env.Chain.L2BaseTokens(senderAgentID))
+	}
+
+	// In both cases, the L1 balance of the receiver should be increased by the withdrawn amount
 	require.EqualValues(t, l1Balance+tokensWithdrawn, env.Chain.Env.L1BaseTokens(receiver))
 }
 
+func TestEVM_WithdrawWithFailedTxAfter(t *testing.T) {
+	testEVMWithdrawWithFailedTx(t, true)
+}
+
 func TestEVM_WithdrawWithFailedTxBefore(t *testing.T) {
-	env := InitEVM(t)
-
-	env.Chain.DepositAssetsToL2(isc.NewAssets(1*isc.Million), env.Chain.ChainAdmin)
-
-	ethKey, senderEthAddress := env.Chain.NewEthereumAccountWithL2Funds()
-	senderAgentID := isc.NewEthereumAddressAgentID(senderEthAddress)
-
-	_, receiver := env.solo.NewKeyPair()
-
-	l1Balance := env.Chain.Env.L1BaseTokens(receiver)
-	l2Balance := env.Chain.L2BaseTokens(senderAgentID)
-	const tokensWithdrawn = 10_000
-
-	value := util.BaseTokensDecimalsToEthereumDecimals(tokensWithdrawn, parameters.BaseTokenDecimals)
-	tx, err := env.ISCMagicSandbox(ethKey).MakeCallFn(
-		[]ethCallOptions{{sender: ethKey, value: value, gasLimit: 100_000}},
-		"transferToL1",
-		receiver,
-		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
-	)
-	require.NoError(t, err)
-	withdrawRequest, err := isc.NewEVMOffLedgerTxRequest(env.Chain.ChainID, tx)
-	require.NoError(t, err)
-
-	failingRequest := solo.NewCallParams(accounts.FuncWithdraw.Message()).
-		AddAllowance(isc.NewAssets(env.Chain.L2BaseTokens(env.Chain.AdminAgentID())*2)).
-		WithMaxAffordableGasBudget().NewRequestOffLedger(env.Chain, env.Chain.ChainAdmin)
-
-	// run both requests in a single block:
-	_, res := env.Chain.RunOffLedgerRequests([]isc.Request{failingRequest, withdrawRequest})
-
-	require.Len(t, res, 2)
-	require.NotNil(t, res[0].Receipt.Error)
-	require.Nil(t, res[1].Receipt.Error)
-
-	gasFee := env.Chain.GetRequestReceiptsForBlock(env.Chain.LatestBlockIndex())[1].GasFeeCharged
-	require.EqualValues(t, l2Balance-tokensWithdrawn-gasFee, env.Chain.L2BaseTokens(senderAgentID))
-	require.EqualValues(t, l1Balance+tokensWithdrawn, env.Chain.Env.L1BaseTokens(receiver))
+	testEVMWithdrawWithFailedTx(t, false)
 }
