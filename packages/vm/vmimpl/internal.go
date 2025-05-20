@@ -1,11 +1,8 @@
 package vmimpl
 
 import (
-	"fmt"
 	"math"
 	"math/big"
-
-	"fortio.org/safecast"
 
 	"github.com/samber/lo"
 
@@ -167,20 +164,11 @@ func (reqctx *requestContext) mustSaveEvent(hContract isc.Hname, topic string, p
 	}
 	reqctx.Debugf("MustSaveEvent/%s: topic: '%s'", hContract.String(), topic)
 
-	timestamp := reqctx.Timestamp().UnixNano()
-	if reqctx.Timestamp().IsZero() {
-		timestamp = 0
-	}
-	timestampUint, err := safecast.Convert[uint64](timestamp)
-	if err != nil {
-		panic(fmt.Sprintf("requestContext timestamp out of range for uint64: %v", timestamp))
-	}
-
 	event := &isc.Event{
 		ContractID: hContract,
 		Topic:      topic,
 		Payload:    payload,
-		Timestamp:  timestampUint,
+		Timestamp:  uint64(reqctx.Timestamp().UnixNano()),
 	}
 	eventKey := reqctx.eventLookupKey().Bytes()
 	reqctx.callCore(blocklog.Contract, func(s kv.KVStore) {
