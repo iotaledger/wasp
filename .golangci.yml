@@ -5,6 +5,8 @@ run:
   allow-serial-runners: true
 linters:
   default: none
+  disable:
+    - exhaustruct
   enable:
     - asasalint
     - asciicheck
@@ -21,6 +23,7 @@ linters:
     - goheader
     - gomodguard
     - goprintffuncname
+    - gosec
     - govet
     - grouper
     - importas
