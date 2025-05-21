@@ -1,5 +1,7 @@
 package util
 
+import "fortio.org/safecast"
+
 import "strconv"
 
 func DecodeUint64(numberAsString string) (uint64, error) {
@@ -8,5 +10,9 @@ func DecodeUint64(numberAsString string) (uint64, error) {
 		return 0, err
 	}
 
-	return uint64(val), nil
+	result, err := safecast.Convert[uint64](val)
+	if err != nil {
+		return 0, err
+	}
+	return result, nil
 }
