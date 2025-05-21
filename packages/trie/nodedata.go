@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
 
@@ -157,7 +159,10 @@ func (n *NodeData) Read(r io.Reader) error {
 	if smallFlags&hasChildrenFlag != 0 {
 		flags := rr.ReadUint16()
 		for i := 0; i < NumChildren; i++ {
-			ib := uint8(i)
+			ib, err := safecast.Convert[uint8](i)
+			if err != nil {
+				panic(fmt.Sprintf("index %d is too large for uint8", i))
+			}
 			if (flags & (1 << i)) != 0 {
 				n.Children[ib] = &Hash{}
 				rr.Read(n.Children[ib])
