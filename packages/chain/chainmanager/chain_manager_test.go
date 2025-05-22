@@ -82,7 +82,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
 		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err := origin.InitChainByAnchor(stores[nid], anchor, deposit, parameterstest.L1Mock)
+		_, err := origin.InitChainByStateMetadataBytes(stores[nid], anchor.GetStateMetadata(), deposit, parameterstest.L1Mock)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {
 			return []*cryptolib.PublicKey{}, []*cryptolib.PublicKey{}

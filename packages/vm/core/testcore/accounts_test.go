@@ -369,27 +369,6 @@ func TestAccounts_TransferAndCheckBaseTokens(t *testing.T) {
 	require.EqualValues(t, commonAccBaseTokens, v.ch.L2CommonAccountAssets().BaseTokens())
 }
 
-// func TestAccounts_FoundryDestroy(t *testing.T) {
-// 	t.Run("destroy existing", func(t *testing.T) {
-// 		v := initDepositTest(t, nil)
-// 		v.ch.MustDepositBaseTokensToL2(2*isc.Million, v.user)
-// 		sn, _, err := v.ch.NewNativeTokenParams(coin.Value(1_000_000)).
-// 			WithUser(v.user).
-// 			CreateFoundry()
-// 		require.NoError(t, err)
-
-// 		err = v.ch.DestroyFoundry(sn, v.user)
-// 		require.NoError(t, err)
-// 		_, err = v.ch.GetFoundryOutput(sn)
-// 		testmisc.RequireErrorToBe(t, err, "not found")
-// 	})
-// 	t.Run("destroy fail", func(t *testing.T) {
-// 		v := initDepositTest(t, nil)
-// 		err := v.ch.DestroyFoundry(2, v.user)
-// 		testmisc.RequireErrorToBe(t, err, "unauthorized")
-// 	})
-// }
-
 func TestAccounts_TransferPartialAssets(t *testing.T) {
 	// setup a chain with some base tokens and native tokens for user1
 	v := initWithdrawTest(t)

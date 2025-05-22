@@ -137,7 +137,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 		dkShare, err := dkShareProviders[i].LoadDKShare(cmtAddress)
 		require.NoError(t, err)
 		chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStore, anchor, anchorDeposit, parameterstest.L1Mock)
+		_, err = origin.InitChainByStateMetadataBytes(chainStore, anchor.GetStateMetadata(), anchorDeposit, parameterstest.L1Mock)
 		require.NoError(t, err)
 		mempools[i] = newTestMempool(t)
 		stateMgrs[i] = newTestStateMgr(t, chainStore)

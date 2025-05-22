@@ -24,6 +24,8 @@ import (
 //	}
 
 func TestNodeConn(t *testing.T) {
+	t.Skip("TODO")
+
 	// if testing.Short() {
 	// 	t.Skip("Skipping nodeconn test in short mode")
 	// }

@@ -679,45 +679,6 @@ func TestSendBaseTokens(t *testing.T) {
 	require.True(t, getAllowanceTo(iscTest.address).IsEmpty())
 }
 
-func TestSendBaseTokensAnotherChain(t *testing.T) {
-	t.Skip("TODO")
-	// env := InitEVM(t)
-	//
-	// ethKey, ethAddress := env.Chain.NewEthereumAccountWithL2Funds()
-	// iscTest := env.deployISCTestContract(ethKey)
-	// foreignChain := env.solo.NewChain()
-	//
-	// senderInitialBalance := env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID( ethAddress))
-	//
-	// // transfer 1 mil from ethAddress L2 to another chain
-	// const transfer = 1 * isc.Million
-	//
-	// // allow ISCTest to take the tokens
-	// _, err := env.ISCMagicSandbox(ethKey).CallFn(
-	// 	[]ethCallOptions{{sender: ethKey}},
-	// 	"allow",
-	// 	iscTest.address,
-	// 	iscmagic.WrapISCAssets(isc.NewAssets(transfer)),
-	// )
-	// require.NoError(t, err)
-	//
-	// balanceOnForeignChain := foreignChain.L2BaseTokens(isc.NewEthereumAddressAgentID( iscTest.address))
-	// require.Zero(t, balanceOnForeignChain)
-	//
-	// const allAllowed = uint64(0)
-	// target := foreignChain.ChainID.AsAddress()
-	// _, err = iscTest.CallFn(nil, "sendBaseTokens", target, allAllowed)
-	// require.NoError(t, err)
-	// require.LessOrEqual(t, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID( ethAddress)), senderInitialBalance-transfer)
-	//
-	// n := foreignChain.RunAllReceivedRequests(5)
-	// require.EqualValues(t, 1, n)
-	//
-	// // assert iscTest contract now has a balance on the foreign chain
-	// balanceOnForeignChain = foreignChain.L2BaseTokens(isc.NewEthereumAddressAgentID( iscTest.address))
-	// require.Positive(t, balanceOnForeignChain)
-}
-
 func TestCannotDepleteAccount(t *testing.T) {
 	env := InitEVM(t)
 
