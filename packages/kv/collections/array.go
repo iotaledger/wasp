@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -59,7 +61,8 @@ func (a *ArrayReadOnly) Len() uint32 {
 	if data == nil {
 		return 0
 	}
-	return uint32(rwutil.NewBytesReader(data).Must().ReadSize32())
+	size := rwutil.NewBytesReader(data).Must().ReadSize32()
+	return safecast.MustConvert[uint32](size)
 }
 
 /////////////////////////////////  Array  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
