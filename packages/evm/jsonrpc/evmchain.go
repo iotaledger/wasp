@@ -11,6 +11,8 @@ import (
 	"math/big"
 	"path"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -609,7 +611,7 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*typ
 	{
 		from := from.Uint64()
 		to := to.Uint64()
-		if to > from && to-from > uint64(params.MaxBlocksInLogsFilterRange) {
+		if to > from && to-from > safecast.MustConvert[uint64](params.MaxBlocksInLogsFilterRange) {
 			return nil, errors.New("ServerError(-32000) too many blocks in filter range") // ServerError(-32000) part is necessary because subgraph expects that string in the error msg: https://github.com/graphprotocol/graph-node/blob/591ad93b5144ff5e6037b73862c607effad90e7f/chain/ethereum/src/ethereum_adapter.rs#L335
 		}
 		for i := from; i <= to; i++ {
@@ -726,13 +728,16 @@ func (e *EVMChain) traceTransaction(
 	if config.Tracer != nil {
 		tracerType = *config.Tracer
 	}
-
+	txIndexInt, err := safecast.Convert[int](txIndex)
+	if err != nil {
+		return nil, err
+	}
 	tracer, err := newTracer(
 		tracerType,
 		&tracers.Context{
 			BlockHash:   blockHash,
 			BlockNumber: new(big.Int).SetUint64(uint64(blockInfo.BlockIndex)),
-			TxIndex:     int(txIndex),
+			TxIndex:     txIndexInt,
 			TxHash:      tx.Hash(),
 		},
 		config.TracerConfig,
@@ -764,10 +769,10 @@ func (e *EVMChain) traceTransaction(
 		return nil, err
 	}
 
-	if len(txResults) <= int(txIndex) {
+	if len(txResults) <= txIndexInt {
 		return nil, errors.New("tx trace not found in tracer result")
 	}
-	txTrace := txResults[int(txIndex)]
+	txTrace := txResults[txIndexInt]
 	if txTrace.Error != "" {
 		return nil, errors.New(txTrace.Error)
 	}
@@ -852,7 +857,11 @@ func (e *EVMChain) TraceBlockByHash(blockHash common.Hash, config *tracers.Trace
 func (e *EVMChain) TraceBlockByNumber(blockNumber uint64, config *tracers.TraceConfig) (any, error) {
 	e.log.LogDebugf("TraceBlockByNumber(blockNumber=%v, config=?)", blockNumber)
 
-	block, err := e.BlockByNumber(big.NewInt(int64(blockNumber)))
+	convertedBlockNumber, err := safecast.Convert[int64](blockNumber)
+	if err != nil {
+		return nil, fmt.Errorf("block number conversion error: %w", err)
+	}
+	block, err := e.BlockByNumber(big.NewInt(convertedBlockNumber))
 	if err != nil {
 		return nil, fmt.Errorf("block not found: %d", blockNumber)
 	}
@@ -934,13 +943,14 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	}
 
 	for i, tx := range blockTxs {
+		iterator := safecast.MustConvert[uint64](i)
 		debugResultJSON, err := e.traceTransaction(
 			&tracers.TraceConfig{},
 			iscBlock,
 			iscRequestsInBlock,
 			enforceGasBurned,
 			tx,
-			uint64(i),
+			iterator,
 			block.Hash(),
 		)
 
@@ -953,7 +963,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 
 			blockHash := block.Hash()
 			txHash := tx.Hash()
-			results.Result = append(results.Result, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, uint64(i))...)
+			results.Result = append(results.Result, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
 		}
 	}
 
@@ -983,7 +993,11 @@ func iscBlockIndexByEVMBlockNumber(blockNumber *big.Int) (uint32, error) {
 	if blockNumber.Cmp(maxUint32) > 0 {
 		return 0, fmt.Errorf("block number is too large: %s", blockNumber)
 	}
-	return uint32(blockNumber.Uint64()), nil
+	convertedValue, err := safecast.Convert[uint32](blockNumber.Uint64())
+	if err != nil {
+		return 0, fmt.Errorf("block number conversion error: %w", err)
+	}
+	return convertedValue, nil
 }
 
 // the first EVM block (number 0) is "minted" at ISC block index 1 (init chain)
