@@ -8,18 +8,18 @@ import (
 	"github.com/iotaledger/wasp/packages/webapi/common"
 )
 
-func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (isc.CoinBalances, error) {
+func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.Assets, error) {
 	ret, err := common.CallView(ch, accounts.ViewTotalAssets.Message(), blockIndexOrTrieRoot)
 	if err != nil {
-		return isc.CoinBalances{}, err
+		return nil, err
 	}
 	return accounts.ViewTotalAssets.DecodeOutput(ret)
 }
 
-func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (isc.CoinBalances, error) {
+func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (*isc.Assets, error) {
 	ret, err := common.CallView(ch, accounts.ViewBalance.Message(&agentID), blockIndexOrTrieRoot)
 	if err != nil {
-		return isc.CoinBalances{}, err
+		return nil, err
 	}
 	return accounts.ViewBalance.DecodeOutput(ret)
 }
