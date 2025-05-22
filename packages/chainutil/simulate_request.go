@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -27,6 +28,7 @@ func SimulateRequest(
 		processors,
 		log,
 		time.Now(),
+		hashing.PseudoRandomHash(nil),
 		req,
 		estimateGasMode,
 	)

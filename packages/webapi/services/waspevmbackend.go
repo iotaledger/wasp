@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -101,6 +102,7 @@ func (b *WaspEVMBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg ethereu
 func (b *WaspEVMBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
+	entropy hashing.HashValue,
 	iscRequestsInBlock []isc.Request,
 	enforceGasBurned []vm.EnforceGasBurned,
 	tracer *tracers.Tracer,
@@ -113,6 +115,7 @@ func (b *WaspEVMBackend) EVMTrace(
 		b.chain.Processors(),
 		b.chain.Log(),
 		blockTime,
+		entropy,
 		iscRequestsInBlock,
 		enforceGasBurned,
 		tracer,

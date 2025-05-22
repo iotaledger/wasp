@@ -8,6 +8,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -30,6 +31,7 @@ type BlockInfo struct {
 	NumOffLedgerRequests  uint16
 	GasBurned             uint64     `bcs:"compact"`
 	GasFeeCharged         coin.Value `bcs:"compact"`
+	Entropy               hashing.HashValue
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index

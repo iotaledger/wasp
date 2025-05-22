@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -76,6 +77,7 @@ func EVMEstimateGas(
 			processors,
 			log,
 			blockTime,
+			hashing.PseudoRandomHash(nil),
 			iscReq,
 			true,
 		)
