@@ -165,14 +165,14 @@ func (c *Client) GetPastAnchorFromObjectID(
 }
 
 func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {
-	var moveAnchor moveAnchor
+	var moveAnchor iscmove.Anchor
 	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
 	return &iscmove.AnchorWithRef{
 		ObjectRef: ref,
-		Object:    moveAnchor.ToAnchor(),
+		Object:    &moveAnchor,
 		Owner:     owner,
 	}, nil
 }

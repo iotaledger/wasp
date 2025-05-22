@@ -119,8 +119,8 @@ type Sandbox interface {
 	TransferAllowedFunds(target AgentID, transfer ...*Assets) *Assets
 	// Send sends an on-ledger request (or a regular transaction to any L1 Address)
 	Send(metadata RequestParameters)
-	// StateAnchor properties of the anchor request
-	StateAnchor() *StateAnchor
+	// StateIndex returns the index of the current block being produced
+	StateIndex() uint32
 	// RequestIndex returns the index of the current request in the request batch
 	RequestIndex() uint16
 

@@ -120,7 +120,7 @@ func (b *WaspEVMBackend) EVMTrace(
 }
 
 func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
-	latestAnchor, err := b.ISCLatestAnchor()
+	latestAnchor, err := b.chain.LatestAnchor(chain.ActiveOrCommittedState)
 	if err != nil {
 		return nil, err
 	}
@@ -133,20 +133,16 @@ func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (i
 	)
 }
 
-func (b *WaspEVMBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
+func (b *WaspEVMBackend) ISCLatestState() (*isc.StateAnchor, state.State, error) {
 	latestAnchor, err := b.chain.LatestAnchor(chain.ActiveOrCommittedState)
 	if err != nil {
-		return nil, fmt.Errorf("could not get latest Anchor: %w", err)
+		return nil, nil, fmt.Errorf("could not get latest Anchor: %w", err)
 	}
-	return latestAnchor, nil
-}
-
-func (b *WaspEVMBackend) ISCLatestState() (state.State, error) {
 	latestState, err := b.chain.LatestState(chain.ActiveOrCommittedState)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get latest block index: %w", err)
+		return nil, nil, fmt.Errorf("couldn't get latest block index: %w", err)
 	}
-	return latestState, nil
+	return latestAnchor, latestState, nil
 }
 
 func (b *WaspEVMBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {

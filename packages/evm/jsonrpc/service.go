@@ -75,7 +75,8 @@ func (e *EthService) resolveError(err error) error {
 			return err
 		}
 		var resolveErr error
-		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(lo.Must(e.evmChain.backend.ISCLatestState())))
+		_, state := lo.Must2(e.evmChain.backend.ISCLatestState())
+		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(state))
 		if resolveErr != nil {
 			return fmt.Errorf("could not resolve VMError: %w: %v", err, resolveErr)
 		}

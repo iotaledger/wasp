@@ -34,8 +34,7 @@ type ChainBackend interface {
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID
 	ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error)
-	ISCLatestAnchor() (*isc.StateAnchor, error)
-	ISCLatestState() (state.State, error)
+	ISCLatestState() (*isc.StateAnchor, state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
 	TakeSnapshot() (int, error)
