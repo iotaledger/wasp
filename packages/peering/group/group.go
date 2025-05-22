@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -39,11 +41,16 @@ func NewPeeringGroupProvider(netProvider peering.NetworkProvider, peeringID peer
 	selfFound := false
 	selfIndex := uint16(0)
 	for i := range nodes {
+		idx, err := safecast.Convert[uint16](i)
+		if err != nil {
+			return nil, fmt.Errorf("index overflow in NewPeeringGroupProvider: %w", err)
+		}
+
 		if nodes[i].PeeringURL() == netProvider.Self().PeeringURL() {
-			selfIndex = uint16(i)
+			selfIndex = idx
 			selfFound = true
 		} else {
-			other[uint16(i)] = nodes[i]
+			other[idx] = nodes[i]
 		}
 	}
 	if !selfFound {
@@ -74,14 +81,19 @@ func (g *groupImpl) PeerIndex(peer peering.PeerSender) (uint16, error) {
 func (g *groupImpl) PeerIndexByPubKey(peerPubKey *cryptolib.PublicKey) (uint16, error) {
 	for i := range g.nodes {
 		if g.nodes[i].PubKey().Equals(peerPubKey) {
-			return uint16(i), nil
+			return safecast.Convert[uint16](i)
 		}
 	}
 	return NotInGroup, errors.New("peer not found by pubKey")
 }
 
 func (g *groupImpl) PubKeyByIndex(index uint16) (*cryptolib.PublicKey, error) {
-	if index < uint16(len(g.nodes)) {
+	nodesLen, err := safecast.Convert[uint16](len(g.nodes))
+	if err != nil {
+		return nil, fmt.Errorf("length overflow in PubKeyByIndex: %w", err)
+	}
+
+	if index < nodesLen {
 		return g.nodes[index].PubKey(), nil
 	}
 	return nil, errors.New("peer index out of scope")
@@ -202,8 +214,13 @@ func (g *groupImpl) AllNodes(except ...uint16) map[uint16]peering.PeerSender {
 		exceptions[i] = struct{}{}
 	}
 	for i := range g.nodes {
-		if _, ok := exceptions[uint16(i)]; !ok {
-			all[uint16(i)] = g.nodes[i]
+		idx, err := safecast.Convert[uint16](i)
+		if err != nil {
+			g.log.LogWarnf("index overflow in AllNodes: %v", err)
+			continue
+		}
+		if _, ok := exceptions[idx]; !ok {
+			all[idx] = g.nodes[i]
 		}
 	}
 	return all
