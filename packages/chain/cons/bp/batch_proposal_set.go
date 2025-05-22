@@ -238,6 +238,18 @@ func (bps batchProposalSet) aggregatedGasCoins(f int) []*coin.CoinWithRef {
 		}
 	}
 
+	// Drop older versions of the same coin.
+	for i := range coinFrom {
+		ci := coinRefs[i].Ref
+		haveNewer := lo.ContainsBy(maps.Keys(coinFrom), func(j string) bool {
+			cj := coinRefs[i].Ref
+			return ci.ObjectID.Equals(*cj.ObjectID) && ci.Version < cj.Version
+		})
+		if haveNewer {
+			delete(coinFrom, i)
+		}
+	}
+
 	// Sort them by the proposal frequency, then by the bytes.
 	coinKeys := maps.Keys(coinFrom)
 	sort.Slice(coinKeys, func(i, j int) bool {
