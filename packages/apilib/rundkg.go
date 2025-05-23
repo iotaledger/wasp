@@ -10,6 +10,8 @@ import (
 	"math"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
@@ -21,7 +23,11 @@ func RunDKG(ctx context.Context, client *apiclient.APIClient, peerPubKeys []stri
 	if len(timeout) > 0 {
 		n := timeout[0].Milliseconds()
 		if n < int64(math.MaxUint16) {
-			to = uint32(n)
+			val, err := safecast.Convert[uint32](n)
+			if err != nil {
+				return nil, err
+			}
+			to = val
 		}
 	}
 

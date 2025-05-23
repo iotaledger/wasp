@@ -5,6 +5,8 @@ import (
 	"context"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/dustin/go-humanize"
 	"go.uber.org/dig"
 
@@ -31,7 +33,11 @@ func run() error {
 		Component.LogPanicf("invalid CacheSize")
 	}
 
-	if err := cache.SetCacheSize(int(size)); err != nil {
+	sizeInt, err := safecast.Convert[int](size)
+	if err != nil {
+		Component.LogPanicf("CacheSize overflows int")
+	}
+	if err := cache.SetCacheSize(sizeInt); err != nil {
 		Component.LogPanic(err.Error())
 	}
 
