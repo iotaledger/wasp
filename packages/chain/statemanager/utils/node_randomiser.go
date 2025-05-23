@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
@@ -38,7 +39,12 @@ func (nrT *nodeRandomiser) init(allNodeIDs []gpa.NodeID) {
 		return nodeID != nrT.me // Do not include self to the permutation.
 	})
 	var err error
-	nrT.permutation, err = util.NewPermutation16(uint16(len(nrT.nodeIDs)))
+	nodeIDsLen, err := safecast.Convert[uint16](len(nrT.nodeIDs))
+	if err != nil {
+		nrT.log.LogWarnf("integer overflow in nodeIDs length: %w", err)
+		return
+	}
+	nrT.permutation, err = util.NewPermutation16(nodeIDsLen)
 	if err != nil {
 		nrT.log.LogWarnf("Failed to generate cryptographically secure random domains permutation; will use insecure one: %v", err)
 		return

@@ -2,9 +2,12 @@ package gpa
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
+
+	"fortio.org/safecast"
 
 	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 
@@ -75,7 +78,11 @@ func newTestEnvNoNodes(
 	var chainInitParameters gpautils.BlockFactoryCallArguments
 	if len(parametersOpt) > 0 {
 		parameters = parametersOpt[0]
-		chainInitParameters = gpautils.BlockFactoryCallArguments{BlockKeepAmount: int32(parameters.PruningMinStatesToKeep)}
+		int32Val, err := safecast.Convert[int32](parameters.PruningMinStatesToKeep)
+		if err != nil {
+			panic(fmt.Sprintf("integer overflow in PruningMinStatesToKeep: %v overflows int32", parameters.PruningMinStatesToKeep))
+		}
+		chainInitParameters = gpautils.BlockFactoryCallArguments{BlockKeepAmount: int32Val}
 		bf = gpautils.NewBlockFactory(t, chainInitParameters)
 	} else {
 		parameters = NewStateManagerParameters()
