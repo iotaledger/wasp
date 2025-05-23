@@ -11,6 +11,7 @@ import (
 	"sort"
 	"time"
 
+	"fortio.org/safecast"
 	"golang.org/x/exp/maps"
 
 	"github.com/samber/lo"
@@ -154,13 +155,26 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomnes
 		return bytes.Compare(a[:], b[:])
 	})
 	uint64Bytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(uint64Bytes, uint64(aggregatedTime.UnixNano()))
+
+	timeNano, err := safecast.Convert[uint64](aggregatedTime.UnixNano())
+	if err != nil {
+		panic("proposal aggregated time overflows uint64")
+	}
+	binary.BigEndian.PutUint64(uint64Bytes, timeNano)
 	hashed := hashing.HashDataBlake2b(
 		uint64Bytes,
 		randomness[:],
 	)
 	randomUint := binary.BigEndian.Uint64(hashed[:])
-	randomPos := int(randomUint % uint64(len(bps)))
+	lenBps, err := safecast.Convert[uint64](len(bps))
+	if err != nil {
+		panic("length of batch proposal set overflows uint64")
+	}
+	randomPosU64 := randomUint % lenBps
+	randomPos, err := safecast.Convert[int](randomPosU64)
+	if err != nil {
+		panic("random proposal from set overflows int")
+	}
 	return peers[randomPos]
 }
 
