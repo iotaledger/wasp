@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/wasp/packages/state"
 )
 
@@ -81,7 +83,11 @@ func readSnapshotInfo(r io.Reader) (SnapshotInfo, error) {
 
 func writeBytes(bytes []byte, w io.Writer) error {
 	lengthArray := make([]byte, constLengthArrayLength)
-	binary.LittleEndian.PutUint32(lengthArray, uint32(len(bytes)))
+	bytesLen, err := safecast.Convert[uint32](len(bytes))
+	if err != nil {
+		return fmt.Errorf("integer overflow in bytes length: %w", err)
+	}
+	binary.LittleEndian.PutUint32(lengthArray, bytesLen)
 	n, err := w.Write(lengthArray)
 	if n != constLengthArrayLength {
 		return fmt.Errorf("only %v of total %v bytes of length written", n, constLengthArrayLength)
