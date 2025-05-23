@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -61,6 +62,7 @@ type proc struct {
 	steps        map[byte]*procStep                         // All the steps for the procedure.
 }
 
+//nolint:funlen
 func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node) (*proc, error) {
 	log := node.log.NewChildLogger(fmt.Sprintf("dkgID.%s", dkgID.String()))
 	var err error
@@ -90,6 +92,10 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
+	thresholdUint16, err := safecast.Convert[uint16](blsThreshold)
+	if err != nil {
+		return nil, fmt.Errorf("bls threshold overflows uint16: %d", blsThreshold)
+	}
 	p := proc{
 		dkgRef:       msg.dkgRef,
 		dkgID:        dkgID,
@@ -97,7 +103,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		nodeIndex:    netGroup.SelfIndex(),
 		initiatorPub: msg.initiatorPub,
 		threshold:    msg.threshold,
-		blsThreshold: uint16(blsThreshold),
+		blsThreshold: thresholdUint16,
 		roundRetry:   msg.roundRetry,
 		netGroup:     netGroup,
 		dkgImpl:      dkgImpl,
@@ -239,7 +245,11 @@ func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, kst keySetType, initRec
 	p.dkgLock.Unlock()
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range deals {
-		sentMsgs[uint16(i)] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinDealMsg{
+		iterator, err := safecast.Convert[uint16](i)
+		if err != nil {
+			return nil, errors.New("length of rabin deals overflows uint16")
+		}
+		sentMsgs[iterator] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinDealMsg{
 			deal: deals[i],
 		})
 	}
@@ -613,8 +623,14 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		p.dkgLock.Unlock()
 		//
 		// Save the needed info.
-		groupSize := uint16(len(p.netGroup.AllNodes()))
-		ownIndex := uint16(distKeyShareDSS.PriShare().I)
+		groupSize, groupErr := safecast.Convert[uint16](len(p.netGroup.AllNodes()))
+		if groupErr != nil {
+			return nil, errors.New("group size overflows uint16")
+		}
+		ownIndex, indexErr := safecast.Convert[uint16](distKeyShareDSS.PriShare().I)
+		if indexErr != nil {
+			return nil, errors.New("group size overflows uint16")
+		}
 		publicSharesDSS := make([]kyber.Point, groupSize)
 		publicSharesDSS[ownIndex] = p.node.edSuite.Point().Mul(distKeyShareDSS.PriShare().V, nil)
 		publicSharesBLS := make([]kyber.Point, groupSize)
@@ -680,7 +696,7 @@ func (p *proc) nodeInQUAL(kst keySetType, nodeIdx uint16) bool {
 	}
 	p.dkgLock.RLock()
 	for _, q := range p.dkgImpl[kst].QUAL() {
-		if uint16(q) == nodeIdx {
+		if safecast.MustConvert[uint16](q) == nodeIdx {
 			p.dkgLock.RUnlock()
 			return true
 		}
@@ -724,7 +740,7 @@ func (p *proc) nodePubKeys() []*cryptolib.PublicKey {
 	nodeCount := len(allNodes)
 	pubKeys := make([]*cryptolib.PublicKey, nodeCount)
 	for i := 0; i < nodeCount; i++ {
-		pubKeys[i] = allNodes[uint16(i)].PubKey()
+		pubKeys[i] = allNodes[safecast.MustConvert[uint16](i)].PubKey()
 	}
 	return pubKeys
 }
