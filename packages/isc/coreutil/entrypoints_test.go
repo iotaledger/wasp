@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 )
 
-var _ isc.SandboxBase = MockSandBox{}
+var _ isc.Sandbox = MockSandBox{}
 
 type MockSandBox struct {
 	MockParams isc.CallArguments
@@ -69,7 +69,7 @@ func (m MockSandBox) Send(metadata isc.RequestParameters) {
 	panic("implement me")
 }
 
-func (m MockSandBox) StateAnchor() *isc.StateAnchor {
+func (m MockSandBox) StateIndex() uint32 {
 	panic("implement me")
 }
 

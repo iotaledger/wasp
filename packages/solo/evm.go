@@ -100,13 +100,10 @@ func (b *jsonRPCSoloBackend) ISCCallView(chainState state.State, msg isc.Message
 	return b.Chain.CallViewAtState(chainState, msg)
 }
 
-func (b *jsonRPCSoloBackend) ISCLatestAnchor() (*isc.StateAnchor, error) {
+func (b *jsonRPCSoloBackend) ISCLatestState() (*isc.StateAnchor, state.State, error) {
 	anchor := b.Chain.GetLatestAnchor()
-	return anchor, nil
-}
-
-func (b *jsonRPCSoloBackend) ISCLatestState() (state.State, error) {
-	return b.Chain.LatestState()
+	state, err := b.Chain.LatestState()
+	return anchor, state, err
 }
 
 func (b *jsonRPCSoloBackend) ISCStateByBlockIndex(blockIndex uint32) (state.State, error) {

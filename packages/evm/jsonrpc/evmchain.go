@@ -147,7 +147,8 @@ func (e *EVMChain) Signer() (types.Signer, error) {
 
 func (e *EVMChain) ChainID() uint16 {
 	if e.chainID == 0 {
-		db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
+		_, state := lo.Must2(e.backend.ISCLatestState())
+		db := blockchainDB(state)
 		e.chainID = db.GetChainID()
 	}
 	return e.chainID
@@ -162,17 +163,20 @@ func (e *EVMChain) ViewCaller(chainState state.State) vmerrors.ViewCaller {
 
 func (e *EVMChain) BlockNumber() *big.Int {
 	e.log.LogDebugf("BlockNumber()")
-	db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
+	_, state := lo.Must2(e.backend.ISCLatestState())
+	db := blockchainDB(state)
 	return big.NewInt(0).SetUint64(db.GetNumber())
 }
 
 func (e *EVMChain) GasFeePolicy() *gas.FeePolicy {
-	govState := governance.NewStateReaderFromChainState(lo.Must(e.backend.ISCLatestState()))
+	_, state := lo.Must2(e.backend.ISCLatestState())
+	govState := governance.NewStateReaderFromChainState(state)
 	return govState.GetGasFeePolicy()
 }
 
 func (e *EVMChain) gasLimits() *gas.Limits {
-	govState := governance.NewStateReaderFromChainState(lo.Must(e.backend.ISCLatestState()))
+	_, state := lo.Must2(e.backend.ISCLatestState())
+	govState := governance.NewStateReaderFromChainState(state)
 	return govState.GetGasLimits()
 }
 
@@ -239,7 +243,8 @@ func (e *EVMChain) checkEnoughL2FundsForGasBudget(sender common.Address, tx *typ
 
 func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State, error) {
 	if blockNumber == nil {
-		return e.backend.ISCLatestState()
+		_, state := lo.Must2(e.backend.ISCLatestState())
+		return state, nil
 	}
 	iscBlockIndex, err := iscBlockIndexByEVMBlockNumber(blockNumber)
 	if err != nil {
@@ -254,7 +259,8 @@ func (e *EVMChain) iscStateFromEVMBlockNumber(blockNumber *big.Int) (state.State
 
 func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (state.State, error) {
 	if blockNumberOrHash == nil {
-		return e.backend.ISCLatestState()
+		_, state := lo.Must2(e.backend.ISCLatestState())
+		return state, nil
 	}
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		return e.iscStateFromEVMBlockNumber(parseBlockNumber(blockNumber))
@@ -268,23 +274,20 @@ func (e *EVMChain) iscStateFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Block
 }
 
 // Returns the anchor corresponding to the given block (i.e. such that
-// anchor.StateIndex == blockNumber; running the VM from this anchor will
-// produce block n+1).
-//
-// [anchor n-1] -> VM -> [state n] -> [anchor n] -> VM -> [state n+1] -> [anchor n+1] ...
+// running the VM from this anchor will produce block n+1).
 func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.BlockNumberOrHash) (*isc.StateAnchor, error) {
-	latest, err := e.backend.ISCLatestAnchor()
+	latestAnchor, latestState, err := e.backend.ISCLatestState()
 	if err != nil {
 		return nil, fmt.Errorf("retrieving latest anchor: %w", err)
 	}
 	if blockNumberOrHash == nil {
-		return latest, nil
+		return latestAnchor, nil
 	}
 	var stateIndex uint32
 	if blockNumber, ok := blockNumberOrHash.Number(); ok {
 		bn := parseBlockNumber(blockNumber)
 		if bn == nil {
-			return e.backend.ISCLatestAnchor()
+			return latestAnchor, nil
 		}
 		stateIndex = blockNumberToStateIndex(bn)
 	} else {
@@ -292,22 +295,18 @@ func (e *EVMChain) iscAnchorFromEVMBlockNumberOrHash(blockNumberOrHash *rpc.Bloc
 		block := e.BlockByHash(blockHash)
 		stateIndex = blockNumberToStateIndex(block.Number())
 	}
-	if stateIndex == latest.GetStateIndex() {
-		return latest, nil
+	if stateIndex == latestState.BlockIndex() {
+		return latestAnchor, nil
 	}
-	if stateIndex > latest.GetStateIndex() {
+	if stateIndex > latestState.BlockIndex() {
 		return nil, fmt.Errorf("block %d not found", stateIndex)
 	}
-	return e.previousAnchor(stateIndex + 1)
+	return e.previousAnchor(latestState, stateIndex+1)
 }
 
-// Returns the anchor, which was used to form state of given index.
-func (e *EVMChain) previousAnchor(stateIndex uint32) (*isc.StateAnchor, error) {
-	state, err := e.backend.ISCLatestState()
-	if err != nil {
-		return nil, fmt.Errorf("retrieving latest state: %w", err)
-	}
-	blocklogState := blocklog.NewStateReader(blocklog.Contract.StateSubrealmR(state))
+// Returns the anchor that was used to form state of given index.
+func (e *EVMChain) previousAnchor(latestState state.State, stateIndex uint32) (*isc.StateAnchor, error) {
+	blocklogState := blocklog.NewStateReader(blocklog.Contract.StateSubrealmR(latestState))
 	block, found := blocklogState.GetBlockInfo(stateIndex)
 	if !found {
 		return nil, fmt.Errorf("block %d not found", stateIndex)
@@ -358,11 +357,7 @@ func (e *EVMChain) BlockByNumber(blockNumber *big.Int) (*types.Block, error) {
 		return cachedBlock, nil
 	}
 
-	latestState, err := e.backend.ISCLatestState()
-	if err != nil {
-		return nil, err
-	}
-
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	block, err := e.blockByNumber(latestState, blockNumber)
 	if err == nil && block == nil {
 		return nil, fmt.Errorf("not found")
@@ -395,10 +390,7 @@ func (e *EVMChain) TransactionByHash(hash common.Hash) (tx *types.Transaction, b
 	if cachedTx != nil {
 		return cachedTx, blockHash, blockNumber, txIndex, nil
 	}
-	latestState, err := e.backend.ISCLatestState()
-	if err != nil {
-		return nil, common.Hash{}, 0, 0, err
-	}
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	db := blockchainDB(latestState)
 	return db.GetTransactionByHash(hash)
 }
@@ -409,10 +401,7 @@ func (e *EVMChain) TransactionByBlockHashAndIndex(hash common.Hash, index uint64
 	if cachedTx != nil {
 		return cachedTx, bn, nil
 	}
-	latestState, err := e.backend.ISCLatestState()
-	if err != nil {
-		return nil, 0, err
-	}
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	db := blockchainDB(latestState)
 	block := db.GetBlockByHash(hash)
 	if block == nil {
@@ -428,10 +417,7 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 	if cachedTx != nil {
 		return cachedTx, blockHash, blockNumber.Uint64(), nil
 	}
-	latestState, err := e.backend.ISCLatestState()
-	if err != nil {
-		return nil, common.Hash{}, 0, err
-	}
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	db := blockchainDB(latestState)
 	bn, err := blockNumberU64(db, blockNumber)
 	if err != nil {
@@ -454,10 +440,7 @@ func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transaction
 	if cachedTxs != nil {
 		return cachedTxs, nil
 	}
-	latestState, err := e.backend.ISCLatestState()
-	if err != nil {
-		return nil, err
-	}
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	db := blockchainDB(latestState)
 	block := db.GetBlockByNumber(blockNumber.Uint64())
 	if block == nil {
@@ -475,7 +458,8 @@ func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 		return cachedBlock
 	}
 
-	db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
+	db := blockchainDB(latestState)
 	block := db.GetBlockByHash(hash)
 	return block
 }
@@ -486,7 +470,8 @@ func (e *EVMChain) TransactionReceipt(txHash common.Hash) *types.Receipt {
 	if rec != nil {
 		return rec
 	}
-	db := blockchainDB(lo.Must(e.backend.ISCLatestState()))
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
+	db := blockchainDB(latestState)
 	return db.GetReceiptByTxHash(txHash)
 }
 
@@ -591,11 +576,12 @@ func (e *EVMChain) Logs(query *ethereum.FilterQuery, params *LogsLimits) ([]*typ
 		return logs, nil
 	}
 
-	// block range query
+	_, latestState := lo.Must2(e.backend.ISCLatestState())
 
+	// block range query
 	// Initialize unset filter boundaries to run from genesis to chain head
 	first := big.NewInt(1) // skip genesis since it has no logs
-	last := new(big.Int).SetUint64(uint64(lo.Must(e.backend.ISCLatestState()).BlockIndex()))
+	last := new(big.Int).SetUint64(uint64(latestState.BlockIndex()))
 	from := first
 	if query.FromBlock != nil && query.FromBlock.Cmp(first) >= 0 && query.FromBlock.Cmp(last) <= 0 {
 		from = query.FromBlock
@@ -979,7 +965,7 @@ func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.Bloc
 	if err != nil {
 		return nil, err
 	}
-	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(anchor.GetStateIndex())
+	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(state.BlockIndex())
 	if !ok {
 		return nil, fmt.Errorf("blockinfo not found")
 	}

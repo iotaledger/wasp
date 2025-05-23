@@ -89,7 +89,7 @@ func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {
 	if err != nil {
 		return nil, err
 	}
-	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(anchor.GetStateIndex())
+	blockInfo, ok := blocklog.NewStateReaderFromChainState(state).GetBlockInfo(state.BlockIndex())
 	if !ok {
 		return nil, fmt.Errorf("blockinfo not found")
 	}
