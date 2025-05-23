@@ -266,7 +266,7 @@ func (n *Node) GenerateDistributedKey(
 		edSharedPublic,
 		edPublicShares,
 		n.blsSuite,
-		derivedThreshold, // TODO: Fix it.
+		derivedThreshold,
 		blsSharedPublic,
 		blsPublicShares,
 	)
