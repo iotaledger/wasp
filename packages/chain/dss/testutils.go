@@ -1,6 +1,7 @@
 package dss
 
 import (
+	"fortio.org/safecast"
 	"go.dedis.ch/kyber/v3"
 	dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
 )
@@ -38,7 +39,7 @@ func GenDistSecret(suite dkg.Suite, nbParticipants int, partSec []kyber.Scalar, 
 	for _, resp := range resps {
 		for h, dkg := range dkgs {
 			// ignore all messages from ourself
-			if resp.Response.Index == uint32(h) {
+			if resp.Response.Index == safecast.MustConvert[uint32](h) {
 				continue
 			}
 			j, err := dkg.ProcessResponse(resp)

@@ -9,6 +9,8 @@ import (
 	"slices"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -228,7 +230,11 @@ func (olp *typedPool[V]) WriteContent(w io.Writer) {
 		if err != nil {
 			return false // stop iteration
 		}
-		_, err = w.Write(codec.Encode[uint32](uint32(len(jsonData))))
+		val, err := safecast.Convert[uint32](len(jsonData))
+		if err != nil {
+			return false
+		}
+		_, err = w.Write(codec.Encode[uint32](val))
 		if err != nil {
 			return false // stop iteration
 		}
