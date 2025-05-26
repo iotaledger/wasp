@@ -6,6 +6,7 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 
 	log "github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/clients"
 
 	"github.com/iotaledger/wasp/packages/authentication"
 	"github.com/iotaledger/wasp/packages/authentication/shared/permissions"
@@ -24,6 +25,7 @@ type Controller struct {
 	committeeService interfaces.CommitteeService
 	offLedgerService interfaces.OffLedgerService
 	registryService  interfaces.RegistryService
+	l1Client         clients.L1Client
 
 	accountDumpsPath string
 }
@@ -36,9 +38,11 @@ func NewChainController(log log.Logger,
 	offLedgerService interfaces.OffLedgerService,
 	registryService interfaces.RegistryService,
 	accountDumpsPath string,
+	l1Client clients.L1Client,
 ) interfaces.APIController {
 	return &Controller{
 		log:              log,
+		l1Client:         l1Client,
 		chainService:     chainService,
 		evmService:       evmService,
 		committeeService: committeeService,

@@ -14,7 +14,7 @@ type ContractCallViewRequest struct {
 }
 
 type EstimateGasRequestOnledger struct {
-	Output string `json:"outputBytes" swagger:"desc(Serialized Output (Hex)),required"`
+	TransactionBytes string `json:"transactionBytes" swagger:"desc(The result of the DryRun encoded in BCS format and represented in hexadecimal),required"`
 }
 
 type EstimateGasRequestOffledger struct {

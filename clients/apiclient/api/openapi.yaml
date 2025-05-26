@@ -2894,16 +2894,17 @@ components:
         name: EstimateGasRequestOffledger
     EstimateGasRequestOnledger:
       example:
-        outputBytes: outputBytes
+        transactionBytes: transactionBytes
       properties:
-        outputBytes:
-          description: Serialized Output (Hex)
+        transactionBytes:
+          description: The result of the DryRun encoded in BCS format and represented
+            in hexadecimal
           format: string
           type: string
           xml:
-            name: Output
+            name: TransactionBytes
       required:
-      - outputBytes
+      - transactionBytes
       type: object
       xml:
         name: EstimateGasRequestOnledger
@@ -3869,6 +3870,7 @@ components:
           gasBurned: 1
         request:
           senderAccount: senderAccount
+          allowanceError: allowanceError
           assets:
             coins:
             - coinType: coinType
@@ -4012,6 +4014,7 @@ components:
     RequestJSON:
       example:
         senderAccount: senderAccount
+        allowanceError: allowanceError
         assets:
           coins:
           - coinType: coinType
@@ -4059,6 +4062,11 @@ components:
       properties:
         allowance:
           $ref: '#/components/schemas/AssetsJSON'
+        allowanceError:
+          format: string
+          type: string
+          xml:
+            name: AllowanceError
         assets:
           $ref: '#/components/schemas/AssetsJSON'
         callTarget:

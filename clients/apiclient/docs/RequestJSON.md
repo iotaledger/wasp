@@ -5,6 +5,7 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Allowance** | [**AssetsJSON**](AssetsJSON.md) |  | 
+**AllowanceError** | Pointer to **string** |  | [optional] 
 **Assets** | [**AssetsJSON**](AssetsJSON.md) |  | 
 **CallTarget** | [**CallTargetJSON**](CallTargetJSON.md) |  | 
 **GasBudget** | **string** | The gas budget (uint64 as string) | 
@@ -52,6 +53,31 @@ and a boolean to check if the value has been set.
 
 SetAllowance sets Allowance field to given value.
 
+
+### GetAllowanceError
+
+`func (o *RequestJSON) GetAllowanceError() string`
+
+GetAllowanceError returns the AllowanceError field if non-nil, zero value otherwise.
+
+### GetAllowanceErrorOk
+
+`func (o *RequestJSON) GetAllowanceErrorOk() (*string, bool)`
+
+GetAllowanceErrorOk returns a tuple with the AllowanceError field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetAllowanceError
+
+`func (o *RequestJSON) SetAllowanceError(v string)`
+
+SetAllowanceError sets AllowanceError field to given value.
+
+### HasAllowanceError
+
+`func (o *RequestJSON) HasAllowanceError() bool`
+
+HasAllowanceError returns a boolean if a field has been set.
 
 ### GetAssets
 
