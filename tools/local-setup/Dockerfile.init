@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1
+ARG GOLANG_IMAGE_TAG=1.24
+
+############################
+# Build stage
+############################
+FROM golang:${GOLANG_IMAGE_TAG}-alpine AS build
+
+ARG BUILD_LD_FLAGS="--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing"
+
+LABEL org.label-schema.description="Sandbox Wasp CLI"
+LABEL org.label-schema.name="iotaledger/sandbox-wasp-cli"
+LABEL org.label-schema.schema-version="1.0"
+LABEL org.label-schema.vcs-url="https://github.com/iotaledger/wasp"
+
+# Install build tools and certificates
+RUN apk add --no-cache git ca-certificates
+
+WORKDIR /app
+
+# Copy and download dependencies
+COPY go.mod go.sum ./
+
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+# Copy the full source code
+COPY . .
+
+# Build the wasp-cli binary
+WORKDIR /app/tools/wasp-cli
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    go build -o /app/wasp-cli -ldflags="${BUILD_LD_FLAGS}"
+
+############################
+# Runtime stage (Alpine)
+############################
+FROM alpine:3.21
+
+# Install runtime dependencies
+RUN apk add --no-cache bash curl ca-certificates
+
+RUN mkdir -p /tmp/wasp-init-home
+
+# Copy built binary from build stage
+COPY --from=build /app/wasp-cli /usr/local/bin/wasp-cli
+
+# Copy the isc contract bytecode
+COPY clients/iota-go/contracts/isc/bytecode.json bytecode.json
+
+WORKDIR /app
+ENTRYPOINT ["/bin/sh"]
+CMD ["-c"]
