@@ -1,0 +1,7 @@
+# Additional configuration and default values at https://github.com/gakonst/foundry/tree/master/config
+[default]
+
+# Sets the concrete solc version to use
+# This overrides the `auto_detect_solc` value
+# solc_version = '0.8.13'
+
