@@ -20,38 +20,33 @@ func TestDevInspectTransactionBlock(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	sender := iotatest.MakeSignerWithFunds(0, l1starter.Instance().FaucetURL())
 
-	limit := uint(3)
-	coinPages, err := client.GetCoins(
-		context.Background(), iotaclient.GetCoinsRequest{
-			Owner: sender.Address(),
-			Limit: limit,
-		},
-	)
-	require.NoError(t, err)
-	coins := iotajsonrpc.Coins(coinPages.Data)
-
 	ptb := iotago.NewProgrammableTransactionBuilder()
 	ptb.PayAllIota(sender.Address())
 	pt := ptb.Finish()
 	tx := iotago.NewProgrammable(
 		sender.Address(),
 		pt,
-		coins.CoinRefs(),
+		nil,
 		iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
 	txBytes, err := bcs.Marshal(&tx.V1.Kind)
 	require.NoError(t, err)
 
+	showRawTxnDataAndEffects := true
 	resp, err := client.DevInspectTransactionBlock(
 		context.Background(),
 		iotaclient.DevInspectTransactionBlockRequest{
 			SenderAddress: sender.Address(),
 			TxKindBytes:   txBytes,
+			AdditionalArgs: &iotaclient.DevInspectArgs{
+				ShowRawTxnDataAndEffects: &showRawTxnDataAndEffects,
+			},
 		},
 	)
 	require.NoError(t, err)
 	require.True(t, resp.Effects.Data.IsSuccess())
+	require.NotEmpty(t, resp.RawEffects)
 }
 
 func TestDryRunTransaction(t *testing.T) {
