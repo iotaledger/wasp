@@ -102,6 +102,8 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 		return true // not added already exists
 	}
 
+	var replaced *OrderedPoolEntry = nil
+
 	//
 	// add to the account requests, keep the slice ordered
 	{
@@ -114,13 +116,10 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 			index, exists := slices.BinarySearchFunc(reqsForAcount, entry, cmpOrderedPoolEntryByNonce)
 
 			if exists && len(reqsForAcount[index].proposedFor) == 0 {
-				// Name nonce, but the existing request was not proposed yet.
+				// Same nonce, but the existing request was not proposed yet.
 				// Thus we just replace it.
-				oldEntry := reqsForAcount[index]
+				replaced = reqsForAcount[index]
 				reqsForAcount[index] = entry
-				p.orderedByGasPrice = lo.Filter(p.orderedByGasPrice, func(e *OrderedPoolEntry, _ int) bool {
-					return e.req.ID() != oldEntry.req.ID()
-				})
 			} else {
 				reqsInAccount := len(reqsForAcount)
 				if reqsInAccount >= p.maxPerAccount {
@@ -163,6 +162,10 @@ func (p *OffLedgerPool) Add(request isc.OffLedgerRequest) bool {
 			copy(p.orderedByGasPrice[index+1:], p.orderedByGasPrice[index:])
 			p.orderedByGasPrice[index] = entry
 		}
+	}
+
+	if replaced != nil {
+		p.Remove(replaced.req)
 	}
 
 	// keep the pool size in check
@@ -269,22 +272,22 @@ func (p *OffLedgerPool) Remove(request isc.OffLedgerRequest) {
 		account := entry.req.SenderAccount().String()
 		reqsByAccount, exists := p.reqsByAcountOrdered.Get(account)
 		if !exists {
-			p.log.LogErrorf("inconsistency trying to DEL %v as key=%v, no request list for account %s", request.ID(), refKey, account)
-			return
-		}
-		indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry) bool {
-			return refKey == isc.RequestRefFromRequest(e.req).AsKey()
-		})
-		if indexToDel == -1 {
-			p.log.LogErrorf("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
-			return
-		}
-		if len(reqsByAccount) == 1 { // just remove the entire array for the account
-			p.reqsByAcountOrdered.Delete(account)
+			p.log.LogWarnf("inconsistency trying to DEL %v as key=%v, no request list for account %s", request.ID(), refKey, account)
 		} else {
-			reqsByAccount[indexToDel] = nil // remove the pointer reference to allow GC of the entry object
-			reqsByAccount = slices.Delete(reqsByAccount, indexToDel, indexToDel+1)
-			p.reqsByAcountOrdered.Set(account, reqsByAccount)
+			indexToDel := slices.IndexFunc(reqsByAccount, func(e *OrderedPoolEntry) bool {
+				return refKey == isc.RequestRefFromRequest(e.req).AsKey()
+			})
+			if indexToDel == -1 {
+				p.log.LogWarnf("inconsistency trying to DEL %v as key=%v, request not found in list for account %s", request.ID(), refKey, account)
+			} else {
+				if len(reqsByAccount) == 1 { // just remove the entire array for the account
+					p.reqsByAcountOrdered.Delete(account)
+				} else {
+					reqsByAccount[indexToDel] = nil // remove the pointer reference to allow GC of the entry object
+					reqsByAccount = slices.Delete(reqsByAccount, indexToDel, indexToDel+1)
+					p.reqsByAcountOrdered.Set(account, reqsByAccount)
+				}
+			}
 		}
 	}
 

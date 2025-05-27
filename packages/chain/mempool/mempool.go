@@ -145,7 +145,7 @@ type mempoolImpl struct {
 	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
-	consensusInstances             []consGR.ConsensusID
+	consensusInstances             []consGR.ConsensusID // TODO: Not used?
 	waitReq                        WaitReq
 	waitChainHead                  []*reqConsensusProposal
 	reqConsensusProposalPipe       pipe.Pipe[*reqConsensusProposal]
