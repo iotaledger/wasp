@@ -1,0 +1,14 @@
+# Use the official iota-tools image as base
+FROM iotaledger/iota-tools:devnet
+
+# Install jq (Debian-based image)
+RUN apt-get update && \
+    apt-get install -y jq && \
+    rm -rf /var/lib/apt/lists/*
+
+# Optional: set working directory
+WORKDIR /app
+
+# Optional: add labels
+LABEL maintainer="you@example.com"
+LABEL description="Custom faucet caller with jq support"

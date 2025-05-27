@@ -42,7 +42,7 @@ FROM iotaledger/iota-tools:devnet AS iota-tools-extract
 FROM alpine:3.21
 
 # Install runtime dependencies
-RUN apk add --no-cache bash curl ca-certificates
+RUN apk add --no-cache bash curl ca-certificates jq
 
 RUN mkdir -p /tmp/wasp-init-home
 
@@ -51,9 +51,6 @@ COPY --from=iota-tools-extract /usr/local/bin/iota /usr/local/bin/iota
 
 # Copy built binary from build stage
 COPY --from=build /app/wasp-cli /usr/local/bin/wasp-cli
-
-# Copy the isc contract bytecode
-COPY clients/iota-go/contracts/isc/bytecode.json bytecode.json
 
 WORKDIR /app
 ENTRYPOINT ["/bin/sh"]

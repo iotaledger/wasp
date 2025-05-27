@@ -42,20 +42,22 @@ services:
       start_period: 10s
 
   faucet-caller:
-    image: iotaledger/iota-tools:devnet
+    build:
+      context: ../../
+      dockerfile: tools/local-setup/Dockerfile.faucet
     container_name: faucet-caller
     depends_on:
       iota-tools:
         condition: service_healthy
     volumes:
       - ../../clients/iota-go/contracts/isc:/isc
+      - ./deploy-isc.sh:/deploy-isc.sh
     command: >
       /bin/sh -c '
         iota client --yes new-env --rpc http://host.docker.internal:9000 --faucet http://host.docker.internal:9123/v1/gas --alias localnet && 
         echo "Calling faucet..." && 
-        iota client faucet && 
-        echo "Calling something else..." && 
-        iota client publish --gas-budget 100000000 /isc && 
+        iota client faucet &&         
+        bash /deploy-isc.sh &&
         echo "Done"
       '
     restart: "no"
