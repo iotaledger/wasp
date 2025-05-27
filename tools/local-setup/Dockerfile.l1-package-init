@@ -10,5 +10,4 @@ RUN apt-get update && \
 WORKDIR /app
 
 # Optional: add labels
-LABEL maintainer="you@example.com"
-LABEL description="Custom faucet caller with jq support"
+LABEL description="container for initialize Anchor contract on L1"

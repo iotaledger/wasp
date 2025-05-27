@@ -6,7 +6,7 @@ DEPENDENCIES=$(jq -c '.dependencies' /isc/bytecode.json)
 GAS_BUDGET=100000000
 
 # Make the JSON-RPC POST call
-PUBLISH_RESULT=$(curl -X POST http://host.docker.internal:9000 \
+PUBLISH_RAW_UNSIGNED_TX_BYTES=$(curl -X POST http://host.docker.internal:9000 \
   -H "Content-Type: application/json" \
   -d "{
     \"jsonrpc\": \"2.0\",
@@ -21,7 +21,8 @@ PUBLISH_RESULT=$(curl -X POST http://host.docker.internal:9000 \
     ]
   }")
 
-UNSIGNED_TX_BYTES=$(echo "$PUBLISH_RESULT" | jq -r '.result.txBytes')
-
+UNSIGNED_TX_BYTES=$(echo "$PUBLISH_UNSIGNED_TX_BYTES" | jq -r '.result.txBytes')
 SERIALIZED_SIGNATURE=$(iota keytool sign --address $IOTA_ADDRESS --data $UNSIGNED_TX_BYTES --json | jq -r '.iotaSignature')
-iota client execute-signed-tx --tx-bytes $UNSIGNED_TX_BYTES --signatures $SERIALIZED_SIGNATURE
+RAW_PUBLISH_RESULT=$(iota client execute-signed-tx --tx-bytes $UNSIGNED_TX_BYTES --signatures $SERIALIZED_SIGNATURE  --json)
+PACKAGE_ID=$(echo "$RAW_PUBLISH_RESULT" | jq -r '.objectChanges[] | select(.type == "published") | .packageId')
+

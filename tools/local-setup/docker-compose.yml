@@ -41,11 +41,11 @@ services:
       retries: 10
       start_period: 10s
 
-  faucet-caller:
+  l1-package-init:
     build:
       context: ../../
-      dockerfile: tools/local-setup/Dockerfile.faucet
-    container_name: faucet-caller
+      dockerfile: tools/local-setup/Dockerfile.l1-package-init
+    container_name: l1-package-init
     depends_on:
       iota-tools:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
   #     iota-tools:
   #       condition: service_healthy
   #     # wasp:
-  #     #   condition: service_started
+  #     #   condition: service_healthy
   #   entrypoint:
   #     - /bin/sh
   #     - -c
