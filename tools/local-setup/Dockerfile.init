@@ -34,6 +34,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
     go build -o /app/wasp-cli -ldflags="${BUILD_LD_FLAGS}"
 
+FROM iotaledger/iota-tools:devnet AS iota-tools-extract
+
 ############################
 # Runtime stage (Alpine)
 ############################
@@ -43,6 +45,9 @@ FROM alpine:3.21
 RUN apk add --no-cache bash curl ca-certificates
 
 RUN mkdir -p /tmp/wasp-init-home
+
+# Copy iota from iota-tools image
+COPY --from=iota-tools-extract /usr/local/bin/iota /usr/local/bin/iota
 
 # Copy built binary from build stage
 COPY --from=build /app/wasp-cli /usr/local/bin/wasp-cli

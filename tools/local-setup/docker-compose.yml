@@ -4,17 +4,17 @@ services:
   # Reverse Proxy (needed to rewrite dashboard route) #
   #####################################################
 
-  traefik:
-    container_name: traefik
-    image: traefik:v3.1
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "${HTTP_PORT:-80}:80/tcp"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  # traefik:
+  #   container_name: traefik
+  #   image: traefik:v3.1
+  #   command:
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entrypoints.web.address=:80"
+  #   ports:
+  #     - "${HTTP_PORT:-80}:80/tcp"
+  #   volumes:
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
   ################
   # L1 Localnode #
@@ -34,141 +34,153 @@ services:
       - --with-faucet
       - --faucet-amount=1000000000000000 # Replace with actual constant if needed
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-H", "Content-Type: application/json", "-d", '{"jsonrpc":"2.0","id":1,"method":"iota_getLatestCheckpointSequenceNumber","params":[]}', "http://localhost:9000"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
-  wasp-init:
-    container_name: wasp-init
-    build:
-      context: ../../
-      dockerfile: tools/local-setup/Dockerfile.init
-    image: iotaledger/wasp-init:latest
+  faucet-caller:
+    image: iotaledger/iota-tools:devnet
+    container_name: faucet-caller
     depends_on:
       iota-tools:
-        condition: service_started
-      wasp:
-        condition: service_started
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        echo "Waiting for iota-tools (iotax_getCommitteeInfo) to respond..." && \
-        until curl --silent --fail --show-error --output /dev/null \
-          --location 'http://iota-tools:9000' \
-          --header 'Content-Type: application/json' \
-          --data '{
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "iotax_getCommitteeInfo",
-            "params": []
-          }'; do \
-          echo "iota-tools not ready yet. Retrying in 3s..."; \
-          sleep 3; \
-        done && \
-        echo "iota-tools is ready!" && \
-        wasp-cli -c ./wasp-cli.json wallet-provider unsafe_inmemory_testing_seed && \
-        wasp-cli -c ./wasp-cli.json init && \
-        wasp-cli -c ./wasp-cli.json set l1.apiaddress http://host.docker.internal:9000 && \
-        wasp-cli -c ./wasp-cli.json set l1.faucetaddress http://host.docker.internal:9123/gas && \
-        wasp-cli -c ./wasp-cli.json wasp add wasp0 http://host.docker.internal:9090 && \
-        wasp-cli -c ./wasp-cli.json request-funds && \
-        echo "!!!!!!!!!!!deploy" && \
-        wasp-cli -c ./wasp-cli.json chain deploy --chain=localchain && \
-        echo "Running wasp-cli chain deposit..." && \
-        wasp-cli -c ./wasp-cli.json chain deposit base|1000000
+        condition: service_healthy
+    volumes:
+      - ../../clients/iota-go/contracts/isc:/isc
+    command: >
+      /bin/sh -c '
+        iota client --yes new-env --rpc http://host.docker.internal:9000 --faucet http://host.docker.internal:9123/v1/gas --alias localnet && 
+        echo "Calling faucet..." && 
+        iota client faucet && 
+        echo "Calling something else..." && 
+        iota client publish --gas-budget 100000000 /isc && 
+        echo "Done"
+      '
     restart: "no"
 
 
-  ########
-  # WASP #
-  ########
+  # wasp-init:
+  #   container_name: wasp-init
+  #   build:
+  #     context: ../../
+  #     dockerfile: tools/local-setup/Dockerfile.init
+  #   image: iotaledger/wasp-init:latest
+  #   depends_on:
+  #     iota-tools:
+  #       condition: service_healthy
+  #     # wasp:
+  #     #   condition: service_started
+  #   entrypoint:
+  #     - /bin/sh
+  #     - -c
+  #     - |        
+  #       wasp-cli -c ./wasp-cli.json wallet-provider unsafe_inmemory_testing_seed && \
+  #       wasp-cli -c ./wasp-cli.json init && \
+  #       wasp-cli -c ./wasp-cli.json set l1.apiaddress http://host.docker.internal:9000 && \
+  #       wasp-cli -c ./wasp-cli.json set l1.faucetaddress http://host.docker.internal:9123/gas && \
+  #       wasp-cli -c ./wasp-cli.json wasp add wasp0 http://host.docker.internal:9090 && \
+  #       wasp-cli -c ./wasp-cli.json request-funds && \
+  #       echo "!!!!!!!!!!!deploy" && \
+  #       wasp-cli -c ./wasp-cli.json chain deploy --chain=localchain && \
+  #       echo "Running wasp-cli chain deposit..." && \
+  #       wasp-cli -c ./wasp-cli.json chain deposit base|1000000
+  #   restart: "no"
 
-  wasp:
-    container_name: wasp
-    image: iotaledger/wasp:latest
 
-    build:
-      context: ../../
-      dockerfile: Dockerfile.noncached
-      args:
-        BUILD_TAGS: "${BUILD_TAGS:-rocksdb}"
-        BUILD_LD_FLAGS: "${BUILD_LD_FLAGS:--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing}"
-    ulimits:
-      nofile:
-        soft: 16384
-        hard: 16384
-    restart: on-failure:1
-    stop_grace_period: 5m
-    depends_on:
-      traefik:
-        condition: service_started
-    ports:
-      - "2112:2112/tcp" # Prometheus
-      - "4000:4000/tcp" # Peering
-      - "9090:9090/tcp" # WebAPI
-      - "6060:6060/tcp" # Profiling
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wasp-api.service=wasp-api"
-      - "traefik.http.routers.wasp-api.rule=Host(`localhost`) && (Path(`/wasp/api`) || PathPrefix(`/wasp/api/`))"
-      - "traefik.http.routers.wasp-api.entrypoints=web"
-      - "traefik.http.services.wasp-api.loadbalancer.server.port=9090"
-      - "traefik.http.routers.wasp-api.middlewares=rewrite-wasp-api"
-      - "traefik.http.middlewares.rewrite-wasp-api.stripprefix.prefixes=/wasp/api"
-      - "traefik.http.routers.wasp-pprof.service=wasp-pprof"
-      - "traefik.http.routers.wasp-pprof.rule=Host(`localhost`) && (Path(`/wasp/debug/pprof`) || PathPrefix(`/wasp/debug/pprof/`))"
-      - "traefik.http.routers.wasp-pprof.entrypoints=web"
-      - "traefik.http.services.wasp-pprof.loadbalancer.server.port=6060"
-      - "traefik.http.routers.wasp-pprof.middlewares=rewrite-wasp-pprof"
-      - "traefik.http.middlewares.rewrite-wasp-pprof.stripprefix.prefixes=/wasp"
-    cap_drop:
-      - ALL
-    volumes:
-      - wasp-db:/app/waspdb
-    command:
-      - "--webapi.auth.scheme=none"
-      - "--logger.level=debug"
-      - "--l1.httpurl=http://host.docker.internal:9000"
-      - "--l1.websocketURL=ws://host.docker.internal:9000"
-      # - "--l1.packageID=0x7b2fd27e09ad438c914fe2199cc78c174da92208384ac4341f61d2a15a588463"
-      - "--db.chainState.path=/app/waspdb/chains/data"
-      - "--p2p.identity.filePath=/app/waspdb/identity/identity.key"
-      - "--p2p.db.path=/app/waspdb/p2pstore"
-      - "--registries.chains.filePath=/app/waspdb/chains/chain_registry.json"
-      - "--registries.dkShares.path=/app/waspdb/dkshares"
-      - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
-      - "--registries.consensusState.path=/app/waspdb/chains/consensus"
-      - "--wal.path=/app/waspdb/wal"
-      - "--profiling.enabled=false"
-      - "--profiling.bindAddress=0.0.0.0:6060"
-    environment:
-      - DEBUG=true
+#   ########
+#   # WASP #
+#   ########
 
-#   ##################
-#   # WASP Dashboard #
-#   ##################
+#   wasp:
+#     container_name: wasp
+#     image: iotaledger/wasp:latest
 
-#   wasp-dashboard:
-#     container_name: wasp-dashboard
-#     image: iotaledger/wasp-dashboard:latest
+#     build:
+#       context: ../../
+#       dockerfile: Dockerfile.noncached
+#       args:
+#         BUILD_TAGS: "${BUILD_TAGS:-rocksdb}"
+#         BUILD_LD_FLAGS: "${BUILD_LD_FLAGS:--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing}"
+#     ulimits:
+#       nofile:
+#         soft: 16384
+#         hard: 16384
+#     restart: on-failure:1
 #     stop_grace_period: 5m
-#     restart: unless-stopped
 #     depends_on:
 #       traefik:
 #         condition: service_started
-#       wasp:
-#         condition: service_started
+#     ports:
+#       - "2112:2112/tcp" # Prometheus
+#       - "4000:4000/tcp" # Peering
+#       - "9090:9090/tcp" # WebAPI
+#       - "6060:6060/tcp" # Profiling
 #     labels:
 #       - "traefik.enable=true"
-#       - "traefik.http.routers.wasp-dashboard.service=wasp-dashboard"
-#       - "traefik.http.routers.wasp-dashboard.rule=Host(`localhost`) && (Path(`/wasp/dashboard`) || PathPrefix(`/wasp/dashboard/`))"
-#       - "traefik.http.routers.wasp-dashboard.entrypoints=web"
-#       - "traefik.http.services.wasp-dashboard.loadbalancer.server.port=80"
-#       - "traefik.http.routers.wasp-dashboard.middlewares=rewrite-wasp-dashboard"
-#       - "traefik.http.middlewares.rewrite-wasp-dashboard.stripprefix.prefixes=/wasp/dashboard"
+#       - "traefik.http.routers.wasp-api.service=wasp-api"
+#       - "traefik.http.routers.wasp-api.rule=Host(`localhost`) && (Path(`/wasp/api`) || PathPrefix(`/wasp/api/`))"
+#       - "traefik.http.routers.wasp-api.entrypoints=web"
+#       - "traefik.http.services.wasp-api.loadbalancer.server.port=9090"
+#       - "traefik.http.routers.wasp-api.middlewares=rewrite-wasp-api"
+#       - "traefik.http.middlewares.rewrite-wasp-api.stripprefix.prefixes=/wasp/api"
+#       - "traefik.http.routers.wasp-pprof.service=wasp-pprof"
+#       - "traefik.http.routers.wasp-pprof.rule=Host(`localhost`) && (Path(`/wasp/debug/pprof`) || PathPrefix(`/wasp/debug/pprof/`))"
+#       - "traefik.http.routers.wasp-pprof.entrypoints=web"
+#       - "traefik.http.services.wasp-pprof.loadbalancer.server.port=6060"
+#       - "traefik.http.routers.wasp-pprof.middlewares=rewrite-wasp-pprof"
+#       - "traefik.http.middlewares.rewrite-wasp-pprof.stripprefix.prefixes=/wasp"
+#     cap_drop:
+#       - ALL
+#     volumes:
+#       - wasp-db:/app/waspdb
+#     command:
+#       - "--webapi.auth.scheme=none"
+#       - "--logger.level=debug"
+#       - "--l1.httpurl=http://host.docker.internal:9000"
+#       - "--l1.websocketURL=ws://host.docker.internal:9000"
+#       # - "--l1.packageID=0x7b2fd27e09ad438c914fe2199cc78c174da92208384ac4341f61d2a15a588463"
+#       - "--db.chainState.path=/app/waspdb/chains/data"
+#       - "--p2p.identity.filePath=/app/waspdb/identity/identity.key"
+#       - "--p2p.db.path=/app/waspdb/p2pstore"
+#       - "--registries.chains.filePath=/app/waspdb/chains/chain_registry.json"
+#       - "--registries.dkShares.path=/app/waspdb/dkshares"
+#       - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
+#       - "--registries.consensusState.path=/app/waspdb/chains/consensus"
+#       - "--wal.path=/app/waspdb/wal"
+#       - "--profiling.enabled=false"
+#       - "--profiling.bindAddress=0.0.0.0:6060"
 #     environment:
-#       - WASP_API_URL=http://localhost/wasp/api
-#       - L1_API_URL=http://localhost
+#       - DEBUG=true
 
-volumes:
-  wasp-db:
-    external: true
-    name: wasp-db
+# #   ##################
+# #   # WASP Dashboard #
+# #   ##################
+
+# #   wasp-dashboard:
+# #     container_name: wasp-dashboard
+# #     image: iotaledger/wasp-dashboard:latest
+# #     stop_grace_period: 5m
+# #     restart: unless-stopped
+# #     depends_on:
+# #       traefik:
+# #         condition: service_started
+# #       wasp:
+# #         condition: service_started
+# #     labels:
+# #       - "traefik.enable=true"
+# #       - "traefik.http.routers.wasp-dashboard.service=wasp-dashboard"
+# #       - "traefik.http.routers.wasp-dashboard.rule=Host(`localhost`) && (Path(`/wasp/dashboard`) || PathPrefix(`/wasp/dashboard/`))"
+# #       - "traefik.http.routers.wasp-dashboard.entrypoints=web"
+# #       - "traefik.http.services.wasp-dashboard.loadbalancer.server.port=80"
+# #       - "traefik.http.routers.wasp-dashboard.middlewares=rewrite-wasp-dashboard"
+# #       - "traefik.http.middlewares.rewrite-wasp-dashboard.stripprefix.prefixes=/wasp/dashboard"
+# #     environment:
+# #       - WASP_API_URL=http://localhost/wasp/api
+# #       - L1_API_URL=http://localhost
+
+# volumes:
+#   wasp-db:
+#     external: true
+#     name: wasp-db
