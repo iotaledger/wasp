@@ -174,13 +174,13 @@ func InitChain(
 	)
 }
 
-func InitChainByAnchor(
+func InitChainByStateMetadataBytes(
 	chainStore state.Store,
-	anchor *isc.StateAnchor,
+	stateMetadataBytes []byte,
 	originDeposit coin.Value,
 	l1Params *parameters.L1Params,
 ) (state.Block, error) {
-	stateMetadata, err := transaction.StateMetadataFromBytes(anchor.GetStateMetadata())
+	stateMetadata, err := transaction.StateMetadataFromBytes(stateMetadataBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func InitChainByAnchor(
 	)
 	if !originBlock.L1Commitment().Equals(stateMetadata.L1Commitment) {
 		return nil, fmt.Errorf(
-			"l1Commitment mismatch between originAO / originBlock: %s / %s",
+			"L1Commitment mismatch between anchor / originBlock: %s / %s",
 			stateMetadata.L1Commitment,
 			originBlock.L1Commitment(),
 		)

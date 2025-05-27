@@ -716,7 +716,7 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 			panic(err)
 		}
 
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, stateAchor, sm.InitDeposit, l1Params)
+		initBlock, err := origin.InitChainByStateMetadataBytes(cni.chainStore, stateAchor.GetStateMetadata(), sm.InitDeposit, l1Params)
 		if err != nil {
 			cni.log.LogErrorf("Ignoring InitialAO for the chain: %v", err)
 			return

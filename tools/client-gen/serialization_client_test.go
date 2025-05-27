@@ -227,8 +227,6 @@ func TestA(t *testing.T) {
 		constructCoreContractFunction(&root.ViewFindContract),
 		constructCoreContractFunction(&root.ViewGetContractRecords),
 		constructCoreContractFunction(&inccounter.FuncIncCounter),
-		constructCoreContractFunction(&inccounter.FuncIncAndRepeatOnceAfter2s),
-		constructCoreContractFunction(&inccounter.FuncIncAndRepeatMany),
 		constructCoreContractFunction(&inccounter.ViewGetCounter),
 		// For now ignore the sbtest contract (mainly used for testing the generator, not included in an actual lib)
 		/*constructCoreContractFunction(&sbtestsc.FuncEventLogGenericData),

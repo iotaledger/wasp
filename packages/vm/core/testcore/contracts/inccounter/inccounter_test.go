@@ -73,29 +73,6 @@ func TestIncParam(t *testing.T) {
 	chain.CheckAccountLedger()
 }
 
-// func TestIncWith1Post(t *testing.T) {
-// 	env := initSolo(t)
-// 	chain := env.NewChain()
-
-// 	checkCounter(chain, 0)
-
-// 	chain.WaitForRequestsMark()
-
-// 	req := solo.NewCallParams(inccounter.FuncIncAndRepeatOnceAfter2s.Message()).
-// 		AddBaseTokens(1_000_000).
-// 		WithAllowance(isc.NewAssets(1_000_000)).
-// 		WithMaxAffordableGasBudget()
-// 	_, err := chain.PostRequestSync(req, nil)
-// 	require.NoError(t, err)
-
-// 	// advance logical clock to unlock that timelocked request
-// 	env.AdvanceClockBy(6 * time.Second)
-// 	require.True(t, chain.WaitForRequestsThrough(2))
-
-// 	checkCounter(chain, 2)
-// 	chain.CheckAccountLedger()
-// }
-
 func initBenchmark(b *testing.B) (*solo.Chain, []*solo.CallParams) {
 	// setup: deploy the inccounter contract
 	log := testlogger.NewSilentLogger(b.Name(), true)
