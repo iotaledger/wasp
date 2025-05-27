@@ -6,23 +6,6 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-// moveAnchor is the BCS equivalent for the move type Anchor
-type moveAnchor struct {
-	ID            iotago.ObjectID
-	Assets        iscmove.Referent[iscmove.AssetsBag]
-	StateMetadata []byte
-	StateIndex    uint32
-}
-
-func (ma *moveAnchor) ToAnchor() *iscmove.Anchor {
-	return &iscmove.Anchor{
-		ID:            ma.ID,
-		Assets:        ma.Assets,
-		StateMetadata: ma.StateMetadata,
-		StateIndex:    ma.StateIndex,
-	}
-}
-
 type MoveRequest struct {
 	ID        iotago.ObjectID
 	Sender    *cryptolib.Address

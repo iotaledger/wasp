@@ -87,9 +87,9 @@ func (s *contractSandbox) State() kv.KVStore {
 	return s.reqctx.contractStateWithGasBurn()
 }
 
-func (s *contractSandbox) StateAnchor() *isc.StateAnchor {
+func (s *contractSandbox) StateIndex() uint32 {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
-	return s.reqctx.vm.stateAnchor()
+	return s.reqctx.vm.stateDraft.BlockIndex()
 }
 
 func (s *contractSandbox) RequestIndex() uint16 {
