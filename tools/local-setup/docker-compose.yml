@@ -4,162 +4,185 @@ services:
   # Reverse Proxy (needed to rewrite dashboard route) #
   #####################################################
 
-  traefik:
-    container_name: traefik
-    image: traefik:v3.1
+  # traefik:
+  #   container_name: traefik
+  #   image: traefik:v3.1
+  #   command:
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=false"
+  #     - "--entrypoints.web.address=:80"
+  #   ports:
+  #     - "${HTTP_PORT:-80}:80/tcp"
+  #   volumes:
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  ################
+  # L1 Localnode #
+  ################
+
+  iota-tools:
+    image: iotaledger/iota-tools:devnet
+    container_name: iota-tools
+    ports:
+      - "9000:9000"
+      - "9123:9123"
     command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "${HTTP_PORT:-80}:80/tcp"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - iota
+      - start
+      - --force-regenesis
+      - --epoch-duration-ms=60000
+      - --with-faucet
+      - --faucet-amount=1000000000000000 # Replace with actual constant if needed
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "-H", "Content-Type: application/json", "-d", '{"jsonrpc":"2.0","id":1,"method":"iota_getLatestCheckpointSequenceNumber","params":[]}', "http://localhost:9000"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
-  ###############
-  # HORNET nest #
-  ###############
-
-  hornet-nest:
-    container_name: hornet-nest
-    image: iotaledger/hornet-nest:2.0-rc
-    ulimits:
-      nofile:
-        soft: 16384
-        hard: 16384
-    restart: on-failure:10
-    stop_grace_period: 5m
-    depends_on:
-      traefik:
-        condition: service_started
-    ports:
-      - "14265:14265/tcp" # API
-      - "8091:8091/tcp" # Faucet
-      - "9029:9029/tcp" # INX
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hornet.service=hornet"
-      - "traefik.http.routers.hornet.rule=Host(`localhost`)"
-      - "traefik.http.routers.hornet.entrypoints=web"
-      - "traefik.http.services.hornet.loadbalancer.server.port=14265"
-      - "traefik.http.routers.hornet.middlewares=redirect-dashboard"
-      - "traefik.http.middlewares.redirect-dashboard.redirectregex.regex=^(https?://[^/]+)/?$$"
-      - "traefik.http.middlewares.redirect-dashboard.redirectregex.replacement=$$1/dashboard/"
-      - "traefik.http.middlewares.redirect-dashboard.redirectregex.permanent=true"
-      - "traefik.http.routers.hornet-dashboard.service=hornet-dashboard"
-      - "traefik.http.routers.hornet-dashboard.rule=Host(`localhost`) && (Path(`/dashboard`) || PathPrefix(`/dashboard/`))"
-      - "traefik.http.routers.hornet-dashboard.entrypoints=web"
-      - "traefik.http.services.hornet-dashboard.loadbalancer.server.port=8081"
-      - "traefik.http.routers.hornet-faucet.service=hornet-faucet"
-      - "traefik.http.routers.hornet-faucet.rule=Path(`/faucet`) || PathPrefix(`/faucet/`)"
-      - "traefik.http.routers.hornet-faucet.entrypoints=web"
-      - "traefik.http.services.hornet-faucet.loadbalancer.server.port=8091"
-      - "traefik.http.routers.hornet-faucet.middlewares=rewrite-faucet"
-      - "traefik.http.middlewares.rewrite-faucet.chain.middlewares=rewrite-faucet-1,rewrite-faucet-2"
-      - "traefik.http.middlewares.rewrite-faucet-1.redirectregex.regex=^(https?://[^/]+/[a-z0-9_]+)$$"
-      - "traefik.http.middlewares.rewrite-faucet-1.redirectregex.replacement=$${1}/"
-      - "traefik.http.middlewares.rewrite-faucet-1.redirectregex.permanent=true"
-      - "traefik.http.middlewares.rewrite-faucet-2.stripprefixregex.regex=/[a-z0-9_]+"
-    cap_drop:
-      - ALL
-    volumes:
-      - hornet-nest-db:/app
-
-  ########
-  # WASP #
-  ########
-
-  wasp:
-    container_name: wasp
-    image: iotaledger/wasp:latest
-
+  l1-package-init:
     build:
       context: ../../
-      dockerfile: Dockerfile.noncached
-      args:
-        BUILD_TAGS: "${BUILD_TAGS:-rocksdb}"
-        BUILD_LD_FLAGS: "${BUILD_LD_FLAGS:--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing}"
-    ulimits:
-      nofile:
-        soft: 16384
-        hard: 16384
-    restart: on-failure:1
-    stop_grace_period: 5m
+      dockerfile: tools/local-setup/Dockerfile.l1-package-init
+    container_name: l1-package-init
     depends_on:
-      traefik:
-        condition: service_started
-      hornet-nest:
-        condition: service_started
-    ports:
-      - "2112:2112/tcp" # Prometheus
-      - "4000:4000/tcp" # Peering
-      - "9090:9090/tcp" # WebAPI
-      - "6060:6060/tcp" # Profiling
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wasp-api.service=wasp-api"
-      - "traefik.http.routers.wasp-api.rule=Host(`localhost`) && (Path(`/wasp/api`) || PathPrefix(`/wasp/api/`))"
-      - "traefik.http.routers.wasp-api.entrypoints=web"
-      - "traefik.http.services.wasp-api.loadbalancer.server.port=9090"
-      - "traefik.http.routers.wasp-api.middlewares=rewrite-wasp-api"
-      - "traefik.http.middlewares.rewrite-wasp-api.stripprefix.prefixes=/wasp/api"
-      - "traefik.http.routers.wasp-pprof.service=wasp-pprof"
-      - "traefik.http.routers.wasp-pprof.rule=Host(`localhost`) && (Path(`/wasp/debug/pprof`) || PathPrefix(`/wasp/debug/pprof/`))"
-      - "traefik.http.routers.wasp-pprof.entrypoints=web"
-      - "traefik.http.services.wasp-pprof.loadbalancer.server.port=6060"
-      - "traefik.http.routers.wasp-pprof.middlewares=rewrite-wasp-pprof"
-      - "traefik.http.middlewares.rewrite-wasp-pprof.stripprefix.prefixes=/wasp"
-    cap_drop:
-      - ALL
+      iota-tools:
+        condition: service_healthy
     volumes:
-      - wasp-db:/app/waspdb
-    command:
-      - "--webapi.auth.scheme=none"
-      - "--inx.address=hornet-nest:9029"
-      - "--logger.level=debug"
-      - "--db.chainState.path=/app/waspdb/chains/data"
-      - "--p2p.identity.filePath=/app/waspdb/identity/identity.key"
-      - "--p2p.db.path=/app/waspdb/p2pstore"
-      - "--registries.chains.filePath=/app/waspdb/chains/chain_registry.json"
-      - "--registries.dkShares.path=/app/waspdb/dkshares"
-      - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
-      - "--registries.consensusState.path=/app/waspdb/chains/consensus"
-      - "--wal.path=/app/waspdb/wal"
-      - "--profiling.enabled=false"
-      - "--profiling.bindAddress=0.0.0.0:6060"
-    environment:
-      - DEBUG=true
+      - ../../clients/iota-go/contracts/isc:/isc
+      - ./deploy-isc.sh:/deploy-isc.sh
+    command: >
+      /bin/sh -c '
+        iota client --yes new-env --rpc http://host.docker.internal:9000 --faucet http://host.docker.internal:9123/v1/gas --alias localnet && 
+        echo "Calling faucet..." && 
+        iota client faucet &&         
+        bash /deploy-isc.sh &&
+        echo "Done"
+      '
+    restart: "no"
 
-  ##################
-  # WASP Dashboard #
-  ##################
 
-  wasp-dashboard:
-    container_name: wasp-dashboard
-    image: iotaledger/wasp-dashboard:latest
-    stop_grace_period: 5m
-    restart: unless-stopped
-    depends_on:
-      traefik:
-        condition: service_started
-      wasp:
-        condition: service_started
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wasp-dashboard.service=wasp-dashboard"
-      - "traefik.http.routers.wasp-dashboard.rule=Host(`localhost`) && (Path(`/wasp/dashboard`) || PathPrefix(`/wasp/dashboard/`))"
-      - "traefik.http.routers.wasp-dashboard.entrypoints=web"
-      - "traefik.http.services.wasp-dashboard.loadbalancer.server.port=80"
-      - "traefik.http.routers.wasp-dashboard.middlewares=rewrite-wasp-dashboard"
-      - "traefik.http.middlewares.rewrite-wasp-dashboard.stripprefix.prefixes=/wasp/dashboard"
-    environment:
-      - WASP_API_URL=http://localhost/wasp/api
-      - L1_API_URL=http://localhost
+  # wasp-init:
+  #   container_name: wasp-init
+  #   build:
+  #     context: ../../
+  #     dockerfile: tools/local-setup/Dockerfile.init
+  #   image: iotaledger/wasp-init:latest
+  #   depends_on:
+  #     iota-tools:
+  #       condition: service_healthy
+  #     # wasp:
+  #     #   condition: service_healthy
+  #   entrypoint:
+  #     - /bin/sh
+  #     - -c
+  #     - |        
+  #       wasp-cli -c ./wasp-cli.json wallet-provider unsafe_inmemory_testing_seed && \
+  #       wasp-cli -c ./wasp-cli.json init && \
+  #       wasp-cli -c ./wasp-cli.json set l1.apiaddress http://host.docker.internal:9000 && \
+  #       wasp-cli -c ./wasp-cli.json set l1.faucetaddress http://host.docker.internal:9123/gas && \
+  #       wasp-cli -c ./wasp-cli.json wasp add wasp0 http://host.docker.internal:9090 && \
+  #       wasp-cli -c ./wasp-cli.json request-funds && \
+  #       echo "!!!!!!!!!!!deploy" && \
+  #       wasp-cli -c ./wasp-cli.json chain deploy --chain=localchain && \
+  #       echo "Running wasp-cli chain deposit..." && \
+  #       wasp-cli -c ./wasp-cli.json chain deposit base|1000000
+  #   restart: "no"
 
-volumes:
-  wasp-db:
-    external: true
-    name: wasp-db
-  hornet-nest-db:
-    external: true
-    name: hornet-nest-db
+
+#   ########
+#   # WASP #
+#   ########
+
+#   wasp:
+#     container_name: wasp
+#     image: iotaledger/wasp:latest
+
+#     build:
+#       context: ../../
+#       dockerfile: Dockerfile.noncached
+#       args:
+#         BUILD_TAGS: "${BUILD_TAGS:-rocksdb}"
+#         BUILD_LD_FLAGS: "${BUILD_LD_FLAGS:--X=github.com/iotaledger/wasp/components/app.Version=v0.0.0-testing}"
+#     ulimits:
+#       nofile:
+#         soft: 16384
+#         hard: 16384
+#     restart: on-failure:1
+#     stop_grace_period: 5m
+#     depends_on:
+#       traefik:
+#         condition: service_started
+#     ports:
+#       - "2112:2112/tcp" # Prometheus
+#       - "4000:4000/tcp" # Peering
+#       - "9090:9090/tcp" # WebAPI
+#       - "6060:6060/tcp" # Profiling
+#     labels:
+#       - "traefik.enable=true"
+#       - "traefik.http.routers.wasp-api.service=wasp-api"
+#       - "traefik.http.routers.wasp-api.rule=Host(`localhost`) && (Path(`/wasp/api`) || PathPrefix(`/wasp/api/`))"
+#       - "traefik.http.routers.wasp-api.entrypoints=web"
+#       - "traefik.http.services.wasp-api.loadbalancer.server.port=9090"
+#       - "traefik.http.routers.wasp-api.middlewares=rewrite-wasp-api"
+#       - "traefik.http.middlewares.rewrite-wasp-api.stripprefix.prefixes=/wasp/api"
+#       - "traefik.http.routers.wasp-pprof.service=wasp-pprof"
+#       - "traefik.http.routers.wasp-pprof.rule=Host(`localhost`) && (Path(`/wasp/debug/pprof`) || PathPrefix(`/wasp/debug/pprof/`))"
+#       - "traefik.http.routers.wasp-pprof.entrypoints=web"
+#       - "traefik.http.services.wasp-pprof.loadbalancer.server.port=6060"
+#       - "traefik.http.routers.wasp-pprof.middlewares=rewrite-wasp-pprof"
+#       - "traefik.http.middlewares.rewrite-wasp-pprof.stripprefix.prefixes=/wasp"
+#     cap_drop:
+#       - ALL
+#     volumes:
+#       - wasp-db:/app/waspdb
+#     command:
+#       - "--webapi.auth.scheme=none"
+#       - "--logger.level=debug"
+#       - "--l1.httpurl=http://host.docker.internal:9000"
+#       - "--l1.websocketURL=ws://host.docker.internal:9000"
+#       # - "--l1.packageID=0x7b2fd27e09ad438c914fe2199cc78c174da92208384ac4341f61d2a15a588463"
+#       - "--db.chainState.path=/app/waspdb/chains/data"
+#       - "--p2p.identity.filePath=/app/waspdb/identity/identity.key"
+#       - "--p2p.db.path=/app/waspdb/p2pstore"
+#       - "--registries.chains.filePath=/app/waspdb/chains/chain_registry.json"
+#       - "--registries.dkShares.path=/app/waspdb/dkshares"
+#       - "--registries.trustedPeers.filePath=/app/waspdb/trusted_peers.json"
+#       - "--registries.consensusState.path=/app/waspdb/chains/consensus"
+#       - "--wal.path=/app/waspdb/wal"
+#       - "--profiling.enabled=false"
+#       - "--profiling.bindAddress=0.0.0.0:6060"
+#     environment:
+#       - DEBUG=true
+
+# #   ##################
+# #   # WASP Dashboard #
+# #   ##################
+
+# #   wasp-dashboard:
+# #     container_name: wasp-dashboard
+# #     image: iotaledger/wasp-dashboard:latest
+# #     stop_grace_period: 5m
+# #     restart: unless-stopped
+# #     depends_on:
+# #       traefik:
+# #         condition: service_started
+# #       wasp:
+# #         condition: service_started
+# #     labels:
+# #       - "traefik.enable=true"
+# #       - "traefik.http.routers.wasp-dashboard.service=wasp-dashboard"
+# #       - "traefik.http.routers.wasp-dashboard.rule=Host(`localhost`) && (Path(`/wasp/dashboard`) || PathPrefix(`/wasp/dashboard/`))"
+# #       - "traefik.http.routers.wasp-dashboard.entrypoints=web"
+# #       - "traefik.http.services.wasp-dashboard.loadbalancer.server.port=80"
+# #       - "traefik.http.routers.wasp-dashboard.middlewares=rewrite-wasp-dashboard"
+# #       - "traefik.http.middlewares.rewrite-wasp-dashboard.stripprefix.prefixes=/wasp/dashboard"
+# #     environment:
+# #       - WASP_API_URL=http://localhost/wasp/api
+# #       - L1_API_URL=http://localhost
+
+# volumes:
+#   wasp-db:
+#     external: true
+#     name: wasp-db

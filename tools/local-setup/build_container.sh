@@ -9,3 +9,6 @@ export BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/components/app.Version=${GI
 
 # build the wasp container
 docker compose build wasp
+
+# build the wasp-init container
+docker compose build wasp-init
