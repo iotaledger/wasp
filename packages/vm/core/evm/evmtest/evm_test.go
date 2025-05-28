@@ -626,6 +626,8 @@ func TestSendPayableValueTX(t *testing.T) {
 	require.EqualValues(t, senderInitialBalance-valueInBaseTokens-res.ISCReceipt.GasFeeCharged, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(senderEthAddress)))
 	// L1 balance of receiver is `values sent in tx`
 	require.EqualValues(t, valueInBaseTokens, env.solo.L1BaseTokens(receiver))
+
+	env.Chain.CheckAccountLedger()
 }
 
 func TestSendBaseTokens(t *testing.T) {
