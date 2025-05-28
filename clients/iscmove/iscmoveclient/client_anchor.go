@@ -12,6 +12,40 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
+type UpdateAnchorStateMetadataRequest struct {
+	Signer        cryptolib.Signer
+	PackageID     iotago.PackageID
+	AnchorRef     *iotago.ObjectRef
+	StateMetadata []byte
+	StateIndex    uint32
+	GasPayments   []*iotago.ObjectRef
+	GasPrice      uint64
+	GasBudget     uint64
+}
+
+func (c *Client) UpdateAnchorStateMetadata(ctx context.Context, req *UpdateAnchorStateMetadataRequest) (bool, error) {
+	ptb := iotago.NewProgrammableTransactionBuilder()
+
+	ptb = PTBUpdateAnchorStateMetadata(ptb, req.PackageID, ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: req.AnchorRef}), req.StateMetadata, req.StateIndex)
+	res, err := c.SignAndExecutePTB(
+		ctx,
+		req.Signer,
+		ptb.Finish(),
+		req.GasPayments,
+		req.GasPrice,
+		req.GasBudget,
+	)
+	if err != nil {
+		return false, fmt.Errorf("updating ptb state metadata failed: %w", err)
+	}
+
+	if len(res.Errors) > 0 {
+		return false, fmt.Errorf("updating ptb state metadata failed: %v", res.Errors)
+	}
+
+	return true, nil
+}
+
 type StartNewChainRequest struct {
 	Signer        cryptolib.Signer
 	AnchorOwner   *cryptolib.Address
