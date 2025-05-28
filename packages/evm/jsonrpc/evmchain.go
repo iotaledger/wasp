@@ -12,7 +12,6 @@ import (
 	"path"
 
 	"fortio.org/safecast"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,7 +24,6 @@ import (
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
-
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -434,20 +432,20 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 	return txs[index], block.Hash(), bn, nil
 }
 
-func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transactions, err error) {
+func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transactions) {
 	e.log.LogDebugf("TxsByBlockNumber(blockNumber=%v, index=%v)", blockNumber)
 	cachedTxs := e.index.TxsByBlockNumber(blockNumber)
 	if cachedTxs != nil {
-		return cachedTxs, nil
+		return cachedTxs
 	}
 	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	db := blockchainDB(latestState)
 	block := db.GetBlockByNumber(blockNumber.Uint64())
 	if block == nil {
-		return nil, err
+		return nil
 	}
 
-	return block.Transactions(), nil
+	return block.Transactions()
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
@@ -919,10 +917,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 		return nil, err
 	}
 
-	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
-	if err != nil {
-		return nil, err
-	}
+	blockTxs := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
 
 	results := TraceBlock{
 		Jsonrpc: "2.0",
