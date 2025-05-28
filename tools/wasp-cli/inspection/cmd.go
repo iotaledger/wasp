@@ -25,4 +25,5 @@ func Init(rootCmd *cobra.Command) {
 
 	inspectCmd.AddCommand(initAssetsBagCmd())
 	inspectCmd.AddCommand(initAnchorCmd())
+	inspectCmd.AddCommand(initRequestsCmd())
 }
