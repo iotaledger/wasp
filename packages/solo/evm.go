@@ -16,6 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -78,6 +79,7 @@ func (b *jsonRPCSoloBackend) EVMEstimateGas(anchor *isc.StateAnchor, callMsg eth
 func (b *jsonRPCSoloBackend) EVMTrace(
 	anchor *isc.StateAnchor,
 	blockTime time.Time,
+	entropy hashing.HashValue,
 	iscRequestsInBlock []isc.Request,
 	enforceGasBurned []vm.EnforceGasBurned,
 	tracer *tracers.Tracer,
@@ -90,6 +92,7 @@ func (b *jsonRPCSoloBackend) EVMTrace(
 		b.Chain.proc,
 		b.Chain.log,
 		blockTime,
+		entropy,
 		iscRequestsInBlock,
 		enforceGasBurned,
 		tracer,

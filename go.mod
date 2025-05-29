@@ -11,6 +11,7 @@ replace (
 
 require (
 	filippo.io/edwards25519 v1.1.0
+	fortio.org/safecast v1.0.0
 	github.com/VictoriaMetrics/fastcache v1.12.2
 	github.com/Yiling-J/theine-go v0.6.1
 	github.com/btcsuite/btcd/btcutil v1.1.6
@@ -72,7 +73,6 @@ require (
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
-	fortio.org/safecast v1.0.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/DataDog/zstd v1.5.5 // indirect

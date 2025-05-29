@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -20,6 +21,7 @@ func EVMTrace(
 	processors *processors.Config,
 	log log.Logger,
 	blockTime time.Time,
+	entropy hashing.HashValue,
 	iscRequestsInBlock []isc.Request,
 	enforceGasBurned []vm.EnforceGasBurned,
 	tracer *tracers.Tracer,
@@ -31,6 +33,7 @@ func EVMTrace(
 		processors,
 		log,
 		blockTime,
+		entropy,
 		iscRequestsInBlock,
 		enforceGasBurned,
 		false,
