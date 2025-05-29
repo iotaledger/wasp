@@ -5,13 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BaseTokens** | **string** | The base tokens (uint64 as string) | 
-**NativeTokens** | [**[]CoinJSON**](CoinJSON.md) |  | 
+**Coins** | [**[]CoinJSON**](CoinJSON.md) |  | 
+**Objects** | [**[]IotaObject**](IotaObject.md) |  | 
 
 ## Methods
 
 ### NewAssetsResponse
 
-`func NewAssetsResponse(baseTokens string, nativeTokens []CoinJSON, ) *AssetsResponse`
+`func NewAssetsResponse(baseTokens string, coins []CoinJSON, objects []IotaObject, ) *AssetsResponse`
 
 NewAssetsResponse instantiates a new AssetsResponse object
 This constructor will assign default values to properties that have it defined,
@@ -46,24 +47,44 @@ and a boolean to check if the value has been set.
 SetBaseTokens sets BaseTokens field to given value.
 
 
-### GetNativeTokens
+### GetCoins
 
-`func (o *AssetsResponse) GetNativeTokens() []CoinJSON`
+`func (o *AssetsResponse) GetCoins() []CoinJSON`
 
-GetNativeTokens returns the NativeTokens field if non-nil, zero value otherwise.
+GetCoins returns the Coins field if non-nil, zero value otherwise.
 
-### GetNativeTokensOk
+### GetCoinsOk
 
-`func (o *AssetsResponse) GetNativeTokensOk() (*[]CoinJSON, bool)`
+`func (o *AssetsResponse) GetCoinsOk() (*[]CoinJSON, bool)`
 
-GetNativeTokensOk returns a tuple with the NativeTokens field if it's non-nil, zero value otherwise
+GetCoinsOk returns a tuple with the Coins field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetNativeTokens
+### SetCoins
 
-`func (o *AssetsResponse) SetNativeTokens(v []CoinJSON)`
+`func (o *AssetsResponse) SetCoins(v []CoinJSON)`
 
-SetNativeTokens sets NativeTokens field to given value.
+SetCoins sets Coins field to given value.
+
+
+### GetObjects
+
+`func (o *AssetsResponse) GetObjects() []IotaObject`
+
+GetObjects returns the Objects field if non-nil, zero value otherwise.
+
+### GetObjectsOk
+
+`func (o *AssetsResponse) GetObjectsOk() (*[]IotaObject, bool)`
+
+GetObjectsOk returns a tuple with the Objects field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetObjects
+
+`func (o *AssetsResponse) SetObjects(v []IotaObject)`
+
+SetObjects sets Objects field to given value.
 
 
 

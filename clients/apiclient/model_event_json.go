@@ -22,7 +22,7 @@ var _ MappedNullable = &EventJSON{}
 // EventJSON struct for EventJSON
 type EventJSON struct {
 	// ID of the Contract that issued the event
-	ContractID uint32 `json:"contractID"`
+	ContractID int32 `json:"contractID"`
 	// payload
 	Payload string `json:"payload"`
 	// timestamp
@@ -37,7 +37,7 @@ type _EventJSON EventJSON
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewEventJSON(contractID uint32, payload string, timestamp int64, topic string) *EventJSON {
+func NewEventJSON(contractID int32, payload string, timestamp int64, topic string) *EventJSON {
 	this := EventJSON{}
 	this.ContractID = contractID
 	this.Payload = payload
@@ -55,9 +55,9 @@ func NewEventJSONWithDefaults() *EventJSON {
 }
 
 // GetContractID returns the ContractID field value
-func (o *EventJSON) GetContractID() uint32 {
+func (o *EventJSON) GetContractID() int32 {
 	if o == nil {
-		var ret uint32
+		var ret int32
 		return ret
 	}
 
@@ -66,7 +66,7 @@ func (o *EventJSON) GetContractID() uint32 {
 
 // GetContractIDOk returns a tuple with the ContractID field value
 // and a boolean to check if the value has been set.
-func (o *EventJSON) GetContractIDOk() (*uint32, bool) {
+func (o *EventJSON) GetContractIDOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -74,7 +74,7 @@ func (o *EventJSON) GetContractIDOk() (*uint32, bool) {
 }
 
 // SetContractID sets field value
-func (o *EventJSON) SetContractID(v uint32) {
+func (o *EventJSON) SetContractID(v int32) {
 	o.ContractID = v
 }
 

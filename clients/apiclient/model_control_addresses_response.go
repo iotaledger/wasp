@@ -26,7 +26,7 @@ type ControlAddressesResponse struct {
 	// The chain admin (Hex Address)
 	ChainAdmin string `json:"chainAdmin"`
 	// The block index (uint32
-	SinceBlockIndex uint32 `json:"sinceBlockIndex"`
+	SinceBlockIndex int32 `json:"sinceBlockIndex"`
 }
 
 type _ControlAddressesResponse ControlAddressesResponse
@@ -35,7 +35,7 @@ type _ControlAddressesResponse ControlAddressesResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewControlAddressesResponse(anchorOwner string, chainAdmin string, sinceBlockIndex uint32) *ControlAddressesResponse {
+func NewControlAddressesResponse(anchorOwner string, chainAdmin string, sinceBlockIndex int32) *ControlAddressesResponse {
 	this := ControlAddressesResponse{}
 	this.AnchorOwner = anchorOwner
 	this.ChainAdmin = chainAdmin
@@ -100,9 +100,9 @@ func (o *ControlAddressesResponse) SetChainAdmin(v string) {
 }
 
 // GetSinceBlockIndex returns the SinceBlockIndex field value
-func (o *ControlAddressesResponse) GetSinceBlockIndex() uint32 {
+func (o *ControlAddressesResponse) GetSinceBlockIndex() int32 {
 	if o == nil {
-		var ret uint32
+		var ret int32
 		return ret
 	}
 
@@ -111,7 +111,7 @@ func (o *ControlAddressesResponse) GetSinceBlockIndex() uint32 {
 
 // GetSinceBlockIndexOk returns a tuple with the SinceBlockIndex field value
 // and a boolean to check if the value has been set.
-func (o *ControlAddressesResponse) GetSinceBlockIndexOk() (*uint32, bool) {
+func (o *ControlAddressesResponse) GetSinceBlockIndexOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -119,7 +119,7 @@ func (o *ControlAddressesResponse) GetSinceBlockIndexOk() (*uint32, bool) {
 }
 
 // SetSinceBlockIndex sets field value
-func (o *ControlAddressesResponse) SetSinceBlockIndex(v uint32) {
+func (o *ControlAddressesResponse) SetSinceBlockIndex(v int32) {
 	o.SinceBlockIndex = v
 }
 

@@ -23,7 +23,8 @@ var _ MappedNullable = &AssetsResponse{}
 type AssetsResponse struct {
 	// The base tokens (uint64 as string)
 	BaseTokens string `json:"baseTokens"`
-	NativeTokens []CoinJSON `json:"nativeTokens"`
+	Coins []CoinJSON `json:"coins"`
+	Objects []IotaObject `json:"objects"`
 }
 
 type _AssetsResponse AssetsResponse
@@ -32,10 +33,11 @@ type _AssetsResponse AssetsResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAssetsResponse(baseTokens string, nativeTokens []CoinJSON) *AssetsResponse {
+func NewAssetsResponse(baseTokens string, coins []CoinJSON, objects []IotaObject) *AssetsResponse {
 	this := AssetsResponse{}
 	this.BaseTokens = baseTokens
-	this.NativeTokens = nativeTokens
+	this.Coins = coins
+	this.Objects = objects
 	return &this
 }
 
@@ -71,28 +73,52 @@ func (o *AssetsResponse) SetBaseTokens(v string) {
 	o.BaseTokens = v
 }
 
-// GetNativeTokens returns the NativeTokens field value
-func (o *AssetsResponse) GetNativeTokens() []CoinJSON {
+// GetCoins returns the Coins field value
+func (o *AssetsResponse) GetCoins() []CoinJSON {
 	if o == nil {
 		var ret []CoinJSON
 		return ret
 	}
 
-	return o.NativeTokens
+	return o.Coins
 }
 
-// GetNativeTokensOk returns a tuple with the NativeTokens field value
+// GetCoinsOk returns a tuple with the Coins field value
 // and a boolean to check if the value has been set.
-func (o *AssetsResponse) GetNativeTokensOk() ([]CoinJSON, bool) {
+func (o *AssetsResponse) GetCoinsOk() ([]CoinJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.NativeTokens, true
+	return o.Coins, true
 }
 
-// SetNativeTokens sets field value
-func (o *AssetsResponse) SetNativeTokens(v []CoinJSON) {
-	o.NativeTokens = v
+// SetCoins sets field value
+func (o *AssetsResponse) SetCoins(v []CoinJSON) {
+	o.Coins = v
+}
+
+// GetObjects returns the Objects field value
+func (o *AssetsResponse) GetObjects() []IotaObject {
+	if o == nil {
+		var ret []IotaObject
+		return ret
+	}
+
+	return o.Objects
+}
+
+// GetObjectsOk returns a tuple with the Objects field value
+// and a boolean to check if the value has been set.
+func (o *AssetsResponse) GetObjectsOk() ([]IotaObject, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.Objects, true
+}
+
+// SetObjects sets field value
+func (o *AssetsResponse) SetObjects(v []IotaObject) {
+	o.Objects = v
 }
 
 func (o AssetsResponse) MarshalJSON() ([]byte, error) {
@@ -106,7 +132,8 @@ func (o AssetsResponse) MarshalJSON() ([]byte, error) {
 func (o AssetsResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["baseTokens"] = o.BaseTokens
-	toSerialize["nativeTokens"] = o.NativeTokens
+	toSerialize["coins"] = o.Coins
+	toSerialize["objects"] = o.Objects
 	return toSerialize, nil
 }
 
@@ -116,7 +143,8 @@ func (o *AssetsResponse) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"baseTokens",
-		"nativeTokens",
+		"coins",
+		"objects",
 	}
 
 	allProperties := make(map[string]interface{})

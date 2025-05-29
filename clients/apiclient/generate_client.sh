@@ -81,6 +81,6 @@ if [ ! -z "$OBSOLETE_FILES" ]; then
   (
     mkdir -p $DELETED_FILES_DIR &&
     cd $SCRIPTPATH &&
-    echo $OBSOLETE_FILES | xargs -I{} mv {} $DELETED_FILES_DIR/
+    echo -n $OBSOLETE_FILES | xargs -d' ' -I{} mv {} $DELETED_FILES_DIR/
   )
 fi

@@ -23,7 +23,7 @@ var _ MappedNullable = &OnLedgerRequestMetricItem{}
 // OnLedgerRequestMetricItem struct for OnLedgerRequestMetricItem
 type OnLedgerRequestMetricItem struct {
 	LastMessage OnLedgerRequest `json:"lastMessage"`
-	Messages uint32 `json:"messages"`
+	Messages int32 `json:"messages"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -33,7 +33,7 @@ type _OnLedgerRequestMetricItem OnLedgerRequestMetricItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewOnLedgerRequestMetricItem(lastMessage OnLedgerRequest, messages uint32, timestamp time.Time) *OnLedgerRequestMetricItem {
+func NewOnLedgerRequestMetricItem(lastMessage OnLedgerRequest, messages int32, timestamp time.Time) *OnLedgerRequestMetricItem {
 	this := OnLedgerRequestMetricItem{}
 	this.LastMessage = lastMessage
 	this.Messages = messages
@@ -74,9 +74,9 @@ func (o *OnLedgerRequestMetricItem) SetLastMessage(v OnLedgerRequest) {
 }
 
 // GetMessages returns the Messages field value
-func (o *OnLedgerRequestMetricItem) GetMessages() uint32 {
+func (o *OnLedgerRequestMetricItem) GetMessages() int32 {
 	if o == nil {
-		var ret uint32
+		var ret int32
 		return ret
 	}
 
@@ -85,7 +85,7 @@ func (o *OnLedgerRequestMetricItem) GetMessages() uint32 {
 
 // GetMessagesOk returns a tuple with the Messages field value
 // and a boolean to check if the value has been set.
-func (o *OnLedgerRequestMetricItem) GetMessagesOk() (*uint32, bool) {
+func (o *OnLedgerRequestMetricItem) GetMessagesOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -93,7 +93,7 @@ func (o *OnLedgerRequestMetricItem) GetMessagesOk() (*uint32, bool) {
 }
 
 // SetMessages sets field value
-func (o *OnLedgerRequestMetricItem) SetMessages(v uint32) {
+func (o *OnLedgerRequestMetricItem) SetMessages(v int32) {
 	o.Messages = v
 }
 
