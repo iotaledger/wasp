@@ -32,48 +32,46 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
-	GasBurned             uint64     `bcs:"compact"`
-	GasFeeCharged         coin.Value `bcs:"compact"`
-	Entropy               hashing.HashValue
+	GasBurned             uint64            `bcs:"compact"`
+	GasFeeCharged         coin.Value        `bcs:"compact"`
+	Entropy               hashing.HashValue // since v1
 }
 
-func init() {
-	bcs.AddCustomEncoder(func(e *bcs.Encoder, bi *BlockInfo) error {
-		e.Encode(bi.SchemaVersion)
-		e.Encode(bi.BlockIndex)
-		e.Encode(bi.Timestamp)
-		e.EncodeOptional(bi.PreviousAnchor)
-		e.Encode(bi.L1Params)
-		e.Encode(bi.TotalRequests)
-		e.Encode(bi.NumSuccessfulRequests)
-		e.Encode(bi.NumOffLedgerRequests)
-		e.WriteCompactUint64(bi.GasBurned)
-		e.WriteCompactUint64(bi.GasFeeCharged.Uint64())
-		if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
-			e.Encode(bi.Entropy)
-		}
-		return e.Err()
-	})
+func (bi *BlockInfo) MarshalBCS(e *bcs.Encoder) error {
+	e.WriteUint8(bi.SchemaVersion)
+	e.WriteUint32(bi.BlockIndex)
+	e.Encode(bi.Timestamp)
+	e.EncodeOptional(bi.PreviousAnchor)
+	e.Encode(bi.L1Params)
+	e.WriteUint16(bi.TotalRequests)
+	e.WriteUint16(bi.NumSuccessfulRequests)
+	e.WriteUint16(bi.NumOffLedgerRequests)
+	e.WriteCompactUint64(bi.GasBurned)
+	e.WriteCompactUint64(bi.GasFeeCharged.Uint64())
+	if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
+		e.Encode(bi.Entropy)
+	}
+	return nil
+}
 
-	bcs.AddCustomDecoder(func(d *bcs.Decoder, bi *BlockInfo) error {
-		d.Decode(&bi.SchemaVersion)
-		d.Decode(&bi.BlockIndex)
-		d.Decode(&bi.Timestamp)
-		_ = d.DecodeOptional(&bi.PreviousAnchor)
-		d.Decode(&bi.L1Params)
-		d.Decode(&bi.TotalRequests)
-		d.Decode(&bi.NumSuccessfulRequests)
-		d.Decode(&bi.NumOffLedgerRequests)
-		bi.GasBurned = d.ReadCompactUint64()
-		bi.GasFeeCharged = coin.Value(d.ReadCompactUint64())
-		if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
-			d.Decode(&bi.Entropy)
-		} else {
-			// we are missing entropy information; assign some unique hash for the given block index
-			bi.Entropy = hashing.HashData(bcs.MustMarshal(&bi.BlockIndex))
-		}
-		return d.Err()
-	})
+func (bi *BlockInfo) UnmarshalBCS(d *bcs.Decoder) error {
+	bi.SchemaVersion = d.ReadUint8()
+	bi.BlockIndex = d.ReadUint32()
+	d.Decode(&bi.Timestamp)
+	_ = d.DecodeOptional(&bi.PreviousAnchor)
+	d.Decode(&bi.L1Params)
+	bi.TotalRequests = d.ReadUint16()
+	bi.NumSuccessfulRequests = d.ReadUint16()
+	bi.NumOffLedgerRequests = d.ReadUint16()
+	bi.GasBurned = d.ReadCompactUint64()
+	bi.GasFeeCharged = coin.Value(d.ReadCompactUint64())
+	if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
+		d.Decode(&bi.Entropy)
+	} else {
+		// we are missing entropy information; assign some unique hash for the given block index
+		bi.Entropy = hashing.HashData(bcs.MustMarshal(&bi.BlockIndex))
+	}
+	return nil
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index
