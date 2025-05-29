@@ -67,7 +67,7 @@ func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []str
 
 	blockInfo, _, err := client.
 		CorecontractsAPI.
-		BlocklogGetBlockInfo(ctx, uint32(index)).
+		BlocklogGetBlockInfo(ctx, int32(index)).
 		Block(blockIndexStr).
 		Execute() //nolint:bodyclose // false positive
 
@@ -75,7 +75,7 @@ func fetchBlockInfo(ctx context.Context, client *apiclient.APIClient, args []str
 	return blockInfo
 }
 
-func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) {
+func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index int32) {
 	receipts, _, err := client.CorecontractsAPI.
 		BlocklogGetRequestReceiptsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
@@ -89,7 +89,7 @@ func logRequestsInBlock(ctx context.Context, client *apiclient.APIClient, index 
 	}
 }
 
-func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index uint32) {
+func logEventsInBlock(ctx context.Context, client *apiclient.APIClient, index int32) {
 	events, _, err := client.CorecontractsAPI.
 		BlocklogGetEventsOfBlock(ctx, index).
 		Block(fmt.Sprintf("%d", index)).
