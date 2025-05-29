@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BlockIndex** | **uint32** |  | 
+**BlockIndex** | **int32** |  | 
 **ErrorMessage** | Pointer to **string** |  | [optional] 
 **GasBudget** | **string** | The gas budget (uint64 as string) | 
 **GasBurnLog** | [**[]BurnRecord**](BurnRecord.md) |  | 
@@ -12,14 +12,14 @@ Name | Type | Description | Notes
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
 **RawError** | Pointer to [**UnresolvedVMErrorJSON**](UnresolvedVMErrorJSON.md) |  | [optional] 
 **Request** | [**RequestJSON**](RequestJSON.md) |  | 
-**RequestIndex** | **uint32** |  | 
+**RequestIndex** | **int32** |  | 
 **StorageDepositCharged** | **string** | Storage deposit charged (uint64 as string) | 
 
 ## Methods
 
 ### NewReceiptResponse
 
-`func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex uint32, storageDepositCharged string, ) *ReceiptResponse`
+`func NewReceiptResponse(blockIndex int32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex int32, storageDepositCharged string, ) *ReceiptResponse`
 
 NewReceiptResponse instantiates a new ReceiptResponse object
 This constructor will assign default values to properties that have it defined,
@@ -36,20 +36,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetBlockIndex
 
-`func (o *ReceiptResponse) GetBlockIndex() uint32`
+`func (o *ReceiptResponse) GetBlockIndex() int32`
 
 GetBlockIndex returns the BlockIndex field if non-nil, zero value otherwise.
 
 ### GetBlockIndexOk
 
-`func (o *ReceiptResponse) GetBlockIndexOk() (*uint32, bool)`
+`func (o *ReceiptResponse) GetBlockIndexOk() (*int32, bool)`
 
 GetBlockIndexOk returns a tuple with the BlockIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetBlockIndex
 
-`func (o *ReceiptResponse) SetBlockIndex(v uint32)`
+`func (o *ReceiptResponse) SetBlockIndex(v int32)`
 
 SetBlockIndex sets BlockIndex field to given value.
 
@@ -206,20 +206,20 @@ SetRequest sets Request field to given value.
 
 ### GetRequestIndex
 
-`func (o *ReceiptResponse) GetRequestIndex() uint32`
+`func (o *ReceiptResponse) GetRequestIndex() int32`
 
 GetRequestIndex returns the RequestIndex field if non-nil, zero value otherwise.
 
 ### GetRequestIndexOk
 
-`func (o *ReceiptResponse) GetRequestIndexOk() (*uint32, bool)`
+`func (o *ReceiptResponse) GetRequestIndexOk() (*int32, bool)`
 
 GetRequestIndexOk returns a tuple with the RequestIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetRequestIndex
 
-`func (o *ReceiptResponse) SetRequestIndex(v uint32)`
+`func (o *ReceiptResponse) SetRequestIndex(v int32)`
 
 SetRequestIndex sets RequestIndex field to given value.
 

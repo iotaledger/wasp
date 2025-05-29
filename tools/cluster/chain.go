@@ -89,7 +89,7 @@ func (ch *Chain) AllNodesMultiClient() *multiclient.MultiClient {
 	return multiclient.New(resolver, ch.AllAPIHosts()) //.WithLogFunc(ch.Cluster.t.Logf)
 }
 
-func (ch *Chain) BlockIndex(nodeIndex ...int) (uint32, error) {
+func (ch *Chain) BlockIndex(nodeIndex ...int) (int32, error) {
 	blockInfo, _, err := ch.Cluster.
 		WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetLatestBlockInfo(context.Background()).
 		Execute() //nolint:bodyclose // false positive
@@ -108,7 +108,7 @@ func (ch *Chain) GetAllBlockInfoRecordsReverse(nodeIndex ...int) ([]*apiclient.B
 	ret := make([]*apiclient.BlockInfoResponse, 0, blockIndex+1)
 	for idx := int(blockIndex); idx >= 0; idx-- {
 		blockInfo, _, err := ch.Cluster.
-			WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetBlockInfo(context.Background(), uint32(idx)).
+			WaspClient(nodeIndex...).CorecontractsAPI.BlocklogGetBlockInfo(context.Background(), int32(idx)).
 			Execute() //nolint:bodyclose // false positive
 		if err != nil {
 			return nil, err
@@ -161,7 +161,7 @@ func (ch *Chain) GetRequestReceipt(reqID isc.RequestID, nodeIndex ...int) (*apic
 	return receipt, err
 }
 
-func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *uint32, nodeIndex ...int) ([]apiclient.ReceiptResponse, error) {
+func (ch *Chain) GetRequestReceiptsForBlock(blockIndex *int32, nodeIndex ...int) ([]apiclient.ReceiptResponse, error) {
 	var err error
 	var receipts []apiclient.ReceiptResponse
 

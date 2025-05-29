@@ -22,7 +22,7 @@ var _ MappedNullable = &StateTransaction{}
 // StateTransaction struct for StateTransaction
 type StateTransaction struct {
 	// The state index
-	StateIndex uint32 `json:"stateIndex"`
+	StateIndex int32 `json:"stateIndex"`
 	// The transaction Digest
 	TxDigest string `json:"txDigest"`
 }
@@ -33,7 +33,7 @@ type _StateTransaction StateTransaction
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStateTransaction(stateIndex uint32, txDigest string) *StateTransaction {
+func NewStateTransaction(stateIndex int32, txDigest string) *StateTransaction {
 	this := StateTransaction{}
 	this.StateIndex = stateIndex
 	this.TxDigest = txDigest
@@ -49,9 +49,9 @@ func NewStateTransactionWithDefaults() *StateTransaction {
 }
 
 // GetStateIndex returns the StateIndex field value
-func (o *StateTransaction) GetStateIndex() uint32 {
+func (o *StateTransaction) GetStateIndex() int32 {
 	if o == nil {
-		var ret uint32
+		var ret int32
 		return ret
 	}
 
@@ -60,7 +60,7 @@ func (o *StateTransaction) GetStateIndex() uint32 {
 
 // GetStateIndexOk returns a tuple with the StateIndex field value
 // and a boolean to check if the value has been set.
-func (o *StateTransaction) GetStateIndexOk() (*uint32, bool) {
+func (o *StateTransaction) GetStateIndexOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -68,7 +68,7 @@ func (o *StateTransaction) GetStateIndexOk() (*uint32, bool) {
 }
 
 // SetStateIndex sets field value
-func (o *StateTransaction) SetStateIndex(v uint32) {
+func (o *StateTransaction) SetStateIndex(v int32) {
 	o.StateIndex = v
 }
 

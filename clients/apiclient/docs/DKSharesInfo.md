@@ -6,16 +6,16 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Address** | **string** | New generated shared address. | 
 **PeerIdentities** | **[]string** | Identities of the nodes sharing the key. (Hex) | 
-**PeerIndex** | **uint32** |  | 
+**PeerIndex** | **int32** |  | 
 **PublicKey** | **string** | Used public key. (Hex) | 
 **PublicKeyShares** | **[]string** | Public key shares for all the peers. (Hex) | 
-**Threshold** | **uint32** |  | 
+**Threshold** | **int32** |  | 
 
 ## Methods
 
 ### NewDKSharesInfo
 
-`func NewDKSharesInfo(address string, peerIdentities []string, peerIndex uint32, publicKey string, publicKeyShares []string, threshold uint32, ) *DKSharesInfo`
+`func NewDKSharesInfo(address string, peerIdentities []string, peerIndex int32, publicKey string, publicKeyShares []string, threshold int32, ) *DKSharesInfo`
 
 NewDKSharesInfo instantiates a new DKSharesInfo object
 This constructor will assign default values to properties that have it defined,
@@ -72,20 +72,20 @@ SetPeerIdentities sets PeerIdentities field to given value.
 
 ### GetPeerIndex
 
-`func (o *DKSharesInfo) GetPeerIndex() uint32`
+`func (o *DKSharesInfo) GetPeerIndex() int32`
 
 GetPeerIndex returns the PeerIndex field if non-nil, zero value otherwise.
 
 ### GetPeerIndexOk
 
-`func (o *DKSharesInfo) GetPeerIndexOk() (*uint32, bool)`
+`func (o *DKSharesInfo) GetPeerIndexOk() (*int32, bool)`
 
 GetPeerIndexOk returns a tuple with the PeerIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetPeerIndex
 
-`func (o *DKSharesInfo) SetPeerIndex(v uint32)`
+`func (o *DKSharesInfo) SetPeerIndex(v int32)`
 
 SetPeerIndex sets PeerIndex field to given value.
 
@@ -132,20 +132,20 @@ SetPublicKeyShares sets PublicKeyShares field to given value.
 
 ### GetThreshold
 
-`func (o *DKSharesInfo) GetThreshold() uint32`
+`func (o *DKSharesInfo) GetThreshold() int32`
 
 GetThreshold returns the Threshold field if non-nil, zero value otherwise.
 
 ### GetThresholdOk
 
-`func (o *DKSharesInfo) GetThresholdOk() (*uint32, bool)`
+`func (o *DKSharesInfo) GetThresholdOk() (*int32, bool)`
 
 GetThresholdOk returns a tuple with the Threshold field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetThreshold
 
-`func (o *DKSharesInfo) SetThreshold(v uint32)`
+`func (o *DKSharesInfo) SetThreshold(v int32)`
 
 SetThreshold sets Threshold field to given value.
 

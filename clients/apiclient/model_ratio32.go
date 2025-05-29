@@ -21,8 +21,8 @@ var _ MappedNullable = &Ratio32{}
 
 // Ratio32 struct for Ratio32
 type Ratio32 struct {
-	A uint32 `json:"a"`
-	B uint32 `json:"b"`
+	A int32 `json:"a"`
+	B int32 `json:"b"`
 }
 
 type _Ratio32 Ratio32
@@ -31,7 +31,7 @@ type _Ratio32 Ratio32
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewRatio32(a uint32, b uint32) *Ratio32 {
+func NewRatio32(a int32, b int32) *Ratio32 {
 	this := Ratio32{}
 	this.A = a
 	this.B = b
@@ -47,9 +47,9 @@ func NewRatio32WithDefaults() *Ratio32 {
 }
 
 // GetA returns the A field value
-func (o *Ratio32) GetA() uint32 {
+func (o *Ratio32) GetA() int32 {
 	if o == nil {
-		var ret uint32
+		var ret int32
 		return ret
 	}
 
@@ -58,7 +58,7 @@ func (o *Ratio32) GetA() uint32 {
 
 // GetAOk returns a tuple with the A field value
 // and a boolean to check if the value has been set.
-func (o *Ratio32) GetAOk() (*uint32, bool) {
+func (o *Ratio32) GetAOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -66,14 +66,14 @@ func (o *Ratio32) GetAOk() (*uint32, bool) {
 }
 
 // SetA sets field value
-func (o *Ratio32) SetA(v uint32) {
+func (o *Ratio32) SetA(v int32) {
 	o.A = v
 }
 
 // GetB returns the B field value
-func (o *Ratio32) GetB() uint32 {
+func (o *Ratio32) GetB() int32 {
 	if o == nil {
-		var ret uint32
+		var ret int32
 		return ret
 	}
 
@@ -82,7 +82,7 @@ func (o *Ratio32) GetB() uint32 {
 
 // GetBOk returns a tuple with the B field value
 // and a boolean to check if the value has been set.
-func (o *Ratio32) GetBOk() (*uint32, bool) {
+func (o *Ratio32) GetBOk() (*int32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,7 +90,7 @@ func (o *Ratio32) GetBOk() (*uint32, bool) {
 }
 
 // SetB sets field value
-func (o *Ratio32) SetB(v uint32) {
+func (o *Ratio32) SetB(v int32) {
 	o.B = v
 }
 

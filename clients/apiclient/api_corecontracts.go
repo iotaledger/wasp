@@ -144,252 +144,6 @@ func (a *CorecontractsAPIService) AccountsGetAccountBalanceExecute(r ApiAccounts
 	return localVarReturnValue, localVarHTTPResponse, nil
 }
 
-type ApiAccountsGetAccountFoundriesRequest struct {
-	ctx context.Context
-	ApiService *CorecontractsAPIService
-	chainID string
-	agentID string
-	block *string
-}
-
-// Block index or trie root
-func (r ApiAccountsGetAccountFoundriesRequest) Block(block string) ApiAccountsGetAccountFoundriesRequest {
-	r.block = &block
-	return r
-}
-
-func (r ApiAccountsGetAccountFoundriesRequest) Execute() (*AccountFoundriesResponse, *http.Response, error) {
-	return r.ApiService.AccountsGetAccountFoundriesExecute(r)
-}
-
-/*
-AccountsGetAccountFoundries Get all foundries owned by an account
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
- @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
- @return ApiAccountsGetAccountFoundriesRequest
-*/
-func (a *CorecontractsAPIService) AccountsGetAccountFoundries(ctx context.Context, chainID string, agentID string) ApiAccountsGetAccountFoundriesRequest {
-	return ApiAccountsGetAccountFoundriesRequest{
-		ApiService: a,
-		ctx: ctx,
-		chainID: chainID,
-		agentID: agentID,
-	}
-}
-
-// Execute executes the request
-//  @return AccountFoundriesResponse
-func (a *CorecontractsAPIService) AccountsGetAccountFoundriesExecute(r ApiAccountsGetAccountFoundriesRequest) (*AccountFoundriesResponse, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *AccountFoundriesResponse
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountFoundries")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/foundries"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	if r.block != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
-	}
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
-}
-
-type ApiAccountsGetAccountNFTIDsRequest struct {
-	ctx context.Context
-	ApiService *CorecontractsAPIService
-	agentID string
-	block *string
-}
-
-// Block index or trie root
-func (r ApiAccountsGetAccountNFTIDsRequest) Block(block string) ApiAccountsGetAccountNFTIDsRequest {
-	r.block = &block
-	return r
-}
-
-func (r ApiAccountsGetAccountNFTIDsRequest) Execute() (*AccountNFTsResponse, *http.Response, error) {
-	return r.ApiService.AccountsGetAccountNFTIDsExecute(r)
-}
-
-/*
-AccountsGetAccountNFTIDs Get all NFT ids belonging to an account
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
- @return ApiAccountsGetAccountNFTIDsRequest
-*/
-func (a *CorecontractsAPIService) AccountsGetAccountNFTIDs(ctx context.Context, agentID string) ApiAccountsGetAccountNFTIDsRequest {
-	return ApiAccountsGetAccountNFTIDsRequest{
-		ApiService: a,
-		ctx: ctx,
-		agentID: agentID,
-	}
-}
-
-// Execute executes the request
-//  @return AccountNFTsResponse
-func (a *CorecontractsAPIService) AccountsGetAccountNFTIDsExecute(r ApiAccountsGetAccountNFTIDsRequest) (*AccountNFTsResponse, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *AccountNFTsResponse
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountNFTIDs")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/nfts"
-	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	if r.block != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
-	}
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
-}
-
 type ApiAccountsGetAccountNonceRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
@@ -439,361 +193,6 @@ func (a *CorecontractsAPIService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 
 	localVarPath := localBasePath + "/v1/chain/core/accounts/account/{agentID}/nonce"
 	localVarPath = strings.Replace(localVarPath, "{"+"agentID"+"}", url.PathEscape(parameterValueToString(r.agentID, "agentID")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	if r.block != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
-	}
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
-}
-
-type ApiAccountsGetFoundryOutputRequest struct {
-	ctx context.Context
-	ApiService *CorecontractsAPIService
-	chainID string
-	serialNumber uint32
-	block *string
-}
-
-// Block index or trie root
-func (r ApiAccountsGetFoundryOutputRequest) Block(block string) ApiAccountsGetFoundryOutputRequest {
-	r.block = &block
-	return r
-}
-
-func (r ApiAccountsGetFoundryOutputRequest) Execute() (*FoundryOutputResponse, *http.Response, error) {
-	return r.ApiService.AccountsGetFoundryOutputExecute(r)
-}
-
-/*
-AccountsGetFoundryOutput Get the foundry output
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param chainID ChainID (Hex Address)
- @param serialNumber Serial Number (uint32)
- @return ApiAccountsGetFoundryOutputRequest
-*/
-func (a *CorecontractsAPIService) AccountsGetFoundryOutput(ctx context.Context, chainID string, serialNumber uint32) ApiAccountsGetFoundryOutputRequest {
-	return ApiAccountsGetFoundryOutputRequest{
-		ApiService: a,
-		ctx: ctx,
-		chainID: chainID,
-		serialNumber: serialNumber,
-	}
-}
-
-// Execute executes the request
-//  @return FoundryOutputResponse
-func (a *CorecontractsAPIService) AccountsGetFoundryOutputExecute(r ApiAccountsGetFoundryOutputRequest) (*FoundryOutputResponse, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *FoundryOutputResponse
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetFoundryOutput")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chain/core/accounts/foundry_output/{serialNumber}"
-	localVarPath = strings.Replace(localVarPath, "{"+"chainID"+"}", url.PathEscape(parameterValueToString(r.chainID, "chainID")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"serialNumber"+"}", url.PathEscape(parameterValueToString(r.serialNumber, "serialNumber")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-	if r.serialNumber < 1 {
-		return localVarReturnValue, nil, reportError("serialNumber must be greater than 1")
-	}
-
-	if r.block != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
-	}
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return localVarReturnValue, nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarReturnValue, localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarReturnValue, localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	err = a.client.decode(&localVarReturnValue, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-	if err != nil {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: err.Error(),
-		}
-		return localVarReturnValue, localVarHTTPResponse, newErr
-	}
-
-	return localVarReturnValue, localVarHTTPResponse, nil
-}
-
-type ApiAccountsGetNFTDataRequest struct {
-	ctx context.Context
-	ApiService *CorecontractsAPIService
-	nftID string
-	block *string
-}
-
-// Block index or trie root
-func (r ApiAccountsGetNFTDataRequest) Block(block string) ApiAccountsGetNFTDataRequest {
-	r.block = &block
-	return r
-}
-
-func (r ApiAccountsGetNFTDataRequest) Execute() (*http.Response, error) {
-	return r.ApiService.AccountsGetNFTDataExecute(r)
-}
-
-/*
-AccountsGetNFTData Get the NFT data by an ID
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @param nftID NFT ID (Hex)
- @return ApiAccountsGetNFTDataRequest
-*/
-func (a *CorecontractsAPIService) AccountsGetNFTData(ctx context.Context, nftID string) ApiAccountsGetNFTDataRequest {
-	return ApiAccountsGetNFTDataRequest{
-		ApiService: a,
-		ctx: ctx,
-		nftID: nftID,
-	}
-}
-
-// Execute executes the request
-func (a *CorecontractsAPIService) AccountsGetNFTDataExecute(r ApiAccountsGetNFTDataRequest) (*http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetNFTData")
-	if err != nil {
-		return nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chain/core/accounts/nftdata/{nftID}"
-	localVarPath = strings.Replace(localVarPath, "{"+"nftID"+"}", url.PathEscape(parameterValueToString(r.nftID, "nftID")), -1)
-
-	localVarHeaderParams := make(map[string]string)
-	localVarQueryParams := url.Values{}
-	localVarFormParams := url.Values{}
-
-	if r.block != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "block", r.block, "", "")
-	}
-	// to determine the Content-Type header
-	localVarHTTPContentTypes := []string{}
-
-	// set Content-Type header
-	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
-	if localVarHTTPContentType != "" {
-		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
-	}
-
-	// to determine the Accept header
-	localVarHTTPHeaderAccepts := []string{"application/json"}
-
-	// set Accept header
-	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
-	if localVarHTTPHeaderAccept != "" {
-		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
-	}
-	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
-	if err != nil {
-		return nil, err
-	}
-
-	localVarHTTPResponse, err := a.client.callAPI(req)
-	if err != nil || localVarHTTPResponse == nil {
-		return localVarHTTPResponse, err
-	}
-
-	localVarBody, err := io.ReadAll(localVarHTTPResponse.Body)
-	localVarHTTPResponse.Body.Close()
-	localVarHTTPResponse.Body = io.NopCloser(bytes.NewBuffer(localVarBody))
-	if err != nil {
-		return localVarHTTPResponse, err
-	}
-
-	if localVarHTTPResponse.StatusCode >= 300 {
-		newErr := &GenericOpenAPIError{
-			body:  localVarBody,
-			error: localVarHTTPResponse.Status,
-		}
-		if localVarHTTPResponse.StatusCode == 401 {
-			var v ValidationError
-			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
-			if err != nil {
-				newErr.error = err.Error()
-				return localVarHTTPResponse, newErr
-			}
-					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
-		}
-		return localVarHTTPResponse, newErr
-	}
-
-	return localVarHTTPResponse, nil
-}
-
-type ApiAccountsGetNativeTokenIDRegistryRequest struct {
-	ctx context.Context
-	ApiService *CorecontractsAPIService
-	block *string
-}
-
-// Block index or trie root
-func (r ApiAccountsGetNativeTokenIDRegistryRequest) Block(block string) ApiAccountsGetNativeTokenIDRegistryRequest {
-	r.block = &block
-	return r
-}
-
-func (r ApiAccountsGetNativeTokenIDRegistryRequest) Execute() (*NativeTokenIDRegistryResponse, *http.Response, error) {
-	return r.ApiService.AccountsGetNativeTokenIDRegistryExecute(r)
-}
-
-/*
-AccountsGetNativeTokenIDRegistry Get a list of all registries
-
- @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
- @return ApiAccountsGetNativeTokenIDRegistryRequest
-*/
-func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistry(ctx context.Context) ApiAccountsGetNativeTokenIDRegistryRequest {
-	return ApiAccountsGetNativeTokenIDRegistryRequest{
-		ApiService: a,
-		ctx: ctx,
-	}
-}
-
-// Execute executes the request
-//  @return NativeTokenIDRegistryResponse
-func (a *CorecontractsAPIService) AccountsGetNativeTokenIDRegistryExecute(r ApiAccountsGetNativeTokenIDRegistryRequest) (*NativeTokenIDRegistryResponse, *http.Response, error) {
-	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *NativeTokenIDRegistryResponse
-	)
-
-	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetNativeTokenIDRegistry")
-	if err != nil {
-		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
-	}
-
-	localVarPath := localBasePath + "/v1/chain/core/accounts/token_registry"
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -986,7 +385,7 @@ func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 type ApiBlocklogGetBlockInfoRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	blockIndex uint32
+	blockIndex int32
 	block *string
 }
 
@@ -1007,7 +406,7 @@ BlocklogGetBlockInfo Get the block info of a certain block index
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetBlockInfoRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetBlockInfo(ctx context.Context, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
+func (a *CorecontractsAPIService) BlocklogGetBlockInfo(ctx context.Context, blockIndex int32) ApiBlocklogGetBlockInfoRequest {
 	return ApiBlocklogGetBlockInfoRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1227,7 +626,7 @@ func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlockl
 type ApiBlocklogGetEventsOfBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	blockIndex uint32
+	blockIndex int32
 	block *string
 }
 
@@ -1248,7 +647,7 @@ BlocklogGetEventsOfBlock Get events of a block
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetEventsOfBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetEventsOfBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetEventsOfBlock(ctx context.Context, blockIndex int32) ApiBlocklogGetEventsOfBlockRequest {
 	return ApiBlocklogGetEventsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -1706,7 +1105,7 @@ func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 type ApiBlocklogGetRequestIDsForBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	blockIndex uint32
+	blockIndex int32
 	block *string
 }
 
@@ -1727,7 +1126,7 @@ BlocklogGetRequestIDsForBlock Get the request ids for a certain block index
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetRequestIDsForBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlock(ctx context.Context, blockIndex int32) ApiBlocklogGetRequestIDsForBlockRequest {
 	return ApiBlocklogGetRequestIDsForBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2189,7 +1588,7 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
 	ctx context.Context
 	ApiService *CorecontractsAPIService
-	blockIndex uint32
+	blockIndex int32
 	block *string
 }
 
@@ -2210,7 +1609,7 @@ BlocklogGetRequestReceiptsOfBlock Get all receipts of a certain block
  @param blockIndex BlockIndex (uint32)
  @return ApiBlocklogGetRequestReceiptsOfBlockRequest
 */
-func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
+func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, blockIndex int32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfBlockRequest{
 		ApiService: a,
 		ctx: ctx,
@@ -2432,7 +1831,7 @@ type ApiErrorsGetErrorMessageFormatRequest struct {
 	ApiService *CorecontractsAPIService
 	chainID string
 	contractHname string
-	errorID uint32
+	errorID int32
 	block *string
 }
 
@@ -2455,7 +1854,7 @@ ErrorsGetErrorMessageFormat Get the error message format of a specific error id
  @param errorID Error Id (uint16)
  @return ApiErrorsGetErrorMessageFormatRequest
 */
-func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormat(ctx context.Context, chainID string, contractHname string, errorID uint32) ApiErrorsGetErrorMessageFormatRequest {
+func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormat(ctx context.Context, chainID string, contractHname string, errorID int32) ApiErrorsGetErrorMessageFormatRequest {
 	return ApiErrorsGetErrorMessageFormatRequest{
 		ApiService: a,
 		ctx: ctx,
