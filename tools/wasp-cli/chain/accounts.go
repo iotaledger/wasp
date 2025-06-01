@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/clients/apiclient"
@@ -45,7 +46,7 @@ func initBalanceCmd() *cobra.Command {
 
 			rows[0] = []string{"base", balance.BaseTokens}
 			for k, v := range balance.Coins {
-				if v.CoinType == coin.BaseTokenType.String() {
+				if lo.Must(coin.IsBaseToken(v.CoinType)) {
 					continue
 				}
 

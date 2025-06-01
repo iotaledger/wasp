@@ -56,6 +56,10 @@ func ValueFromString(s string) (Value, error) {
 
 var BaseTokenType = MustTypeFromString(iotajsonrpc.IotaCoinType.String())
 
+func IsBaseToken(t string) (bool, error) {
+	return BaseTokenType.EqualsStr(t)
+}
+
 // Type is the representation of a Iota coin type, e.g. `0x000...0002::iota::IOTA`
 // Two instances of Type are equal iif they represent the same coin type.
 type Type = iotago.ObjectType
