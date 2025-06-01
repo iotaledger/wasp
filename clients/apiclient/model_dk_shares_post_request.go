@@ -24,9 +24,9 @@ type DKSharesPostRequest struct {
 	// Names or hex encoded public keys of trusted peers to run DKG on.
 	PeerIdentities []string `json:"peerIdentities"`
 	// Should be =< len(PeerPublicIdentities)
-	Threshold int32 `json:"threshold"`
+	Threshold uint32 `json:"threshold"`
 	// Timeout in milliseconds.
-	TimeoutMS int32 `json:"timeoutMS"`
+	TimeoutMS uint32 `json:"timeoutMS"`
 }
 
 type _DKSharesPostRequest DKSharesPostRequest
@@ -35,7 +35,7 @@ type _DKSharesPostRequest DKSharesPostRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewDKSharesPostRequest(peerIdentities []string, threshold int32, timeoutMS int32) *DKSharesPostRequest {
+func NewDKSharesPostRequest(peerIdentities []string, threshold uint32, timeoutMS uint32) *DKSharesPostRequest {
 	this := DKSharesPostRequest{}
 	this.PeerIdentities = peerIdentities
 	this.Threshold = threshold
@@ -76,9 +76,9 @@ func (o *DKSharesPostRequest) SetPeerIdentities(v []string) {
 }
 
 // GetThreshold returns the Threshold field value
-func (o *DKSharesPostRequest) GetThreshold() int32 {
+func (o *DKSharesPostRequest) GetThreshold() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -87,7 +87,7 @@ func (o *DKSharesPostRequest) GetThreshold() int32 {
 
 // GetThresholdOk returns a tuple with the Threshold field value
 // and a boolean to check if the value has been set.
-func (o *DKSharesPostRequest) GetThresholdOk() (*int32, bool) {
+func (o *DKSharesPostRequest) GetThresholdOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -95,14 +95,14 @@ func (o *DKSharesPostRequest) GetThresholdOk() (*int32, bool) {
 }
 
 // SetThreshold sets field value
-func (o *DKSharesPostRequest) SetThreshold(v int32) {
+func (o *DKSharesPostRequest) SetThreshold(v uint32) {
 	o.Threshold = v
 }
 
 // GetTimeoutMS returns the TimeoutMS field value
-func (o *DKSharesPostRequest) GetTimeoutMS() int32 {
+func (o *DKSharesPostRequest) GetTimeoutMS() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -111,7 +111,7 @@ func (o *DKSharesPostRequest) GetTimeoutMS() int32 {
 
 // GetTimeoutMSOk returns a tuple with the TimeoutMS field value
 // and a boolean to check if the value has been set.
-func (o *DKSharesPostRequest) GetTimeoutMSOk() (*int32, bool) {
+func (o *DKSharesPostRequest) GetTimeoutMSOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -119,7 +119,7 @@ func (o *DKSharesPostRequest) GetTimeoutMSOk() (*int32, bool) {
 }
 
 // SetTimeoutMS sets field value
-func (o *DKSharesPostRequest) SetTimeoutMS(v int32) {
+func (o *DKSharesPostRequest) SetTimeoutMS(v uint32) {
 	o.TimeoutMS = v
 }
 

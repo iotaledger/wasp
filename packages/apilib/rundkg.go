@@ -32,8 +32,8 @@ func RunDKG(ctx context.Context, client *apiclient.APIClient, peerPubKeys []stri
 	}
 
 	dkShares, _, err := client.NodeAPI.GenerateDKS(ctx).DKSharesPostRequest(apiclient.DKSharesPostRequest{
-		Threshold:      int32(threshold),
-		TimeoutMS:      int32(to),
+		Threshold:      uint32(threshold),
+		TimeoutMS:      to,
 		PeerIdentities: peerPubKeys,
 	}).Execute()
 	if err != nil {

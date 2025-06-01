@@ -21,7 +21,7 @@ var _ MappedNullable = &ReceiptResponse{}
 
 // ReceiptResponse struct for ReceiptResponse
 type ReceiptResponse struct {
-	BlockIndex int32 `json:"blockIndex"`
+	BlockIndex uint32 `json:"blockIndex"`
 	ErrorMessage *string `json:"errorMessage,omitempty"`
 	// The gas budget (uint64 as string)
 	GasBudget string `json:"gasBudget"`
@@ -32,7 +32,7 @@ type ReceiptResponse struct {
 	GasFeeCharged string `json:"gasFeeCharged"`
 	RawError *UnresolvedVMErrorJSON `json:"rawError,omitempty"`
 	Request RequestJSON `json:"request"`
-	RequestIndex int32 `json:"requestIndex"`
+	RequestIndex uint32 `json:"requestIndex"`
 	// Storage deposit charged (uint64 as string)
 	StorageDepositCharged string `json:"storageDepositCharged"`
 }
@@ -43,7 +43,7 @@ type _ReceiptResponse ReceiptResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewReceiptResponse(blockIndex int32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex int32, storageDepositCharged string) *ReceiptResponse {
+func NewReceiptResponse(blockIndex uint32, gasBudget string, gasBurnLog []BurnRecord, gasBurned string, gasFeeCharged string, request RequestJSON, requestIndex uint32, storageDepositCharged string) *ReceiptResponse {
 	this := ReceiptResponse{}
 	this.BlockIndex = blockIndex
 	this.GasBudget = gasBudget
@@ -65,9 +65,9 @@ func NewReceiptResponseWithDefaults() *ReceiptResponse {
 }
 
 // GetBlockIndex returns the BlockIndex field value
-func (o *ReceiptResponse) GetBlockIndex() int32 {
+func (o *ReceiptResponse) GetBlockIndex() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -76,7 +76,7 @@ func (o *ReceiptResponse) GetBlockIndex() int32 {
 
 // GetBlockIndexOk returns a tuple with the BlockIndex field value
 // and a boolean to check if the value has been set.
-func (o *ReceiptResponse) GetBlockIndexOk() (*int32, bool) {
+func (o *ReceiptResponse) GetBlockIndexOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -84,7 +84,7 @@ func (o *ReceiptResponse) GetBlockIndexOk() (*int32, bool) {
 }
 
 // SetBlockIndex sets field value
-func (o *ReceiptResponse) SetBlockIndex(v int32) {
+func (o *ReceiptResponse) SetBlockIndex(v uint32) {
 	o.BlockIndex = v
 }
 
@@ -273,9 +273,9 @@ func (o *ReceiptResponse) SetRequest(v RequestJSON) {
 }
 
 // GetRequestIndex returns the RequestIndex field value
-func (o *ReceiptResponse) GetRequestIndex() int32 {
+func (o *ReceiptResponse) GetRequestIndex() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -284,7 +284,7 @@ func (o *ReceiptResponse) GetRequestIndex() int32 {
 
 // GetRequestIndexOk returns a tuple with the RequestIndex field value
 // and a boolean to check if the value has been set.
-func (o *ReceiptResponse) GetRequestIndexOk() (*int32, bool) {
+func (o *ReceiptResponse) GetRequestIndexOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -292,7 +292,7 @@ func (o *ReceiptResponse) GetRequestIndexOk() (*int32, bool) {
 }
 
 // SetRequestIndex sets field value
-func (o *ReceiptResponse) SetRequestIndex(v int32) {
+func (o *ReceiptResponse) SetRequestIndex(v uint32) {
 	o.RequestIndex = v
 }
 

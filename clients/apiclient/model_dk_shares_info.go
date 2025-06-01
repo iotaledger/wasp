@@ -25,12 +25,12 @@ type DKSharesInfo struct {
 	Address string `json:"address"`
 	// Identities of the nodes sharing the key. (Hex)
 	PeerIdentities []string `json:"peerIdentities"`
-	PeerIndex int32 `json:"peerIndex"`
+	PeerIndex uint32 `json:"peerIndex"`
 	// Used public key. (Hex)
 	PublicKey string `json:"publicKey"`
 	// Public key shares for all the peers. (Hex)
 	PublicKeyShares []string `json:"publicKeyShares"`
-	Threshold int32 `json:"threshold"`
+	Threshold uint32 `json:"threshold"`
 }
 
 type _DKSharesInfo DKSharesInfo
@@ -39,7 +39,7 @@ type _DKSharesInfo DKSharesInfo
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewDKSharesInfo(address string, peerIdentities []string, peerIndex int32, publicKey string, publicKeyShares []string, threshold int32) *DKSharesInfo {
+func NewDKSharesInfo(address string, peerIdentities []string, peerIndex uint32, publicKey string, publicKeyShares []string, threshold uint32) *DKSharesInfo {
 	this := DKSharesInfo{}
 	this.Address = address
 	this.PeerIdentities = peerIdentities
@@ -107,9 +107,9 @@ func (o *DKSharesInfo) SetPeerIdentities(v []string) {
 }
 
 // GetPeerIndex returns the PeerIndex field value
-func (o *DKSharesInfo) GetPeerIndex() int32 {
+func (o *DKSharesInfo) GetPeerIndex() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -118,7 +118,7 @@ func (o *DKSharesInfo) GetPeerIndex() int32 {
 
 // GetPeerIndexOk returns a tuple with the PeerIndex field value
 // and a boolean to check if the value has been set.
-func (o *DKSharesInfo) GetPeerIndexOk() (*int32, bool) {
+func (o *DKSharesInfo) GetPeerIndexOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -126,7 +126,7 @@ func (o *DKSharesInfo) GetPeerIndexOk() (*int32, bool) {
 }
 
 // SetPeerIndex sets field value
-func (o *DKSharesInfo) SetPeerIndex(v int32) {
+func (o *DKSharesInfo) SetPeerIndex(v uint32) {
 	o.PeerIndex = v
 }
 
@@ -179,9 +179,9 @@ func (o *DKSharesInfo) SetPublicKeyShares(v []string) {
 }
 
 // GetThreshold returns the Threshold field value
-func (o *DKSharesInfo) GetThreshold() int32 {
+func (o *DKSharesInfo) GetThreshold() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -190,7 +190,7 @@ func (o *DKSharesInfo) GetThreshold() int32 {
 
 // GetThresholdOk returns a tuple with the Threshold field value
 // and a boolean to check if the value has been set.
-func (o *DKSharesInfo) GetThresholdOk() (*int32, bool) {
+func (o *DKSharesInfo) GetThresholdOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -198,7 +198,7 @@ func (o *DKSharesInfo) GetThresholdOk() (*int32, bool) {
 }
 
 // SetThreshold sets field value
-func (o *DKSharesInfo) SetThreshold(v int32) {
+func (o *DKSharesInfo) SetThreshold(v uint32) {
 	o.Threshold = v
 }
 

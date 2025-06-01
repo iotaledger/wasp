@@ -5,14 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **PeerIdentities** | **[]string** | Names or hex encoded public keys of trusted peers to run DKG on. | 
-**Threshold** | **int32** | Should be &#x3D;&lt; len(PeerPublicIdentities) | 
-**TimeoutMS** | **int32** | Timeout in milliseconds. | 
+**Threshold** | **uint32** | Should be &#x3D;&lt; len(PeerPublicIdentities) | 
+**TimeoutMS** | **uint32** | Timeout in milliseconds. | 
 
 ## Methods
 
 ### NewDKSharesPostRequest
 
-`func NewDKSharesPostRequest(peerIdentities []string, threshold int32, timeoutMS int32, ) *DKSharesPostRequest`
+`func NewDKSharesPostRequest(peerIdentities []string, threshold uint32, timeoutMS uint32, ) *DKSharesPostRequest`
 
 NewDKSharesPostRequest instantiates a new DKSharesPostRequest object
 This constructor will assign default values to properties that have it defined,
@@ -49,40 +49,40 @@ SetPeerIdentities sets PeerIdentities field to given value.
 
 ### GetThreshold
 
-`func (o *DKSharesPostRequest) GetThreshold() int32`
+`func (o *DKSharesPostRequest) GetThreshold() uint32`
 
 GetThreshold returns the Threshold field if non-nil, zero value otherwise.
 
 ### GetThresholdOk
 
-`func (o *DKSharesPostRequest) GetThresholdOk() (*int32, bool)`
+`func (o *DKSharesPostRequest) GetThresholdOk() (*uint32, bool)`
 
 GetThresholdOk returns a tuple with the Threshold field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetThreshold
 
-`func (o *DKSharesPostRequest) SetThreshold(v int32)`
+`func (o *DKSharesPostRequest) SetThreshold(v uint32)`
 
 SetThreshold sets Threshold field to given value.
 
 
 ### GetTimeoutMS
 
-`func (o *DKSharesPostRequest) GetTimeoutMS() int32`
+`func (o *DKSharesPostRequest) GetTimeoutMS() uint32`
 
 GetTimeoutMS returns the TimeoutMS field if non-nil, zero value otherwise.
 
 ### GetTimeoutMSOk
 
-`func (o *DKSharesPostRequest) GetTimeoutMSOk() (*int32, bool)`
+`func (o *DKSharesPostRequest) GetTimeoutMSOk() (*uint32, bool)`
 
 GetTimeoutMSOk returns a tuple with the TimeoutMS field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetTimeoutMS
 
-`func (o *DKSharesPostRequest) SetTimeoutMS(v int32)`
+`func (o *DKSharesPostRequest) SetTimeoutMS(v uint32)`
 
 SetTimeoutMS sets TimeoutMS field to given value.
 

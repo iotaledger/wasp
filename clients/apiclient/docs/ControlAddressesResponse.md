@@ -6,13 +6,13 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **AnchorOwner** | **string** | The anchor owner (Hex Address) | 
 **ChainAdmin** | **string** | The chain admin (Hex Address) | 
-**SinceBlockIndex** | **int32** | The block index (uint32 | 
+**SinceBlockIndex** | **uint32** | The block index (uint32 | 
 
 ## Methods
 
 ### NewControlAddressesResponse
 
-`func NewControlAddressesResponse(anchorOwner string, chainAdmin string, sinceBlockIndex int32, ) *ControlAddressesResponse`
+`func NewControlAddressesResponse(anchorOwner string, chainAdmin string, sinceBlockIndex uint32, ) *ControlAddressesResponse`
 
 NewControlAddressesResponse instantiates a new ControlAddressesResponse object
 This constructor will assign default values to properties that have it defined,
@@ -69,20 +69,20 @@ SetChainAdmin sets ChainAdmin field to given value.
 
 ### GetSinceBlockIndex
 
-`func (o *ControlAddressesResponse) GetSinceBlockIndex() int32`
+`func (o *ControlAddressesResponse) GetSinceBlockIndex() uint32`
 
 GetSinceBlockIndex returns the SinceBlockIndex field if non-nil, zero value otherwise.
 
 ### GetSinceBlockIndexOk
 
-`func (o *ControlAddressesResponse) GetSinceBlockIndexOk() (*int32, bool)`
+`func (o *ControlAddressesResponse) GetSinceBlockIndexOk() (*uint32, bool)`
 
 GetSinceBlockIndexOk returns a tuple with the SinceBlockIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetSinceBlockIndex
 
-`func (o *ControlAddressesResponse) SetSinceBlockIndex(v int32)`
+`func (o *ControlAddressesResponse) SetSinceBlockIndex(v uint32)`
 
 SetSinceBlockIndex sets SinceBlockIndex field to given value.
 

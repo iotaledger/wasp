@@ -6,7 +6,7 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **ChainAdmin** | **string** | The chain admin address (Hex Address) | 
 **ChainID** | **string** | ChainID (Hex Address) | 
-**EvmChainId** | **int32** | The EVM chain ID | 
+**EvmChainId** | **uint32** | The EVM chain ID | 
 **GasFeePolicy** | [**FeePolicy**](FeePolicy.md) |  | 
 **GasLimits** | [**Limits**](Limits.md) |  | 
 **IsActive** | **bool** | Whether or not the chain is active | 
@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewChainInfoResponse
 
-`func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId int32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string, ) *ChainInfoResponse`
+`func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string, ) *ChainInfoResponse`
 
 NewChainInfoResponse instantiates a new ChainInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -74,20 +74,20 @@ SetChainID sets ChainID field to given value.
 
 ### GetEvmChainId
 
-`func (o *ChainInfoResponse) GetEvmChainId() int32`
+`func (o *ChainInfoResponse) GetEvmChainId() uint32`
 
 GetEvmChainId returns the EvmChainId field if non-nil, zero value otherwise.
 
 ### GetEvmChainIdOk
 
-`func (o *ChainInfoResponse) GetEvmChainIdOk() (*int32, bool)`
+`func (o *ChainInfoResponse) GetEvmChainIdOk() (*uint32, bool)`
 
 GetEvmChainIdOk returns a tuple with the EvmChainId field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetEvmChainId
 
-`func (o *ChainInfoResponse) SetEvmChainId(v int32)`
+`func (o *ChainInfoResponse) SetEvmChainId(v uint32)`
 
 SetEvmChainId sets EvmChainId field to given value.
 

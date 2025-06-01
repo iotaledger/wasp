@@ -5,14 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **LastMessage** | [**OnLedgerRequest**](OnLedgerRequest.md) |  | 
-**Messages** | **int32** |  | 
+**Messages** | **uint32** |  | 
 **Timestamp** | **time.Time** |  | 
 
 ## Methods
 
 ### NewOnLedgerRequestMetricItem
 
-`func NewOnLedgerRequestMetricItem(lastMessage OnLedgerRequest, messages int32, timestamp time.Time, ) *OnLedgerRequestMetricItem`
+`func NewOnLedgerRequestMetricItem(lastMessage OnLedgerRequest, messages uint32, timestamp time.Time, ) *OnLedgerRequestMetricItem`
 
 NewOnLedgerRequestMetricItem instantiates a new OnLedgerRequestMetricItem object
 This constructor will assign default values to properties that have it defined,
@@ -49,20 +49,20 @@ SetLastMessage sets LastMessage field to given value.
 
 ### GetMessages
 
-`func (o *OnLedgerRequestMetricItem) GetMessages() int32`
+`func (o *OnLedgerRequestMetricItem) GetMessages() uint32`
 
 GetMessages returns the Messages field if non-nil, zero value otherwise.
 
 ### GetMessagesOk
 
-`func (o *OnLedgerRequestMetricItem) GetMessagesOk() (*int32, bool)`
+`func (o *OnLedgerRequestMetricItem) GetMessagesOk() (*uint32, bool)`
 
 GetMessagesOk returns a tuple with the Messages field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMessages
 
-`func (o *OnLedgerRequestMetricItem) SetMessages(v int32)`
+`func (o *OnLedgerRequestMetricItem) SetMessages(v uint32)`
 
 SetMessages sets Messages field to given value.
 

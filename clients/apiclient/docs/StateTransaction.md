@@ -4,14 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**StateIndex** | **int32** | The state index | 
+**StateIndex** | **uint32** | The state index | 
 **TxDigest** | **string** | The transaction Digest | 
 
 ## Methods
 
 ### NewStateTransaction
 
-`func NewStateTransaction(stateIndex int32, txDigest string, ) *StateTransaction`
+`func NewStateTransaction(stateIndex uint32, txDigest string, ) *StateTransaction`
 
 NewStateTransaction instantiates a new StateTransaction object
 This constructor will assign default values to properties that have it defined,
@@ -28,20 +28,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetStateIndex
 
-`func (o *StateTransaction) GetStateIndex() int32`
+`func (o *StateTransaction) GetStateIndex() uint32`
 
 GetStateIndex returns the StateIndex field if non-nil, zero value otherwise.
 
 ### GetStateIndexOk
 
-`func (o *StateTransaction) GetStateIndexOk() (*int32, bool)`
+`func (o *StateTransaction) GetStateIndexOk() (*uint32, bool)`
 
 GetStateIndexOk returns a tuple with the StateIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetStateIndex
 
-`func (o *StateTransaction) SetStateIndex(v int32)`
+`func (o *StateTransaction) SetStateIndex(v uint32)`
 
 SetStateIndex sets StateIndex field to given value.
 

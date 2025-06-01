@@ -104,7 +104,7 @@ import (
 )
 
 func main() {
-	dKSharesPostRequest := *openapiclient.NewDKSharesPostRequest([]string{"PeerIdentities_example"}, int32(123), int32(123)) // DKSharesPostRequest | Request parameters
+	dKSharesPostRequest := *openapiclient.NewDKSharesPostRequest([]string{"PeerIdentities_example"}, uint32(123), uint32(123)) // DKSharesPostRequest | Request parameters
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)

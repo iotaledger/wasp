@@ -23,7 +23,7 @@ var _ MappedNullable = &AnchorMetricItem{}
 // AnchorMetricItem struct for AnchorMetricItem
 type AnchorMetricItem struct {
 	LastMessage StateAnchor `json:"lastMessage"`
-	Messages int32 `json:"messages"`
+	Messages uint32 `json:"messages"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -33,7 +33,7 @@ type _AnchorMetricItem AnchorMetricItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAnchorMetricItem(lastMessage StateAnchor, messages int32, timestamp time.Time) *AnchorMetricItem {
+func NewAnchorMetricItem(lastMessage StateAnchor, messages uint32, timestamp time.Time) *AnchorMetricItem {
 	this := AnchorMetricItem{}
 	this.LastMessage = lastMessage
 	this.Messages = messages
@@ -74,9 +74,9 @@ func (o *AnchorMetricItem) SetLastMessage(v StateAnchor) {
 }
 
 // GetMessages returns the Messages field value
-func (o *AnchorMetricItem) GetMessages() int32 {
+func (o *AnchorMetricItem) GetMessages() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -85,7 +85,7 @@ func (o *AnchorMetricItem) GetMessages() int32 {
 
 // GetMessagesOk returns a tuple with the Messages field value
 // and a boolean to check if the value has been set.
-func (o *AnchorMetricItem) GetMessagesOk() (*int32, bool) {
+func (o *AnchorMetricItem) GetMessagesOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -93,7 +93,7 @@ func (o *AnchorMetricItem) GetMessagesOk() (*int32, bool) {
 }
 
 // SetMessages sets field value
-func (o *AnchorMetricItem) SetMessages(v int32) {
+func (o *AnchorMetricItem) SetMessages(v uint32) {
 	o.Messages = v
 }
 

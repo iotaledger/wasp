@@ -1,6 +1,5 @@
 import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/http';
-import { Configuration, ConfigurationOptions } from '../configuration'
-import type { Middleware } from '../middleware';
+import { Configuration} from '../configuration'
 
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
@@ -95,7 +94,7 @@ export class ObjectAuthApi {
      * Get information about the current authentication mode
      * @param param the request object
      */
-    public authInfoWithHttpInfo(param: AuthApiAuthInfoRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<AuthInfoModel>> {
+    public authInfoWithHttpInfo(param: AuthApiAuthInfoRequest = {}, options?: Configuration): Promise<HttpInfo<AuthInfoModel>> {
         return this.api.authInfoWithHttpInfo( options).toPromise();
     }
 
@@ -103,7 +102,7 @@ export class ObjectAuthApi {
      * Get information about the current authentication mode
      * @param param the request object
      */
-    public authInfo(param: AuthApiAuthInfoRequest = {}, options?: ConfigurationOptions): Promise<AuthInfoModel> {
+    public authInfo(param: AuthApiAuthInfoRequest = {}, options?: Configuration): Promise<AuthInfoModel> {
         return this.api.authInfo( options).toPromise();
     }
 
@@ -111,7 +110,7 @@ export class ObjectAuthApi {
      * Authenticate towards the node
      * @param param the request object
      */
-    public authenticateWithHttpInfo(param: AuthApiAuthenticateRequest, options?: ConfigurationOptions): Promise<HttpInfo<LoginResponse>> {
+    public authenticateWithHttpInfo(param: AuthApiAuthenticateRequest, options?: Configuration): Promise<HttpInfo<LoginResponse>> {
         return this.api.authenticateWithHttpInfo(param.loginRequest,  options).toPromise();
     }
 
@@ -119,7 +118,7 @@ export class ObjectAuthApi {
      * Authenticate towards the node
      * @param param the request object
      */
-    public authenticate(param: AuthApiAuthenticateRequest, options?: ConfigurationOptions): Promise<LoginResponse> {
+    public authenticate(param: AuthApiAuthenticateRequest, options?: Configuration): Promise<LoginResponse> {
         return this.api.authenticate(param.loginRequest,  options).toPromise();
     }
 
@@ -310,7 +309,7 @@ export class ObjectChainsApi {
      * Activate a chain
      * @param param the request object
      */
-    public activateChainWithHttpInfo(param: ChainsApiActivateChainRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public activateChainWithHttpInfo(param: ChainsApiActivateChainRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.activateChainWithHttpInfo(param.chainID,  options).toPromise();
     }
 
@@ -318,7 +317,7 @@ export class ObjectChainsApi {
      * Activate a chain
      * @param param the request object
      */
-    public activateChain(param: ChainsApiActivateChainRequest, options?: ConfigurationOptions): Promise<void> {
+    public activateChain(param: ChainsApiActivateChainRequest, options?: Configuration): Promise<void> {
         return this.api.activateChain(param.chainID,  options).toPromise();
     }
 
@@ -326,7 +325,7 @@ export class ObjectChainsApi {
      * Configure a trusted node to be an access node.
      * @param param the request object
      */
-    public addAccessNodeWithHttpInfo(param: ChainsApiAddAccessNodeRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public addAccessNodeWithHttpInfo(param: ChainsApiAddAccessNodeRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.addAccessNodeWithHttpInfo(param.peer,  options).toPromise();
     }
 
@@ -334,7 +333,7 @@ export class ObjectChainsApi {
      * Configure a trusted node to be an access node.
      * @param param the request object
      */
-    public addAccessNode(param: ChainsApiAddAccessNodeRequest, options?: ConfigurationOptions): Promise<void> {
+    public addAccessNode(param: ChainsApiAddAccessNodeRequest, options?: Configuration): Promise<void> {
         return this.api.addAccessNode(param.peer,  options).toPromise();
     }
 
@@ -343,7 +342,7 @@ export class ObjectChainsApi {
      * Call a view function on a contract by Hname
      * @param param the request object
      */
-    public callViewWithHttpInfo(param: ChainsApiCallViewRequest, options?: ConfigurationOptions): Promise<HttpInfo<Array<string>>> {
+    public callViewWithHttpInfo(param: ChainsApiCallViewRequest, options?: Configuration): Promise<HttpInfo<Array<string>>> {
         return this.api.callViewWithHttpInfo(param.contractCallViewRequest,  options).toPromise();
     }
 
@@ -352,7 +351,7 @@ export class ObjectChainsApi {
      * Call a view function on a contract by Hname
      * @param param the request object
      */
-    public callView(param: ChainsApiCallViewRequest, options?: ConfigurationOptions): Promise<Array<string>> {
+    public callView(param: ChainsApiCallViewRequest, options?: Configuration): Promise<Array<string>> {
         return this.api.callView(param.contractCallViewRequest,  options).toPromise();
     }
 
@@ -360,7 +359,7 @@ export class ObjectChainsApi {
      * Deactivate a chain
      * @param param the request object
      */
-    public deactivateChainWithHttpInfo(param: ChainsApiDeactivateChainRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public deactivateChainWithHttpInfo(param: ChainsApiDeactivateChainRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.deactivateChainWithHttpInfo( options).toPromise();
     }
 
@@ -368,7 +367,7 @@ export class ObjectChainsApi {
      * Deactivate a chain
      * @param param the request object
      */
-    public deactivateChain(param: ChainsApiDeactivateChainRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public deactivateChain(param: ChainsApiDeactivateChainRequest = {}, options?: Configuration): Promise<void> {
         return this.api.deactivateChain( options).toPromise();
     }
 
@@ -376,7 +375,7 @@ export class ObjectChainsApi {
      * dump accounts information into a humanly-readable format
      * @param param the request object
      */
-    public dumpAccountsWithHttpInfo(param: ChainsApiDumpAccountsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public dumpAccountsWithHttpInfo(param: ChainsApiDumpAccountsRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.dumpAccountsWithHttpInfo( options).toPromise();
     }
 
@@ -384,7 +383,7 @@ export class ObjectChainsApi {
      * dump accounts information into a humanly-readable format
      * @param param the request object
      */
-    public dumpAccounts(param: ChainsApiDumpAccountsRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public dumpAccounts(param: ChainsApiDumpAccountsRequest = {}, options?: Configuration): Promise<void> {
         return this.api.dumpAccounts( options).toPromise();
     }
 
@@ -392,7 +391,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given off-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOffledgerWithHttpInfo(param: ChainsApiEstimateGasOffledgerRequest, options?: ConfigurationOptions): Promise<HttpInfo<ReceiptResponse>> {
+    public estimateGasOffledgerWithHttpInfo(param: ChainsApiEstimateGasOffledgerRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
         return this.api.estimateGasOffledgerWithHttpInfo(param.request,  options).toPromise();
     }
 
@@ -400,7 +399,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given off-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOffledger(param: ChainsApiEstimateGasOffledgerRequest, options?: ConfigurationOptions): Promise<ReceiptResponse> {
+    public estimateGasOffledger(param: ChainsApiEstimateGasOffledgerRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.estimateGasOffledger(param.request,  options).toPromise();
     }
 
@@ -408,7 +407,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given on-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOnledgerWithHttpInfo(param: ChainsApiEstimateGasOnledgerRequest, options?: ConfigurationOptions): Promise<HttpInfo<ReceiptResponse>> {
+    public estimateGasOnledgerWithHttpInfo(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
         return this.api.estimateGasOnledgerWithHttpInfo(param.request,  options).toPromise();
     }
 
@@ -416,7 +415,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given on-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: ConfigurationOptions): Promise<ReceiptResponse> {
+    public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.estimateGasOnledger(param.request,  options).toPromise();
     }
 
@@ -424,7 +423,7 @@ export class ObjectChainsApi {
      * Get information about a specific chain
      * @param param the request object
      */
-    public getChainInfoWithHttpInfo(param: ChainsApiGetChainInfoRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<ChainInfoResponse>> {
+    public getChainInfoWithHttpInfo(param: ChainsApiGetChainInfoRequest = {}, options?: Configuration): Promise<HttpInfo<ChainInfoResponse>> {
         return this.api.getChainInfoWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -432,7 +431,7 @@ export class ObjectChainsApi {
      * Get information about a specific chain
      * @param param the request object
      */
-    public getChainInfo(param: ChainsApiGetChainInfoRequest = {}, options?: ConfigurationOptions): Promise<ChainInfoResponse> {
+    public getChainInfo(param: ChainsApiGetChainInfoRequest = {}, options?: Configuration): Promise<ChainInfoResponse> {
         return this.api.getChainInfo(param.block,  options).toPromise();
     }
 
@@ -440,7 +439,7 @@ export class ObjectChainsApi {
      * Get information about the deployed committee
      * @param param the request object
      */
-    public getCommitteeInfoWithHttpInfo(param: ChainsApiGetCommitteeInfoRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<CommitteeInfoResponse>> {
+    public getCommitteeInfoWithHttpInfo(param: ChainsApiGetCommitteeInfoRequest = {}, options?: Configuration): Promise<HttpInfo<CommitteeInfoResponse>> {
         return this.api.getCommitteeInfoWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -448,7 +447,7 @@ export class ObjectChainsApi {
      * Get information about the deployed committee
      * @param param the request object
      */
-    public getCommitteeInfo(param: ChainsApiGetCommitteeInfoRequest = {}, options?: ConfigurationOptions): Promise<CommitteeInfoResponse> {
+    public getCommitteeInfo(param: ChainsApiGetCommitteeInfoRequest = {}, options?: Configuration): Promise<CommitteeInfoResponse> {
         return this.api.getCommitteeInfo(param.block,  options).toPromise();
     }
 
@@ -456,7 +455,7 @@ export class ObjectChainsApi {
      * Get all available chain contracts
      * @param param the request object
      */
-    public getContractsWithHttpInfo(param: ChainsApiGetContractsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<Array<ContractInfoResponse>>> {
+    public getContractsWithHttpInfo(param: ChainsApiGetContractsRequest = {}, options?: Configuration): Promise<HttpInfo<Array<ContractInfoResponse>>> {
         return this.api.getContractsWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -464,7 +463,7 @@ export class ObjectChainsApi {
      * Get all available chain contracts
      * @param param the request object
      */
-    public getContracts(param: ChainsApiGetContractsRequest = {}, options?: ConfigurationOptions): Promise<Array<ContractInfoResponse>> {
+    public getContracts(param: ChainsApiGetContractsRequest = {}, options?: Configuration): Promise<Array<ContractInfoResponse>> {
         return this.api.getContracts(param.block,  options).toPromise();
     }
 
@@ -472,7 +471,7 @@ export class ObjectChainsApi {
      * Get the contents of the mempool.
      * @param param the request object
      */
-    public getMempoolContentsWithHttpInfo(param: ChainsApiGetMempoolContentsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<Array<number>>> {
+    public getMempoolContentsWithHttpInfo(param: ChainsApiGetMempoolContentsRequest = {}, options?: Configuration): Promise<HttpInfo<Array<number>>> {
         return this.api.getMempoolContentsWithHttpInfo( options).toPromise();
     }
 
@@ -480,7 +479,7 @@ export class ObjectChainsApi {
      * Get the contents of the mempool.
      * @param param the request object
      */
-    public getMempoolContents(param: ChainsApiGetMempoolContentsRequest = {}, options?: ConfigurationOptions): Promise<Array<number>> {
+    public getMempoolContents(param: ChainsApiGetMempoolContentsRequest = {}, options?: Configuration): Promise<Array<number>> {
         return this.api.getMempoolContents( options).toPromise();
     }
 
@@ -488,7 +487,7 @@ export class ObjectChainsApi {
      * Get a receipt from a request ID
      * @param param the request object
      */
-    public getReceiptWithHttpInfo(param: ChainsApiGetReceiptRequest, options?: ConfigurationOptions): Promise<HttpInfo<ReceiptResponse>> {
+    public getReceiptWithHttpInfo(param: ChainsApiGetReceiptRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
         return this.api.getReceiptWithHttpInfo(param.requestID,  options).toPromise();
     }
 
@@ -496,7 +495,7 @@ export class ObjectChainsApi {
      * Get a receipt from a request ID
      * @param param the request object
      */
-    public getReceipt(param: ChainsApiGetReceiptRequest, options?: ConfigurationOptions): Promise<ReceiptResponse> {
+    public getReceipt(param: ChainsApiGetReceiptRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.getReceipt(param.requestID,  options).toPromise();
     }
 
@@ -504,7 +503,7 @@ export class ObjectChainsApi {
      * Fetch the raw value associated with the given key in the chain state
      * @param param the request object
      */
-    public getStateValueWithHttpInfo(param: ChainsApiGetStateValueRequest, options?: ConfigurationOptions): Promise<HttpInfo<StateResponse>> {
+    public getStateValueWithHttpInfo(param: ChainsApiGetStateValueRequest, options?: Configuration): Promise<HttpInfo<StateResponse>> {
         return this.api.getStateValueWithHttpInfo(param.stateKey,  options).toPromise();
     }
 
@@ -512,7 +511,7 @@ export class ObjectChainsApi {
      * Fetch the raw value associated with the given key in the chain state
      * @param param the request object
      */
-    public getStateValue(param: ChainsApiGetStateValueRequest, options?: ConfigurationOptions): Promise<StateResponse> {
+    public getStateValue(param: ChainsApiGetStateValueRequest, options?: Configuration): Promise<StateResponse> {
         return this.api.getStateValue(param.stateKey,  options).toPromise();
     }
 
@@ -520,7 +519,7 @@ export class ObjectChainsApi {
      * Remove an access node.
      * @param param the request object
      */
-    public removeAccessNodeWithHttpInfo(param: ChainsApiRemoveAccessNodeRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public removeAccessNodeWithHttpInfo(param: ChainsApiRemoveAccessNodeRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.removeAccessNodeWithHttpInfo(param.peer,  options).toPromise();
     }
 
@@ -528,7 +527,7 @@ export class ObjectChainsApi {
      * Remove an access node.
      * @param param the request object
      */
-    public removeAccessNode(param: ChainsApiRemoveAccessNodeRequest, options?: ConfigurationOptions): Promise<void> {
+    public removeAccessNode(param: ChainsApiRemoveAccessNodeRequest, options?: Configuration): Promise<void> {
         return this.api.removeAccessNode(param.peer,  options).toPromise();
     }
 
@@ -536,7 +535,7 @@ export class ObjectChainsApi {
      * Rotate a chain
      * @param param the request object
      */
-    public rotateChainWithHttpInfo(param: ChainsApiRotateChainRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public rotateChainWithHttpInfo(param: ChainsApiRotateChainRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.rotateChainWithHttpInfo(param.rotateRequest,  options).toPromise();
     }
 
@@ -544,7 +543,7 @@ export class ObjectChainsApi {
      * Rotate a chain
      * @param param the request object
      */
-    public rotateChain(param: ChainsApiRotateChainRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public rotateChain(param: ChainsApiRotateChainRequest = {}, options?: Configuration): Promise<void> {
         return this.api.rotateChain(param.rotateRequest,  options).toPromise();
     }
 
@@ -552,7 +551,7 @@ export class ObjectChainsApi {
      * Sets the chain record.
      * @param param the request object
      */
-    public setChainRecordWithHttpInfo(param: ChainsApiSetChainRecordRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public setChainRecordWithHttpInfo(param: ChainsApiSetChainRecordRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.setChainRecordWithHttpInfo(param.chainID, param.chainRecord,  options).toPromise();
     }
 
@@ -560,7 +559,7 @@ export class ObjectChainsApi {
      * Sets the chain record.
      * @param param the request object
      */
-    public setChainRecord(param: ChainsApiSetChainRecordRequest, options?: ConfigurationOptions): Promise<void> {
+    public setChainRecord(param: ChainsApiSetChainRecordRequest, options?: Configuration): Promise<void> {
         return this.api.setChainRecord(param.chainID, param.chainRecord,  options).toPromise();
     }
 
@@ -568,7 +567,7 @@ export class ObjectChainsApi {
      * Ethereum JSON-RPC
      * @param param the request object
      */
-    public v1ChainEvmPostWithHttpInfo(param: ChainsApiV1ChainEvmPostRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public v1ChainEvmPostWithHttpInfo(param: ChainsApiV1ChainEvmPostRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.v1ChainEvmPostWithHttpInfo( options).toPromise();
     }
 
@@ -576,7 +575,7 @@ export class ObjectChainsApi {
      * Ethereum JSON-RPC
      * @param param the request object
      */
-    public v1ChainEvmPost(param: ChainsApiV1ChainEvmPostRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public v1ChainEvmPost(param: ChainsApiV1ChainEvmPostRequest = {}, options?: Configuration): Promise<void> {
         return this.api.v1ChainEvmPost( options).toPromise();
     }
 
@@ -584,7 +583,7 @@ export class ObjectChainsApi {
      * Ethereum JSON-RPC (Websocket transport)
      * @param param the request object
      */
-    public v1ChainEvmWsGetWithHttpInfo(param: ChainsApiV1ChainEvmWsGetRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public v1ChainEvmWsGetWithHttpInfo(param: ChainsApiV1ChainEvmWsGetRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.v1ChainEvmWsGetWithHttpInfo( options).toPromise();
     }
 
@@ -592,7 +591,7 @@ export class ObjectChainsApi {
      * Ethereum JSON-RPC (Websocket transport)
      * @param param the request object
      */
-    public v1ChainEvmWsGet(param: ChainsApiV1ChainEvmWsGetRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public v1ChainEvmWsGet(param: ChainsApiV1ChainEvmWsGetRequest = {}, options?: Configuration): Promise<void> {
         return this.api.v1ChainEvmWsGet( options).toPromise();
     }
 
@@ -600,7 +599,7 @@ export class ObjectChainsApi {
      * Wait until the given request has been processed by the node
      * @param param the request object
      */
-    public waitForRequestWithHttpInfo(param: ChainsApiWaitForRequestRequest, options?: ConfigurationOptions): Promise<HttpInfo<ReceiptResponse>> {
+    public waitForRequestWithHttpInfo(param: ChainsApiWaitForRequestRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
         return this.api.waitForRequestWithHttpInfo(param.requestID, param.timeoutSeconds, param.waitForL1Confirmation,  options).toPromise();
     }
 
@@ -608,7 +607,7 @@ export class ObjectChainsApi {
      * Wait until the given request has been processed by the node
      * @param param the request object
      */
-    public waitForRequest(param: ChainsApiWaitForRequestRequest, options?: ConfigurationOptions): Promise<ReceiptResponse> {
+    public waitForRequest(param: ChainsApiWaitForRequestRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.waitForRequest(param.requestID, param.timeoutSeconds, param.waitForL1Confirmation,  options).toPromise();
     }
 
@@ -897,7 +896,7 @@ export class ObjectCorecontractsApi {
      * Get all assets belonging to an account
      * @param param the request object
      */
-    public accountsGetAccountBalanceWithHttpInfo(param: CorecontractsApiAccountsGetAccountBalanceRequest, options?: ConfigurationOptions): Promise<HttpInfo<AssetsResponse>> {
+    public accountsGetAccountBalanceWithHttpInfo(param: CorecontractsApiAccountsGetAccountBalanceRequest, options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
         return this.api.accountsGetAccountBalanceWithHttpInfo(param.agentID, param.block,  options).toPromise();
     }
 
@@ -905,7 +904,7 @@ export class ObjectCorecontractsApi {
      * Get all assets belonging to an account
      * @param param the request object
      */
-    public accountsGetAccountBalance(param: CorecontractsApiAccountsGetAccountBalanceRequest, options?: ConfigurationOptions): Promise<AssetsResponse> {
+    public accountsGetAccountBalance(param: CorecontractsApiAccountsGetAccountBalanceRequest, options?: Configuration): Promise<AssetsResponse> {
         return this.api.accountsGetAccountBalance(param.agentID, param.block,  options).toPromise();
     }
 
@@ -913,7 +912,7 @@ export class ObjectCorecontractsApi {
      * Get the current nonce of an account
      * @param param the request object
      */
-    public accountsGetAccountNonceWithHttpInfo(param: CorecontractsApiAccountsGetAccountNonceRequest, options?: ConfigurationOptions): Promise<HttpInfo<AccountNonceResponse>> {
+    public accountsGetAccountNonceWithHttpInfo(param: CorecontractsApiAccountsGetAccountNonceRequest, options?: Configuration): Promise<HttpInfo<AccountNonceResponse>> {
         return this.api.accountsGetAccountNonceWithHttpInfo(param.agentID, param.block,  options).toPromise();
     }
 
@@ -921,7 +920,7 @@ export class ObjectCorecontractsApi {
      * Get the current nonce of an account
      * @param param the request object
      */
-    public accountsGetAccountNonce(param: CorecontractsApiAccountsGetAccountNonceRequest, options?: ConfigurationOptions): Promise<AccountNonceResponse> {
+    public accountsGetAccountNonce(param: CorecontractsApiAccountsGetAccountNonceRequest, options?: Configuration): Promise<AccountNonceResponse> {
         return this.api.accountsGetAccountNonce(param.agentID, param.block,  options).toPromise();
     }
 
@@ -929,7 +928,7 @@ export class ObjectCorecontractsApi {
      * Get all stored assets
      * @param param the request object
      */
-    public accountsGetTotalAssetsWithHttpInfo(param: CorecontractsApiAccountsGetTotalAssetsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<AssetsResponse>> {
+    public accountsGetTotalAssetsWithHttpInfo(param: CorecontractsApiAccountsGetTotalAssetsRequest = {}, options?: Configuration): Promise<HttpInfo<AssetsResponse>> {
         return this.api.accountsGetTotalAssetsWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -937,7 +936,7 @@ export class ObjectCorecontractsApi {
      * Get all stored assets
      * @param param the request object
      */
-    public accountsGetTotalAssets(param: CorecontractsApiAccountsGetTotalAssetsRequest = {}, options?: ConfigurationOptions): Promise<AssetsResponse> {
+    public accountsGetTotalAssets(param: CorecontractsApiAccountsGetTotalAssetsRequest = {}, options?: Configuration): Promise<AssetsResponse> {
         return this.api.accountsGetTotalAssets(param.block,  options).toPromise();
     }
 
@@ -945,7 +944,7 @@ export class ObjectCorecontractsApi {
      * Get the block info of a certain block index
      * @param param the request object
      */
-    public blocklogGetBlockInfoWithHttpInfo(param: CorecontractsApiBlocklogGetBlockInfoRequest, options?: ConfigurationOptions): Promise<HttpInfo<BlockInfoResponse>> {
+    public blocklogGetBlockInfoWithHttpInfo(param: CorecontractsApiBlocklogGetBlockInfoRequest, options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
         return this.api.blocklogGetBlockInfoWithHttpInfo(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -953,7 +952,7 @@ export class ObjectCorecontractsApi {
      * Get the block info of a certain block index
      * @param param the request object
      */
-    public blocklogGetBlockInfo(param: CorecontractsApiBlocklogGetBlockInfoRequest, options?: ConfigurationOptions): Promise<BlockInfoResponse> {
+    public blocklogGetBlockInfo(param: CorecontractsApiBlocklogGetBlockInfoRequest, options?: Configuration): Promise<BlockInfoResponse> {
         return this.api.blocklogGetBlockInfo(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -961,7 +960,7 @@ export class ObjectCorecontractsApi {
      * Get the control addresses
      * @param param the request object
      */
-    public blocklogGetControlAddressesWithHttpInfo(param: CorecontractsApiBlocklogGetControlAddressesRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<ControlAddressesResponse>> {
+    public blocklogGetControlAddressesWithHttpInfo(param: CorecontractsApiBlocklogGetControlAddressesRequest = {}, options?: Configuration): Promise<HttpInfo<ControlAddressesResponse>> {
         return this.api.blocklogGetControlAddressesWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -969,7 +968,7 @@ export class ObjectCorecontractsApi {
      * Get the control addresses
      * @param param the request object
      */
-    public blocklogGetControlAddresses(param: CorecontractsApiBlocklogGetControlAddressesRequest = {}, options?: ConfigurationOptions): Promise<ControlAddressesResponse> {
+    public blocklogGetControlAddresses(param: CorecontractsApiBlocklogGetControlAddressesRequest = {}, options?: Configuration): Promise<ControlAddressesResponse> {
         return this.api.blocklogGetControlAddresses(param.block,  options).toPromise();
     }
 
@@ -977,7 +976,7 @@ export class ObjectCorecontractsApi {
      * Get events of a block
      * @param param the request object
      */
-    public blocklogGetEventsOfBlockWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfBlockRequest, options?: ConfigurationOptions): Promise<HttpInfo<EventsResponse>> {
+    public blocklogGetEventsOfBlockWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfBlockRequest, options?: Configuration): Promise<HttpInfo<EventsResponse>> {
         return this.api.blocklogGetEventsOfBlockWithHttpInfo(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -985,7 +984,7 @@ export class ObjectCorecontractsApi {
      * Get events of a block
      * @param param the request object
      */
-    public blocklogGetEventsOfBlock(param: CorecontractsApiBlocklogGetEventsOfBlockRequest, options?: ConfigurationOptions): Promise<EventsResponse> {
+    public blocklogGetEventsOfBlock(param: CorecontractsApiBlocklogGetEventsOfBlockRequest, options?: Configuration): Promise<EventsResponse> {
         return this.api.blocklogGetEventsOfBlock(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -993,7 +992,7 @@ export class ObjectCorecontractsApi {
      * Get events of the latest block
      * @param param the request object
      */
-    public blocklogGetEventsOfLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<EventsResponse>> {
+    public blocklogGetEventsOfLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {}, options?: Configuration): Promise<HttpInfo<EventsResponse>> {
         return this.api.blocklogGetEventsOfLatestBlockWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -1001,7 +1000,7 @@ export class ObjectCorecontractsApi {
      * Get events of the latest block
      * @param param the request object
      */
-    public blocklogGetEventsOfLatestBlock(param: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {}, options?: ConfigurationOptions): Promise<EventsResponse> {
+    public blocklogGetEventsOfLatestBlock(param: CorecontractsApiBlocklogGetEventsOfLatestBlockRequest = {}, options?: Configuration): Promise<EventsResponse> {
         return this.api.blocklogGetEventsOfLatestBlock(param.block,  options).toPromise();
     }
 
@@ -1009,7 +1008,7 @@ export class ObjectCorecontractsApi {
      * Get events of a request
      * @param param the request object
      */
-    public blocklogGetEventsOfRequestWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfRequestRequest, options?: ConfigurationOptions): Promise<HttpInfo<EventsResponse>> {
+    public blocklogGetEventsOfRequestWithHttpInfo(param: CorecontractsApiBlocklogGetEventsOfRequestRequest, options?: Configuration): Promise<HttpInfo<EventsResponse>> {
         return this.api.blocklogGetEventsOfRequestWithHttpInfo(param.requestID, param.block,  options).toPromise();
     }
 
@@ -1017,7 +1016,7 @@ export class ObjectCorecontractsApi {
      * Get events of a request
      * @param param the request object
      */
-    public blocklogGetEventsOfRequest(param: CorecontractsApiBlocklogGetEventsOfRequestRequest, options?: ConfigurationOptions): Promise<EventsResponse> {
+    public blocklogGetEventsOfRequest(param: CorecontractsApiBlocklogGetEventsOfRequestRequest, options?: Configuration): Promise<EventsResponse> {
         return this.api.blocklogGetEventsOfRequest(param.requestID, param.block,  options).toPromise();
     }
 
@@ -1025,7 +1024,7 @@ export class ObjectCorecontractsApi {
      * Get the block info of the latest block
      * @param param the request object
      */
-    public blocklogGetLatestBlockInfoWithHttpInfo(param: CorecontractsApiBlocklogGetLatestBlockInfoRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<BlockInfoResponse>> {
+    public blocklogGetLatestBlockInfoWithHttpInfo(param: CorecontractsApiBlocklogGetLatestBlockInfoRequest = {}, options?: Configuration): Promise<HttpInfo<BlockInfoResponse>> {
         return this.api.blocklogGetLatestBlockInfoWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -1033,7 +1032,7 @@ export class ObjectCorecontractsApi {
      * Get the block info of the latest block
      * @param param the request object
      */
-    public blocklogGetLatestBlockInfo(param: CorecontractsApiBlocklogGetLatestBlockInfoRequest = {}, options?: ConfigurationOptions): Promise<BlockInfoResponse> {
+    public blocklogGetLatestBlockInfo(param: CorecontractsApiBlocklogGetLatestBlockInfoRequest = {}, options?: Configuration): Promise<BlockInfoResponse> {
         return this.api.blocklogGetLatestBlockInfo(param.block,  options).toPromise();
     }
 
@@ -1041,7 +1040,7 @@ export class ObjectCorecontractsApi {
      * Get the request ids for a certain block index
      * @param param the request object
      */
-    public blocklogGetRequestIDsForBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIDsForBlockRequest, options?: ConfigurationOptions): Promise<HttpInfo<RequestIDsResponse>> {
+    public blocklogGetRequestIDsForBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIDsForBlockRequest, options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
         return this.api.blocklogGetRequestIDsForBlockWithHttpInfo(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -1049,7 +1048,7 @@ export class ObjectCorecontractsApi {
      * Get the request ids for a certain block index
      * @param param the request object
      */
-    public blocklogGetRequestIDsForBlock(param: CorecontractsApiBlocklogGetRequestIDsForBlockRequest, options?: ConfigurationOptions): Promise<RequestIDsResponse> {
+    public blocklogGetRequestIDsForBlock(param: CorecontractsApiBlocklogGetRequestIDsForBlockRequest, options?: Configuration): Promise<RequestIDsResponse> {
         return this.api.blocklogGetRequestIDsForBlock(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -1057,7 +1056,7 @@ export class ObjectCorecontractsApi {
      * Get the request ids for the latest block
      * @param param the request object
      */
-    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<RequestIDsResponse>> {
+    public blocklogGetRequestIDsForLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {}, options?: Configuration): Promise<HttpInfo<RequestIDsResponse>> {
         return this.api.blocklogGetRequestIDsForLatestBlockWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -1065,7 +1064,7 @@ export class ObjectCorecontractsApi {
      * Get the request ids for the latest block
      * @param param the request object
      */
-    public blocklogGetRequestIDsForLatestBlock(param: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {}, options?: ConfigurationOptions): Promise<RequestIDsResponse> {
+    public blocklogGetRequestIDsForLatestBlock(param: CorecontractsApiBlocklogGetRequestIDsForLatestBlockRequest = {}, options?: Configuration): Promise<RequestIDsResponse> {
         return this.api.blocklogGetRequestIDsForLatestBlock(param.block,  options).toPromise();
     }
 
@@ -1073,7 +1072,7 @@ export class ObjectCorecontractsApi {
      * Get the request processing status
      * @param param the request object
      */
-    public blocklogGetRequestIsProcessedWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIsProcessedRequest, options?: ConfigurationOptions): Promise<HttpInfo<RequestProcessedResponse>> {
+    public blocklogGetRequestIsProcessedWithHttpInfo(param: CorecontractsApiBlocklogGetRequestIsProcessedRequest, options?: Configuration): Promise<HttpInfo<RequestProcessedResponse>> {
         return this.api.blocklogGetRequestIsProcessedWithHttpInfo(param.requestID, param.block,  options).toPromise();
     }
 
@@ -1081,7 +1080,7 @@ export class ObjectCorecontractsApi {
      * Get the request processing status
      * @param param the request object
      */
-    public blocklogGetRequestIsProcessed(param: CorecontractsApiBlocklogGetRequestIsProcessedRequest, options?: ConfigurationOptions): Promise<RequestProcessedResponse> {
+    public blocklogGetRequestIsProcessed(param: CorecontractsApiBlocklogGetRequestIsProcessedRequest, options?: Configuration): Promise<RequestProcessedResponse> {
         return this.api.blocklogGetRequestIsProcessed(param.requestID, param.block,  options).toPromise();
     }
 
@@ -1089,7 +1088,7 @@ export class ObjectCorecontractsApi {
      * Get the receipt of a certain request id
      * @param param the request object
      */
-    public blocklogGetRequestReceiptWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: ConfigurationOptions): Promise<HttpInfo<ReceiptResponse>> {
+    public blocklogGetRequestReceiptWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
         return this.api.blocklogGetRequestReceiptWithHttpInfo(param.requestID, param.block,  options).toPromise();
     }
 
@@ -1097,7 +1096,7 @@ export class ObjectCorecontractsApi {
      * Get the receipt of a certain request id
      * @param param the request object
      */
-    public blocklogGetRequestReceipt(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: ConfigurationOptions): Promise<ReceiptResponse> {
+    public blocklogGetRequestReceipt(param: CorecontractsApiBlocklogGetRequestReceiptRequest, options?: Configuration): Promise<ReceiptResponse> {
         return this.api.blocklogGetRequestReceipt(param.requestID, param.block,  options).toPromise();
     }
 
@@ -1105,7 +1104,7 @@ export class ObjectCorecontractsApi {
      * Get all receipts of a certain block
      * @param param the request object
      */
-    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: ConfigurationOptions): Promise<HttpInfo<Array<ReceiptResponse>>> {
+    public blocklogGetRequestReceiptsOfBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
         return this.api.blocklogGetRequestReceiptsOfBlockWithHttpInfo(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -1113,7 +1112,7 @@ export class ObjectCorecontractsApi {
      * Get all receipts of a certain block
      * @param param the request object
      */
-    public blocklogGetRequestReceiptsOfBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: ConfigurationOptions): Promise<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfBlockRequest, options?: Configuration): Promise<Array<ReceiptResponse>> {
         return this.api.blocklogGetRequestReceiptsOfBlock(param.blockIndex, param.block,  options).toPromise();
     }
 
@@ -1121,7 +1120,7 @@ export class ObjectCorecontractsApi {
      * Get all receipts of the latest block
      * @param param the request object
      */
-    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<Array<ReceiptResponse>>> {
+    public blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {}, options?: Configuration): Promise<HttpInfo<Array<ReceiptResponse>>> {
         return this.api.blocklogGetRequestReceiptsOfLatestBlockWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -1129,7 +1128,7 @@ export class ObjectCorecontractsApi {
      * Get all receipts of the latest block
      * @param param the request object
      */
-    public blocklogGetRequestReceiptsOfLatestBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {}, options?: ConfigurationOptions): Promise<Array<ReceiptResponse>> {
+    public blocklogGetRequestReceiptsOfLatestBlock(param: CorecontractsApiBlocklogGetRequestReceiptsOfLatestBlockRequest = {}, options?: Configuration): Promise<Array<ReceiptResponse>> {
         return this.api.blocklogGetRequestReceiptsOfLatestBlock(param.block,  options).toPromise();
     }
 
@@ -1137,7 +1136,7 @@ export class ObjectCorecontractsApi {
      * Get the error message format of a specific error id
      * @param param the request object
      */
-    public errorsGetErrorMessageFormatWithHttpInfo(param: CorecontractsApiErrorsGetErrorMessageFormatRequest, options?: ConfigurationOptions): Promise<HttpInfo<ErrorMessageFormatResponse>> {
+    public errorsGetErrorMessageFormatWithHttpInfo(param: CorecontractsApiErrorsGetErrorMessageFormatRequest, options?: Configuration): Promise<HttpInfo<ErrorMessageFormatResponse>> {
         return this.api.errorsGetErrorMessageFormatWithHttpInfo(param.chainID, param.contractHname, param.errorID, param.block,  options).toPromise();
     }
 
@@ -1145,7 +1144,7 @@ export class ObjectCorecontractsApi {
      * Get the error message format of a specific error id
      * @param param the request object
      */
-    public errorsGetErrorMessageFormat(param: CorecontractsApiErrorsGetErrorMessageFormatRequest, options?: ConfigurationOptions): Promise<ErrorMessageFormatResponse> {
+    public errorsGetErrorMessageFormat(param: CorecontractsApiErrorsGetErrorMessageFormatRequest, options?: Configuration): Promise<ErrorMessageFormatResponse> {
         return this.api.errorsGetErrorMessageFormat(param.chainID, param.contractHname, param.errorID, param.block,  options).toPromise();
     }
 
@@ -1154,7 +1153,7 @@ export class ObjectCorecontractsApi {
      * Get the chain admin
      * @param param the request object
      */
-    public governanceGetChainAdminWithHttpInfo(param: CorecontractsApiGovernanceGetChainAdminRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<GovChainAdminResponse>> {
+    public governanceGetChainAdminWithHttpInfo(param: CorecontractsApiGovernanceGetChainAdminRequest = {}, options?: Configuration): Promise<HttpInfo<GovChainAdminResponse>> {
         return this.api.governanceGetChainAdminWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -1163,7 +1162,7 @@ export class ObjectCorecontractsApi {
      * Get the chain admin
      * @param param the request object
      */
-    public governanceGetChainAdmin(param: CorecontractsApiGovernanceGetChainAdminRequest = {}, options?: ConfigurationOptions): Promise<GovChainAdminResponse> {
+    public governanceGetChainAdmin(param: CorecontractsApiGovernanceGetChainAdminRequest = {}, options?: Configuration): Promise<GovChainAdminResponse> {
         return this.api.governanceGetChainAdmin(param.block,  options).toPromise();
     }
 
@@ -1172,7 +1171,7 @@ export class ObjectCorecontractsApi {
      * Get the chain info
      * @param param the request object
      */
-    public governanceGetChainInfoWithHttpInfo(param: CorecontractsApiGovernanceGetChainInfoRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<GovChainInfoResponse>> {
+    public governanceGetChainInfoWithHttpInfo(param: CorecontractsApiGovernanceGetChainInfoRequest = {}, options?: Configuration): Promise<HttpInfo<GovChainInfoResponse>> {
         return this.api.governanceGetChainInfoWithHttpInfo(param.block,  options).toPromise();
     }
 
@@ -1181,7 +1180,7 @@ export class ObjectCorecontractsApi {
      * Get the chain info
      * @param param the request object
      */
-    public governanceGetChainInfo(param: CorecontractsApiGovernanceGetChainInfoRequest = {}, options?: ConfigurationOptions): Promise<GovChainInfoResponse> {
+    public governanceGetChainInfo(param: CorecontractsApiGovernanceGetChainInfoRequest = {}, options?: Configuration): Promise<GovChainInfoResponse> {
         return this.api.governanceGetChainInfo(param.block,  options).toPromise();
     }
 
@@ -1207,7 +1206,7 @@ export class ObjectDefaultApi {
      * Returns 200 if the node is healthy.
      * @param param the request object
      */
-    public getHealthWithHttpInfo(param: DefaultApiGetHealthRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public getHealthWithHttpInfo(param: DefaultApiGetHealthRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.getHealthWithHttpInfo( options).toPromise();
     }
 
@@ -1215,7 +1214,7 @@ export class ObjectDefaultApi {
      * Returns 200 if the node is healthy.
      * @param param the request object
      */
-    public getHealth(param: DefaultApiGetHealthRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public getHealth(param: DefaultApiGetHealthRequest = {}, options?: Configuration): Promise<void> {
         return this.api.getHealth( options).toPromise();
     }
 
@@ -1223,7 +1222,7 @@ export class ObjectDefaultApi {
      * The websocket connection service
      * @param param the request object
      */
-    public v1WsGetWithHttpInfo(param: DefaultApiV1WsGetRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public v1WsGetWithHttpInfo(param: DefaultApiV1WsGetRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.v1WsGetWithHttpInfo( options).toPromise();
     }
 
@@ -1231,7 +1230,7 @@ export class ObjectDefaultApi {
      * The websocket connection service
      * @param param the request object
      */
-    public v1WsGet(param: DefaultApiV1WsGetRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public v1WsGet(param: DefaultApiV1WsGetRequest = {}, options?: Configuration): Promise<void> {
         return this.api.v1WsGet( options).toPromise();
     }
 
@@ -1260,7 +1259,7 @@ export class ObjectMetricsApi {
      * Get chain specific message metrics.
      * @param param the request object
      */
-    public getChainMessageMetricsWithHttpInfo(param: MetricsApiGetChainMessageMetricsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<ChainMessageMetrics>> {
+    public getChainMessageMetricsWithHttpInfo(param: MetricsApiGetChainMessageMetricsRequest = {}, options?: Configuration): Promise<HttpInfo<ChainMessageMetrics>> {
         return this.api.getChainMessageMetricsWithHttpInfo( options).toPromise();
     }
 
@@ -1268,7 +1267,7 @@ export class ObjectMetricsApi {
      * Get chain specific message metrics.
      * @param param the request object
      */
-    public getChainMessageMetrics(param: MetricsApiGetChainMessageMetricsRequest = {}, options?: ConfigurationOptions): Promise<ChainMessageMetrics> {
+    public getChainMessageMetrics(param: MetricsApiGetChainMessageMetricsRequest = {}, options?: Configuration): Promise<ChainMessageMetrics> {
         return this.api.getChainMessageMetrics( options).toPromise();
     }
 
@@ -1276,7 +1275,7 @@ export class ObjectMetricsApi {
      * Get chain pipe event metrics.
      * @param param the request object
      */
-    public getChainPipeMetricsWithHttpInfo(param: MetricsApiGetChainPipeMetricsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<ConsensusPipeMetrics>> {
+    public getChainPipeMetricsWithHttpInfo(param: MetricsApiGetChainPipeMetricsRequest = {}, options?: Configuration): Promise<HttpInfo<ConsensusPipeMetrics>> {
         return this.api.getChainPipeMetricsWithHttpInfo( options).toPromise();
     }
 
@@ -1284,7 +1283,7 @@ export class ObjectMetricsApi {
      * Get chain pipe event metrics.
      * @param param the request object
      */
-    public getChainPipeMetrics(param: MetricsApiGetChainPipeMetricsRequest = {}, options?: ConfigurationOptions): Promise<ConsensusPipeMetrics> {
+    public getChainPipeMetrics(param: MetricsApiGetChainPipeMetricsRequest = {}, options?: Configuration): Promise<ConsensusPipeMetrics> {
         return this.api.getChainPipeMetrics( options).toPromise();
     }
 
@@ -1292,7 +1291,7 @@ export class ObjectMetricsApi {
      * Get chain workflow metrics.
      * @param param the request object
      */
-    public getChainWorkflowMetricsWithHttpInfo(param: MetricsApiGetChainWorkflowMetricsRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<ConsensusWorkflowMetrics>> {
+    public getChainWorkflowMetricsWithHttpInfo(param: MetricsApiGetChainWorkflowMetricsRequest = {}, options?: Configuration): Promise<HttpInfo<ConsensusWorkflowMetrics>> {
         return this.api.getChainWorkflowMetricsWithHttpInfo( options).toPromise();
     }
 
@@ -1300,7 +1299,7 @@ export class ObjectMetricsApi {
      * Get chain workflow metrics.
      * @param param the request object
      */
-    public getChainWorkflowMetrics(param: MetricsApiGetChainWorkflowMetricsRequest = {}, options?: ConfigurationOptions): Promise<ConsensusWorkflowMetrics> {
+    public getChainWorkflowMetrics(param: MetricsApiGetChainWorkflowMetricsRequest = {}, options?: Configuration): Promise<ConsensusWorkflowMetrics> {
         return this.api.getChainWorkflowMetrics( options).toPromise();
     }
 
@@ -1382,7 +1381,7 @@ export class ObjectNodeApi {
      * Distrust a peering node
      * @param param the request object
      */
-    public distrustPeerWithHttpInfo(param: NodeApiDistrustPeerRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public distrustPeerWithHttpInfo(param: NodeApiDistrustPeerRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.distrustPeerWithHttpInfo(param.peer,  options).toPromise();
     }
 
@@ -1390,7 +1389,7 @@ export class ObjectNodeApi {
      * Distrust a peering node
      * @param param the request object
      */
-    public distrustPeer(param: NodeApiDistrustPeerRequest, options?: ConfigurationOptions): Promise<void> {
+    public distrustPeer(param: NodeApiDistrustPeerRequest, options?: Configuration): Promise<void> {
         return this.api.distrustPeer(param.peer,  options).toPromise();
     }
 
@@ -1398,7 +1397,7 @@ export class ObjectNodeApi {
      * Generate a new distributed key
      * @param param the request object
      */
-    public generateDKSWithHttpInfo(param: NodeApiGenerateDKSRequest, options?: ConfigurationOptions): Promise<HttpInfo<DKSharesInfo>> {
+    public generateDKSWithHttpInfo(param: NodeApiGenerateDKSRequest, options?: Configuration): Promise<HttpInfo<DKSharesInfo>> {
         return this.api.generateDKSWithHttpInfo(param.dKSharesPostRequest,  options).toPromise();
     }
 
@@ -1406,7 +1405,7 @@ export class ObjectNodeApi {
      * Generate a new distributed key
      * @param param the request object
      */
-    public generateDKS(param: NodeApiGenerateDKSRequest, options?: ConfigurationOptions): Promise<DKSharesInfo> {
+    public generateDKS(param: NodeApiGenerateDKSRequest, options?: Configuration): Promise<DKSharesInfo> {
         return this.api.generateDKS(param.dKSharesPostRequest,  options).toPromise();
     }
 
@@ -1414,7 +1413,7 @@ export class ObjectNodeApi {
      * Get basic information about all configured peers
      * @param param the request object
      */
-    public getAllPeersWithHttpInfo(param: NodeApiGetAllPeersRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<Array<PeeringNodeStatusResponse>>> {
+    public getAllPeersWithHttpInfo(param: NodeApiGetAllPeersRequest = {}, options?: Configuration): Promise<HttpInfo<Array<PeeringNodeStatusResponse>>> {
         return this.api.getAllPeersWithHttpInfo( options).toPromise();
     }
 
@@ -1422,7 +1421,7 @@ export class ObjectNodeApi {
      * Get basic information about all configured peers
      * @param param the request object
      */
-    public getAllPeers(param: NodeApiGetAllPeersRequest = {}, options?: ConfigurationOptions): Promise<Array<PeeringNodeStatusResponse>> {
+    public getAllPeers(param: NodeApiGetAllPeersRequest = {}, options?: Configuration): Promise<Array<PeeringNodeStatusResponse>> {
         return this.api.getAllPeers( options).toPromise();
     }
 
@@ -1430,7 +1429,7 @@ export class ObjectNodeApi {
      * Return the Wasp configuration
      * @param param the request object
      */
-    public getConfigurationWithHttpInfo(param: NodeApiGetConfigurationRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<{ [key: string]: string; }>> {
+    public getConfigurationWithHttpInfo(param: NodeApiGetConfigurationRequest = {}, options?: Configuration): Promise<HttpInfo<{ [key: string]: string; }>> {
         return this.api.getConfigurationWithHttpInfo( options).toPromise();
     }
 
@@ -1438,7 +1437,7 @@ export class ObjectNodeApi {
      * Return the Wasp configuration
      * @param param the request object
      */
-    public getConfiguration(param: NodeApiGetConfigurationRequest = {}, options?: ConfigurationOptions): Promise<{ [key: string]: string; }> {
+    public getConfiguration(param: NodeApiGetConfigurationRequest = {}, options?: Configuration): Promise<{ [key: string]: string; }> {
         return this.api.getConfiguration( options).toPromise();
     }
 
@@ -1446,7 +1445,7 @@ export class ObjectNodeApi {
      * Get information about the shared address DKS configuration
      * @param param the request object
      */
-    public getDKSInfoWithHttpInfo(param: NodeApiGetDKSInfoRequest, options?: ConfigurationOptions): Promise<HttpInfo<DKSharesInfo>> {
+    public getDKSInfoWithHttpInfo(param: NodeApiGetDKSInfoRequest, options?: Configuration): Promise<HttpInfo<DKSharesInfo>> {
         return this.api.getDKSInfoWithHttpInfo(param.sharedAddress,  options).toPromise();
     }
 
@@ -1454,7 +1453,7 @@ export class ObjectNodeApi {
      * Get information about the shared address DKS configuration
      * @param param the request object
      */
-    public getDKSInfo(param: NodeApiGetDKSInfoRequest, options?: ConfigurationOptions): Promise<DKSharesInfo> {
+    public getDKSInfo(param: NodeApiGetDKSInfoRequest, options?: Configuration): Promise<DKSharesInfo> {
         return this.api.getDKSInfo(param.sharedAddress,  options).toPromise();
     }
 
@@ -1462,7 +1461,7 @@ export class ObjectNodeApi {
      * Returns private information about this node.
      * @param param the request object
      */
-    public getInfoWithHttpInfo(param: NodeApiGetInfoRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<InfoResponse>> {
+    public getInfoWithHttpInfo(param: NodeApiGetInfoRequest = {}, options?: Configuration): Promise<HttpInfo<InfoResponse>> {
         return this.api.getInfoWithHttpInfo( options).toPromise();
     }
 
@@ -1470,7 +1469,7 @@ export class ObjectNodeApi {
      * Returns private information about this node.
      * @param param the request object
      */
-    public getInfo(param: NodeApiGetInfoRequest = {}, options?: ConfigurationOptions): Promise<InfoResponse> {
+    public getInfo(param: NodeApiGetInfoRequest = {}, options?: Configuration): Promise<InfoResponse> {
         return this.api.getInfo( options).toPromise();
     }
 
@@ -1478,7 +1477,7 @@ export class ObjectNodeApi {
      * Get basic peer info of the current node
      * @param param the request object
      */
-    public getPeeringIdentityWithHttpInfo(param: NodeApiGetPeeringIdentityRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<PeeringNodeIdentityResponse>> {
+    public getPeeringIdentityWithHttpInfo(param: NodeApiGetPeeringIdentityRequest = {}, options?: Configuration): Promise<HttpInfo<PeeringNodeIdentityResponse>> {
         return this.api.getPeeringIdentityWithHttpInfo( options).toPromise();
     }
 
@@ -1486,7 +1485,7 @@ export class ObjectNodeApi {
      * Get basic peer info of the current node
      * @param param the request object
      */
-    public getPeeringIdentity(param: NodeApiGetPeeringIdentityRequest = {}, options?: ConfigurationOptions): Promise<PeeringNodeIdentityResponse> {
+    public getPeeringIdentity(param: NodeApiGetPeeringIdentityRequest = {}, options?: Configuration): Promise<PeeringNodeIdentityResponse> {
         return this.api.getPeeringIdentity( options).toPromise();
     }
 
@@ -1494,7 +1493,7 @@ export class ObjectNodeApi {
      * Get trusted peers
      * @param param the request object
      */
-    public getTrustedPeersWithHttpInfo(param: NodeApiGetTrustedPeersRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<Array<PeeringNodeIdentityResponse>>> {
+    public getTrustedPeersWithHttpInfo(param: NodeApiGetTrustedPeersRequest = {}, options?: Configuration): Promise<HttpInfo<Array<PeeringNodeIdentityResponse>>> {
         return this.api.getTrustedPeersWithHttpInfo( options).toPromise();
     }
 
@@ -1502,7 +1501,7 @@ export class ObjectNodeApi {
      * Get trusted peers
      * @param param the request object
      */
-    public getTrustedPeers(param: NodeApiGetTrustedPeersRequest = {}, options?: ConfigurationOptions): Promise<Array<PeeringNodeIdentityResponse>> {
+    public getTrustedPeers(param: NodeApiGetTrustedPeersRequest = {}, options?: Configuration): Promise<Array<PeeringNodeIdentityResponse>> {
         return this.api.getTrustedPeers( options).toPromise();
     }
 
@@ -1510,7 +1509,7 @@ export class ObjectNodeApi {
      * Returns the node version.
      * @param param the request object
      */
-    public getVersionWithHttpInfo(param: NodeApiGetVersionRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<VersionResponse>> {
+    public getVersionWithHttpInfo(param: NodeApiGetVersionRequest = {}, options?: Configuration): Promise<HttpInfo<VersionResponse>> {
         return this.api.getVersionWithHttpInfo( options).toPromise();
     }
 
@@ -1518,7 +1517,7 @@ export class ObjectNodeApi {
      * Returns the node version.
      * @param param the request object
      */
-    public getVersion(param: NodeApiGetVersionRequest = {}, options?: ConfigurationOptions): Promise<VersionResponse> {
+    public getVersion(param: NodeApiGetVersionRequest = {}, options?: Configuration): Promise<VersionResponse> {
         return this.api.getVersion( options).toPromise();
     }
 
@@ -1526,7 +1525,7 @@ export class ObjectNodeApi {
      * Gets the node owner
      * @param param the request object
      */
-    public ownerCertificateWithHttpInfo(param: NodeApiOwnerCertificateRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<NodeOwnerCertificateResponse>> {
+    public ownerCertificateWithHttpInfo(param: NodeApiOwnerCertificateRequest = {}, options?: Configuration): Promise<HttpInfo<NodeOwnerCertificateResponse>> {
         return this.api.ownerCertificateWithHttpInfo( options).toPromise();
     }
 
@@ -1534,7 +1533,7 @@ export class ObjectNodeApi {
      * Gets the node owner
      * @param param the request object
      */
-    public ownerCertificate(param: NodeApiOwnerCertificateRequest = {}, options?: ConfigurationOptions): Promise<NodeOwnerCertificateResponse> {
+    public ownerCertificate(param: NodeApiOwnerCertificateRequest = {}, options?: Configuration): Promise<NodeOwnerCertificateResponse> {
         return this.api.ownerCertificate( options).toPromise();
     }
 
@@ -1542,7 +1541,7 @@ export class ObjectNodeApi {
      * Shut down the node
      * @param param the request object
      */
-    public shutdownNodeWithHttpInfo(param: NodeApiShutdownNodeRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public shutdownNodeWithHttpInfo(param: NodeApiShutdownNodeRequest = {}, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.shutdownNodeWithHttpInfo( options).toPromise();
     }
 
@@ -1550,7 +1549,7 @@ export class ObjectNodeApi {
      * Shut down the node
      * @param param the request object
      */
-    public shutdownNode(param: NodeApiShutdownNodeRequest = {}, options?: ConfigurationOptions): Promise<void> {
+    public shutdownNode(param: NodeApiShutdownNodeRequest = {}, options?: Configuration): Promise<void> {
         return this.api.shutdownNode( options).toPromise();
     }
 
@@ -1558,7 +1557,7 @@ export class ObjectNodeApi {
      * Trust a peering node
      * @param param the request object
      */
-    public trustPeerWithHttpInfo(param: NodeApiTrustPeerRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public trustPeerWithHttpInfo(param: NodeApiTrustPeerRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.trustPeerWithHttpInfo(param.peeringTrustRequest,  options).toPromise();
     }
 
@@ -1566,7 +1565,7 @@ export class ObjectNodeApi {
      * Trust a peering node
      * @param param the request object
      */
-    public trustPeer(param: NodeApiTrustPeerRequest, options?: ConfigurationOptions): Promise<void> {
+    public trustPeer(param: NodeApiTrustPeerRequest, options?: Configuration): Promise<void> {
         return this.api.trustPeer(param.peeringTrustRequest,  options).toPromise();
     }
 
@@ -1595,7 +1594,7 @@ export class ObjectRequestsApi {
      * Post an off-ledger request
      * @param param the request object
      */
-    public offLedgerWithHttpInfo(param: RequestsApiOffLedgerRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public offLedgerWithHttpInfo(param: RequestsApiOffLedgerRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.offLedgerWithHttpInfo(param.offLedgerRequest,  options).toPromise();
     }
 
@@ -1603,7 +1602,7 @@ export class ObjectRequestsApi {
      * Post an off-ledger request
      * @param param the request object
      */
-    public offLedger(param: RequestsApiOffLedgerRequest, options?: ConfigurationOptions): Promise<void> {
+    public offLedger(param: RequestsApiOffLedgerRequest, options?: Configuration): Promise<void> {
         return this.api.offLedger(param.offLedgerRequest,  options).toPromise();
     }
 
@@ -1687,7 +1686,7 @@ export class ObjectUsersApi {
      * Add a user
      * @param param the request object
      */
-    public addUserWithHttpInfo(param: UsersApiAddUserRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public addUserWithHttpInfo(param: UsersApiAddUserRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.addUserWithHttpInfo(param.addUserRequest,  options).toPromise();
     }
 
@@ -1695,7 +1694,7 @@ export class ObjectUsersApi {
      * Add a user
      * @param param the request object
      */
-    public addUser(param: UsersApiAddUserRequest, options?: ConfigurationOptions): Promise<void> {
+    public addUser(param: UsersApiAddUserRequest, options?: Configuration): Promise<void> {
         return this.api.addUser(param.addUserRequest,  options).toPromise();
     }
 
@@ -1703,7 +1702,7 @@ export class ObjectUsersApi {
      * Change user password
      * @param param the request object
      */
-    public changeUserPasswordWithHttpInfo(param: UsersApiChangeUserPasswordRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public changeUserPasswordWithHttpInfo(param: UsersApiChangeUserPasswordRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.changeUserPasswordWithHttpInfo(param.username, param.updateUserPasswordRequest,  options).toPromise();
     }
 
@@ -1711,7 +1710,7 @@ export class ObjectUsersApi {
      * Change user password
      * @param param the request object
      */
-    public changeUserPassword(param: UsersApiChangeUserPasswordRequest, options?: ConfigurationOptions): Promise<void> {
+    public changeUserPassword(param: UsersApiChangeUserPasswordRequest, options?: Configuration): Promise<void> {
         return this.api.changeUserPassword(param.username, param.updateUserPasswordRequest,  options).toPromise();
     }
 
@@ -1719,7 +1718,7 @@ export class ObjectUsersApi {
      * Change user permissions
      * @param param the request object
      */
-    public changeUserPermissionsWithHttpInfo(param: UsersApiChangeUserPermissionsRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public changeUserPermissionsWithHttpInfo(param: UsersApiChangeUserPermissionsRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.changeUserPermissionsWithHttpInfo(param.username, param.updateUserPermissionsRequest,  options).toPromise();
     }
 
@@ -1727,7 +1726,7 @@ export class ObjectUsersApi {
      * Change user permissions
      * @param param the request object
      */
-    public changeUserPermissions(param: UsersApiChangeUserPermissionsRequest, options?: ConfigurationOptions): Promise<void> {
+    public changeUserPermissions(param: UsersApiChangeUserPermissionsRequest, options?: Configuration): Promise<void> {
         return this.api.changeUserPermissions(param.username, param.updateUserPermissionsRequest,  options).toPromise();
     }
 
@@ -1735,7 +1734,7 @@ export class ObjectUsersApi {
      * Deletes a user
      * @param param the request object
      */
-    public deleteUserWithHttpInfo(param: UsersApiDeleteUserRequest, options?: ConfigurationOptions): Promise<HttpInfo<void>> {
+    public deleteUserWithHttpInfo(param: UsersApiDeleteUserRequest, options?: Configuration): Promise<HttpInfo<void>> {
         return this.api.deleteUserWithHttpInfo(param.username,  options).toPromise();
     }
 
@@ -1743,7 +1742,7 @@ export class ObjectUsersApi {
      * Deletes a user
      * @param param the request object
      */
-    public deleteUser(param: UsersApiDeleteUserRequest, options?: ConfigurationOptions): Promise<void> {
+    public deleteUser(param: UsersApiDeleteUserRequest, options?: Configuration): Promise<void> {
         return this.api.deleteUser(param.username,  options).toPromise();
     }
 
@@ -1751,7 +1750,7 @@ export class ObjectUsersApi {
      * Get a user
      * @param param the request object
      */
-    public getUserWithHttpInfo(param: UsersApiGetUserRequest, options?: ConfigurationOptions): Promise<HttpInfo<User>> {
+    public getUserWithHttpInfo(param: UsersApiGetUserRequest, options?: Configuration): Promise<HttpInfo<User>> {
         return this.api.getUserWithHttpInfo(param.username,  options).toPromise();
     }
 
@@ -1759,7 +1758,7 @@ export class ObjectUsersApi {
      * Get a user
      * @param param the request object
      */
-    public getUser(param: UsersApiGetUserRequest, options?: ConfigurationOptions): Promise<User> {
+    public getUser(param: UsersApiGetUserRequest, options?: Configuration): Promise<User> {
         return this.api.getUser(param.username,  options).toPromise();
     }
 
@@ -1767,7 +1766,7 @@ export class ObjectUsersApi {
      * Get a list of all users
      * @param param the request object
      */
-    public getUsersWithHttpInfo(param: UsersApiGetUsersRequest = {}, options?: ConfigurationOptions): Promise<HttpInfo<Array<User>>> {
+    public getUsersWithHttpInfo(param: UsersApiGetUsersRequest = {}, options?: Configuration): Promise<HttpInfo<Array<User>>> {
         return this.api.getUsersWithHttpInfo( options).toPromise();
     }
 
@@ -1775,7 +1774,7 @@ export class ObjectUsersApi {
      * Get a list of all users
      * @param param the request object
      */
-    public getUsers(param: UsersApiGetUsersRequest = {}, options?: ConfigurationOptions): Promise<Array<User>> {
+    public getUsers(param: UsersApiGetUsersRequest = {}, options?: Configuration): Promise<Array<User>> {
         return this.api.getUsers( options).toPromise();
     }
 

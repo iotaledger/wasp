@@ -5,14 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **LastMessage** | [**StateAnchor**](StateAnchor.md) |  | 
-**Messages** | **int32** |  | 
+**Messages** | **uint32** |  | 
 **Timestamp** | **time.Time** |  | 
 
 ## Methods
 
 ### NewAnchorMetricItem
 
-`func NewAnchorMetricItem(lastMessage StateAnchor, messages int32, timestamp time.Time, ) *AnchorMetricItem`
+`func NewAnchorMetricItem(lastMessage StateAnchor, messages uint32, timestamp time.Time, ) *AnchorMetricItem`
 
 NewAnchorMetricItem instantiates a new AnchorMetricItem object
 This constructor will assign default values to properties that have it defined,
@@ -49,20 +49,20 @@ SetLastMessage sets LastMessage field to given value.
 
 ### GetMessages
 
-`func (o *AnchorMetricItem) GetMessages() int32`
+`func (o *AnchorMetricItem) GetMessages() uint32`
 
 GetMessages returns the Messages field if non-nil, zero value otherwise.
 
 ### GetMessagesOk
 
-`func (o *AnchorMetricItem) GetMessagesOk() (*int32, bool)`
+`func (o *AnchorMetricItem) GetMessagesOk() (*uint32, bool)`
 
 GetMessagesOk returns a tuple with the Messages field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMessages
 
-`func (o *AnchorMetricItem) SetMessages(v int32)`
+`func (o *AnchorMetricItem) SetMessages(v uint32)`
 
 SetMessages sets Messages field to given value.
 

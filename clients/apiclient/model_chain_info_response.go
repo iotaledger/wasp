@@ -26,7 +26,7 @@ type ChainInfoResponse struct {
 	// ChainID (Hex Address)
 	ChainID string `json:"chainID"`
 	// The EVM chain ID
-	EvmChainId int32 `json:"evmChainId"`
+	EvmChainId uint32 `json:"evmChainId"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
 	GasLimits Limits `json:"gasLimits"`
 	// Whether or not the chain is active
@@ -42,7 +42,7 @@ type _ChainInfoResponse ChainInfoResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId int32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
+func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainAdmin = chainAdmin
 	this.ChainID = chainID
@@ -112,9 +112,9 @@ func (o *ChainInfoResponse) SetChainID(v string) {
 }
 
 // GetEvmChainId returns the EvmChainId field value
-func (o *ChainInfoResponse) GetEvmChainId() int32 {
+func (o *ChainInfoResponse) GetEvmChainId() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -123,7 +123,7 @@ func (o *ChainInfoResponse) GetEvmChainId() int32 {
 
 // GetEvmChainIdOk returns a tuple with the EvmChainId field value
 // and a boolean to check if the value has been set.
-func (o *ChainInfoResponse) GetEvmChainIdOk() (*int32, bool) {
+func (o *ChainInfoResponse) GetEvmChainIdOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -131,7 +131,7 @@ func (o *ChainInfoResponse) GetEvmChainIdOk() (*int32, bool) {
 }
 
 // SetEvmChainId sets field value
-func (o *ChainInfoResponse) SetEvmChainId(v int32) {
+func (o *ChainInfoResponse) SetEvmChainId(v uint32) {
 	o.EvmChainId = v
 }
 

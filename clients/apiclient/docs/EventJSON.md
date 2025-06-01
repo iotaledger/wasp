@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**ContractID** | **int32** | ID of the Contract that issued the event | 
+**ContractID** | **uint32** | ID of the Contract that issued the event | 
 **Payload** | **string** | payload | 
 **Timestamp** | **int64** | timestamp | 
 **Topic** | **string** | topic | 
@@ -13,7 +13,7 @@ Name | Type | Description | Notes
 
 ### NewEventJSON
 
-`func NewEventJSON(contractID int32, payload string, timestamp int64, topic string, ) *EventJSON`
+`func NewEventJSON(contractID uint32, payload string, timestamp int64, topic string, ) *EventJSON`
 
 NewEventJSON instantiates a new EventJSON object
 This constructor will assign default values to properties that have it defined,
@@ -30,20 +30,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetContractID
 
-`func (o *EventJSON) GetContractID() int32`
+`func (o *EventJSON) GetContractID() uint32`
 
 GetContractID returns the ContractID field if non-nil, zero value otherwise.
 
 ### GetContractIDOk
 
-`func (o *EventJSON) GetContractIDOk() (*int32, bool)`
+`func (o *EventJSON) GetContractIDOk() (*uint32, bool)`
 
 GetContractIDOk returns a tuple with the ContractID field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetContractID
 
-`func (o *EventJSON) SetContractID(v int32)`
+`func (o *EventJSON) SetContractID(v uint32)`
 
 SetContractID sets ContractID field to given value.
 

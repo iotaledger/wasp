@@ -24,7 +24,7 @@ type StateAnchor struct {
 	// The raw data of the anchor (Hex)
 	Raw string `json:"raw"`
 	// The state index
-	StateIndex int32 `json:"stateIndex"`
+	StateIndex uint32 `json:"stateIndex"`
 	// The state metadata
 	StateMetadata string `json:"stateMetadata"`
 }
@@ -35,7 +35,7 @@ type _StateAnchor StateAnchor
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStateAnchor(raw string, stateIndex int32, stateMetadata string) *StateAnchor {
+func NewStateAnchor(raw string, stateIndex uint32, stateMetadata string) *StateAnchor {
 	this := StateAnchor{}
 	this.Raw = raw
 	this.StateIndex = stateIndex
@@ -76,9 +76,9 @@ func (o *StateAnchor) SetRaw(v string) {
 }
 
 // GetStateIndex returns the StateIndex field value
-func (o *StateAnchor) GetStateIndex() int32 {
+func (o *StateAnchor) GetStateIndex() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -87,7 +87,7 @@ func (o *StateAnchor) GetStateIndex() int32 {
 
 // GetStateIndexOk returns a tuple with the StateIndex field value
 // and a boolean to check if the value has been set.
-func (o *StateAnchor) GetStateIndexOk() (*int32, bool) {
+func (o *StateAnchor) GetStateIndexOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -95,7 +95,7 @@ func (o *StateAnchor) GetStateIndexOk() (*int32, bool) {
 }
 
 // SetStateIndex sets field value
-func (o *StateAnchor) SetStateIndex(v int32) {
+func (o *StateAnchor) SetStateIndex(v uint32) {
 	o.StateIndex = v
 }
 

@@ -5,14 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **LastMessage** | [**StateTransaction**](StateTransaction.md) |  | 
-**Messages** | **int32** |  | 
+**Messages** | **uint32** |  | 
 **Timestamp** | **time.Time** |  | 
 
 ## Methods
 
 ### NewPublisherStateTransactionItem
 
-`func NewPublisherStateTransactionItem(lastMessage StateTransaction, messages int32, timestamp time.Time, ) *PublisherStateTransactionItem`
+`func NewPublisherStateTransactionItem(lastMessage StateTransaction, messages uint32, timestamp time.Time, ) *PublisherStateTransactionItem`
 
 NewPublisherStateTransactionItem instantiates a new PublisherStateTransactionItem object
 This constructor will assign default values to properties that have it defined,
@@ -49,20 +49,20 @@ SetLastMessage sets LastMessage field to given value.
 
 ### GetMessages
 
-`func (o *PublisherStateTransactionItem) GetMessages() int32`
+`func (o *PublisherStateTransactionItem) GetMessages() uint32`
 
 GetMessages returns the Messages field if non-nil, zero value otherwise.
 
 ### GetMessagesOk
 
-`func (o *PublisherStateTransactionItem) GetMessagesOk() (*int32, bool)`
+`func (o *PublisherStateTransactionItem) GetMessagesOk() (*uint32, bool)`
 
 GetMessagesOk returns a tuple with the Messages field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetMessages
 
-`func (o *PublisherStateTransactionItem) SetMessages(v int32)`
+`func (o *PublisherStateTransactionItem) SetMessages(v uint32)`
 
 SetMessages sets Messages field to given value.
 

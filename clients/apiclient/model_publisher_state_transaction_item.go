@@ -23,7 +23,7 @@ var _ MappedNullable = &PublisherStateTransactionItem{}
 // PublisherStateTransactionItem struct for PublisherStateTransactionItem
 type PublisherStateTransactionItem struct {
 	LastMessage StateTransaction `json:"lastMessage"`
-	Messages int32 `json:"messages"`
+	Messages uint32 `json:"messages"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
@@ -33,7 +33,7 @@ type _PublisherStateTransactionItem PublisherStateTransactionItem
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPublisherStateTransactionItem(lastMessage StateTransaction, messages int32, timestamp time.Time) *PublisherStateTransactionItem {
+func NewPublisherStateTransactionItem(lastMessage StateTransaction, messages uint32, timestamp time.Time) *PublisherStateTransactionItem {
 	this := PublisherStateTransactionItem{}
 	this.LastMessage = lastMessage
 	this.Messages = messages
@@ -74,9 +74,9 @@ func (o *PublisherStateTransactionItem) SetLastMessage(v StateTransaction) {
 }
 
 // GetMessages returns the Messages field value
-func (o *PublisherStateTransactionItem) GetMessages() int32 {
+func (o *PublisherStateTransactionItem) GetMessages() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -85,7 +85,7 @@ func (o *PublisherStateTransactionItem) GetMessages() int32 {
 
 // GetMessagesOk returns a tuple with the Messages field value
 // and a boolean to check if the value has been set.
-func (o *PublisherStateTransactionItem) GetMessagesOk() (*int32, bool) {
+func (o *PublisherStateTransactionItem) GetMessagesOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -93,7 +93,7 @@ func (o *PublisherStateTransactionItem) GetMessagesOk() (*int32, bool) {
 }
 
 // SetMessages sets field value
-func (o *PublisherStateTransactionItem) SetMessages(v int32) {
+func (o *PublisherStateTransactionItem) SetMessages(v uint32) {
 	o.Messages = v
 }
 

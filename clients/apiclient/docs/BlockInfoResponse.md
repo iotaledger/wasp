@@ -4,19 +4,19 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**BlockIndex** | **int32** |  | 
+**BlockIndex** | **uint32** |  | 
 **GasBurned** | **string** | The burned gas (uint64 as string) | 
 **GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
-**NumOffLedgerRequests** | **int32** |  | 
-**NumSuccessfulRequests** | **int32** |  | 
+**NumOffLedgerRequests** | **uint32** |  | 
+**NumSuccessfulRequests** | **uint32** |  | 
 **Timestamp** | **time.Time** |  | 
-**TotalRequests** | **int32** |  | 
+**TotalRequests** | **uint32** |  | 
 
 ## Methods
 
 ### NewBlockInfoResponse
 
-`func NewBlockInfoResponse(blockIndex int32, gasBurned string, gasFeeCharged string, numOffLedgerRequests int32, numSuccessfulRequests int32, timestamp time.Time, totalRequests int32, ) *BlockInfoResponse`
+`func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, timestamp time.Time, totalRequests uint32, ) *BlockInfoResponse`
 
 NewBlockInfoResponse instantiates a new BlockInfoResponse object
 This constructor will assign default values to properties that have it defined,
@@ -33,20 +33,20 @@ but it doesn't guarantee that properties required by API are set
 
 ### GetBlockIndex
 
-`func (o *BlockInfoResponse) GetBlockIndex() int32`
+`func (o *BlockInfoResponse) GetBlockIndex() uint32`
 
 GetBlockIndex returns the BlockIndex field if non-nil, zero value otherwise.
 
 ### GetBlockIndexOk
 
-`func (o *BlockInfoResponse) GetBlockIndexOk() (*int32, bool)`
+`func (o *BlockInfoResponse) GetBlockIndexOk() (*uint32, bool)`
 
 GetBlockIndexOk returns a tuple with the BlockIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetBlockIndex
 
-`func (o *BlockInfoResponse) SetBlockIndex(v int32)`
+`func (o *BlockInfoResponse) SetBlockIndex(v uint32)`
 
 SetBlockIndex sets BlockIndex field to given value.
 
@@ -93,40 +93,40 @@ SetGasFeeCharged sets GasFeeCharged field to given value.
 
 ### GetNumOffLedgerRequests
 
-`func (o *BlockInfoResponse) GetNumOffLedgerRequests() int32`
+`func (o *BlockInfoResponse) GetNumOffLedgerRequests() uint32`
 
 GetNumOffLedgerRequests returns the NumOffLedgerRequests field if non-nil, zero value otherwise.
 
 ### GetNumOffLedgerRequestsOk
 
-`func (o *BlockInfoResponse) GetNumOffLedgerRequestsOk() (*int32, bool)`
+`func (o *BlockInfoResponse) GetNumOffLedgerRequestsOk() (*uint32, bool)`
 
 GetNumOffLedgerRequestsOk returns a tuple with the NumOffLedgerRequests field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNumOffLedgerRequests
 
-`func (o *BlockInfoResponse) SetNumOffLedgerRequests(v int32)`
+`func (o *BlockInfoResponse) SetNumOffLedgerRequests(v uint32)`
 
 SetNumOffLedgerRequests sets NumOffLedgerRequests field to given value.
 
 
 ### GetNumSuccessfulRequests
 
-`func (o *BlockInfoResponse) GetNumSuccessfulRequests() int32`
+`func (o *BlockInfoResponse) GetNumSuccessfulRequests() uint32`
 
 GetNumSuccessfulRequests returns the NumSuccessfulRequests field if non-nil, zero value otherwise.
 
 ### GetNumSuccessfulRequestsOk
 
-`func (o *BlockInfoResponse) GetNumSuccessfulRequestsOk() (*int32, bool)`
+`func (o *BlockInfoResponse) GetNumSuccessfulRequestsOk() (*uint32, bool)`
 
 GetNumSuccessfulRequestsOk returns a tuple with the NumSuccessfulRequests field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetNumSuccessfulRequests
 
-`func (o *BlockInfoResponse) SetNumSuccessfulRequests(v int32)`
+`func (o *BlockInfoResponse) SetNumSuccessfulRequests(v uint32)`
 
 SetNumSuccessfulRequests sets NumSuccessfulRequests field to given value.
 
@@ -153,20 +153,20 @@ SetTimestamp sets Timestamp field to given value.
 
 ### GetTotalRequests
 
-`func (o *BlockInfoResponse) GetTotalRequests() int32`
+`func (o *BlockInfoResponse) GetTotalRequests() uint32`
 
 GetTotalRequests returns the TotalRequests field if non-nil, zero value otherwise.
 
 ### GetTotalRequestsOk
 
-`func (o *BlockInfoResponse) GetTotalRequestsOk() (*int32, bool)`
+`func (o *BlockInfoResponse) GetTotalRequestsOk() (*uint32, bool)`
 
 GetTotalRequestsOk returns a tuple with the TotalRequests field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetTotalRequests
 
-`func (o *BlockInfoResponse) SetTotalRequests(v int32)`
+`func (o *BlockInfoResponse) SetTotalRequests(v uint32)`
 
 SetTotalRequests sets TotalRequests field to given value.
 

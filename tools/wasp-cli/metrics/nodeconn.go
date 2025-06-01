@@ -38,11 +38,11 @@ func initNodeconnMetricsCmd() *cobra.Command {
 	return cmd
 }
 
-func mapMetricItem(messages int32, timestamp time.Time, message string) *apiclient.InterfaceMetricItem {
+func mapMetricItem(messages uint32, timestamp time.Time, message string) *apiclient.InterfaceMetricItem {
 	return &apiclient.InterfaceMetricItem{
 		Timestamp:   timestamp,
 		LastMessage: message,
-		Messages:    uint32(messages),
+		Messages:    messages,
 	}
 }
 

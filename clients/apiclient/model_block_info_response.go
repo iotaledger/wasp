@@ -22,15 +22,15 @@ var _ MappedNullable = &BlockInfoResponse{}
 
 // BlockInfoResponse struct for BlockInfoResponse
 type BlockInfoResponse struct {
-	BlockIndex int32 `json:"blockIndex"`
+	BlockIndex uint32 `json:"blockIndex"`
 	// The burned gas (uint64 as string)
 	GasBurned string `json:"gasBurned"`
 	// The charged gas fee (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
-	NumOffLedgerRequests int32 `json:"numOffLedgerRequests"`
-	NumSuccessfulRequests int32 `json:"numSuccessfulRequests"`
+	NumOffLedgerRequests uint32 `json:"numOffLedgerRequests"`
+	NumSuccessfulRequests uint32 `json:"numSuccessfulRequests"`
 	Timestamp time.Time `json:"timestamp"`
-	TotalRequests int32 `json:"totalRequests"`
+	TotalRequests uint32 `json:"totalRequests"`
 }
 
 type _BlockInfoResponse BlockInfoResponse
@@ -39,7 +39,7 @@ type _BlockInfoResponse BlockInfoResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBlockInfoResponse(blockIndex int32, gasBurned string, gasFeeCharged string, numOffLedgerRequests int32, numSuccessfulRequests int32, timestamp time.Time, totalRequests int32) *BlockInfoResponse {
+func NewBlockInfoResponse(blockIndex uint32, gasBurned string, gasFeeCharged string, numOffLedgerRequests uint32, numSuccessfulRequests uint32, timestamp time.Time, totalRequests uint32) *BlockInfoResponse {
 	this := BlockInfoResponse{}
 	this.BlockIndex = blockIndex
 	this.GasBurned = gasBurned
@@ -60,9 +60,9 @@ func NewBlockInfoResponseWithDefaults() *BlockInfoResponse {
 }
 
 // GetBlockIndex returns the BlockIndex field value
-func (o *BlockInfoResponse) GetBlockIndex() int32 {
+func (o *BlockInfoResponse) GetBlockIndex() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -71,7 +71,7 @@ func (o *BlockInfoResponse) GetBlockIndex() int32 {
 
 // GetBlockIndexOk returns a tuple with the BlockIndex field value
 // and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetBlockIndexOk() (*int32, bool) {
+func (o *BlockInfoResponse) GetBlockIndexOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -79,7 +79,7 @@ func (o *BlockInfoResponse) GetBlockIndexOk() (*int32, bool) {
 }
 
 // SetBlockIndex sets field value
-func (o *BlockInfoResponse) SetBlockIndex(v int32) {
+func (o *BlockInfoResponse) SetBlockIndex(v uint32) {
 	o.BlockIndex = v
 }
 
@@ -132,9 +132,9 @@ func (o *BlockInfoResponse) SetGasFeeCharged(v string) {
 }
 
 // GetNumOffLedgerRequests returns the NumOffLedgerRequests field value
-func (o *BlockInfoResponse) GetNumOffLedgerRequests() int32 {
+func (o *BlockInfoResponse) GetNumOffLedgerRequests() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -143,7 +143,7 @@ func (o *BlockInfoResponse) GetNumOffLedgerRequests() int32 {
 
 // GetNumOffLedgerRequestsOk returns a tuple with the NumOffLedgerRequests field value
 // and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetNumOffLedgerRequestsOk() (*int32, bool) {
+func (o *BlockInfoResponse) GetNumOffLedgerRequestsOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -151,14 +151,14 @@ func (o *BlockInfoResponse) GetNumOffLedgerRequestsOk() (*int32, bool) {
 }
 
 // SetNumOffLedgerRequests sets field value
-func (o *BlockInfoResponse) SetNumOffLedgerRequests(v int32) {
+func (o *BlockInfoResponse) SetNumOffLedgerRequests(v uint32) {
 	o.NumOffLedgerRequests = v
 }
 
 // GetNumSuccessfulRequests returns the NumSuccessfulRequests field value
-func (o *BlockInfoResponse) GetNumSuccessfulRequests() int32 {
+func (o *BlockInfoResponse) GetNumSuccessfulRequests() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -167,7 +167,7 @@ func (o *BlockInfoResponse) GetNumSuccessfulRequests() int32 {
 
 // GetNumSuccessfulRequestsOk returns a tuple with the NumSuccessfulRequests field value
 // and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetNumSuccessfulRequestsOk() (*int32, bool) {
+func (o *BlockInfoResponse) GetNumSuccessfulRequestsOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -175,7 +175,7 @@ func (o *BlockInfoResponse) GetNumSuccessfulRequestsOk() (*int32, bool) {
 }
 
 // SetNumSuccessfulRequests sets field value
-func (o *BlockInfoResponse) SetNumSuccessfulRequests(v int32) {
+func (o *BlockInfoResponse) SetNumSuccessfulRequests(v uint32) {
 	o.NumSuccessfulRequests = v
 }
 
@@ -204,9 +204,9 @@ func (o *BlockInfoResponse) SetTimestamp(v time.Time) {
 }
 
 // GetTotalRequests returns the TotalRequests field value
-func (o *BlockInfoResponse) GetTotalRequests() int32 {
+func (o *BlockInfoResponse) GetTotalRequests() uint32 {
 	if o == nil {
-		var ret int32
+		var ret uint32
 		return ret
 	}
 
@@ -215,7 +215,7 @@ func (o *BlockInfoResponse) GetTotalRequests() int32 {
 
 // GetTotalRequestsOk returns a tuple with the TotalRequests field value
 // and a boolean to check if the value has been set.
-func (o *BlockInfoResponse) GetTotalRequestsOk() (*int32, bool) {
+func (o *BlockInfoResponse) GetTotalRequestsOk() (*uint32, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -223,7 +223,7 @@ func (o *BlockInfoResponse) GetTotalRequestsOk() (*int32, bool) {
 }
 
 // SetTotalRequests sets field value
-func (o *BlockInfoResponse) SetTotalRequests(v int32) {
+func (o *BlockInfoResponse) SetTotalRequests(v uint32) {
 	o.TotalRequests = v
 }
 

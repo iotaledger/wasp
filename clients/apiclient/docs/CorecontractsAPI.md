@@ -248,7 +248,7 @@ import (
 )
 
 func main() {
-	blockIndex := int32(56) // int32 | BlockIndex (uint32)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
@@ -269,7 +269,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**blockIndex** | **int32** | BlockIndex (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -382,7 +382,7 @@ import (
 )
 
 func main() {
-	blockIndex := int32(56) // int32 | BlockIndex (uint32)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
@@ -403,7 +403,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**blockIndex** | **int32** | BlockIndex (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -650,7 +650,7 @@ import (
 )
 
 func main() {
-	blockIndex := int32(56) // int32 | BlockIndex (uint32)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
@@ -671,7 +671,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**blockIndex** | **int32** | BlockIndex (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -924,7 +924,7 @@ import (
 )
 
 func main() {
-	blockIndex := int32(56) // int32 | BlockIndex (uint32)
+	blockIndex := uint32(56) // uint32 | BlockIndex (uint32)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
@@ -945,7 +945,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**blockIndex** | **int32** | BlockIndex (uint32) | 
+**blockIndex** | **uint32** | BlockIndex (uint32) | 
 
 ### Other Parameters
 
@@ -1060,7 +1060,7 @@ import (
 func main() {
 	chainID := "chainID_example" // string | ChainID (Hex Address)
 	contractHname := "contractHname_example" // string | Contract (Hname as Hex)
-	errorID := int32(56) // int32 | Error Id (uint16)
+	errorID := uint32(56) // uint32 | Error Id (uint16)
 	block := "block_example" // string | Block index or trie root (optional)
 
 	configuration := openapiclient.NewConfiguration()
@@ -1083,7 +1083,7 @@ Name | Type | Description  | Notes
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
 **chainID** | **string** | ChainID (Hex Address) | 
 **contractHname** | **string** | Contract (Hname as Hex) | 
-**errorID** | **int32** | Error Id (uint16) | 
+**errorID** | **uint32** | Error Id (uint16) | 
 
 ### Other Parameters
 

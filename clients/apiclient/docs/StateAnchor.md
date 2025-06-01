@@ -5,14 +5,14 @@
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **Raw** | **string** | The raw data of the anchor (Hex) | 
-**StateIndex** | **int32** | The state index | 
+**StateIndex** | **uint32** | The state index | 
 **StateMetadata** | **string** | The state metadata | 
 
 ## Methods
 
 ### NewStateAnchor
 
-`func NewStateAnchor(raw string, stateIndex int32, stateMetadata string, ) *StateAnchor`
+`func NewStateAnchor(raw string, stateIndex uint32, stateMetadata string, ) *StateAnchor`
 
 NewStateAnchor instantiates a new StateAnchor object
 This constructor will assign default values to properties that have it defined,
@@ -49,20 +49,20 @@ SetRaw sets Raw field to given value.
 
 ### GetStateIndex
 
-`func (o *StateAnchor) GetStateIndex() int32`
+`func (o *StateAnchor) GetStateIndex() uint32`
 
 GetStateIndex returns the StateIndex field if non-nil, zero value otherwise.
 
 ### GetStateIndexOk
 
-`func (o *StateAnchor) GetStateIndexOk() (*int32, bool)`
+`func (o *StateAnchor) GetStateIndexOk() (*uint32, bool)`
 
 GetStateIndexOk returns a tuple with the StateIndex field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetStateIndex
 
-`func (o *StateAnchor) SetStateIndex(v int32)`
+`func (o *StateAnchor) SetStateIndex(v uint32)`
 
 SetStateIndex sets StateIndex field to given value.
 
