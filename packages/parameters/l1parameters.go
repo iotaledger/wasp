@@ -1,3 +1,4 @@
+// Package parameters provides configuration parameters for L1 and other components of the system.
 package parameters
 
 import (

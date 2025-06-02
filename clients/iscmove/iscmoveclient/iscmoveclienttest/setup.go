@@ -1,3 +1,4 @@
+// Package iscmoveclienttest provides testing utilities for the ISC move client.
 package iscmoveclienttest
 
 import (
@@ -29,7 +30,7 @@ func NewRandomSignerWithFunds(t *testing.T, index int) cryptolib.Signer {
 }
 
 func NewWebSocketClient(ctx context.Context, log log.Logger) (*iscmoveclient.Client, error) {
-	if l1starter.IsLocalConfigured() {
+	if l1starter.IsLocalConfigured() { //nolint:contextcheck
 		panic("Right now no WS support")
 	}
 

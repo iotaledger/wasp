@@ -95,7 +95,7 @@ func (c *Client) PostRequest(
 	return c.postSingleRequest(ctx, msg, param)
 }
 
-// PostNRequest sends n consecutive on-ledger transactions with one request on each, to the chain
+// PostMultipleRequests sends requestsCount consecutive on-ledger transactions with one request on each, to the chain
 func (c *Client) PostMultipleRequests(
 	ctx context.Context,
 	msg isc.Message,

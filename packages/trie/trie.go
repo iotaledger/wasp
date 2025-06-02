@@ -63,7 +63,7 @@ func (tr *TrieReader) setRoot(h Hash) (*NodeData, error) {
 
 // SetRoot overloaded for updatable trie
 func (tr *TrieUpdatable) SetRoot(h Hash) error {
-	rootNodeData, err := tr.TrieReader.setRoot(h)
+	rootNodeData, err := tr.setRoot(h)
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -26,14 +27,14 @@ type ChainBackend interface {
 		anchor *isc.StateAnchor,
 		blockTime time.Time,
 		iscRequestsInBlock []isc.Request,
+		enforceGasBurned []vm.EnforceGasBurned,
 		tracer *tracers.Tracer,
 		l1Params *parameters.L1Params,
 	) error
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID
 	ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error)
-	ISCLatestAnchor() (*isc.StateAnchor, error)
-	ISCLatestState() (state.State, error)
+	ISCLatestState() (*isc.StateAnchor, state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
 	TakeSnapshot() (int, error)

@@ -1,11 +1,15 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package domain provides domain-specific functionality for peer-to-peer communication.
 package domain
 
 import (
 	"context"
+	"fmt"
 	"sync"
+
+	"fortio.org/safecast"
 
 	"github.com/iotaledger/hive.go/log"
 
@@ -147,7 +151,11 @@ func (d *DomainImpl) initPermPubKeys() {
 		}
 	}
 	var err error
-	d.permutation, err = util.NewPermutation16(uint16(len(d.permPubKeys)))
+	permLen, convErr := safecast.Convert[uint16](len(d.permPubKeys))
+	if convErr != nil {
+		panic(fmt.Sprintf("Error converting permPubKeys length: %v", convErr))
+	}
+	d.permutation, err = util.NewPermutation16(permLen)
 	if err != nil {
 		d.log.LogWarnf("Error generating cryptographically secure random domains permutation: %v", err)
 	}

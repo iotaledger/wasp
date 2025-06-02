@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// l1starter allows starting and stopping the iota validator tool
+// Package l1starter allows starting and stopping the iota validator tool
 // for testing purposes.
 package l1starter
 
@@ -105,10 +105,10 @@ func TestMain(m *testing.M) {
 		instance.Store(&node)
 	}
 
-	rebasedExplorerUrl := "https://explorer.rebased.iota.org"
-	explorerUrl := rebasedExplorerUrl + "?network=" + url.QueryEscape(node.APIURL())
+	rebasedExplorerURL := "https://explorer.rebased.iota.org"
+	explorerURL := rebasedExplorerURL + "?network=" + url.QueryEscape(node.APIURL())
 	fmt.Printf("L1Starter initialized. \nAPI URL: %s\nFaucet URL: %s\nExplorer URL:%s\n"+
-		"(To use local nodes in the Explorer, it is required to disable CORS via an extension or command flags)\n", node.APIURL(), node.FaucetURL(), explorerUrl)
+		"(To use local nodes in the Explorer, it is required to disable CORS via an extension or command flags)\n", node.APIURL(), node.FaucetURL(), explorerURL)
 
 	m.Run()
 }
@@ -122,10 +122,13 @@ func ClusterStart(config L1EndpointConfig) IotaNodeEndpoint {
 		instance.Store(&iotaNodeEndpoint)
 	} else {
 		node, cancel := StartNode(context.Background())
+		_ = node // TODO: handle clean up properly
+		_ = cancel
 		panic("handle clean up properly")
-		defer cancel()
+		/* defer cancel()
 
 		instance.Store(&node)
+		*/
 	}
 
 	return *instance.Load()
@@ -141,6 +144,6 @@ func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 	in.start(ctx)
 
 	return in, func() {
-		in.stop()
+		in.stop(ctx)
 	}
 }

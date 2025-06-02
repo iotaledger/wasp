@@ -1,3 +1,6 @@
+// Package subrealm provides functionality for working with isolated subsets
+// of the key-value store. It enables creation of distinct realms within a
+// single KV store, allowing for better organization and isolation of data.
 package subrealm
 
 import (

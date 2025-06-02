@@ -55,15 +55,10 @@ func (ch *Chain) L2LedgerString() string {
 
 // L2Assets return all tokens contained in the on-chain account controlled by the 'agentID'
 func (ch *Chain) L2Assets(agentID isc.AgentID) *isc.Assets {
-	cb := ch.L2AssetsAtStateIndex(agentID, ch.LatestBlockIndex())
-
-	assets := isc.NewEmptyAssets()
-	assets.Coins = cb
-
-	return assets
+	return ch.L2AssetsAtStateIndex(agentID, ch.LatestBlockIndex())
 }
 
-func (ch *Chain) L2AssetsAtStateIndex(agentID isc.AgentID, stateIndex uint32) isc.CoinBalances {
+func (ch *Chain) L2AssetsAtStateIndex(agentID isc.AgentID, stateIndex uint32) *isc.Assets {
 	chainState, err := ch.store.StateByIndex(stateIndex)
 	require.NoError(ch.Env.T, err)
 
@@ -109,12 +104,7 @@ func (ch *Chain) L2CommonAccountNativeTokens(coinType coin.Type) coin.Value {
 func (ch *Chain) L2TotalAssets() *isc.Assets {
 	r, err := ch.CallView(accounts.ViewTotalAssets.Message())
 	require.NoError(ch.Env.T, err)
-	coins := lo.Must(accounts.ViewTotalAssets.DecodeOutput(r))
-
-	assets := isc.NewEmptyAssets()
-	assets.Coins = coins
-
-	return assets
+	return lo.Must(accounts.ViewTotalAssets.DecodeOutput(r))
 }
 
 // L2TotalBaseTokens return total sum of base tokens in L2 (all accounts)

@@ -22,7 +22,7 @@ func adaptDecimals(value *big.Int, fromDecimals, toDecimals uint8) (result *big.
 	return
 }
 
-// wei => base tokens
+// EthereumDecimalsToBaseTokenDecimals converts from wei (ethereum) to base tokens.
 func EthereumDecimalsToBaseTokenDecimals(value *big.Int, baseTokenDecimals uint8) (result coin.Value, remainder *big.Int) {
 	if baseTokenDecimals > ethereumDecimals {
 		panic("expected baseTokenDecimals <= ethereumDecimals")
@@ -42,7 +42,7 @@ func MustEthereumDecimalsToBaseTokenDecimalsExact(value *big.Int, baseTokenDecim
 	return r
 }
 
-// base tokens => wei
+// BaseTokensDecimalsToEthereumDecimals converts from base tokens to wei (ethereum).
 func BaseTokensDecimalsToEthereumDecimals(value coin.Value, baseTokenDecimals uint8) (result *big.Int) {
 	if baseTokenDecimals > ethereumDecimals {
 		panic("expected baseTokenDecimals <= ethereumDecimals")

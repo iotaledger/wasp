@@ -52,11 +52,13 @@ func NewAnchorTransactionBuilder(
 
 func (txb *AnchorTransactionBuilder) Clone() TransactionBuilder {
 	return &AnchorTransactionBuilder{
-		anchor:     txb.anchor,
-		iscPackage: txb.iscPackage,
-		consumed:   slices.Clone(txb.consumed),
-		ptb:        txb.ptb.Clone(),
-		ownerAddr:  txb.ownerAddr,
+		anchor:       txb.anchor,
+		iscPackage:   txb.iscPackage,
+		consumed:     slices.Clone(txb.consumed),
+		ptb:          txb.ptb.Clone(),
+		ownerAddr:    txb.ownerAddr,
+		sent:         slices.Clone(txb.sent),
+		rotateToAddr: txb.rotateToAddr,
 	}
 }
 

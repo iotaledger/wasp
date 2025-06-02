@@ -27,11 +27,11 @@ func NewRandomAddress() *Address {
 	data := make([]byte, AddressSize)
 	_, err := rand.Read(data)
 	if err != nil {
-		panic(fmt.Errorf("Failed to read random data, %s", err))
+		panic(fmt.Errorf("failed to read random data, %s", err))
 	}
 	address, err := NewAddressFromBytes(data)
 	if err != nil {
-		panic(fmt.Errorf("Failed to create random address, %s", err))
+		panic(fmt.Errorf("failed to create random address, %s", err))
 	}
 	return address
 }
@@ -43,7 +43,7 @@ func newAddressFromArray(addr [AddressSize]byte) *Address {
 
 func NewAddressFromBytes(addr []byte) (*Address, error) {
 	if len(addr) != AddressSize {
-		return nil, fmt.Errorf("Array of size %v expected, size %v received", AddressSize, len(addr))
+		return nil, fmt.Errorf("array of size %v expected, size %v received", AddressSize, len(addr))
 	}
 	result := &Address{}
 	copy(result[:], addr)

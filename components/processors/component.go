@@ -1,3 +1,4 @@
+// Package processors provides data processing functionality for the application.
 package processors
 
 import (

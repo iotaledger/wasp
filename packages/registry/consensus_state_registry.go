@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/onchangemap"
@@ -57,7 +57,7 @@ func (c *comparableChainCommitteeID) String() string {
 type consensusState struct {
 	identifier *comparableChainCommitteeID
 
-	LogIndex cmt_log.LogIndex
+	LogIndex cmtlog.LogIndex
 }
 
 func (c *consensusState) ID() *comparableChainCommitteeID {
@@ -113,7 +113,7 @@ func (c *consensusState) UnmarshalJSON(bytes []byte) error {
 
 	*c = consensusState{
 		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
-		LogIndex:   cmt_log.LogIndex(j.LogIndex),
+		LogIndex:   cmtlog.LogIndex(j.LogIndex),
 	}
 
 	return nil
@@ -125,7 +125,7 @@ type ConsensusStateRegistry struct {
 	folderPath string
 }
 
-var _ cmt_log.ConsensusStateRegistry = &ConsensusStateRegistry{}
+var _ cmtlog.ConsensusStateRegistry = &ConsensusStateRegistry{}
 
 // NewConsensusStateRegistry creates new instance of the consensus state registry implementation.
 func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, error) {
@@ -154,7 +154,6 @@ func NewConsensusStateRegistry(folderPath string) (*ConsensusStateRegistry, erro
 	return registry, nil
 }
 
-//nolint:gocyclo,funlen
 func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 	if p.folderPath == "" {
 		// do not load entries if no path is given
@@ -167,7 +166,7 @@ func (p *ConsensusStateRegistry) loadConsensusStateJSONsFromFolder() error {
 			return nil
 		}
 
-		committeeAddressHex := strings.Replace(subFolderFile.Name(), ".json", "", -1)
+		committeeAddressHex := strings.ReplaceAll(subFolderFile.Name(), ".json", "")
 		committeeAddress, err := cryptolib.NewAddressFromHexString(committeeAddressHex)
 		if err != nil {
 			return fmt.Errorf("unable to parse committee hex address (%s), error: %w", committeeAddressHex, err)
@@ -293,14 +292,14 @@ func (p *ConsensusStateRegistry) deleteConsensusStateJSON(state *consensusState)
 	return nil
 }
 
-// Can return cmtLog.ErrCmtLogStateNotFound.
-func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*cmt_log.State, error) {
+// Get retrieves the consensus state for the given key. Can return cmtLog.ErrCmtLogStateNotFound.
+func (p *ConsensusStateRegistry) Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*cmtlog.State, error) {
 	state, err := p.onChangeMap.Get(newComparableChainCommitteeID(chainID, committeeAddress))
 	if err != nil {
-		return nil, cmt_log.ErrCmtLogStateNotFound
+		return nil, cmtlog.ErrCmtLogStateNotFound
 	}
 
-	return &cmt_log.State{
+	return &cmtlog.State{
 		LogIndex: state.LogIndex,
 	}, nil
 }
@@ -323,7 +322,7 @@ func (p *ConsensusStateRegistry) add(state *consensusState) error {
 	return nil
 }
 
-func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *cmt_log.State) error {
+func (p *ConsensusStateRegistry) Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *cmtlog.State) error {
 	return p.add(&consensusState{
 		identifier: newComparableChainCommitteeID(chainID, committeeAddress),
 		LogIndex:   state.LogIndex,

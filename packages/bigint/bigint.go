@@ -1,3 +1,4 @@
+// Package bigint provides utilities for working with large integers.
 package bigint
 
 import "math/big"

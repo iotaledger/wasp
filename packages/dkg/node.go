@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"go.dedis.ch/kyber/v3/suites"
@@ -22,7 +23,7 @@ import (
 	"github.com/iotaledger/wasp/packages/registry"
 	"github.com/iotaledger/wasp/packages/tcrypto"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/byz_quorum"
+	"github.com/iotaledger/wasp/packages/util/byzquorum"
 )
 
 type NodeProvider func() *Node
@@ -45,7 +46,7 @@ type Node struct {
 	log                     log.Logger
 }
 
-// Init creates new node, that can participate in the DKG procedure.
+// NewNode creates new node, that can participate in the DKG procedure.
 // The node then can run several DKG procedures.
 func NewNode(
 	identity *cryptolib.KeyPair,
@@ -113,14 +114,21 @@ func (n *Node) GenerateDistributedKey(
 ) (tcrypto.DKShare, error) {
 	n.log.LogInfof("Starting new DKG procedure, initiator=%v, peers=%+v", n.netProvider.Self().PeeringURL(), peerPubs)
 	var err error
-	peerCount := uint16(len(peerPubs))
+	peerCount, err := safecast.Convert[uint16](len(peerPubs))
+	if err != nil {
+		return nil, invalidParams(fmt.Errorf("peerPubs length overflows uint16: %d", len(peerPubs)))
+	}
 	//
 	// Some validation for the parameters.
 	if peerCount < 1 || threshold < 1 || threshold > peerCount {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: N = %d, T = %d", peerCount, threshold))
 	}
 
-	if threshold < uint16(byz_quorum.MinQuorum(int(peerCount))) {
+	minQuorum, err := safecast.Convert[uint16](byzquorum.MinQuorum(len(peerPubs)))
+	if err != nil {
+		return nil, invalidParams(fmt.Errorf("peerPubs length overflows uint16: %d", len(peerPubs)))
+	}
+	if threshold < minQuorum {
 		return nil, invalidParams(fmt.Errorf("wrong DKG parameters: for N = %d value T must be at least %d", peerCount, peerCount/2+1))
 	}
 	//
@@ -244,6 +252,10 @@ func (n *Node) GenerateDistributedKey(
 	); err != nil {
 		return nil, err
 	}
+	derivedThreshold, err := safecast.Convert[uint16](deriveBlsThreshold(&initiatorInitMsg{peerPubs: peerPubs}))
+	if err != nil {
+		return nil, errors.New("bls threshold overflows uint16")
+	}
 	dkShare := tcrypto.NewDKSharePublic(
 		sharedAddress,
 		peerCount,
@@ -254,7 +266,7 @@ func (n *Node) GenerateDistributedKey(
 		edSharedPublic,
 		edPublicShares,
 		n.blsSuite,
-		uint16(deriveBlsThreshold(&initiatorInitMsg{peerPubs: peerPubs})), // TODO: Fix it.
+		derivedThreshold,
 		blsSharedPublic,
 		blsPublicShares,
 	)

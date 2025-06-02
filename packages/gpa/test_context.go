@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-// Imitates a cluster of nodes and the medium performing the message exchange.
+// TestContext imitates a cluster of nodes and the medium performing the message exchange.
 // Inputs are processes in-order for each node individually.
 type TestContext struct {
 	nodes           map[NodeID]GPA                     // Nodes to test.
@@ -54,7 +54,7 @@ func (tc *TestContext) MsgCounts() (int, int) {
 	return tc.msgsSent, tc.msgsRecv
 }
 
-// Will add new inputs to the existing set.
+// AddInputs adds new inputs to the existing set.
 // The inputs will be overridden, if exist for the same nodes.
 func (tc *TestContext) AddInputs(inputs map[NodeID]Input) {
 	for nid := range inputs {
@@ -234,7 +234,7 @@ func (tc *TestContext) RunAll() {
 	tc.RunUntil(tc.OutOfMessagesPredicate())
 }
 
-// Returns a number of non-nil outputs.
+// NumberOfOutputs returns a number of non-nil outputs.
 func (tc *TestContext) NumberOfOutputs() int {
 	outNum := 0
 	for _, node := range tc.nodes {
@@ -245,14 +245,14 @@ func (tc *TestContext) NumberOfOutputs() int {
 	return outNum
 }
 
-// Will run until there will be at least outNum of non-nil outputs generated.
+// NumberOfOutputsPredicate runs until there will be at least outNum of non-nil outputs generated.
 func (tc *TestContext) NumberOfOutputsPredicate(outNum int) func() bool {
 	return func() bool {
 		return tc.NumberOfOutputs() >= outNum
 	}
 }
 
-// Will run until all the messages will be processed.
+// OutOfMessagesPredicate runs until all the messages will be processed.
 func (tc *TestContext) OutOfMessagesPredicate() func() bool {
 	return func() bool { return false }
 }

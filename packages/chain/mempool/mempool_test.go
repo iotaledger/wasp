@@ -19,7 +19,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/packages/chain"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -623,7 +623,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
 		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		origin.InitChainByAnchor(te.stores[i], te.anchor, originDepositVal, parameterstest.L1Mock)
+		origin.InitChainByStateMetadataBytes(te.stores[i], te.anchor.GetStateMetadata(), originDepositVal, parameterstest.L1Mock)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())
 		te.mempools[i] = mempool.New(

@@ -10,14 +10,14 @@ import (
 )
 
 func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
-	anchor, err := ch.LatestAnchor(chain.ConfirmedState)
+	state, err := ch.LatestState(chain.ConfirmedState)
 	if err != nil {
 		return nil, err
 	}
 
 	committeeAddr := ch.GetCommitteeInfo().Address
 
-	admin, err := GetChainAdmin(ch, fmt.Sprintf("%d", anchor.GetStateIndex()))
+	admin, err := GetChainAdmin(ch, fmt.Sprintf("%d", state.BlockIndex()))
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func GetControlAddresses(ch chain.Chain) (*isc.ControlAddresses, error) {
 	return &isc.ControlAddresses{
 		AnchorOwner:     committeeAddr,
 		ChainAdmin:      admin,
-		SinceBlockIndex: anchor.GetStateIndex(),
+		SinceBlockIndex: state.BlockIndex(),
 	}, nil
 }
 

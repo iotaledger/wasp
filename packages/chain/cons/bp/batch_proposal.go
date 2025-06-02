@@ -54,7 +54,7 @@ func (b *BatchProposal) Bytes() []byte {
 	return bcs.MustMarshal(b)
 }
 
-// If a proposal is ⊥, it will not contain request refs nor base AO.
+// IsVoid returns true if a proposal is ⊥, in which case it will not contain request refs nor base AO.
 // Other fields are required to help other participants to sign a TX, if such is produced from other node's inputs.
 func (b *BatchProposal) IsVoid() bool {
 	return b.baseAliasOutput == nil

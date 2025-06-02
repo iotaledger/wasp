@@ -18,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/util"
 )
 
+// SecretShare represents a share of a secret in a threshold scheme.
 // It also covers the dss.SecretShare.
 type SecretShare interface {
 	PriShare() *share.PriShare

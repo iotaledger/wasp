@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-// Check, if peeringURL is of proper format.
+// CheckPeeringURL verifies if peeringURL is of proper format.
 func CheckPeeringURL(url string) error {
 	sHost, sPort, err := net.SplitHostPort(url)
 	if err != nil {

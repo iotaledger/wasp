@@ -1,3 +1,6 @@
+// Package decode provides utilities for decoding various data formats
+// used in the IOTA smart contract ecosystem, including metadata, gas policies,
+// and transaction outputs.
 package decode
 
 import (
@@ -8,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	wasputil "github.com/iotaledger/wasp/packages/util"
@@ -63,7 +66,7 @@ func initDecodeWALCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Reading WAL file '%s'\n", args[0])
 
-			block, err := sm_gpa_utils.BlockFromFilePath(args[0])
+			block, err := utils.BlockFromFilePath(args[0])
 			log.Check(err)
 
 			fmt.Printf("Block Number: %v\n", block.StateIndex())

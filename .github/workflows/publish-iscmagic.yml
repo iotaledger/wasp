@@ -1,15 +1,15 @@
 name: Publish @iota/iscmagic
 
 on:
-#  workflow_dispatch:
-#  workflow_call:
-#    inputs:
-#      version:
-#        required: true
-#        type: string
-#    secrets:
-#      NPM_TOKEN:
-#        required: true
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+    secrets:
+      NPM_TOKEN:
+        required: true
 
 jobs:
   publish:

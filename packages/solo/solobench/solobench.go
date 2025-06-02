@@ -1,4 +1,4 @@
-// package solobench provides tools to benchmark contracts running under solo
+// Package solobench provides tools to benchmark contracts running under solo
 package solobench
 
 import (

@@ -1,3 +1,4 @@
+// Package profilingrecorder provides functionality for recording and analyzing performance metrics.
 package profilingrecorder
 
 import (

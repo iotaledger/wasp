@@ -86,8 +86,8 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 		req := solo.NewCallParams(msg).
 			WithGasBudget(100_000)
 
-		d, err := chain.PostRequestSync(req, nil)
-		return d, err
+		d, innerErr := chain.PostRequestSync(req, nil)
+		return d, innerErr
 	})
 	require.NoError(t, err)
 
@@ -95,8 +95,8 @@ func TestRetrievalOfErrorMessage(t *testing.T) {
 		req := solo.NewCallParams(msg).
 			WithGasBudget(100_000)
 
-		d, err := chain.PostRequestSync(req, nil)
-		return d, err
+		d, innerErr := chain.PostRequestSync(req, nil)
+		return d, innerErr
 	})
 	require.NoError(t, err)
 	require.Equal(t, testerrors.MessageToTest, message)

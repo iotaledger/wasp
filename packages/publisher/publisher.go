@@ -1,3 +1,4 @@
+// Package publisher provides functionality for publishing chain events to subscribers.
 package publisher
 
 import (
@@ -56,25 +57,25 @@ func New(log log.Logger) *Publisher {
 	return p
 }
 
-// Implements the chain.ChainListener interface.
+// BlockApplied implements the chain.ChainListener interface.
 // NOTE: Do not block the caller!
 func (p *Publisher) BlockApplied(chainID isc.ChainID, block state.Block, latestState kv.KVStoreReader) {
 	p.blockAppliedPipe.In() <- &blockApplied{chainID: chainID, block: block, latestState: latestState}
 }
 
-// Implements the chain.ChainListener interface.
+// AccessNodesUpdated implements the chain.ChainListener interface.
 // NOTE: Do not block the caller!
 func (p *Publisher) AccessNodesUpdated(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
 
-// Implements the chain.ChainListener interface.
+// ServerNodesUpdated implements the chain.ChainListener interface.
 // NOTE: Do not block the caller!
 func (p *Publisher) ServerNodesUpdated(chainID isc.ChainID, serverNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
 
-// This is called by the component to run this.
+// Run is called by the component to run this.
 func (p *Publisher) Run(ctx context.Context) {
 	blockAppliedPipeOutCh := p.blockAppliedPipe.Out()
 	for {

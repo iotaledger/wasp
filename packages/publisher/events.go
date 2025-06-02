@@ -3,6 +3,8 @@ package publisher
 import (
 	"fmt"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
 
@@ -29,7 +31,7 @@ type ISCEvent[T any] struct {
 	Payload   T             `json:"payload"`
 }
 
-// kind is not printed right now, because it is added when calling p.publish
+// String returns a string representation of the event. Note that kind is not printed right now, because it is added when calling p.publish.
 func (e *ISCEvent[T]) String() string {
 	issuerStr := "vm"
 	if e.Issuer != nil {
@@ -103,7 +105,7 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logg
 			}
 
 			receipt.BlockIndex = blockIndex
-			receipt.RequestIndex = uint16(index)
+			receipt.RequestIndex = safecast.MustConvert[uint16](index)
 
 			parsedReceipt := receipt.ToISCReceipt(vmError)
 

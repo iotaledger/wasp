@@ -1,3 +1,5 @@
+// Package completion provides command-line completion functionality for wasp-cli,
+// generating shell completions for improved user experience.
 package completion
 
 import (

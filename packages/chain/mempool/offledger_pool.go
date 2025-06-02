@@ -10,17 +10,19 @@ import (
 	"slices"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
-// keeps a map of requests ordered by nonce for each account
+// OffLedgerPool keeps a map of requests ordered by nonce for each account
 type OffLedgerPool struct {
 	waitReq WaitReq
 	refLUT  *shrinkingmap.ShrinkingMap[isc.RequestRefKey, *OrderedPoolEntry]
@@ -327,7 +329,11 @@ func (p *OffLedgerPool) WriteContent(w io.Writer) {
 			if err != nil {
 				return false // stop iteration
 			}
-			_, err = w.Write(codec.Encode[uint32](uint32(len(jsonData))))
+			val, err := safecast.Convert[uint32](len(jsonData))
+			if err != nil {
+				return false
+			}
+			_, err = w.Write(codec.Encode[uint32](val))
 			if err != nil {
 				return false // stop iteration
 			}

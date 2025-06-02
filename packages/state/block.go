@@ -27,7 +27,7 @@ type block struct {
 
 var _ Block = &block{}
 
-// This needs to be public for bcs to function
+// BlockHashCreate needs to be public for bcs to function
 type BlockHashCreate struct {
 	Sets kv.Items
 	Dels []kv.Key
@@ -95,7 +95,7 @@ func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
 }
 
-// test only function
+// RandomBlock is a test only function
 func RandomBlock() Block {
 	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()

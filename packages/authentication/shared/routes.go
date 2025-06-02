@@ -1,3 +1,4 @@
+// Package shared contains common utilities and components shared across authentication modules.
 package shared
 
 func AuthRoute() string {

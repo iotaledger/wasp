@@ -1,3 +1,6 @@
+// Package dict provides a dictionary implementation for key-value storage.
+// It implements the kv.KVStore interface with an in-memory map as the backend,
+// allowing for efficient key-value operations and serialization.
 package dict
 
 import (

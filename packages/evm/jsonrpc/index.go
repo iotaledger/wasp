@@ -6,6 +6,8 @@ import (
 	"math/big"
 	"sync"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -31,10 +33,10 @@ type Index struct {
 
 func NewIndex(
 	stateByTrieRoot func(trieRoot trie.Hash) (state.State, error),
-	indexDbEngine hivedb.Engine,
-	indexDbPath string,
+	indexDBEngine hivedb.Engine,
+	indexDBPath string,
 ) *Index {
-	db, err := database.NewDatabase(indexDbEngine, indexDbPath, true, false, database.CacheSizeDefault)
+	db, err := database.NewDatabase(indexDBEngine, indexDBPath, true, false, database.CacheSizeDefault)
 	if err != nil {
 		panic(err)
 	}
@@ -63,10 +65,14 @@ func (c *Index) IndexBlock(trieRoot trie.Hash) error {
 		return nil // pruning disabled, never cache anything
 	}
 	// cache the block that will be pruned next (this way reorgs are okay, as long as it never reorgs more than `blockKeepAmount`, which would be catastrophic)
-	if state.BlockIndex() < uint32(blockKeepAmount-1) {
+	blockKeepIndex, err := safecast.Convert[uint32](blockKeepAmount - 1)
+	if err != nil {
+		return fmt.Errorf("blockKeepAmount-1 overflows uint32")
+	}
+	if state.BlockIndex() < blockKeepIndex {
 		return nil
 	}
-	blockIndexToCache := state.BlockIndex() - uint32(blockKeepAmount-1)
+	blockIndexToCache := state.BlockIndex() - blockKeepIndex
 	cacheUntil := uint32(0)
 	lastBlockIndexed := c.lastBlockIndexed()
 	if lastBlockIndexed != nil {
@@ -127,7 +133,11 @@ func (c *Index) BlockByNumber(n *big.Int) *types.Block {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	db := c.evmDBFromBlockIndex(uint32(n.Uint64()))
+	convertedValue, err := safecast.Convert[uint32](n.Uint64())
+	if err != nil {
+		return nil
+	}
+	db := c.evmDBFromBlockIndex(convertedValue)
 	if db == nil {
 		return nil
 	}
@@ -204,7 +214,11 @@ func (c *Index) TxByBlockNumberAndIndex(blockNumber *big.Int, txIndex uint64) (t
 	if blockNumber == nil {
 		return nil, common.Hash{}
 	}
-	db := c.evmDBFromBlockIndex(uint32(blockNumber.Uint64()))
+	convertedValue, err := safecast.Convert[uint32](blockNumber.Uint64())
+	if err != nil {
+		return nil, common.Hash{}
+	}
+	db := c.evmDBFromBlockIndex(convertedValue)
 	if db == nil {
 		return nil, common.Hash{}
 	}
@@ -226,7 +240,11 @@ func (c *Index) TxsByBlockNumber(blockNumber *big.Int) types.Transactions {
 	if blockNumber == nil {
 		return nil
 	}
-	db := c.evmDBFromBlockIndex(uint32(blockNumber.Uint64()))
+	convertedValue, err := safecast.Convert[uint32](blockNumber.Uint64())
+	if err != nil {
+		return nil
+	}
+	db := c.evmDBFromBlockIndex(convertedValue)
 	if db == nil {
 		return nil
 	}

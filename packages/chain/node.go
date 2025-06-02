@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// This runs single chain will all the committees, mempool, state mgr etc.
+// Package chain runs a single chain with all the committees, mempool, state mgr etc.
 // The main task for this package to run the protocol as in a threaded environment,
 // communicate between ChainMgr, Mempool, StateMgr, NodeConn and ConsensusInstances.
 //
@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -32,14 +34,14 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/packages/chain/chainmanager"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/chain/cons"
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
 	"github.com/iotaledger/wasp/packages/chain/statemanager"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -116,7 +118,7 @@ type PeerStatus struct {
 
 type RequestHandler = func(req isc.OnLedgerRequest)
 
-// The Anchor versions must be passed here in-order. The last one
+// AnchorHandler handles anchors. The Anchor versions must be passed here in-order. The last one
 // is the current one.
 type AnchorHandler = func(anchor *isc.StateAnchor, l1Params *parameters.L1Params)
 
@@ -134,7 +136,7 @@ type chainNodeImpl struct {
 	stateMgr            statemanager.StateMgr
 	recvAnchorPipe      pipe.Pipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]]
 	recvTxPublishedPipe pipe.Pipe[*txPublished]
-	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]] // Running consensus instances.
+	consensusInsts      *shrinkingmap.ShrinkingMap[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]] // Running consensus instances.
 	// TODO: Send wantRotate to all the consInst.
 	// Also, if nil, wait for requests.
 	// If non-nil, wait for some delay, then propose empty set of requests.
@@ -149,7 +151,7 @@ type chainNodeImpl struct {
 	awaitReceiptCnfCh  chan *awaitReceiptReq
 	stateTrackerAct    StateTracker
 	stateTrackerCnf    StateTracker
-	blockWAL           sm_gpa_utils.BlockWAL
+	blockWAL           utils.BlockWAL
 	//
 	// Configuration values.
 	consensusDelay   time.Duration
@@ -222,7 +224,7 @@ func (cr *consRecover) String() string {
 // This is event received from the NodeConn as response to PublishTX
 type txPublished struct {
 	committeeAddr   cryptolib.Address
-	logIndex        cmt_log.LogIndex
+	logIndex        cmtlog.LogIndex
 	txID            iotago.Digest
 	nextAliasOutput *isc.StateAnchor
 	confirmed       bool
@@ -249,10 +251,10 @@ func New(
 	nodeIdentity *cryptolib.KeyPair,
 	processorConfig *processors.Config,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,
-	consensusStateRegistry cmt_log.ConsensusStateRegistry,
+	consensusStateRegistry cmtlog.ConsensusStateRegistry,
 	recoverFromWAL bool,
-	blockWAL sm_gpa_utils.BlockWAL,
-	snapshotManager sm_snapshots.SnapshotManager,
+	blockWAL utils.BlockWAL,
+	snapshotManager snapshots.SnapshotManager,
 	listener ChainListener,
 	accessNodesFromNode []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
@@ -266,7 +268,7 @@ func New(
 	consensusDelay time.Duration,
 	recoveryTimeout time.Duration,
 	validatorAgentID isc.AgentID,
-	smParameters sm_gpa.StateManagerParameters,
+	smParameters smgpa.StateManagerParameters,
 	mempoolSettings mempool.Settings,
 	mempoolBroadcastInterval time.Duration,
 	originDeposit coin.Value,
@@ -287,7 +289,7 @@ func New(
 		tangleTime:             time.Time{}, // Zero time, while we haven't received it from the L1.
 		recvAnchorPipe:         pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
 		recvTxPublishedPipe:    pipe.NewInfinitePipe[*txPublished](),
-		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]](),
+		consensusInsts:         shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]](),
 		consOutputPipe:         pipe.NewInfinitePipe[*consOutput](),
 		consRecoverPipe:        pipe.NewInfinitePipe[*consRecover](),
 		publishingTXes:         shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
@@ -684,8 +686,8 @@ func (cni *chainNodeImpl) handleServersUpdated(serverNodes []*cryptolib.PublicKe
 func (cni *chainNodeImpl) handleRotateTo(address *iotago.Address) {
 	cni.log.LogDebugf("handleRotateTo: %v", address)
 	cni.rotateTo = address
-	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
-		sm.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(ak cryptolib.AddressKey, sm *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
+		sm.ForEach(func(li cmtlog.LogIndex, ci *consensusInst) bool {
 			ci.consensus.RotateTo(address)
 			return true
 		})
@@ -714,7 +716,7 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 			panic(err)
 		}
 
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, stateAchor, sm.InitDeposit, l1Params)
+		initBlock, err := origin.InitChainByStateMetadataBytes(cni.chainStore, stateAchor.GetStateMetadata(), sm.InitDeposit, l1Params)
 		if err != nil {
 			cni.log.LogErrorf("Ignoring InitialAO for the chain: %v", err)
 			return
@@ -741,8 +743,8 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 func (cni *chainNodeImpl) handleMilestoneTimestamp(timestamp time.Time) {
 	cni.tangleTime = timestamp
 	cni.mempool.TangleTimeUpdated(timestamp)
-	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
-		consensusInstances.ForEach(func(li cmt_log.LogIndex, consensusInstance *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(address cryptolib.AddressKey, consensusInstances *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
+		consensusInstances.ForEach(func(li cmtlog.LogIndex, consensusInstance *consensusInst) bool {
 			if consensusInstance.cancelFunc != nil {
 				consensusInstance.consensus.Time(timestamp)
 			}
@@ -771,8 +773,8 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	})
 	//
 	// Cleanup instances not needed anymore.
-	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
-		cmtInsts.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
+	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]) bool {
+		cmtInsts.ForEach(func(li cmtlog.LogIndex, ci *consensusInst) bool {
 			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
 				ci.Cancel()
 				cmtInsts.Delete(li)
@@ -871,8 +873,8 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	logIndex := needConsensus.LogIndex
 	dkShare := needConsensus.DKShare
 
-	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst] {
-		return shrinkingmap.New[cmt_log.LogIndex, *consensusInst]()
+	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst] {
+		return shrinkingmap.New[cmtlog.LogIndex, *consensusInst]()
 	})
 
 	addLogIndex := logIndex
@@ -1135,7 +1137,7 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 		})
 		if index == -1 {
 			peerStatus[i] = &PeerStatus{
-				Index:      uint16(i),
+				Index:      safecast.MustConvert[uint16](i),
 				PubKey:     nodePubKey,
 				PeeringURL: "",
 				Connected:  false,
@@ -1143,7 +1145,7 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 			continue
 		}
 		peerStatus[i] = &PeerStatus{
-			Index:      uint16(i),
+			Index:      safecast.MustConvert[uint16](i),
 			PubKey:     nodePubKey,
 			PeeringURL: netPeerStatus[index].PeeringURL(),
 			Connected:  netPeerStatus[index].IsAlive(),
@@ -1230,7 +1232,7 @@ func (cni *chainNodeImpl) GetMempoolContents() io.Reader {
 	return cni.mempool.GetContents()
 }
 
-func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL sm_gpa_utils.BlockWAL) {
+func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedStore, chainWAL utils.BlockWAL) {
 	//
 	// Load all the existing blocks from the WAL.
 	blocksAdded := 0

@@ -6,19 +6,19 @@ package chainmanager
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 )
 
 type inputConsensusOutputSkip struct {
 	committeeAddr cryptolib.Address
-	logIndex      cmt_log.LogIndex
+	logIndex      cmtlog.LogIndex
 }
 
 func NewInputConsensusOutputSkip(
 	committeeAddr cryptolib.Address,
-	logIndex cmt_log.LogIndex,
+	logIndex cmtlog.LogIndex,
 ) gpa.Input {
 	return &inputConsensusOutputSkip{
 		committeeAddr: committeeAddr,

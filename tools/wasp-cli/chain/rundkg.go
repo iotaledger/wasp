@@ -14,7 +14,7 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/apilib"
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/util/byz_quorum"
+	"github.com/iotaledger/wasp/packages/util/byzquorum"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
@@ -87,7 +87,7 @@ func doDKG(ctx context.Context, node string, peers []string, quorum int) *crypto
 	}
 
 	// Use default quorum, if it is unspecified.
-	minQuorum := byz_quorum.MinQuorum(len(committeePubKeys))
+	minQuorum := byzquorum.MinQuorum(len(committeePubKeys))
 	if quorum == 0 {
 		quorum = minQuorum
 	}

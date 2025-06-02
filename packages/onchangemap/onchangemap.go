@@ -1,3 +1,4 @@
+// Package onchangemap provides a map implementation that triggers callbacks when items are added, modified, or deleted.
 package onchangemap
 
 import (

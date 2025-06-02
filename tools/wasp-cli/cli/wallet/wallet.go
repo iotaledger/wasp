@@ -1,3 +1,5 @@
+// Package wallet provides wallet management functionality for wasp-cli,
+// including operations such as key generation, seed management, and signer creation.
 package wallet
 
 import (

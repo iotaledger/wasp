@@ -76,6 +76,8 @@ type requestGas struct {
 	feeCharged coin.Value
 	// burn history. If disabled, it is nil
 	burnLog *gas.BurnLog
+	// used to allow tracing stardust requests
+	enforceGasBurned *vm.EnforceGasBurned
 }
 
 type coreCallbackFunc struct {

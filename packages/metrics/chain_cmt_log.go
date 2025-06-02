@@ -17,25 +17,25 @@ func newChainCmtLogMetricsProvider() *ChainCmtLogMetricsProvider {
 	return &ChainCmtLogMetricsProvider{
 		logIndexIncReasonConsOut: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "cmt_log",
+			Subsystem: "cmtlog",
 			Name:      "log_index_inc_reason_ConsOut",
 			Help:      "Number if times LogIndex was increased because of consensus output.",
 		}, []string{labelNameChain}),
 		logIndexIncReasonRecover: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "cmt_log",
+			Subsystem: "cmtlog",
 			Name:      "log_index_inc_reason_Recover",
 			Help:      "Number if times LogIndex was increased because of recovery procedure.",
 		}, []string{labelNameChain}),
 		logIndexIncReasonL1RepAnchor: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "cmt_log",
+			Subsystem: "cmtlog",
 			Name:      "log_index_inc_reason_L1RepAnchor",
 			Help:      "Number if times LogIndex was increased because L1 replaced TIP anchor.",
 		}, []string{labelNameChain}),
 		logIndexIncReasonStarted: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "iota_wasp",
-			Subsystem: "cmt_log",
+			Subsystem: "cmtlog",
 			Name:      "log_index_inc_reason_Started",
 			Help:      "Number if times LogIndex was increased because other nodes started the consensus.",
 		}, []string{labelNameChain}),

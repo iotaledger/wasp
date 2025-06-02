@@ -188,7 +188,6 @@ func (env *Solo) IterateChainTrieDBs(
 	chainIDs := lo.Keys(env.chains)
 	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
 	for _, chID := range chainIDs {
-		chID := chID // prevent loop variable aliasing
 		ch := env.chains[chID]
 		lo.Must0(ch.db.Iterate(nil, func(k []byte, v []byte) bool {
 			f(&chID, k, v)
@@ -207,7 +206,6 @@ func (env *Solo) IterateChainLatestStates(
 	chainIDs := lo.Keys(env.chains)
 	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
 	for _, chID := range chainIDs {
-		chID := chID // prevent loop variable aliasing
 		ch := env.chains[chID]
 		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(ch.db))
 		state, err := store.LatestState()
@@ -602,7 +600,7 @@ func (env *Solo) L1CoinBalance(addr *cryptolib.Address, coinType coin.Type) coin
 	return coin.Value(r.TotalBalance.Uint64())
 }
 
-// L1Assets returns all ftokens of the address contained in the UTXODB ledger
+// L1CoinBalances returns all ftokens of the address contained in the UTXODB ledger
 func (env *Solo) L1CoinBalances(addr *cryptolib.Address) isc.CoinBalances {
 	r, err := env.L1Client().GetAllBalances(env.ctx, addr.AsIotaAddress())
 	require.NoError(env.T, err)

@@ -1,3 +1,5 @@
+// Package shutdown provides functionality for coordinating the graceful shutdown
+// of various components in the application.
 package shutdown
 
 import (
@@ -9,7 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 )
 
-// Shutdown coordinator implements a hierarchical await.
+// Coordinator implements a hierarchical shutdown await.
 // This way the components can await for their sub-components before terminating.
 type Coordinator struct {
 	name       string // Unique name in the parent coordinator.
@@ -41,7 +43,7 @@ func newCoordinator(name string, parent *Coordinator, log log.Logger) *Coordinat
 	}
 }
 
-// makes a sub-context, with a name (for debugging).
+// Nested makes a sub-context, with a name (for debugging).
 func (s *Coordinator) Nested(name string) *Coordinator {
 	s.nestedLock.Lock()
 	defer s.nestedLock.Unlock()
@@ -76,7 +78,7 @@ func (s *Coordinator) subDone(subName string) {
 	s.nestedWG.Done()
 }
 
-// waits to for all the hierarchy to complete. (same as Wait(), but logs what components are still being waited for)
+// WaitNestedWithLogging waits for all the hierarchy to complete. (same as Wait(), but logs what components are still being waited for)
 func (s *Coordinator) WaitNestedWithLogging(logPeriod time.Duration) {
 	nextLogTime := time.Now().Add(logPeriod)
 	for {
@@ -101,7 +103,7 @@ func (s *Coordinator) WaitNested() {
 	s.nestedWG.Wait()
 }
 
-// don't block, just check, if all the sub-tree is terminated.
+// CheckNestedDone doesn't block, just checks if all the sub-tree is terminated.
 func (s *Coordinator) CheckNestedDone() bool {
 	s.nestedLock.RLock()
 	defer s.nestedLock.RUnlock()

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -22,7 +24,8 @@ type MigrationScheme struct {
 }
 
 func (m *MigrationScheme) LatestSchemaVersion() isc.SchemaVersion {
-	return m.BaseSchemaVersion + isc.SchemaVersion(len(m.Migrations))
+	migrationCount := safecast.MustConvert[isc.SchemaVersion](len(m.Migrations))
+	return m.BaseSchemaVersion + migrationCount
 }
 
 var (

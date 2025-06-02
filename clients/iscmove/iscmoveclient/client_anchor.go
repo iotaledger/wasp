@@ -23,7 +23,7 @@ type StartNewChainRequest struct {
 	GasBudget     uint64
 }
 
-// the only exception which is doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
+// StartNewChain is the only exception which doesn't use committee's GasCoin (the one in StateMetadata) for paying gas fee
 // this func automatically pick a coin
 func (c *Client) StartNewChain(
 	ctx context.Context,
@@ -165,14 +165,14 @@ func (c *Client) GetPastAnchorFromObjectID(
 }
 
 func decodeAnchorBCS(bcsBytes iotago.Base64Data, ref iotago.ObjectRef, owner *iotago.Address) (*iscmove.AnchorWithRef, error) {
-	var moveAnchor moveAnchor
+	var moveAnchor iscmove.Anchor
 	err := iotaclient.UnmarshalBCS(bcsBytes, &moveAnchor)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal BCS: %w", err)
 	}
 	return &iscmove.AnchorWithRef{
 		ObjectRef: ref,
-		Object:    moveAnchor.ToAnchor(),
+		Object:    &moveAnchor,
 		Owner:     owner,
 	}, nil
 }

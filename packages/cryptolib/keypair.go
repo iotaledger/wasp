@@ -1,3 +1,4 @@
+// Package cryptolib provides cryptographic primitives and operations for secure communications.
 package cryptolib
 
 import (

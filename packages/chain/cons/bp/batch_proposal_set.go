@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package bp implements batch proposal functionality for consensus operations.
 package bp
 
 import (
@@ -10,6 +11,7 @@ import (
 	"sort"
 	"time"
 
+	"fortio.org/safecast"
 	"golang.org/x/exp/maps"
 
 	"github.com/samber/lo"
@@ -153,13 +155,26 @@ func (bps batchProposalSet) selectedProposal(aggregatedTime time.Time, randomnes
 		return bytes.Compare(a[:], b[:])
 	})
 	uint64Bytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(uint64Bytes, uint64(aggregatedTime.UnixNano()))
+
+	timeNano, err := safecast.Convert[uint64](aggregatedTime.UnixNano())
+	if err != nil {
+		panic("proposal aggregated time overflows uint64")
+	}
+	binary.BigEndian.PutUint64(uint64Bytes, timeNano)
 	hashed := hashing.HashDataBlake2b(
 		uint64Bytes,
 		randomness[:],
 	)
 	randomUint := binary.BigEndian.Uint64(hashed[:])
-	randomPos := int(randomUint % uint64(len(bps)))
+	lenBps, err := safecast.Convert[uint64](len(bps))
+	if err != nil {
+		panic("length of batch proposal set overflows uint64")
+	}
+	randomPosU64 := randomUint % lenBps
+	randomPos, err := safecast.Convert[int](randomPosU64)
+	if err != nil {
+		panic("random proposal from set overflows int")
+	}
 	return peers[randomPos]
 }
 
@@ -234,6 +249,18 @@ func (bps batchProposalSet) aggregatedGasCoins(f int) []*coin.CoinWithRef {
 	// Drop the coins proposed by less than F+1 nodes.
 	for i, cf := range coinFrom {
 		if len(cf) < f+1 {
+			delete(coinFrom, i)
+		}
+	}
+
+	// Drop older versions of the same coin.
+	for i := range coinFrom {
+		ci := coinRefs[i].Ref
+		haveNewer := lo.ContainsBy(maps.Keys(coinFrom), func(j string) bool {
+			cj := coinRefs[i].Ref
+			return ci.ObjectID.Equals(*cj.ObjectID) && ci.Version < cj.Version
+		})
+		if haveNewer {
 			delete(coinFrom, i)
 		}
 	}

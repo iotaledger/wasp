@@ -10,7 +10,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 )
 
-// A + B
+// RatioByteSize represents the byte size of A + B.
 const RatioByteSize = 4 + 4 // (2 x uint32)
 
 // Ratio32 represents a ratio (a:b) between two quantities, expressed as two uint32 values.

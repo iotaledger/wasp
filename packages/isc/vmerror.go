@@ -86,7 +86,7 @@ func (e *VMErrorTemplate) Create(params ...VMErrorParam) *VMError {
 	}
 }
 
-// VMErrorTemplate implements error just in case someone panics with
+// Error implements the error interface. VMErrorTemplate implements error just in case someone panics with it.
 // VMErrorTemplate by mistake, so that we don't crash the VM because of that.
 func (e *VMErrorTemplate) Error() string {
 	// calling Sprintf so that it marks missing parameters as errors
@@ -129,7 +129,7 @@ func (e *UnresolvedVMError) Error() string {
 	return fmt.Sprintf("UnresolvedVMError(code: %s)", e.ErrorCode)
 }
 
-// produce the params as humanly readably json, and the uints as strings
+// ToJSONStruct produces the params as humanly readable json, and the uints as strings
 func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
 	if e == nil {
 		return &UnresolvedVMErrorJSON{

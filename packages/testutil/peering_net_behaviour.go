@@ -16,7 +16,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
-// An interface for all the network behaviors.
+// PeeringNetBehavior is an interface for all the network behaviors.
 type PeeringNetBehavior interface {
 	AddLink(inCh, outCh chan *peeringMsg, dstPubKey *cryptolib.PublicKey)
 	Close()

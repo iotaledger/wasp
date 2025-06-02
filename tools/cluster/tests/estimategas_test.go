@@ -80,9 +80,9 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		Contract: uint32(isc.Hn("accounts")),
 		Function: uint32(isc.Hn("deposit")),
 	}
-	allowanceVal := uint64(1 * isc.Million)
+	allowanceVal := iotajsonrpc.CoinValue(1 * isc.Million)
 	allowance := iscmove.NewAssets(allowanceVal)
-	allowance.AddCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
+	allowance.SetCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
 	l2GasBudget := uint64(100)
 	ptb = iscmoveclient.PTBCreateAndSendRequest(
 		assetsBagPTB.Clone(),
@@ -90,7 +90,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		env.Chain.ChainID.AsObjectID(),
 		argAssetsBag,
 		msg,
-		allowance,
+		bcs.MustMarshal(allowance),
 		l2GasBudget,
 	)
 	pt := ptb.Finish()
@@ -110,12 +110,9 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.True(t, dryRunRes.Effects.Data.IsSuccess())
 	dryRunResBcs, err := bcs.Marshal(dryRunRes)
 	require.NoError(t, err)
-	msgJson, err := bcs.Marshal(&msg)
-	require.NoError(t, err)
 
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
-		DryRunRes: string(hexutil.Encode(dryRunResBcs)),
-		Msg:       string(hexutil.Encode(msgJson)),
+		TransactionBytes: hexutil.Encode(dryRunResBcs),
 	}).Execute()
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)
@@ -128,7 +125,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		env.Chain.ChainID.AsObjectID(),
 		argAssetsBag,
 		msg,
-		allowance,
+		bcs.MustMarshal(allowance),
 		l2GasBudget,
 	)
 	pt = ptb.Finish()

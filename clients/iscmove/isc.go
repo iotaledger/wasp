@@ -52,9 +52,9 @@ func init() {
 	}
 }
 
-// Used in packages/chain/cons/bp/batch_proposal_set as key of a map
+// Hash returns the byte representation. Used in packages/chain/cons/bp/batch_proposal_set as key of a map
 func (rwo *RefWithObject[any]) Hash() hashing.HashValue {
-	return rwo.ObjectRef.Digest.HashValue()
+	return rwo.Digest.HashValue()
 }
 
 type Referent[T any] struct {
@@ -119,7 +119,7 @@ func (a1 Anchor) Equals(a2 *Anchor) bool {
 type AnchorWithRef = RefWithObject[Anchor]
 
 func AnchorWithRefEquals(a1 AnchorWithRef, a2 AnchorWithRef) bool {
-	if !a1.ObjectRef.Equals(&a2.ObjectRef) {
+	if !a1.Equals(&a2.ObjectRef) {
 		return false
 	}
 	if !a1.Object.Equals(a2.Object) {

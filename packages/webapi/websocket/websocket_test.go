@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+
 	websocketserver "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/context"
@@ -39,7 +41,7 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 
 	ws.EventHandler().AttachToEvents()
 
-	chain := env.NewChain()
+	chain := env.NewChain() //nolint:contextcheck
 
 	go func() {
 		websocketHub.Run(ctx)
@@ -53,7 +55,7 @@ func TestWebsocketEvents(t *testing.T) {
 		t.Skip("Skipping WebSocket test, as the local node does not support WebSockets")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(5*time.Second))
 	ws, _, chain := InitWebsocket(ctx, t, []publisher.ISCEventType{publisher.ISCEventKindNewBlock})
 
 	// publisherEvent is the event that gets called from the websocket event handlers.

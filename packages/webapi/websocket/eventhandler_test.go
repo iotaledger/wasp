@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+
 	"github.com/stretchr/testify/require"
 
 	appLogger "github.com/iotaledger/hive.go/log"
@@ -44,7 +46,7 @@ func initTest(ctx context.Context) (*publisher.Publisher, *EventHandler, *event.
 }
 
 func TestSuccessfulEventHandling(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(5*time.Second))
 	pub, _, publisherEvent, subscriptionManager := initTest(ctx)
 
 	subscriptionManager.Subscribe(1, string(publisher.ISCEventKindNewBlock))

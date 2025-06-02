@@ -1,3 +1,6 @@
+// Package codec provides encoding and decoding functionality for the kv package.
+// It handles serialization and deserialization of various data types to and from
+// the key-value store format.
 package codec
 
 import (

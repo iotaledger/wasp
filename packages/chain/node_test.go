@@ -26,11 +26,11 @@ import (
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -424,8 +424,8 @@ func (tnc *testNodeConn) WaitUntilInitiallySynced(ctx context.Context) error {
 func (tnc *testNodeConn) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan cons_gr.NodeConnL1Info {
-	t := make(chan cons_gr.NodeConnL1Info)
+) <-chan gr.NodeConnL1Info {
+	t := make(chan gr.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -434,7 +434,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 			panic(err)
 		}
 
-		gasCoin, err := tnc.l1Client.GetObject(context.Background(), iotaclient.GetObjectRequest{
+		gasCoin, err := tnc.l1Client.GetObject(ctx, iotaclient.GetObjectRequest{
 			ObjectID: stateMetadata.GasCoinObjectID,
 			Options:  &iotajsonrpc.IotaObjectDataOptions{ShowBcs: true},
 		})
@@ -454,7 +454,7 @@ func (tnc *testNodeConn) ConsensusL1InfoProposal(
 		}
 
 		ref := gasCoin.Data.Ref()
-		var l1Info cons_gr.NodeConnL1Info = &testNodeConnL1Info{
+		var l1Info gr.NodeConnL1Info = &testNodeConnL1Info{
 			gasCoins: []*coin.CoinWithRef{{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(moveBalance.Balance),
@@ -571,8 +571,8 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			dkShareProviders[i],
 			testutil.NewConsensusStateRegistry(),
 			false,
-			sm_gpa_utils.NewMockedTestBlockWAL(),
-			sm_snapshots.NewEmptySnapshotManager(),
+			utils.NewMockedTestBlockWAL(),
+			snapshots.NewEmptySnapshotManager(),
 			chain.NewEmptyChainListener(),
 			[]*cryptolib.PublicKey{}, // Access nodes.
 			te.networkProviders[i],
@@ -586,7 +586,7 @@ func newEnv(t *testing.T, n, f int, reliable bool, node l1starter.IotaNodeEndpoi
 			10*time.Millisecond,
 			10*time.Second,
 			accounts.CommonAccount(),
-			sm_gpa.NewStateManagerParameters(),
+			smgpa.NewStateManagerParameters(),
 			mempool.Settings{
 				TTL:                    24 * time.Hour,
 				MaxOffledgerInPool:     1000,

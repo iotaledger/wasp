@@ -1,3 +1,4 @@
+// Package evmutil provides utility functions for EVM operations and interactions.
 package evmutil
 
 import (

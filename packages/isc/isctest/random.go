@@ -1,3 +1,5 @@
+// Package isctest provides testing utilities and helpers for the ISC (IOTA Smart Contracts) package.
+// It includes functionality for creating test fixtures and simulating various ISC conditions.
 package isctest
 
 import (
@@ -62,7 +64,7 @@ func RandomStateAnchor(opts ...RandomAnchorOption) isc.StateAnchor {
 	return isc.NewStateAnchor(&anchorRefWithObject, *iotatest.RandomAddress())
 }
 
-// simualte how StateAnchor is updated (state transition)
+// UpdateStateAnchor simulates how StateAnchor is updated (state transition)
 // assume the AssetsBag keep unchanged
 func UpdateStateAnchor(anchor *isc.StateAnchor, stateMetadata ...[]byte) *isc.StateAnchor {
 	// a := anchor.Clone()

@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -58,8 +57,6 @@ func (h *magicContractHandler) TakeAllowedFunds(addr common.Address, allowance i
 		h.evm.StateDB.AddLog(log)
 	}
 }
-
-var errMetadataUnsupported = coreerrors.Register("metadata is unsupported")
 
 func (h *magicContractHandler) handleCallValue(callValue *uint256.Int) coin.Value {
 	adjustedTxValue, _ := util.EthereumDecimalsToBaseTokenDecimals(callValue.ToBig(), parameters.BaseTokenDecimals)
@@ -128,10 +125,10 @@ func (h *magicContractHandler) Send(
 			Amount:   legacyAssets.BaseTokens,
 		})
 	}
-	for _ = range legacyAssets.NativeTokens {
+	for range legacyAssets.NativeTokens {
 		panic("cannot send legacy native tokens")
 	}
-	for _ = range legacyAssets.Nfts {
+	for range legacyAssets.Nfts {
 		panic("cannot send legacy NFTs")
 	}
 	h.TransferToL1(target, assets)

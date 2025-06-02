@@ -673,10 +673,10 @@ type ScrambledZipfian struct {
 	z *generator.ScrambledZipfian
 }
 
-func NewScrambledZipfian(max int) Generator {
+func NewScrambledZipfian(maximum int) Generator {
 	return &ScrambledZipfian{
 		r: rand.New(rand.NewSource(time.Now().UnixNano())),
-		z: generator.NewScrambledZipfian(0, int64(max), generator.ZipfianConstant),
+		z: generator.NewScrambledZipfian(0, int64(maximum), generator.ZipfianConstant),
 	}
 }
 

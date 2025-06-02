@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// nodeconn package provides an interface to the L1 node (Hornet).
+// Package nodeconn provides an interface to the L1 node (Hornet).
 package nodeconn
 
 import (
@@ -21,7 +21,7 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	"github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -169,8 +169,8 @@ func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID
 func (nc *nodeConnection) ConsensusL1InfoProposal(
 	ctx context.Context,
 	anchor *isc.StateAnchor,
-) <-chan cons_gr.NodeConnL1Info {
-	t := make(chan cons_gr.NodeConnL1Info)
+) <-chan gr.NodeConnL1Info {
+	t := make(chan gr.NodeConnL1Info)
 
 	// TODO: Refactor this separate goroutine and place it somewhere connection related instead
 	go func() {
@@ -199,7 +199,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 		}
 
 		gasCoinRef := gasCoinGetObjectRes.Data.Ref()
-		var coinInfo cons_gr.NodeConnL1Info = &SingleL1Info{
+		var coinInfo gr.NodeConnL1Info = &SingleL1Info{
 			coin.CoinWithRef{
 				Type:  coin.BaseTokenType,
 				Value: coin.Value(gasCoin.Balance),

@@ -1,3 +1,4 @@
+// Package metrics provides functionality for collecting and exposing metrics about the system.
 package metrics
 
 import (

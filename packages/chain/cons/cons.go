@@ -1,4 +1,5 @@
-// Consensus. A single instance of it.
+// Package cons implements consensus functionality for IOTA Smart Contracts.
+// A single instance of it.
 //
 // We move all the synchronization logic to separate objects (upon_...). They are
 // responsible for waiting specific data and then triggering the next state action
@@ -12,6 +13,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
+
+	"fortio.org/safecast"
 
 	"github.com/minio/blake2b-simd"
 	"github.com/samber/lo"
@@ -176,7 +179,11 @@ func New( //nolint:funlen
 	acsLog := log.NewChildLogger("ACS")
 	acsCCInstFunc := func(nodeID gpa.NodeID, round int) gpa.GPA {
 		var roundBin [4]byte
-		binary.BigEndian.PutUint32(roundBin[:], uint32(round))
+		roundU32, err := safecast.Convert[uint32](round)
+		if err != nil {
+			panic("round overflows uint32")
+		}
+		binary.BigEndian.PutUint32(roundBin[:], roundU32)
 		sid := hashing.HashDataBlake2b(instID, nodeID[:], roundBin[:]).Bytes()
 		realCC := blssig.New(blsSuite, nodeIDs, dkShare.BLSCommits(), dkShare.BLSPriShare(), int(dkShare.BLSThreshold()), me, sid, acsLog)
 		return semi.New(round, realCC)
@@ -529,7 +536,7 @@ func (c *consImpl) uponACSOutputReceived(outputValues map[gpa.NodeID][]byte) gpa
 		return nil
 	}
 	bao := aggr.DecidedBaseAliasOutput()
-	baoID := bao.GetObjectID()
+	baoID := bao.GetObjectRef()
 	reqs := aggr.DecidedRequestRefs()
 	c.log.LogDebugf("ACS decision: baseAO=%v, requests=%v", bao, reqs)
 	if aggr.DecidedRotateTo() != nil {
@@ -644,11 +651,11 @@ func (c *consImpl) uponVMOutputReceived(vmResult *vm.VMTaskResult, aggregatedPro
 // TX
 
 func (c *consImpl) makeTransactionData(pt *iotago.ProgrammableTransaction, aggregatedProposals *bp.AggregatedBatchProposals) *iotago.TransactionData {
-	var sender *iotago.Address = c.dkShare.GetAddress().AsIotaAddress()
-	var l1params *parameters.L1Params = aggregatedProposals.AggregatedL1Params()
+	sender := c.dkShare.GetAddress().AsIotaAddress()
+	l1params := aggregatedProposals.AggregatedL1Params()
 	gasPrice := l1params.Protocol.ReferenceGasPrice.Uint64()
-	var gasBudget uint64 = pt.EstimateGasBudget(gasPrice)
-	var gasPaymentCoinRef []*coin.CoinWithRef = aggregatedProposals.AggregatedGasCoins()
+	gasBudget := pt.EstimateGasBudget(gasPrice)
+	gasPaymentCoinRef := aggregatedProposals.AggregatedGasCoins()
 	gasPayment := make([]*iotago.ObjectRef, len(gasPaymentCoinRef))
 	for i, coinRef := range gasPaymentCoinRef {
 		gasPayment[i] = coinRef.Ref

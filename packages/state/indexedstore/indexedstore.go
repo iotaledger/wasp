@@ -1,10 +1,13 @@
 // Copyright 2022 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package indexedstore provides functionality to search blocks by index within the state store
 package indexedstore
 
 import (
 	"fmt"
+
+	"fortio.org/safecast"
 
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
@@ -75,8 +78,12 @@ func (s *istore) findTrieRootByIndex(index uint32) (trie.Hash, error) {
 	for blockKeepAmount != -1 { // no need to iterate if pruning is disabled
 		blocklogState := blocklog.NewStateReaderFromChainState(state)
 		earliestAvailableBlockIndex := uint32(0)
-		if uint32(blockKeepAmount) < state.BlockIndex() {
-			earliestAvailableBlockIndex = state.BlockIndex() - uint32(blockKeepAmount) + 1
+		blockKeepAmountUint32, err := safecast.Convert[uint32](blockKeepAmount)
+		if err != nil {
+			return trie.Hash{}, fmt.Errorf("iterating the chain: blockKeepAmount is not a uint32: %w", err)
+		}
+		if blockKeepAmountUint32 < state.BlockIndex() {
+			earliestAvailableBlockIndex = state.BlockIndex() - blockKeepAmountUint32 + 1
 		}
 		if targetBlockIndex >= earliestAvailableBlockIndex {
 			break // found it
