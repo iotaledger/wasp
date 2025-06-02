@@ -4,7 +4,6 @@ package waspcmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/util"
@@ -70,9 +69,9 @@ func DefaultWaspNodeFallback(node string) string {
 
 func getDefaultWaspNode() string {
 	waspSettings := map[string]interface{}{}
-	waspKey := viper.Sub("wasp")
+	waspKey := config.Config.Cut("wasp")
 	if waspKey != nil {
-		waspSettings = waspKey.AllSettings()
+		waspSettings = waspKey.All()
 	}
 	switch len(waspSettings) {
 	case 0:
