@@ -89,8 +89,6 @@ func Read() {
 
 		log.Check(err)
 	}
-	fmt.Println("Config file loaded:", ConfigPath)
-	fmt.Println(Config.All())
 }
 
 func L1APIAddress() string {
