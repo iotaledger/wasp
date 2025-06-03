@@ -29,7 +29,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	dryRunResBytes, err := hexutil.Decode(estimateGasRequest.TransactionBytes)
+	txBytes, err := hexutil.Decode(estimateGasRequest.TransactionBytes)
 	if err != nil {
 		return apierrors.InvalidPropertyError("transactionBytes", err)
 	}
@@ -37,7 +37,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	callContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, dryRunResBytes)
+	dryRunResponse, err := c.l1Client.DryRunTransaction(callContext, txBytes)
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}

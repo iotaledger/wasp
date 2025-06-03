@@ -90,6 +90,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		env.Chain.ChainID.AsObjectID(),
 		argAssetsBag,
 		msg,
+		//bcs.MustMarshal(lo.ToPtr(bcs.MustMarshal(allowance))),
 		bcs.MustMarshal(allowance),
 		l2GasBudget,
 	)
@@ -105,14 +106,14 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	txBytes, err := bcs.Marshal(&txData)
 	require.NoError(t, err)
 
-	dryRunRes, err := env.Clu.L1Client().DryRunTransaction(context.Background(), txBytes)
-	require.NoError(t, err)
-	require.True(t, dryRunRes.Effects.Data.IsSuccess())
-	dryRunResBcs, err := bcs.Marshal(dryRunRes)
-	require.NoError(t, err)
+	// dryRunRes, err := env.Clu.L1Client().DryRunTransaction(context.Background(), txBytes)
+	// require.NoError(t, err)
+	// require.True(t, dryRunRes.Effects.Data.IsSuccess())
+	// dryRunResBcs, err := bcs.Marshal(dryRunRes)
+	// require.NoError(t, err)
 
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
-		TransactionBytes: hexutil.Encode(dryRunResBcs),
+		TransactionBytes: hexutil.Encode(txBytes),
 	}).Execute()
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)

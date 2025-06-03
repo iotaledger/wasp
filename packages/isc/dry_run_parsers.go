@@ -29,31 +29,35 @@ func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd iotago.ProgrammableM
 	// contractHname
 	err := json.Unmarshal(inputs[*cmd.Arguments[2].Input].Value, &msg.Message.Contract)
 	if err != nil {
-		return fmt.Errorf("failed to decode contract argument: %v", err)
+		return fmt.Errorf("failed to decode contract hname: %v", err)
 	}
 
 	// functionHname
 	err = json.Unmarshal(inputs[*cmd.Arguments[3].Input].Value, &msg.Message.Function)
 	if err != nil {
-		return fmt.Errorf("failed to decode contract argument: %v", err)
+		return fmt.Errorf("failed to decode function hname: %v", err)
 	}
 
 	// contractCallArgs
 	err = json.Unmarshal(inputs[*cmd.Arguments[4].Input].Value, &msg.Message.Args)
 	if err != nil {
-		return fmt.Errorf("failed to decode contract argument: %v", err)
+		return fmt.Errorf("failed to decode contract call args: %v", err)
 	}
 
+	fmt.Printf("XXX msg.AllowanceBCS %v\n", string(inputs[*cmd.Arguments[5].Input].Value))
 	// allowance
-	err = json.Unmarshal(inputs[*cmd.Arguments[5].Input].Value, &msg.AllowanceBCS)
+	var allowanceBCS string
+	err = json.Unmarshal(inputs[*cmd.Arguments[5].Input].Value, &allowanceBCS)
 	if err != nil {
-		return fmt.Errorf("failed to decode contract argument: %v", err)
+		return fmt.Errorf("failed to decode allowance: %v", err)
 	}
+	// TODO: check why this is needed
+	msg.AllowanceBCS = []byte(allowanceBCS)
 
 	// gasBudget
 	err = json.Unmarshal(inputs[*cmd.Arguments[6].Input].Value, &msg.GasBudget)
 	if err != nil {
-		return fmt.Errorf("failed to decode contract argument: %v", err)
+		return fmt.Errorf("failed to decode gas budget: %v", err)
 	}
 
 	return nil
