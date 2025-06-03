@@ -8,6 +8,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state/indexedstore"
@@ -48,6 +49,7 @@ func EVMCall(
 		processors,
 		log,
 		time.Now(),
+		hashing.PseudoRandomHash(nil),
 		iscReq,
 		true,
 	)

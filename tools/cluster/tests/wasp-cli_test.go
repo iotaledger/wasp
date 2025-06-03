@@ -485,7 +485,7 @@ func TestWaspCLIMintNativeToken(t *testing.T) {
 
 func sendDummyEVMTx(t *testing.T, w *WaspCLITest, ethPvtKey *ecdsa.PrivateKey) *types.Transaction {
 	gasPrice := gas.DefaultFeePolicy().DefaultGasPriceFullDecimals(parameters.BaseTokenDecimals)
-	jsonRPCClient := NewEVMJSONRPClient(t, w.ChainID(0), w.Cluster, 0)
+	jsonRPCClient := NewEVMJSONRPClient(t, w.Cluster, 0)
 	tx, err := types.SignTx(
 		types.NewTransaction(0, common.Address{}, big.NewInt(123), 100000, gasPrice, []byte{}),
 		EVMSigner(),

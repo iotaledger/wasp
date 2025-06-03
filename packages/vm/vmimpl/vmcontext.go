@@ -134,6 +134,7 @@ func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuc
 		NumOffLedgerRequests:  numOffLedger,
 		GasBurned:             vmctx.blockGas.burned,
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
+		Entropy:               vmctx.task.Entropy,
 	}
 
 	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState))
