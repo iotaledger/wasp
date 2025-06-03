@@ -66,7 +66,9 @@ func (ch *Chain) CheckAccountLedger() {
 	require.True(ch.Env.T, ch.L2Assets(coreacc).IsEmpty())
 
 	_, bals := ch.GetLatestAnchorWithBalances()
-	require.True(ch.Env.T, bals.Equals(total))
+	if !bals.Equals(total) {
+		require.Failf(ch.Env.T, "failed chain accounts check", "Balances:\nL1: %s\nL2: %s", bals.String(), total.String())
+	}
 }
 
 func (ch *Chain) AssertL2TotalCoins(coinType coin.Type, bal coin.Value) {
