@@ -3,12 +3,11 @@
 package wallet
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
 type WalletConfig struct {

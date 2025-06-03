@@ -9,13 +9,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/knadh/koanf/parsers/json"
-	"github.com/knadh/koanf/providers/file"
-
-	"github.com/samber/lo"
-
-	"github.com/knadh/koanf/v2"
-
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -23,6 +16,10 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/knadh/koanf/parsers/json"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
+	"github.com/samber/lo"
 )
 
 var (
