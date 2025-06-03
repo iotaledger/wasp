@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -89,7 +90,7 @@ func Read() {
 }
 
 func L1APIAddress() string {
-	host := Config.String("l1.apiAddress")
+	host := Config.String("l1.apiaddress")
 	if host != "" {
 		return host
 	}
@@ -97,7 +98,7 @@ func L1APIAddress() string {
 }
 
 func L1FaucetAddress() string {
-	address := Config.String("l1.faucetAddress")
+	address := Config.String("l1.faucetaddress")
 	if address != "" {
 		return address
 	}
@@ -138,7 +139,7 @@ func MustWaspAPIURL(nodeName string) string {
 }
 
 func WaspAPIURL(nodeName string) string {
-	return Config.String(fmt.Sprintf("wasp.%s", nodeName))
+	return Config.String(fmt.Sprintf("wasp.%s", strings.ToLower(nodeName)))
 }
 
 func NodeAPIURLs(nodeNames []string) []string {
@@ -176,7 +177,7 @@ func WriteConfig() error {
 }
 
 func GetChain(name string) isc.ChainID {
-	configChainID := Config.String("chains." + name)
+	configChainID := Config.String("chains." + strings.ToLower(name))
 	if configChainID == "" {
 		log.Fatal(fmt.Sprintf("chain '%s' doesn't exist in config file", name))
 	}
@@ -191,7 +192,7 @@ func GetChain(name string) isc.ChainID {
 }
 
 func GetPackageID() iotago.PackageID {
-	configPackageID := Config.String("l1.packageId")
+	configPackageID := Config.String("l1.packageid")
 	if configPackageID == "" {
 		log.Fatal(fmt.Sprintf("package id '%s' doesn't exist in config file", configPackageID))
 	}
