@@ -87,9 +87,9 @@ func (h *magicContractHandler) Decimals() uint8 {
 }
 
 // handler for ISCSandbox::supportsInterface
-func (h *magicContractHandler) SupportsInterface(interfaceId [4]byte) bool {
+func (h *magicContractHandler) SupportsInterface(interfaceID [4]byte) bool {
 	// ERC165 interface ID (XOR of supportsInterface(bytes4))
-	erc165InterfaceId := [4]byte{0x01, 0xff, 0xc9, 0xa7}
+	erc165InterfaceID := [4]byte{0x01, 0xff, 0xc9, 0xa7}
 	// ERC20 interface ID (XOR of function selectors):
 	// - totalSupply(): 0x18160ddd
 	// - balanceOf(address): 0x70a08231
@@ -98,7 +98,7 @@ func (h *magicContractHandler) SupportsInterface(interfaceId [4]byte) bool {
 	// - approve(address,uint256): 0x095ea7b3
 	// - allowance(address,address): 0xdd62ed3e
 	// XOR result: 0x36372b07
-	erc20InterfaceId := [4]byte{0x36, 0x37, 0x2b, 0x07}
+	erc20InterfaceID := [4]byte{0x36, 0x37, 0x2b, 0x07}
 
-	return interfaceId == erc165InterfaceId || interfaceId == erc20InterfaceId
+	return interfaceID == erc165InterfaceID || interfaceID == erc20InterfaceID
 }
