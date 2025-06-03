@@ -5,13 +5,11 @@ package setup
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-
-	"github.com/spf13/cobra"
-
 	"github.com/iotaledger/wasp/components/app"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
 func initCheckVersionsCmd() *cobra.Command {
