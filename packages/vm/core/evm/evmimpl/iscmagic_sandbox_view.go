@@ -4,10 +4,14 @@
 package evmimpl
 
 import (
+	"math/big"
+
 	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
 
@@ -61,4 +65,40 @@ func (h *magicContractHandler) GetCoinInfo(coinType iscmagic.CoinType) iscmagic.
 // handler for ISCSandbox::ERC20CoinAddress
 func (h *magicContractHandler) ERC20CoinAddress(coinType iscmagic.CoinType) common.Address {
 	return iscmagic.ERC20CoinAddress(coin.MustTypeFromString(coinType))
+}
+
+// handler for ISCSandbox::balanceOf
+func (h *magicContractHandler) BalanceOf(account common.Address) *big.Int {
+	var agentID isc.AgentID = isc.NewEthereumAddressAgentID(account)
+	result := h.ctx.CallView(accounts.ViewBalanceBaseTokenEVM.Message(&agentID))
+	balance, err := accounts.ViewBalanceBaseTokenEVM.DecodeOutput(result)
+	h.ctx.RequireNoError(err)
+	return balance
+}
+
+// handler for ISCSandbox::symbol
+func (h *magicContractHandler) Symbol() string {
+	return "IOTA"
+}
+
+// handler for ISCSandbox::decimals
+func (h *magicContractHandler) Decimals() uint8 {
+	return uint8(parameters.BaseTokenDecimals)
+}
+
+// handler for ISCSandbox::supportsInterface
+func (h *magicContractHandler) SupportsInterface(interfaceId [4]byte) bool {
+	// ERC165 interface ID (XOR of supportsInterface(bytes4))
+	erc165InterfaceId := [4]byte{0x01, 0xff, 0xc9, 0xa7}
+	// ERC20 interface ID (XOR of function selectors):
+	// - totalSupply(): 0x18160ddd
+	// - balanceOf(address): 0x70a08231
+	// - transfer(address,uint256): 0xa9059cbb
+	// - transferFrom(address,address,uint256): 0x23b872dd
+	// - approve(address,uint256): 0x095ea7b3
+	// - allowance(address,address): 0xdd62ed3e
+	// XOR result: 0x36372b07
+	erc20InterfaceId := [4]byte{0x36, 0x37, 0x2b, 0x07}
+
+	return interfaceId == erc165InterfaceId || interfaceId == erc20InterfaceId
 }

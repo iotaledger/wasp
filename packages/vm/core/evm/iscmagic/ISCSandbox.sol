@@ -175,6 +175,32 @@ interface ISCSandbox {
     function ERC20CoinAddress(
         string memory coinType
     ) external view returns (address);
+
+    /**
+     * @notice Returns the token balance of the specified address.
+     * @param account The address to query the balance of.
+     * @return The amount of tokens owned by the account.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @notice Returns the token symbol.
+     * @return The token symbol.
+     */
+    function symbol() external view returns (string memory);
+
+    /**
+     * @notice Returns the number of decimals used to get its user representation.
+     * @return The number of decimals.
+     */
+    function decimals() external view returns (uint8);
+
+    /**
+     * @notice Returns true if this contract implements the interface defined by interfaceId.
+     * @param interfaceId The interface identifier, as specified in ERC-165.
+     * @return true if the contract implements interfaceId and interfaceId is not 0xffffffff, false otherwise.
+     */
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
 ISCSandbox constant __iscSandbox = ISCSandbox(ISC_MAGIC_ADDRESS);
