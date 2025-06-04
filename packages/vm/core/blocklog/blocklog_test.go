@@ -1,6 +1,7 @@
 package blocklog
 
 import (
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -8,12 +9,16 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
@@ -146,4 +151,49 @@ func TestGetEventsInternal(t *testing.T) {
 
 	events := NewStateWriter(d).getSmartContractEventsInternal(EventsForContractQuery{contractID, &BlockRange{blockFrom, blockTo}})
 	validateEvents(t, events, maxRequests, maxEventsPerRequest, blockFrom, blockTo)
+}
+
+func TestBlockInfoMarshalling(t *testing.T) {
+	t.Run("v0", func(t *testing.T) {
+		const v0hex = "002a00000000b421501f01000000640000000000000000000000000000000100000000000000000000000000000001000000000000000000000000000000e80300000000000000000000000000009edb91da930100000000000000000000005c2605000000000000000000000000000000000000000000000000000000000000000000000000000000000000000204696f746104494f5441000004496f746104494f544104494f54410f687474703a2f2f696f74612e6f726709e0afdabfb6f592bd8a010a0008000200e807f403"
+		var blockIndex uint32 = 42
+		expected := &BlockInfo{
+			SchemaVersion:         blockInfoSchemaVersion0,
+			BlockIndex:            blockIndex,
+			Timestamp:             time.Unix(1234, 0),
+			PreviousAnchor:        nil,
+			L1Params:              parameterstest.L1Mock,
+			TotalRequests:         10,
+			NumSuccessfulRequests: 8,
+			NumOffLedgerRequests:  2,
+			GasBurned:             1000,
+			GasFeeCharged:         coin.Value(500),
+			Entropy:               hashing.HashData(bcs.MustMarshal(&blockIndex)),
+		}
+
+		bi, err := BlockInfoFromBytes(lo.Must(hex.DecodeString(v0hex)))
+		require.NoError(t, err)
+		require.EqualValues(t, expected, bi)
+	})
+
+	t.Run("v1", func(t *testing.T) {
+		biv1 := &BlockInfo{
+			SchemaVersion:         blockInfoSchemaVersionAddedEntropy,
+			BlockIndex:            42,
+			Timestamp:             time.Unix(1234, 0),
+			PreviousAnchor:        nil,
+			L1Params:              parameterstest.L1Mock,
+			TotalRequests:         10,
+			NumSuccessfulRequests: 8,
+			NumOffLedgerRequests:  2,
+
+			GasBurned:     1000,
+			GasFeeCharged: coin.Value(500),
+			Entropy:       hashing.PseudoRandomHash(nil),
+		}
+
+		bi, err := BlockInfoFromBytes(biv1.Bytes())
+		require.NoError(t, err)
+		require.EqualValues(t, biv1, bi)
+	})
 }

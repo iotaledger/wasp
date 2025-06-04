@@ -116,10 +116,6 @@ func (reqctx *requestContext) transferAllowedFunds(target isc.AgentID, transfer 
 	return reqctx.allowanceAvailable()
 }
 
-func (vmctx *vmContext) stateAnchor() *isc.StateAnchor {
-	return vmctx.task.Anchor
-}
-
 func (reqctx *requestContext) registerError(messageFormat string) *isc.VMErrorTemplate {
 	reqctx.Debugf("vmcontext.RegisterError: messageFormat: '%s'", messageFormat)
 	args := reqctx.Call(errors.FuncRegisterError.Message(messageFormat), isc.NewEmptyAssets())

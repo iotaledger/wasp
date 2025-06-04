@@ -3,7 +3,6 @@ package tests
 import (
 	"context"
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -160,11 +159,11 @@ func (e *ChainEnv) GetGasPriceEVM() *big.Int {
 }
 
 func (e *ChainEnv) EVMJSONRPClient(nodeIndex int) *ethclient.Client {
-	return NewEVMJSONRPClient(e.t, e.Chain.ChainID.String(), e.Clu, nodeIndex)
+	return NewEVMJSONRPClient(e.t, e.Clu, nodeIndex)
 }
 
-func NewEVMJSONRPClient(t *testing.T, chainID string, clu *cluster.Cluster, nodeIndex int) *ethclient.Client {
-	evmJSONRPCPath := fmt.Sprintf("/v1/chain/evm")
+func NewEVMJSONRPClient(t *testing.T, clu *cluster.Cluster, nodeIndex int) *ethclient.Client {
+	evmJSONRPCPath := "/v1/chain/evm"
 	jsonRPCEndpoint := clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)

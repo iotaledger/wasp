@@ -33,7 +33,8 @@ type clusterTestEnv struct {
 }
 
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
-	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + "/v1/chain/evm"
+	evmJSONRPCPath := "/v1/chain/evm"
+	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
 	client := ethclient.NewClient(rawClient)
