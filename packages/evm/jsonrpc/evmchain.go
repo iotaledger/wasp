@@ -927,11 +927,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 		return nil, err
 	}
 
-	results := TraceBlock{
-		Jsonrpc: "2.0",
-		Result:  make([]*Trace, 0),
-		ID:      1,
-	}
+	var traces []*Trace
 
 	for i, tx := range blockTxs {
 		debugResultJSON, err := e.traceTransaction(
@@ -953,11 +949,11 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 
 			blockHash := block.Hash()
 			txHash := tx.Hash()
-			results.Result = append(results.Result, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, uint64(i))...)
+			traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, uint64(i))...)
 		}
 	}
 
-	return results, nil
+	return traces, nil
 }
 
 func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.BlockInfo, error) {

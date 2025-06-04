@@ -6,12 +6,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 )
 
-type TraceBlock struct {
-	Jsonrpc string   `json:"jsonrpc"`
-	Result  []*Trace `json:"result"`
-	ID      int      `json:"id"`
-}
-
 type Trace struct {
 	Action      interface{}  `json:"action"`
 	BlockHash   *common.Hash `json:"blockHash,omitempty"`
