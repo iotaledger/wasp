@@ -1310,82 +1310,88 @@ func TestRPCEthCalls(t *testing.T) {
 	var contractAddr common.Address
 	copy(contractAddr[:], iscmagic.AddressPrefix)
 
-	// Test decimals() method - returns 9
-	callMsg := ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddr,
-		Data: common.Hex2Bytes("313ce567"),
-	}
-	result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
-	require.NoError(t, err)
-	require.NotEmpty(t, result)
-	decoded := new(big.Int).SetBytes(result).Uint64()
-	require.Equal(t, uint64(9), decoded)
+	t.Run("decimals() method should return 18", func(t *testing.T) {
+		callMsg := ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddr,
+			Data: common.Hex2Bytes("313ce567"),
+		}
+		result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		decoded := new(big.Int).SetBytes(result).Uint64()
+		require.Equal(t, uint64(18), decoded)
+	})
 
-	// Test symbol() method - returns 'IOTA'
-	callMsg = ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddr,
-		Data: common.Hex2Bytes("95d89b41"),
-	}
-	result, err = env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
-	require.NoError(t, err)
-	require.NotEmpty(t, result)
-	// For string return type, we need to decode the dynamic bytes
-	// First 32 bytes are offset to string data
-	offset := new(big.Int).SetBytes(result[:32]).Uint64()
-	// At offset: 32 bytes for string length
-	length := new(big.Int).SetBytes(result[offset : offset+32]).Uint64()
-	// Actual string data starts after length
-	strData := result[offset+32 : offset+32+length]
-	decodedString := string(strData)
-	require.Equal(t, "IOTA", decodedString)
+	t.Run("symbol() method should return 'IOTA'", func(t *testing.T) {
+		callMsg := ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddr,
+			Data: common.Hex2Bytes("95d89b41"),
+		}
+		result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		// For string return type, we need to decode the dynamic bytes
+		// First 32 bytes are offset to string data
+		offset := new(big.Int).SetBytes(result[:32]).Uint64()
+		// At offset: 32 bytes for string length
+		length := new(big.Int).SetBytes(result[offset : offset+32]).Uint64()
+		// Actual string data starts after length
+		strData := result[offset+32 : offset+32+length]
+		decodedString := string(strData)
+		require.Equal(t, "IOTA", decodedString)
+	})
 
-	// Test supportsInterface(0x01ffc9a7) with parameter 0x01ffc9a7 (ERC165) - returns true
-	callMsg = ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddr,
-		Data: common.Hex2Bytes("01ffc9a701ffc9a700000000000000000000000000000000000000000000000000000000"),
-	}
-	result, err = env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
-	require.NoError(t, err)
-	require.NotEmpty(t, result)
-	decodedBool := new(big.Int).SetBytes(result).Uint64() == 1
-	require.Equal(t, true, decodedBool)
+	t.Run("supportsInterface(0x01ffc9a7) with parameter 0x01ffc9a7 (ERC165) should return true", func(t *testing.T) {
+		callMsg := ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddr,
+			Data: common.Hex2Bytes("01ffc9a701ffc9a700000000000000000000000000000000000000000000000000000000"),
+		}
+		result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		decodedBool := new(big.Int).SetBytes(result).Uint64() == 1
+		require.Equal(t, true, decodedBool)
+	})
 
-	// Test supportsInterface(0x01ffc9a7) with parameter 0x36372b07 (ERC20) - returns true
-	callMsg = ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddr,
-		Data: common.Hex2Bytes("01ffc9a736372b0700000000000000000000000000000000000000000000000000000000"),
-	}
-	result, err = env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
-	require.NoError(t, err)
-	require.NotEmpty(t, result)
-	decodedBool = new(big.Int).SetBytes(result).Uint64() == 1
-	require.Equal(t, true, decodedBool)
+	t.Run("supportsInterface(0x01ffc9a7) with parameter 0x36372b07 (ERC20) should return false", func(t *testing.T) {
+		callMsg := ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddr,
+			Data: common.Hex2Bytes("01ffc9a736372b0700000000000000000000000000000000000000000000000000000000"),
+		}
+		result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		decodedBool := new(big.Int).SetBytes(result).Uint64() == 1
+		require.Equal(t, false, decodedBool)
+	})
 
-	// Test supportsInterface(0x01ffc9a7) with parameter 0xd9b67a26 - returns false
-	callMsg = ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddr,
-		Data: common.Hex2Bytes("01ffc9a7d9b67a2600000000000000000000000000000000000000000000000000000000"),
-	}
-	result, err = env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
-	require.NoError(t, err)
-	require.NotEmpty(t, result)
-	decodedBool = new(big.Int).SetBytes(result).Uint64() == 1
-	require.Equal(t, false, decodedBool)
+	t.Run("supportsInterface(0x01ffc9a7) with parameter 0xd9b67a26 should return false", func(t *testing.T) {
+		callMsg := ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddr,
+			Data: common.Hex2Bytes("01ffc9a7d9b67a2600000000000000000000000000000000000000000000000000000000"),
+		}
+		result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		decodedBool := new(big.Int).SetBytes(result).Uint64() == 1
+		require.Equal(t, false, decodedBool)
+	})
 
-	// Test balanceOf(0x0000000000000000000000000000000000000000) - returns 0
-	callMsg = ethereum.CallMsg{
-		From: creatorAddress,
-		To:   &contractAddr,
-		Data: common.Hex2Bytes("70a082315a2b629f62499facf454bca49e7561b55db62e13000000000000000000000000"),
-	}
-	result, err = env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
-	require.NoError(t, err)
-	require.NotEmpty(t, result)
-	decoded = new(big.Int).SetBytes(result).Uint64()
-	require.Equal(t, uint64(0), decoded)
+	t.Run("balanceOf(0x0000000000000000000000000000000000000000) should return 0", func(t *testing.T) {
+		callMsg := ethereum.CallMsg{
+			From: creatorAddress,
+			To:   &contractAddr,
+			Data: common.Hex2Bytes("70a082315a2b629f62499facf454bca49e7561b55db62e13000000000000000000000000"),
+		}
+		result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		decoded := new(big.Int).SetBytes(result).Uint64()
+		require.Equal(t, uint64(0), decoded)
+	})
 }
