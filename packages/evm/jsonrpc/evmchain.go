@@ -708,23 +708,18 @@ func (e *EVMChain) traceTransaction(
 	txIndex uint64,
 	blockHash common.Hash,
 ) (json.RawMessage, error) {
-	tracerType := "callTracer"
-	if config.Tracer != nil {
-		tracerType = *config.Tracer
-	}
 	txIndexInt, err := safecast.Convert[int](txIndex)
 	if err != nil {
 		return nil, err
 	}
 	tracer, err := newTracer(
-		tracerType,
 		&tracers.Context{
 			BlockHash:   blockHash,
 			BlockNumber: new(big.Int).SetUint64(uint64(blockInfo.BlockIndex)),
 			TxIndex:     txIndexInt,
 			TxHash:      tx.Hash(),
 		},
-		config.TracerConfig,
+		config,
 	)
 	if err != nil {
 		return nil, err
@@ -770,18 +765,12 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		return nil, err
 	}
 
-	tracerType := "callTracer"
-	if config.Tracer != nil {
-		tracerType = *config.Tracer
-	}
-
 	tracer, err := newTracer(
-		tracerType,
 		&tracers.Context{
 			BlockHash:   block.Hash(),
 			BlockNumber: new(big.Int).SetUint64(uint64(iscBlock.BlockIndex)),
 		},
-		config.TracerConfig,
+		config,
 	)
 	if err != nil {
 		return nil, err
