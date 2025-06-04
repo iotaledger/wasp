@@ -81,7 +81,7 @@ func TestDryRunForRequest(t *testing.T) {
 		Function: uint32(isc.Hn("deposit")),
 	}
 	allowance := iscmove.NewAssets(33)
-	allowance.AddCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
+	allowance.SetCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
 	req := iscmoveclient.PTBCreateAndSendRequest(
 		ptb,
 		l1starter.ISCPackageID(),
