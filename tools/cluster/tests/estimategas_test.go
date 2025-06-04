@@ -30,9 +30,11 @@ import (
 )
 
 func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
+	// Create tx sender with some funds
 	sender := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	env.DepositFunds(100*isc.Million, sender.(*cryptolib.KeyPair))
 
+	// Mind some TESTCOINs
 	coinPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
 		t,
 		env.Clu.L1Client().IotaClient(),
@@ -57,9 +59,12 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()
+
+	// Create asset bag for transaction
 	ptb = iscmoveclient.PTBAssetsBagNew(ptb, l1starter.ISCPackageID(), sender.Address())
 	argAssetsBag := ptb.LastCommandResultArg()
 
+	// Place some IOTAs into new asset bag for gas payment
 	ptb = iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
 		ptb,
 		l1starter.ISCPackageID(),
@@ -68,6 +73,8 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		iotajsonrpc.CoinValue(iotaclient.DefaultGasBudget),
 		iotajsonrpc.IotaCoinType,
 	)
+
+	// Place some TESTCOINs into new asset bag
 	assetsBagPTB := iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
 		ptb,
 		l1starter.ISCPackageID(),
@@ -76,6 +83,8 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		iotajsonrpc.CoinValue(122),
 		iotajsonrpc.CoinType(testcoinType.String()),
 	)
+
+	// Deposit funds from L1 asset bag into L2 account
 	msg := &iscmove.Message{
 		Contract: uint32(isc.Hn("accounts")),
 		Function: uint32(isc.Hn("deposit")),
@@ -90,7 +99,6 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		env.Chain.ChainID.AsObjectID(),
 		argAssetsBag,
 		msg,
-		//bcs.MustMarshal(lo.ToPtr(bcs.MustMarshal(allowance))),
 		bcs.MustMarshal(allowance),
 		l2GasBudget,
 	)
@@ -106,12 +114,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	txBytes, err := bcs.Marshal(&txData)
 	require.NoError(t, err)
 
-	// dryRunRes, err := env.Clu.L1Client().DryRunTransaction(context.Background(), txBytes)
-	// require.NoError(t, err)
-	// require.True(t, dryRunRes.Effects.Data.IsSuccess())
-	// dryRunResBcs, err := bcs.Marshal(dryRunRes)
-	// require.NoError(t, err)
-
+	// Estimate L2 gas budget for that transaction
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
 		TransactionBytes: hexutil.Encode(txBytes),
 	}).Execute()
@@ -120,6 +123,8 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 
 	l2GasBudget, err = strconv.ParseUint(estimatedReceipt.GasFeeCharged, 10, 64)
 	require.NoError(t, err)
+
+	// Create and execute same transaction, but with proper L2 gas budget
 	ptb = iscmoveclient.PTBCreateAndSendRequest(
 		assetsBagPTB.Clone(),
 		l1starter.ISCPackageID(),
@@ -133,6 +138,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 
 	gasPayments, err := env.Clu.L1Client().FindCoinsForGasPayment(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, 2*iotaclient.DefaultGasBudget)
 	require.NoError(t, err)
+
 	txData = iotago.NewProgrammable(
 		sender.Address().AsIotaAddress(),
 		pt,
