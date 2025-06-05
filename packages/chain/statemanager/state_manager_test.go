@@ -13,9 +13,9 @@ import (
 	hivelog "github.com/iotaledger/hive.go/log"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/metrics"
@@ -62,14 +62,14 @@ func TestCruelWorld(t *testing.T) {
 		log.NewChildLogger("net"),
 	)
 	netProviders := network.NetworkProviders()
-	bf := sm_gpa_utils.NewBlockFactory(t)
+	bf := utils.NewBlockFactory(t)
 	sms := make([]StateMgr, nodeCount)
 	stores := make([]state.Store, nodeCount)
-	snapMs := make([]sm_snapshots.SnapshotManager, nodeCount)
-	parameters := sm_gpa.NewStateManagerParameters()
+	snapMs := make([]snapshots.SnapshotManager, nodeCount)
+	parameters := gpa.NewStateManagerParameters()
 	parameters.StateManagerTimerTickPeriod = timerTickPeriod
 	parameters.StateManagerGetBlockRetry = getBlockPeriod
-	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log hivelog.Logger) sm_snapshots.SnapshotManager {
+	NewMockedSnapshotManagerFun := func(createSnapshots bool, store state.Store, log hivelog.Logger) snapshots.SnapshotManager {
 		var createPeriod uint32
 		var delayPeriod uint32
 		if createSnapshots {
@@ -79,7 +79,7 @@ func TestCruelWorld(t *testing.T) {
 			createPeriod = 0
 			delayPeriod = 0
 		}
-		return sm_snapshots.NewMockedSnapshotManager(t, createPeriod, delayPeriod, bf.GetStore(), store, nil, snapshotCommitTime, parameters.TimeProvider, log)
+		return snapshots.NewMockedSnapshotManager(t, createPeriod, delayPeriod, bf.GetStore(), store, nil, snapshotCommitTime, parameters.TimeProvider, log)
 	}
 	for i := range sms {
 		t.Logf("Creating %v-th state manager for node %s", i, peeringURLs[i])
@@ -95,7 +95,7 @@ func TestCruelWorld(t *testing.T) {
 			peerPubKeys[i],
 			peerPubKeys,
 			netProviders[i],
-			sm_gpa_utils.NewMockedTestBlockWAL(),
+			utils.NewMockedTestBlockWAL(),
 			snapMs[i],
 			stores[i],
 			nil,

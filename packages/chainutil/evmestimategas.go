@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -24,6 +25,8 @@ var evmErrOutOfGasRegex = regexp.MustCompile("out of gas|intrinsic gas too low")
 
 // EVMEstimateGas executes the given request and discards the resulting chain state. It is useful
 // for estimating gas.
+//
+//nolint:gocyclo,funlen
 func EVMEstimateGas(
 	anchor *isc.StateAnchor,
 	l1Params *parameters.L1Params,
@@ -31,14 +34,14 @@ func EVMEstimateGas(
 	processors *processors.Config,
 	log log.Logger,
 	call ethereum.CallMsg,
-) (uint64, error) { //nolint:gocyclo,funlen
+) (uint64, error) {
 	// Determine the lowest and highest possible gas limits to binary search in between
 	intrinsicGas, err := core.IntrinsicGas(call.Data, nil, nil, call.To == nil, true, true, true)
 	if err != nil {
 		return 0, err
 	}
 	var (
-		lo     uint64 = intrinsicGas - 1
+		lo     = intrinsicGas - 1
 		hi     uint64
 		gasCap uint64
 	)
@@ -74,6 +77,7 @@ func EVMEstimateGas(
 			processors,
 			log,
 			blockTime,
+			hashing.PseudoRandomHash(nil),
 			iscReq,
 			true,
 		)

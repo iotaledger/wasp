@@ -5,6 +5,8 @@ run:
   allow-serial-runners: true
 linters:
   default: none
+  disable:
+    - exhaustruct
   enable:
     - asasalint
     - asciicheck
@@ -191,6 +193,15 @@ linters:
         text: Error return value of `e.Encode` is not checked
       - path: (.+)\.go$
         text: may want to add detail/ assignee to this TODO/ FIXME/ BUG comment
+      - path: 'packages/evm/jsonrpc/service.go'
+        text: 'ST1003: method ChainId should be ChainID'  # casing required for evm
+      - path: (.+)\.go$
+        text: "consider `optionalAgentID' to be of non-pointer type"
+      - path: "packages/nodeconn/chain.go"
+        text: "Non-inherited new context, use function like `context.WithXXX` instead"
+      - linters:
+          - misspell
+        text: "`Finalise` is a misspelling of `Finalize`"
     paths:
       - contracts/wasm
       - tools/cluster

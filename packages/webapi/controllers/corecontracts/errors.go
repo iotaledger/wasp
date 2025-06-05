@@ -3,6 +3,7 @@ package corecontracts
 import (
 	"net/http"
 
+	"fortio.org/safecast"
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
@@ -15,7 +16,6 @@ type ErrorMessageFormatResponse struct {
 
 func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
-
 	if err != nil {
 		return c.handleViewCallError(err)
 	}
@@ -29,7 +29,12 @@ func (c *Controller) getErrorMessageFormat(e echo.Context) error {
 		return err
 	}
 
-	messageFormat, err := corecontracts.ErrorMessageFormat(ch, contractHname, uint16(errorID), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+	errorIDUint16, err := safecast.Convert[uint16](errorID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error ID out of range for uint16")
+	}
+
+	messageFormat, err := corecontracts.ErrorMessageFormat(ch, contractHname, errorIDUint16, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	if err != nil {
 		return c.handleViewCallError(err)
 	}

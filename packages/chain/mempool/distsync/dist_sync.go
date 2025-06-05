@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package distsync implements distributed synchronization mechanisms for the mempool.
 package distsync
 
 import (

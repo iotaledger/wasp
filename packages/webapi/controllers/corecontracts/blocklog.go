@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"fortio.org/safecast"
+
 	"github.com/labstack/echo/v4"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -19,6 +21,9 @@ import (
 
 func (c *Controller) getControlAddresses(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	controlAddresses, err := corecontracts.GetControlAddresses(ch)
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -35,6 +40,9 @@ func (c *Controller) getControlAddresses(e echo.Context) error {
 
 func (c *Controller) getBlockInfo(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	var blockInfo *blocklog.BlockInfo
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -47,7 +55,11 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 			return apierrors.InvalidPropertyError(params.ParamBlockIndex, err)
 		}
 
-		_, blockInfo, err = corecontracts.GetBlockInfo(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		_, blockInfo, err = corecontracts.GetBlockInfo(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -60,6 +72,9 @@ func (c *Controller) getBlockInfo(e echo.Context) error {
 
 func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	var requestIDs []isc.RequestID
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -72,7 +87,11 @@ func (c *Controller) getRequestIDsForBlock(e echo.Context) error {
 			return err
 		}
 
-		_, requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		_, requestIDs, err = corecontracts.GetRequestIDsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 
 	if err != nil {
@@ -122,6 +141,9 @@ func (c *Controller) getRequestReceipt(e echo.Context) error {
 
 func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	var blocklogReceipts *blocklog.RequestReceiptsResponse
 	blockIndex := e.Param(params.ParamBlockIndex)
 
@@ -140,7 +162,11 @@ func (c *Controller) getRequestReceiptsForBlock(e echo.Context) error {
 			return err
 		}
 
-		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		blocklogReceipts, err = corecontracts.GetRequestReceiptsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 	}
 	if err != nil {
 		return c.handleViewCallError(err)
@@ -209,7 +235,11 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 			return err
 		}
 
-		_, events, err = corecontracts.GetEventsForBlock(ch, uint32(blockIndexNum), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
+		blockIndexUint32, convertErr := safecast.Convert[uint32](blockIndexNum)
+		if convertErr != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "Block index out of range for uint32")
+		}
+		_, events, err = corecontracts.GetEventsForBlock(ch, blockIndexUint32, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
 		if err != nil {
 			return c.handleViewCallError(err)
 		}
@@ -229,6 +259,9 @@ func (c *Controller) getBlockEvents(e echo.Context) error {
 
 func (c *Controller) getRequestEvents(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
+	if err != nil {
+		return err
+	}
 	requestID, err := params.DecodeRequestID(e)
 	if err != nil {
 		return err

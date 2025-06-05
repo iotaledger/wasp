@@ -1,3 +1,4 @@
+// Package prometheus provides Prometheus metrics collection and exposition functionality for the Wasp node.
 package prometheus
 
 import (

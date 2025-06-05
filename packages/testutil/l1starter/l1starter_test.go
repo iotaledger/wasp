@@ -2,9 +2,10 @@ package l1starter_test
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 
@@ -27,6 +28,7 @@ func TestStart(t *testing.T) {
 	require.NoError(t, err)
 	require.EqualValues(t, 0, state.PendingActiveValidatorsSize.Uint64())
 
-	w, _ := context.WithTimeout(context.Background(), testmisc.GetTimeout(2*time.Second))
+	w, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(2*time.Second))
+	defer cancel()
 	<-w.Done()
 }

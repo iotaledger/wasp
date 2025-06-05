@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package mempool manages transaction pools for IOTA Smart Contracts.
 // A mempool basically does these functions:
 //   - Provide a proposed set of requests (refs) for the consensus.
 //   - Provide a set of requests for a TX as decided by the consensus.
@@ -53,7 +54,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/chain/mempool/distsync"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
@@ -80,7 +81,7 @@ const (
 	forceCleanMempoolTick   = 1 * time.Minute
 )
 
-// Partial interface for providing chain events to the outside.
+// ChainListener is a partial interface for providing chain events to the outside.
 // This interface is in the mempool part only because it tracks
 // the actual state for checking the consumed requests.
 type ChainListener interface {

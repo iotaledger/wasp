@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// nonce package implements NonceDKG as described in <https://github.com/iotaledger/crypto-tss/>.
+// Package nonce implements NonceDKG as described in <https://github.com/iotaledger/crypto-tss/>.
 // > 4) Asynchronous nonce-DKG
 // > Variant a)
 // >

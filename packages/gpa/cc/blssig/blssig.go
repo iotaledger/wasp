@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// blssig package implements a Common Coin (CC) based on a BLS Threshold signatures as
+// Package blssig implements a Common Coin (CC) based on a BLS Threshold signatures as
 // described in the Appendix C of
 //
 // > Andrew Miller, Yu Xia, Kyle Croman, Elaine Shi, and Dawn Song. 2016.

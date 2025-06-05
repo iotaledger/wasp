@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package jsonrpc implements JSON-RPC endpoints according to
+// Package jsonrpc implements JSON-RPC endpoints according to
 // https://eth.wiki/json-rpc/API
 package jsonrpc
 
@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"fortio.org/safecast"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -75,7 +77,8 @@ func (e *EthService) resolveError(err error) error {
 			return err
 		}
 		var resolveErr error
-		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(lo.Must(e.evmChain.backend.ISCLatestState())))
+		_, state := lo.Must2(e.evmChain.backend.ISCLatestState())
+		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(state))
 		if resolveErr != nil {
 			return fmt.Errorf("could not resolve VMError: %w: %v", err, resolveErr)
 		}
@@ -201,7 +204,11 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]any, 
 			return nil, e.resolveError(err)
 		}
 		// get fee policy at the same block and calculate effectiveGasPrice
-		feePolicy, err := e.evmChain.backend.FeePolicy(uint32(blockNumber))
+		convertedValue, err := safecast.Convert[uint32](blockNumber)
+		if err != nil {
+			return nil, fmt.Errorf("block number conversion error: %w", err)
+		}
+		feePolicy, err := e.evmChain.backend.FeePolicy(convertedValue)
 		if err != nil {
 			return nil, err
 		}
@@ -383,9 +390,7 @@ func (e *EthService) GetLogs(q *RPCFilterQuery) ([]*types.Log, error) {
 	})
 }
 
-// ChainID implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
-//
-
+// ChainId implements the eth_chainId method according to https://eips.ethereum.org/EIPS/eip-695
 func (e *EthService) ChainId() (hexutil.Uint, error) {
 	return withMetrics(e.metrics, "eth_chainId", func() (hexutil.Uint, error) {
 		chainID := e.evmChain.ChainID()
@@ -464,7 +469,11 @@ func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[
 		result := make([]map[string]any, len(receipts))
 		for i, receipt := range receipts {
 			// This is pretty ugly, maybe we should shift to uint64 for internals too.
-			feePolicy, err := e.evmChain.backend.FeePolicy(uint32(receipt.BlockNumber.Uint64()))
+			convertedValue, err := safecast.Convert[uint32](receipt.BlockNumber.Uint64())
+			if err != nil {
+				return nil, fmt.Errorf("block number conversion error: %w", err)
+			}
+			feePolicy, err := e.evmChain.backend.FeePolicy(convertedValue)
 			if err != nil {
 				return nil, err
 			}
@@ -623,9 +632,17 @@ func NewEVMService(evmChain *EVMChain) *EVMService {
 
 func (e *EVMService) Snapshot() (hexutil.Uint, error) {
 	n, err := e.evmChain.backend.TakeSnapshot()
-	return hexutil.Uint(n), err
+	convertedValue, convErr := safecast.Convert[uint](n)
+	if convErr != nil {
+		return 0, fmt.Errorf("snapshot ID conversion error: %w", convErr)
+	}
+	return hexutil.Uint(convertedValue), err
 }
 
 func (e *EVMService) Revert(snapshot hexutil.Uint) error {
-	return e.evmChain.backend.RevertToSnapshot(int(snapshot))
+	convertedValue, err := safecast.Convert[int](snapshot)
+	if err != nil {
+		return fmt.Errorf("snapshot ID conversion error: %w", err)
+	}
+	return e.evmChain.backend.RevertToSnapshot(convertedValue)
 }

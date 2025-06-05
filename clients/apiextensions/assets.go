@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 )
 
-// TODO: Handle Coins (other than base tokens) and Objects
+// AssetsFromAPIResponse TODO: Handle Coins (other than base tokens) and Objects
 func AssetsFromAPIResponse(assetsResponse *apiclient.AssetsResponse) (*isc.Assets, error) {
 	baseTokens, err := strconv.ParseUint(assetsResponse.BaseTokens, 10, 64)
 	if err != nil {

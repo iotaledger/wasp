@@ -10,10 +10,10 @@ type countAndMaxMetrics struct {
 	maxValue float64
 }
 
-func newCountAndMaxMetrics(count, max *prometheus.CounterVec) *countAndMaxMetrics {
+func newCountAndMaxMetrics(count, maximum *prometheus.CounterVec) *countAndMaxMetrics {
 	return &countAndMaxMetrics{
 		count:    count,
-		max:      max,
+		max:      maximum,
 		maxValue: -1,
 	}
 }

@@ -2,9 +2,10 @@ package websocket
 
 import (
 	"context"
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	"github.com/stretchr/testify/require"
 

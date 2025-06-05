@@ -1,3 +1,5 @@
+// Package cli implements the command-line interface for the wasp-cli tool,
+// providing core functionality and utilities for user interaction.
 package cli
 
 import (

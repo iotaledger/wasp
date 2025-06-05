@@ -12,10 +12,10 @@ import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
 )
 
-// testnet/alphanet uses COIN_TYPE = 1
+// TestnetCoinType is used by testnet/alphanet with COIN_TYPE = 1
 const TestnetCoinType = iotasigner.TestnetCoinType
 
-// / IOTA coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
+// IotaCoinType is the IOTA coin type <https://github.com/satoshilabs/slips/blob/master/slip-0044.md>
 const IotaCoinType = iotasigner.IotaCoinType
 
 // SubSeed returns a Seed (ed25519 Seed) from a master seed (that has arbitrary length)

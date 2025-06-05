@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package evmtest provides testing utilities and mock contracts for EVM implementation.
 package evmtest
 
 import (

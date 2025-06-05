@@ -3,6 +3,7 @@ package blocklog
 import (
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/isc"
@@ -61,7 +62,9 @@ func viewGetRequestIDsForBlock(ctx isc.SandboxView, blockIndexOptional *uint32) 
 	}
 
 	return blockIndex, lo.Map(receipts, func(b []byte, i int) isc.RequestID {
-		receipt, err := RequestReceiptFromBytes(b, blockIndex, uint16(i))
+		requestIndex, err := safecast.Convert[uint16](i)
+		ctx.RequireNoError(err)
+		receipt, err := RequestReceiptFromBytes(b, blockIndex, requestIndex)
 		ctx.RequireNoError(err)
 		return receipt.Request.ID()
 	})
@@ -89,7 +92,9 @@ func viewGetRequestReceiptsForBlock(ctx isc.SandboxView, blockIndexOptional *uin
 	return &RequestReceiptsResponse{
 		BlockIndex: blockIndex,
 		Receipts: lo.Map(receipts, func(b []byte, i int) *RequestReceipt {
-			receipt, err := RequestReceiptFromBytes(b, blockIndex, uint16(i))
+			requestIndex, err := safecast.Convert[uint16](i)
+			ctx.RequireNoError(err)
+			receipt, err := RequestReceiptFromBytes(b, blockIndex, requestIndex)
 			ctx.RequireNoError(err)
 			return receipt
 		}),

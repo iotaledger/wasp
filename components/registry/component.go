@@ -1,6 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
+// Package registry implements node identity and chain record management functionality.
 package registry
 
 import (
@@ -13,7 +14,7 @@ import (
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
 	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmt_log"
+	"github.com/iotaledger/wasp/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/registry"
 )
@@ -51,7 +52,7 @@ func provide(c *dig.Container) error {
 		NodeConnection chain.NodeConnection
 	}
 
-	if err := c.Provide(func(deps consensusRegistryDeps) cmt_log.ConsensusStateRegistry {
+	if err := c.Provide(func(deps consensusRegistryDeps) cmtlog.ConsensusStateRegistry {
 		consensusStateRegistry, err := registry.NewConsensusStateRegistry(ParamsRegistries.ConsensusState.Path)
 		if err != nil {
 			Component.LogPanic(err.Error())

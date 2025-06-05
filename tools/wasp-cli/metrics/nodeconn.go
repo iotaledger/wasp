@@ -1,3 +1,5 @@
+// Package metrics provides functionality for collecting and reporting
+// performance and operational metrics from Wasp nodes.
 package metrics
 
 import (

@@ -1,3 +1,4 @@
+// Package publisher implements the Publisher component which handles event publishing and subscriptions.
 package publisher
 
 import (

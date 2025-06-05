@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/tracers"
 
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/state"
@@ -26,6 +27,7 @@ type ChainBackend interface {
 	EVMTrace(
 		anchor *isc.StateAnchor,
 		blockTime time.Time,
+		entropy hashing.HashValue,
 		iscRequestsInBlock []isc.Request,
 		enforceGasBurned []vm.EnforceGasBurned,
 		tracer *tracers.Tracer,
@@ -34,8 +36,7 @@ type ChainBackend interface {
 	FeePolicy(blockIndex uint32) (*gas.FeePolicy, error)
 	ISCChainID() *isc.ChainID
 	ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error)
-	ISCLatestAnchor() (*isc.StateAnchor, error)
-	ISCLatestState() (state.State, error)
+	ISCLatestState() (*isc.StateAnchor, state.State, error)
 	ISCStateByBlockIndex(blockIndex uint32) (state.State, error)
 	ISCStateByTrieRoot(trieRoot trie.Hash) (state.State, error)
 	TakeSnapshot() (int, error)

@@ -1,9 +1,10 @@
 package websocket
 
 import (
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 	"testing"
 	"time"
+
+	"github.com/iotaledger/wasp/packages/testutil/testmisc"
 
 	websocketserver "github.com/coder/websocket"
 	"github.com/stretchr/testify/require"
@@ -40,7 +41,7 @@ func InitWebsocket(ctx context.Context, t *testing.T, eventsToSubscribe []publis
 
 	ws.EventHandler().AttachToEvents()
 
-	chain := env.NewChain()
+	chain := env.NewChain() //nolint:contextcheck
 
 	go func() {
 		websocketHub.Run(ctx)

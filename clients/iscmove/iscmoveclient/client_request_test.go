@@ -161,22 +161,22 @@ func TestCreateAndSendRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := range 25 {
-			getCoinRef, err := client.GetObject(
+			getCoinRef, assetErr := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
 					ObjectID: testCoinRef[i].ObjectID,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 				},
 			)
-			require.NoError(t, err)
+			require.NoError(t, assetErr)
 
-			coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
-			require.NoError(t, err)
+			coinResource, assetErr := iotago.NewResourceType(*getCoinRef.Data.Type)
+			require.NoError(t, assetErr)
 
-			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
-			require.NoError(t, err)
+			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
-			_, err = PTBTestWrapper(
+			_, assetErr = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
 					Signer:    cryptolibSigner,
@@ -195,10 +195,10 @@ func TestCreateAndSendRequest(t *testing.T) {
 					)
 				},
 			)
-			require.NoError(t, err)
+			require.NoError(t, assetErr)
 
-			assetsBagRef, err = client.UpdateObjectRef(context.Background(), assetsBagRef)
-			require.NoError(t, err)
+			assetsBagRef, assetErr = client.UpdateObjectRef(context.Background(), assetsBagRef)
+			require.NoError(t, assetErr)
 		}
 
 		createAndSendRequestRes, err := client.CreateAndSendRequest(
@@ -227,22 +227,22 @@ func TestCreateAndSendRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		for i := range 26 {
-			getCoinRef, err := client.GetObject(
+			getCoinRef, assetErr := client.GetObject(
 				context.Background(),
 				iotaclient.GetObjectRequest{
 					ObjectID: testCoinRef[i+25].ObjectID,
 					Options:  &iotajsonrpc.IotaObjectDataOptions{ShowType: true},
 				},
 			)
-			require.NoError(t, err)
+			require.NoError(t, assetErr)
 
-			coinResource, err := iotago.NewResourceType(*getCoinRef.Data.Type)
-			require.NoError(t, err)
+			coinResource, assetErr := iotago.NewResourceType(*getCoinRef.Data.Type)
+			require.NoError(t, assetErr)
 
-			testCointype, err := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
-			require.NoError(t, err)
+			testCointype, assetErr := iotajsonrpc.CoinTypeFromString(coinResource.SubType1.String())
+			require.NoError(t, assetErr)
 			ref := getCoinRef.Data.Ref()
-			_, err = PTBTestWrapper(
+			_, assetErr = PTBTestWrapper(
 				&PTBTestWrapperRequest{
 					Client:    client,
 					Signer:    cryptolibSigner,
@@ -261,10 +261,10 @@ func TestCreateAndSendRequest(t *testing.T) {
 					)
 				},
 			)
-			require.NoError(t, err)
+			require.NoError(t, assetErr)
 
-			assetsBagRef, err = client.UpdateObjectRef(context.Background(), assetsBagRef)
-			require.NoError(t, err)
+			assetsBagRef, assetErr = client.UpdateObjectRef(context.Background(), assetsBagRef)
+			require.NoError(t, assetErr)
 		}
 
 		_, err = client.CreateAndSendRequest(

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"go.dedis.ch/kyber/v3"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -61,6 +62,7 @@ type proc struct {
 	steps        map[byte]*procStep                         // All the steps for the procedure.
 }
 
+//nolint:funlen
 func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node) (*proc, error) {
 	log := node.log.NewChildLogger(fmt.Sprintf("dkgID.%s", dkgID.String()))
 	var err error
@@ -90,6 +92,10 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 			return nil, fmt.Errorf("failed to instantiate DistKeyGenerator: %w", err)
 		}
 	}
+	thresholdUint16, err := safecast.Convert[uint16](blsThreshold)
+	if err != nil {
+		return nil, fmt.Errorf("bls threshold overflows uint16: %d", blsThreshold)
+	}
 	p := proc{
 		dkgRef:       msg.dkgRef,
 		dkgID:        dkgID,
@@ -97,7 +103,7 @@ func onInitiatorInit(dkgID peering.PeeringID, msg *initiatorInitMsg, node *Node)
 		nodeIndex:    netGroup.SelfIndex(),
 		initiatorPub: msg.initiatorPub,
 		threshold:    msg.threshold,
-		blsThreshold: uint16(blsThreshold),
+		blsThreshold: thresholdUint16,
 		roundRetry:   msg.roundRetry,
 		netGroup:     netGroup,
 		dkgImpl:      dkgImpl,
@@ -239,7 +245,11 @@ func (p *proc) rabinStep1R21SendDealsMakeSent(step byte, kst keySetType, initRec
 	p.dkgLock.Unlock()
 	sentMsgs := make(map[uint16]*peering.PeerMessageData)
 	for i := range deals {
-		sentMsgs[uint16(i)] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinDealMsg{
+		iterator, err := safecast.Convert[uint16](i)
+		if err != nil {
+			return nil, errors.New("length of rabin deals overflows uint16")
+		}
+		sentMsgs[iterator] = makePeerMessage(p.dkgID, peering.ReceiverDkg, step, &rabinDealMsg{
 			deal: deals[i],
 		})
 	}
@@ -314,7 +324,7 @@ func (p *proc) rabinStep3R23SendJustificationsMakeSent(step byte, kst keySetType
 	for i := range prevMsgs {
 		peerResponseMsg := &rabinResponseMsg{}
 		if err = msgFromBytes(prevMsgs[i].MsgData, peerResponseMsg); err != nil {
-			err = fmt.Errorf("Response: decoding failed: %w", err)
+			err = fmt.Errorf("response: decoding failed: %w", err)
 			return nil, err
 		}
 		recvResponses[i] = peerResponseMsg
@@ -365,7 +375,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 	for i := range prevMsgs {
 		peerJustificationMsg := &rabinJustificationMsg{blsSuite: p.keySetSuite(kst)}
 		if err = msgFromBytes(prevMsgs[i].MsgData, peerJustificationMsg); err != nil {
-			return nil, fmt.Errorf("Justification: decoding failed: %w", err)
+			return nil, fmt.Errorf("justification: decoding failed: %w", err)
 		}
 		recvJustifications[i] = peerJustificationMsg
 	}
@@ -376,7 +386,7 @@ func (p *proc) rabinStep4R4SendSecretCommitsMakeSent(step byte, kst keySetType, 
 		for _, j := range recvJustifications[i].justifications {
 			if err = p.dkgImpl[kst].ProcessJustification(j); err != nil {
 				p.dkgLock.Unlock()
-				return nil, fmt.Errorf("Justification: processing failed: %w", err)
+				return nil, fmt.Errorf("justification: processing failed: %w", err)
 			}
 		}
 	}
@@ -531,7 +541,6 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeSent(step byte, kst keySetT
 	return sentMsgs, nil
 }
 
-//nolint:gocyclo,funlen
 func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 	step byte,
 	initRecv *peering.PeerMessageGroupIn,
@@ -614,8 +623,14 @@ func (p *proc) rabinStep6R6SendReconstructCommitsMakeResp(
 		p.dkgLock.Unlock()
 		//
 		// Save the needed info.
-		groupSize := uint16(len(p.netGroup.AllNodes()))
-		ownIndex := uint16(distKeyShareDSS.PriShare().I)
+		groupSize, groupErr := safecast.Convert[uint16](len(p.netGroup.AllNodes()))
+		if groupErr != nil {
+			return nil, errors.New("group size overflows uint16")
+		}
+		ownIndex, indexErr := safecast.Convert[uint16](distKeyShareDSS.PriShare().I)
+		if indexErr != nil {
+			return nil, errors.New("group size overflows uint16")
+		}
 		publicSharesDSS := make([]kyber.Point, groupSize)
 		publicSharesDSS[ownIndex] = p.node.edSuite.Point().Mul(distKeyShareDSS.PriShare().V, nil)
 		publicSharesBLS := make([]kyber.Point, groupSize)
@@ -681,7 +696,7 @@ func (p *proc) nodeInQUAL(kst keySetType, nodeIdx uint16) bool {
 	}
 	p.dkgLock.RLock()
 	for _, q := range p.dkgImpl[kst].QUAL() {
-		if uint16(q) == nodeIdx {
+		if safecast.MustConvert[uint16](q) == nodeIdx {
 			p.dkgLock.RUnlock()
 			return true
 		}
@@ -725,7 +740,7 @@ func (p *proc) nodePubKeys() []*cryptolib.PublicKey {
 	nodeCount := len(allNodes)
 	pubKeys := make([]*cryptolib.PublicKey, nodeCount)
 	for i := 0; i < nodeCount; i++ {
-		pubKeys[i] = allNodes[uint16(i)].PubKey()
+		pubKeys[i] = allNodes[safecast.MustConvert[uint16](i)].PubKey()
 	}
 	return pubKeys
 }
@@ -798,7 +813,7 @@ func (s *procStep) recv(msg *peering.PeerMessageGroupIn) {
 	s.recvCh <- msg
 }
 
-//nolint:gocyclo,funlen
+//nolint:gocyclo
 func (s *procStep) run() {
 	var err error
 	for {
@@ -880,12 +895,12 @@ func (s *procStep) run() {
 					// Here we received a message from the peer first time in this round.
 					// Parse and store it and wait until we have messages from all the peers.
 					multiKSTMsg := &multiKeySetMsg{
-						peeringID: recv.PeerMessageData.PeeringID,
-						receiver:  recv.PeerMessageData.MsgReceiver,
-						msgType:   recv.PeerMessageData.MsgType,
+						peeringID: recv.PeeringID,
+						receiver:  recv.MsgReceiver,
+						msgType:   recv.MsgType,
 					}
-					if err := msgFromBytes(recv.PeerMessageData.MsgData, multiKSTMsg); err != nil {
-						s.log.LogDebugf("failed to parse peer message, peeringID: %s, msgType: %d, msgData: %s, error: %w", recv.PeerMessageData.PeeringID, recv.PeerMessageData.MsgType, hex.EncodeToString(recv.PeerMessageData.MsgData), err)
+					if err := msgFromBytes(recv.MsgData, multiKSTMsg); err != nil {
+						s.log.LogDebugf("failed to parse peer message, peeringID: %s, msgType: %d, msgData: %s, error: %w", recv.PeeringID, recv.MsgType, hex.EncodeToString(recv.MsgData), err)
 						continue
 					}
 

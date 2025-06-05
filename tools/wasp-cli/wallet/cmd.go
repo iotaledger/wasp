@@ -1,3 +1,5 @@
+// Package wallet provides commands for managing and interacting with IOTA wallets,
+// enabling users to perform various cryptocurrency operations.
 package wallet
 
 import (

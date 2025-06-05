@@ -188,7 +188,6 @@ func (env *Solo) IterateChainTrieDBs(
 	chainIDs := lo.Keys(env.chains)
 	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
 	for _, chID := range chainIDs {
-		chID := chID // prevent loop variable aliasing
 		ch := env.chains[chID]
 		lo.Must0(ch.db.Iterate(nil, func(k []byte, v []byte) bool {
 			f(&chID, k, v)
@@ -207,7 +206,6 @@ func (env *Solo) IterateChainLatestStates(
 	chainIDs := lo.Keys(env.chains)
 	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
 	for _, chID := range chainIDs {
-		chID := chID // prevent loop variable aliasing
 		ch := env.chains[chID]
 		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(ch.db))
 		state, err := store.LatestState()

@@ -1,4 +1,5 @@
-// to be used by utilities like: cluster-tool, wasp-cli, apilib, etc
+// Package clients provides layer 2 client functionality to be used by utilities
+// like: cluster-tool, wasp-cli, apilib, etc.
 package clients
 
 import (

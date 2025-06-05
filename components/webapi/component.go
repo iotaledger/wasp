@@ -1,3 +1,4 @@
+// Package webapi implements the REST API server component for the Wasp node.
 package webapi
 
 import (
@@ -120,14 +121,6 @@ func NewEcho(params *ParametersWebAPI, metrics *metrics.ChainMetricsProvider, lo
 
 			status := c.Response().Status
 			if err != nil {
-				var httpError *echo.HTTPError
-				if errors.As(err, &httpError) {
-					status = httpError.Code
-				}
-				if status == 0 || status == http.StatusOK {
-					status = http.StatusInternalServerError
-				}
-
 				return err
 			}
 
@@ -214,6 +207,7 @@ func CreateEchoSwagger(e *echo.Echo, version string) echoswagger.ApiRoot {
 	return echoSwagger
 }
 
+//nolint:funlen
 func provide(c *dig.Container) error {
 	type webapiServerDeps struct {
 		dig.In
@@ -294,7 +288,7 @@ func provide(c *dig.Container) error {
 			ParamsWebAPI.Auth,
 			deps.APICacheTTL,
 			websocketService,
-			ParamsWebAPI.IndexDbPath,
+			ParamsWebAPI.IndexDBPath,
 			ParamsWebAPI.AccountDumpsPath,
 			deps.Publisher,
 			deps.NodeConn.L1ParamsFetcher(),

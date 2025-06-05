@@ -1,3 +1,4 @@
+// Package chainclient provides client functionality for interacting with the blockchain state.
 package chainclient
 
 import (

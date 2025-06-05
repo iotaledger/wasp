@@ -846,10 +846,7 @@ func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAdd
 	env.soloChain.RunRequestsSync(rqs)
 }
 
-// TestRPCTraceBlockForLargeN requires a large number of requests to be added to the mempool, for that set solo.MaxRequestsInBlock to a large value (>500)
 func TestRPCTraceBlockForLargeN(t *testing.T) {
-	t.Skip("skipping because it requires solo parameters to be set")
-
 	n := 400
 	env := newSoloTestEnv(t)
 	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()

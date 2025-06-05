@@ -1,3 +1,5 @@
+// Package keychain provides secure management of cryptographic keys
+// and credentials for the wasp-cli tool.
 package keychain
 
 import (

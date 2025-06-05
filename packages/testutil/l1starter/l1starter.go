@@ -125,9 +125,10 @@ func ClusterStart(config L1EndpointConfig) IotaNodeEndpoint {
 		_ = node // TODO: handle clean up properly
 		_ = cancel
 		panic("handle clean up properly")
-		defer cancel()
+		/* defer cancel()
 
 		instance.Store(&node)
+		*/
 	}
 
 	return *instance.Load()
@@ -143,6 +144,6 @@ func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 	in.start(ctx)
 
 	return in, func() {
-		in.stop()
+		in.stop(ctx)
 	}
 }

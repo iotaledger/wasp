@@ -1,3 +1,4 @@
+// Package statemanager implements the state management functionality for blockchain state.
 package statemanager
 
 import (
@@ -9,12 +10,12 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/cons_gr"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_gpa_utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_gpa/sm_inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_snapshots"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/sm_utils"
+	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
+	smgpa "github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
+	gpautils "github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
+	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -35,7 +36,7 @@ type StateMgr interface {
 	ChainFetchStateDiff(
 		ctx context.Context,
 		prevAnchor, nextAnchor *isc.StateAnchor,
-	) <-chan *sm_inputs.ChainFetchStateDiffResults
+	) <-chan *inputs.ChainFetchStateDiffResults
 	// Invoked by the chain when a set of server (access⁻¹) nodes has changed.
 	// These nodes should be used to perform block replication.
 	ChainNodesUpdated(serverNodes, accessNodes, committeeNodes []*cryptolib.PublicKey)
@@ -81,17 +82,17 @@ type stateManager struct {
 	log                  log.Logger
 	chainID              isc.ChainID
 	stateManagerGPA      gpa.GPA
-	nodeRandomiser       sm_utils.NodeRandomiser
+	nodeRandomiser       utils.NodeRandomiser
 	nodeIDToPubKey       map[gpa.NodeID]*cryptolib.PublicKey
 	inputPipe            pipe.Pipe[gpa.Input]
 	messagePipe          pipe.Pipe[*peering.PeerMessageIn]
 	nodePubKeysPipe      pipe.Pipe[*reqChainNodesUpdated]
 	preliminaryBlockPipe pipe.Pipe[*reqPreliminaryBlock]
-	snapshotManager      sm_snapshots.SnapshotManager
-	wal                  sm_gpa_utils.BlockWAL
+	snapshotManager      snapshots.SnapshotManager
+	wal                  gpautils.BlockWAL
 	net                  peering.NetworkProvider
 	netPeeringID         peering.PeeringID
-	parameters           sm_gpa.StateManagerParameters
+	parameters           smgpa.StateManagerParameters
 	ctx                  context.Context
 	cleanupFun           func()
 	shutdownCoordinator  *shutdown.Coordinator
@@ -113,18 +114,18 @@ func New(
 	me *cryptolib.PublicKey,
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
-	wal sm_gpa_utils.BlockWAL,
-	snapshotManager sm_snapshots.SnapshotManager,
+	wal gpautils.BlockWAL,
+	snapshotManager snapshots.SnapshotManager,
 	store state.Store,
 	shutdownCoordinator *shutdown.Coordinator,
 	metrics *metrics.ChainStateManagerMetrics,
 	pipeMetrics *metrics.ChainPipeMetrics,
 	log log.Logger,
-	parameters sm_gpa.StateManagerParameters,
+	parameters smgpa.StateManagerParameters,
 ) (StateMgr, error) {
 	smLog := log.NewChildLogger("SM")
-	nr := sm_utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
-	stateManagerGPA, err := sm_gpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
+	nr := utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
+	stateManagerGPA, err := smgpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
 		smLog.LogErrorf("failed to create state manager GPA: %w", err)
 		return nil, err
@@ -186,8 +187,8 @@ func New(
 // Implementations for chain package
 // -------------------------------------
 
-func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.StateAnchor) <-chan *sm_inputs.ChainFetchStateDiffResults {
-	input, resultCh := sm_inputs.NewChainFetchStateDiff(ctx, prevAnchor, nextAnchor)
+func (smT *stateManager) ChainFetchStateDiff(ctx context.Context, prevAnchor, nextAnchor *isc.StateAnchor) <-chan *inputs.ChainFetchStateDiffResults {
+	input, resultCh := inputs.NewChainFetchStateDiff(ctx, prevAnchor, nextAnchor)
 	smT.addInput(input)
 	return resultCh
 }
@@ -216,20 +217,20 @@ func (smT *stateManager) PreliminaryBlock(block state.Block) error {
 // ConsensusStateProposal asks State manager to ensure that all the blocks for aliasOutput are available.
 // `nil` is sent via the returned channel upon successful retrieval of every block for aliasOutput.
 func (smT *stateManager) ConsensusStateProposal(ctx context.Context, anchor *isc.StateAnchor) <-chan interface{} {
-	input, resultCh := sm_inputs.NewConsensusStateProposal(ctx, anchor)
+	input, resultCh := inputs.NewConsensusStateProposal(ctx, anchor)
 	smT.addInput(input)
 	return resultCh
 }
 
 // ConsensusDecidedState asks State manager to return a virtual state with stateCommitment as its state commitment
 func (smT *stateManager) ConsensusDecidedState(ctx context.Context, anchor *isc.StateAnchor) <-chan state.State {
-	input, resultCh := sm_inputs.NewConsensusDecidedState(ctx, anchor)
+	input, resultCh := inputs.NewConsensusDecidedState(ctx, anchor)
 	smT.addInput(input)
 	return resultCh
 }
 
 func (smT *stateManager) ConsensusProducedBlock(ctx context.Context, stateDraft state.StateDraft) <-chan state.Block {
-	input, resultCh := sm_inputs.NewConsensusBlockProduced(ctx, stateDraft)
+	input, resultCh := inputs.NewConsensusBlockProduced(ctx, stateDraft)
 	smT.addInput(input)
 	return resultCh
 }
@@ -322,7 +323,7 @@ func (smT *stateManager) handleMessage(peerMsg *peering.PeerMessageIn) {
 }
 
 func (smT *stateManager) handleOutput() {
-	output := smT.stateManagerGPA.Output().(sm_gpa.StateManagerOutput)
+	output := smT.stateManagerGPA.Output().(smgpa.StateManagerOutput)
 	for _, snapshotInfo := range output.TakeBlocksCommitted() {
 		smT.snapshotManager.BlockCommittedAsync(snapshotInfo)
 	}
@@ -382,7 +383,7 @@ func (smT *stateManager) handlePreliminaryBlock(msg *reqPreliminaryBlock) {
 }
 
 func (smT *stateManager) handleTimerTick(now time.Time) {
-	smT.handleInput(sm_inputs.NewStateManagerTimerTick(now))
+	smT.handleInput(inputs.NewStateManagerTimerTick(now))
 }
 
 func (smT *stateManager) sendMessages(outMsgs gpa.OutMessages) {

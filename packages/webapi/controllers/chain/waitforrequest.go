@@ -29,9 +29,9 @@ func (c *Controller) waitForRequestToFinish(e echo.Context) error {
 
 	timeoutInSeconds := e.QueryParam("timeoutSeconds")
 	if timeoutInSeconds != "" {
-		parsedTimeout, err := strconv.Atoi(timeoutInSeconds)
-		if err != nil {
-			return err
+		parsedTimeout, innerErr := strconv.Atoi(timeoutInSeconds)
+		if innerErr != nil {
+			return innerErr
 		}
 		if parsedTimeout < 0 {
 			parsedTimeout = 0

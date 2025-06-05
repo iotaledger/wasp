@@ -144,19 +144,19 @@ func (a *ackHandler) handleTickMsg(msg *ackHandlerTick) OutMessages {
 func (a *ackHandler) handleResetMsg(msg *ackHandlerReset) OutMessages {
 	from := msg.sender
 	if !msg.response {
-		maxId := 0
+		maxID := 0
 
 		if recvAcksIn, exists := a.recvAcksIn.Get(msg.sender); exists {
 			for id := range recvAcksIn {
-				if id > maxId {
-					maxId = id
+				if id > maxID {
+					maxID = id
 				}
 			}
 		}
 		return NoMessages().Add(&ackHandlerReset{
 			BasicMessage: NewBasicMessage(msg.sender),
 			response:     true,
-			latestID:     maxId,
+			latestID:     maxID,
 		})
 	}
 	if ini, exists := a.initialized.Get(from); exists && ini {

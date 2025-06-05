@@ -1,3 +1,4 @@
+// Package authentication implements authentication mechanisms and routes for secure API access.
 package authentication
 
 import (

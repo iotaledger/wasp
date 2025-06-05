@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/dustin/go-humanize"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -103,10 +104,14 @@ func NewEcho(logger log.Logger, onHTTPError func(err error, c echo.Context), deb
 			LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
 				errString := ""
 				if v.Error != nil {
-					errString = fmt.Sprintf("error: \"%s\", ", v.Error.Error())
+					errString = fmt.Sprintf("error: %q, ", v.Error.Error())
 				}
 
-				logger.LogDebugf("%d %s \"%s\", %sagent: \"%s\", remoteIP: %s, responseSize: %s, took: %v", v.Status, v.Method, v.URI, errString, v.UserAgent, v.RemoteIP, humanize.Bytes(uint64(v.ResponseSize)), v.Latency.Truncate(time.Millisecond))
+				responseSize, err := safecast.Convert[uint64](v.ResponseSize)
+				if err != nil {
+					return err
+				}
+				logger.LogDebugf("%d %s \"%s\", %sagent: \"%s\", remoteIP: %s, responseSize: %s, took: %v", v.Status, v.Method, v.URI, errString, v.UserAgent, v.RemoteIP, humanize.Bytes(responseSize), v.Latency.Truncate(time.Millisecond))
 
 				return nil
 			},
@@ -154,7 +159,7 @@ func ParseUint32QueryParam(c echo.Context, paramName string, maxValue ...uint32)
 	}
 
 	if len(maxValue) > 0 {
-		if uint32(value) > maxValue[0] {
+		if value > uint64(maxValue[0]) {
 			return 0, errors.WithMessagef(ErrInvalidParameter, "invalid value: %s, higher than the max number %d", intString, maxValue)
 		}
 	}

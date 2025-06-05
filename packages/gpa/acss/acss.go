@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-// package acss implements "Asynchronous Complete Secret Sharing" as described in
+// Package acss implements "Asynchronous Complete Secret Sharing" as described in
 //
 //	https://iotaledger.github.io/crypto-tss/talks/async-dkg/slides-async-dkg.html#/5/6
 //

@@ -1,9 +1,12 @@
+// Package iscmovetest provides testing utilities for ISC move operations.
 package iscmovetest
 
 // Everything in this file should be test only
 
 import (
 	"math/rand"
+
+	"fortio.org/safecast"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -26,7 +29,7 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 	id := *iotatest.RandomAddress()
 	assets := iscmove.AssetsBag{
 		ID:   *iotatest.RandomAddress(),
-		Size: uint64(rand.Int63()),
+		Size: safecast.MustConvert[uint64](rand.Int63()),
 	}
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := isc.NewCallArguments([]byte{1, 2, 3})
@@ -39,7 +42,7 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		0,
 		"http://url",
 	).Bytes()
-	stateIndex := uint32(rand.Int31())
+	stateIndex := safecast.MustConvert[uint32](rand.Int31())
 	if len(opts) > 0 {
 		if opts[0].ID != nil {
 			id = *opts[0].ID
