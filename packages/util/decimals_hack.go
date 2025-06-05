@@ -6,7 +6,7 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 )
 
-const ethereumDecimals = uint8(18)
+const EthereumDecimals = uint8(18)
 
 func adaptDecimals(value *big.Int, fromDecimals, toDecimals uint8) (result *big.Int, remainder *big.Int) {
 	result = new(big.Int)
@@ -24,10 +24,10 @@ func adaptDecimals(value *big.Int, fromDecimals, toDecimals uint8) (result *big.
 
 // EthereumDecimalsToBaseTokenDecimals converts from wei (ethereum) to base tokens.
 func EthereumDecimalsToBaseTokenDecimals(value *big.Int, baseTokenDecimals uint8) (result coin.Value, remainder *big.Int) {
-	if baseTokenDecimals > ethereumDecimals {
+	if baseTokenDecimals > EthereumDecimals {
 		panic("expected baseTokenDecimals <= ethereumDecimals")
 	}
-	r, m := adaptDecimals(value, ethereumDecimals, baseTokenDecimals)
+	r, m := adaptDecimals(value, EthereumDecimals, baseTokenDecimals)
 	if !r.IsUint64() {
 		panic("cannot convert ether value to base tokens: too large")
 	}
@@ -44,10 +44,10 @@ func MustEthereumDecimalsToBaseTokenDecimalsExact(value *big.Int, baseTokenDecim
 
 // BaseTokensDecimalsToEthereumDecimals converts from base tokens to wei (ethereum).
 func BaseTokensDecimalsToEthereumDecimals(value coin.Value, baseTokenDecimals uint8) (result *big.Int) {
-	if baseTokenDecimals > ethereumDecimals {
+	if baseTokenDecimals > EthereumDecimals {
 		panic("expected baseTokenDecimals <= ethereumDecimals")
 	}
-	r, m := adaptDecimals(new(big.Int).SetUint64(uint64(value)), baseTokenDecimals, ethereumDecimals)
+	r, m := adaptDecimals(new(big.Int).SetUint64(uint64(value)), baseTokenDecimals, EthereumDecimals)
 	if m.Sign() != 0 {
 		panic("expected zero remainder")
 	}
