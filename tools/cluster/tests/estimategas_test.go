@@ -75,7 +75,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	)
 
 	// Place some TESTCOINs into new asset bag
-	assetsBagPTB := iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
+	ptb = iscmoveclient.PTBAssetsBagPlaceCoinWithAmount(
 		ptb,
 		l1starter.ISCPackageID(),
 		argAssetsBag,
@@ -94,7 +94,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	allowance.SetCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
 	l2GasBudget := uint64(100)
 	ptb = iscmoveclient.PTBCreateAndSendRequest(
-		assetsBagPTB.Clone(),
+		ptb,
 		l1starter.ISCPackageID(),
 		env.Chain.ChainID.AsObjectID(),
 		argAssetsBag,
@@ -104,10 +104,13 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	)
 	pt := ptb.Finish()
 
+	coinsForGas, err := env.Clu.L1Client().FindCoinsForGasPayment(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, 2*iotaclient.DefaultGasBudget)
+	require.NoError(t, err)
+
 	txData := iotago.NewProgrammable(
 		sender.Address().AsIotaAddress(),
 		pt,
-		[]*iotago.ObjectRef{},
+		coinsForGas,
 		2*iotaclient.DefaultGasBudget,
 		iotaclient.DefaultGasPrice,
 	)
@@ -124,31 +127,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	l2GasBudget, err = strconv.ParseUint(estimatedReceipt.GasFeeCharged, 10, 64)
 	require.NoError(t, err)
 
-	// Create and execute same transaction, but with proper L2 gas budget
-	ptb = iscmoveclient.PTBCreateAndSendRequest(
-		assetsBagPTB.Clone(),
-		l1starter.ISCPackageID(),
-		env.Chain.ChainID.AsObjectID(),
-		argAssetsBag,
-		msg,
-		bcs.MustMarshal(allowance),
-		l2GasBudget,
-	)
-	pt = ptb.Finish()
-
-	gasPayments, err := env.Clu.L1Client().FindCoinsForGasPayment(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, 2*iotaclient.DefaultGasBudget)
-	require.NoError(t, err)
-
-	txData = iotago.NewProgrammable(
-		sender.Address().AsIotaAddress(),
-		pt,
-		gasPayments,
-		2*iotaclient.DefaultGasBudget,
-		iotaclient.DefaultGasPrice,
-	)
-	txBytes, err = bcs.Marshal(&txData)
-	require.NoError(t, err)
-
+	// Execute same transaction, but with proper L2 gas budget
 	execRes, err := env.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
 		TxDataBytes: txBytes,
 		Signer:      cryptolib.SignerToIotaSigner(sender),
