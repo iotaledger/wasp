@@ -19,7 +19,7 @@
   },
   "l1": {
     "websocketURL": "ws://localhost:9000",
-    "httpURL": "http://localhost:9000",
+    "httpurl": "http://localhost:9000",
     "packageID": "",
     "maxConnectionAttempts": 30,
     "targetNetworkName": ""
@@ -84,6 +84,7 @@
     "mempoolMaxTimedInPool": 100,
     "mempoolMaxOffledgerToPropose": 500,
     "mempoolMaxOnledgerToPropose": 100,
+    "mempoolMaxOffledgerPerAccount": 100,
     "mempoolOnLedgerRefreshMinInterval": "10m"
   },
   "snapshots": {
@@ -122,7 +123,7 @@
         "duration": "24h"
       }
     },
-    "indexDbPath": "waspdb/chains/index",
+    "indexDBPath": "waspdb/chains/index",
     "accountDumpsPath": "waspdb/account_dumps",
     "limits": {
       "timeout": "30s",

@@ -129,6 +129,11 @@ func (t ObjectType) ResourceType() *ResourceType {
 	return lo.Must(NewResourceType(t.s))
 }
 
+// EqualsStr  parses given object type string and checks it represents the same resource type.
+func (t ObjectType) EqualsStr(other string) (bool, error) {
+	return IsSameResource(t.s, other)
+}
+
 func (t ObjectType) TypeTag() TypeTag {
 	coinTypeTag, err := TypeTagFromString(t.String())
 	if err != nil {
