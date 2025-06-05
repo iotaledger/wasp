@@ -10,6 +10,7 @@ import (
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 )
@@ -77,12 +78,14 @@ func (h *magicContractHandler) BalanceOf(account common.Address) *big.Int {
 
 // handler for ISCSandbox::symbol
 func (h *magicContractHandler) Symbol() string {
-	return "IOTA"
+	info, ok := h.ctx.GetCoinInfo(coin.BaseTokenType)
+	h.ctx.Requiref(ok, errUnknownCoin.Error())
+	return info.Symbol
 }
 
 // handler for ISCSandbox::decimals
 func (h *magicContractHandler) Decimals() uint8 {
-	return uint8(18)
+	return util.EthereumDecimals
 }
 
 // handler for ISCSandbox::supportsInterface
