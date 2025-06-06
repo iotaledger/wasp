@@ -124,6 +124,66 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 	return *gasCoin.ObjectID, nil
 }
 
+type chainInitResult struct {
+	gasCoinObject    iotago.ObjectID
+	l1Params         *parameters.L1Params
+	committeeAddress *cryptolib.Address
+}
+
+func initializeDeploymentWithGasCoin(ctx context.Context, signer wallets.Wallet, node string, chainName string, peers []string, quorum int) chainInitResult {
+	if !util.IsSlug(chainName) {
+		log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
+	}
+
+	l1Client := cliclients.L1Client()
+
+	client := cliclients.WaspClientWithVersionCheck(ctx, node)
+	_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
+	defer header.Body.Close()
+
+	// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
+	if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
+		log.Fatal(fmt.Errorf("failed to get current chain info: %w", err))
+	}
+
+	// Now check if the response is 404, if not, a Chain has already been deployed. Exit early.
+	if header != nil && header.StatusCode != http.StatusNotFound {
+		log.Fatal("A chain has already been deployed.")
+	}
+
+	committeeAddr := doDKG(ctx, node, peers, quorum)
+
+	l1Params, err := parameters.FetchLatest(context.Background(), l1Client.IotaClient())
+	log.Check(err)
+
+	gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, signer, committeeAddr.AsIotaAddress(), l1Params)
+	log.Check(err)
+
+	return chainInitResult{
+		l1Params:         l1Params,
+		gasCoinObject:    gasCoin,
+		committeeAddress: committeeAddr,
+	}
+}
+
+func finalizeChainDeployment(ctx context.Context, node string, chainInitResult chainInitResult, stateMetadata *transaction.StateMetadata) isc.ChainID {
+	packageID := config.GetPackageID()
+
+	par := apilib.CreateChainParams{
+		Layer1Client:      cliclients.L1Client(),
+		CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
+		Signer:            wallet.Load(),
+		Textout:           os.Stdout,
+		PackageID:         packageID,
+		StateMetadata:     *stateMetadata,
+	}
+
+	chainID, err := apilib.DeployChain(ctx, par, chainInitResult.committeeAddress)
+	log.Check(err)
+
+	return chainID
+}
+
 func initDeployCmd() *cobra.Command {
 	var (
 		node             string
@@ -145,53 +205,13 @@ func initDeployCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
-			if !util.IsSlug(chainName) {
-				log.Fatalf("invalid chain name: %s, must be in slug format, only lowercase and hyphens, example: foo-bar", chainName)
-			}
-
-			l1Client := cliclients.L1Client()
 			kp := wallet.Load()
 
-			client := cliclients.WaspClientWithVersionCheck(ctx, node)
-			_, header, err := client.ChainsAPI.GetChainInfo(ctx).Execute()
-			defer header.Body.Close()
-
-			// We expect a 404 if no chain has been deployed yet. In any other case, show the error.
-			if err != nil && !strings.Contains(err.Error(), strconv.Itoa(http.StatusNotFound)) {
-				log.Fatal(fmt.Errorf("failed to get current chain info: %w", err))
-			}
-
-			// Now check if the response is 404, if not, a Chain has already been deployed. Exit early.
-			if header != nil && header.StatusCode != http.StatusNotFound {
-				log.Fatal("A chain has already been deployed.")
-			}
-
-			packageID := config.GetPackageID()
-
-			committeeAddr := doDKG(ctx, node, peers, quorum)
-
-			l1Params, err := parameters.FetchLatest(context.Background(), l1Client.IotaClient())
-			log.Check(err)
-
-			gasCoin, err := CreateAndSendGasCoin(ctx, l1Client, kp, committeeAddr.AsIotaAddress(), l1Params)
-			log.Check(err)
-
-			stateMetadata := initializeNewChainState(kp.Address(), gasCoin, l1Params)
-
-			par := apilib.CreateChainParams{
-				Layer1Client:      l1Client,
-				CommitteeAPIHosts: config.NodeAPIURLs([]string{node}),
-				Signer:            kp,
-				Textout:           os.Stdout,
-				PackageID:         packageID,
-				StateMetadata:     *stateMetadata,
-			}
-
-			chainID, err := apilib.DeployChain(ctx, par, committeeAddr)
-			log.Check(err)
+			result := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
+			stateMetadata := initializeNewChainState(kp.Address(), result.gasCoinObject, result.l1Params)
+			chainID := finalizeChainDeployment(ctx, node, result, stateMetadata)
 
 			config.AddChain(chainName, chainID.String())
-
 			activateChain(ctx, node, chainName, chainID)
 		},
 	}
