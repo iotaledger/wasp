@@ -421,7 +421,7 @@ import (
 )
 
 func main() {
-	request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
+	request := *openapiclient.NewEstimateGasRequestOnledger("TransactionBytes_example") // EstimateGasRequestOnledger | Request
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)

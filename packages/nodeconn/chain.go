@@ -142,7 +142,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, err
 		}
 
-		anchor, err := ncc.nodeConn.httpClient.GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
+		anchor, err := ncc.nodeConn.httpClient.L2().GetAnchorFromObjectID(ctx, anchorInfo.ObjectID)
 		if err != nil {
 			return nil, err
 		}
