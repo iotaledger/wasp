@@ -9,10 +9,8 @@ import (
 
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 )
 
 type WaspConfig struct {
@@ -25,8 +23,8 @@ type WaspConfig struct {
 	FirstMetricsPort   int
 }
 
-func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams {
-	return templates.WaspConfigParams{
+func (w *WaspConfig) WaspConfigTemplateParams(i int) WaspConfigParams {
+	return WaspConfigParams{
 		APIPort:                w.FirstAPIPort + i,
 		PeeringPort:            w.FirstPeeringPort + i,
 		ProfilingPort:          w.FirstProfilingPort + i,
@@ -37,7 +35,7 @@ func (w *WaspConfig) WaspConfigTemplateParams(i int) templates.WaspConfigParams 
 }
 
 type ClusterConfig struct {
-	Wasp []templates.WaspConfigParams
+	Wasp []WaspConfigParams
 	L1   l1starter.IotaNodeEndpoint
 }
 
@@ -55,9 +53,9 @@ func ConfigExists(dataPath string) (bool, error) {
 	return fileExists(configPath(dataPath))
 }
 
-func NewConfig(waspConfig WaspConfig, l1Config l1starter.IotaNodeEndpoint, modifyConfig ...templates.ModifyNodesConfigFn) *ClusterConfig {
-	nodesConfigs := make([]templates.WaspConfigParams, waspConfig.NumNodes)
-	for i := 0; i < waspConfig.NumNodes; i++ {
+func NewConfig(waspConfig WaspConfig, l1Config l1starter.IotaNodeEndpoint, modifyConfig ...ModifyNodesConfigFn) *ClusterConfig {
+	nodesConfigs := make([]WaspConfigParams, waspConfig.NumNodes)
+	for i := range waspConfig.NumNodes {
 		// generate template from waspconfigs
 		nodesConfigs[i] = waspConfig.WaspConfigTemplateParams(i)
 		// set L1 part of the template
@@ -127,7 +125,7 @@ func (c *ClusterConfig) waspHosts(nodeIndexes []int, getHost func(i int) string)
 
 func (c *ClusterConfig) AllNodes() []int {
 	nodes := make([]int, len(c.Wasp))
-	for i := 0; i < len(c.Wasp); i++ {
+	for i := range c.Wasp {
 		nodes[i] = i
 	}
 	return nodes

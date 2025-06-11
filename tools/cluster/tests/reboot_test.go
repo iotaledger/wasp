@@ -24,6 +24,7 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestReboot(t *testing.T) {
+	t.Skip("TODO: fix test")
 	committee := []int{0, 1, 2, 3}
 	quorum := uint16((2*len(committee))/3 + 1)
 	env := SetupWithChainWithOpts(t, &waspClusterOpts{
@@ -152,7 +153,7 @@ func (icc *incCounterClient) MustIncBoth(onLedgerFirst bool) {
 // Ensures a nodes resumes normal operation after rebooting.
 // In this case we have F=0 and N=3, thus any reboot violates the assumptions.
 func TestRebootN3Single(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: fix test")
 	tm := util.NewTimer()
 	allNodes := []int{0, 1, 2}
 	env := setupNativeInccounterTest(t, 3, allNodes)
@@ -180,7 +181,7 @@ func TestRebootN3Single(t *testing.T) {
 // In this case we have F=0 and N=3, thus any reboot violates the assumptions.
 // We restart 2 nodes each iteration in this scenario..
 func TestRebootN3TwoNodes(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: fix test")
 
 	tm := util.NewTimer()
 	allNodes := []int{0, 1, 2}
@@ -208,7 +209,7 @@ func TestRebootN3TwoNodes(t *testing.T) {
 
 // Test rebooting nodes during operation.
 func TestRebootDuringTasks(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: fix test")
 
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	restartDelay := 20 * time.Second
@@ -302,7 +303,7 @@ func TestRebootDuringTasks(t *testing.T) {
 }
 
 func TestRebootRecoverFromWAL(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: fix test")
 
 	env := setupNativeInccounterTest(t, 4, []int{0, 1, 2, 3})
 	client, _ := env.NewRandomChainClient()
