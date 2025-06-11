@@ -3,8 +3,6 @@ package providers
 import (
 	"reflect"
 
-	"github.com/spf13/viper"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
@@ -63,7 +61,7 @@ func MigrateKeyChain(seed cryptolib.Seed) {
 	if reflect.DeepEqual(kcSeed[:], seed[:]) {
 		log.Printf("Seed has been successfully validated.\n")
 		config.RemoveSeedForMigration()
-		err = viper.WriteConfig()
+		err = config.WriteConfig()
 		log.Check(err)
 		log.Printf("Seed was removed from the config file\n")
 	} else {

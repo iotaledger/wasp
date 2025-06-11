@@ -1037,22 +1037,22 @@ func TestRPCTraceBlock(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		var result jsonrpc.TraceBlock
-		err = json.Unmarshal(res, &result)
+		var traces []*jsonrpc.Trace
+		err = json.Unmarshal(res, &traces)
 		require.NoError(t, err)
-		require.Len(t, result.Result, 4)
+		require.Len(t, traces, 4)
 
-		traceTx1Index := slices.IndexFunc(result.Result, func(v *jsonrpc.Trace) bool {
+		traceTx1Index := slices.IndexFunc(traces, func(v *jsonrpc.Trace) bool {
 			return *v.TransactionHash == tx1.Hash()
 		})
-		traceTx2Index := slices.IndexFunc(result.Result, func(v *jsonrpc.Trace) bool {
+		traceTx2Index := slices.IndexFunc(traces, func(v *jsonrpc.Trace) bool {
 			return *v.TransactionHash == tx2.Hash()
 		})
 
-		call11 := result.Result[traceTx1Index]
-		call12 := result.Result[traceTx1Index+1]
-		call21 := result.Result[traceTx2Index]
-		call22 := result.Result[traceTx2Index+1]
+		call11 := traces[traceTx1Index]
+		call12 := traces[traceTx1Index+1]
+		call21 := traces[traceTx2Index]
+		call22 := traces[traceTx2Index+1]
 
 		call11Action := call11.Action.(map[string]any)
 		call12Action := call12.Action.(map[string]any)

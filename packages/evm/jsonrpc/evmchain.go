@@ -12,7 +12,6 @@ import (
 	"path"
 
 	"fortio.org/safecast"
-
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -25,7 +24,6 @@ import (
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
-
 	"github.com/iotaledger/wasp/packages/evm/evmtypes"
 	"github.com/iotaledger/wasp/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -434,20 +432,20 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 	return txs[index], block.Hash(), bn, nil
 }
 
-func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transactions, err error) {
+func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transactions) {
 	e.log.LogDebugf("TxsByBlockNumber(blockNumber=%v, index=%v)", blockNumber)
 	cachedTxs := e.index.TxsByBlockNumber(blockNumber)
 	if cachedTxs != nil {
-		return cachedTxs, nil
+		return cachedTxs
 	}
 	_, latestState := lo.Must2(e.backend.ISCLatestState())
 	db := blockchainDB(latestState)
 	block := db.GetBlockByNumber(blockNumber.Uint64())
 	if block == nil {
-		return nil, err
+		return nil
 	}
 
-	return block.Transactions(), nil
+	return block.Transactions()
 }
 
 func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
@@ -710,23 +708,18 @@ func (e *EVMChain) traceTransaction(
 	txIndex uint64,
 	blockHash common.Hash,
 ) (json.RawMessage, error) {
-	tracerType := "callTracer"
-	if config.Tracer != nil {
-		tracerType = *config.Tracer
-	}
 	txIndexInt, err := safecast.Convert[int](txIndex)
 	if err != nil {
 		return nil, err
 	}
 	tracer, err := newTracer(
-		tracerType,
 		&tracers.Context{
 			BlockHash:   blockHash,
 			BlockNumber: new(big.Int).SetUint64(uint64(blockInfo.BlockIndex)),
 			TxIndex:     txIndexInt,
 			TxHash:      tx.Hash(),
 		},
-		config.TracerConfig,
+		config,
 	)
 	if err != nil {
 		return nil, err
@@ -735,6 +728,7 @@ func (e *EVMChain) traceTransaction(
 	err = e.backend.EVMTrace(
 		blockInfo.PreviousAnchor,
 		blockInfo.Timestamp,
+		blockInfo.Entropy,
 		requestsInBlock,
 		enforceGasBurned,
 		tracer,
@@ -771,18 +765,12 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		return nil, err
 	}
 
-	tracerType := "callTracer"
-	if config.Tracer != nil {
-		tracerType = *config.Tracer
-	}
-
 	tracer, err := newTracer(
-		tracerType,
 		&tracers.Context{
 			BlockHash:   block.Hash(),
 			BlockNumber: new(big.Int).SetUint64(uint64(iscBlock.BlockIndex)),
 		},
-		config.TracerConfig,
+		config,
 	)
 	if err != nil {
 		return nil, err
@@ -791,6 +779,7 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 	err = e.backend.EVMTrace(
 		iscBlock.PreviousAnchor,
 		iscBlock.Timestamp,
+		iscBlock.Entropy,
 		iscRequestsInBlock,
 		enforceGasBurned,
 		tracer,
@@ -917,16 +906,9 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 		return nil, err
 	}
 
-	blockTxs, err := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
-	if err != nil {
-		return nil, err
-	}
+	blockTxs := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
 
-	results := TraceBlock{
-		Jsonrpc: "2.0",
-		Result:  make([]*Trace, 0),
-		ID:      1,
-	}
+	var traces []*Trace
 
 	for i, tx := range blockTxs {
 		iterator := safecast.MustConvert[uint64](i)
@@ -949,11 +931,11 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 
 			blockHash := block.Hash()
 			txHash := tx.Hash()
-			results.Result = append(results.Result, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
+			traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
 		}
 	}
 
-	return results, nil
+	return traces, nil
 }
 
 func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.BlockInfo, error) {
