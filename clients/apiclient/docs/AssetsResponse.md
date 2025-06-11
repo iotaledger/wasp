@@ -6,13 +6,13 @@ Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
 **BaseTokens** | **string** | The base tokens (uint64 as string) | 
 **Coins** | [**[]CoinJSON**](CoinJSON.md) |  | 
-**Objects** | [**[]IotaObject**](IotaObject.md) |  | 
+**Objects** | [**[]IotaObjectJSON**](IotaObjectJSON.md) |  | 
 
 ## Methods
 
 ### NewAssetsResponse
 
-`func NewAssetsResponse(baseTokens string, coins []CoinJSON, objects []IotaObject, ) *AssetsResponse`
+`func NewAssetsResponse(baseTokens string, coins []CoinJSON, objects []IotaObjectJSON, ) *AssetsResponse`
 
 NewAssetsResponse instantiates a new AssetsResponse object
 This constructor will assign default values to properties that have it defined,
@@ -69,20 +69,20 @@ SetCoins sets Coins field to given value.
 
 ### GetObjects
 
-`func (o *AssetsResponse) GetObjects() []IotaObject`
+`func (o *AssetsResponse) GetObjects() []IotaObjectJSON`
 
 GetObjects returns the Objects field if non-nil, zero value otherwise.
 
 ### GetObjectsOk
 
-`func (o *AssetsResponse) GetObjectsOk() (*[]IotaObject, bool)`
+`func (o *AssetsResponse) GetObjectsOk() (*[]IotaObjectJSON, bool)`
 
 GetObjectsOk returns a tuple with the Objects field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetObjects
 
-`func (o *AssetsResponse) SetObjects(v []IotaObject)`
+`func (o *AssetsResponse) SetObjects(v []IotaObjectJSON)`
 
 SetObjects sets Objects field to given value.
 

@@ -82,7 +82,7 @@ func initAccountObjectsCmd() *cobra.Command {
 			log.Check(err)
 
 			for _, obj := range assets.Objects {
-				log.Printf("%s: %s\n", *obj.Type.S, obj.Id)
+				log.Printf("%s: %s\n", obj.Type, obj.Id)
 			}
 		},
 	}

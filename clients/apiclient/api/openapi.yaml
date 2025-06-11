@@ -1736,16 +1736,10 @@ components:
         - coinType: coinType
           balance: balance
         objects:
-        - id:
-          - 0
-          - 0
-          type:
-            s: s
-        - id:
-          - 0
-          - 0
-          type:
-            s: s
+        - id: id
+          type: type
+        - id: id
+          type: type
       properties:
         coins:
           items:
@@ -1756,7 +1750,7 @@ components:
             wrapped: true
         objects:
           items:
-            $ref: '#/components/schemas/IotaObject'
+            $ref: '#/components/schemas/IotaObjectJSON'
           type: array
           xml:
             name: Objects
@@ -1776,16 +1770,10 @@ components:
           balance: balance
         baseTokens: baseTokens
         objects:
-        - id:
-          - 0
-          - 0
-          type:
-            s: s
-        - id:
-          - 0
-          - 0
-          type:
-            s: s
+        - id: id
+          type: type
+        - id: id
+          type: type
       properties:
         baseTokens:
           description: The base tokens (uint64 as string)
@@ -1802,7 +1790,7 @@ components:
             wrapped: true
         objects:
           items:
-            $ref: '#/components/schemas/IotaObject'
+            $ref: '#/components/schemas/IotaObjectJSON'
           type: array
           xml:
             name: Objects
@@ -3095,30 +3083,28 @@ components:
       type: object
       xml:
         name: IotaCoinInfo
-    IotaObject:
+    IotaObjectJSON:
       example:
-        id:
-        - 0
-        - 0
-        type:
-          s: s
+        id: id
+        type: type
       properties:
         id:
-          items:
-            format: int32
-            type: integer
-          type: array
+          description: Hex-encoded object ID
+          format: string
+          type: string
           xml:
             name: ID
-            wrapped: true
         type:
-          $ref: '#/components/schemas/ObjectType'
+          format: string
+          type: string
+          xml:
+            name: Type
       required:
       - id
       - type
       type: object
       xml:
-        name: IotaObject
+        name: IotaObjectJSON
     L1Params:
       example:
         protocol:
@@ -3648,16 +3634,10 @@ components:
             - coinType: coinType
               balance: balance
             objects:
-            - id:
-              - 0
-              - 0
-              type:
-                s: s
-            - id:
-              - 0
-              - 0
-              type:
-                s: s
+            - id: id
+              type: type
+            - id: id
+              type: type
           isOffLedger: true
           requestId: requestId
           callTarget:
@@ -3671,16 +3651,10 @@ components:
             - coinType: coinType
               balance: balance
             objects:
-            - id:
-              - 0
-              - 0
-              type:
-                s: s
-            - id:
-              - 0
-              - 0
-              type:
-                s: s
+            - id: id
+              type: type
+            - id: id
+              type: type
           params:
           - params
           - params
@@ -3792,16 +3766,10 @@ components:
           - coinType: coinType
             balance: balance
           objects:
-          - id:
-            - 0
-            - 0
-            type:
-              s: s
-          - id:
-            - 0
-            - 0
-            type:
-              s: s
+          - id: id
+            type: type
+          - id: id
+            type: type
         isOffLedger: true
         requestId: requestId
         callTarget:
@@ -3815,16 +3783,10 @@ components:
           - coinType: coinType
             balance: balance
           objects:
-          - id:
-            - 0
-            - 0
-            type:
-              s: s
-          - id:
-            - 0
-            - 0
-            type:
-              s: s
+          - id: id
+            type: type
+          - id: id
+            type: type
         params:
         - params
         - params

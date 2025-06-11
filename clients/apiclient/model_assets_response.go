@@ -24,7 +24,7 @@ type AssetsResponse struct {
 	// The base tokens (uint64 as string)
 	BaseTokens string `json:"baseTokens"`
 	Coins []CoinJSON `json:"coins"`
-	Objects []IotaObject `json:"objects"`
+	Objects []IotaObjectJSON `json:"objects"`
 }
 
 type _AssetsResponse AssetsResponse
@@ -33,7 +33,7 @@ type _AssetsResponse AssetsResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAssetsResponse(baseTokens string, coins []CoinJSON, objects []IotaObject) *AssetsResponse {
+func NewAssetsResponse(baseTokens string, coins []CoinJSON, objects []IotaObjectJSON) *AssetsResponse {
 	this := AssetsResponse{}
 	this.BaseTokens = baseTokens
 	this.Coins = coins
@@ -98,9 +98,9 @@ func (o *AssetsResponse) SetCoins(v []CoinJSON) {
 }
 
 // GetObjects returns the Objects field value
-func (o *AssetsResponse) GetObjects() []IotaObject {
+func (o *AssetsResponse) GetObjects() []IotaObjectJSON {
 	if o == nil {
-		var ret []IotaObject
+		var ret []IotaObjectJSON
 		return ret
 	}
 
@@ -109,7 +109,7 @@ func (o *AssetsResponse) GetObjects() []IotaObject {
 
 // GetObjectsOk returns a tuple with the Objects field value
 // and a boolean to check if the value has been set.
-func (o *AssetsResponse) GetObjectsOk() ([]IotaObject, bool) {
+func (o *AssetsResponse) GetObjectsOk() ([]IotaObjectJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -117,7 +117,7 @@ func (o *AssetsResponse) GetObjectsOk() ([]IotaObject, bool) {
 }
 
 // SetObjects sets field value
-func (o *AssetsResponse) SetObjects(v []IotaObject) {
+func (o *AssetsResponse) SetObjects(v []IotaObjectJSON) {
 	o.Objects = v
 }
 

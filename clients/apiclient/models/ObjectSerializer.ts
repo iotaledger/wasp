@@ -33,7 +33,7 @@ export * from '../models/GovPublicChainMetadata';
 export * from '../models/InfoResponse';
 export * from '../models/Int';
 export * from '../models/IotaCoinInfo';
-export * from '../models/IotaObject';
+export * from '../models/IotaObjectJSON';
 export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
@@ -100,7 +100,7 @@ import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
-import { IotaObject } from '../models/IotaObject';
+import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
@@ -183,7 +183,7 @@ let typeMap: {[index: string]: any} = {
     "InfoResponse": InfoResponse,
     "Int": Int,
     "IotaCoinInfo": IotaCoinInfo,
-    "IotaObject": IotaObject,
+    "IotaObjectJSON": IotaObjectJSON,
     "L1Params": L1Params,
     "Limits": Limits,
     "LoginRequest": LoginRequest,

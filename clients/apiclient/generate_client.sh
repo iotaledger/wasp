@@ -72,7 +72,7 @@ sed -i "/uint32/! s/NullableInt{/nullableIntUnused{/g" "$SCRIPTPATH/utils.go"
 sed -i "/uint32/! s/NullableInt /nullableIntUnused /g" "$SCRIPTPATH/utils.go"
 
 ## Deleting obsolete files
-OBSOLETE_FILES=$(sort /tmp/prev_openapi_generator_files $SCRIPTPATH/.openapi-generator/FILES | uniq -u)
+OBSOLETE_FILES=$(comm -23 <(sort /tmp/prev_openapi_generator_files) <(sort $SCRIPTPATH/.openapi-generator/FILES))
 if [ ! -z "$OBSOLETE_FILES" ]; then
   DELETED_FILES_DIR=/tmp/openapi_generator_deleted_files_$(date +%F_%H-%M-%S)
   

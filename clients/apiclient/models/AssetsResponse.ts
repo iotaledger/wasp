@@ -11,7 +11,7 @@
  */
 
 import { CoinJSON } from '../models/CoinJSON';
-import { IotaObject } from '../models/IotaObject';
+import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { HttpFile } from '../http/http';
 
 export class AssetsResponse {
@@ -20,7 +20,7 @@ export class AssetsResponse {
     */
     'baseTokens': string;
     'coins': Array<CoinJSON>;
-    'objects': Array<IotaObject>;
+    'objects': Array<IotaObjectJSON>;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -42,7 +42,7 @@ export class AssetsResponse {
         {
             "name": "objects",
             "baseName": "objects",
-            "type": "Array<IotaObject>",
+            "type": "Array<IotaObjectJSON>",
             "format": ""
         }    ];
 

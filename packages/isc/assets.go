@@ -173,12 +173,28 @@ func (c CoinBalances) Clone() CoinBalances {
 
 // IotaObject represents a non-coin object originally created on L1
 type IotaObject struct {
-	ID   iotago.ObjectID   `json:"id" swagger:"required"`
-	Type iotago.ObjectType `json:"type" swagger:"required"`
+	ID   iotago.ObjectID
+	Type iotago.ObjectType
 }
 
 func NewIotaObject(id iotago.ObjectID, t iotago.ObjectType) IotaObject {
 	return IotaObject{id, t}
+}
+
+func (o IotaObject) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.JSON())
+}
+
+func (o IotaObject) JSON() IotaObjectJSON {
+	return IotaObjectJSON{
+		ID:   o.ID.ToHex(),
+		Type: o.Type.ToTypeJSON(),
+	}
+}
+
+type IotaObjectJSON struct {
+	ID   string                `json:"id" swagger:"required,desc(Hex-encoded object ID)"`
+	Type iotago.ObjectTypeJSON `json:"type" swagger:"required"`
 }
 
 type ObjectSet struct {
@@ -258,8 +274,12 @@ func (o ObjectSet) Clone() ObjectSet {
 	return r
 }
 
-func (o *ObjectSet) JSON() []IotaObject {
-	return slices.Collect(o.Iterate())
+func (o *ObjectSet) JSON() []IotaObjectJSON {
+	objs := make([]IotaObjectJSON, 0, len(o.items))
+	for obj := range o.Iterate() {
+		objs = append(objs, obj.JSON())
+	}
+	return objs
 }
 
 func (o *ObjectSet) UnmarshalJSON(b []byte) error {

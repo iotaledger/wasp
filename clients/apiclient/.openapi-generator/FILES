@@ -50,7 +50,7 @@ docs/GovPublicChainMetadata.md
 docs/InfoResponse.md
 docs/Int.md
 docs/IotaCoinInfo.md
-docs/IotaObject.md
+docs/IotaObjectJSON.md
 docs/L1Params.md
 docs/Limits.md
 docs/LoginRequest.md
@@ -122,7 +122,7 @@ model_gov_public_chain_metadata.go
 model_info_response.go
 model_int.go
 model_iota_coin_info.go
-model_iota_object.go
+model_iota_object_json.go
 model_l1_params.go
 model_limits.go
 model_login_request.go
