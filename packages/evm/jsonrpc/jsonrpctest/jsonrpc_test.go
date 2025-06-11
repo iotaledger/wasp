@@ -40,6 +40,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -1293,5 +1294,42 @@ func BenchmarkRPCEstimateGas(b *testing.B) {
 		})
 		require.NoError(b, err)
 		require.NotZero(b, n)
+	}
+}
+
+func TestSupportsInterfaceRPCEthCall(t *testing.T) {
+	env := newSoloTestEnv(t)
+	_, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	blockNumber, err := env.Client.BlockNumber(context.Background())
+	require.NoError(t, err)
+
+	var contractAddr common.Address
+	copy(contractAddr[:], iscmagic.AddressPrefix)
+
+	cases := []struct {
+		interfaceID string
+		expected    bool
+		description string
+	}{
+		{"01ffc9a7", true, "ERC165"},
+		{"36372b07", false, "ERC20"},
+		{"d9b67a26", false, "ERC721"},
+	}
+
+	for _, c := range cases {
+		interfaceID := fmt.Sprintf("01ffc9a7%s00000000000000000000000000000000000000000000000000000000", c.interfaceID)
+		t.Run(fmt.Sprintf("supportsInterface with parameter %s (%s) should return %t", c.interfaceID, c.description, c.expected), func(t *testing.T) {
+			callMsg := ethereum.CallMsg{
+				From: creatorAddress,
+				To:   &contractAddr,
+				Data: common.Hex2Bytes(interfaceID),
+			}
+			result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+			require.NoError(t, err)
+			require.NotEmpty(t, result)
+			decodedBool := new(big.Int).SetBytes(result).Uint64() == 1
+			require.Equal(t, c.expected, decodedBool)
+		})
 	}
 }

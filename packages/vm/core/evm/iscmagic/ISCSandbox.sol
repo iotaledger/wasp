@@ -175,6 +175,13 @@ interface ISCSandbox {
     function ERC20CoinAddress(
         string memory coinType
     ) external view returns (address);
+
+    /**
+     * @notice Returns true if this contract implements the interface defined by interfaceId.
+     * @param interfaceId The interface identifier, as specified in ERC-165.
+     * @return true if the contract implements interfaceId and interfaceId is not 0xffffffff, false otherwise.
+     */
+    function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
 
 ISCSandbox constant __iscSandbox = ISCSandbox(ISC_MAGIC_ADDRESS);
