@@ -56,27 +56,6 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 	return e.JSON(http.StatusOK, assetsResponse)
 }
 
-func (c *Controller) getAccountFoundries(e echo.Context) error {
-	panic("TODO")
-	// ch,  err := c.chainService.GetChain()
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-	// agentID, err := params.DecodeAgentID(e)
-	// if err != nil {
-	// 	return err
-	// }
-
-	// foundries, err := corecontracts.GetAccountFoundries(ch, agentID, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-
-	// return e.JSON(http.StatusOK, &models.AccountFoundriesResponse{
-	// 	FoundrySerialNumbers: foundries,
-	// })
-}
-
 func (c *Controller) getAccountNonce(e echo.Context) error {
 	ch, err := c.chainService.GetChain()
 	if err != nil {
@@ -98,59 +77,4 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 	}
 
 	return e.JSON(http.StatusOK, nonceResponse)
-}
-
-// func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
-// 	ch, err := c.chainService.GetChain()
-// 	if err != nil {
-// 		return c.handleViewCallError(err)
-// 	}
-
-// 	registries, err := corecontracts.GetNativeTokenIDRegistry(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-// 	if err != nil {
-// 		return c.handleViewCallError(err)
-// 	}
-
-// 	nativeTokenIDRegistryResponse := &models.NativeTokenIDRegistryResponse{
-// 		NativeTokenRegistryIDs: make([]string, len(registries)),
-// 	}
-
-// 	for k, v := range registries {
-// 		nativeTokenIDRegistryResponse.NativeTokenRegistryIDs[k] = v.String()
-// 	}
-
-// 	return e.JSON(http.StatusOK, nativeTokenIDRegistryResponse)
-// }
-
-func (c *Controller) getFoundryOutput(e echo.Context) error {
-	panic("TODO")
-	// ch,  err := c.chainService.GetChain()
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-
-	// serialNumber, err := params.DecodeUInt(e, "serialNumber")
-	// if err != nil {
-	// 	return err
-	// }
-
-	// foundryOutput, err := corecontracts.GetFoundryOutput(ch, uint32(serialNumber), e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-	// if err != nil {
-	// 	return c.handleViewCallError(err)
-	// }
-
-	// foundryOutputID, err := foundryOutput.ID()
-	// if err != nil {
-	// 	return apierrors.InvalidPropertyError("FoundryOutput.ID", err)
-	// }
-
-	// foundryOutputResponse := &models.FoundryOutputResponse{
-	// 	FoundryID: foundryOutputID.ToHex(),
-	// 	Assets: models.AssetsResponse{
-	// 		BaseTokens:   iotago.EncodeUint64(foundryOutput.Amount),
-	// 		NativeTokens: isc.NativeTokensToJSONObject(foundryOutput.NativeTokens),
-	// 	},
-	// }
-
-	// return e.JSON(http.StatusOK, foundryOutputResponse)
 }
