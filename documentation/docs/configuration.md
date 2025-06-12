@@ -100,7 +100,7 @@ Example:
 | Name                  | Description                                                                                        | Type   | Default value           |
 | --------------------- | -------------------------------------------------------------------------------------------------- | ------ | ----------------------- |
 | websocketURL          | The WS address to which to connect to                                                              | string | "ws://localhost:9000"   |
-| httpURL               | The HTTP address to which to connect to                                                            | string | "http://localhost:9000" |
+| httpurl               | The HTTP address to which to connect to                                                            | string | "http://localhost:9000" |
 | packageID             | The identifier of the isc move package                                                             | string | ""                      |
 | maxConnectionAttempts | The amount of times the connection to INX will be attempted before it fails (1 attempt per second) | uint   | 30                      |
 | targetNetworkName     | The network name on which the node should operate on (optional)                                    | string | ""                      |
@@ -111,7 +111,7 @@ Example:
   {
     "l1": {
       "websocketURL": "ws://localhost:9000",
-      "httpURL": "http://localhost:9000",
+      "httpurl": "http://localhost:9000",
       "packageID": "",
       "maxConnectionAttempts": 30,
       "targetNetworkName": ""
@@ -300,6 +300,7 @@ Example:
 | mempoolMaxTimedInPool             | Maximum number of timed on-ledger requests kept in the mempool                                                                                                                                                                | int     | 100           |
 | mempoolMaxOffledgerToPropose      | Maximum number of off-ledger requests to propose for the next block                                                                                                                                                           | int     | 500           |
 | mempoolMaxOnledgerToPropose       | Maximum number of on-ledger requests to propose for the next block (includes timed requests)                                                                                                                                  | int     | 100           |
+| mempoolMaxOffledgerPerAccount     | Maximum number of off-ledger requests per account in mempool                                                                                                                                                                  | int     | 100           |
 | mempoolOnLedgerRefreshMinInterval | Minimum interval to try to refresh the list of on-ledger requests after some have been dropped from the pool (this interval is introduced to avoid dropping/refreshing cycle if there are too many requests on L1 to process) | string  | "10m"         |
 
 Example:
@@ -326,6 +327,7 @@ Example:
       "mempoolMaxTimedInPool": 100,
       "mempoolMaxOffledgerToPropose": 500,
       "mempoolMaxOnledgerToPropose": 100,
+      "mempoolMaxOffledgerPerAccount": 100,
       "mempoolOnLedgerRefreshMinInterval": "10m"
     }
   }
@@ -432,7 +434,7 @@ Example:
 | enabled                   | Whether the web api plugin is enabled                                                      | boolean | true                   |
 | bindAddress               | The bind address for the node web api                                                      | string  | "0.0.0.0:9090"         |
 | [auth](#webapi_auth)      | Configuration for auth                                                                     | object  |                        |
-| indexDbPath               | Directory for storing indexes of historical data (only archive nodes will create/use them) | string  | "waspdb/chains/index"  |
+| indexDBPath               | Directory for storing indexes of historical data (only archive nodes will create/use them) | string  | "waspdb/chains/index"  |
 | accountDumpsPath          | Directory where account dumps will be stored                                               | string  | "waspdb/account_dumps" |
 | [limits](#webapi_limits)  | Configuration for limits                                                                   | object  |                        |
 | debugRequestLoggerEnabled | Whether the debug logging for requests should be enabled                                   | boolean | false                  |
@@ -487,7 +489,7 @@ Example:
           "duration": "24h"
         }
       },
-      "indexDbPath": "waspdb/chains/index",
+      "indexDBPath": "waspdb/chains/index",
       "accountDumpsPath": "waspdb/account_dumps",
       "limits": {
         "timeout": "30s",

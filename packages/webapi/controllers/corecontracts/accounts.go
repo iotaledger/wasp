@@ -78,25 +78,3 @@ func (c *Controller) getAccountNonce(e echo.Context) error {
 
 	return e.JSON(http.StatusOK, nonceResponse)
 }
-
-// func (c *Controller) getNativeTokenIDRegistry(e echo.Context) error {
-// 	ch, err := c.chainService.GetChain()
-// 	if err != nil {
-// 		return c.handleViewCallError(err)
-// 	}
-
-// 	registries, err := corecontracts.GetNativeTokenIDRegistry(ch, e.QueryParam(params.ParamBlockIndexOrTrieRoot))
-// 	if err != nil {
-// 		return c.handleViewCallError(err)
-// 	}
-
-// 	nativeTokenIDRegistryResponse := &models.NativeTokenIDRegistryResponse{
-// 		NativeTokenRegistryIDs: make([]string, len(registries)),
-// 	}
-
-// 	for k, v := range registries {
-// 		nativeTokenIDRegistryResponse.NativeTokenRegistryIDs[k] = v.String()
-// 	}
-
-// 	return e.JSON(http.StatusOK, nativeTokenIDRegistryResponse)
-// }
