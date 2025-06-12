@@ -708,23 +708,18 @@ func (e *EVMChain) traceTransaction(
 	txIndex uint64,
 	blockHash common.Hash,
 ) (json.RawMessage, error) {
-	tracerType := "callTracer"
-	if config.Tracer != nil {
-		tracerType = *config.Tracer
-	}
 	txIndexInt, err := safecast.Convert[int](txIndex)
 	if err != nil {
 		return nil, err
 	}
 	tracer, err := newTracer(
-		tracerType,
 		&tracers.Context{
 			BlockHash:   blockHash,
 			BlockNumber: new(big.Int).SetUint64(uint64(blockInfo.BlockIndex)),
 			TxIndex:     txIndexInt,
 			TxHash:      tx.Hash(),
 		},
-		config.TracerConfig,
+		config,
 	)
 	if err != nil {
 		return nil, err
@@ -770,18 +765,12 @@ func (e *EVMChain) debugTraceBlock(config *tracers.TraceConfig, block *types.Blo
 		return nil, err
 	}
 
-	tracerType := "callTracer"
-	if config.Tracer != nil {
-		tracerType = *config.Tracer
-	}
-
 	tracer, err := newTracer(
-		tracerType,
 		&tracers.Context{
 			BlockHash:   block.Hash(),
 			BlockNumber: new(big.Int).SetUint64(uint64(iscBlock.BlockIndex)),
 		},
-		config.TracerConfig,
+		config,
 	)
 	if err != nil {
 		return nil, err
@@ -919,11 +908,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 
 	blockTxs := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
 
-	results := TraceBlock{
-		Jsonrpc: "2.0",
-		Result:  make([]*Trace, 0),
-		ID:      1,
-	}
+	var traces []*Trace
 
 	for i, tx := range blockTxs {
 		iterator := safecast.MustConvert[uint64](i)
@@ -946,11 +931,11 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 
 			blockHash := block.Hash()
 			txHash := tx.Hash()
-			results.Result = append(results.Result, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
+			traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
 		}
 	}
 
-	return results, nil
+	return traces, nil
 }
 
 func (e *EVMChain) getBlockInfoByAnchor(anchor *isc.StateAnchor) (*blocklog.BlockInfo, error) {

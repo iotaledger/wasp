@@ -4,11 +4,16 @@ package testconfig
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/spf13/viper"
+	"fortio.org/safecast"
+	"github.com/knadh/koanf/parsers/json"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/v2"
 )
 
 const (
@@ -21,11 +26,11 @@ var (
 )
 
 type sectionCfg struct {
-	C        *viper.Viper
+	C        *koanf.Koanf
 	WasFound bool
 }
 
-func LoadConfig(sectionName string) (_ *viper.Viper, configFound bool) {
+func LoadConfig(sectionName string) (_ *koanf.Koanf, configFound bool) {
 	loadedConfigsLock.Lock()
 	defer loadedConfigsLock.Unlock()
 
@@ -33,27 +38,30 @@ func LoadConfig(sectionName string) (_ *viper.Viper, configFound bool) {
 		return loadedCfg.C, loadedCfg.WasFound
 	}
 
-	c := viper.NewWithOptions(viper.EnvKeyReplacer(&envKeyReplacer{
-		RemovePrefix: strings.ToUpper(sectionName) + ".",
-		AddPrefix:    "TEST_",
-	}))
-
-	c.SetConfigName(testconfigFile)
-	c.SetConfigType("json")
-	c.AddConfigPath(GetRootDir())
-
-	if err := c.ReadInConfig(); err != nil {
-		fmt.Printf("config file %v not found - using defaul values\n", testconfigFile)
+	c := koanf.New(".")
+	if err := c.Load(file.Provider(path.Join(GetRootDir(), testconfigFile)), json.Parser()); err != nil {
+		fmt.Printf("config file %v not found - using default values\n", testconfigFile)
 	} else {
-		if c = c.Sub(sectionName); c == nil {
-			fmt.Printf("key %v not found in config %v - using defaul values\n", sectionName, testconfigFile)
-			c = viper.New()
+		subKeys := c.Cut(sectionName)
+		if len(subKeys.Keys()) == 0 {
+			fmt.Printf("key %v not found in config %v - using default values\n", sectionName, testconfigFile)
 		} else {
+			c = subKeys
 			configFound = true
 		}
 	}
 
-	c.AutomaticEnv()
+	prefix := "TEST_"
+	removePrefix := strings.ToUpper(sectionName) + "_"
+
+	envProvider := env.Provider(prefix, ".", func(s string) string {
+		s = strings.TrimPrefix(s, removePrefix)
+		return strings.ToLower(strings.ReplaceAll(s, "_", "."))
+	})
+
+	if err := c.Load(envProvider, nil); err != nil {
+		fmt.Printf("failed to load env vars: %v\n", err)
+	}
 
 	loadedConfigs[sectionName] = sectionCfg{
 		C:        c,
@@ -73,25 +81,37 @@ func Get[ValueType any](section string, keyName string, def ValueType) ValueType
 
 	switch interface{}(&def).(type) {
 	case *string:
-		v = c.GetString(keyName)
+		v = c.String(keyName)
 	case *int:
-		v = c.GetInt(keyName)
+		v = c.Int(keyName)
 	case *int32:
-		v = c.GetInt32(keyName)
+		var err error
+		if v, err = safecast.Convert[int32](c.Int64(keyName)); err != nil {
+			panic(fmt.Sprintf("integer overflow when converting to int32: %v", err))
+		}
 	case *int64:
-		v = c.GetInt64(keyName)
+		v = c.Int64(keyName)
 	case *uint:
-		v = c.GetUint(keyName)
+		var err error
+		if v, err = safecast.Convert[uint](c.Int(keyName)); err != nil {
+			panic(fmt.Sprintf("integer overflow when converting to uint: %v", err))
+		}
 	case *uint32:
-		v = c.GetUint32(keyName)
+		var err error
+		if v, err = safecast.Convert[uint32](c.Int(keyName)); err != nil {
+			panic(fmt.Sprintf("integer overflow when converting to uint32: %v", err))
+		}
 	case *uint64:
-		v = c.GetUint64(keyName)
+		var err error
+		if v, err = safecast.Convert[uint64](c.Int64(keyName)); err != nil {
+			panic(fmt.Sprintf("integer overflow when converting to uint64: %v", err))
+		}
 	case *float32:
-		v = float32(c.GetFloat64(keyName))
+		v = float32(c.Float64(keyName))
 	case *float64:
-		v = c.GetFloat64(keyName)
+		v = c.Float64(keyName)
 	case *bool:
-		v = c.GetBool(keyName)
+		v = c.Bool(keyName)
 	case *any:
 		v = c.Get(keyName)
 	}
@@ -118,13 +138,4 @@ func GetRootDir() string {
 		}
 		dir = parent
 	}
-}
-
-type envKeyReplacer struct {
-	RemovePrefix string
-	AddPrefix    string
-}
-
-func (r *envKeyReplacer) Replace(s string) string {
-	return r.AddPrefix + strings.TrimPrefix(s, r.RemovePrefix)
 }
