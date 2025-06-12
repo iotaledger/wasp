@@ -24,7 +24,6 @@ import (
 
 // ensures a nodes resumes normal operation after rebooting
 func TestReboot(t *testing.T) {
-	t.Skip("TODO: fix test")
 	committee := []int{0, 1, 2, 3}
 	quorum := uint16((2*len(committee))/3 + 1)
 	env := SetupWithChainWithOpts(t, &waspClusterOpts{
@@ -153,7 +152,6 @@ func (icc *incCounterClient) MustIncBoth(onLedgerFirst bool) {
 // Ensures a nodes resumes normal operation after rebooting.
 // In this case we have F=0 and N=3, thus any reboot violates the assumptions.
 func TestRebootN3Single(t *testing.T) {
-	t.Skip("TODO: fix test")
 	tm := util.NewTimer()
 	allNodes := []int{0, 1, 2}
 	env := setupNativeInccounterTest(t, 3, allNodes)

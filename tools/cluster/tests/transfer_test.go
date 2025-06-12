@@ -16,7 +16,6 @@ import (
 )
 
 func TestDepositWithdraw(t *testing.T) {
-	t.Skip("TODO: fix test")
 	e := SetupWithChain(t)
 
 	userKeypair, userAddr, err := e.Clu.NewKeyPairWithFunds()

@@ -19,8 +19,6 @@ import (
 
 // executed in cluster_test.go
 func (e *ChainEnv) testPost1Request(t *testing.T) {
-	t.Skip("TODO: fix test")
-
 	userKeyPair, userAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient := e.Chain.Client(userKeyPair)
@@ -43,8 +41,6 @@ func (e *ChainEnv) testPost1Request(t *testing.T) {
 
 // executed in cluster_test.go
 func (e *ChainEnv) testPost3Requests(t *testing.T) {
-	t.Skip("TODO: fix test")
-
 	userKeyPair, userAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient := e.Chain.Client(userKeyPair)
@@ -77,8 +73,6 @@ func (e *ChainEnv) testPost3Requests(t *testing.T) {
 
 // executed in cluster_test.go
 func (e *ChainEnv) testPost5AsyncRequests(t *testing.T) {
-	t.Skip("TODO: fix test")
-
 	userWallet, userAddr, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
 	userClient := e.Chain.Client(userWallet)

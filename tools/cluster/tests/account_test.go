@@ -72,7 +72,6 @@ func (e *ChainEnv) testAccounts() {
 
 // executed in cluster_test.go
 func (e *ChainEnv) testBasic2Accounts(t *testing.T) {
-	t.Skip("TODO: fix test")
 	e.checkCoreContracts()
 
 	keyPairUser1, addressUser1, err := e.Clu.NewKeyPairWithFunds()

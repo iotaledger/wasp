@@ -17,7 +17,6 @@ import (
 )
 
 func TestOffledgerRequestAccessNode(t *testing.T) {
-	t.Skip("TODO: fix test")
 	const clusterSize = 10
 	cmt := []int{0, 1, 2, 3}
 	e := SetupWithChainWithOpts(t, &waspClusterOpts{nNodes: clusterSize}, cmt, 3)
@@ -68,7 +67,6 @@ func (e *ChainEnv) testOffledgerRequest(t *testing.T) {
 
 // executed in cluster_test.go
 func (e *ChainEnv) testOffledgerNonce(t *testing.T) {
-	t.Skip("TODO: fix test")
 	chClient := e.newWalletWithL2Funds(0, 0, 1, 2, 3)
 
 	_, err := chClient.DepositFunds(1 * isc.Million)
