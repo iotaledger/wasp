@@ -901,38 +901,57 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	tracer, err := newTracer(
+		&tracers.Context{
+			BlockHash:   block.Hash(),
+			BlockNumber: new(big.Int).SetUint64(uint64(block.NumberU64())),
+		},
+		&tracers.TraceConfig{},
+	)
+	if err != nil {
+		return nil, err
+	}
 	iscBlock, iscRequestsInBlock, enforceGasBurned, err := e.iscRequestsInBlock(block.NumberU64())
 	if err != nil {
 		return nil, err
 	}
 
-	blockTxs := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
+	err = e.backend.EVMTrace(
+		iscBlock.PreviousAnchor,
+		iscBlock.Timestamp,
+		iscBlock.Entropy,
+		iscRequestsInBlock,
+		enforceGasBurned,
+		tracer,
+		iscBlock.L1Params,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := tracer.GetResult()
+	if err != nil {
+		return nil, err
+	}
+
+	var txResults []TxTraceResult
+	err = json.Unmarshal(res, &txResults)
+	if err != nil {
+		return nil, err
+	}
 
 	var traces []*Trace
-
-	for i, tx := range blockTxs {
-		iterator := safecast.MustConvert[uint64](i)
-		debugResultJSON, err := e.traceTransaction(
-			&tracers.TraceConfig{},
-			iscBlock,
-			iscRequestsInBlock,
-			enforceGasBurned,
-			tx,
-			iterator,
-			block.Hash(),
-		)
-
-		if err == nil {
-			var debugResult CallFrame
-			err = json.Unmarshal(debugResultJSON, &debugResult)
-			if err != nil {
-				return nil, err
-			}
-
-			blockHash := block.Hash()
-			txHash := tx.Hash()
-			traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
+	for i, txResult := range txResults {
+		var debugResult CallFrame
+		err = json.Unmarshal(txResult.Result, &debugResult)
+		if err != nil {
+			return nil, err
 		}
+
+		blockHash := block.Hash()
+		txHash := txResult.TxHash
+		traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, uint64(i))...)
 	}
 
 	return traces, nil
