@@ -3,6 +3,7 @@ package models
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -45,4 +46,19 @@ func MapReceiptResponse(receipt *isc.Receipt) *ReceiptResponse {
 		SDCharged:     receipt.SDCharged.String(),
 		GasBurnLog:    burnRecords,
 	}
+}
+
+type OnLedgerEstimationResponse struct {
+	L1 *L1EstimationResult `json:"l1" swagger:"required"`
+	L2 *ReceiptResponse    `json:"l2" swagger:"required"`
+}
+
+func MapL1EstimationResult(gasFeeCharged *big.Int) *L1EstimationResult {
+	return &L1EstimationResult{
+		GasFeeCharged: gasFeeCharged.String(),
+	}
+}
+
+type L1EstimationResult struct {
+	GasFeeCharged string `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
 }

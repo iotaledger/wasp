@@ -21,7 +21,7 @@ var _ MappedNullable = &EstimateGasRequestOnledger{}
 
 // EstimateGasRequestOnledger struct for EstimateGasRequestOnledger
 type EstimateGasRequestOnledger struct {
-	// The result of the DryRun encoded in BCS format and represented in hexadecimal
+	// Hexadecimal bytes of transaction to estimate
 	TransactionBytes string `json:"transactionBytes"`
 }
 

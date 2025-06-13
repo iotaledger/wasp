@@ -703,7 +703,7 @@ func (r ApiEstimateGasOnledgerRequest) Request(request EstimateGasRequestOnledge
 	return r
 }
 
-func (r ApiEstimateGasOnledgerRequest) Execute() (*ReceiptResponse, *http.Response, error) {
+func (r ApiEstimateGasOnledgerRequest) Execute() (*OnLedgerEstimationResponse, *http.Response, error) {
 	return r.ApiService.EstimateGasOnledgerExecute(r)
 }
 
@@ -721,13 +721,13 @@ func (a *ChainsAPIService) EstimateGasOnledger(ctx context.Context) ApiEstimateG
 }
 
 // Execute executes the request
-//  @return ReceiptResponse
-func (a *ChainsAPIService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*ReceiptResponse, *http.Response, error) {
+//  @return OnLedgerEstimationResponse
+func (a *ChainsAPIService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*OnLedgerEstimationResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod   = http.MethodPost
 		localVarPostBody     interface{}
 		formFiles            []formFile
-		localVarReturnValue  *ReceiptResponse
+		localVarReturnValue  *OnLedgerEstimationResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.EstimateGasOnledger")

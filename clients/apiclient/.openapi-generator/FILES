@@ -51,6 +51,7 @@ docs/InfoResponse.md
 docs/Int.md
 docs/IotaCoinInfo.md
 docs/IotaObjectJSON.md
+docs/L1EstimationResult.md
 docs/L1Params.md
 docs/Limits.md
 docs/LoginRequest.md
@@ -60,6 +61,7 @@ docs/NodeAPI.md
 docs/NodeOwnerCertificateResponse.md
 docs/ObjectType.md
 docs/OffLedgerRequest.md
+docs/OnLedgerEstimationResponse.md
 docs/OnLedgerRequest.md
 docs/OnLedgerRequestMetricItem.md
 docs/PeeringNodeIdentityResponse.md
@@ -123,6 +125,7 @@ model_info_response.go
 model_int.go
 model_iota_coin_info.go
 model_iota_object_json.go
+model_l1_estimation_result.go
 model_l1_params.go
 model_limits.go
 model_login_request.go
@@ -130,6 +133,7 @@ model_login_response.go
 model_node_owner_certificate_response.go
 model_object_type.go
 model_off_ledger_request.go
+model_on_ledger_estimation_response.go
 model_on_ledger_request.go
 model_on_ledger_request_metric_item.go
 model_peering_node_identity_response.go

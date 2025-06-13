@@ -2,6 +2,7 @@ package chain
 
 import (
 	"fmt"
+	"math/big"
 	"net/http"
 	"time"
 
@@ -51,10 +52,23 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "VM run error", err)
 	}
+
 	res := rec.DeserializedRequest()
 	fmt.Printf("RequestBytes: %s\n", hexutil.Encode(rec.Request))
 	fmt.Printf("Request data: %v %v", res, res.Message())
-	return e.JSON(http.StatusOK, models.MapReceiptResponse(rec))
+
+	l1GasSummary := &dryRunResponse.Effects.Data.V1.GasUsed
+	var l1GasUsed big.Int
+	l1GasUsed.Add(&l1GasUsed, l1GasSummary.ComputationCost.Int)
+	l1GasUsed.Add(&l1GasUsed, l1GasSummary.StorageCost.Int)
+	l1GasUsed.Sub(&l1GasUsed, l1GasSummary.StorageRebate.Int)
+	// TODO: What is l1GasSummary.NonRefundableStorageFee ? Should it me included?
+
+	return e.JSON(http.StatusOK, models.OnLedgerEstimationResponse{
+		L1: models.MapL1EstimationResult(&l1GasUsed),
+		L2: models.MapReceiptResponse(rec),
+	})
+
 }
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {

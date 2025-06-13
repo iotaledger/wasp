@@ -44,7 +44,6 @@ func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd iotago.ProgrammableM
 		return fmt.Errorf("failed to decode contract call args: %v", err)
 	}
 
-	fmt.Printf("XXX msg.AllowanceBCS %v\n", string(inputs[*cmd.Arguments[5].Input].Value))
 	// allowance
 	var allowanceBCS string
 	err = json.Unmarshal(inputs[*cmd.Arguments[5].Input].Value, &allowanceBCS)
@@ -77,7 +76,7 @@ func DecodeCoin(assets *Assets, cmd iotago.ProgrammableMoveCall, inputs []iotajs
 
 	amount, err := strconv.ParseUint(amountString, 10, 64)
 	if err != nil {
-		err = fmt.Errorf("can't decode value in place_coin command: %w", err)
+		err = fmt.Errorf("can't decode amount argument in place_coin command: %w", err)
 		return err
 	}
 

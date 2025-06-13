@@ -98,7 +98,7 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 
 	publicAPI.POST("chain/estimategas-onledger", c.estimateGasOnLedger).
 		AddParamBody(mocker.Get(models.EstimateGasRequestOnledger{}), "Request", "Request", true).
-		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.ReceiptResponse{}), nil).
+		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.OnLedgerEstimationResponse{}), nil).
 		SetSummary("Estimates gas for a given on-ledger ISC request").
 		SetOperationId("estimateGasOnledger")
 

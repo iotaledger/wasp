@@ -37,6 +37,7 @@ import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
 import { IotaObjectJSON } from '../models/IotaObjectJSON';
+import { L1EstimationResult } from '../models/L1EstimationResult';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
@@ -44,6 +45,7 @@ import { LoginResponse } from '../models/LoginResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
+import { OnLedgerEstimationResponse } from '../models/OnLedgerEstimationResponse';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
 import { PeeringNodeIdentityResponse } from '../models/PeeringNodeIdentityResponse';
@@ -407,7 +409,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given on-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOnledgerWithHttpInfo(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<HttpInfo<ReceiptResponse>> {
+    public estimateGasOnledgerWithHttpInfo(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<HttpInfo<OnLedgerEstimationResponse>> {
         return this.api.estimateGasOnledgerWithHttpInfo(param.request,  options).toPromise();
     }
 
@@ -415,7 +417,7 @@ export class ObjectChainsApi {
      * Estimates gas for a given on-ledger ISC request
      * @param param the request object
      */
-    public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<ReceiptResponse> {
+    public estimateGasOnledger(param: ChainsApiEstimateGasOnledgerRequest, options?: Configuration): Promise<OnLedgerEstimationResponse> {
         return this.api.estimateGasOnledger(param.request,  options).toPromise();
     }
 

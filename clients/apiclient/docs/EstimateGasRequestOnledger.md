@@ -4,7 +4,7 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**TransactionBytes** | **string** | The result of the DryRun encoded in BCS format and represented in hexadecimal | 
+**TransactionBytes** | **string** | Hexadecimal bytes of transaction to estimate | 
 
 ## Methods
 
