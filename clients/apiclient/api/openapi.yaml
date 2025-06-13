@@ -3108,14 +3108,23 @@ components:
     L1EstimationResult:
       example:
         gasFeeCharged: gasFeeCharged
+        gasBudget: gasBudget
       properties:
+        gasBudget:
+          description: Gas budget required for processing of transaction (uint64 as
+            string)
+          format: string
+          type: string
+          xml:
+            name: GasBudget
         gasFeeCharged:
-          description: The charged gas fee (uint64 as string)
+          description: Total gas fee charged (uint64 as string)
           format: string
           type: string
           xml:
             name: GasFeeCharged
       required:
+      - gasBudget
       - gasFeeCharged
       type: object
       xml:
@@ -3306,6 +3315,7 @@ components:
       example:
         l1:
           gasFeeCharged: gasFeeCharged
+          gasBudget: gasBudget
         l2:
           gasBurnLog:
           - code: 6

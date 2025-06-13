@@ -4,13 +4,14 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**GasFeeCharged** | **string** | The charged gas fee (uint64 as string) | 
+**GasBudget** | **string** | Gas budget required for processing of transaction (uint64 as string) | 
+**GasFeeCharged** | **string** | Total gas fee charged (uint64 as string) | 
 
 ## Methods
 
 ### NewL1EstimationResult
 
-`func NewL1EstimationResult(gasFeeCharged string, ) *L1EstimationResult`
+`func NewL1EstimationResult(gasBudget string, gasFeeCharged string, ) *L1EstimationResult`
 
 NewL1EstimationResult instantiates a new L1EstimationResult object
 This constructor will assign default values to properties that have it defined,
@@ -24,6 +25,26 @@ will change when the set of required properties is changed
 NewL1EstimationResultWithDefaults instantiates a new L1EstimationResult object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
+
+### GetGasBudget
+
+`func (o *L1EstimationResult) GetGasBudget() string`
+
+GetGasBudget returns the GasBudget field if non-nil, zero value otherwise.
+
+### GetGasBudgetOk
+
+`func (o *L1EstimationResult) GetGasBudgetOk() (*string, bool)`
+
+GetGasBudgetOk returns a tuple with the GasBudget field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetGasBudget
+
+`func (o *L1EstimationResult) SetGasBudget(v string)`
+
+SetGasBudget sets GasBudget field to given value.
+
 
 ### GetGasFeeCharged
 

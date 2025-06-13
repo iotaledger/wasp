@@ -21,7 +21,9 @@ var _ MappedNullable = &L1EstimationResult{}
 
 // L1EstimationResult struct for L1EstimationResult
 type L1EstimationResult struct {
-	// The charged gas fee (uint64 as string)
+	// Gas budget required for processing of transaction (uint64 as string)
+	GasBudget string `json:"gasBudget"`
+	// Total gas fee charged (uint64 as string)
 	GasFeeCharged string `json:"gasFeeCharged"`
 }
 
@@ -31,8 +33,9 @@ type _L1EstimationResult L1EstimationResult
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewL1EstimationResult(gasFeeCharged string) *L1EstimationResult {
+func NewL1EstimationResult(gasBudget string, gasFeeCharged string) *L1EstimationResult {
 	this := L1EstimationResult{}
+	this.GasBudget = gasBudget
 	this.GasFeeCharged = gasFeeCharged
 	return &this
 }
@@ -43,6 +46,30 @@ func NewL1EstimationResult(gasFeeCharged string) *L1EstimationResult {
 func NewL1EstimationResultWithDefaults() *L1EstimationResult {
 	this := L1EstimationResult{}
 	return &this
+}
+
+// GetGasBudget returns the GasBudget field value
+func (o *L1EstimationResult) GetGasBudget() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.GasBudget
+}
+
+// GetGasBudgetOk returns a tuple with the GasBudget field value
+// and a boolean to check if the value has been set.
+func (o *L1EstimationResult) GetGasBudgetOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return &o.GasBudget, true
+}
+
+// SetGasBudget sets field value
+func (o *L1EstimationResult) SetGasBudget(v string) {
+	o.GasBudget = v
 }
 
 // GetGasFeeCharged returns the GasFeeCharged field value
@@ -79,6 +106,7 @@ func (o L1EstimationResult) MarshalJSON() ([]byte, error) {
 
 func (o L1EstimationResult) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
+	toSerialize["gasBudget"] = o.GasBudget
 	toSerialize["gasFeeCharged"] = o.GasFeeCharged
 	return toSerialize, nil
 }
@@ -88,6 +116,7 @@ func (o *L1EstimationResult) UnmarshalJSON(data []byte) (err error) {
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
+		"gasBudget",
 		"gasFeeCharged",
 	}
 

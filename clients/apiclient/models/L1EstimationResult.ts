@@ -14,7 +14,11 @@ import { HttpFile } from '../http/http';
 
 export class L1EstimationResult {
     /**
-    * The charged gas fee (uint64 as string)
+    * Gas budget required for processing of transaction (uint64 as string)
+    */
+    'gasBudget': string;
+    /**
+    * Total gas fee charged (uint64 as string)
     */
     'gasFeeCharged': string;
 
@@ -23,6 +27,12 @@ export class L1EstimationResult {
     static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "gasBudget",
+            "baseName": "gasBudget",
+            "type": "string",
+            "format": "string"
+        },
         {
             "name": "gasFeeCharged",
             "baseName": "gasFeeCharged",

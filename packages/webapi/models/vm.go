@@ -53,12 +53,14 @@ type OnLedgerEstimationResponse struct {
 	L2 *ReceiptResponse    `json:"l2" swagger:"required"`
 }
 
-func MapL1EstimationResult(gasFeeCharged *big.Int) *L1EstimationResult {
+func MapL1EstimationResult(gasFeeCharged, minGasBudget *big.Int) *L1EstimationResult {
 	return &L1EstimationResult{
 		GasFeeCharged: gasFeeCharged.String(),
+		GasBudget:     minGasBudget.String(),
 	}
 }
 
 type L1EstimationResult struct {
-	GasFeeCharged string `json:"gasFeeCharged" swagger:"required,desc(The charged gas fee (uint64 as string))"`
+	GasFeeCharged string `json:"gasFeeCharged,omitempty" swagger:"required,desc(Total gas fee charged (uint64 as string))"`
+	GasBudget     string `json:"gasBudget,omitempty" swagger:"required,desc(Gas budget required for processing of transaction (uint64 as string))"`
 }

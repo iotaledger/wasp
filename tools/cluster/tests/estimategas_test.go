@@ -115,7 +115,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 			sender.Address().AsIotaAddress(),
 			pt,
 			coinsForGas,
-			2*iotaclient.DefaultGasBudget, // TODO: l1GasBudget here fails test.
+			2*iotaclient.DefaultGasBudget, // TODO: Why l1GasBudget here fails test?
 			iotaclient.DefaultGasPrice,
 		)
 
@@ -126,17 +126,9 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	}
 
 	// Create transaction for estimation
-	const minL1GasBudget = 1000000
-	txBytesForEstimation := createTx(minL1GasBudget, 0)
-	// TODO:
-	// Ideally the this call should look like this: createTx(0, 0).
-	// But if we pass 0 as l1 budget we get error upon estimation:
-	//    Error checking transaction input objects: GasBudgetTooLow { gas_budget: 0, min_budget: 1000000 }"
-	// If we try to pass math.MaxUint64, we get an error upon trying to find coins for gas:
-	//    insufficient account balance
-	// So we need to specify some meaningful value of gas budget for estimation. But this becomes chicken-and-egg problem.
-	// So I assumed that 1000000 is some theoretical min budget for any transaction, because if we remove one of requests from the transaction,
-	// the estimated gas still stays at 1000000.
+	txBytesForEstimation := createTx(iotaclient.MinGasBudget, 0)
+	// TODO: Right now our required budget is less then iotaclient.MinGasBudget.
+	// We need to add more test requests to actually test real-life budget.
 
 	// Estimate L1 and L2 gas budget for that transaction
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
@@ -151,7 +143,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	}
 	require.Empty(t, estimatedReceipt.L2.ErrorMessage, lo.FromPtr(estimatedReceipt.L2.ErrorMessage))
 
-	l1GasBudget, err := strconv.ParseUint(estimatedReceipt.L1.GasFeeCharged, 10, 64)
+	l1GasBudget, err := strconv.ParseUint(estimatedReceipt.L1.GasBudget, 10, 64)
 	require.NoError(t, err)
 	l2GasBudget, err := strconv.ParseUint(estimatedReceipt.L2.GasFeeCharged, 10, 64)
 	require.NoError(t, err)
@@ -171,13 +163,13 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 
 	// TODO: This check won't work, because right now l1GasBudget == minL1GasBudget, so L1 tx actually executes successfully.
 	//
-	// Checking that execution fails with zero L1 and L2 gas budgets
+	// // Checking that execution fails with zero L1 and L2 gas budgets
 	// res := executeTx(txBytesForEstimation)
 	// require.NotEmpty(t, res.Errors)
 
 	// TODO: This check does not work because we have 2*iotaclient.DefaultGasBudget in NewProgrammable.
 	//
-	// Checking that transaction execution fails with wrong L1 gas budget
+	// // Checking that transaction execution fails with wrong L1 gas budget
 	// txBytesWithWrongL1GasBudget := createTx(l1GasBudget-1, l2GasBudget)
 	// res, err := executeTx(txBytesWithWrongL1GasBudget)
 	// require.Error(t, err)
@@ -185,7 +177,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	// TODO: Should we make an attempt to execute tx with wrong L2 gas budget?
 	//       How then will it work in relation to next attempt? The request will stuck and then unstuck?
 	//
-	// Checking that transaction execution fails with wrong L2 gas budget
+	// // Checking that transaction execution fails with wrong L2 gas budget
 	// txBytesWithWrongL2GasBudget := createTx(l1GasBudget, l2GasBudget-1)
 	// res = executeTx(txBytesWithWrongL2GasBudget)
 	// require.NotEmpty(t, res.Errors)
@@ -201,7 +193,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	totalL1GasUsed.Sub(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.StorageRebate.Int)
 	require.Equal(t, estimatedReceipt.L1.GasFeeCharged, totalL1GasUsed.String())
 
-	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
+	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
 	require.NoError(t, err)
 	require.Empty(t, recs[0].ErrorMessage, lo.FromPtr(recs[0].ErrorMessage))
 	require.Equal(t, recs[0].GasBurned, estimatedReceipt.L2.GasBurned)
