@@ -432,22 +432,6 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 	return txs[index], block.Hash(), bn, nil
 }
 
-func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transactions) {
-	e.log.LogDebugf("TxsByBlockNumber(blockNumber=%v, index=%v)", blockNumber)
-	cachedTxs := e.index.TxsByBlockNumber(blockNumber)
-	if cachedTxs != nil {
-		return cachedTxs
-	}
-	_, latestState := lo.Must2(e.backend.ISCLatestState())
-	db := blockchainDB(latestState)
-	block := db.GetBlockByNumber(blockNumber.Uint64())
-	if block == nil {
-		return nil
-	}
-
-	return block.Transactions()
-}
-
 func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 	e.log.LogDebugf("BlockByHash(hash=%v)", hash)
 
@@ -905,7 +889,7 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	tracer, err := newTracer(
 		&tracers.Context{
 			BlockHash:   block.Hash(),
-			BlockNumber: new(big.Int).SetUint64(uint64(block.NumberU64())),
+			BlockNumber: new(big.Int).SetUint64(block.NumberU64()),
 		},
 		&tracers.TraceConfig{},
 	)
