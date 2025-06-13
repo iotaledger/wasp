@@ -935,7 +935,11 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 
 		blockHash := block.Hash()
 		txHash := txResult.TxHash
-		traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, uint64(i))...)
+		txIndex, err := safecast.Convert[uint64](i)
+		if err != nil {
+			return nil, fmt.Errorf("tx index conversion error: %w", err)
+		}
+		traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, txIndex)...)
 	}
 
 	return traces, nil
