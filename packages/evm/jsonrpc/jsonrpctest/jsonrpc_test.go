@@ -4,7 +4,6 @@
 package jsonrpctest
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
@@ -860,6 +859,36 @@ func TestRPCTraceBlockForLargeN(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, n, bi.NumSuccessfulRequests)
 
+	var res1 json.RawMessage
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"trace_block",
+		rpc.BlockNumber(env.BlockNumber()),
+	)
+	require.NoError(t, err)
+
+	traces := make([]map[string]any, 0)
+	err = json.Unmarshal(res1, &traces)
+	require.NoError(t, err)
+
+	// 400 requests, 2 traces per request
+	require.Len(t, traces, 800)
+}
+
+func TestRPCDebugTraceBlockForLargeN(t *testing.T) {
+	n := 400
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	addNRequests(n, env, creator, creatorAddress, contractABI, contractAddress)
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, n, bi.NumSuccessfulRequests)
+
 	callTracer := "callTracer"
 	var res1 json.RawMessage
 	// we have to use the raw client, because the normal client does not support debug methods
@@ -872,10 +901,12 @@ func TestRPCTraceBlockForLargeN(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, res1, "", "    ")
+	traces := make([]jsonrpc.TxTraceResult, 0)
+	err = json.Unmarshal(res1, &traces)
 	require.NoError(t, err)
-	fmt.Println(prettyJSON.String())
+
+	// 400 requests, 1 trace per request
+	require.Len(t, traces, 400)
 }
 
 func TestRPCTraceBlock(t *testing.T) {
