@@ -13,22 +13,22 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
+	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 // executed in cluster_test.go
-func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
+func (e *ChainEnv) testPermissionlessAccessNode(t *testing.T) {
 	// deposit funds for offledger requests
-	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
-	require.NoError(t, err)
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
+	require.NoError(e.t, err)
 
-	env.DepositFunds(iotaclient.DefaultGasBudget, keyPair)
+	e.DepositFunds(iotaclient.DefaultGasBudget, keyPair)
 
 	// spin a new node
 	clu2 := newCluster(t, waspClusterOpts{
 		nNodes:  1,
 		dirName: "wasp-cluster-access-node",
-		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
+		modifyConfig: func(nodeIndex int, configParams cluster.WaspConfigParams) cluster.WaspConfigParams {
 			// avoid port conflicts when running everything on localhost
 			configParams.APIPort += 100
 			configParams.MetricsPort += 100
@@ -40,7 +40,7 @@ func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 	// remove this cluster when the test ends
 	t.Cleanup(clu2.Stop)
 
-	nodeClient := env.Clu.WaspClient(0)
+	nodeClient := e.Clu.WaspClient(0)
 	accessNodeClient := clu2.WaspClient(0)
 
 	// adds node #0 from cluster2 as access node of node #0 from cluster1
@@ -59,7 +59,7 @@ func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 	accessNodePeerInfo, _, err := accessNodeClient.NodeAPI.GetPeeringIdentity(context.Background()).Execute()
 	require.NoError(t, err)
 
-	err = env.Clu.AddTrustedNode(apiclient.PeeringTrustRequest{
+	err = e.Clu.AddTrustedNode(apiclient.PeeringTrustRequest{
 		Name:       "node-from-other-cluster",
 		PublicKey:  accessNodePeerInfo.PublicKey,
 		PeeringURL: accessNodePeerInfo.PeeringURL,
@@ -68,7 +68,7 @@ func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 
 	// activate the chain on the access node
 	_, err = accessNodeClient.ChainsAPI.
-		SetChainRecord(context.Background(), env.Chain.ChainID.String()).
+		SetChainRecord(context.Background(), e.Chain.ChainID.String()).
 		ChainRecord(apiclient.ChainRecord{
 			IsActive:    true,
 			AccessNodes: []string{},
@@ -84,10 +84,10 @@ func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 
 	// send a request to the access node
 	myClient := chainclient.New(
-		env.Clu.L1Client(),
+		e.Clu.L1Client(),
 		accessNodeClient,
-		env.Chain.ChainID,
-		env.Clu.Config.ISCPackageID(),
+		e.Chain.ChainID,
+		e.Clu.Config.ISCPackageID(),
 		keyPair,
 	)
 	req, err := myClient.PostOffLedgerRequest(context.Background(), accounts.FuncWithdraw.Message(),
@@ -98,7 +98,7 @@ func testPermissionlessAccessNode(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 
 	// request has been processed
-	_, err = env.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 1*time.Minute)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 1*time.Minute)
 	require.NoError(t, err)
 
 	// remove the access node from cluster1 node 0

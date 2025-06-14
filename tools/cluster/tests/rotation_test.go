@@ -10,7 +10,7 @@ import (
 )
 
 func TestBasicRotation(t *testing.T) { // FIXME serious error
-	t.Skipf("Rotation requires refactoring to work, skipped for now")
+	t.Skipf("TODO: Rotation requires refactoring to work, skipped for now")
 	/*
 		env := setupNativeInccounterTest(t, 6, []int{0, 1, 2, 3})
 
@@ -70,7 +70,7 @@ func TestBasicRotation(t *testing.T) { // FIXME serious error
 
 // cluster of 10 access nodes and two overlapping committees
 func TestRotation(t *testing.T) {
-	t.Skipf("Rotation requires refactoring to work, skipped for now")
+	t.Skipf("TODO: Rotation requires refactoring to work, skipped for now")
 
 	/*
 		numRequests := 8
@@ -136,7 +136,7 @@ func TestRotation(t *testing.T) {
 // requests in state index 18. In that node, request index 8 is marked as processed
 // only after state manager reaches state index 18 and publishes the transaction.
 func TestRotationFromSingle(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: Cluster tests currently disabled")
 
 	/*
 		numRequests := 16
@@ -226,7 +226,7 @@ func newTestRotationSingleRotation(t *testing.T, clu *cluster.Cluster, committee
 }
 
 func TestRotationMany(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: Cluster tests currently disabled")
 	/*
 		testutil.RunHeavy(t)
 		if testing.Short() {

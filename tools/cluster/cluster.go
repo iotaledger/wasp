@@ -47,7 +47,6 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 type Cluster struct {
@@ -575,11 +574,11 @@ func (clu *Cluster) InitDataPath(templatesPath string, removeExisting bool) erro
 		}
 	}
 
-	for i := 0; i < len(clu.Config.Wasp); i++ {
+	for i := range clu.Config.Wasp {
 		err = initNodeConfig(
 			clu.NodeDataPath(i),
 			path.Join(templatesPath, "wasp-config-template.json"),
-			templates.WaspConfig,
+			waspConfigTemplate,
 			&clu.Config.Wasp[i],
 		)
 		if err != nil {
@@ -589,7 +588,7 @@ func (clu *Cluster) InitDataPath(templatesPath string, removeExisting bool) erro
 	return clu.Config.Save(clu.DataPath)
 }
 
-func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *templates.WaspConfigParams) error {
+func initNodeConfig(nodePath, configTemplatePath, defaultTemplate string, params *WaspConfigParams) error {
 	exists, err := fileExists(configTemplatePath)
 	if err != nil {
 		return err

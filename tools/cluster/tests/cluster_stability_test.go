@@ -6,6 +6,7 @@ package tests
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -103,13 +104,7 @@ func (e *SabotageEnv) sabotageNodes(startDelay, inBetweenDelay time.Duration) *s
 
 func (e *SabotageEnv) getActiveNodeList() []int {
 	contains := func(x int) bool {
-		for _, n := range e.SabotageList {
-			if n == x {
-				return true
-			}
-		}
-
-		return false
+		return slices.Contains(e.SabotageList, x)
 	}
 
 	activeNodeList := []int{}

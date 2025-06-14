@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func TestDepositWithdraw(t *testing.T) { // passed
+func TestDepositWithdraw(t *testing.T) {
 	e := SetupWithChain(t)
 
 	userKeypair, userAddr, err := e.Clu.NewKeyPairWithFunds()
