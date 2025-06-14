@@ -26,7 +26,7 @@ compile-solidity:
 	cd packages/evm/evmtest/wiki_how_tos && go generate
 
 build-cli:
-	cd tools/wasp-cli && go mod tidy && go build  -ldflags $(BUILD_LD_FLAGS) -o ../../
+	cd tools/wasp-cli && go mod tidy && go build  -ldflags $(BUILD_LD_FLAGS) -tags rocksdb -o ../../
 
 build-full: build-cli
 	$(BUILD_CMD) ./...
