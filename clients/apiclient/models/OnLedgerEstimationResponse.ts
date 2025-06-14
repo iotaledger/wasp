@@ -10,13 +10,13 @@
  * Do not edit the class manually.
  */
 
+import { L1EstimationResult } from '../models/L1EstimationResult';
+import { ReceiptResponse } from '../models/ReceiptResponse';
 import { HttpFile } from '../http/http';
 
-export class EstimateGasRequestOnledger {
-    /**
-    * Hexadecimal bytes of transaction to estimate
-    */
-    'transactionBytes': string;
+export class OnLedgerEstimationResponse {
+    'l1': L1EstimationResult;
+    'l2': ReceiptResponse;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,14 +24,20 @@ export class EstimateGasRequestOnledger {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "transactionBytes",
-            "baseName": "transactionBytes",
-            "type": "string",
-            "format": "string"
+            "name": "l1",
+            "baseName": "l1",
+            "type": "L1EstimationResult",
+            "format": ""
+        },
+        {
+            "name": "l2",
+            "baseName": "l2",
+            "type": "ReceiptResponse",
+            "format": ""
         }    ];
 
     static getAttributeTypeMap() {
-        return EstimateGasRequestOnledger.attributeTypeMap;
+        return OnLedgerEstimationResponse.attributeTypeMap;
     }
 
     public constructor() {

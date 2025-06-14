@@ -12,11 +12,15 @@
 
 import { HttpFile } from '../http/http';
 
-export class EstimateGasRequestOnledger {
+export class L1EstimationResult {
     /**
-    * Hexadecimal bytes of transaction to estimate
+    * Gas budget required for processing of transaction (uint64 as string)
     */
-    'transactionBytes': string;
+    'gasBudget': string;
+    /**
+    * Total gas fee charged (uint64 as string)
+    */
+    'gasFeeCharged': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,14 +28,20 @@ export class EstimateGasRequestOnledger {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "transactionBytes",
-            "baseName": "transactionBytes",
+            "name": "gasBudget",
+            "baseName": "gasBudget",
+            "type": "string",
+            "format": "string"
+        },
+        {
+            "name": "gasFeeCharged",
+            "baseName": "gasFeeCharged",
             "type": "string",
             "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
-        return EstimateGasRequestOnledger.attributeTypeMap;
+        return L1EstimationResult.attributeTypeMap;
     }
 
     public constructor() {

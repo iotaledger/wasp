@@ -404,7 +404,7 @@ No authorization required
 
 ## EstimateGasOnledger
 
-> ReceiptResponse EstimateGasOnledger(ctx).Request(request).Execute()
+> OnLedgerEstimationResponse EstimateGasOnledger(ctx).Request(request).Execute()
 
 Estimates gas for a given on-ledger ISC request
 
@@ -421,7 +421,7 @@ import (
 )
 
 func main() {
-	request := *openapiclient.NewEstimateGasRequestOnledger("OutputBytes_example") // EstimateGasRequestOnledger | Request
+	request := *openapiclient.NewEstimateGasRequestOnledger("TransactionBytes_example") // EstimateGasRequestOnledger | Request
 
 	configuration := openapiclient.NewConfiguration()
 	apiClient := openapiclient.NewAPIClient(configuration)
@@ -430,7 +430,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error when calling `ChainsAPI.EstimateGasOnledger``: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	// response from `EstimateGasOnledger`: ReceiptResponse
+	// response from `EstimateGasOnledger`: OnLedgerEstimationResponse
 	fmt.Fprintf(os.Stdout, "Response from `ChainsAPI.EstimateGasOnledger`: %v\n", resp)
 }
 ```
@@ -450,7 +450,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**ReceiptResponse**](ReceiptResponse.md)
+[**OnLedgerEstimationResponse**](OnLedgerEstimationResponse.md)
 
 ### Authorization
 
