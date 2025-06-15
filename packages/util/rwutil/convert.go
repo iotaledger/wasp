@@ -58,7 +58,7 @@ func size16Decode(readByte func() (byte, error)) (uint16, error) {
 	if size64 >= 0x1_0000 {
 		return 0, errors.New("size16 overflow")
 	}
-	return uint16(size64), err
+	return uint16(size64), err //nolint:gosec //overflow is checked above
 }
 
 func size32Decode(readByte func() (byte, error)) (uint32, error) {
@@ -66,7 +66,7 @@ func size32Decode(readByte func() (byte, error)) (uint32, error) {
 	if size64 >= 0x1_0000_0000 {
 		return 0, errors.New("size32 overflow")
 	}
-	return uint32(size64), err
+	return uint32(size64), err //nolint:gosec //overflow is checked above
 }
 
 // size64Decode uses a simple variable length encoding scheme

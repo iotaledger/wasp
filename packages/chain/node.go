@@ -24,6 +24,8 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
@@ -714,7 +716,7 @@ func (cni *chainNodeImpl) handleStateAnchor(stateAchor *isc.StateAnchor, l1Param
 			panic(err)
 		}
 
-		initBlock, err := origin.InitChainByAnchor(cni.chainStore, stateAchor, sm.InitDeposit, l1Params)
+		initBlock, err := origin.InitChainByStateMetadataBytes(cni.chainStore, stateAchor.GetStateMetadata(), sm.InitDeposit, l1Params)
 		if err != nil {
 			cni.log.LogErrorf("Ignoring InitialAO for the chain: %v", err)
 			return
@@ -1135,7 +1137,7 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 		})
 		if index == -1 {
 			peerStatus[i] = &PeerStatus{
-				Index:      uint16(i),
+				Index:      safecast.MustConvert[uint16](i),
 				PubKey:     nodePubKey,
 				PeeringURL: "",
 				Connected:  false,
@@ -1143,7 +1145,7 @@ func (cni *chainNodeImpl) GetCommitteeInfo() *CommitteeInfo {
 			continue
 		}
 		peerStatus[i] = &PeerStatus{
-			Index:      uint16(i),
+			Index:      safecast.MustConvert[uint16](i),
 			PubKey:     nodePubKey,
 			PeeringURL: netPeerStatus[index].PeeringURL(),
 			Connected:  netPeerStatus[index].IsAlive(),

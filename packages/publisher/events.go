@@ -3,6 +3,8 @@ package publisher
 import (
 	"fmt"
 
+	"fortio.org/safecast"
+
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/event"
 
@@ -103,7 +105,7 @@ func PublishBlockEvents(blockApplied *blockApplied, events *Events, log log.Logg
 			}
 
 			receipt.BlockIndex = blockIndex
-			receipt.RequestIndex = uint16(index)
+			receipt.RequestIndex = safecast.MustConvert[uint16](index)
 
 			parsedReceipt := receipt.ToISCReceipt(vmError)
 

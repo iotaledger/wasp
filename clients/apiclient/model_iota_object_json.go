@@ -16,40 +16,41 @@ import (
 	"fmt"
 )
 
-// checks if the IotaObject type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &IotaObject{}
+// checks if the IotaObjectJSON type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &IotaObjectJSON{}
 
-// IotaObject struct for IotaObject
-type IotaObject struct {
-	Id []int32 `json:"id"`
-	Type ObjectType `json:"type"`
+// IotaObjectJSON struct for IotaObjectJSON
+type IotaObjectJSON struct {
+	// Hex-encoded object ID
+	Id string `json:"id"`
+	Type string `json:"type"`
 }
 
-type _IotaObject IotaObject
+type _IotaObjectJSON IotaObjectJSON
 
-// NewIotaObject instantiates a new IotaObject object
+// NewIotaObjectJSON instantiates a new IotaObjectJSON object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewIotaObject(id []int32, type_ ObjectType) *IotaObject {
-	this := IotaObject{}
+func NewIotaObjectJSON(id string, type_ string) *IotaObjectJSON {
+	this := IotaObjectJSON{}
 	this.Id = id
 	this.Type = type_
 	return &this
 }
 
-// NewIotaObjectWithDefaults instantiates a new IotaObject object
+// NewIotaObjectJSONWithDefaults instantiates a new IotaObjectJSON object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewIotaObjectWithDefaults() *IotaObject {
-	this := IotaObject{}
+func NewIotaObjectJSONWithDefaults() *IotaObjectJSON {
+	this := IotaObjectJSON{}
 	return &this
 }
 
 // GetId returns the Id field value
-func (o *IotaObject) GetId() []int32 {
+func (o *IotaObjectJSON) GetId() string {
 	if o == nil {
-		var ret []int32
+		var ret string
 		return ret
 	}
 
@@ -58,22 +59,22 @@ func (o *IotaObject) GetId() []int32 {
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-func (o *IotaObject) GetIdOk() ([]int32, bool) {
+func (o *IotaObjectJSON) GetIdOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Id, true
+	return &o.Id, true
 }
 
 // SetId sets field value
-func (o *IotaObject) SetId(v []int32) {
+func (o *IotaObjectJSON) SetId(v string) {
 	o.Id = v
 }
 
 // GetType returns the Type field value
-func (o *IotaObject) GetType() ObjectType {
+func (o *IotaObjectJSON) GetType() string {
 	if o == nil {
-		var ret ObjectType
+		var ret string
 		return ret
 	}
 
@@ -82,7 +83,7 @@ func (o *IotaObject) GetType() ObjectType {
 
 // GetTypeOk returns a tuple with the Type field value
 // and a boolean to check if the value has been set.
-func (o *IotaObject) GetTypeOk() (*ObjectType, bool) {
+func (o *IotaObjectJSON) GetTypeOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,11 +91,11 @@ func (o *IotaObject) GetTypeOk() (*ObjectType, bool) {
 }
 
 // SetType sets field value
-func (o *IotaObject) SetType(v ObjectType) {
+func (o *IotaObjectJSON) SetType(v string) {
 	o.Type = v
 }
 
-func (o IotaObject) MarshalJSON() ([]byte, error) {
+func (o IotaObjectJSON) MarshalJSON() ([]byte, error) {
 	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -102,14 +103,14 @@ func (o IotaObject) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o IotaObject) ToMap() (map[string]interface{}, error) {
+func (o IotaObjectJSON) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["id"] = o.Id
 	toSerialize["type"] = o.Type
 	return toSerialize, nil
 }
 
-func (o *IotaObject) UnmarshalJSON(data []byte) (err error) {
+func (o *IotaObjectJSON) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -132,53 +133,53 @@ func (o *IotaObject) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varIotaObject := _IotaObject{}
+	varIotaObjectJSON := _IotaObjectJSON{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varIotaObject)
+	err = decoder.Decode(&varIotaObjectJSON)
 
 	if err != nil {
 		return err
 	}
 
-	*o = IotaObject(varIotaObject)
+	*o = IotaObjectJSON(varIotaObjectJSON)
 
 	return err
 }
 
-type NullableIotaObject struct {
-	value *IotaObject
+type NullableIotaObjectJSON struct {
+	value *IotaObjectJSON
 	isSet bool
 }
 
-func (v NullableIotaObject) Get() *IotaObject {
+func (v NullableIotaObjectJSON) Get() *IotaObjectJSON {
 	return v.value
 }
 
-func (v *NullableIotaObject) Set(val *IotaObject) {
+func (v *NullableIotaObjectJSON) Set(val *IotaObjectJSON) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableIotaObject) IsSet() bool {
+func (v NullableIotaObjectJSON) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableIotaObject) Unset() {
+func (v *NullableIotaObjectJSON) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableIotaObject(val *IotaObject) *NullableIotaObject {
-	return &NullableIotaObject{value: val, isSet: true}
+func NewNullableIotaObjectJSON(val *IotaObjectJSON) *NullableIotaObjectJSON {
+	return &NullableIotaObjectJSON{value: val, isSet: true}
 }
 
-func (v NullableIotaObject) MarshalJSON() ([]byte, error) {
+func (v NullableIotaObjectJSON) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableIotaObject) UnmarshalJSON(src []byte) error {
+func (v *NullableIotaObjectJSON) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

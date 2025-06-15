@@ -124,6 +124,10 @@ func (e *EVMContractInstance) estimateGas(opts []ethCallOptions, fnName string, 
 	return tx.Gas(), nil
 }
 
+func (e *EVMContractInstance) MakeCallFn(opts []ethCallOptions, fnName string, args ...interface{}) (*types.Transaction, error) {
+	return e.buildEthTx(opts, fnName, args...)
+}
+
 func (e *EVMContractInstance) CallFn(opts []ethCallOptions, fnName string, args ...interface{}) (CallFnResult, error) {
 	e.chain.t.Logf("callFn: %s %+v", fnName, args)
 

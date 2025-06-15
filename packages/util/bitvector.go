@@ -4,9 +4,11 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"math"
 
+	"fortio.org/safecast"
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 )
@@ -60,7 +62,15 @@ func (b *fixBitVector) AsInts() []int {
 }
 
 func (b *fixBitVector) bitMask(position int) (int, byte) {
-	if uint32(position) >= uint32(b.size) {
+	positionU32, err := safecast.Convert[uint32](position)
+	if err != nil {
+		panic("position is too large for uint32")
+	}
+	sizeU32, err := safecast.Convert[uint32](b.size)
+	if err != nil {
+		panic("size is too large for uint32")
+	}
+	if positionU32 >= sizeU32 {
 		panic("bit vector position out of range")
 	}
 	return position >> 3, 1 << (position & 0x07)
@@ -69,7 +79,11 @@ func (b *fixBitVector) bitMask(position int) (int, byte) {
 func (b *fixBitVector) Read(r io.Reader) error {
 	rr := rwutil.NewReader(r)
 	size := rr.ReadSizeWithLimit(math.MaxUint16)
-	b.size = uint16(size)
+	sizeU16, err := safecast.Convert[uint16](size)
+	if err != nil {
+		return fmt.Errorf("size too large for uint16: %d", size)
+	}
+	b.size = sizeU16
 	size = rr.CheckAvailable((size + 7) / 8)
 	b.data = make([]byte, size)
 	rr.ReadN(b.data)

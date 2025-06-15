@@ -1,5 +1,3 @@
-export * from '../models/AccountFoundriesResponse';
-export * from '../models/AccountNFTsResponse';
 export * from '../models/AccountNonceResponse';
 export * from '../models/AddUserRequest';
 export * from '../models/AnchorMetricItem';
@@ -29,19 +27,17 @@ export * from '../models/EstimateGasRequestOnledger';
 export * from '../models/EventJSON';
 export * from '../models/EventsResponse';
 export * from '../models/FeePolicy';
-export * from '../models/FoundryOutputResponse';
 export * from '../models/GovChainAdminResponse';
 export * from '../models/GovChainInfoResponse';
 export * from '../models/GovPublicChainMetadata';
 export * from '../models/InfoResponse';
 export * from '../models/Int';
 export * from '../models/IotaCoinInfo';
-export * from '../models/IotaObject';
+export * from '../models/IotaObjectJSON';
 export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
 export * from '../models/LoginResponse';
-export * from '../models/NativeTokenIDRegistryResponse';
 export * from '../models/NodeOwnerCertificateResponse';
 export * from '../models/ObjectType';
 export * from '../models/OffLedgerRequest';
@@ -69,8 +65,6 @@ export * from '../models/User';
 export * from '../models/ValidationError';
 export * from '../models/VersionResponse';
 
-import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AnchorMetricItem } from '../models/AnchorMetricItem';
@@ -100,19 +94,17 @@ import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger
 import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
-import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
 import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
-import { IotaObject } from '../models/IotaObject';
+import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
-import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -156,8 +148,6 @@ let enumsMap: Set<string> = new Set<string>([
 ]);
 
 let typeMap: {[index: string]: any} = {
-    "AccountFoundriesResponse": AccountFoundriesResponse,
-    "AccountNFTsResponse": AccountNFTsResponse,
     "AccountNonceResponse": AccountNonceResponse,
     "AddUserRequest": AddUserRequest,
     "AnchorMetricItem": AnchorMetricItem,
@@ -187,19 +177,17 @@ let typeMap: {[index: string]: any} = {
     "EventJSON": EventJSON,
     "EventsResponse": EventsResponse,
     "FeePolicy": FeePolicy,
-    "FoundryOutputResponse": FoundryOutputResponse,
     "GovChainAdminResponse": GovChainAdminResponse,
     "GovChainInfoResponse": GovChainInfoResponse,
     "GovPublicChainMetadata": GovPublicChainMetadata,
     "InfoResponse": InfoResponse,
     "Int": Int,
     "IotaCoinInfo": IotaCoinInfo,
-    "IotaObject": IotaObject,
+    "IotaObjectJSON": IotaObjectJSON,
     "L1Params": L1Params,
     "Limits": Limits,
     "LoginRequest": LoginRequest,
     "LoginResponse": LoginResponse,
-    "NativeTokenIDRegistryResponse": NativeTokenIDRegistryResponse,
     "NodeOwnerCertificateResponse": NodeOwnerCertificateResponse,
     "ObjectType": ObjectType,
     "OffLedgerRequest": OffLedgerRequest,

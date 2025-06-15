@@ -1,6 +1,7 @@
 package execution
 
 import (
+	"fortio.org/safecast"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -23,7 +24,10 @@ func (s *kvStoreWithGasBurn) Get(name kv.Key) []byte {
 
 func (s *kvStoreWithGasBurn) Set(name kv.Key, value []byte) {
 	s.KVStore.Set(name, value)
-	s.gas.GasBurn(gas.BurnCodeStorage1P, uint64(len(name)+len(value)))
+	// Safe conversion to avoid integer overflow
+	size := len(name) + len(value)
+	sizeUint := safecast.MustConvert[uint64](size)
+	s.gas.GasBurn(gas.BurnCodeStorage1P, sizeUint)
 }
 
 type kvStoreReaderWithGasBurn struct {
@@ -44,6 +48,9 @@ func (s *kvStoreReaderWithGasBurn) Get(name kv.Key) []byte {
 
 func getWithGasBurn(r kv.KVStoreReader, name kv.Key, gasctx GasContext) []byte {
 	v := r.Get(name)
-	gasctx.GasBurn(gas.BurnCodeReadFromState1P, uint64(len(v)/100)+1) // minimum 1
+	// Safe conversion to avoid integer overflow
+	size := len(v) / 100
+	sizeUint := safecast.MustConvert[uint64](size)
+	gasctx.GasBurn(gas.BurnCodeReadFromState1P, sizeUint+1) // minimum 1
 	return v
 }

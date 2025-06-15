@@ -8,6 +8,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv/collections"
 	"github.com/iotaledger/wasp/packages/parameters"
@@ -16,7 +17,10 @@ import (
 )
 
 const (
-	BlockInfoLatestSchemaVersion = 0
+	blockInfoSchemaVersion0 = iota
+	blockInfoSchemaVersionAddedEntropy
+
+	BlockInfoLatestSchemaVersion = blockInfoSchemaVersionAddedEntropy
 )
 
 type BlockInfo struct {
@@ -28,8 +32,46 @@ type BlockInfo struct {
 	TotalRequests         uint16
 	NumSuccessfulRequests uint16 // which didn't panic
 	NumOffLedgerRequests  uint16
-	GasBurned             uint64     `bcs:"compact"`
-	GasFeeCharged         coin.Value `bcs:"compact"`
+	GasBurned             uint64            `bcs:"compact"`
+	GasFeeCharged         coin.Value        `bcs:"compact"`
+	Entropy               hashing.HashValue // since v1
+}
+
+func (bi *BlockInfo) MarshalBCS(e *bcs.Encoder) error {
+	e.WriteUint8(bi.SchemaVersion)
+	e.WriteUint32(bi.BlockIndex)
+	e.Encode(bi.Timestamp)
+	e.EncodeOptional(bi.PreviousAnchor)
+	e.Encode(bi.L1Params)
+	e.WriteUint16(bi.TotalRequests)
+	e.WriteUint16(bi.NumSuccessfulRequests)
+	e.WriteUint16(bi.NumOffLedgerRequests)
+	e.WriteCompactUint64(bi.GasBurned)
+	e.WriteCompactUint64(bi.GasFeeCharged.Uint64())
+	if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
+		e.Encode(bi.Entropy)
+	}
+	return nil
+}
+
+func (bi *BlockInfo) UnmarshalBCS(d *bcs.Decoder) error {
+	bi.SchemaVersion = d.ReadUint8()
+	bi.BlockIndex = d.ReadUint32()
+	d.Decode(&bi.Timestamp)
+	_ = d.DecodeOptional(&bi.PreviousAnchor)
+	d.Decode(&bi.L1Params)
+	bi.TotalRequests = d.ReadUint16()
+	bi.NumSuccessfulRequests = d.ReadUint16()
+	bi.NumOffLedgerRequests = d.ReadUint16()
+	bi.GasBurned = d.ReadCompactUint64()
+	bi.GasFeeCharged = coin.Value(d.ReadCompactUint64())
+	if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
+		d.Decode(&bi.Entropy)
+	} else {
+		// we are missing entropy information; assign some unique hash for the given block index
+		bi.Entropy = hashing.HashData(bcs.MustMarshal(&bi.BlockIndex))
+	}
+	return nil
 }
 
 // RequestTimestamp returns timestamp which corresponds to the request with the given index

@@ -1,6 +1,9 @@
 // Package evmdoc contains internal documentation about EVM support in
 // ISC.
 //
+// Note: this article is best viewed as rendered by `godoc`
+// or `gopls` "Browse package documentation".
+//
 // # EVM support
 //
 // The main components of the EVM subsystem are:
@@ -21,6 +24,42 @@
 //   - tools/cluster/tests/evm_jsonrpc_test.go: cluster tests
 //   - [github.com/iotaledger/wasp/packages/evm/evmtest]: common Solidity
 //     code used in tests
+//
+// # go-ethereum
+//
+// The EVM support relies heavily on a [fork] of [go-ethereum], the official
+// implementation of the Ethereum execution layer.
+//
+// The changes that the fork introduces are minimal, and the main purpose is
+// to allow executing custom code on the magic contract at address 0x1074.
+//
+// The fork must be kept up to date with the upstream changes. In order to
+// do that, and to keep the process as simple as possible, we always aim to
+// have a single commit on top of the latest release tag.
+//
+// For example, if the latest official release tag is [v1.15.5], then we add a
+// [single commit] and call that [v1.15.5-wasp].
+//
+// So when a new release is published on go-ethereum, we:
+//
+//  1. Checkout the latest release tag (e.g. v1.15.6)
+//  2. Cherry-pick the commit with our changes (be careful to use the latest
+//     one)
+//  3. Add the new tag with the -wasp suffix (e.g. v1.15.6-wasp)
+//
+// # The magic contract
+//
+// The EVM magic contract lives in address 0x1074.
+//
+// The interface of the contract is defined in several .sol files, that are
+// compiled with the Solidity compiler and embedded in [iscmagic.SandboxABI],
+// [iscmagic.UtilABI], etc.
+//
+// Any calls to the magic contract address are handled in
+// [evmimpl.magicContract.Run]. Given the name of the called EVM method,
+// the corresponding Go function is called. For example, if
+// ISCSandbox::getEntropy is called, this is translated as a call to
+// [evmimpl.magicContractHandler.GetEntropy].
 //
 // # Handling Ethereum Transactions
 //
@@ -110,22 +149,56 @@
 //     [isc.NewEVMOffLedgerCallRequest], which is processed the same way as in
 //     the gas estimation case.
 //
+// # Tracing
+//
+// When receiving a call to [debug_traceBlockByNumber] or similar:
+//
+//   - The corresponding method in [jsonrpc.EthService] is invoked, e.g.
+//     [jsonrpc.EthService.TraceBlockByNumber].
+//
+//   - [jsonrpc.ChainBackend.EVMTrace] is called
+//     ([services.WaspEVMBackend.EVMTrace] in the production environment),
+//     which, in turn, calls [chainutil.EVMTrace].
+//
+//   - [chainutil.EVMTrace] will execute a full VM run on the given block
+//     number, re-executing all transactions in the block (even if we are only
+//     interested in the trace of a single transaction). For this purpose,
+//     [vmimpl.Run] is called.
+//
+//   - The [vm.VMTask] passed to [vmimpl.Run] contains a non-null
+//     [tracers.Tracer]. This comes from a call to [jsonrpc.newTracer].
+//     Given the tracer type specified in the request, one of
+//     [jsonrpc.newCallTracer] or [jsonrpc.newPrestateTracer] is called.
+//     Each one of these contains the specific logic for the actual tracing.
+//
+//   - After the VM run is done, [tracers.Tracer.GetResult] is called. This
+//     function returns the trace results in json format.
+//
+// [fork]: https://github.com/iotaledger/go-ethereum
+// [go-ethereum]: https://github.com/ethereum/go-ethereum
+// [single commit]: https://github.com/iotaledger/go-ethereum/commit/cd897d7b31192a9042d59b7c60e7c172de79da14
+// [v1.15.5-wasp]: https://github.com/iotaledger/go-ethereum/tree/v1.15.5-wasp
+// [v1.15.5]: https://github.com/ethereum/go-ethereum/tree/v1.15.5
 // [eth_sendRawTransaction]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_sendrawtransaction
 // [eth_estimateGas]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_estimategas
 // [eth_call]: https://ethereum.org/en/developers/docs/apis/json-rpc/#eth_call
+// [debug_traceBlockByNumber]: https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-debug#debugtraceblockbynumber
 package evmdoc
 
 import (
 	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/eth/tracers"
 
 	"github.com/iotaledger/wasp/packages/chain"
 	"github.com/iotaledger/wasp/packages/chainutil"
 	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/vm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/emulator"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
 	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/packages/vm/vmimpl"
 	"github.com/iotaledger/wasp/packages/webapi/services"
 )
 
@@ -141,4 +214,7 @@ var (
 	_ chain.ChainRequests
 	_ core.BlockChain
 	_ services.WaspEVMBackend
+	_ *tracers.Tracer
+	_ *vm.VMTask
+	_ = vmimpl.Run
 )

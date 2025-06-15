@@ -10,13 +10,14 @@
  * Do not edit the class manually.
  */
 
-import { CoinJSON } from '../models/CoinJSON';
-import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { HttpFile } from '../http/http';
 
-export class AssetsJSON {
-    'coins': Array<CoinJSON>;
-    'objects': Array<IotaObjectJSON>;
+export class IotaObjectJSON {
+    /**
+    * Hex-encoded object ID
+    */
+    'id': string;
+    'type': string;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -24,20 +25,20 @@ export class AssetsJSON {
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
         {
-            "name": "coins",
-            "baseName": "coins",
-            "type": "Array<CoinJSON>",
-            "format": ""
+            "name": "id",
+            "baseName": "id",
+            "type": "string",
+            "format": "string"
         },
         {
-            "name": "objects",
-            "baseName": "objects",
-            "type": "Array<IotaObjectJSON>",
-            "format": ""
+            "name": "type",
+            "baseName": "type",
+            "type": "string",
+            "format": "string"
         }    ];
 
     static getAttributeTypeMap() {
-        return AssetsJSON.attributeTypeMap;
+        return IotaObjectJSON.attributeTypeMap;
     }
 
     public constructor() {

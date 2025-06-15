@@ -3,6 +3,7 @@ package vmimpl
 import (
 	"math"
 
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
@@ -90,7 +91,10 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 		governance.NewStateReaderFromChainState(stateDraft).GetMaintenanceStatus(),
 		vmctx.task.Log,
 	)
-	numProcessed := uint16(len(requestResults))
+	numProcessed, err := safecast.Convert[uint16](len(requestResults))
+	if err != nil {
+		panic(err)
+	}
 
 	// execute onBlockClose callbacks
 	for _, callback := range vmctx.onBlockCloseCallbacks {

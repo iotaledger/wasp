@@ -153,7 +153,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-		_, err = origin.InitChainByAnchor(chainStates[nid], stateAnchor0, 0, parameterstest.L1Mock)
+		_, err = origin.InitChainByStateMetadataBytes(chainStates[nid], stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(
 			chainID,

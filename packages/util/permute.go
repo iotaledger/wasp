@@ -2,7 +2,10 @@ package util
 
 import (
 	crypto_rand "crypto/rand"
+	"fmt"
 	"math/rand"
+
+	"fortio.org/safecast"
 )
 
 // Permutation16 deterministic permutation of integers from 0 to size-1
@@ -47,7 +50,11 @@ func NewPermutation16(size uint16, seedOptional ...int64) (*Permutation16, error
 		random:      NewPseudoRand(seed),
 	}
 	for i := range ret.permutation {
-		ret.permutation[i] = uint16(i)
+		iU16, err := safecast.Convert[uint16](i)
+		if err != nil {
+			return nil, fmt.Errorf("index %d is too large for uint16", i)
+		}
+		ret.permutation[i] = iU16
 	}
 	return ret.Shuffle(), nil
 }
@@ -86,7 +93,10 @@ func (perm *Permutation16) GetArray() []uint16 {
 }
 
 func ValidPermutation(perm []uint16) bool {
-	n := uint16(len(perm))
+	n, err := safecast.Convert[uint16](len(perm))
+	if err != nil {
+		panic(fmt.Sprintf("permutation length %d is too large for uint16", len(perm)))
+	}
 
 	// check if every value exists
 	for i := uint16(0); i < n; i++ {
@@ -103,7 +113,12 @@ func ValidPermutation(perm []uint16) bool {
 func findIndexOf(val uint16, sequence []uint16) (uint16, bool) {
 	for i, s := range sequence {
 		if s == val {
-			return uint16(i), true
+			iU16, err := safecast.Convert[uint16](i)
+			if err != nil {
+				// This shouldn't happen since we've already checked len(perm) fits in uint16
+				panic(fmt.Sprintf("index %d is too large for uint16", i))
+			}
+			return iU16, true
 		}
 	}
 	return 0, false

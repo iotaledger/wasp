@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"fortio.org/safecast"
 )
 
 type downloaderImpl struct {
@@ -195,7 +197,11 @@ func DownloadToFile(
 		if e != nil {
 			return fmt.Errorf("error downloading and saving url %s to file %s: %w", filePathNetwork, filePathTemp, e)
 		}
-		if n != int64(downloader.GetLength()) {
+		lengthInt64, err := safecast.Convert[int64](downloader.GetLength())
+		if err != nil {
+			return fmt.Errorf("integer overflow in downloader length: %w", err)
+		}
+		if n != lengthInt64 {
 			return fmt.Errorf("downloaded file %s was not written completely: of %v bytes to download only %v byte written",
 				filePathNetwork, downloader.GetLength(), n)
 		}

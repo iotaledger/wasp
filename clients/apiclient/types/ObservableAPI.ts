@@ -2,8 +2,6 @@ import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/htt
 import { Configuration} from '../configuration'
 import { Observable, of, from } from '../rxjsStub';
 import {mergeMap, map} from  '../rxjsStub';
-import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AnchorMetricItem } from '../models/AnchorMetricItem';
@@ -33,19 +31,17 @@ import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger
 import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
-import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
 import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
-import { IotaObject } from '../models/IotaObject';
+import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
-import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -806,74 +802,6 @@ export class ObservableCorecontractsApi {
     }
 
     /**
-     * Get all foundries owned by an account
-     * @param chainID ChainID (Hex Address)
-     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountFoundriesWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AccountFoundriesResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetAccountFoundries(chainID, agentID, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetAccountFoundriesWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get all foundries owned by an account
-     * @param chainID ChainID (Hex Address)
-     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountFoundries(chainID: string, agentID: string, block?: string, _options?: Configuration): Observable<AccountFoundriesResponse> {
-        return this.accountsGetAccountFoundriesWithHttpInfo(chainID, agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountFoundriesResponse>) => apiResponse.data));
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountNFTIDsWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Observable<HttpInfo<AccountNFTsResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetAccountNFTIDs(agentID, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetAccountNFTIDsWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountNFTIDs(agentID: string, block?: string, _options?: Configuration): Observable<AccountNFTsResponse> {
-        return this.accountsGetAccountNFTIDsWithHttpInfo(agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountNFTsResponse>) => apiResponse.data));
-    }
-
-    /**
      * Get the current nonce of an account
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
@@ -904,105 +832,6 @@ export class ObservableCorecontractsApi {
      */
     public accountsGetAccountNonce(agentID: string, block?: string, _options?: Configuration): Observable<AccountNonceResponse> {
         return this.accountsGetAccountNonceWithHttpInfo(agentID, block, _options).pipe(map((apiResponse: HttpInfo<AccountNonceResponse>) => apiResponse.data));
-    }
-
-    /**
-     * Get the foundry output
-     * @param chainID ChainID (Hex Address)
-     * @param serialNumber Serial Number (uint32)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetFoundryOutputWithHttpInfo(chainID: string, serialNumber: number, block?: string, _options?: Configuration): Observable<HttpInfo<FoundryOutputResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetFoundryOutput(chainID, serialNumber, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetFoundryOutputWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get the foundry output
-     * @param chainID ChainID (Hex Address)
-     * @param serialNumber Serial Number (uint32)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetFoundryOutput(chainID: string, serialNumber: number, block?: string, _options?: Configuration): Observable<FoundryOutputResponse> {
-        return this.accountsGetFoundryOutputWithHttpInfo(chainID, serialNumber, block, _options).pipe(map((apiResponse: HttpInfo<FoundryOutputResponse>) => apiResponse.data));
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param nftID NFT ID (Hex)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNFTDataWithHttpInfo(nftID: string, block?: string, _options?: Configuration): Observable<HttpInfo<void>> {
-        const requestContextPromise = this.requestFactory.accountsGetNFTData(nftID, block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetNFTDataWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param nftID NFT ID (Hex)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNFTData(nftID: string, block?: string, _options?: Configuration): Observable<void> {
-        return this.accountsGetNFTDataWithHttpInfo(nftID, block, _options).pipe(map((apiResponse: HttpInfo<void>) => apiResponse.data));
-    }
-
-    /**
-     * Get a list of all registries
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNativeTokenIDRegistryWithHttpInfo(block?: string, _options?: Configuration): Observable<HttpInfo<NativeTokenIDRegistryResponse>> {
-        const requestContextPromise = this.requestFactory.accountsGetNativeTokenIDRegistry(block, _options);
-
-        // build promise chain
-        let middlewarePreObservable = from<RequestContext>(requestContextPromise);
-        for (const middleware of this.configuration.middleware) {
-            middlewarePreObservable = middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => middleware.pre(ctx)));
-        }
-
-        return middlewarePreObservable.pipe(mergeMap((ctx: RequestContext) => this.configuration.httpApi.send(ctx))).
-            pipe(mergeMap((response: ResponseContext) => {
-                let middlewarePostObservable = of(response);
-                for (const middleware of this.configuration.middleware) {
-                    middlewarePostObservable = middlewarePostObservable.pipe(mergeMap((rsp: ResponseContext) => middleware.post(rsp)));
-                }
-                return middlewarePostObservable.pipe(map((rsp: ResponseContext) => this.responseProcessor.accountsGetNativeTokenIDRegistryWithHttpInfo(rsp)));
-            }));
-    }
-
-    /**
-     * Get a list of all registries
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNativeTokenIDRegistry(block?: string, _options?: Configuration): Observable<NativeTokenIDRegistryResponse> {
-        return this.accountsGetNativeTokenIDRegistryWithHttpInfo(block, _options).pipe(map((apiResponse: HttpInfo<NativeTokenIDRegistryResponse>) => apiResponse.data));
     }
 
     /**

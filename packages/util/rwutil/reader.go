@@ -11,6 +11,8 @@ import (
 	"math"
 	"math/big"
 	"time"
+
+	"fortio.org/safecast"
 )
 
 type Reader struct {
@@ -173,7 +175,16 @@ func (rr *Reader) ReadBytes() []byte {
 }
 
 func (rr *Reader) ReadDuration() (ret time.Duration) {
-	return time.Duration(rr.ReadUint64())
+	uint64Val := rr.ReadUint64()
+	if rr.Err != nil {
+		return 0
+	}
+	int64Val, err := safecast.Convert[int64](uint64Val)
+	if err != nil {
+		rr.Err = err
+		return 0
+	}
+	return time.Duration(int64Val)
 }
 
 func (rr *Reader) ReadFromFunc(read func(w io.Reader) (int, error)) {
@@ -194,19 +205,55 @@ func (rr *Reader) ReadGas64() (ret uint64) {
 }
 
 func (rr *Reader) ReadInt8() (ret int8) {
-	return int8(rr.ReadUint8())
+	uint8Val := rr.ReadUint8()
+	if rr.Err != nil {
+		return 0
+	}
+	int8Val, err := safecast.Convert[int8](uint8Val)
+	if err != nil {
+		rr.Err = err
+		return 0
+	}
+	return int8Val
 }
 
 func (rr *Reader) ReadInt16() (ret int16) {
-	return int16(rr.ReadUint16())
+	uint16Val := rr.ReadUint16()
+	if rr.Err != nil {
+		return 0
+	}
+	int16Val, err := safecast.Convert[int16](uint16Val)
+	if err != nil {
+		rr.Err = err
+		return 0
+	}
+	return int16Val
 }
 
 func (rr *Reader) ReadInt32() (ret int32) {
-	return int32(rr.ReadUint32())
+	uint32Val := rr.ReadUint32()
+	if rr.Err != nil {
+		return 0
+	}
+	int32Val, err := safecast.Convert[int32](uint32Val)
+	if err != nil {
+		rr.Err = err
+		return 0
+	}
+	return int32Val
 }
 
 func (rr *Reader) ReadInt64() (ret int64) {
-	return int64(rr.ReadUint64())
+	uint64Val := rr.ReadUint64()
+	if rr.Err != nil {
+		return 0
+	}
+	int64Val, err := safecast.Convert[int64](uint64Val)
+	if err != nil {
+		rr.Err = err
+		return 0
+	}
+	return int64Val
 }
 
 func (rr *Reader) ReadKind() Kind {

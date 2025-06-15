@@ -22,7 +22,7 @@ var _ MappedNullable = &AssetsJSON{}
 // AssetsJSON struct for AssetsJSON
 type AssetsJSON struct {
 	Coins []CoinJSON `json:"coins"`
-	Objects []IotaObject `json:"objects"`
+	Objects []IotaObjectJSON `json:"objects"`
 }
 
 type _AssetsJSON AssetsJSON
@@ -31,7 +31,7 @@ type _AssetsJSON AssetsJSON
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewAssetsJSON(coins []CoinJSON, objects []IotaObject) *AssetsJSON {
+func NewAssetsJSON(coins []CoinJSON, objects []IotaObjectJSON) *AssetsJSON {
 	this := AssetsJSON{}
 	this.Coins = coins
 	this.Objects = objects
@@ -71,9 +71,9 @@ func (o *AssetsJSON) SetCoins(v []CoinJSON) {
 }
 
 // GetObjects returns the Objects field value
-func (o *AssetsJSON) GetObjects() []IotaObject {
+func (o *AssetsJSON) GetObjects() []IotaObjectJSON {
 	if o == nil {
-		var ret []IotaObject
+		var ret []IotaObjectJSON
 		return ret
 	}
 
@@ -82,7 +82,7 @@ func (o *AssetsJSON) GetObjects() []IotaObject {
 
 // GetObjectsOk returns a tuple with the Objects field value
 // and a boolean to check if the value has been set.
-func (o *AssetsJSON) GetObjectsOk() ([]IotaObject, bool) {
+func (o *AssetsJSON) GetObjectsOk() ([]IotaObjectJSON, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -90,7 +90,7 @@ func (o *AssetsJSON) GetObjectsOk() ([]IotaObject, bool) {
 }
 
 // SetObjects sets field value
-func (o *AssetsJSON) SetObjects(v []IotaObject) {
+func (o *AssetsJSON) SetObjects(v []IotaObjectJSON) {
 	o.Objects = v
 }
 

@@ -29,6 +29,7 @@ import (
 	"sync"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/libp2p/go-libp2p/core/host"
@@ -581,7 +582,11 @@ func readFrame(stream network.Stream) ([]byte, error) {
 
 func writeFrame(stream network.Stream, payload []byte) error {
 	ww := rwutil.NewWriter(stream)
-	ww.WriteUint32(uint32(len(payload)))
+	payloadLen, err := safecast.Convert[uint32](len(payload))
+	if err != nil {
+		return fmt.Errorf("payload length overflow in writeFrame: %w", err)
+	}
+	ww.WriteUint32(payloadLen)
 	if len(payload) != 0 {
 		ww.WriteN(payload)
 	}

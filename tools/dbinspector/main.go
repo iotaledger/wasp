@@ -12,6 +12,8 @@ import (
 	"os/signal"
 	"runtime"
 
+	"fortio.org/safecast"
+
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/kvstore/rocksdb"
@@ -62,7 +64,9 @@ func getState(kvs kvstore.KVStore, index int64) state.State {
 		mustNoError(err)
 		return state
 	}
-	state, err := store.StateByIndex(uint32(index))
+	indexUint32, err := safecast.Convert[uint32](index)
+	mustNoError(err)
+	state, err := store.StateByIndex(indexUint32)
 	mustNoError(err)
 	return state
 }

@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"sync/atomic"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/tracing"
@@ -125,7 +127,17 @@ func (t *prestateTracer) OnOpcode(pc uint64, opcode byte, gas, cost uint64, scop
 	case stackLen >= 4 && op == vm.CREATE2:
 		offset := stackData[stackLen-2]
 		size := stackData[stackLen-3]
-		init, err := getMemoryCopyPadded(scope.MemoryData(), int64(offset.Uint64()), int64(size.Uint64()))
+		offsetConverted, convErr := safecast.Convert[int64](offset.Uint64())
+		if convErr != nil {
+			log.Warn("failed to copy CREATE2 input, offset conversion error:", convErr)
+			return
+		}
+		sizeConverted, convErr := safecast.Convert[int64](size.Uint64())
+		if convErr != nil {
+			log.Warn("failed to copy CREATE2 input, size conversion error:", convErr)
+			return
+		}
+		init, err := getMemoryCopyPadded(scope.MemoryData(), offsetConverted, sizeConverted)
 		if err != nil {
 			log.Warn("failed to copy CREATE2 input", "err", err, "tracer", "prestateTracer", "offset", offset, "size", size)
 			return

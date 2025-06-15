@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/stretchr/testify/require"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
@@ -116,10 +117,19 @@ func SetupDkgTrivial(
 	require.Equal(t, n, len(dkShareRegistryProviders))
 	var address *cryptolib.Address
 	for i, identity := range peerIdentities {
+		indexUint16, err := safecast.Convert[uint16](i)
+		require.NoError(t, err)
+		nUint16, err := safecast.Convert[uint16](n)
+		require.NoError(t, err)
+		dssThresholdUint16, err := safecast.Convert[uint16](dssThreshold)
+		require.NoError(t, err)
+		blsThresholdUint16, err := safecast.Convert[uint16](blsThreshold)
+		require.NoError(t, err)
+
 		nodeDKS, err := tcrypto.NewDKShare(
-			uint16(i),                // index
-			uint16(n),                // n
-			uint16(dssThreshold),     // t
+			indexUint16,              // index
+			nUint16,                  // n
+			dssThresholdUint16,       // t
 			identity.GetPrivateKey(), // nodePrivKey
 			nodePubKeys,              // nodePubKeys
 			dssSuite,                 // edSuite
@@ -128,7 +138,7 @@ func SetupDkgTrivial(
 			dssPublicShares,          // edPublicShares
 			dssPriShares[i].V,        // edPrivateShare
 			blsSuite,                 // blsSuite
-			uint16(blsThreshold),     // blsThreshold
+			blsThresholdUint16,       // blsThreshold
 			blsPubKey,                // blsSharedPublic
 			blsCommits,               // blsPublicCommits
 			blsPublicShares,          // blsPublicShares

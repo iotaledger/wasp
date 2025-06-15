@@ -6,6 +6,8 @@ package dss
 import (
 	"fmt"
 
+	"fortio.org/safecast"
+
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
@@ -27,7 +29,11 @@ func (m *msgPartialSig) MsgType() gpa.MessageType {
 }
 
 func (m *msgPartialSig) MarshalBCS(e *bcs.Encoder) error {
-	e.WriteUint16(uint16(m.partialSig.Partial.I)) // TODO: Resolve it from the context, instead of marshaling.
+	val, err := safecast.Convert[uint16](m.partialSig.Partial.I)
+	if err != nil {
+		return err
+	}
+	e.WriteUint16(val) // TODO: Resolve it from the context, instead of marshaling.
 
 	if _, err := m.partialSig.Partial.V.MarshalTo(e); err != nil {
 		return fmt.Errorf("marshaling PartialSig.Partial.V: %w", err)

@@ -62,3 +62,11 @@ func (h *magicContractHandler) GetCoinInfo(coinType iscmagic.CoinType) iscmagic.
 func (h *magicContractHandler) ERC20CoinAddress(coinType iscmagic.CoinType) common.Address {
 	return iscmagic.ERC20CoinAddress(coin.MustTypeFromString(coinType))
 }
+
+// ERC165 interface ID (XOR of supportsInterface(bytes4))
+var erc165InterfaceID = [4]byte{0x01, 0xff, 0xc9, 0xa7}
+
+// handler for ISCSandbox::supportsInterface
+func (h *magicContractHandler) SupportsInterface(interfaceID [4]byte) bool {
+	return interfaceID == erc165InterfaceID
+}

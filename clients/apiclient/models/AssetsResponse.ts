@@ -11,6 +11,7 @@
  */
 
 import { CoinJSON } from '../models/CoinJSON';
+import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { HttpFile } from '../http/http';
 
 export class AssetsResponse {
@@ -18,7 +19,8 @@ export class AssetsResponse {
     * The base tokens (uint64 as string)
     */
     'baseTokens': string;
-    'nativeTokens': Array<CoinJSON>;
+    'coins': Array<CoinJSON>;
+    'objects': Array<IotaObjectJSON>;
 
     static readonly discriminator: string | undefined = undefined;
 
@@ -32,9 +34,15 @@ export class AssetsResponse {
             "format": "string"
         },
         {
-            "name": "nativeTokens",
-            "baseName": "nativeTokens",
+            "name": "coins",
+            "baseName": "coins",
             "type": "Array<CoinJSON>",
+            "format": ""
+        },
+        {
+            "name": "objects",
+            "baseName": "objects",
+            "type": "Array<IotaObjectJSON>",
             "format": ""
         }    ];
 

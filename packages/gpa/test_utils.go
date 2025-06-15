@@ -6,13 +6,15 @@ package gpa
 import (
 	"encoding/binary"
 	"math/rand"
+
+	"fortio.org/safecast"
 )
 
 func MakeTestNodeIDFromIndex(index int) NodeID {
 	nodeID := NodeID{}
 
 	indexBytes := make([]byte, 4)
-	binary.BigEndian.PutUint32(indexBytes, uint32(index))
+	binary.BigEndian.PutUint32(indexBytes, safecast.MustConvert[uint32](index))
 	copy(nodeID[:4], indexBytes)
 
 	return nodeID

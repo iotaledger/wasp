@@ -13,6 +13,8 @@ import (
 	"io"
 	"time"
 
+	"fortio.org/safecast"
+
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	rabin_dkg "go.dedis.ch/kyber/v3/share/dkg/rabin"
@@ -881,7 +883,7 @@ func readPriShare(rr *rwutil.Reader, scalarFactory interface{ Scalar() kyber.Sca
 func writePriShare(ww *rwutil.Writer, val *share.PriShare) {
 	ww.WriteBool(val != nil)
 	if val != nil {
-		ww.WriteUint32(uint32(val.I))
+		ww.WriteUint32(safecast.MustConvert[uint32](val.I))
 		cryptolib.ScalarToWriter(ww, val.V)
 	}
 }

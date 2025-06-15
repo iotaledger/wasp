@@ -11,6 +11,8 @@ import (
 	"math/big"
 	"slices"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -104,7 +106,11 @@ func RPCMarshalBlock(block *types.Block, inclTx, fullTx bool) (map[string]any, e
 func newRPCTransactionFromBlockHash(b *types.Block, hash common.Hash) *RPCTransaction {
 	for idx, tx := range b.Transactions() {
 		if tx.Hash() == hash {
-			return newRPCTransactionFromBlockIndex(b, uint64(idx))
+			convertedIdx, err := safecast.Convert[uint64](idx)
+			if err != nil {
+				return nil
+			}
+			return newRPCTransactionFromBlockIndex(b, convertedIdx)
 		}
 	}
 	return nil

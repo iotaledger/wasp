@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
@@ -75,7 +77,8 @@ func (e *EthService) resolveError(err error) error {
 			return err
 		}
 		var resolveErr error
-		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(lo.Must(e.evmChain.backend.ISCLatestState())))
+		_, state := lo.Must2(e.evmChain.backend.ISCLatestState())
+		resolvedErr, resolveErr = vmerrors.Resolve(vmError, e.evmChain.ViewCaller(state))
 		if resolveErr != nil {
 			return fmt.Errorf("could not resolve VMError: %w: %v", err, resolveErr)
 		}
@@ -201,7 +204,11 @@ func (e *EthService) GetTransactionReceipt(txHash common.Hash) (map[string]any, 
 			return nil, e.resolveError(err)
 		}
 		// get fee policy at the same block and calculate effectiveGasPrice
-		feePolicy, err := e.evmChain.backend.FeePolicy(uint32(blockNumber))
+		convertedValue, err := safecast.Convert[uint32](blockNumber)
+		if err != nil {
+			return nil, fmt.Errorf("block number conversion error: %w", err)
+		}
+		feePolicy, err := e.evmChain.backend.FeePolicy(convertedValue)
 		if err != nil {
 			return nil, err
 		}
@@ -462,7 +469,11 @@ func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[
 		result := make([]map[string]any, len(receipts))
 		for i, receipt := range receipts {
 			// This is pretty ugly, maybe we should shift to uint64 for internals too.
-			feePolicy, err := e.evmChain.backend.FeePolicy(uint32(receipt.BlockNumber.Uint64()))
+			convertedValue, err := safecast.Convert[uint32](receipt.BlockNumber.Uint64())
+			if err != nil {
+				return nil, fmt.Errorf("block number conversion error: %w", err)
+			}
+			feePolicy, err := e.evmChain.backend.FeePolicy(convertedValue)
 			if err != nil {
 				return nil, err
 			}
@@ -482,18 +493,18 @@ func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[
 
 /*
 Not implemented:
-func (e *EthService) NewFilter()
-func (e *EthService) NewBlockFilter()
-func (e *EthService) NewPendingTransactionFilter()
-func (e *EthService) UninstallFilter()
+func (e *EthService) BlobBaseFee()
+func (e *EthService) CreateAccessList()
+func (e *EthService) FeeHistory()
 func (e *EthService) GetFilterChanges()
 func (e *EthService) GetFilterLogs()
-func (e *EthService) SubmitWork()
-func (e *EthService) GetWork()
-func (e *EthService) SubmitHashrate()
-func (e *EthService) CompileLLL()
-func (e *EthService) CompileSolidity()
-func (e *EthService) CompileSerpent()
+func (e *EthService) GetProof()
+func (e *EthService) MaxPriorityFeePerGas()
+func (e *EthService) NewBlockFilter()
+func (e *EthService) NewFilter()
+func (e *EthService) NewPendingTransactionFilter()
+func (e *EthService) SimulateV1()
+func (e *EthService) UninstallFilter()
 */
 
 type NetService struct {
@@ -590,6 +601,14 @@ func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (any, er
 	})
 }
 
+/*
+Not implemented:
+func (e *DebugService) GetBadBlocks()
+func (e *DebugService) GetRawHeader()
+func (e *DebugService) GetRawReceipts()
+func (e *DebugService) GetRawTransaction()
+*/
+
 type TraceService struct {
 	evmChain *EVMChain
 	metrics  *metrics.ChainWebAPIMetrics
@@ -621,9 +640,17 @@ func NewEVMService(evmChain *EVMChain) *EVMService {
 
 func (e *EVMService) Snapshot() (hexutil.Uint, error) {
 	n, err := e.evmChain.backend.TakeSnapshot()
-	return hexutil.Uint(n), err
+	convertedValue, convErr := safecast.Convert[uint](n)
+	if convErr != nil {
+		return 0, fmt.Errorf("snapshot ID conversion error: %w", convErr)
+	}
+	return hexutil.Uint(convertedValue), err
 }
 
 func (e *EVMService) Revert(snapshot hexutil.Uint) error {
-	return e.evmChain.backend.RevertToSnapshot(int(snapshot))
+	convertedValue, err := safecast.Convert[int](snapshot)
+	if err != nil {
+		return fmt.Errorf("snapshot ID conversion error: %w", err)
+	}
+	return e.evmChain.backend.RevertToSnapshot(convertedValue)
 }

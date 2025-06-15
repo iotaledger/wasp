@@ -109,43 +109,6 @@ func TestCreateOrigin(t *testing.T) {
 	require.Equal(t, balancesStateSinger1[0], balancesStateSinger2[0])
 }
 
-// Was used to find proper deposit values for a specific metadata according to the existing hashes.
-func TestMetadataBad(t *testing.T) {
-	t.SkipNow()
-
-	// This test was also skipped for wasp.
-	// When it is enabled, it fails in both repos, so I have no easy way to decode that string of bytes
-	// to be able then to re-implement it for isc.CallArguments instead of dict.Dict.
-
-	// metadataHex := "0300000001006102000000e60701006204000000ffffffff01006322000000010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067"
-	// metadataBin, err := hex.DecodeString(metadataHex)
-	// require.NoError(t, err)
-	// var initParams dict.Dict
-	// initParams, err = dict.FromBytes(metadataBin)
-	// require.NoError(t, err)
-	// require.NotNil(t, initParams)
-	// t.Logf("Args=%v", initParams)
-	// initParams.Iterate(kv.EmptyPrefix, func(key kv.Key, value []byte) bool {
-	// 	t.Logf("Args, %v ===> %v", key, value)
-	// 	return true
-	// })
-
-	// for deposit := uint64(0); deposit <= 10*isc.Million; deposit++ {
-	// 	db := mapdb.NewMapDB()
-	// 	st := state.NewStoreWithUniqueWriteMutex(db)
-	// 	block1A, _ := origin.InitChain(0, st, initParams, deposit, isc.BaseTokenCoinInfo)
-	// 	block1B, _ := origin.InitChain(0, st, initParams, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
-	// 	block1C, _ := origin.InitChain(0, st, initParams, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
-	// 	block2A, _ := origin.InitChain(0, st, nil, deposit, isc.BaseTokenCoinInfo)
-	// 	block2B, _ := origin.InitChain(0, st, nil, 10*isc.Million-deposit, isc.BaseTokenCoinInfo)
-	// 	block2C, _ := origin.InitChain(0, st, nil, 10*isc.Million+deposit, isc.BaseTokenCoinInfo)
-	// 	t.Logf("Block0, deposit=%v => %v %v %v / %v %v %v", deposit,
-	// 		block1A.L1Commitment(), block1B.L1Commitment(), block1C.L1Commitment(),
-	// 		block2A.L1Commitment(), block2B.L1Commitment(), block2C.L1Commitment(),
-	// 	)
-	// }
-}
-
 func TestDictBytes(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		key := rapid.SliceOfBytesMatching(".*").Draw(t, "key")
@@ -159,49 +122,34 @@ func TestDictBytes(t *testing.T) {
 	})
 }
 
-// example values taken from a test on the testnet
-func TestMismatchOriginCommitment(t *testing.T) {
-	t.Skip("TODO")
-	// store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	// oid, err := iotago.OutputIDFromHex("0xcf72dd6a8c8cd76eab93c80ae192677a17c554b91334a41bed5079eff37effc40000")
-	// require.NoError(t, err)
-	// originMetadata, err := cryptolib.DecodeHex("0x03016102e607016204ffffffff016322010024ed2ed9d3682c9c4b801dd15103f73d1fe877224cb51c8b3def6f91b67f5067")
-	// require.NoError(t, err)
-	// aoStateMetadata, err := cryptolib.DecodeHex("0x01000000006e55672af085d73ea0ed646f280a26e0eba053df10f439378fe4e99e0fb8774600761da7c0402da8640000000100000000010000000100000000")
-	// require.NoError(t, err)
-	// _, sender, err := iotago.ParseBech32("rms1qqjw6tke6d5ze8ztsqwaz5gr7u73l6rhyfxt28yt8hhklydk0agxwgerk65")
-	// require.NoError(t, err)
-	// _, stateController, err := iotago.ParseBech32("rms1qrkrlggl2plwfvxyuuyj55gw48ws0xwtteydez8y8e03elm3xf38gf7eq5r")
-	// require.NoError(t, err)
-	// _, govController, err := iotago.ParseBech32("rms1qqjw6tke6d5ze8ztsqwaz5gr7u73l6rhyfxt28yt8hhklydk0agxwgerk65")
-	// require.NoError(t, err)
-	// _, chainAliasAddress, err := iotago.ParseBech32("rms1pr27d4mr9wgesv8je5j6zkequhw0ysx55ftxt04z55dm9hc9yxkauqtukfl")
-	// require.NoError(t, err)
+func TestInitChainByStateMetadataBytes(t *testing.T) {
+	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
+	initParams := origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
+	originDepositVal := coin.Value(100)
 
-	// ao := isc.NewAliasOutputWithID(
-	// 	&iotago.AliasOutput{
-	// 		Amount:         10000000,
-	// 		NativeTokens:   []*iotago.NativeToken{},
-	// 		AliasID:        chainAliasAddress.(*iotago.AliasAddress).AliasID(),
-	// 		StateIndex:     0,
-	// 		StateMetadata:  aoStateMetadata,
-	// 		FoundryCounter: 0,
-	// 		Conditions: []iotago.UnlockCondition{
-	// 			&iotago.StateControllerAddressUnlockCondition{Address: stateController},
-	// 			&iotago.GovernorAddressUnlockCondition{Address: govController},
-	// 		},
-	// 		Features: []iotago.Feature{
-	// 			&iotago.SenderFeature{
-	// 				Address: sender,
-	// 			},
-	// 			&iotago.MetadataFeature{Data: originMetadata},
-	// 		},
-	// 	},
-	// 	oid,
-	// )
+	var stateMetadata *transaction.StateMetadata
+	{
+		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, stateMetadata = origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
+	}
 
-	// _, err = origin.InitChainByAliasOutput(store, ao)
-	// testmisc.RequireErrorToBe(t, err, "l1Commitment mismatch between originAO / originBlock")
+	{
+		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		stateMetadataBytes := stateMetadata.Bytes()
+		_, err := origin.InitChainByStateMetadataBytes(store, stateMetadataBytes, originDepositVal, parameterstest.L1Mock)
+		require.NoError(t, err)
+	}
+
+	{
+		// corrupted/different state metadata
+		stateMetadata := *stateMetadata
+		stateMetadata.L1Commitment = &state.L1Commitment{}
+		stateMetadataBytes := stateMetadata.Bytes()
+
+		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		_, err := origin.InitChainByStateMetadataBytes(store, stateMetadataBytes, originDepositVal, parameterstest.L1Mock)
+		require.ErrorContains(t, err, "L1Commitment mismatch")
+	}
 }
 
 func startNewChain(

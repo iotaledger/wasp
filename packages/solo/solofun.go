@@ -5,6 +5,8 @@ import (
 	"math"
 	"time"
 
+	"fortio.org/safecast"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/clients"
@@ -46,7 +48,7 @@ func (env *Solo) NewSeedFromIndex(index int) *cryptolib.Seed {
 		// SubSeed takes a "uint31"
 		index += math.MaxUint32 / 2
 	}
-	seed := cryptolib.SubSeed(env.seed[:], uint32(index))
+	seed := cryptolib.SubSeed(env.seed[:], safecast.MustConvert[uint32](index))
 	return &seed
 }
 

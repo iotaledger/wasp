@@ -6,6 +6,7 @@ package utils
 import (
 	"time"
 
+	"fortio.org/safecast"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -176,7 +177,10 @@ func (bfT *BlockFactory) GetBlocksFrom(
 	require.NoError(bfT.t, err)
 	for i := 1; i < len(result); i++ {
 		baseIndex := (i + branchingFactor - 2) / branchingFactor
-		increment := uint64(1+i%branchingFactor) * incrementFactor
+		val := 1 + i%branchingFactor
+		increment64, err := safecast.Convert[uint64](val)
+		require.NoError(bfT.t, err)
+		increment := increment64 * incrementFactor
 		result[i] = bfT.GetNextBlock(result[baseIndex].L1Commitment(), increment)
 	}
 	return result[1:]

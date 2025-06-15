@@ -17,15 +17,19 @@ func registerTracer(tracerType string, fn tracerFactory) {
 }
 
 func newTracer(
-	tracerType string,
 	ctx *tracers.Context,
-	cfg json.RawMessage,
+	config *tracers.TraceConfig,
 ) (*tracers.Tracer, error) {
+	tracerType := "callTracer"
+	if config.Tracer != nil {
+		tracerType = *config.Tracer
+	}
+
 	fn := allTracers[tracerType]
 	if fn == nil {
 		return nil, fmt.Errorf("unsupported tracer type: %s", tracerType)
 	}
-	return fn(ctx, cfg)
+	return fn(ctx, config.TracerConfig)
 }
 
 type TxTraceResult struct {

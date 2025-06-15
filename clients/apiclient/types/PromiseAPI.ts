@@ -1,8 +1,6 @@
 import { ResponseContext, RequestContext, HttpFile, HttpInfo } from '../http/http';
 import { Configuration} from '../configuration'
 
-import { AccountFoundriesResponse } from '../models/AccountFoundriesResponse';
-import { AccountNFTsResponse } from '../models/AccountNFTsResponse';
 import { AccountNonceResponse } from '../models/AccountNonceResponse';
 import { AddUserRequest } from '../models/AddUserRequest';
 import { AnchorMetricItem } from '../models/AnchorMetricItem';
@@ -32,19 +30,17 @@ import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger
 import { EventJSON } from '../models/EventJSON';
 import { EventsResponse } from '../models/EventsResponse';
 import { FeePolicy } from '../models/FeePolicy';
-import { FoundryOutputResponse } from '../models/FoundryOutputResponse';
 import { GovChainAdminResponse } from '../models/GovChainAdminResponse';
 import { GovChainInfoResponse } from '../models/GovChainInfoResponse';
 import { GovPublicChainMetadata } from '../models/GovPublicChainMetadata';
 import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
-import { IotaObject } from '../models/IotaObject';
+import { IotaObjectJSON } from '../models/IotaObjectJSON';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
 import { LoginResponse } from '../models/LoginResponse';
-import { NativeTokenIDRegistryResponse } from '../models/NativeTokenIDRegistryResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
@@ -518,48 +514,6 @@ export class PromiseCorecontractsApi {
     }
 
     /**
-     * Get all foundries owned by an account
-     * @param chainID ChainID (Hex Address)
-     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountFoundriesWithHttpInfo(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AccountFoundriesResponse>> {
-        const result = this.api.accountsGetAccountFoundriesWithHttpInfo(chainID, agentID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all foundries owned by an account
-     * @param chainID ChainID (Hex Address)
-     * @param agentID AgentID (Hex Address for L1 accounts, Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountFoundries(chainID: string, agentID: string, block?: string, _options?: Configuration): Promise<AccountFoundriesResponse> {
-        const result = this.api.accountsGetAccountFoundries(chainID, agentID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountNFTIDsWithHttpInfo(agentID: string, block?: string, _options?: Configuration): Promise<HttpInfo<AccountNFTsResponse>> {
-        const result = this.api.accountsGetAccountNFTIDsWithHttpInfo(agentID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get all NFT ids belonging to an account
-     * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetAccountNFTIDs(agentID: string, block?: string, _options?: Configuration): Promise<AccountNFTsResponse> {
-        const result = this.api.accountsGetAccountNFTIDs(agentID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
      * Get the current nonce of an account
      * @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
      * @param [block] Block index or trie root
@@ -576,66 +530,6 @@ export class PromiseCorecontractsApi {
      */
     public accountsGetAccountNonce(agentID: string, block?: string, _options?: Configuration): Promise<AccountNonceResponse> {
         const result = this.api.accountsGetAccountNonce(agentID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get the foundry output
-     * @param chainID ChainID (Hex Address)
-     * @param serialNumber Serial Number (uint32)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetFoundryOutputWithHttpInfo(chainID: string, serialNumber: number, block?: string, _options?: Configuration): Promise<HttpInfo<FoundryOutputResponse>> {
-        const result = this.api.accountsGetFoundryOutputWithHttpInfo(chainID, serialNumber, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get the foundry output
-     * @param chainID ChainID (Hex Address)
-     * @param serialNumber Serial Number (uint32)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetFoundryOutput(chainID: string, serialNumber: number, block?: string, _options?: Configuration): Promise<FoundryOutputResponse> {
-        const result = this.api.accountsGetFoundryOutput(chainID, serialNumber, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param nftID NFT ID (Hex)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNFTDataWithHttpInfo(nftID: string, block?: string, _options?: Configuration): Promise<HttpInfo<void>> {
-        const result = this.api.accountsGetNFTDataWithHttpInfo(nftID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get the NFT data by an ID
-     * @param nftID NFT ID (Hex)
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNFTData(nftID: string, block?: string, _options?: Configuration): Promise<void> {
-        const result = this.api.accountsGetNFTData(nftID, block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get a list of all registries
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNativeTokenIDRegistryWithHttpInfo(block?: string, _options?: Configuration): Promise<HttpInfo<NativeTokenIDRegistryResponse>> {
-        const result = this.api.accountsGetNativeTokenIDRegistryWithHttpInfo(block, _options);
-        return result.toPromise();
-    }
-
-    /**
-     * Get a list of all registries
-     * @param [block] Block index or trie root
-     */
-    public accountsGetNativeTokenIDRegistry(block?: string, _options?: Configuration): Promise<NativeTokenIDRegistryResponse> {
-        const result = this.api.accountsGetNativeTokenIDRegistry(block, _options);
         return result.toPromise();
     }
 

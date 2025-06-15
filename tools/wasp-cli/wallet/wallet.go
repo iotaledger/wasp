@@ -3,13 +3,11 @@
 package wallet
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
 type WalletConfig struct {
@@ -27,7 +25,7 @@ func initInitCmd() *cobra.Command {
 			wallet.InitWallet(initOverwrite)
 
 			config.SetWalletProviderString(string(wallet.GetWalletProvider()))
-			log.Check(viper.WriteConfig())
+			log.Check(config.WriteConfig())
 		},
 	}
 	cmd.Flags().BoolVar(&initOverwrite, "overwrite", false, "allow overwriting existing seed")

@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"math"
 
+	"fortio.org/safecast"
+
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -184,7 +186,7 @@ func (r *CallParams) NewRequestOnLedger(ch *Chain, keyPair *cryptolib.KeyPair) (
 			Sender: keyPair.Address(),
 			AssetsBag: *r.assets.AsAssetsBagWithBalances(&iscmove.AssetsBag{
 				ID:   *assetsBagRef.ObjectID,
-				Size: uint64(r.assets.Size()),
+				Size: safecast.MustConvert[uint64](r.assets.Size()),
 			}),
 			Message: iscmove.Message{
 				Contract: uint32(r.msg.Target.Contract),

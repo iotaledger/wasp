@@ -1,10 +1,9 @@
 package chain
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
+	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
 func withChainFlag(cmd *cobra.Command, chainName *string) {
@@ -20,9 +19,9 @@ func defaultChainFallback(chainName string) string {
 
 func getDefaultChain() string {
 	chainSettings := map[string]interface{}{}
-	chainsKey := viper.Sub("chains")
+	chainsKey := config.Config.Cut("chains")
 	if chainsKey != nil {
-		chainSettings = chainsKey.AllSettings()
+		chainSettings = chainsKey.All()
 	}
 	switch len(chainSettings) {
 	case 0:

@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"fortio.org/safecast"
+
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
@@ -477,7 +479,7 @@ func (e *Env) TestRPCAccessHistoricalState() {
 
 	for i := 0; i < len(addrs); i++ {
 		addr := addrs[i]
-		n := firstBlockNumber + uint64(i)
+		n := firstBlockNumber + safecast.MustConvert[uint64](i)
 		require.Zero(e.T, e.BalanceAt(addr, new(big.Int).SetUint64(n)).Uint64())
 		require.NotZero(e.T, e.BalanceAt(addr, new(big.Int).SetUint64(n+1)).Uint64())
 	}
