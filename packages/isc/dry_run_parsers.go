@@ -99,22 +99,22 @@ func DecodeAsset(assets *Assets, cmd iotago.ProgrammableMoveCall, inputs []iotaj
 		return fmt.Errorf("can't decode typeTag in place_asset command: %v", err)
 	}
 
-	var objectIdHex string
-	err = json.Unmarshal(inputs[*cmd.Arguments[1].Result].Value, &objectIdHex)
+	var objectIDHex string
+	err = json.Unmarshal(inputs[*cmd.Arguments[1].Result].Value, &objectIDHex)
 	if err != nil {
 		return fmt.Errorf("can't decode objectID in place_asset command: %v", err)
 	}
 
-	objectId, err := iotago.ObjectIDFromHex(objectIdHex)
+	objectID, err := iotago.ObjectIDFromHex(objectIDHex)
 	if err != nil {
 		return fmt.Errorf("can't decode objectID in place_asset command: %v", err)
 	}
 
 	assets.AddObject(IotaObject{
-		ID:   *objectId,
+		ID:   *objectID,
 		Type: objectType,
 	})
-	//coin.MustTypeFromString(cmd.TypeArguments[0].String()), coin.Value(amount))
+
 	return err
 }
 

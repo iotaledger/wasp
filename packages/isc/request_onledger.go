@@ -75,7 +75,7 @@ func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse)
 		assets:        assets,
 		assetsBag: &iscmove.AssetsBagWithBalances{
 			Assets:    *assets.AsISCMove(),
-			AssetsBag: iscmove.AssetsBag{ID: iotago.ObjectID{}, Size: uint64(assets.Size())},
+			AssetsBag: iscmove.AssetsBag{ID: iotago.ObjectID{}, Size: uint64(assets.Size())}, //nolint:gosec
 		},
 		requestMetadata: &RequestMetadata{
 			SenderContract: ContractIdentity{},
@@ -87,7 +87,7 @@ func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse)
 				Params: request.Message.Args,
 			},
 			AllowanceBCS: request.AllowanceBCS,
-			GasBudget:    uint64(gasBudget),
+			GasBudget:    uint64(gasBudget), //nolint:gosec
 		},
 	}
 	return r, nil

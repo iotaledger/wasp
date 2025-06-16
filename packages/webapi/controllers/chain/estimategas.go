@@ -81,7 +81,6 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		L1: models.MapL1EstimationResult(&totalL1Gas, &l1GasBudget),
 		L2: models.MapReceiptResponse(rec),
 	})
-
 }
 
 func (c *Controller) estimateGasOffLedger(e echo.Context) error {
