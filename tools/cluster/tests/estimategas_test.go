@@ -115,7 +115,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 			sender.Address().AsIotaAddress(),
 			pt,
 			coinsForGas,
-			2*iotaclient.DefaultGasBudget, // TODO: Why l1GasBudget here fails test?
+			l1GasBudget, // 2*iotaclient.DefaultGasBudget, // TODO: Why l1GasBudget here fails test?
 			iotaclient.DefaultGasPrice,
 		)
 
@@ -187,6 +187,8 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	res, err := executeTx(txBytes)
 	require.NoError(t, err)
 	require.Empty(t, res.Errors)
+	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
+
 	var totalL1GasUsed big.Int
 	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.ComputationCost.Int)
 	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.StorageCost.Int)
@@ -194,7 +196,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.Equal(t, estimatedReceipt.L1.GasFeeCharged, totalL1GasUsed.String())
 
 	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
-	require.NoError(t, err)
+	require.NoError(t, err, recs)
 	require.Empty(t, recs[0].ErrorMessage, lo.FromPtr(recs[0].ErrorMessage))
 	require.Equal(t, recs[0].GasBurned, estimatedReceipt.L2.GasBurned)
 	require.Equal(t, recs[0].GasFeeCharged, estimatedReceipt.L2.GasFeeCharged)

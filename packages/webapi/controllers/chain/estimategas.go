@@ -43,6 +43,12 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	if err != nil {
 		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun error", err)
 	}
+	if dryRunResponse.Effects.Data.V1.Status.Error != "" {
+		return apierrors.NewHTTPError(http.StatusBadRequest, "DryRun status error", fmt.Errorf("%s: %s",
+			dryRunResponse.Effects.Data.V1.Status.Status,
+			dryRunResponse.Effects.Data.V1.Status.Error,
+		))
+	}
 
 	req, err := isc.FakeEstimateOnLedger(dryRunResponse)
 	if err != nil {
