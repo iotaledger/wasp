@@ -90,7 +90,10 @@ func initImportCmd() *cobra.Command {
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 			defer cancel()
 
-			result := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
+			result, err := initializeDeploymentWithGasCoin(ctx, kp, node, chainName, peers, quorum)
+			if err != nil {
+				log.Fatal(err)
+			}
 
 			dbPath := args[0]
 			anchorStateMetadata, blockIndex := openChainAndRead(dbPath)
