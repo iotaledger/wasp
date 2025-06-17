@@ -14,19 +14,34 @@ import { HttpFile } from '../http/http';
 
 export class L1EstimationResult {
     /**
-    * Gas budget required for processing of transaction (uint64 as string)
+    * Gas cost for computation (uint64 as string)
     */
+    'computationFee': string;
     'gasBudget': string;
     /**
-    * Total gas fee charged (uint64 as string)
+    * Total gas fee charged: computation fee + storage fee - storage rebate (uint64 as string)
     */
     'gasFeeCharged': string;
+    /**
+    * Gas cost for storage (uint64 as string)
+    */
+    'storageFee': string;
+    /**
+    * Gas rebate for storage (uint64 as string)
+    */
+    'storageRebate': string;
 
     static readonly discriminator: string | undefined = undefined;
 
     static readonly mapping: {[index: string]: string} | undefined = undefined;
 
     static readonly attributeTypeMap: Array<{name: string, baseName: string, type: string, format: string}> = [
+        {
+            "name": "computationFee",
+            "baseName": "computationFee",
+            "type": "string",
+            "format": "string"
+        },
         {
             "name": "gasBudget",
             "baseName": "gasBudget",
@@ -36,6 +51,18 @@ export class L1EstimationResult {
         {
             "name": "gasFeeCharged",
             "baseName": "gasFeeCharged",
+            "type": "string",
+            "format": "string"
+        },
+        {
+            "name": "storageFee",
+            "baseName": "storageFee",
+            "type": "string",
+            "format": "string"
+        },
+        {
+            "name": "storageRebate",
+            "baseName": "storageRebate",
             "type": "string",
             "format": "string"
         }    ];

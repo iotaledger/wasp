@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
@@ -53,14 +55,43 @@ type OnLedgerEstimationResponse struct {
 	L2 *ReceiptResponse    `json:"l2" swagger:"required"`
 }
 
-func MapL1EstimationResult(gasFeeCharged, minGasBudget *big.Int) *L1EstimationResult {
+func MapL1EstimationResult(gasSummary *iotajsonrpc.GasCostSummary) *L1EstimationResult {
+	// Total L1 gas = computation cost + storage cost - storage rebate
+	var totalGas big.Int
+	totalGas.Add(&totalGas, gasSummary.ComputationCost.Int)
+	totalGas.Add(&totalGas, gasSummary.StorageCost.Int)
+	totalGas.Sub(&totalGas, gasSummary.StorageRebate.Int)
+
+	gasBudget := totalGas
+	if gasBudget.Cmp(gasSummary.ComputationCost.Int) < 0 {
+		// L1 gas budget must be >= max(computation cost, total cost)
+		// See: https://docs.iota.org/about-iota/tokenomics/gas-in-iota#gas-budgets
+		gasBudget.Set(gasSummary.ComputationCost.Int)
+	}
+	if gasBudget.Cmp(big.NewInt(iotaclient.MinGasBudget)) < 0 {
+		// L1 gas budget must be at least 1,000,000
+		gasBudget.SetInt64(iotaclient.MinGasBudget)
+	}
+
+	// fmt.Println("XXX estimate ComputationCost:", l1GasSummary.ComputationCost.Int.String())
+	// fmt.Println("XXX estimate StorageCost:", l1GasSummary.StorageCost.Int.String())
+	// fmt.Println("XXX estimate StorageRebate:", l1GasSummary.StorageRebate.Int.String())
+	// fmt.Println("XXX estimate TotalL1Gas:", totalL1Gas.String())
+	// fmt.Println("XXX estimate L1GasBudget:", l1GasBudget.String())
+
 	return &L1EstimationResult{
-		GasFeeCharged: gasFeeCharged.String(),
-		GasBudget:     minGasBudget.String(),
+		ComputationFee: gasSummary.ComputationCost.Int.String(),
+		StorageFee:     gasSummary.StorageCost.Int.String(),
+		StorageRebate:  gasSummary.StorageRebate.Int.String(),
+		GasFeeCharged:  totalGas.String(),
+		GasBudget:      gasBudget.String(),
 	}
 }
 
 type L1EstimationResult struct {
-	GasFeeCharged string `json:"gasFeeCharged,omitempty" swagger:"required,desc(Total gas fee charged (uint64 as string))"`
-	GasBudget     string `json:"gasBudget,omitempty" swagger:"required,desc(Gas budget required for processing of transaction (uint64 as string))"`
+	ComputationFee string `json:"computationFee,omitempty" swagger:"required,desc(Gas cost for computation (uint64 as string))"`
+	StorageFee     string `json:"storageFee,omitempty" swagger:"required,desc(Gas cost for storage (uint64 as string))"`
+	StorageRebate  string `json:"storageRebate,omitempty" swagger:"required,desc(Gas rebate for storage (uint64 as string))"`
+	GasFeeCharged  string `json:"gasFeeCharged,omitempty" swagger:"required,desc(Total gas fee charged: computation fee + storage fee - storage rebate (uint64 as string))"`
+	GasBudget      string `json:"gasBudget,omitempty" swagger:"required,desc(Gas budget required for processing of transaction: max(computation fee, total fee) (uint64 as string))"`
 }

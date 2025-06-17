@@ -3107,25 +3107,48 @@ components:
         name: IotaObjectJSON
     L1EstimationResult:
       example:
+        storageRebate: storageRebate
+        storageFee: storageFee
+        computationFee: computationFee
         gasFeeCharged: gasFeeCharged
         gasBudget: gasBudget
       properties:
+        computationFee:
+          description: Gas cost for computation (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: ComputationFee
         gasBudget:
-          description: Gas budget required for processing of transaction (uint64 as
-            string)
           format: string
           type: string
           xml:
             name: GasBudget
         gasFeeCharged:
-          description: Total gas fee charged (uint64 as string)
+          description: "Total gas fee charged: computation fee + storage fee - storage\
+            \ rebate (uint64 as string)"
           format: string
           type: string
           xml:
             name: GasFeeCharged
+        storageFee:
+          description: Gas cost for storage (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: StorageFee
+        storageRebate:
+          description: Gas rebate for storage (uint64 as string)
+          format: string
+          type: string
+          xml:
+            name: StorageRebate
       required:
+      - computationFee
       - gasBudget
       - gasFeeCharged
+      - storageFee
+      - storageRebate
       type: object
       xml:
         name: L1EstimationResult
@@ -3314,6 +3337,9 @@ components:
     OnLedgerEstimationResponse:
       example:
         l1:
+          storageRebate: storageRebate
+          storageFee: storageFee
+          computationFee: computationFee
           gasFeeCharged: gasFeeCharged
           gasBudget: gasBudget
         l2:

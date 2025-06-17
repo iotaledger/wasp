@@ -73,7 +73,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 			l1starter.ISCPackageID(),
 			argAssetsBag,
 			iotago.GetArgumentGasCoin(),
-			iotajsonrpc.CoinValue(l1GasBudget),
+			iotajsonrpc.CoinValue(2*iotaclient.DefaultGasBudget),
 			iotajsonrpc.IotaCoinType,
 		)
 
@@ -115,7 +115,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 			sender.Address().AsIotaAddress(),
 			pt,
 			coinsForGas,
-			l1GasBudget, // 2*iotaclient.DefaultGasBudget, // TODO: Why l1GasBudget here fails test?
+			l1GasBudget,
 			iotaclient.DefaultGasPrice,
 		)
 
@@ -126,9 +126,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	}
 
 	// Create transaction for estimation
-	txBytesForEstimation := createTx(iotaclient.MinGasBudget, 0)
-	// TODO: Right now our required budget is less then iotaclient.MinGasBudget.
-	// We need to add more test requests to actually test real-life budget.
+	txBytesForEstimation := createTx(0, 0)
 
 	// Estimate L1 and L2 gas budget for that transaction
 	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
@@ -143,10 +141,8 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	}
 	require.Empty(t, estimatedReceipt.L2.ErrorMessage, lo.FromPtr(estimatedReceipt.L2.ErrorMessage))
 
-	l1GasBudget, err := strconv.ParseUint(estimatedReceipt.L1.GasBudget, 10, 64)
-	require.NoError(t, err)
-	l2GasBudget, err := strconv.ParseUint(estimatedReceipt.L2.GasFeeCharged, 10, 64)
-	require.NoError(t, err)
+	l1GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasBudget, 10, 64))
+	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasFeeCharged, 10, 64))
 
 	executeTx := func(txBytes []byte) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 		execRes, err := env.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
@@ -189,11 +185,25 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.Empty(t, res.Errors)
 	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
 
+	// Checked that actual used gas was not greater than estimated fee or budget.
+	estimatedGasFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasFeeCharged, 10, 64))
+	require.LessOrEqual(t, estimatedGasFee, l1GasBudget)
 	var totalL1GasUsed big.Int
 	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.ComputationCost.Int)
 	totalL1GasUsed.Add(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.StorageCost.Int)
 	totalL1GasUsed.Sub(&totalL1GasUsed, res.Effects.Data.V1.GasUsed.StorageRebate.Int)
-	require.Equal(t, estimatedReceipt.L1.GasFeeCharged, totalL1GasUsed.String())
+	require.LessOrEqual(t, totalL1GasUsed.Uint64(), estimatedGasFee)
+	require.LessOrEqual(t, totalL1GasUsed.Uint64(), l1GasBudget)
+
+	// Checking that computation and storage fees exactly match the estimated values.
+	// Actual rebate value could be bigger (but not smaller) than estimated, because
+	// more than objects were destroyed than expected - e.g. when gas coin was consumed.
+	estimatedComputationFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.ComputationFee, 10, 64))
+	estimatedStorageFee := lo.Must(strconv.ParseUint(estimatedReceipt.L1.StorageFee, 10, 64))
+	estimatedStorageRebate := lo.Must(strconv.ParseUint(estimatedReceipt.L1.StorageRebate, 10, 64))
+	require.Equal(t, estimatedComputationFee, res.Effects.Data.V1.GasUsed.ComputationCost.Int.Uint64())
+	require.Equal(t, estimatedStorageFee, res.Effects.Data.V1.GasUsed.StorageCost.Int.Uint64())
+	require.LessOrEqual(t, estimatedStorageRebate, res.Effects.Data.V1.GasUsed.StorageRebate.Int.Uint64())
 
 	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
 	require.NoError(t, err, recs)
