@@ -17,31 +17,29 @@ import (
 )
 
 // executed in cluster_test.go
-func testBasicAccounts(t *testing.T, env *ChainEnv) {
-	testAccounts(env)
+func (e *ChainEnv) testBasicAccounts(t *testing.T) {
+	e.testAccounts()
 }
 
 func TestBasicAccountsNLow(t *testing.T) {
 	runTest := func(tt *testing.T, n, t int) {
 		clu := newCluster(tt)
-		e := &ChainEnv{t: tt, Clu: clu}
 		chainNodes := make([]int, n)
 		for i := range chainNodes {
 			chainNodes[i] = i
 		}
-		chain, err := e.Clu.DeployChainWithDKG(chainNodes, chainNodes, uint16(t))
+		chain, err := clu.DeployChainWithDKG(chainNodes, chainNodes, uint16(t))
 		require.NoError(tt, err)
 		env := newChainEnv(tt, clu, chain)
-
-		testAccounts(env)
+		env.testAccounts()
 	}
-	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) }) // passed
-	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) }) // passed
-	t.Run("N=3", func(tt *testing.T) { runTest(tt, 3, 3) }) // passed
-	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) }) // passed
+	t.Run("N=1", func(tt *testing.T) { runTest(tt, 1, 1) })
+	t.Run("N=2", func(tt *testing.T) { runTest(tt, 2, 2) })
+	t.Run("N=3", func(tt *testing.T) { runTest(tt, 3, 3) })
+	t.Run("N=4", func(tt *testing.T) { runTest(tt, 4, 3) })
 }
 
-func testAccounts(e *ChainEnv) {
+func (e *ChainEnv) testAccounts() {
 	e.t.Logf("   %s: %s", root.Contract.Name, root.Contract.Hname().String())
 	e.t.Logf("   %s: %s", accounts.Contract.Name, accounts.Contract.Hname().String())
 
@@ -73,7 +71,7 @@ func testAccounts(e *ChainEnv) {
 }
 
 // executed in cluster_test.go
-func testBasic2Accounts(t *testing.T, e *ChainEnv) {
+func (e *ChainEnv) testBasic2Accounts(t *testing.T) {
 	e.checkCoreContracts()
 
 	keyPairUser1, addressUser1, err := e.Clu.NewKeyPairWithFunds()

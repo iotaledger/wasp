@@ -16,13 +16,13 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 )
 
-func TestOffledgerRequestAccessNode(t *testing.T) { // passed
+func TestOffledgerRequestAccessNode(t *testing.T) {
 	const clusterSize = 10
 	cmt := []int{0, 1, 2, 3}
 	e := SetupWithChainWithOpts(t, &waspClusterOpts{nNodes: clusterSize}, cmt, 3)
 
 	// use an access node to create the chainClient
-	chClient := newWalletWithL2Funds(e, 5, 0, 2, 4, 5, 7)
+	chClient := e.newWalletWithL2Funds(5, 0, 2, 4, 5, 7)
 
 	// send off-ledger request via Web API (to the access node)
 	_, err := chClient.DepositFunds(100)
@@ -45,7 +45,7 @@ func TestOffledgerRequestAccessNode(t *testing.T) { // passed
 }
 
 // executed in cluster_test.go
-func testOffledgerRequest(t *testing.T, e *ChainEnv) {
+func (e *ChainEnv) testOffledgerRequest(t *testing.T) {
 	// send off-ledger request via Web API
 	chClient := e.NewChainClient(e.Chain.OriginatorKeyPair)
 	_, err := chClient.DepositFunds(1 * isc.Million)
@@ -66,8 +66,8 @@ func testOffledgerRequest(t *testing.T, e *ChainEnv) {
 }
 
 // executed in cluster_test.go
-func testOffledgerNonce(t *testing.T, e *ChainEnv) {
-	chClient := newWalletWithL2Funds(e, 0, 0, 1, 2, 3)
+func (e *ChainEnv) testOffledgerNonce(t *testing.T) {
+	chClient := e.newWalletWithL2Funds(0, 0, 1, 2, 3)
 
 	_, err := chClient.DepositFunds(1 * isc.Million)
 	require.NoError(t, err)
@@ -108,7 +108,7 @@ func testOffledgerNonce(t *testing.T, e *ChainEnv) {
 	require.Contains(t, string(err.(*apiclient.GenericOpenAPIError).Body()), "not added to the mempool")
 }
 
-func newWalletWithL2Funds(e *ChainEnv, waspnode int, waitOnNodes ...int) *chainclient.Client {
+func (e *ChainEnv) newWalletWithL2Funds(waspnode int, waitOnNodes ...int) *chainclient.Client {
 	baseTokes := coin.Value(1000 * isc.Million)
 	userWallet, userAddress, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(e.t, err)

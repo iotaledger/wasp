@@ -14,28 +14,28 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 )
 
-func testDumpAccounts(t *testing.T, env *ChainEnv) {
+func (e *ChainEnv) testDumpAccounts(t *testing.T) {
 	// create 10 accounts with funds on-chain
 	accs := make([]string, 0, 100)
 	for i := 0; i < 5; i++ {
 		// 5 L1 accounts
-		keyPair, addr, err := env.Clu.NewKeyPairWithFunds()
+		keyPair, addr, err := e.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
-		env.DepositFunds(10*isc.Million, keyPair)
+		e.DepositFunds(10*isc.Million, keyPair)
 		accs = append(accs, addr.String())
 	}
 
 	for i := 0; i < 5; i++ {
 		// 5 EVM accounts
 		_, evmAddr := solo.NewEthereumAccount()
-		keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+		keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 		require.NoError(t, err)
 		evmAgentID := isc.NewEthereumAddressAgentID(evmAddr)
-		env.TransferFundsTo(isc.NewAssets(iotaclient.DefaultGasBudget-1*isc.Million), keyPair, evmAgentID)
+		e.TransferFundsTo(isc.NewAssets(iotaclient.DefaultGasBudget-1*isc.Million), keyPair, evmAgentID)
 		accs = append(accs, evmAgentID.String())
 	}
 
-	client, _ := env.NewRandomChainClient()
+	client, _ := e.NewRandomChainClient()
 	resp, err := client.WaspClient.ChainsAPI.DumpAccounts(
 		context.Background(),
 	).Execute()
@@ -43,7 +43,7 @@ func testDumpAccounts(t *testing.T, env *ChainEnv) {
 	require.Equal(t, 202, resp.StatusCode)
 	time.Sleep(1 * time.Second) // wait for the file to be produced
 
-	path := filepath.Join(env.Clu.NodeDataPath(0), "waspdb", "account_dumps", env.Chain.ChainID.String())
+	path := filepath.Join(e.Clu.NodeDataPath(0), "waspdb", "account_dumps", e.Chain.ChainID.String())
 	entries, err := os.ReadDir(path)
 	require.NoError(t, err)
 	require.Len(t, entries, 1)

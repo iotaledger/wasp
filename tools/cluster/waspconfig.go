@@ -1,7 +1,7 @@
 // Copyright 2020 IOTA Stiftung
 // SPDX-License-Identifier: Apache-2.0
 
-package templates
+package cluster
 
 import (
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -24,7 +24,7 @@ type WaspConfigParams struct {
 	AuthScheme             string
 }
 
-var WaspConfig = `
+var waspConfigTemplate = `
 {
   "app": {
     "checkForUpdates": true,

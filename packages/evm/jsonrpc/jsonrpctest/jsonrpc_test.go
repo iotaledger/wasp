@@ -4,7 +4,6 @@
 package jsonrpctest
 
 import (
-	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
@@ -40,6 +39,7 @@ import (
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 )
 
@@ -859,6 +859,36 @@ func TestRPCTraceBlockForLargeN(t *testing.T) {
 	bi := env.soloChain.GetLatestBlockInfo()
 	require.EqualValues(t, n, bi.NumSuccessfulRequests)
 
+	var res1 json.RawMessage
+	err = env.RawClient.CallContext(
+		context.Background(),
+		&res1,
+		"trace_block",
+		rpc.BlockNumber(env.BlockNumber()),
+	)
+	require.NoError(t, err)
+
+	traces := make([]map[string]any, 0)
+	err = json.Unmarshal(res1, &traces)
+	require.NoError(t, err)
+
+	// 400 requests, 2 traces per request
+	require.Len(t, traces, 800)
+}
+
+func TestRPCDebugTraceBlockForLargeN(t *testing.T) {
+	n := 400
+	env := newSoloTestEnv(t)
+	creator, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+	contractABI, err := abi.JSON(strings.NewReader(evmtest.ISCTestContractABI))
+	require.NoError(t, err)
+	_, _, contractAddress := env.DeployEVMContract(creator, contractABI, evmtest.ISCTestContractBytecode)
+
+	addNRequests(n, env, creator, creatorAddress, contractABI, contractAddress)
+
+	bi := env.soloChain.GetLatestBlockInfo()
+	require.EqualValues(t, n, bi.NumSuccessfulRequests)
+
 	callTracer := "callTracer"
 	var res1 json.RawMessage
 	// we have to use the raw client, because the normal client does not support debug methods
@@ -871,10 +901,12 @@ func TestRPCTraceBlockForLargeN(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, res1, "", "    ")
+	traces := make([]jsonrpc.TxTraceResult, 0)
+	err = json.Unmarshal(res1, &traces)
 	require.NoError(t, err)
-	fmt.Println(prettyJSON.String())
+
+	// 400 requests, 1 trace per request
+	require.Len(t, traces, 400)
 }
 
 func TestRPCTraceBlock(t *testing.T) {
@@ -1037,22 +1069,22 @@ func TestRPCTraceBlock(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		var result jsonrpc.TraceBlock
-		err = json.Unmarshal(res, &result)
+		var traces []*jsonrpc.Trace
+		err = json.Unmarshal(res, &traces)
 		require.NoError(t, err)
-		require.Len(t, result.Result, 4)
+		require.Len(t, traces, 4)
 
-		traceTx1Index := slices.IndexFunc(result.Result, func(v *jsonrpc.Trace) bool {
+		traceTx1Index := slices.IndexFunc(traces, func(v *jsonrpc.Trace) bool {
 			return *v.TransactionHash == tx1.Hash()
 		})
-		traceTx2Index := slices.IndexFunc(result.Result, func(v *jsonrpc.Trace) bool {
+		traceTx2Index := slices.IndexFunc(traces, func(v *jsonrpc.Trace) bool {
 			return *v.TransactionHash == tx2.Hash()
 		})
 
-		call11 := result.Result[traceTx1Index]
-		call12 := result.Result[traceTx1Index+1]
-		call21 := result.Result[traceTx2Index]
-		call22 := result.Result[traceTx2Index+1]
+		call11 := traces[traceTx1Index]
+		call12 := traces[traceTx1Index+1]
+		call21 := traces[traceTx2Index]
+		call22 := traces[traceTx2Index+1]
 
 		call11Action := call11.Action.(map[string]any)
 		call12Action := call12.Action.(map[string]any)
@@ -1293,5 +1325,42 @@ func BenchmarkRPCEstimateGas(b *testing.B) {
 		})
 		require.NoError(b, err)
 		require.NotZero(b, n)
+	}
+}
+
+func TestSupportsInterfaceRPCEthCall(t *testing.T) {
+	env := newSoloTestEnv(t)
+	_, creatorAddress := env.soloChain.NewEthereumAccountWithL2Funds()
+
+	blockNumber, err := env.Client.BlockNumber(context.Background())
+	require.NoError(t, err)
+
+	var contractAddr common.Address
+	copy(contractAddr[:], iscmagic.AddressPrefix)
+
+	cases := []struct {
+		interfaceID string
+		expected    bool
+		description string
+	}{
+		{"01ffc9a7", true, "ERC165"},
+		{"36372b07", false, "ERC20"},
+		{"d9b67a26", false, "ERC721"},
+	}
+
+	for _, c := range cases {
+		interfaceID := fmt.Sprintf("01ffc9a7%s00000000000000000000000000000000000000000000000000000000", c.interfaceID)
+		t.Run(fmt.Sprintf("supportsInterface with parameter %s (%s) should return %t", c.interfaceID, c.description, c.expected), func(t *testing.T) {
+			callMsg := ethereum.CallMsg{
+				From: creatorAddress,
+				To:   &contractAddr,
+				Data: common.Hex2Bytes(interfaceID),
+			}
+			result, err := env.Client.CallContract(context.Background(), callMsg, big.NewInt(int64(blockNumber)))
+			require.NoError(t, err)
+			require.NotEmpty(t, result)
+			decodedBool := new(big.Int).SetBytes(result).Uint64() == 1
+			require.Equal(t, c.expected, decodedBool)
+		})
 	}
 }

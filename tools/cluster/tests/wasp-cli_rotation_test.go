@@ -13,12 +13,11 @@ import (
 	"github.com/iotaledger/wasp/clients/apiclient"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
+	"github.com/iotaledger/wasp/tools/cluster"
 )
 
 func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
+	t.Skip("TODO: fix or remove test")
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		out := w.MustRun("chain", "gov-change-access-nodes", "accept", pubKey, "--node=0")
 		out = w.GetReceiptFromRunPostRequestOutput(out)
@@ -28,7 +27,7 @@ func TestWaspCLIExternalRotationGovAccessNodes(t *testing.T) {
 }
 
 func TestWaspCLIExternalRotationPermissionlessAccessNodes(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: fix or remove test")
 
 	addAccessNode := func(w *WaspCLITest, pubKey string) {
 		for _, idx := range w.Cluster.AllNodes() {
@@ -77,7 +76,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	w2 := newWaspCLITest(t, waspClusterOpts{
 		nNodes:  4,
 		dirName: "wasp-cluster-new-gov",
-		modifyConfig: func(nodeIndex int, configParams templates.WaspConfigParams) templates.WaspConfigParams {
+		modifyConfig: func(nodeIndex int, configParams cluster.WaspConfigParams) cluster.WaspConfigParams {
 			// avoid port conflicts when running everything on localhost
 			configParams.APIPort += 100
 			configParams.MetricsPort += 100
@@ -202,7 +201,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 }
 
 func TestRotateOnOrigin(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
+	t.Skip("TODO: fix or remove test")
 
 	w := newWaspCLITest(t, waspClusterOpts{
 		nNodes: 4,
