@@ -493,18 +493,18 @@ func (e *EthService) GetBlockReceipts(blockNumber rpc.BlockNumberOrHash) ([]map[
 
 /*
 Not implemented:
-func (e *EthService) NewFilter()
-func (e *EthService) NewBlockFilter()
-func (e *EthService) NewPendingTransactionFilter()
-func (e *EthService) UninstallFilter()
+func (e *EthService) BlobBaseFee()
+func (e *EthService) CreateAccessList()
+func (e *EthService) FeeHistory()
 func (e *EthService) GetFilterChanges()
 func (e *EthService) GetFilterLogs()
-func (e *EthService) SubmitWork()
-func (e *EthService) GetWork()
-func (e *EthService) SubmitHashrate()
-func (e *EthService) CompileLLL()
-func (e *EthService) CompileSolidity()
-func (e *EthService) CompileSerpent()
+func (e *EthService) GetProof()
+func (e *EthService) MaxPriorityFeePerGas()
+func (e *EthService) NewBlockFilter()
+func (e *EthService) NewFilter()
+func (e *EthService) NewPendingTransactionFilter()
+func (e *EthService) SimulateV1()
+func (e *EthService) UninstallFilter()
 */
 
 type NetService struct {
@@ -600,6 +600,14 @@ func (d *DebugService) GetRawBlock(blockNrOrHash rpc.BlockNumberOrHash) (any, er
 		return d.evmChain.GetRawBlock(blockNrOrHash)
 	})
 }
+
+/*
+Not implemented:
+func (e *DebugService) GetBadBlocks()
+func (e *DebugService) GetRawHeader()
+func (e *DebugService) GetRawReceipts()
+func (e *DebugService) GetRawTransaction()
+*/
 
 type TraceService struct {
 	evmChain *EVMChain

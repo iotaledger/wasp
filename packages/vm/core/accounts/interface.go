@@ -46,7 +46,7 @@ var (
 	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
-		coreutil.Field[isc.CoinBalances]("coinBalances"),
+		coreutil.Field[*isc.Assets]("coinBalances"),
 	)
 	ViewBalanceBaseToken = coreutil.NewViewEP11(Contract, "balanceBaseToken",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
@@ -68,6 +68,6 @@ var (
 	)
 	// TODO: implement pagination
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",
-		coreutil.Field[isc.CoinBalances]("coinBalances"),
+		coreutil.Field[*isc.Assets]("coinBalances"),
 	)
 )

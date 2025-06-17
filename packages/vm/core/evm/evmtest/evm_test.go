@@ -625,6 +625,8 @@ func TestSendPayableValueTX(t *testing.T) {
 	require.EqualValues(t, senderInitialBalance-valueInBaseTokens-res.ISCReceipt.GasFeeCharged, env.Chain.L2BaseTokens(isc.NewEthereumAddressAgentID(senderEthAddress)))
 	// L1 balance of receiver is `values sent in tx`
 	require.EqualValues(t, valueInBaseTokens, env.solo.L1BaseTokens(receiver))
+
+	env.Chain.CheckAccountLedger()
 }
 
 func TestSendBaseTokens(t *testing.T) {
@@ -1839,7 +1841,7 @@ func TestCaller(t *testing.T) {
 	var r []byte
 	err = iscTest.callView("testCallViewCaller", nil, &r)
 	require.NoError(t, err)
-	require.EqualValues(t, 42, lo.Must(isc.CoinBalancesFromBytes(r)).BaseTokens())
+	require.EqualValues(t, 42, lo.Must(isc.AssetsFromBytes(r)).BaseTokens())
 }
 
 func TestCustomError(t *testing.T) {

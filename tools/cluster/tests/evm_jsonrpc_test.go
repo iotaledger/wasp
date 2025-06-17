@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -34,7 +33,7 @@ type clusterTestEnv struct {
 }
 
 func newClusterTestEnv(t *testing.T, env *ChainEnv, nodeIndex int) *clusterTestEnv {
-	evmJSONRPCPath := fmt.Sprintf("/v1/chains/%v/evm", env.Chain.ChainID.String())
+	evmJSONRPCPath := "/v1/chain/evm"
 	jsonRPCEndpoint := env.Clu.Config.APIHost(nodeIndex) + evmJSONRPCPath
 	rawClient, err := rpc.DialHTTP(jsonRPCEndpoint)
 	require.NoError(t, err)
@@ -105,18 +104,16 @@ func (e *clusterTestEnv) newEthereumAccountWithL2Funds(baseTokens ...coin.Value)
 }
 
 // executed in cluster_test.go
-func testEVMJsonRPCCluster(t *testing.T, env *ChainEnv) {
-	e := newClusterTestEnv(t, env, 0)
-	e.TestRPCGetLogs()
-	e.TestRPCInvalidNonce()
-	e.TestRPCGasLimitTooLow()
-	e.TestRPCAccessHistoricalState()
-	e.TestGasPrice()
+func (e *ChainEnv) testEVMJsonRPCCluster(t *testing.T) {
+	ctenv := newClusterTestEnv(t, e, 0)
+	ctenv.TestRPCGetLogs()
+	ctenv.TestRPCInvalidNonce()
+	ctenv.TestRPCGasLimitTooLow()
+	ctenv.TestRPCAccessHistoricalState()
+	ctenv.TestGasPrice()
 }
 
 func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)
@@ -126,8 +123,6 @@ func TestEVMJsonRPCClusterAccessNode(t *testing.T) {
 }
 
 func TestEVMJsonRPCZeroGasFee(t *testing.T) {
-	t.Skip("Cluster tests currently disabled")
-
 	clu := newCluster(t, waspClusterOpts{nNodes: 5})
 	chain, err := clu.DeployChainWithDKG(clu.Config.AllNodes(), []int{0, 1, 2, 3}, uint16(3))
 	require.NoError(t, err)

@@ -3,13 +3,11 @@
 package waspcmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 	"github.com/iotaledger/wasp/clients/apiextensions"
 	"github.com/iotaledger/wasp/packages/util"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/spf13/cobra"
 )
 
 func initWaspNodesCmd() *cobra.Command {
@@ -70,9 +68,9 @@ func DefaultWaspNodeFallback(node string) string {
 
 func getDefaultWaspNode() string {
 	waspSettings := map[string]interface{}{}
-	waspKey := viper.Sub("wasp")
+	waspKey := config.Config.Cut("wasp")
 	if waspKey != nil {
-		waspSettings = waspKey.AllSettings()
+		waspSettings = waspKey.All()
 	}
 	switch len(waspSettings) {
 	case 0:

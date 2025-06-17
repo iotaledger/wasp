@@ -10,7 +10,7 @@ DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel
 TEST_PKG=./...
 TEST_ARG=
 
-BUILD_PKGS ?= ./ ./tools/cluster/wasp-cluster/
+BUILD_PKGS ?= ./
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
@@ -64,9 +64,6 @@ lint: lint-wasp-cli
 
 lint-wasp-cli:
 	cd ./tools/wasp-cli && golangci-lint run --timeout 5m
-
-apiclient:
-	./clients/apiclient/generate_client.sh
 
 apiclient-docker:
 	./clients/apiclient/generate_client.sh docker

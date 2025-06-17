@@ -47,7 +47,7 @@ func LoadConfig() *L1EndpointConfig {
 		}
 	}
 
-	isLocal := c.GetBool("IS_LOCAL")
+	isLocal := c.Bool("IS_LOCAL")
 
 	if isLocal {
 		return &L1EndpointConfig{
@@ -57,7 +57,7 @@ func LoadConfig() *L1EndpointConfig {
 
 	return &L1EndpointConfig{
 		IsLocal:   false,
-		APIURL:    c.GetString("API_URL"),
-		FaucetURL: c.GetString("FAUCET_URL"),
+		APIURL:    c.String("API_URL"),
+		FaucetURL: c.String("FAUCET_URL"),
 	}
 }
