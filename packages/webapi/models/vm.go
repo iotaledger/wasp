@@ -73,12 +73,6 @@ func MapL1EstimationResult(gasSummary *iotajsonrpc.GasCostSummary) *L1Estimation
 		gasBudget.SetInt64(iotaclient.MinGasBudget)
 	}
 
-	// fmt.Println("XXX estimate ComputationCost:", l1GasSummary.ComputationCost.Int.String())
-	// fmt.Println("XXX estimate StorageCost:", l1GasSummary.StorageCost.Int.String())
-	// fmt.Println("XXX estimate StorageRebate:", l1GasSummary.StorageRebate.Int.String())
-	// fmt.Println("XXX estimate TotalL1Gas:", totalL1Gas.String())
-	// fmt.Println("XXX estimate L1GasBudget:", l1GasBudget.String())
-
 	return &L1EstimationResult{
 		ComputationFee: gasSummary.ComputationCost.Int.String(),
 		StorageFee:     gasSummary.StorageCost.Int.String(),
