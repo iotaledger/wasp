@@ -14,7 +14,7 @@ type ContractCallViewRequest struct {
 }
 
 type EstimateGasRequestOnledger struct {
-	Output string `json:"outputBytes" swagger:"desc(Serialized Output (Hex)),required"`
+	TransactionBytes string `json:"transactionBytes" swagger:"desc(Hexadecimal bytes of transaction to estimate),required"`
 }
 
 type EstimateGasRequestOffledger struct {

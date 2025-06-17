@@ -15,6 +15,7 @@ import { ContractCallViewRequest } from '../models/ContractCallViewRequest';
 import { ContractInfoResponse } from '../models/ContractInfoResponse';
 import { EstimateGasRequestOffledger } from '../models/EstimateGasRequestOffledger';
 import { EstimateGasRequestOnledger } from '../models/EstimateGasRequestOnledger';
+import { OnLedgerEstimationResponse } from '../models/OnLedgerEstimationResponse';
 import { ReceiptResponse } from '../models/ReceiptResponse';
 import { RotateChainRequest } from '../models/RotateChainRequest';
 import { StateResponse } from '../models/StateResponse';
@@ -902,22 +903,22 @@ export class ChainsApiResponseProcessor {
      * @params response Response returned by the server for a request to estimateGasOnledger
      * @throws ApiException if the response code was not in [200, 299]
      */
-     public async estimateGasOnledgerWithHttpInfo(response: ResponseContext): Promise<HttpInfo<ReceiptResponse >> {
+     public async estimateGasOnledgerWithHttpInfo(response: ResponseContext): Promise<HttpInfo<OnLedgerEstimationResponse >> {
         const contentType = ObjectSerializer.normalizeMediaType(response.headers["content-type"]);
         if (isCodeInRange("200", response.httpStatusCode)) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
+            const body: OnLedgerEstimationResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
+                "OnLedgerEstimationResponse", ""
+            ) as OnLedgerEstimationResponse;
             return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 
         // Work around for missing responses in specification, e.g. for petstore.yaml
         if (response.httpStatusCode >= 200 && response.httpStatusCode <= 299) {
-            const body: ReceiptResponse = ObjectSerializer.deserialize(
+            const body: OnLedgerEstimationResponse = ObjectSerializer.deserialize(
                 ObjectSerializer.parse(await response.body.text(), contentType),
-                "ReceiptResponse", ""
-            ) as ReceiptResponse;
+                "OnLedgerEstimationResponse", ""
+            ) as OnLedgerEstimationResponse;
             return new HttpInfo(response.httpStatusCode, response.headers, response.body, body);
         }
 

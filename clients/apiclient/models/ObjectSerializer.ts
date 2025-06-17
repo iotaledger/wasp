@@ -34,6 +34,7 @@ export * from '../models/InfoResponse';
 export * from '../models/Int';
 export * from '../models/IotaCoinInfo';
 export * from '../models/IotaObjectJSON';
+export * from '../models/L1EstimationResult';
 export * from '../models/L1Params';
 export * from '../models/Limits';
 export * from '../models/LoginRequest';
@@ -41,6 +42,7 @@ export * from '../models/LoginResponse';
 export * from '../models/NodeOwnerCertificateResponse';
 export * from '../models/ObjectType';
 export * from '../models/OffLedgerRequest';
+export * from '../models/OnLedgerEstimationResponse';
 export * from '../models/OnLedgerRequest';
 export * from '../models/OnLedgerRequestMetricItem';
 export * from '../models/PeeringNodeIdentityResponse';
@@ -101,6 +103,7 @@ import { InfoResponse } from '../models/InfoResponse';
 import { Int } from '../models/Int';
 import { IotaCoinInfo } from '../models/IotaCoinInfo';
 import { IotaObjectJSON } from '../models/IotaObjectJSON';
+import { L1EstimationResult } from '../models/L1EstimationResult';
 import { L1Params } from '../models/L1Params';
 import { Limits } from '../models/Limits';
 import { LoginRequest } from '../models/LoginRequest';
@@ -108,6 +111,7 @@ import { LoginResponse } from '../models/LoginResponse';
 import { NodeOwnerCertificateResponse } from '../models/NodeOwnerCertificateResponse';
 import { ObjectType } from '../models/ObjectType';
 import { OffLedgerRequest } from '../models/OffLedgerRequest';
+import { OnLedgerEstimationResponse } from '../models/OnLedgerEstimationResponse';
 import { OnLedgerRequest } from '../models/OnLedgerRequest';
 import { OnLedgerRequestMetricItem } from '../models/OnLedgerRequestMetricItem';
 import { PeeringNodeIdentityResponse } from '../models/PeeringNodeIdentityResponse';
@@ -184,6 +188,7 @@ let typeMap: {[index: string]: any} = {
     "Int": Int,
     "IotaCoinInfo": IotaCoinInfo,
     "IotaObjectJSON": IotaObjectJSON,
+    "L1EstimationResult": L1EstimationResult,
     "L1Params": L1Params,
     "Limits": Limits,
     "LoginRequest": LoginRequest,
@@ -191,6 +196,7 @@ let typeMap: {[index: string]: any} = {
     "NodeOwnerCertificateResponse": NodeOwnerCertificateResponse,
     "ObjectType": ObjectType,
     "OffLedgerRequest": OffLedgerRequest,
+    "OnLedgerEstimationResponse": OnLedgerEstimationResponse,
     "OnLedgerRequest": OnLedgerRequest,
     "OnLedgerRequestMetricItem": OnLedgerRequestMetricItem,
     "PeeringNodeIdentityResponse": PeeringNodeIdentityResponse,
