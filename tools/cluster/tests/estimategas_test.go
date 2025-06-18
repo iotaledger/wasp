@@ -29,38 +29,58 @@ import (
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
 func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
+	// We decrease min gas per request, so that we can test L2 gas estimation negative cases.
+	// Without this configuration using value of (l2GasBudget - 1) would still work, because in our
+	// case l2GasBudget is lower then minGasPerRequest, so it is automatically increased to minGasPerRequest.
+	govClient := env.Chain.Client(env.Clu.OriginatorKeyPair)
+	tx, err := govClient.PostRequest(context.Background(), governance.FuncSetGasLimits.Message(&gas.Limits{
+		MinGasPerRequest:       1,
+		MaxGasPerBlock:         gas.LimitsDefault.MaxGasPerBlock,
+		MaxGasPerRequest:       gas.LimitsDefault.MaxGasPerRequest,
+		MaxGasExternalViewCall: gas.LimitsDefault.MaxGasExternalViewCall,
+	}), chainclient.PostRequestParams{
+		GasBudget: iotaclient.DefaultGasBudget,
+	})
+	require.NoError(t, err)
+	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, true, 10*time.Second)
+	require.NoError(t, err)
+
 	// Create tx sender with some funds
 	sender := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
 	env.DepositFunds(100*isc.Million, sender.(*cryptolib.KeyPair))
 
-	// Mind some TESTCOINs
-	coinPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
-		t,
-		env.Clu.L1Client().IotaClient(),
-		cryptolib.SignerToIotaSigner(sender),
-		contracts.Testcoin(),
-	)
-	testcoinType := coin.MustTypeFromString(fmt.Sprintf(
-		"%s::%s::%s",
-		coinPackageID.String(),
-		contracts.TestcoinModuleName,
-		contracts.TestcoinTypeTag,
-	))
-	testcoinRef := iotaclienttest.MintCoins(
-		t,
-		env.Clu.L1Client().IotaClient(),
-		cryptolib.SignerToIotaSigner(sender),
-		coinPackageID,
-		contracts.TestcoinModuleName,
-		contracts.TestcoinTypeTag,
-		treasuryCap,
-		1*isc.Million,
-	)
-
 	createTx := func(l1GasBudget, l2GasBudget uint64) []byte {
+		// Mind some TESTCOINs
+		// TODO: Can we avoid doing this for each tx? If we place this code outside of the function,
+		// we get an error regarding version of some object (presumably treasuryCap).
+		coinPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
+			t,
+			env.Clu.L1Client().IotaClient(),
+			cryptolib.SignerToIotaSigner(sender),
+			contracts.Testcoin(),
+		)
+		testcoinType := coin.MustTypeFromString(fmt.Sprintf(
+			"%s::%s::%s",
+			coinPackageID.String(),
+			contracts.TestcoinModuleName,
+			contracts.TestcoinTypeTag,
+		))
+		testcoinRef := iotaclienttest.MintCoins(
+			t,
+			env.Clu.L1Client().IotaClient(),
+			cryptolib.SignerToIotaSigner(sender),
+			coinPackageID,
+			contracts.TestcoinModuleName,
+			contracts.TestcoinTypeTag,
+			treasuryCap,
+			1*isc.Million,
+		)
+
 		ptb := iotago.NewProgrammableTransactionBuilder()
 
 		// Create asset bag for transaction
@@ -141,8 +161,9 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	}
 	require.Empty(t, estimatedReceipt.L2.ErrorMessage, lo.FromPtr(estimatedReceipt.L2.ErrorMessage))
 
+	// TODO: The naming is confusing: for L1 we use "GasBudget", but for L2 we use "GasBurned".
 	l1GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L1.GasBudget, 10, 64))
-	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasFeeCharged, 10, 64))
+	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasBurned, 10, 64))
 
 	executeTx := func(txBytes []byte) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 		execRes, err := env.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
@@ -156,27 +177,6 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		})
 		return execRes, err
 	}
-
-	// TODO: This check won't work, because right now l1GasBudget == minL1GasBudget, so L1 tx actually executes successfully.
-	//
-	// // Checking that execution fails with zero L1 and L2 gas budgets
-	// res := executeTx(txBytesForEstimation)
-	// require.NotEmpty(t, res.Errors)
-
-	// TODO: This check does not work because we have 2*iotaclient.DefaultGasBudget in NewProgrammable.
-	//
-	// // Checking that transaction execution fails with wrong L1 gas budget
-	// txBytesWithWrongL1GasBudget := createTx(l1GasBudget-1, l2GasBudget)
-	// res, err := executeTx(txBytesWithWrongL1GasBudget)
-	// require.Error(t, err)
-
-	// TODO: Should we make an attempt to execute tx with wrong L2 gas budget?
-	//       How then will it work in relation to next attempt? The request will stuck and then unstuck?
-	//
-	// // Checking that transaction execution fails with wrong L2 gas budget
-	// txBytesWithWrongL2GasBudget := createTx(l1GasBudget, l2GasBudget-1)
-	// res = executeTx(txBytesWithWrongL2GasBudget)
-	// require.NotEmpty(t, res.Errors)
 
 	// Executing transaction with proper L1 and L2 gas budgets
 	txBytes := createTx(l1GasBudget, l2GasBudget)
@@ -210,6 +210,21 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.Empty(t, recs[0].ErrorMessage, lo.FromPtr(recs[0].ErrorMessage))
 	require.Equal(t, recs[0].GasBurned, estimatedReceipt.L2.GasBurned)
 	require.Equal(t, recs[0].GasFeeCharged, estimatedReceipt.L2.GasFeeCharged)
+
+	// Checking that transaction execution fails with wrong L1 gas budget
+	// TODO: Why -1 is not enough to get the error?...
+	txBytesWithWrongL1GasBudget := createTx(l1GasBudget-2000000, l2GasBudget)
+	res, _ = executeTx(txBytesWithWrongL1GasBudget)
+	require.Equal(t, "InsufficientGas", res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
+
+	// Checking that transaction execution fails with wrong L2 gas budget
+	txBytesWithWrongL2GasBudget := createTx(l1GasBudget, l2GasBudget-1)
+	res, err = executeTx(txBytesWithWrongL2GasBudget)
+	require.NoError(t, err)
+	require.Empty(t, res.Errors)
+	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
+	recs, _ = env.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
+	require.Equal(t, "gas budget exceeded", lo.FromPtr(recs[0].ErrorMessage))
 }
 
 func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
