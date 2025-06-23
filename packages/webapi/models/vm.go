@@ -74,9 +74,9 @@ func MapL1EstimationResult(gasSummary *iotajsonrpc.GasCostSummary) *L1Estimation
 	}
 
 	return &L1EstimationResult{
-		ComputationFee: gasSummary.ComputationCost.Int.String(),
-		StorageFee:     gasSummary.StorageCost.Int.String(),
-		StorageRebate:  gasSummary.StorageRebate.Int.String(),
+		ComputationFee: gasSummary.ComputationCost.String(),
+		StorageFee:     gasSummary.StorageCost.String(),
+		StorageRebate:  gasSummary.StorageRebate.String(),
 		GasFeeCharged:  totalGas.String(),
 		GasBudget:      gasBudget.String(),
 	}
