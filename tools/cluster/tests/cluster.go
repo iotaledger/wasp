@@ -6,18 +6,16 @@ import (
 	"path"
 	"testing"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/tools/cluster"
-	"github.com/iotaledger/wasp/tools/cluster/templates"
 )
 
 type waspClusterOpts struct {
 	nNodes       int
-	modifyConfig templates.ModifyNodesConfigFn
+	modifyConfig cluster.ModifyNodesConfigFn
 	dirName      string
 }
 
@@ -51,7 +49,7 @@ func newCluster(t *testing.T, opt ...waspClusterOpts) *cluster.Cluster {
 	}
 
 	dirname := "wasp-cluster"
-	var modifyNodesConfig templates.ModifyNodesConfigFn
+	var modifyNodesConfig cluster.ModifyNodesConfigFn
 
 	waspConfig := cluster.DefaultWaspConfig()
 

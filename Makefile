@@ -10,7 +10,7 @@ DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel
 TEST_PKG=./...
 TEST_ARG=
 
-BUILD_PKGS ?= ./ ./tools/cluster/wasp-cluster/
+BUILD_PKGS ?= ./
 BUILD_CMD=go build -o . -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 INSTALL_CMD=go install -tags $(BUILD_TAGS) -ldflags $(BUILD_LD_FLAGS)
 
@@ -26,7 +26,7 @@ compile-solidity:
 	cd packages/evm/evmtest/wiki_how_tos && go generate
 
 build-cli:
-	cd tools/wasp-cli && go mod tidy && go build  -ldflags $(BUILD_LD_FLAGS) -o ../../
+	cd tools/wasp-cli && go mod tidy && go build  -ldflags $(BUILD_LD_FLAGS) -tags rocksdb -o ../../
 
 build-full: build-cli
 	$(BUILD_CMD) ./...

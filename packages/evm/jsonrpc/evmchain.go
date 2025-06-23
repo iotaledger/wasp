@@ -432,22 +432,6 @@ func (e *EVMChain) TransactionByBlockNumberAndIndex(blockNumber *big.Int, index 
 	return txs[index], block.Hash(), bn, nil
 }
 
-func (e *EVMChain) txsByBlockNumber(blockNumber *big.Int) (txs types.Transactions) {
-	e.log.LogDebugf("TxsByBlockNumber(blockNumber=%v, index=%v)", blockNumber)
-	cachedTxs := e.index.TxsByBlockNumber(blockNumber)
-	if cachedTxs != nil {
-		return cachedTxs
-	}
-	_, latestState := lo.Must2(e.backend.ISCLatestState())
-	db := blockchainDB(latestState)
-	block := db.GetBlockByNumber(blockNumber.Uint64())
-	if block == nil {
-		return nil
-	}
-
-	return block.Transactions()
-}
-
 func (e *EVMChain) BlockByHash(hash common.Hash) *types.Block {
 	e.log.LogDebugf("BlockByHash(hash=%v)", hash)
 
@@ -901,38 +885,61 @@ func (e *EVMChain) TraceBlock(bn rpc.BlockNumber) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	tracer, err := newTracer(
+		&tracers.Context{
+			BlockHash:   block.Hash(),
+			BlockNumber: new(big.Int).SetUint64(block.NumberU64()),
+		},
+		&tracers.TraceConfig{},
+	)
+	if err != nil {
+		return nil, err
+	}
 	iscBlock, iscRequestsInBlock, enforceGasBurned, err := e.iscRequestsInBlock(block.NumberU64())
 	if err != nil {
 		return nil, err
 	}
 
-	blockTxs := e.txsByBlockNumber(new(big.Int).SetUint64(block.NumberU64()))
+	err = e.backend.EVMTrace(
+		iscBlock.PreviousAnchor,
+		iscBlock.Timestamp,
+		iscBlock.Entropy,
+		iscRequestsInBlock,
+		enforceGasBurned,
+		tracer,
+		iscBlock.L1Params,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := tracer.GetResult()
+	if err != nil {
+		return nil, err
+	}
+
+	var txResults []TxTraceResult
+	err = json.Unmarshal(res, &txResults)
+	if err != nil {
+		return nil, err
+	}
 
 	var traces []*Trace
-
-	for i, tx := range blockTxs {
-		iterator := safecast.MustConvert[uint64](i)
-		debugResultJSON, err := e.traceTransaction(
-			&tracers.TraceConfig{},
-			iscBlock,
-			iscRequestsInBlock,
-			enforceGasBurned,
-			tx,
-			iterator,
-			block.Hash(),
-		)
-
-		if err == nil {
-			var debugResult CallFrame
-			err = json.Unmarshal(debugResultJSON, &debugResult)
-			if err != nil {
-				return nil, err
-			}
-
-			blockHash := block.Hash()
-			txHash := tx.Hash()
-			traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, iterator)...)
+	for i, txResult := range txResults {
+		var debugResult CallFrame
+		err = json.Unmarshal(txResult.Result, &debugResult)
+		if err != nil {
+			return nil, err
 		}
+
+		blockHash := block.Hash()
+		txHash := txResult.TxHash
+		txIndex, err := safecast.Convert[uint64](i)
+		if err != nil {
+			return nil, fmt.Errorf("tx index conversion error: %w", err)
+		}
+		traces = append(traces, convertToTrace(debugResult, &blockHash, block.NumberU64(), &txHash, txIndex)...)
 	}
 
 	return traces, nil

@@ -33,11 +33,11 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/gas"
 )
 
-func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
+func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 	// We decrease min gas per request, so that we can test L2 gas estimation negative cases.
 	// Without this configuration using value of (l2GasBudget - 1) would still work, because in our
 	// case l2GasBudget is lower then minGasPerRequest, so it is automatically increased to minGasPerRequest.
-	govClient := env.Chain.Client(env.Clu.OriginatorKeyPair)
+	govClient := e.Chain.Client(e.Clu.OriginatorKeyPair)
 	tx, err := govClient.PostRequest(context.Background(), governance.FuncSetGasLimits.Message(&gas.Limits{
 		MinGasPerRequest:       1,
 		MaxGasPerBlock:         gas.LimitsDefault.MaxGasPerBlock,
@@ -47,12 +47,12 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		GasBudget: iotaclient.DefaultGasBudget,
 	})
 	require.NoError(t, err)
-	_, err = env.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), env.Chain.ChainID, tx, true, 10*time.Second)
+	_, err = e.Clu.MultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx, true, 10*time.Second)
 	require.NoError(t, err)
 
 	// Create tx sender with some funds
 	sender := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	env.DepositFunds(100*isc.Million, sender.(*cryptolib.KeyPair))
+	e.DepositFunds(100*isc.Million, sender.(*cryptolib.KeyPair))
 
 	createTx := func(l1GasBudget, l2GasBudget uint64) []byte {
 		// Mind some TESTCOINs
@@ -60,7 +60,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		// we get an error regarding version of some object (presumably treasuryCap).
 		coinPackageID, treasuryCap := iotaclienttest.DeployCoinPackage(
 			t,
-			env.Clu.L1Client().IotaClient(),
+			e.Clu.L1Client().IotaClient(),
 			cryptolib.SignerToIotaSigner(sender),
 			contracts.Testcoin(),
 		)
@@ -72,7 +72,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		))
 		testcoinRef := iotaclienttest.MintCoins(
 			t,
-			env.Clu.L1Client().IotaClient(),
+			e.Clu.L1Client().IotaClient(),
 			cryptolib.SignerToIotaSigner(sender),
 			coinPackageID,
 			contracts.TestcoinModuleName,
@@ -115,7 +115,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		ptb = iscmoveclient.PTBCreateAndSendRequest(
 			ptb,
 			l1starter.ISCPackageID(),
-			env.Chain.ChainID.AsObjectID(),
+			e.Chain.ChainID.AsObjectID(),
 			argAssetsBag,
 			&iscmove.Message{
 				Contract: uint32(isc.Hn("accounts")),
@@ -128,7 +128,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 		pt := ptb.Finish()
 
 		// Find proper coin objects to pay for gas
-		coinsForGas, err := env.Clu.L1Client().FindCoinsForGasPayment(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, l1GasBudget)
+		coinsForGas, err := e.Clu.L1Client().FindCoinsForGasPayment(context.Background(), sender.Address().AsIotaAddress(), pt, iotaclient.DefaultGasPrice, l1GasBudget)
 		require.NoError(t, err)
 
 		txData := iotago.NewProgrammable(
@@ -149,7 +149,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	txBytesForEstimation := createTx(0, 0)
 
 	// Estimate L1 and L2 gas budget for that transaction
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
+	estimatedReceipt, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOnledger(context.Background()).Request(apiclient.EstimateGasRequestOnledger{
 		TransactionBytes: hexutil.Encode(txBytesForEstimation),
 	}).Execute()
 	if err != nil {
@@ -166,7 +166,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	l2GasBudget := lo.Must(strconv.ParseUint(estimatedReceipt.L2.GasBurned, 10, 64))
 
 	executeTx := func(txBytes []byte) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
-		execRes, err := env.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
+		execRes, err := e.Clu.L1Client().SignAndExecuteTransaction(context.Background(), &iotaclient.SignAndExecuteTransactionRequest{
 			TxDataBytes: txBytes,
 			Signer:      cryptolib.SignerToIotaSigner(sender),
 			Options: &iotajsonrpc.IotaTransactionBlockResponseOptions{
@@ -205,7 +205,7 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.Equal(t, estimatedStorageFee, res.Effects.Data.V1.GasUsed.StorageCost.Int.Uint64())
 	require.LessOrEqual(t, estimatedStorageRebate, res.Effects.Data.V1.GasUsed.StorageRebate.Int.Uint64())
 
-	recs, err := env.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
+	recs, err := e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
 	require.NoError(t, err, recs)
 	require.Empty(t, recs[0].ErrorMessage, lo.FromPtr(recs[0].ErrorMessage))
 	require.Equal(t, recs[0].GasBurned, estimatedReceipt.L2.GasBurned)
@@ -225,18 +225,18 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.NoError(t, err)
 	require.Empty(t, res.Errors)
 	require.Empty(t, res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
-	recs, _ = env.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), env.Chain.ChainID, res, false, 10*time.Second)
+	recs, _ = e.Clu.MultiClient().WaitUntilAllRequestsProcessed(context.Background(), e.Chain.ChainID, res, false, 10*time.Second)
 	require.Equal(t, "gas budget exceeded", lo.FromPtr(recs[0].ErrorMessage))
 }
 
-func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
+func (e *ChainEnv) testEstimateGasOffLedger(t *testing.T) {
 	// estimate off-ledger request, then send the same request, assert the gas used/fees match
-	keyPair, _, err := env.Clu.NewKeyPairWithFunds()
+	keyPair, _, err := e.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	env.DepositFunds(10*isc.Million, keyPair)
+	e.DepositFunds(10*isc.Million, keyPair)
 
 	estimationReq := isc.NewOffLedgerRequest(
-		env.Chain.ChainID,
+		e.Chain.ChainID,
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		0,
 		1*isc.Million,
@@ -244,7 +244,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		WithSender(keyPair.GetPublicKey())
 
 	// Test that the API will fail if the FromAddress is missing
-	estimatedReceiptFail, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background()).Request(apiclient.EstimateGasRequestOffledger{
+	estimatedReceiptFail, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background()).Request(apiclient.EstimateGasRequestOffledger{
 		RequestBytes: cryptolib.EncodeHex(estimationReq.Bytes()),
 	}).Execute()
 	require.Error(t, err)
@@ -253,14 +253,14 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 
 	requestHex := cryptolib.EncodeHex(estimationReq.Bytes())
 
-	estimatedReceipt, _, err := env.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background()).Request(apiclient.EstimateGasRequestOffledger{
+	estimatedReceipt, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.EstimateGasOffledger(context.Background()).Request(apiclient.EstimateGasRequestOffledger{
 		FromAddress:  keyPair.Address().String(),
 		RequestBytes: requestHex,
 	}).Execute()
 	require.NoError(t, err)
 	require.Empty(t, estimatedReceipt.ErrorMessage)
 
-	client := env.Chain.Client(keyPair)
+	client := e.Chain.Client(keyPair)
 	par := chainclient.PostRequestParams{
 		Allowance:   isc.NewAssets(5000),
 		GasBudget:   iotaclient.DefaultGasBudget,
@@ -272,7 +272,7 @@ func testEstimateGasOffLedger(t *testing.T, env *ChainEnv) {
 		par,
 	)
 	require.NoError(t, err)
-	rec, err := env.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), env.Chain.ChainID, req.ID(), false, 30*time.Second)
+	rec, err := e.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, rec.GasBurned, estimatedReceipt.GasBurned)
 	require.Equal(t, rec.GasFeeCharged, estimatedReceipt.GasFeeCharged)

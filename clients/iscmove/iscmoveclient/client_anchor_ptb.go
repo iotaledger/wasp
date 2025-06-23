@@ -9,6 +9,25 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 )
 
+func PTBUpdateAnchorStateMetadata(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, anchorRef iotago.Argument, stateMetadata []byte, stateIndex uint32) *iotago.ProgrammableTransactionBuilder {
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "update_anchor_state_for_migration",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					anchorRef,
+					ptb.MustPure(stateMetadata),
+					ptb.MustPure(stateIndex),
+				},
+			},
+		},
+	)
+	return ptb
+}
+
 func PTBStartNewChain(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	packageID iotago.PackageID,
