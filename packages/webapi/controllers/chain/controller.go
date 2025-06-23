@@ -100,6 +100,8 @@ func (c *Controller) RegisterPublic(publicAPI echoswagger.ApiGroup, mocker inter
 		AddParamBody(mocker.Get(models.EstimateGasRequestOnledger{}), "Request", "Request", true).
 		AddResponse(http.StatusOK, "ReceiptResponse", mocker.Get(models.OnLedgerEstimationResponse{}), nil).
 		SetSummary("Estimates gas for a given on-ledger ISC request").
+		SetDescription("Estimates gas usage for a given on-ledger ISC request. " +
+			"To calculate required L1 and L2 gas budgets use values of L1.GasBudget and L2.GasBurned respectively.").
 		SetOperationId("estimateGasOnledger")
 
 	publicAPI.POST("chain/estimategas-offledger", c.estimateGasOffLedger).

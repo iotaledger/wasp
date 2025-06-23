@@ -212,8 +212,10 @@ func testEstimateGasOnLedger(t *testing.T, env *ChainEnv) {
 	require.Equal(t, recs[0].GasFeeCharged, estimatedReceipt.L2.GasFeeCharged)
 
 	// Checking that transaction execution fails with wrong L1 gas budget
-	// TODO: Why -1 is not enough to get the error?...
-	txBytesWithWrongL1GasBudget := createTx(l1GasBudget-2000000, l2GasBudget)
+	// NOTE: The reason we use l1GasBudget-1200000 here is because actual storage rebate is bigger than estimated
+	//       due to mock gas coins being used for estimation. So we cannot use l1GasBudget-1 - it simply won't trigger an error.
+	//       For L1 estimated budget is not strictly equal to actual needed value, it is greater or equal. So such test is hard to write.
+	txBytesWithWrongL1GasBudget := createTx(l1GasBudget-1200000, l2GasBudget)
 	res, _ = executeTx(txBytesWithWrongL1GasBudget)
 	require.Equal(t, "InsufficientGas", res.Effects.Data.V1.Status.Error, res.Effects.Data.V1.Status.Status)
 
