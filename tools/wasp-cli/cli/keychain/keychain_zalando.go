@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/awnumar/memguard"
+	"github.com/google/uuid"
 	"github.com/zalando/go-keyring"
 
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -17,11 +18,11 @@ func NewKeyChainZalando() *KeyChainZalando {
 	return &KeyChainZalando{}
 }
 
-// IsKeyChainAvailable validates existence of a keychain by querying an entry.
-// If a keychain is not available, it will throw an internal OS error,
-// while an existing keychain will return ErrNotFound (as the key does not exist)
+// IsKeyChainAvailable checks if the keychain is available
 func IsKeyChainAvailable() bool {
-	_, err := keyring.Get("", "")
+	// If the keychain is available, it will return ErrNotFound
+	// If the keychain is not available, it will return ErrUnsupportedPlatform
+	_, err := keyring.Get(uuid.NewString(), "")
 
 	if errors.Is(err, keyring.ErrNotFound) {
 		return true
