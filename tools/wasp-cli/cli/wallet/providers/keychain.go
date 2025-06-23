@@ -35,7 +35,7 @@ func LoadKeyChain(addressIndex uint32) wallets.Wallet {
 }
 
 func CreateKeyChain(overwrite bool) {
-	oldSeed, _ := config.GetKeyChain().GetSeed() //nolint: staticcheck, wastedassign
+	oldSeed, _ := config.GetKeyChain().GetSeed()
 
 	if oldSeed != nil && !overwrite {
 		log.Printf("You already have an existing seed inside your Keychain.\nCalling `init` will *replace* it with a new one.\n")
