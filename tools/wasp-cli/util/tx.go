@@ -57,7 +57,5 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func(
 		log.Check(err2)
 	}
 
-	log.Printf("osted TX: %s\n", tx.Digest)
-
 	return tx
 }

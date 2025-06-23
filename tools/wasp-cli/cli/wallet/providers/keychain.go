@@ -37,7 +37,7 @@ func LoadKeyChain(addressIndex uint32) wallets.Wallet {
 func CreateKeyChain(overwrite bool) {
 	oldSeed, _ := config.GetKeyChain().GetSeed() //nolint: staticcheck, wastedassign
 
-	if len(oldSeed) == cryptolib.SeedSize && !overwrite {
+	if oldSeed != nil && !overwrite {
 		log.Printf("You already have an existing seed inside your Keychain.\nCalling `init` will *replace* it with a new one.\n")
 		log.Printf("Run `wasp-cli init --overwrite` to continue with the initialization.\n")
 		log.Fatalf("The cli will now exit.")
