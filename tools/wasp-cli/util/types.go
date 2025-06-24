@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -19,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/packages/kv/codec"
 	"github.com/iotaledger/wasp/packages/kv/dict"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
 )
@@ -243,13 +245,13 @@ func EncodeParams(params []string) isc.CallArguments {
 }
 
 func PrintCallResultsAsJSON(res isc.CallResults) {
-	log.Check(json.NewEncoder(os.Stdout).Encode(res))
+	log.Check(json.NewEncoder(os.Stdout).Encode(models.ToCallResultsJSON(res)))
 }
 
 func ReadCallResultsAsJSON() isc.CallArguments {
-	var args isc.CallArguments
+	var args models.CallResultsJSON
 	log.Check(json.NewDecoder(os.Stdin).Decode(&args))
-	return args
+	return lo.Must(args.ToCallResults())
 }
 
 func AgentIDFromArgs(args []string) isc.AgentID {

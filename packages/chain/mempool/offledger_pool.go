@@ -5,12 +5,9 @@ package mempool
 
 import (
 	"fmt"
-	"io"
 	"math/big"
 	"slices"
 	"time"
-
-	"fortio.org/safecast"
 
 	"github.com/samber/lo"
 
@@ -19,7 +16,6 @@ import (
 
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 // OffLedgerPool keeps a map of requests ordered by nonce for each account
@@ -301,10 +297,9 @@ func (p *OffLedgerPool) Remove(request isc.OffLedgerRequest) {
 	}
 }
 
-func (p *OffLedgerPool) Iterate(f func(account string, requests []*OrderedPoolEntry)) {
+func (p *OffLedgerPool) Iterate(f func(account string, requests []*OrderedPoolEntry) bool) {
 	p.reqsByAcountOrdered.ForEach(func(acc string, entries []*OrderedPoolEntry) bool {
-		f(acc, slices.Clone(entries))
-		return true
+		return f(acc, slices.Clone(entries))
 	})
 }
 
@@ -320,28 +315,4 @@ func (p *OffLedgerPool) Cleanup(predicate func(request isc.OffLedgerRequest, ts 
 
 func (p *OffLedgerPool) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", p.refLUT.Size())
-}
-
-func (p *OffLedgerPool) WriteContent(w io.Writer) {
-	p.reqsByAcountOrdered.ForEach(func(_ string, list []*OrderedPoolEntry) bool {
-		for _, entry := range list {
-			jsonData, err := isc.RequestToJSON(entry.req)
-			if err != nil {
-				return false // stop iteration
-			}
-			val, err := safecast.Convert[uint32](len(jsonData))
-			if err != nil {
-				return false
-			}
-			_, err = w.Write(codec.Encode[uint32](val))
-			if err != nil {
-				return false // stop iteration
-			}
-			_, err = w.Write(jsonData)
-			if err != nil {
-				return false // stop iteration
-			}
-		}
-		return true
-	})
 }

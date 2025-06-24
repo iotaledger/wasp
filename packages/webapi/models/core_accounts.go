@@ -1,9 +1,5 @@
 package models
 
-import (
-	"github.com/iotaledger/wasp/packages/isc"
-)
-
 type AccountsResponse struct {
 	AccountIDs []string `json:"accountIds" swagger:"required"`
 }
@@ -13,9 +9,9 @@ type AccountListResponse struct {
 }
 
 type AssetsResponse struct {
-	BaseTokens string               `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
-	Coins      []isc.CoinJSON       `json:"coins" swagger:"required"`
-	Objects    []isc.IotaObjectJSON `json:"objects" swagger:"required"`
+	BaseTokens string           `json:"baseTokens" swagger:"required,desc(The base tokens (uint64 as string))"`
+	Coins      []CoinJSON       `json:"coins" swagger:"required"`
+	Objects    []IotaObjectJSON `json:"objects" swagger:"required"`
 }
 
 type AccountNonceResponse struct {

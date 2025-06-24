@@ -57,17 +57,6 @@ type ObjectType struct { // struct to enforce using the constructor functions
 	s string
 }
 
-// ObjectTypeJSON is the representation of a Iota object type that is used in the JSON API
-type ObjectTypeJSON string
-
-func (t ObjectTypeJSON) ToType() ObjectType {
-	return ObjectType{s: string(t)}
-}
-
-func (t ObjectType) ToTypeJSON() ObjectTypeJSON {
-	return ObjectTypeJSON(t.s)
-}
-
 func ObjectTypeFromString(s string) (ObjectType, error) {
 	rt, err := NewResourceType(s)
 	if err != nil {
