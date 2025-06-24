@@ -21,21 +21,3 @@ func CoinBalancesToJSON(b isc.CoinBalances) []CoinJSON {
 	}
 	return coins
 }
-
-// func (c *CoinBalances) UnmarshalJSON(b []byte) error {
-// 	var coins []CoinJSON
-// 	err := json.Unmarshal(b, &coins)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	*c = NewCoinBalances()
-// 	for _, cc := range coins {
-// 		value := lo.Must(coin.ValueFromString(cc.Balance))
-// 		c.Add(cc.CoinType.ToType(), value)
-// 	}
-// 	return nil
-// }
-
-// func (c CoinBalances) MarshalJSON() ([]byte, error) {
-// 	return json.Marshal(c.JSON())
-// }
