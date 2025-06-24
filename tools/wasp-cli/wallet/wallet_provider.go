@@ -9,8 +9,8 @@ import (
 
 func initWalletProviderCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "wallet-provider (keychain, sdk_ledger, sdk_stronghold)",
-		Short: "Get or set wallet provider (keychain, sdk_ledger, sdk_stronghold)",
+		Use:   "wallet-provider (keychain, ledger)",
+		Short: "Get or set wallet provider (keychain, ledger)",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(args) == 0 {
