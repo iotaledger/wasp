@@ -202,10 +202,6 @@ func SetPackageID(id iotago.PackageID) {
 	Set("l1.packageid", id.String())
 }
 
-func GetUseLegacyDerivation() bool {
-	return Config.Bool("wallet.uselegacyderivation")
-}
-
 func GetWalletProviderString() string {
 	return Config.String("wallet.provider")
 }
