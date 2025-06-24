@@ -16,6 +16,7 @@ require (
 	github.com/awnumar/memguard v0.22.5
 	github.com/dvsekhvalnov/jose2go v1.8.0
 	github.com/ethereum/go-ethereum v1.15.5
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
 	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
 	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
@@ -80,7 +81,6 @@ require (
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/pprof v0.0.0-20250302191652-9094ed2288e7 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect

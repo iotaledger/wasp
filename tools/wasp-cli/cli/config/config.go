@@ -35,9 +35,6 @@ const (
 	DefaultWaitForCompletion = "0s"
 )
 
-func RefreshL1ParamsFromNode() {
-}
-
 func locateBaseDir() string {
 	homeDir, err := os.UserHomeDir()
 	log.Check(err)
