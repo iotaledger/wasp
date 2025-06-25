@@ -35,9 +35,6 @@ const (
 	DefaultWaitForCompletion = "0s"
 )
 
-func RefreshL1ParamsFromNode() {
-}
-
 func locateBaseDir() string {
 	homeDir, err := os.UserHomeDir()
 	log.Check(err)
@@ -203,10 +200,6 @@ func GetPackageID() iotago.PackageID {
 
 func SetPackageID(id iotago.PackageID) {
 	Set("l1.packageid", id.String())
-}
-
-func GetUseLegacyDerivation() bool {
-	return Config.Bool("wallet.uselegacyderivation")
 }
 
 func GetWalletProviderString() string {

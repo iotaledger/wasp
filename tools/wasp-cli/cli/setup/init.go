@@ -8,12 +8,9 @@ import (
 
 func initRefreshL1ParamsCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "refresh-l1-params",
-		Short: "Refresh L1 params from node",
-		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			config.RefreshL1ParamsFromNode()
-		},
+		Use:        "refresh-l1-params",
+		Short:      "Refresh L1 params from node",
+		Deprecated: "no longer required",
 	}
 }
 
