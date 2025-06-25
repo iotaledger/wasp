@@ -36,6 +36,10 @@ var (
 	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
 		coreutil.Field[coin.Type]("coinType"),
 	)
+	AdjustCommonAccountBaseTokens = coreutil.NewEP2(Contract, "adjustCommonAccountBaseTokens",
+		coreutil.Field[coin.Value]("credit"),
+		coreutil.Field[coin.Value]("debit"),
+	)
 
 	// Views
 	// TODO: implement pagination

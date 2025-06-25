@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -665,4 +666,29 @@ func TestAccounts_Nonces(t *testing.T) {
 	req = req.WithNonce(3)
 	_, err = ch.PostRequestOffLedger(req, senderWallet)
 	testmisc.RequireErrorToBe(t, err, vm.ErrContractNotFound)
+}
+
+func TestAccounts_AdjustCommonAccountBaseTokens(t *testing.T) {
+	env := solo.New(t, &solo.InitOptions{})
+	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
+	ch := env.NewChain()
+
+	err := ch.DepositBaseTokensToL2(100_000, sender)
+	require.NoError(t, err)
+
+	l1Bal1 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
+	l2Total1 := ch.L2TotalAssets().BaseTokens()
+	require.Equal(t, l1Bal1, l2Total1)
+
+	ch.PostRequestOffLedger(solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(1000, 0)), ch.ChainAdmin)
+
+	l1Bal2 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
+	l2Total2 := ch.L2TotalAssets().BaseTokens()
+	require.Equal(t, l1Bal2+1000, l2Total2)
+
+	ch.PostRequestOffLedger(solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(0, 1000)), ch.ChainAdmin)
+
+	l1Bal3 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
+	l2Total3 := ch.L2TotalAssets().BaseTokens()
+	require.Equal(t, l1Bal3, l2Total3)
 }
