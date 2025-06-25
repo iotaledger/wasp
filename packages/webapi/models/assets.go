@@ -15,7 +15,7 @@ func AssetsToAssetsJSON(a *isc.Assets) AssetsJSON {
 	}
 
 	return AssetsJSON{
-		Coins:   CoinBalancesToJSON(a.Coins),
+		Coins:   ToCoinBalancesJSON(a.Coins),
 		Objects: ToIotaObjectsJSON(&a.Objects),
 	}
 }

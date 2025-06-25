@@ -11,7 +11,7 @@ type CoinJSON struct {
 	Balance  string   `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
 }
 
-func CoinBalancesToJSON(b isc.CoinBalances) []CoinJSON {
+func ToCoinBalancesJSON(b isc.CoinBalances) []CoinJSON {
 	var coins []CoinJSON
 	for t, v := range b.Iterate() {
 		coins = append(coins, CoinJSON{

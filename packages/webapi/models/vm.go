@@ -53,7 +53,7 @@ type UnresolvedVMErrorJSON struct {
 	Params    []string `json:"params"`
 }
 
-// ToJSONStruct produces the params as humanly readable json, and the uints as strings
+// ToUnresolvedVMErrorJSON produces the params as humanly readable json, and the uints as strings
 func ToUnresolvedVMErrorJSON(e *isc.UnresolvedVMError) *UnresolvedVMErrorJSON {
 	if e == nil {
 		return &UnresolvedVMErrorJSON{

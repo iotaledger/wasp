@@ -86,7 +86,7 @@ func (c CallResultsJSON) ToCallResults() (isc.CallArguments, error) {
 }
 
 func ToCallResultsJSON(c isc.CallResults) CallResultsJSON {
-	return CallResultsJSON(ToCallArgumentsJSON(isc.CallArguments(c)))
+	return CallResultsJSON(ToCallArgumentsJSON(c))
 }
 
 type OffLedgerRequest struct {
