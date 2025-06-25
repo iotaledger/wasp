@@ -82,6 +82,13 @@ func TestLocal() func() {
 	return cancel
 }
 
+// TestLocalExternal connects to an already running local node.
+func TestLocalExternal() func() {
+	node, cancel := ConnectNode(context.Background())
+	instance.Store(&node)
+	return cancel
+}
+
 func TestMain(m *testing.M) {
 	if instance.Load() != nil {
 		m.Run()
@@ -142,6 +149,16 @@ func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 	in := NewLocalIotaNode(ISCPackageOwner)
 
 	in.start(ctx)
+
+	return in, func() {
+		in.stop(ctx)
+	}
+}
+
+func ConnectNode(ctx context.Context) (IotaNodeEndpoint, func()) {
+	in := NewLocalIotaNode(ISCPackageOwner)
+
+	in.connectService(ctx)
 
 	return in, func() {
 		in.stop(ctx)

@@ -6,7 +6,6 @@ package main
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -61,6 +60,14 @@ func (*soloContext) Name() string {
 }
 
 var listenAddress string = ":8545"
+var nodeLaunchMode string
+
+type NodeLaunchMode string
+
+const (
+	EnumNodeLaunchModeStandalone    NodeLaunchMode = "standalone"
+	EnumNodeLaunchModeDockerCompose NodeLaunchMode = "docker-compose"
+)
 
 func main() {
 	cmd := &cobra.Command{
@@ -68,7 +75,7 @@ func main() {
 		Run:   start,
 		Use:   "evmemulator",
 		Short: "evmemulator runs a JSONRPC server with Solo as backend",
-		Long: fmt.Sprintf(`evmemulator runs a JSONRPC server with Solo as backend.
+		Long: `evmemulator runs a JSONRPC server with Solo as backend.
 
 evmemulator does the following:
 
@@ -80,11 +87,16 @@ You can connect any Ethereum tool (eg Metamask) to this JSON-RPC server and use 
 
 Note: chain data is stored in-memory and will be lost upon termination.
 `,
-		),
 	}
 
 	log.Init(cmd)
 	cmd.PersistentFlags().StringVarP(&listenAddress, "listen", "l", ":8545", "listen address")
+	cmd.PersistentFlags().StringVar(
+		&nodeLaunchMode,
+		"node-launch-mode",
+		string(EnumNodeLaunchModeStandalone),
+		"How to launch the L1 node: 'standalone' (start container) or 'docker-compose' (wait for external service)",
+	)
 
 	err := cmd.Execute()
 	log.Check(err)
@@ -114,7 +126,12 @@ func createAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
 }
 
 func start(cmd *cobra.Command, args []string) {
-	cancel := l1starter.TestLocal()
+	var cancel func()
+	if nodeLaunchMode == string(EnumNodeLaunchModeStandalone) {
+		cancel = l1starter.TestLocal()
+	} else if nodeLaunchMode == string(EnumNodeLaunchModeDockerCompose) {
+		cancel = l1starter.TestLocalExternal()
+	}
 	defer cancel()
 
 	ctx, chain := initSolo()
