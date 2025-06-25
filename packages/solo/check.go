@@ -52,7 +52,11 @@ func (ch *Chain) CheckChain() {
 // CheckAccountLedger checks the integrity of the on-chain ledger.
 // Sum of all accounts must be equal to total ftokens
 func (ch *Chain) CheckAccountLedger() {
+	_, l1Bals := ch.GetLatestAnchorWithBalances()
+
 	total := ch.L2TotalAssets()
+	require.True(ch.Env.T, l1Bals.Equals(total), "L1 AssetsBag and L2 totals should be equal: %s %s", l1Bals, total)
+
 	accs := ch.L2Accounts()
 	sum := isc.NewEmptyAssets()
 	for i := range accs {
