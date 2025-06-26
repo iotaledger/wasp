@@ -23,6 +23,7 @@ var Processor = Contract.Processor(nil,
 	FuncWithdraw.WithHandler(withdraw),
 	SetCoinMetadata.WithHandler(setCoinMetadata),
 	DeleteCoinMetadata.WithHandler(deleteCoinMetadata),
+	AdjustCommonAccountBaseTokens.WithHandler(adjustCommonAccountBaseTokens),
 
 	// views
 	ViewAccountObjects.WithHandler(viewAccountObjects),
@@ -112,4 +113,15 @@ func setCoinMetadata(ctx isc.Sandbox, coinInfo *parameters.IotaCoinInfo) {
 func deleteCoinMetadata(ctx isc.Sandbox, coinType coin.Type) {
 	ctx.RequireCallerIsChainAdmin()
 	NewStateWriterFromSandbox(ctx).DeleteCoinInfo(coinType)
+}
+
+func adjustCommonAccountBaseTokens(ctx isc.Sandbox, credit, debit coin.Value) {
+	ctx.RequireCallerIsChainAdmin()
+	state := NewStateWriterFromSandbox(ctx)
+	if credit != 0 {
+		state.CreditToAccount(CommonAccount(), isc.NewCoinBalances().AddBaseTokens(credit))
+	}
+	if debit != 0 {
+		state.DebitFromAccount(CommonAccount(), isc.NewCoinBalances().AddBaseTokens(debit))
+	}
 }
