@@ -15,7 +15,6 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/setup"
-	"github.com/iotaledger/wasp/tools/wasp-cli/completion"
 	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
 	"github.com/iotaledger/wasp/tools/wasp-cli/disrec"
 	"github.com/iotaledger/wasp/tools/wasp-cli/inspection"
@@ -76,7 +75,10 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", true, "skip-version-check")
 
 	log.Init(rootCmd)
-	rootCmd.AddCommand(completion.InitCompletionCommand(rootCmd.Root().Name()))
+	rootCmd.AddCommand(&cobra.Command{
+		Use:        "gen_completion",
+		Deprecated: "use 'completion' instead",
+	})
 	setup.Init(rootCmd)
 	authentication.Init(rootCmd)
 	waspcmd.Init(rootCmd)
