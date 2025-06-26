@@ -1,6 +1,6 @@
 // Package setup provides initialization and setup functionality for the wasp-cli tool,
 // including version checking and environment preparation.
-package setup
+package waspcmd
 
 import (
 	"context"

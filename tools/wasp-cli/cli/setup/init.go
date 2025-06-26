@@ -18,7 +18,10 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.PersistentFlags().StringVarP(&config.ConfigPath, "config", "c", "", "path to wasp-cli.json")
 	rootCmd.PersistentFlags().StringVarP(&config.WaitForCompletion, "wait", "w", config.DefaultWaitForCompletion, "wait time for request completion, should not be less than 1 sec")
 
-	rootCmd.AddCommand(initCheckVersionsCmd())
+	rootCmd.AddCommand(&cobra.Command{
+		Use:        "check-versions",
+		Deprecated: "use 'wasp check-versions' instead",
+	})
 	rootCmd.AddCommand(initConfigSetCmd())
 	rootCmd.AddCommand(initRefreshL1ParamsCmd())
 }
