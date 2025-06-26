@@ -211,9 +211,9 @@ func (c *Controller) getIsRequestProcessed(e echo.Context) error {
 }
 
 func eventsResponse(e echo.Context, events []*isc.Event) error {
-	eventsJSON := make([]*isc.EventJSON, len(events))
+	eventsJSON := make([]*models.EventJSON, len(events))
 	for i, ev := range events {
-		eventsJSON[i] = ev.ToJSONStruct()
+		eventsJSON[i] = models.ToJSONStruct(ev)
 	}
 	return e.JSON(http.StatusOK, models.EventsResponse{
 		Events: eventsJSON,

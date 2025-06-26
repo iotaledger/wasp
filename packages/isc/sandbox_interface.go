@@ -153,28 +153,6 @@ type Privileged interface {
 
 type CallArguments [][]byte
 
-type CallArgumentsJSON []string
-
-func (c CallArgumentsJSON) ToCallArguments() (CallArguments, error) {
-	callArguments := make(CallArguments, len(c))
-	var err error
-	for i, v := range c {
-		callArguments[i], err = hexutil.Decode(v)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return callArguments, nil
-}
-
-func (c CallArguments) ToCallArgumentsJSON() CallArgumentsJSON {
-	callArgumentsJSON := make(CallArgumentsJSON, len(c))
-	for i, v := range c {
-		callArgumentsJSON[i] = hexutil.Encode(v)
-	}
-	return callArgumentsJSON
-}
-
 func NewCallArguments(args ...[]byte) CallArguments {
 	callArguments := make(CallArguments, len(args))
 	for i, v := range args {

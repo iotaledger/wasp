@@ -5,11 +5,8 @@ package mempool
 
 import (
 	"fmt"
-	"io"
 	"slices"
 	"time"
-
-	"fortio.org/safecast"
 
 	"github.com/samber/lo"
 
@@ -18,7 +15,6 @@ import (
 
 	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
 )
 
 type RequestPool[V isc.Request] interface {
@@ -30,7 +26,6 @@ type RequestPool[V isc.Request] interface {
 	Cleanup(predicate func(request V, ts time.Time) bool)
 	Iterate(f func(e *typedPoolEntry[V]) bool)
 	StatusString() string
-	WriteContent(io.Writer)
 	ShouldRefreshRequests() bool
 }
 
@@ -222,23 +217,4 @@ func (olp *typedPool[V]) Iterate(f func(e *typedPoolEntry[V]) bool) {
 
 func (olp *typedPool[V]) StatusString() string {
 	return fmt.Sprintf("{|req|=%d}", olp.requests.Size())
-}
-
-func (olp *typedPool[V]) WriteContent(w io.Writer) {
-	olp.requests.ForEach(func(_ isc.RequestRefKey, entry *typedPoolEntry[V]) bool {
-		jsonData, err := isc.RequestToJSON(entry.req)
-		if err != nil {
-			return false // stop iteration
-		}
-		val, err := safecast.Convert[uint32](len(jsonData))
-		if err != nil {
-			return false
-		}
-		_, err = w.Write(codec.Encode[uint32](val))
-		if err != nil {
-			return false // stop iteration
-		}
-		_, err = w.Write(jsonData)
-		return err == nil
-	})
 }

@@ -51,10 +51,12 @@ func TestOffledgerMempoolAccountNonce(t *testing.T) {
 	require.Len(t, reqsInPoolForAccount, 4)
 
 	// try to remove everything during iteration
-	pool.Iterate(func(account string, entries []*OrderedPoolEntry) {
+	pool.Iterate(func(account string, entries []*OrderedPoolEntry) bool {
 		for _, e := range entries {
 			pool.Remove(e.req)
 		}
+
+		return true
 	})
 	require.EqualValues(t, 0, pool.refLUT.Size())
 	require.EqualValues(t, 0, pool.reqsByAcountOrdered.Size())
