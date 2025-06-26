@@ -39,6 +39,7 @@ func deprecated(cmd, msg string) *cobra.Command {
 		Deprecated: msg,
 	}
 }
+
 func initWalletCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "wallet <command>",

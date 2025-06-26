@@ -15,7 +15,7 @@ import (
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/tools/wasp-cli/cli/setup"
-	"github.com/iotaledger/wasp/tools/wasp-cli/decode"
+	"github.com/iotaledger/wasp/tools/wasp-cli/codec"
 	"github.com/iotaledger/wasp/tools/wasp-cli/disrec"
 	"github.com/iotaledger/wasp/tools/wasp-cli/inspection"
 	"github.com/iotaledger/wasp/tools/wasp-cli/log"
@@ -84,7 +84,7 @@ func init() {
 	waspcmd.Init(rootCmd)
 	wallet.Init(rootCmd)
 	chain.Init(rootCmd)
-	decode.Init(rootCmd)
+	codec.Init(rootCmd)
 	peering.Init(rootCmd)
 	metrics.Init(rootCmd)
 	disrec.Init(rootCmd)
