@@ -39,10 +39,10 @@ func Init(rootCmd *cobra.Command) {
 
 	rootCmd.AddCommand(deprecated("decode", "use codec decode call-result"))
 	rootCmd.AddCommand(deprecated("decode-metadata", "use codec decode metadata"))
-	rootCmd.AddCommand(deprecated("decode-feepolicy", "use codec decode feepolicy"))
+	rootCmd.AddCommand(deprecated("decode-feepolicy", "use codec decode fee-policy"))
 	rootCmd.AddCommand(deprecated("decode-wal", "use codec decode wal"))
 
-	rootCmd.AddCommand(deprecated("encode-feepolicy", "use codec encode feepolicy"))
+	rootCmd.AddCommand(deprecated("encode-feepolicy", "use codec encode fee-policy"))
 }
 
 func deprecated(cmd, msg string) *cobra.Command {
@@ -160,7 +160,7 @@ func initDecodeMetadataCmd() *cobra.Command {
 
 func initDecodeGasFeePolicy() *cobra.Command {
 	return &cobra.Command{
-		Use:   "feepolicy <0x...>",
+		Use:   "fee-policy <0x...>",
 		Short: "Translates gas fee policy from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -179,7 +179,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "feepolicy",
+		Use:   "fee-policy",
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
