@@ -51,13 +51,13 @@ func TestZeroGasFee(t *testing.T) {
 	committee, quorum := w.ArgCommitteeConfig(0)
 
 	// test chain deploy command
-	w.MustRun("request-funds")
-	w.MustRun("request-funds", "--address-index=1")
+	w.MustRun("wallet", "request-funds")
+	w.MustRun("wallet", "request-funds", "--address-index=1")
 	w.MustRun("chain", "deploy", "--chain="+chainName, committee, quorum, "--block-keep-amount=123", "--node=0")
 	w.ActivateChainOnAllNodes(chainName, 0)
 
-	w.MustRun("address")
-	alternativeAddress := getAddress(w.MustRun("address"))
+	w.MustRun("wallet", "address")
+	alternativeAddress := getAddress(w.MustRun("wallet", "address"))
 	w.MustRun("chain", "deposit", alternativeAddress, "base|2000000", "--node=0")
 	w.MustRun("chain", "balance", alternativeAddress, "--node=0")
 	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
@@ -75,9 +75,9 @@ func TestZeroGasFee(t *testing.T) {
 	})
 
 	t.Run("deposit directly to EVM", func(t *testing.T) {
-		alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
-		w.MustRun("send-funds", "-s", alternativeAddress, "base|1000000")
-		outs := w.MustRun("balance", "--address-index=1")
+		alternativeAddress := getAddress(w.MustRun("wallet", "address", "--address-index=1"))
+		w.MustRun("wallet", "send-funds", "-s", alternativeAddress, "base|1000000")
+		outs := w.MustRun("wallet", "balance", "--address-index=1")
 		_, eth := newEthereumAccount()
 		w.MustRun("chain", "deposit", eth.String(), "base|1000000", "--node=0", "--address-index=1")
 		outs = w.MustRun("chain", "balance", eth.String(), "--node=0")
@@ -118,11 +118,11 @@ func getAddress(out []string) string {
 func TestWaspCLISendFunds(t *testing.T) {
 	w := newWaspCLITest(t)
 
-	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
+	alternativeAddress := getAddress(w.MustRun("wallet", "address", "--address-index=1"))
 
-	w.MustRun("request-funds")
-	w.MustRun("send-funds", alternativeAddress, "base|1000")
-	outs := w.MustRun("balance", "--address-index=1")
+	w.MustRun("wallet", "request-funds")
+	w.MustRun("wallet", "send-funds", alternativeAddress, "base|1000")
+	outs := w.MustRun("wallet", "balance", "--address-index=1")
 	checkL1Balance(t, outs, 1000)
 }
 
@@ -131,18 +131,18 @@ func TestWaspCLIDeposit(t *testing.T) {
 	w := newWaspCLITest(t)
 
 	committee, quorum := w.ArgCommitteeConfig(0)
-	w.MustRun("request-funds")
-	w.MustRun("request-funds", "--address-index=1")
-	outs := w.MustRun("balance")
+	w.MustRun("wallet", "request-funds")
+	w.MustRun("wallet", "request-funds", "--address-index=1")
+	outs := w.MustRun("wallet", "balance")
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
 	// fund an alternative address to deposit from (so we can test the fees,
 	// since --address-index=0 is the chain admin / default payoutAddress)
-	alternativeAddress := getAddress(w.MustRun("address", "--address-index=1"))
-	w.MustRun("send-funds", "-s", alternativeAddress, "base|10000000", "--address-index=1")
+	alternativeAddress := getAddress(w.MustRun("wallet", "address", "--address-index=1"))
+	w.MustRun("wallet", "send-funds", "-s", alternativeAddress, "base|10000000", "--address-index=1")
 
-	outs = w.MustRun("balance")
+	outs = w.MustRun("wallet", "balance")
 	minFee := gas.DefaultFeePolicy().MinFee(nil, parameters.BaseTokenDecimals)
 
 	outs, err := w.Run("chain", "info", "--node=0", "--node=0")
@@ -272,7 +272,7 @@ func TestWaspCLIBlockLog(t *testing.T) {
 	w.MustRun("chain", "deploy", "--chain=chain1", committee, quorum, "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
 
-	w.MustRun("request-funds")
+	w.MustRun("wallet", "request-funds")
 	out := w.MustRun("chain", "deposit", "base|100", "--node=0")
 	reqID := findRequestIDInOutput(out)
 	require.NotEmpty(t, reqID)

@@ -9,7 +9,7 @@ import (
 
 func initWalletProviderCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "wallet-provider (keychain, ledger)",
+		Use:   "provider (keychain, ledger)",
 		Short: "Get or set wallet provider (keychain, ledger)",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
