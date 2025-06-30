@@ -46,8 +46,8 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		Cluster: clu,
 		dir:     dir,
 	}
-	w.MustRun("wallet-provider", "unsafe_inmemory_testing_seed")
-	w.MustRun("init")
+	w.MustRun("wallet", "provider", "unsafe_inmemory_testing_seed")
+	w.MustRun("wallet", "init")
 
 	// FIXME make them into parameters
 	w.MustRun("set", "l1.apiAddress", clu.Config.L1APIAddress())
@@ -57,7 +57,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}
 
-	requestFundstext := w.MustRun("request-funds")
+	requestFundstext := w.MustRun("wallet", "request-funds")
 	// regex example: Request funds for address atoi1qqqrqtn44e0563utwau9aaygt824qznjkhvr6836eratglg3cp2n6ydplqx: success
 	expectedRegexp := regexp.MustCompile(`(?i:Request funds for address)\s*(0x[a-fA-F0-9]{40}).*(?i:success)`)
 	rs := expectedRegexp.FindStringSubmatch(requestFundstext[len(requestFundstext)-1])
@@ -184,7 +184,7 @@ func (w *WaspCLITest) ArgCommitteeConfig(initiatorIndex int) (string, string) {
 }
 
 func (w *WaspCLITest) Address() iotago.Address {
-	out := w.MustRun("address")
+	out := w.MustRun("wallet", "address")
 	s := regexp.MustCompile(`(?m)Address:[[:space:]]+([[:alnum:]]+)$`).FindStringSubmatch(out[1])[1] //nolint:gocritic
 	addr, err := iotago.AddressFromHex(s)
 	require.NoError(w.T, err)
