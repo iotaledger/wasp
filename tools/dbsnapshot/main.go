@@ -41,32 +41,18 @@ func createDestinationDB(dbPath string) indexedstore.IndexedStore {
 }
 
 func copyState(source indexedstore.IndexedStore, destination indexedstore.IndexedStore, trieRoot trie.Hash) error {
-	//var buf bytes.Buffer
+	var buf bytes.Buffer
 
 	fmt.Println("	Taking Snapshot")
 
-	/*
-		if err := source.TakeSnapshot(trieRoot, &buf); err != nil {
-			return err
-		}
+	if err := source.TakeSnapshot(trieRoot, &buf); err != nil {
+		return err
+	}
 
-		fmt.Println("	Copying Snapshot")
+	fmt.Println("	Copying Snapshot")
 
-		if err := destination.RestoreSnapshot(trieRoot, &buf); err != nil {
-			return err
-		}*/
-
-	sourceBlock, _ := source.BlockByTrieRoot(trieRoot)
-	sourceState, _ := source.StateByTrieRoot(trieRoot)
-	destDraft, _ := destination.NewStateDraft(sourceState.Timestamp(), sourceBlock.PreviousL1Commitment())
-
-	sourceState.IterateSorted("", func(key kv.Key, value []byte) bool {
-		destDraft.Set(key, value)
-		return true
-	})
-
-	for k, _ := range sourceBlock.Mutations().Dels {
-		destDraft.Del(k)
+	if err := destination.RestoreSnapshot(trieRoot, &buf); err != nil {
+		return err
 	}
 
 	destination.SetLatest(trieRoot)
