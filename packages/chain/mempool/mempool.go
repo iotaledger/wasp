@@ -112,6 +112,10 @@ type Mempool interface {
 	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
 
+	// Invoked to inform mempool which consensus instances can be abandoned,
+	// e.g. drop outdated requests that were proposed to outdated consensus instances only.
+	ActiveConsensusIDs(consensusIDs []consGR.ConsensusID)
+
 	GetContents() io.Reader
 }
 
@@ -145,9 +149,10 @@ type mempoolImpl struct {
 	accessNodesUpdatedPipe         pipe.Pipe[*reqAccessNodesUpdated]
 	accessNodes                    []*cryptolib.PublicKey
 	committeeNodes                 []*cryptolib.PublicKey
-	consensusInstances             []consGR.ConsensusID // TODO: Not used?
+	consensusInstances             []consGR.ConsensusID
 	waitReq                        WaitReq
 	waitChainHead                  []*reqConsensusProposal
+	reqConsensusIDsPipe            pipe.Pipe[[]consGR.ConsensusID]
 	reqConsensusProposalPipe       pipe.Pipe[*reqConsensusProposal]
 	reqConsensusRequestsPipe       pipe.Pipe[*reqConsensusRequests]
 	reqReceiveOnLedgerRequestPipe  pipe.Pipe[isc.OnLedgerRequest]
@@ -238,6 +243,7 @@ func New(
 		committeeNodes:                 []*cryptolib.PublicKey{},
 		waitReq:                        waitReq,
 		waitChainHead:                  []*reqConsensusProposal{},
+		reqConsensusIDsPipe:            pipe.NewInfinitePipe[[]consGR.ConsensusID](),
 		reqConsensusProposalPipe:       pipe.NewInfinitePipe[*reqConsensusProposal](),
 		reqConsensusRequestsPipe:       pipe.NewInfinitePipe[*reqConsensusRequests](),
 		reqReceiveOnLedgerRequestPipe:  pipe.NewInfinitePipe[isc.OnLedgerRequest](),
@@ -259,6 +265,7 @@ func New(
 
 	pipeMetrics.TrackPipeLen("mp-serverNodesUpdatedPipe", mpi.serverNodesUpdatedPipe.Len)
 	pipeMetrics.TrackPipeLen("mp-accessNodesUpdatedPipe", mpi.accessNodesUpdatedPipe.Len)
+	pipeMetrics.TrackPipeLen("mp-reqConsensusIDsPipe", mpi.reqConsensusIDsPipe.Len)
 	pipeMetrics.TrackPipeLen("mp-reqConsensusProposalPipe", mpi.reqConsensusProposalPipe.Len)
 	pipeMetrics.TrackPipeLen("mp-reqConsensusRequestsPipe", mpi.reqConsensusRequestsPipe.Len)
 	pipeMetrics.TrackPipeLen("mp-reqReceiveOnLedgerRequestPipe", mpi.reqReceiveOnLedgerRequestPipe.Len)
@@ -285,6 +292,10 @@ func New(
 	})
 	go mpi.run(ctx, unhook)
 	return mpi
+}
+
+func (mpi *mempoolImpl) ActiveConsensusIDs(consensusIDs []consGR.ConsensusID) {
+	mpi.reqConsensusIDsPipe.In() <- consensusIDs
 }
 
 func (mpi *mempoolImpl) TangleTimeUpdated(tangleTime time.Time) {
@@ -361,6 +372,7 @@ func (mpi *mempoolImpl) GetContents() io.Reader {
 func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) { //nolint:gocyclo
 	serverNodesUpdatedPipeOutCh := mpi.serverNodesUpdatedPipe.Out()
 	accessNodesUpdatedPipeOutCh := mpi.accessNodesUpdatedPipe.Out()
+	reqConsensusIDsPipeOutCh := mpi.reqConsensusIDsPipe.Out()
 	reqConsensusProposalPipeOutCh := mpi.reqConsensusProposalPipe.Out()
 	reqConsensusRequestsPipeOutCh := mpi.reqConsensusRequestsPipe.Out()
 	reqReceiveOnLedgerRequestPipeOutCh := mpi.reqReceiveOnLedgerRequestPipe.Out()
@@ -386,6 +398,12 @@ func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc)
 				break
 			}
 			mpi.handleAccessNodesUpdated(recv)
+		case recv, ok := <-reqConsensusIDsPipeOutCh:
+			if !ok {
+				reqConsensusIDsPipeOutCh = nil
+				break
+			}
+			mpi.consensusInstances = recv
 		case recv, ok := <-reqConsensusProposalPipeOutCh:
 			if !ok {
 				reqConsensusProposalPipeOutCh = nil

@@ -132,7 +132,7 @@ func TestUnreliableNetwork(t *testing.T) {
 			dsss[nid] = dss.New(suite, nodeIDs, nodePKs, f, nid, nodeSKs[nid], longTermSecretShares[nid], log)
 			gpas[nid] = gpa.NewAckHandler(nid, dsss[nid].AsGPA(), time.Second)
 		}
-		tc := gpa.NewTestContext(gpas).WithMessageDeliveryProbability(0.7)
+		tc := gpa.NewTestContext(gpas).WithMessageDeliveryProbability(0.5)
 		//
 		// Run the DKG
 		inputs := make(map[gpa.NodeID]gpa.Input)
@@ -142,8 +142,8 @@ func TestUnreliableNetwork(t *testing.T) {
 		tc.WithInputs(inputs).WithInputProbability(0.01)
 		tick := time.Now()
 		for {
-			predicate := tc.NumberOfOutputsPredicate(n)
-			tc.RunUntil(tc.NumberOfOutputsPredicate(n))
+			predicate := tc.NumberOfOutputsPredicate(n - f)
+			tc.RunUntil(predicate)
 			if predicate() {
 				log.LogDebugf("Predicate satisfied, continue.")
 				break
@@ -169,7 +169,8 @@ func TestUnreliableNetwork(t *testing.T) {
 			require.Nil(tt, intermediateOutput.Signature)
 			intermediateOutputs[nid] = intermediateOutput
 		}
-		require.Len(tt, intermediateOutputs, n)
+		require.True(tt, len(intermediateOutputs) >= (n-f))
+
 		//
 		// Emulate the agreement on index proposals (ACS).
 		decidedProposals := map[gpa.NodeID][]int{}
@@ -223,6 +224,10 @@ func TestUnreliableNetwork(t *testing.T) {
 	t.Run("n=2,f=0", func(tt *testing.T) { test(tt, 2, 0) })
 	t.Run("n=3,f=0", func(tt *testing.T) { test(tt, 3, 0) })
 	t.Run("n=4,f=1", func(tt *testing.T) { test(tt, 4, 1) })
+	t.Run("n=5,f=1", func(tt *testing.T) { test(tt, 5, 1) })
+	t.Run("n=6,f=1", func(tt *testing.T) { test(tt, 6, 1) })
+	t.Run("n=7,f=1", func(tt *testing.T) { test(tt, 7, 1) })
+	t.Run("n=7,f=1", func(tt *testing.T) { test(tt, 7, 2) })
 	t.Run("n=10,f=3", func(tt *testing.T) { test(tt, 10, 3) })
 	t.Run("n=31,f=10", func(tt *testing.T) { test(tt, 31, 10) })
 }

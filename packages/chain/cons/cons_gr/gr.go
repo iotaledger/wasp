@@ -47,7 +47,7 @@ type ConsensusID [iotago.AddressLen + 4]byte
 func NewConsensusID(cmtAddr *cryptolib.Address, logIndex *cmt_log.LogIndex) ConsensusID {
 	ret := ConsensusID{}
 	copy(ret[:], cmtAddr.Bytes())
-	copy(ret[iotago.AddressLen:], codec.Encode[uint32](logIndex.AsUint32()))
+	copy(ret[iotago.AddressLen:], codec.Encode(logIndex.AsUint32()))
 	return ret
 }
 
