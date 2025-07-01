@@ -771,11 +771,13 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 	})
 	//
 	// Cleanup instances not needed anymore.
+	wasUpdated := false
 	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
 		cmtInsts.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
 			if ci.request != nil && !upd.Has(chainmanager.MakeConsensusKey(ci.request.CommitteeAddr, li)) {
 				ci.Cancel()
 				cmtInsts.Delete(li)
+				wasUpdated = true
 			}
 			return true
 		})
@@ -784,6 +786,21 @@ func (cni *chainNodeImpl) handleNeedConsensus(ctx context.Context, upd *chainman
 		}
 		return true
 	})
+	if wasUpdated {
+		cni.pushConsInstIdsToMempool()
+	}
+}
+
+func (cni *chainNodeImpl) pushConsInstIdsToMempool() {
+	var ids []consGR.ConsensusID = nil
+	cni.consensusInsts.ForEach(func(cmtAddr cryptolib.AddressKey, cmtInsts *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst]) bool {
+		cmtInsts.ForEach(func(li cmt_log.LogIndex, ci *consensusInst) bool {
+			ids = append(ids, consGR.NewConsensusID(cryptolib.NewAddressFromKey(cmtAddr), &li))
+			return true
+		})
+		return true
+	})
+	cni.mempool.ActiveConsensusIDs(ids)
 }
 
 func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainmanager.NeedPublishTXMap) {
@@ -871,9 +888,12 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 	logIndex := needConsensus.LogIndex
 	dkShare := needConsensus.DKShare
 
-	consensusInstances, _ := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst] {
+	consensusInstances, created := cni.consensusInsts.GetOrCreate(committeeAddr.Key(), func() *shrinkingmap.ShrinkingMap[cmt_log.LogIndex, *consensusInst] {
 		return shrinkingmap.New[cmt_log.LogIndex, *consensusInst]()
 	})
+	if created {
+		cni.pushConsInstIdsToMempool()
+	}
 
 	addLogIndex := logIndex
 	for range ConsensusInstsInAdvance {
