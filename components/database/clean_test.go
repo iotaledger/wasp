@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database"
+	"github.com/iotaledger/wasp/packages/kvstore"
 )
 
 func count(t *testing.T, store kvstore.KVStore) int {

@@ -15,8 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/contracts"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -30,6 +28,8 @@ import (
 	"github.com/iotaledger/wasp/packages/evm/evmlogger"
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/publisher"

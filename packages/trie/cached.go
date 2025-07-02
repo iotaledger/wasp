@@ -26,6 +26,12 @@ func (c *cachedKVReader) Get(key []byte) []byte {
 	return v
 }
 
+func (c *cachedKVReader) MultiGet(keys [][]byte) [][]byte {
+	// TODO: use cache
+	v := c.r.MultiGet(keys)
+	return v
+}
+
 func (c *cachedKVReader) Has(key []byte) bool {
 	return c.Get(key) != nil
 }

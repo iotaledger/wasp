@@ -12,9 +12,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/packages/kvstore"
 	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"

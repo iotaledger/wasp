@@ -15,8 +15,8 @@ import (
 	"fortio.org/safecast"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/rocksdb"
+	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/packages/kvstore/rocksdb"
 
 	"github.com/iotaledger/wasp/packages/database"
 	"github.com/iotaledger/wasp/packages/state"

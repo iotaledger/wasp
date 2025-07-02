@@ -10,10 +10,10 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/runtime/event"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/packages/kvstore"
 	"github.com/iotaledger/wasp/packages/onchangemap"
 	"github.com/iotaledger/wasp/packages/peering"
 	"github.com/iotaledger/wasp/packages/util"

@@ -12,8 +12,8 @@ import (
 
 	lru "github.com/hashicorp/golang-lru/v2"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kvstore"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/trie"
 )

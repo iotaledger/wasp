@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/chaindb"
+	"github.com/iotaledger/wasp/packages/kvstore"
 )
 
 var AllowedEngines = []hivedb.Engine{

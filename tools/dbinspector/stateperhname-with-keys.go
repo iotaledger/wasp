@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/kvstore"
 
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/kv"
