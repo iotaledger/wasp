@@ -36,7 +36,7 @@ func NewIndex(
 	indexDBEngine hivedb.Engine,
 	indexDBPath string,
 ) *Index {
-	db, err := database.NewDatabase(indexDBEngine, indexDBPath, true, false, database.CacheSizeDefault)
+	db, err := database.NewDatabase(indexDBEngine, indexDBPath, true, database.CacheSizeDefault)
 	if err != nil {
 		panic(err)
 	}

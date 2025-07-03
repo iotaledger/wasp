@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/packages/kvstore/flushkv"
 	"github.com/iotaledger/wasp/packages/kvstore/rocksdb"
 )
 
@@ -26,17 +25,13 @@ func NewRocksDB(path string, cacheSize uint64) (*rocksdb.RocksDB, error) {
 	return rocksdb.CreateDB(path, opts...)
 }
 
-func newDatabaseRocksDB(path string, autoFlush bool, cacheSize uint64) (*Database, error) {
+func newDatabaseRocksDB(path string, cacheSize uint64) (*Database, error) {
 	rocksDatabase, err := NewRocksDB(path, cacheSize)
 	if err != nil {
 		return nil, fmt.Errorf("rocksdb database initialization failed: %w", err)
 	}
 
 	store := rocksdb.New(rocksDatabase)
-	if autoFlush {
-		store = flushkv.New(store)
-	}
-
 	return New(
 		path,
 		store,

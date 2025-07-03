@@ -102,7 +102,6 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 	databaseChainState, err := newDatabaseWithHealthTracker(
 		path.Join(m.databasePath, chainID.String()),
 		m.engine,
-		false,
 		m.cacheSize,
 		StoreVersionChainState,
 		nil,
