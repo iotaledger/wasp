@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
@@ -369,6 +370,115 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 	}
 }
 
+func (env *Solo) deployChainWithGenesis(
+	chainAdmin *cryptolib.KeyPair,
+	initCommonAccountBaseTokens coin.Value,
+	name string,
+	evmChainID uint16,
+	blockKeepAmount int32,
+	genesis *core.Genesis,
+) chainData {
+	env.logger.LogDebugf("deploying new chain '%s'", name)
+
+	if chainAdmin == nil {
+		chainAdmin = env.NewKeyPairFromIndex(-1000 + len(env.chains)) // making new originator for each new chain
+		env.GetFundsFromFaucet(chainAdmin.Address())
+	}
+
+	anchorOwner := env.NewKeyPairFromIndex(-2000 + len(env.chains))
+	env.GetFundsFromFaucet(anchorOwner.Address())
+
+	initParams := origin.NewInitParams(
+		isc.NewAddressAgentID(chainAdmin.Address()),
+		evmChainID,
+		blockKeepAmount,
+		true,
+	)
+
+	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
+	db := mapdb.NewMapDB()
+	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+
+	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
+	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
+	env.logger.LogInfof("GAS COIN BEFORE PULL: %v\n", gasCoinRef)
+
+	var block state.Block
+	var stateMetadata *transaction.StateMetadata
+
+	block, stateMetadata = origin.InitChainWithGenesis(
+		schemaVersion,
+		store,
+		initParams.Encode(),
+		*gasCoinRef.ObjectID,
+		initCommonAccountBaseTokens,
+		env.L1Params(),
+		genesis,
+	)
+
+	var initCoin *iotago.ObjectRef
+
+	if initCommonAccountBaseTokens > 0 {
+		initCoin = env.makeBaseTokenCoin(
+			anchorOwner,
+			initCommonAccountBaseTokens,
+			func(c *iotajsonrpc.Coin) bool {
+				return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID)
+			},
+		)
+	}
+
+	gasPayment, err := iotajsonrpc.PickupCoinsWithFilter(
+		env.L1BaseTokenCoins(anchorOwner.Address()),
+		uint64(iotaclient.DefaultGasBudget),
+		func(c *iotajsonrpc.Coin) bool {
+			return !c.CoinObjectID.Equals(*gasCoinRef.ObjectID) &&
+				(initCoin == nil || !c.CoinObjectID.Equals(*initCoin.ObjectID))
+		},
+	)
+	require.NoError(env.T, err)
+
+	var anchorRef *iscmove.AnchorWithRef
+	env.MustWithWaitForNextVersion(gasPayment.CoinRefs()[0], func() {
+		env.MustWithWaitForNextVersion(initCoin, func() {
+			anchorRef, err = env.ISCMoveClient().StartNewChain(
+				env.ctx,
+				&iscmoveclient.StartNewChainRequest{
+					Signer:        anchorOwner,
+					AnchorOwner:   anchorOwner.Address(),
+					PackageID:     env.ISCPackageID(),
+					StateMetadata: stateMetadata.Bytes(),
+					InitCoinRef:   initCoin,
+					GasPrice:      iotaclient.DefaultGasPrice,
+					GasBudget:     iotaclient.DefaultGasBudget,
+					GasPayments:   gasPayment.CoinRefs(),
+				},
+			)
+		})
+	})
+
+	require.NoError(env.T, err)
+	chainID := isc.ChainIDFromObjectID(anchorRef.Object.ID)
+
+	env.logger.LogInfof(
+		"deployed chain '%s' - ID: %s - anchor owner: %s - chain admin: %s - origin trie root: %s",
+		name,
+		chainID,
+		anchorOwner.Address(),
+		chainAdmin.Address(),
+		block.TrieRoot(),
+	)
+
+	return chainData{
+		Name:            name,
+		ChainID:         chainID,
+		AnchorOwner:     anchorOwner,
+		ChainAdmin:      chainAdmin,
+		db:              db,
+		migrationScheme: allmigrations.DefaultScheme,
+	}
+}
+
 // NewChainExt returns also origin and init transactions. Used for core testing
 //
 // If 'chainOriginator' is nil, new one is generated and utxodb.FundsFromFaucetAmount (many) base tokens are loaded from the UTXODB faucet.
@@ -396,6 +506,31 @@ func (env *Solo) NewChainExt(
 		name,
 		evmChainID,
 		blockKeepAmount,
+	)
+
+	env.chainsMutex.Lock()
+	defer env.chainsMutex.Unlock()
+	ch := env.addChain(chData)
+
+	ch.log.LogInfof("chain '%s' deployed. Chain ID: %s", ch.Name, ch.ChainID.String())
+	return ch, nil
+}
+
+func (env *Solo) NewChainExtWithGenesis(
+	chainOriginator *cryptolib.KeyPair,
+	initCommonAccountBaseTokens coin.Value,
+	name string,
+	evmChainID uint16,
+	blockKeepAmount int32,
+	genesis *core.Genesis,
+) (*Chain, *isc.StateAnchor) {
+	chData := env.deployChainWithGenesis(
+		chainOriginator,
+		initCommonAccountBaseTokens,
+		name,
+		evmChainID,
+		blockKeepAmount,
+		genesis,
 	)
 
 	env.chainsMutex.Lock()

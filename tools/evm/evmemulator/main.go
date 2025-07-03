@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 
@@ -60,6 +61,7 @@ func (*soloContext) Name() string {
 }
 
 var listenAddress string = ":8545"
+var genesisJsonPath string = ""
 var nodeLaunchMode string
 
 type NodeLaunchMode string
@@ -97,18 +99,24 @@ Note: chain data is stored in-memory and will be lost upon termination.
 		string(EnumNodeLaunchModeStandalone),
 		"How to launch the L1 node: 'standalone' (start container) or 'docker-compose' (wait for external service)",
 	)
+	cmd.PersistentFlags().StringVar(
+		&genesisJsonPath,
+		"genesis",
+		"",
+		"path to the genesis JSON file",
+	)
 
 	err := cmd.Execute()
 	log.Check(err)
 }
 
-func initSolo() (*soloContext, *solo.Chain) {
+func initSolo(genesis *core.Genesis) (*soloContext, *solo.Chain) {
 	ctx := &soloContext{}
 
 	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
 
 	chainAdmin, _ := env.NewKeyPairWithFunds()
-	chain, _ := env.NewChainExt(chainAdmin, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll)
+	chain, _ := env.NewChainExtWithGenesis(chainAdmin, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll, genesis)
 	return ctx, chain
 }
 
@@ -134,7 +142,11 @@ func start(cmd *cobra.Command, args []string) {
 	}
 	defer cancel()
 
-	ctx, chain := initSolo()
+	g, err := genesis.InitGenesis(genesisJsonPath)
+	if err != nil {
+		log.Fatalf("failed to initialize genesis: %v", err)
+	}
+	ctx, chain := initSolo(g)
 	defer ctx.cleanupAll()
 
 	accounts := createAccounts(chain)

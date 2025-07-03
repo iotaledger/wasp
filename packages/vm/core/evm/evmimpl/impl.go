@@ -75,6 +75,49 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	)
 }
 
+func SetInitialStateWithGenesis(evmPartition kv.KVStore, evmChainID uint16, genesis *core.Genesis) {
+	// Ethereum genesis block configuration
+	genesisAlloc := types.GenesisAlloc{}
+
+	// add the ISC magic contract at address 0x10740000...00
+	genesisAlloc[iscmagic.Address] = types.Account{
+		// Dummy code, because some contracts check the code size before calling
+		// the contract.
+		// The EVM code itself will never get executed; see type [magicContract].
+		Code:    common.Hex2Bytes("600180808053f3"),
+		Storage: map[common.Hash]common.Hash{},
+		Balance: nil,
+	}
+
+	for addr, acc := range genesisAlloc {
+		genesisAlloc[addr] = types.Account{
+			Code:    acc.Code,
+			Storage: acc.Storage,
+			Balance: acc.Balance,
+		}
+	}
+
+	gasLimits := gas.LimitsDefault
+	gasRatio := gas.DefaultFeePolicy().EVMGasRatio
+
+	evmGasLimit := emulator.GasLimits{
+		Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
+		Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
+	}
+	if genesis.GasLimit != 0 {
+		evmGasLimit.Block = genesis.GasLimit
+	}
+
+	// create the Ethereum genesis block
+	emulator.Init(
+		evm.EmulatorStateSubrealm(evmPartition),
+		evmChainID,
+		evmGasLimit,
+		genesis.Timestamp,
+		genesisAlloc,
+	)
+}
+
 var errChainIDMismatch = coreerrors.Register("chainId mismatch").Create()
 
 func applyTransaction(ctx isc.Sandbox, tx *types.Transaction) {

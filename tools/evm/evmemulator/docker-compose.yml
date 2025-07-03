@@ -4,7 +4,6 @@ services:
   iota-tools:
     image: iotaledger/iota-tools:devnet
     container_name: iota-tools
-    platform: linux/arm64
     command:
       [
         "iota",
@@ -20,14 +19,14 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-sf", "-H", "Content-Type: application/json", "-d", '{"jsonrpc":"2.0","id":1,"method":"iota_getLatestCheckpointSequenceNumber","params":[]}', "http://localhost:9000"]
-      interval: 5s
+      interval: 2s
       timeout: 3s
       retries: 10
       start_period: 10s
     tmpfs:
       - /tmp
     networks:
-      - appnet
+      - testnetwork
 
   evmemulator:
     build:
@@ -39,25 +38,16 @@ services:
     depends_on:
       iota-tools:
         condition: service_healthy
+    volumes:
+      - ./genesis.json:/etc/genesis.json:ro
     command:
       [
-        "--node-launch-mode=docker-compose"
+        "--node-launch-mode=docker-compose",
+        "--genesis=/etc/genesis.json"
       ]
     networks:
-      - appnet
-
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    ports:
-      - "80:80"  # Expose NGINX to the host on port 80
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - evmemulator
-    networks:
-      - appnet
+      - testnetwork
 
 networks:
-  appnet:
+  testnetwork:
     driver: bridge

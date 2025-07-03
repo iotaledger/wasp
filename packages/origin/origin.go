@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/core"
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/coin"
@@ -163,6 +164,70 @@ func InitChain(
 	if err != nil {
 		panic(err)
 	}
+	if err := store.SetLatest(block.TrieRoot()); err != nil {
+		panic(err)
+	}
+	return block, transaction.NewStateMetadata(
+		v,
+		block.L1Commitment(),
+		&gasCoinObjectID,
+		gas.DefaultFeePolicy(),
+		args,
+		originDeposit,
+		"",
+	)
+}
+
+func InitChainWithGenesis(
+	v isc.SchemaVersion,
+	store state.Store,
+	args isc.CallArguments,
+	gasCoinObjectID iotago.ObjectID,
+	originDeposit coin.Value,
+	l1Params *parameters.L1Params,
+	genesis *core.Genesis,
+) (state.Block, *transaction.StateMetadata) {
+	initParams, err := DecodeInitParams(args)
+	if err != nil {
+		panic(err)
+	}
+
+	d := store.NewOriginStateDraft()
+	d.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
+	d.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode(time.Unix(0, 0)))
+
+	contracts := []*coreutil.ContractInfo{
+		root.Contract,
+		accounts.Contract,
+		blocklog.Contract,
+		errors.Contract,
+		governance.Contract,
+		evm.Contract,
+	}
+	if initParams.DeployTestContracts {
+		contracts = append(contracts, inccounter.Contract)
+		contracts = append(contracts, manyevents.Contract)
+		contracts = append(contracts, testerrors.Contract)
+		contracts = append(contracts, sbtestsc.Contract)
+	}
+
+	var blockKeepAmount int32 = governance.DefaultBlockKeepAmount
+	if initParams.BlockKeepAmount != 0 {
+		blockKeepAmount = initParams.BlockKeepAmount
+	}
+
+	// init the state of each core contract
+	root.NewStateWriter(root.Contract.StateSubrealm(d)).SetInitialState(v, contracts)
+	accounts.NewStateWriter(v, accounts.Contract.StateSubrealm(d)).SetInitialState(originDeposit, l1Params.BaseToken)
+	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
+	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
+	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
+	evmimpl.SetInitialStateWithGenesis(evm.Contract.StateSubrealm(d), initParams.EVMChainID, genesis)
+	if initParams.DeployTestContracts {
+		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
+	}
+
+	block, _, _, err := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}
