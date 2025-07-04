@@ -40,7 +40,7 @@ func createDestinationDB(dbPath string) indexedstore.IndexedStore {
 	return rebasedDBStore
 }
 
-func copyState(source indexedstore.IndexedStore, destination indexedstore.IndexedStore, trieRoot trie.Hash) error {
+func copyAsSnapshot(source indexedstore.IndexedStore, destination indexedstore.IndexedStore, trieRoot trie.Hash) error {
 	var buf bytes.Buffer
 
 	fmt.Println("	Taking Snapshot")
@@ -55,15 +55,40 @@ func copyState(source indexedstore.IndexedStore, destination indexedstore.Indexe
 		return err
 	}
 
-	destination.SetLatest(trieRoot)
-
 	return nil
 }
 
-func copyBlockWithState(source indexedstore.IndexedStore, destination indexedstore.IndexedStore, blockIndex uint32, start time.Time) {
+func copyState(source indexedstore.IndexedStore, destination indexedstore.IndexedStore, trieRoot trie.Hash, previousL1Commitment *state.L1Commitment, validationMap map[kv.Key][]byte) (*state.L1Commitment, error) {
+	sourceState, _ := source.StateByTrieRoot(trieRoot)
+
+	stateDraft, err := destination.NewStateDraft(sourceState.Timestamp(), previousL1Commitment)
+	if err != nil {
+		return nil, err
+	}
+
+	sourceKeys := map[kv.Key]bool{}
+
+	sourceState.IterateKeys("", func(key kv.Key) bool {
+		sourceKeys[key] = true
+		return true
+	})
+	
+	sourceState.Iterate("", func(key kv.Key, value []byte) bool {
+		stateDraft.Set(key, value)
+		validationMap[key] = value
+		return true
+	})
+
+	newBlock := destination.Commit(stateDraft)
+	destination.SetLatest(trieRoot)
+
+	return newBlock.L1Commitment(), nil
+}
+
+func copyBlockWithState(source indexedstore.IndexedStore, destination indexedstore.IndexedStore, blockIndex uint32, start time.Time, previousL1Commitment *state.L1Commitment) *state.L1Commitment {
 	fmt.Printf("  Extracting Block %d\n", blockIndex)
 
-	checkValidity := false
+	checkValidity := true
 
 	sourceState, err := source.StateByIndex(blockIndex)
 	if err != nil {
@@ -73,14 +98,9 @@ func copyBlockWithState(source indexedstore.IndexedStore, destination indexedsto
 	srcMap := map[kv.Key][]byte{}
 	dstMap := map[kv.Key][]byte{}
 
-	if checkValidity {
-		sourceState.IterateSorted("", func(key kv.Key, value []byte) bool {
-			srcMap[key] = value
-			return true
-		})
-	}
+	var newBlock *state.L1Commitment
 
-	if err := copyState(source, destination, sourceState.TrieRoot()); err != nil {
+	if newBlock, err = copyState(source, destination, sourceState.TrieRoot(), previousL1Commitment, srcMap); err != nil {
 		panic(fmt.Errorf("failed to copy snapshot: %w", err))
 	}
 
@@ -97,10 +117,14 @@ func copyBlockWithState(source indexedstore.IndexedStore, destination indexedsto
 
 		if !compareMaps(srcMap, dstMap) {
 			panic(fmt.Errorf("snapshot failed for block: %d", blockIndex))
+		} else {
+			fmt.Printf("  Successfully copied block %d\n", blockIndex)
 		}
 	}
 
 	fmt.Printf("  Block %d extracted, runtime: %v\n\n", blockIndex, time.Since(start))
+
+	return newBlock
 }
 
 func compareMaps(map1, map2 map[kv.Key][]byte) bool {
@@ -140,10 +164,20 @@ func main() {
 
 	b, _ := sourceDB.LatestState()
 	fmt.Printf("%v", b)
-	copyBlockWithState(sourceDB, destinationDB, 0, start)
 
+	block0, err := sourceDB.BlockByIndex(0)
+	if err != nil {
+		panic(err)
+	}
+
+	err = copyAsSnapshot(sourceDB, destinationDB, block0.TrieRoot())
+	if err != nil {
+		panic(err)
+	}
+
+	l1Commitment := block0.L1Commitment()
 	for _, block := range blocks.Blocks {
-		copyBlockWithState(sourceDB, destinationDB, uint32(block), start)
+		l1Commitment = copyBlockWithState(sourceDB, destinationDB, uint32(block), start, l1Commitment)
 	}
 
 	fmt.Printf("Block extraction completed in %v\n", time.Since(start))
