@@ -254,6 +254,7 @@ func PTBReceiveRequestsAndTransition(
 	sentAssets []SentAssets,
 	stateMetadata []byte,
 	topUpAmount uint64,
+	incrementState bool,
 ) *iotago.ProgrammableTransactionBuilder {
 	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
@@ -388,12 +389,13 @@ func PTBReceiveRequestsAndTransition(
 			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
-				Function:      "transition",
+				Function:      "transition_v2",
 				TypeArguments: []iotago.TypeTag{},
 				Arguments: []iotago.Argument{
 					argAnchor,
 					ptb.MustPure(stateMetadata),
 					argReceipts,
+					ptb.MustPure(incrementState),
 				},
 			},
 		},

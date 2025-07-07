@@ -90,7 +90,12 @@ module isc::anchor {
         (Receipt { request_id }, assets)
     }
 
-    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
+    fun transition_internal(
+        self: &mut Anchor,
+        new_state_metadata: vector<u8>,
+        mut receipts: vector<Receipt>,
+        increment_state: bool
+    ) {
         let receipts_len = receipts.length();
         let mut i = 0;
         while (i < receipts_len) {
@@ -102,7 +107,17 @@ module isc::anchor {
         };
         receipts.destroy_empty();
         self.state_metadata = new_state_metadata;
-        self.state_index = self.state_index + 1;
+        if (increment_state) {
+            self.state_index = self.state_index + 1;
+        }
+    }
+
+    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
+        transition_internal(self, new_state_metadata, receipts, true)
+    }
+
+    public fun transition_v2(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>, increment_state: bool) {
+        transition_internal(self, new_state_metadata, receipts, increment_state)
     }
 
     // === Migration helpers === 

@@ -115,6 +115,9 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
+
+	incrementState := txb.rotateToAddr == nil // if we are rotating, we don't want to increment the state index
+
 	ptb := iscmoveclient.PTBReceiveRequestsAndTransition(
 		txb.ptb,
 		txb.iscPackage,
@@ -123,6 +126,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.sent,
 		stateMetadata,
 		topUpAmount,
+		incrementState,
 	)
 
 	if txb.rotateToAddr != nil {

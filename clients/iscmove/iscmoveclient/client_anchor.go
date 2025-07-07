@@ -134,6 +134,7 @@ func (c *Client) ReceiveRequestsAndTransition(
 		req.SentAssets,
 		req.StateMetadata,
 		req.TopUpAmount,
+		true,
 	)
 	return c.SignAndExecutePTB(
 		ctx,
