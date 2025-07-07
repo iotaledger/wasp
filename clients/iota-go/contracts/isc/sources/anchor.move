@@ -116,6 +116,8 @@ module isc::anchor {
         transition_internal(self, new_state_metadata, receipts, true)
     }
 
+    /// This function allows transition without modifying the state index (currently used for rotation purposes).
+    /// We add a new function instead of changing the original one to keep public method's signatures unchanged, as required by IOTA Managing Package Upgrades guide
     public fun transition_v2(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>, increment_state: bool) {
         transition_internal(self, new_state_metadata, receipts, increment_state)
     }
