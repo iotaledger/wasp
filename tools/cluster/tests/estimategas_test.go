@@ -107,11 +107,40 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 			iotajsonrpc.CoinType(testcoinType.String()),
 		)
 
-		// Deposit funds from L1 asset bag into L2 account
+		ptb = iscmoveclient.PTBOptionNoneIotaCoin(ptb)
+		argInitCoin := ptb.LastCommandResultArg()
+
+		// We start new chain only to get an some real object (in this case it's anchor),
+		// which we can place into asset bag. It could be any other object, but using anchor is just very simple.
+		assetObj := ptb.Command(
+			iotago.Command{
+				MoveCall: &iotago.ProgrammableMoveCall{
+					Package:       lo.ToPtr(l1starter.ISCPackageID()),
+					Module:        iscmove.AnchorModuleName,
+					Function:      "start_new_chain",
+					TypeArguments: []iotago.TypeTag{},
+					Arguments: []iotago.Argument{
+						ptb.MustPure([]byte(nil)),
+						argInitCoin,
+					},
+				},
+			},
+		)
+
+		// Place dummy object into the asset bag
+		ptb = iscmoveclient.PTBAssetsBagPlaceObject(
+			ptb,
+			l1starter.ISCPackageID(),
+			argAssetsBag,
+			assetObj,
+			lo.Must(iotago.ObjectTypeFromString(l1starter.ISCPackageID().String()+"::anchor::Anchor")),
+		)
+
 		allowanceVal := iotajsonrpc.CoinValue(1 * isc.Million)
 		allowance := iscmove.NewAssets(allowanceVal)
 		allowance.SetCoin(iotajsonrpc.MustCoinTypeFromString(testcoinType.String()), iotajsonrpc.CoinValue(10))
 
+		// Deposit funds from L1 asset bag into L2 account
 		ptb = iscmoveclient.PTBCreateAndSendRequest(
 			ptb,
 			l1starter.ISCPackageID(),
