@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/util/panicutil"
 	iscvm "github.com/iotaledger/wasp/v2/packages/vm"
@@ -66,6 +67,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
+		types.EmptyRootHash,
 		emulator.GasLimits{
 			Block: gas.EVMBlockGasLimit(gasLimits, &gasRatio),
 			Call:  gas.EVMCallGasLimit(gasLimits, &gasRatio),
@@ -75,7 +77,7 @@ func SetInitialState(evmPartition kv.KVStore, evmChainID uint16) {
 	)
 }
 
-func SetInitialStateWithGenesis(evmPartition kv.KVStore, evmChainID uint16, genesis *core.Genesis) {
+func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1Commitment, evmChainID uint16, genesis *core.Genesis) {
 	// Ethereum genesis block configuration
 	genesisAlloc := types.GenesisAlloc{}
 
@@ -89,7 +91,7 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, evmChainID uint16, gene
 		Balance: nil,
 	}
 
-	for addr, acc := range genesisAlloc {
+	for addr, acc := range genesis.Alloc {
 		genesisAlloc[addr] = types.Account{
 			Code:    acc.Code,
 			Storage: acc.Storage,
@@ -112,6 +114,7 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, evmChainID uint16, gene
 	emulator.Init(
 		evm.EmulatorStateSubrealm(evmPartition),
 		evmChainID,
+		types.EmptyRootHash,
 		evmGasLimit,
 		genesis.Timestamp,
 		genesisAlloc,

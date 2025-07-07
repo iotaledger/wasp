@@ -222,7 +222,7 @@ func InitChainWithGenesis(
 	blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(d)).SetInitialState(l1Params)
 	errors.NewStateWriter(errors.Contract.StateSubrealm(d)).SetInitialState()
 	governance.NewStateWriter(governance.Contract.StateSubrealm(d)).SetInitialState(initParams.ChainAdmin, blockKeepAmount)
-	evmimpl.SetInitialStateWithGenesis(evm.Contract.StateSubrealm(d), initParams.EVMChainID, genesis)
+	evmimpl.SetInitialStateWithGenesis(evm.Contract.StateSubrealm(d), d.BaseL1Commitment(), initParams.EVMChainID, genesis)
 	if initParams.DeployTestContracts {
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}

@@ -4,21 +4,18 @@
 package main
 
 import (
-	"crypto/ecdsa"
-	"encoding/hex"
-	"net/http"
 	"os"
+	"time"
 
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
-	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/chains"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/cli"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/genesis"
+	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/server"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
@@ -92,15 +89,15 @@ Note: chain data is stored in-memory and will be lost upon termination.
 	}
 
 	log.Init(cmd)
-	cmd.PersistentFlags().StringVarP(&listenAddress, "listen", "l", ":8545", "listen address")
+	cmd.PersistentFlags().StringVarP(&cli.ListenAddress, "listen", "l", ":8545", "listen address")
 	cmd.PersistentFlags().StringVar(
-		&nodeLaunchMode,
+		&cli.NodeLaunchMode,
 		"node-launch-mode",
-		string(EnumNodeLaunchModeStandalone),
+		string(cli.EnumNodeLaunchModeStandalone),
 		"How to launch the L1 node: 'standalone' (start container) or 'docker-compose' (wait for external service)",
 	)
 	cmd.PersistentFlags().StringVar(
-		&genesisJsonPath,
+		&cli.GenesisJsonPath,
 		"genesis",
 		"",
 		"path to the genesis JSON file",
@@ -110,46 +107,27 @@ Note: chain data is stored in-memory and will be lost upon termination.
 	log.Check(err)
 }
 
-func initSolo(genesis *core.Genesis) (*soloContext, *solo.Chain) {
-	ctx := &soloContext{}
-
-	env := solo.New(ctx, &solo.InitOptions{Debug: log.DebugFlag, PrintStackTrace: log.DebugFlag})
-
-	chainAdmin, _ := env.NewKeyPairWithFunds()
-	chain, _ := env.NewChainExtWithGenesis(chainAdmin, 1*isc.Million, "evmemulator", 1074, emulator.BlockKeepAll, genesis)
-	return ctx, chain
-}
-
-func createAccounts(chain *solo.Chain) (accounts []*ecdsa.PrivateKey) {
-	log.Printf("creating accounts with funds...\n")
-	header := []string{"private key", "address"}
-	var rows [][]string
-	for i := 0; i < len(solo.EthereumAccounts); i++ {
-		pk, addr := chain.EthereumAccountByIndexWithL2Funds(i)
-		accounts = append(accounts, pk)
-		rows = append(rows, []string{hex.EncodeToString(crypto.FromECDSA(pk)), addr.String()})
-	}
-	log.PrintTable(header, rows)
-	return accounts
-}
-
 func start(cmd *cobra.Command, args []string) {
 	var cancel func()
-	if nodeLaunchMode == string(EnumNodeLaunchModeStandalone) {
+	if cli.NodeLaunchMode == string(cli.EnumNodeLaunchModeStandalone) {
 		cancel = l1starter.TestLocal()
-	} else if nodeLaunchMode == string(EnumNodeLaunchModeDockerCompose) {
+	} else if cli.NodeLaunchMode == string(cli.EnumNodeLaunchModeDockerCompose) {
 		cancel = l1starter.TestLocalExternal()
 	}
 	defer cancel()
 
-	g, err := genesis.InitGenesis(genesisJsonPath)
+	g, err := genesis.InitGenesis(cli.GenesisJsonPath)
 	if err != nil {
 		log.Fatalf("failed to initialize genesis: %v", err)
 	}
-	ctx, chain := initSolo(g)
-	defer ctx.cleanupAll()
 
-	accounts := createAccounts(chain)
+	log.Printf("Initialize Solo Env\n")
+	initSoloTime := time.Now()
+	ctx, chain := chains.InitSolo(g)
+	defer ctx.CleanupAll()
+	log.Printf("Finish Initializing Solo Env: %s\n", time.Since(initSoloTime))
+
+	accounts := chains.CreateAccounts(chain)
 
 	jsonRPCServer, err := jsonrpc.NewServer(
 		chain.EVM(),
@@ -159,17 +137,14 @@ func start(cmd *cobra.Command, args []string) {
 	)
 	log.Check(err)
 
-	mux := http.NewServeMux()
-	mux.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		jsonRPCServer.WebsocketHandler([]string{"*"}).ServeHTTP(w, req)
-	}))
-	mux.Handle("/", jsonRPCServer)
-
-	s := &http.Server{
-		Addr:    listenAddress,
-		Handler: mux,
-	}
-	log.Printf("starting JSONRPC server on %s...\n", listenAddress)
-	err = s.ListenAndServe()
+	go func() {
+		log.Printf("starting JSONRPC server on %s...\n", cli.ListenAddress)
+		e := server.StartServer(jsonRPCServer, cli.ListenAddress)
+		err = e.ListenAndServe()
+		log.Check(err)
+	}()
+	log.Printf("starting JSONRPC server on %s...\n", ":8551")
+	e := server.StartEngineMockServer(":8551")
+	err = e.ListenAndServe()
 	log.Check(err)
 }

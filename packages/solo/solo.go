@@ -397,7 +397,7 @@ func (env *Solo) deployChainWithGenesis(
 
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	db := mapdb.NewMapDB()
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
 
 	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
 	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)

@@ -163,6 +163,28 @@ func (s *StateDB) IncNonce(addr common.Address) {
 	IncNonce(s.kv, addr)
 }
 
+// func SetBalance(kv kv.KVStore, addr common.Address, amount *big.Int, _ tracing.BalanceChangeReason) uint256.Int {
+// 	amountU256 := uint256.MustFromBig(amount)
+// 	if amount.Sign() < 0 {
+// 		amountU256 = uint256.MustFromBig(big.NewInt(0))
+// 	}
+
+// 	s.ctx.AddBaseTokensBalance(addr, amount.ToBig())
+// 	return *prev
+// }
+
+// func (s *StateDB) SetBalance(addr common.Address, amount *big.Int, _ tracing.BalanceChangeReason) uint256.Int {
+// 	prev := uint256.MustFromBig(s.ctx.GetBaseTokensBalance(addr))
+// 	if amount.Sign() == 0 {
+// 		return *prev
+// 	}
+// 	if amount.Sign() == -1 {
+// 		panic("unexpected negative amount")
+// 	}
+// 	s.ctx.AddBaseTokensBalance(addr, amount.ToBig())
+// 	return *prev
+// }
+
 func SetNonce(kv kv.KVStore, addr common.Address, n uint64) {
 	kv.Set(accountNonceKey(addr), codec.Encode(n))
 }

@@ -132,7 +132,8 @@ func (in *LocalIotaNode) connectService(ctx context.Context) {
 
 	ctxTimeout, cancel = context.WithTimeout(ctx, 4*time.Minute)
 	defer cancel()
-	in.config.Host = "http://iota-tools"
+	// in.config.Host = "http://iota-tools" // FIXME
+	in.config.Host = "http://localhost" // FIXME
 	in.config.Ports.RPC = 9000
 	in.config.Ports.Faucet = 9123
 

@@ -76,7 +76,7 @@ type CreateAndSendRequestWithAssetsRequest struct {
 	GasBudget        uint64
 }
 
-func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) (*iotajsonrpc.Coin, uint64, error) {
+func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateAndSendRequestWithAssetsRequest) ([]*iotajsonrpc.Coin, uint64, error) {
 	iotaBalance := req.Assets.BaseToken()
 
 	coinOptions, err := c.GetCoinObjsForTargetAmount(ctx, req.Signer.Address().AsIotaAddress(), iotaBalance.Uint64(), iotaclient.DefaultGasBudget)
@@ -84,7 +84,7 @@ func (c *Client) selectProperGasCoinAndBalance(ctx context.Context, req *CreateA
 		return nil, 0, err
 	}
 
-	coin, err := coinOptions.PickCoinNoLess(iotaBalance.Uint64())
+	coin, err := coinOptions.PickMultipleCoinsNoLess(iotaBalance.Uint64())
 	if err != nil {
 		return nil, 0, err
 	}
@@ -135,7 +135,7 @@ func (c *Client) CreateAndSendRequestWithAssets(
 	argAssetsBag := ptb.LastCommandResultArg()
 
 	// Select IOTA coin first
-	gasCoin, balance, err := c.selectProperGasCoinAndBalance(ctx, req)
+	gasCoins, balance, err := c.selectProperGasCoinAndBalance(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find an IOTA coin with proper balance ref: %w", err)
 	}
@@ -188,11 +188,15 @@ func (c *Client) CreateAndSendRequestWithAssets(
 		req.AllowanceBCS,
 		req.OnchainGasBudget,
 	)
+	var gasCoinRefs []*iotago.ObjectRef
+	for _, gasCoin := range gasCoins {
+		gasCoinRefs = append(gasCoinRefs, gasCoin.Ref())
+	}
 	return c.SignAndExecutePTB(
 		ctx,
 		req.Signer,
 		ptb.Finish(),
-		[]*iotago.ObjectRef{gasCoin.Ref()},
+		gasCoinRefs,
 		req.GasPrice,
 		req.GasBudget,
 	)

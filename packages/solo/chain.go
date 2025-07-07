@@ -296,6 +296,11 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 	} else {
 		amount = ch.Env.L1BaseTokens(walletAddr) / 10
 	}
+
+	iterTimes := amount / 5000000000000
+	for i := 0; i < int(iterTimes)+2; i++ {
+		ch.Env.GetFundsFromFaucet(walletAddr)
+	}
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
 		agentID,
