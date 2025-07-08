@@ -27,7 +27,9 @@ import (
 	"github.com/iotaledger/wasp/packages/coin"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/state"
 	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/packages/transaction"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/gas"
@@ -120,7 +122,11 @@ func (e *ChainEnv) testEstimateGasOnLedger(t *testing.T) {
 					Function:      "start_new_chain",
 					TypeArguments: []iotago.TypeTag{},
 					Arguments: []iotago.Argument{
-						ptb.MustPure([]byte(nil)),
+						ptb.MustPure(bcs.MustMarshal(&transaction.StateMetadata{
+							L1Commitment:    &state.L1Commitment{},
+							GasCoinObjectID: &iotago.ObjectID{},
+							GasFeePolicy:    gas.DefaultFeePolicy(),
+						})),
 						argInitCoin,
 					},
 				},

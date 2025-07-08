@@ -9,6 +9,7 @@ import (
 	"github.com/tidwall/gjson"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/packages/coin"
@@ -99,19 +100,10 @@ func DecodeAsset(assets *Assets, cmd iotago.ProgrammableMoveCall, inputs []iotaj
 		return fmt.Errorf("can't decode typeTag in place_asset command: %v", err)
 	}
 
-	var objectIDHex string
-	err = json.Unmarshal(inputs[*cmd.Arguments[1].Result].Value, &objectIDHex)
-	if err != nil {
-		return fmt.Errorf("can't decode objectID in place_asset command: %v", err)
-	}
-
-	objectID, err := iotago.ObjectIDFromHex(objectIDHex)
-	if err != nil {
-		return fmt.Errorf("can't decode objectID in place_asset command: %v", err)
-	}
+	// Not parsing objectID here, because it could be a reference to the result of other command.
 
 	assets.AddObject(IotaObject{
-		ID:   *objectID,
+		ID:   *iotatest.RandomAddress(),
 		Type: objectType,
 	})
 
