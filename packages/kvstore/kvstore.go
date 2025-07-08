@@ -1,3 +1,4 @@
+// Package kvstore provides an interface for a key-value store.
 package kvstore
 
 import (
@@ -162,36 +163,35 @@ func CopyBatched(source KVStore, target KVStore, batchSize ...int) error {
 	}
 
 	var innerErr error
-	if err := source.Iterate(EmptyPrefix, func(key, value Value) bool {
+	if iterateErr := source.Iterate(EmptyPrefix, func(key, value Value) bool {
 		currentBatchSize++
 
-		if err := batchedMutation.Set(key, value); err != nil {
-			innerErr = err
+		if setErr := batchedMutation.Set(key, value); setErr != nil {
+			innerErr = setErr
 		}
 
 		if batchedSize != 0 && currentBatchSize >= batchedSize {
-			if err := batchedMutation.Commit(); err != nil {
-				innerErr = err
+			if commitErr := batchedMutation.Commit(); commitErr != nil {
+				innerErr = commitErr
 			}
 
 			// init new batched mutation
 			currentBatchSize = 0
-			batchedMutation, err = target.Batched()
-			if err != nil {
-				innerErr = err
+			var batchedErr error
+			batchedMutation, batchedErr = target.Batched()
+			if batchedErr != nil {
+				innerErr = batchedErr
 			}
 		}
 
 		return innerErr == nil
-	}); err != nil {
+	}); iterateErr != nil {
 		batchedMutation.Cancel()
-
-		return err
+		return iterateErr
 	}
 
 	if innerErr != nil {
 		batchedMutation.Cancel()
-
 		return innerErr
 	}
 

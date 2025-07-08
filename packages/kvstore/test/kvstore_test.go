@@ -1,4 +1,5 @@
-package test
+// Package kvstore_test tests the KVStore
+package kvstore_test
 
 import (
 	"bytes"
@@ -25,7 +26,6 @@ var testEntries = []*struct {
 
 func testStore(t *testing.T, dbImplementation string, realm []byte) (kvstore.KVStore, error) {
 	switch dbImplementation {
-
 	case "mapDB":
 		return mapdb.NewMapDB().WithRealm(realm)
 
@@ -35,7 +35,6 @@ func testStore(t *testing.T, dbImplementation string, realm []byte) (kvstore.KVS
 		require.NoError(t, err, "used db: %s", dbImplementation)
 
 		return rocksdb.New(db).WithRealm(realm)
-
 	}
 	panic("unknown database")
 }
@@ -59,13 +58,13 @@ func TestSetAndGet(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, entry := range testEntries {
-			err := store.Set(entry.Key, entry.Value)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			setErr := store.Set(entry.Key, entry.Value)
+			require.NoError(t, setErr, "used db: %s", dbImplementation)
 		}
 
 		for _, entry := range testEntries {
-			value, err := store.Get(entry.Key)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			value, getErr := store.Get(entry.Key)
+			require.NoError(t, getErr, "used db: %s", dbImplementation)
 			require.True(t, bytes.Equal(entry.Value, value), "used db: %s", dbImplementation)
 		}
 
@@ -84,13 +83,13 @@ func TestSetAndGetEmptyValue(t *testing.T) {
 		expectedValue := []byte{}
 
 		for _, entry := range testEntries {
-			err := store.Set(entry.Key, expectedValue)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			setErr := store.Set(entry.Key, expectedValue)
+			require.NoError(t, setErr, "used db: %s", dbImplementation)
 		}
 
 		for _, entry := range testEntries {
-			value, err := store.Get(entry.Key)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			value, getErr := store.Get(entry.Key)
+			require.NoError(t, getErr, "used db: %s", dbImplementation)
 			require.True(t, bytes.Equal(expectedValue, value), "used db: %s", dbImplementation)
 		}
 
@@ -144,14 +143,14 @@ func TestRealm(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, entry := range testEntries {
-			err := realmStore.Set(entry.Key, entry.Value)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			setErr := realmStore.Set(entry.Key, entry.Value)
+			require.NoError(t, setErr, "used db: %s", dbImplementation)
 		}
 		require.Equal(t, len(testEntries), countKeys(t, realmStore), "used db: %s", dbImplementation)
 
 		for _, entry := range testEntries {
-			err := tmpStore.Set(append(entry.Key, []byte("_2")...), entry.Value)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			setErr := tmpStore.Set(append(entry.Key, []byte("_2")...), entry.Value)
+			require.NoError(t, setErr, "used db: %s", dbImplementation)
 		}
 		require.Equal(t, len(testEntries), countKeys(t, tmpStore), "used db: %s", dbImplementation)
 
@@ -159,12 +158,12 @@ func TestRealm(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, entry := range testEntries {
-			has, err := realmStore2.Has(entry.Key)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			has, hasErr := realmStore2.Has(entry.Key)
+			require.NoError(t, hasErr, "used db: %s", dbImplementation)
 			require.True(t, has, "used db: %s", dbImplementation)
 
-			has, err = realmStore2.Has(append(entry.Key, []byte("_2")...))
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			has, hasErr = realmStore2.Has(append(entry.Key, []byte("_2")...))
+			require.NoError(t, hasErr, "used db: %s", dbImplementation)
 			require.False(t, has, "used db: %s", dbImplementation)
 		}
 
@@ -192,8 +191,8 @@ func TestClear(t *testing.T) {
 		require.EqualValues(t, 0, countKeys(t, store), "used db: %s", dbImplementation)
 
 		for _, entry := range testEntries {
-			err := store.Set(entry.Key, entry.Value)
-			require.NoError(t, err, "used db: %s", dbImplementation)
+			setErr := store.Set(entry.Key, entry.Value)
+			require.NoError(t, setErr, "used db: %s", dbImplementation)
 		}
 		require.Equal(t, len(testEntries), countKeys(t, store), "used db: %s", dbImplementation)
 
@@ -241,7 +240,6 @@ func TestIterateDirection(t *testing.T) {
 	prefix := kvstore.EmptyPrefix
 
 	for _, dbImplementation := range dbImplementations {
-
 		store, err := testStore(t, dbImplementation, prefix)
 		require.NoError(t, err)
 
@@ -351,7 +349,6 @@ func TestIterateDirectionKeyOnly(t *testing.T) {
 	prefix := kvstore.EmptyPrefix
 
 	for _, dbImplementation := range dbImplementations {
-
 		store, err := testStore(t, dbImplementation, prefix)
 		require.NoError(t, err)
 

@@ -1,8 +1,6 @@
 //go:build rocksdb
 // +build rocksdb
 
-package test
+package kvstore_test
 
-var (
-	dbImplementations = []string{"mapDB", "rocksdb"}
-)
+var dbImplementations = []string{"mapDB", "rocksdb"}

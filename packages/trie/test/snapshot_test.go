@@ -71,7 +71,7 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 		for range 10000 {
 			key := makeKey()
 			value := values.Next()
-			tr.Update([]byte(key), []byte(value))
+			tr.Update(key, []byte(value))
 		}
 
 		root, _ = tr.Commit(store)

@@ -1,3 +1,4 @@
+// Package rocksdb provides a KVStore implementation using RocksDB as the underlying storage engine.
 package rocksdb
 
 // Options holds the options used to instantiate the underlying grocksdb.DB.

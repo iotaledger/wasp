@@ -1,8 +1,6 @@
 //go:build !rocksdb
 // +build !rocksdb
 
-package test
+package kvstore_test //nolint:staticcheck
 
-var (
-	dbImplementations = []string{"mapDB"}
-)
+var dbImplementations = []string{"mapDB"}

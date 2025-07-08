@@ -66,16 +66,16 @@ func TestMapDB_Batched(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, entry := range testEntries {
-		err := batched.Set(entry.Key, entry.Value)
-		require.NoError(t, err)
+		setErr := batched.Set(entry.Key, entry.Value)
+		require.NoError(t, setErr)
 	}
 
 	err = batched.Commit()
 	require.NoError(t, err)
 
 	for _, entry := range testEntries {
-		exists, err := store.Has(entry.Key)
-		require.NoError(t, err)
+		exists, existsErr := store.Has(entry.Key)
+		require.NoError(t, existsErr)
 		require.True(t, exists)
 	}
 

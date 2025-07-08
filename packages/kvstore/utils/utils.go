@@ -1,3 +1,4 @@
+// Package utils provides utility functions for working with key-value stores.
 package utils
 
 import (
