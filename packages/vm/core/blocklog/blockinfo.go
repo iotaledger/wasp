@@ -18,6 +18,11 @@ import (
 
 const (
 	blockInfoSchemaVersion0 = iota
+	blockInfoSchemaVersion1NOOP
+	blockInfoSchemaVersion2NOOP
+	blockInfoSchemaVersion3NOOP
+	blockInfoSchemaVersion4NOOP
+	blockInfoSchemaVersion5NOOP
 	blockInfoSchemaVersionAddedEntropy
 
 	BlockInfoLatestSchemaVersion = blockInfoSchemaVersionAddedEntropy

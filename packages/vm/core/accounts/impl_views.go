@@ -9,10 +9,10 @@ import (
 )
 
 // viewBalance returns the balances of the account belonging to the AgentID
-func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) *isc.Assets {
+func viewBalance(ctx isc.SandboxView, optionalAgentID *isc.AgentID) isc.CoinBalances {
 	aid := coreutil.FromOptional(optionalAgentID, ctx.Caller())
 	ctx.Log().Debugf("accounts.viewBalance %s", aid)
-	return NewStateReaderFromSandbox(ctx).GetAssets(aid)
+	return NewStateReaderFromSandbox(ctx).getFungibleTokens(accountKey(aid))
 }
 
 // viewBalanceBaseToken returns the base tokens balance of the account belonging to the AgentID
@@ -36,9 +36,9 @@ func viewBalanceCoin(ctx isc.SandboxView, optionalAgentID *isc.AgentID, coinID c
 }
 
 // viewTotalAssets returns total balances controlled by the chain
-func viewTotalAssets(ctx isc.SandboxView) *isc.Assets {
+func viewTotalAssets(ctx isc.SandboxView) isc.CoinBalances {
 	ctx.Log().Debugf("accounts.viewTotalAssets")
-	return NewStateReaderFromSandbox(ctx).GetTotalAssets()
+	return NewStateReaderFromSandbox(ctx).getFungibleTokens(L2TotalsAccount)
 }
 
 // nonces are only sent with off-ledger requests
