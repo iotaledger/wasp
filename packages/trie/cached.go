@@ -27,9 +27,28 @@ func (c *cachedKVReader) Get(key []byte) []byte {
 }
 
 func (c *cachedKVReader) MultiGet(keys [][]byte) [][]byte {
-	// TODO: use cache
-	v := c.r.MultiGet(keys)
-	return v
+	missing := make([][]byte, 0, len(keys))
+	for _, key := range keys {
+		_, ok := c.cache.Get(key)
+		if !ok {
+			missing = append(missing, key)
+		}
+	}
+	var missingValues [][]byte
+	if len(missing) > 0 {
+		missingValues = c.r.MultiGet(missing)
+	}
+	values := make([][]byte, len(keys))
+	for i, key := range keys {
+		v, ok := c.cache.Get(key)
+		if ok {
+			values[i] = v
+		} else {
+			values[i] = missingValues[0]
+			missingValues = missingValues[1:]
+		}
+	}
+	return values
 }
 
 func (c *cachedKVReader) Has(key []byte) bool {
