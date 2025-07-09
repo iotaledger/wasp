@@ -27,17 +27,18 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.2
 	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
+	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7
 	github.com/iotaledger/hive.go/app v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/constraints v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/ds v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/ierrors v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/hive.go/kvstore v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/lo v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/objectstorage v0.0.0-20231018191940-f36386f4e2fa
 	github.com/iotaledger/hive.go/runtime v0.0.0-20250409140545-e1a365dbea74
+	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/web v0.0.0-20250409140545-e1a365dbea74
 	github.com/knadh/koanf v1.5.0
 	github.com/knadh/koanf/v2 v2.2.0
@@ -122,8 +123,6 @@ require (
 	github.com/holiman/bloomfilter/v2 v2.0.3 // indirect
 	github.com/huin/goupnp v1.3.0 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
-	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 // indirect
-	github.com/iotaledger/hive.go/serializer/v2 v2.0.0-rc.1.0.20250409140545-e1a365dbea74 // indirect
 	github.com/iotaledger/hive.go/stringify v0.0.0-20250409140545-e1a365dbea74 // indirect
 	github.com/ipfs/go-cid v0.5.0 // indirect
 	github.com/ipfs/go-log/v2 v2.6.0 // indirect

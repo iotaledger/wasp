@@ -21,7 +21,6 @@ require (
 	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
 	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/hive.go/kvstore v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
 	github.com/knadh/koanf v1.5.0

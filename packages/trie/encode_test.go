@@ -78,7 +78,7 @@ func TestCheckingKey(t *testing.T) {
 	t.Logf("unpackedBin = %+v", unpackedBin)
 
 	encBin := mustEncodeUnpackedBytes(unpackedBin)
-	t.Logf("encodedBin = %+v, hex = %x, str: %s", encBin, encBin, string(encBin))
+	t.Logf("encodedBin = %+v, hex = %x, str: %q", encBin, encBin, string(encBin))
 
 	unpackedBinBack, err := decode16(encBin)
 	require.NoError(t, err)

@@ -1,5 +1,7 @@
 package trie
 
+import "github.com/samber/lo"
+
 //----------------------------------------------------------------------------
 // generic abstraction interfaces of key/value storage
 
@@ -7,6 +9,10 @@ package trie
 type KVReader interface {
 	// Get retrieves value by key. Returned nil means absence of the key
 	Get(key []byte) []byte
+
+	// MultiGet retrieves multiple values by keys.
+	MultiGet([][]byte) [][]byte
+
 	// Has checks presence of the key in the key/value store
 	Has(key []byte) bool // for performance
 }
@@ -45,6 +51,12 @@ type kvStorePartition struct {
 
 func (p *kvStorePartition) Get(key []byte) []byte {
 	return p.s.Get(concat([]byte{p.prefix}, key))
+}
+
+func (p *kvStorePartition) MultiGet(keys [][]byte) [][]byte {
+	return p.s.MultiGet(lo.Map(keys, func(k []byte, _ int) []byte {
+		return concat([]byte{p.prefix}, k)
+	}))
 }
 
 func (p *kvStorePartition) Has(key []byte) bool {
@@ -91,6 +103,12 @@ type readerPartition struct {
 
 func (p *readerPartition) Get(key []byte) []byte {
 	return p.r.Get(concat([]byte{p.prefix}, key))
+}
+
+func (p *readerPartition) MultiGet(keys [][]byte) [][]byte {
+	return p.r.MultiGet(lo.Map(keys, func(k []byte, _ int) []byte {
+		return concat([]byte{p.prefix}, k)
+	}))
 }
 
 func (p *readerPartition) Has(key []byte) bool {

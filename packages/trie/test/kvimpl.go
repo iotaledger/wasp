@@ -8,6 +8,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/trie"
 	"github.com/iotaledger/wasp/packages/util"
@@ -36,6 +38,12 @@ func NewInMemoryKVStore() InMemoryKVStore {
 
 func (im InMemoryKVStore) Get(k []byte) []byte {
 	return im[string(k)]
+}
+
+func (im InMemoryKVStore) MultiGet(ks [][]byte) [][]byte {
+	return lo.Map(ks, func(k []byte, _ int) []byte {
+		return im[string(k)]
+	})
 }
 
 func (im InMemoryKVStore) Has(k []byte) bool {

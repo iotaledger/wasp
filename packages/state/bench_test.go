@@ -21,7 +21,7 @@ func BenchmarkTriePruning(b *testing.B) {
 	b.StopTimer()
 	path := "/tmp/" + b.Name() + ".db"
 	const cacheSize = database.CacheSizeDefault
-	db, err := database.NewDatabase(hivedb.EngineRocksDB, path, true, false, cacheSize)
+	db, err := database.NewDatabase(hivedb.EngineRocksDB, path, true, cacheSize)
 	require.NoError(b, err)
 	b.Cleanup(func() {
 		os.RemoveAll(path)
