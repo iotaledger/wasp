@@ -189,7 +189,7 @@ func initDepositCmd() *cobra.Command {
 
 			if printReceipt {
 				log.Printf("L1 Gas Fee: %d\n", res.Effects.Data.GasFee())
-				ref, err := res.GetCreatedObjectInfo("request", "Request")
+				ref, err := res.GetCreatedObjectByName("request", "Request")
 				log.Check(err)
 				receipt, _, err := client.ChainsAPI.
 					GetReceipt(ctx, ref.ObjectID.String()).

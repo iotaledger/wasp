@@ -414,7 +414,7 @@ func (r *IotaTransactionBlockResponse) GetMutatedObjectByID(objectID iotago.Obje
 
 	for _, change := range r.ObjectChanges {
 		if change.Data.Mutated != nil {
-			if change.Data.Mutated.ObjectID == *objectID {
+			if change.Data.Mutated.ObjectID == objectID {
 				if ref != nil {
 					return nil, fmt.Errorf("multiple mutated objects found for %v: first = %v, second = %v",
 						objectID.String(),
