@@ -116,20 +116,20 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
 
-	incrementState := txb.rotateToAddr == nil // if we are rotating, we don't want to increment the state index
+	isRotation := txb.rotateToAddr != nil
 
-	ptb := iscmoveclient.PTBReceiveRequestsAndTransition(
-		txb.ptb,
-		txb.iscPackage,
-		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		txb.consumed,
-		txb.sent,
-		stateMetadata,
-		topUpAmount,
-		incrementState,
-	)
+	var ptb *iotago.ProgrammableTransactionBuilder
 
-	if txb.rotateToAddr != nil {
+	if isRotation {
+		ptb = iscmoveclient.PTBReceiveRequestsAndTransitionForRotation(
+			txb.ptb,
+			txb.iscPackage,
+			txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+			txb.consumed,
+			txb.sent,
+			stateMetadata,
+			topUpAmount,
+		)
 		ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
@@ -146,6 +146,16 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
+	} else {
+		ptb = iscmoveclient.PTBReceiveRequestsAndTransition(
+			txb.ptb,
+			txb.iscPackage,
+			txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+			txb.consumed,
+			txb.sent,
+			stateMetadata,
+			topUpAmount,
+		)
 	}
 	return ptb.Finish()
 }

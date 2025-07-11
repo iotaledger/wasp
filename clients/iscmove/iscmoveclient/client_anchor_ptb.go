@@ -246,16 +246,14 @@ type SentAssets struct {
 }
 
 //nolint:funlen
-func PTBReceiveRequestsAndTransition(
+func internalPTBReceiveRequestsAndTransition(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
 	consumedRequests []ConsumedRequest,
 	sentAssets []SentAssets,
-	stateMetadata []byte,
 	topUpAmount uint64,
-	incrementState bool,
-) *iotago.ProgrammableTransactionBuilder {
+) (*iotago.ProgrammableTransactionBuilder, iotago.Argument) {
 	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
 		panic(fmt.Sprintf("can't parse Receipt's TypeTag: %s", err))
@@ -384,18 +382,62 @@ func PTBReceiveRequestsAndTransition(
 		ptb = PTBTakeAndTransferAssets(ptb, packageID, argAnchor, &sent.Target, &sent.Assets)
 	}
 
+	return ptb, argReceipts
+}
+
+func PTBReceiveRequestsAndTransition(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAnchor iotago.Argument,
+	consumedRequests []ConsumedRequest,
+	sentAssets []SentAssets,
+	stateMetadata []byte,
+	topUpAmount uint64,
+) *iotago.ProgrammableTransactionBuilder {
+	var argReceipts iotago.Argument
+	ptb, argReceipts = internalPTBReceiveRequestsAndTransition(ptb, packageID, argAnchor, consumedRequests, sentAssets, topUpAmount)
+
 	ptb.Command(
 		iotago.Command{
 			MoveCall: &iotago.ProgrammableMoveCall{
 				Package:       &packageID,
 				Module:        iscmove.AnchorModuleName,
-				Function:      "transition_v2",
+				Function:      "transition",
 				TypeArguments: []iotago.TypeTag{},
 				Arguments: []iotago.Argument{
 					argAnchor,
 					ptb.MustPure(stateMetadata),
 					argReceipts,
-					ptb.MustPure(incrementState),
+				},
+			},
+		},
+	)
+
+	return ptb
+}
+
+func PTBReceiveRequestsAndTransitionForRotation(
+	ptb *iotago.ProgrammableTransactionBuilder,
+	packageID iotago.PackageID,
+	argAnchor iotago.Argument,
+	consumedRequests []ConsumedRequest,
+	sentAssets []SentAssets,
+	stateMetadata []byte,
+	topUpAmount uint64,
+) *iotago.ProgrammableTransactionBuilder {
+	var argReceipts iotago.Argument
+	ptb, argReceipts = internalPTBReceiveRequestsAndTransition(ptb, packageID, argAnchor, consumedRequests, sentAssets, topUpAmount)
+	ptb.Command(
+		iotago.Command{
+			MoveCall: &iotago.ProgrammableMoveCall{
+				Package:       &packageID,
+				Module:        iscmove.AnchorModuleName,
+				Function:      "transition_for_rotation",
+				TypeArguments: []iotago.TypeTag{},
+				Arguments: []iotago.Argument{
+					argAnchor,
+					ptb.MustPure(stateMetadata),
+					argReceipts,
 				},
 			},
 		},
