@@ -178,7 +178,7 @@ func startNewChain(
 	)
 	require.NoError(t, err)
 
-	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorRef, err := txnResponse.GetCreatedObjectByName(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	require.NoError(t, err)
 	anchor, err := client.GetAnchorFromObjectID(context.Background(), anchorRef.ObjectID)
 	return txnResponse, anchor, err

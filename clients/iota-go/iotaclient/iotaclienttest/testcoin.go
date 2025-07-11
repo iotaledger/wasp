@@ -53,7 +53,7 @@ func DeployCoinPackage(
 	packageID, err = txnResponse.GetPublishedPackageID()
 	require.NoError(t, err)
 
-	treasuryCap, err = txnResponse.GetCreatedObjectInfo("coin", "TreasuryCap")
+	treasuryCap, err = txnResponse.GetCreatedObjectByName("coin", "TreasuryCap")
 	require.NoError(t, err)
 
 	return
@@ -84,7 +84,7 @@ func MintCoins(
 	require.NoError(t, err)
 	require.True(t, txnRes.Effects.Data.IsSuccess())
 
-	coinRef, err := txnRes.GetCreatedObjectInfo(moduleName, typeTag)
+	coinRef, err := txnRes.GetCreatedObjectByName(moduleName, typeTag)
 	require.NoError(t, err)
 
 	return coinRef
