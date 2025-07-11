@@ -2,9 +2,8 @@ package buffered
 
 import (
 	"fmt"
+	"maps"
 	"sort"
-
-	"github.com/iotaledger/hive.go/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/kv"
@@ -76,9 +75,13 @@ func (ms *Mutations) Set(k kv.Key, v []byte) {
 	ms.Sets[k] = v
 }
 
-func (ms *Mutations) Del(k kv.Key) {
+func (ms *Mutations) Del(k kv.Key, baseExists bool) {
 	delete(ms.Sets, k)
-	ms.Dels[k] = struct{}{}
+	if baseExists {
+		ms.Dels[k] = struct{}{}
+	} else {
+		delete(ms.Dels, k)
+	}
 }
 
 func (ms *Mutations) ApplyTo(w kv.KVWriter) {
@@ -91,17 +94,10 @@ func (ms *Mutations) ApplyTo(w kv.KVWriter) {
 }
 
 func (ms *Mutations) Clone() *Mutations {
-	clone := NewMutations()
-
-	for k, v := range ms.Sets {
-		clone.Set(k, lo.CopySlice(v))
+	return &Mutations{
+		Sets: maps.Clone(ms.Sets),
+		Dels: maps.Clone(ms.Dels),
 	}
-
-	for k := range ms.Dels {
-		clone.Del(k)
-	}
-
-	return clone
 }
 
 func (ms *Mutations) IsEmpty() bool {
