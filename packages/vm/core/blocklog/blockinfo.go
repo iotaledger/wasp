@@ -18,12 +18,9 @@ import (
 
 const (
 	blockInfoSchemaVersion0 = iota
-	blockInfoSchemaVersion1NOOP
-	blockInfoSchemaVersion2NOOP
-	blockInfoSchemaVersion3NOOP
-	blockInfoSchemaVersion4NOOP
-	blockInfoSchemaVersion5NOOP
-	blockInfoSchemaVersionAddedEntropy
+	// During migration, the block info schema version was incorrectly set to 5 instead of 0.
+	// To support additional changes, we now have to start with schema version 6.
+	blockInfoSchemaVersionAddedEntropy = iota + 5
 
 	BlockInfoLatestSchemaVersion = blockInfoSchemaVersionAddedEntropy
 )
