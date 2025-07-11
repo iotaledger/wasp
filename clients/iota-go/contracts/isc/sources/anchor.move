@@ -93,8 +93,7 @@ module isc::anchor {
     fun transition_internal(
         self: &mut Anchor,
         new_state_metadata: vector<u8>,
-        mut receipts: vector<Receipt>,
-        increment_state: bool
+        mut receipts: vector<Receipt>
     ) {
         let receipts_len = receipts.length();
         let mut i = 0;
@@ -107,19 +106,16 @@ module isc::anchor {
         };
         receipts.destroy_empty();
         self.state_metadata = new_state_metadata;
-        if (increment_state) {
-            self.state_index = self.state_index + 1;
-        }
     }
 
-    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
-        transition_internal(self, new_state_metadata, receipts, true)
+    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, receipts: vector<Receipt>) {
+        transition_internal(self, new_state_metadata, receipts);
+        self.state_index = self.state_index + 1;
     }
 
-    /// This function allows transition without modifying the state index (currently used for rotation purposes).
-    /// We add a new function instead of changing the original one to keep public method's signatures unchanged, as required by IOTA Managing Package Upgrades guide
-    public fun transition_v2(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>, increment_state: bool) {
-        transition_internal(self, new_state_metadata, receipts, increment_state)
+    /// This function performs transition for rotation (without modifying the state index)
+    public fun transition_for_rotation(self: &mut Anchor, new_state_metadata: vector<u8>, receipts: vector<Receipt>) {
+        transition_internal(self, new_state_metadata, receipts)
     }
 
     // === Migration helpers === 
