@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 )
 
 func TestBufferedKVStore(t *testing.T) {
@@ -104,4 +104,26 @@ func TestIterateSorted(t *testing.T) {
 		return true
 	})
 	require.Equal(t, []kv.Key{"234", "245", "247", "248", "250", "259"}, seen)
+}
+
+func TestSetAndDelete(t *testing.T) {
+	db := mapdb.NewMapDB()
+	_ = db.Set([]byte("abcd"), []byte("v1"))
+
+	realm, err := db.WithRealm([]byte("ab"))
+	require.NoError(t, err)
+
+	t.Run("with existing value", func(t *testing.T) {
+		b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
+		b.Set("cd", []byte("v2"))
+		b.Del("cd")
+		require.False(t, b.Mutations().IsEmpty())
+	})
+
+	t.Run("with non-existing value", func(t *testing.T) {
+		b := NewBufferedKVStore(kv.NewHiveKVStoreReader(realm))
+		b.Set("xy", []byte("v2"))
+		b.Del("xy")
+		require.True(t, b.Mutations().IsEmpty())
+	})
 }

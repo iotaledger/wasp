@@ -1,8 +1,6 @@
 package isc
 
 import (
-	"github.com/ethereum/go-ethereum/common/hexutil"
-
 	bcs "github.com/iotaledger/bcs-go"
 )
 
@@ -29,20 +27,4 @@ func ContractIDFromEventBytes(eventBytes []byte) (Hname, error) {
 
 func (e *Event) Bytes() []byte {
 	return bcs.MustMarshal(e)
-}
-
-type EventJSON struct {
-	ContractID Hname  `json:"contractID" swagger:"desc(ID of the Contract that issued the event),required,min(1)"`
-	Topic      string `json:"topic" swagger:"desc(topic),required"`
-	Timestamp  uint64 `json:"timestamp" swagger:"desc(timestamp),required"`
-	Payload    string `json:"payload" swagger:"desc(payload),required"`
-}
-
-func (e *Event) ToJSONStruct() *EventJSON {
-	return &EventJSON{
-		ContractID: e.ContractID,
-		Topic:      e.Topic,
-		Timestamp:  e.Timestamp,
-		Payload:    hexutil.Encode(e.Payload),
-	}
 }

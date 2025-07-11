@@ -2,7 +2,6 @@ package isc
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"iter"
 	"maps"
@@ -109,40 +108,6 @@ func (c CoinBalances) Size() int {
 	return len(c.items)
 }
 
-type CoinJSON struct {
-	CoinType coin.TypeJSON `json:"coinType" swagger:"required"`
-	Balance  string        `json:"balance" swagger:"required,desc(The balance (uint64 as string))"`
-}
-
-func (c *CoinBalances) JSON() []CoinJSON {
-	var coins []CoinJSON
-	for t, v := range c.Iterate() {
-		coins = append(coins, CoinJSON{
-			CoinType: t.ToTypeJSON(),
-			Balance:  v.String(),
-		})
-	}
-	return coins
-}
-
-func (c *CoinBalances) UnmarshalJSON(b []byte) error {
-	var coins []CoinJSON
-	err := json.Unmarshal(b, &coins)
-	if err != nil {
-		return err
-	}
-	*c = NewCoinBalances()
-	for _, cc := range coins {
-		value := lo.Must(coin.ValueFromString(cc.Balance))
-		c.Add(cc.CoinType.ToType(), value)
-	}
-	return nil
-}
-
-func (c CoinBalances) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.JSON())
-}
-
 func (c CoinBalances) Equals(b CoinBalances) bool {
 	if len(c.items) != len(b.items) {
 		return false
@@ -179,22 +144,6 @@ type IotaObject struct {
 
 func NewIotaObject(id iotago.ObjectID, t iotago.ObjectType) IotaObject {
 	return IotaObject{id, t}
-}
-
-func (o IotaObject) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.JSON())
-}
-
-func (o IotaObject) JSON() IotaObjectJSON {
-	return IotaObjectJSON{
-		ID:   o.ID.ToHex(),
-		Type: o.Type.ToTypeJSON(),
-	}
-}
-
-type IotaObjectJSON struct {
-	ID   string                `json:"id" swagger:"required,desc(Hex-encoded object ID)"`
-	Type iotago.ObjectTypeJSON `json:"type" swagger:"required"`
 }
 
 type ObjectSet struct {
@@ -272,31 +221,6 @@ func (o ObjectSet) Clone() ObjectSet {
 		r.Add(NewIotaObject(id, t))
 	}
 	return r
-}
-
-func (o *ObjectSet) JSON() []IotaObjectJSON {
-	objs := make([]IotaObjectJSON, 0, len(o.items))
-	for obj := range o.Iterate() {
-		objs = append(objs, obj.JSON())
-	}
-	return objs
-}
-
-func (o *ObjectSet) UnmarshalJSON(b []byte) error {
-	var objs []IotaObject
-	err := json.Unmarshal(b, &objs)
-	if err != nil {
-		return err
-	}
-	*o = NewObjectSet()
-	for _, obj := range objs {
-		o.Add(NewIotaObject(obj.ID, obj.Type))
-	}
-	return nil
-}
-
-func (o ObjectSet) MarshalJSON() ([]byte, error) {
-	return json.Marshal(o.JSON())
 }
 
 func (o ObjectSet) Equals(b ObjectSet) bool {

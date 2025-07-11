@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
 )
 
@@ -47,5 +46,5 @@ type RequestProcessedResponse struct {
 }
 
 type EventsResponse struct {
-	Events []*isc.EventJSON `json:"events" swagger:"required"`
+	Events []*EventJSON `json:"events" swagger:"required"`
 }

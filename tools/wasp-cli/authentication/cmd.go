@@ -24,7 +24,10 @@ func Init(rootCmd *cobra.Command) {
 	importCmd := initImportCmd()
 
 	rootCmd.AddCommand(authCmd)
-	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(&cobra.Command{
+		Use:        "login",
+		Deprecated: "use 'auth login' instead",
+	})
 	authCmd.AddCommand(initSetTokenCmd())
 
 	authCmd.AddCommand(loginCmd)

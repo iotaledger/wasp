@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 )
 
 func TestMapDB(t *testing.T) {

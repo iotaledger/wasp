@@ -7,9 +7,9 @@ import (
 	"sync"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 	"github.com/iotaledger/wasp/packages/chaindb"
+	"github.com/iotaledger/wasp/packages/kvstore"
 )
 
 var AllowedEngines = []hivedb.Engine{
@@ -88,7 +88,7 @@ func CheckEngine(dbPath string, createDatabaseIfNotExists bool, dbEngine hivedb.
 }
 
 func NewDatabaseInMemory() (*Database, error) {
-	return NewDatabase(hivedb.EngineMapDB, "", false, false, 0)
+	return NewDatabase(hivedb.EngineMapDB, "", false, 0)
 }
 
 // NewDatabase opens a database.
@@ -97,7 +97,6 @@ func NewDatabase(
 	dbEngine hivedb.Engine,
 	path string,
 	createDatabaseIfNotExists bool,
-	autoFlush bool,
 	cacheSize uint64,
 ) (*Database, error) {
 	targetEngine, err := CheckEngine(path, createDatabaseIfNotExists, dbEngine)
@@ -107,7 +106,7 @@ func NewDatabase(
 
 	switch targetEngine {
 	case hivedb.EngineRocksDB:
-		return newDatabaseRocksDB(path, autoFlush, cacheSize)
+		return newDatabaseRocksDB(path, cacheSize)
 
 	case hivedb.EngineMapDB:
 		return newDatabaseMapDB(), nil
@@ -125,12 +124,11 @@ type databaseWithHealthTracker struct {
 func newDatabaseWithHealthTracker(
 	path string,
 	dbEngine hivedb.Engine,
-	autoFlush bool,
 	cacheSize uint64,
 	storeVersion byte,
 	storeVersionUpdateFunc StoreVersionUpdateFunc,
 ) (*databaseWithHealthTracker, error) {
-	db, err := NewDatabase(dbEngine, path, true, autoFlush, cacheSize)
+	db, err := NewDatabase(dbEngine, path, true, cacheSize)
 	if err != nil {
 		return nil, err
 	}

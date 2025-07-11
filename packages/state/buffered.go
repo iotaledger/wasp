@@ -4,9 +4,9 @@
 package state
 
 import (
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/buffered"
+	"github.com/iotaledger/wasp/packages/kvstore"
 )
 
 // bufferedKVStore is a KVStore backed by some other KVStore. Writes are cached in-memory;
@@ -38,7 +38,11 @@ func (*bufferedKVStore) Close() error {
 }
 
 func (b *bufferedKVStore) Delete(key []byte) error {
-	b.muts.Del(kv.Key(key))
+	baseExists, err := b.db.Has(key)
+	if err != nil {
+		return err
+	}
+	b.muts.Del(kv.Key(key), baseExists)
 	return nil
 }
 
@@ -56,6 +60,35 @@ func (b *bufferedKVStore) Get(key []byte) (value []byte, err error) {
 		return v, nil
 	}
 	return b.db.Get(key)
+}
+
+func (b *bufferedKVStore) MultiGet(keys [][]byte) (values [][]byte, err error) {
+	missing := make([][]byte, 0, len(keys))
+	for _, key := range keys {
+		_, ok := b.muts.Get(kv.Key(key))
+		if !ok {
+			missing = append(missing, key)
+		}
+	}
+	var missingValues [][]byte
+	if len(missing) > 0 {
+		var err error
+		missingValues, err = b.db.MultiGet(missing)
+		if err != nil {
+			return nil, err
+		}
+	}
+	values = make([][]byte, len(keys))
+	for i, key := range keys {
+		v, ok := b.muts.Get(kv.Key(key))
+		if ok {
+			values[i] = v
+		} else {
+			values[i] = missingValues[0]
+			missingValues = missingValues[1:]
+		}
+	}
+	return values, nil
 }
 
 func (b *bufferedKVStore) Has(key []byte) (bool, error) {

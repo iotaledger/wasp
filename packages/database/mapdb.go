@@ -2,7 +2,7 @@ package database
 
 import (
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 )
 
 func newDatabaseMapDB() *Database {

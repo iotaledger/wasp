@@ -17,6 +17,7 @@ import (
 	"github.com/iotaledger/wasp/packages/solo"
 	"github.com/iotaledger/wasp/packages/util/rwutil"
 	"github.com/iotaledger/wasp/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 func TestImpersonatedOffLedgerRequest(t *testing.T) {
@@ -48,7 +49,7 @@ func TestRequestToJSONObject(t *testing.T) {
 		}))
 	require.NoError(t, err)
 
-	obj := isc.RequestToJSONObject(req)
+	obj := models.RequestToJSONObject(req)
 	require.NotNil(t, obj)
 	require.NotNil(t, obj.SenderAccount)
 
@@ -61,7 +62,7 @@ func TestRequestToJSONObject(t *testing.T) {
 	).WithAllowance(isc.NewAssets(5000)).
 		WithSender(keyPair.GetPublicKey())
 
-	obj2 := isc.RequestToJSONObject(tx2)
+	obj2 := models.RequestToJSONObject(tx2)
 	require.NotNil(t, obj2)
 	require.NotNil(t, obj2.SenderAccount)
 
@@ -75,7 +76,7 @@ func TestRequestToJSONObject(t *testing.T) {
 	require.NotNil(t, impRequest.SenderAccount())
 	require.Equal(t, impRequest.SenderAccount().String(), requestFrom.String())
 
-	obj3 := isc.RequestToJSONObject(impRequest)
+	obj3 := models.RequestToJSONObject(impRequest)
 	require.NotNil(t, obj3)
 	require.NotNil(t, obj3.SenderAccount)
 }

@@ -143,7 +143,7 @@ func (c *Controller) dumpAccounts(e echo.Context) error {
 			}
 			agentID := lo.Must(accounts.AgentIDFromKey(key))
 			accountAssets := sa.GetAccountFungibleTokens(agentID)
-			assetsJSON, err2 := json.Marshal(accountAssets)
+			assetsJSON, err2 := json.Marshal(models.ToCoinBalancesJSON(accountAssets))
 			if err2 != nil {
 				c.log.LogErrorf("dumpAccounts - generating JSON for account %s assets failed%s", agentID.String(), err2.Error())
 				return false

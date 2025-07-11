@@ -46,7 +46,6 @@ package mempool
 import (
 	"context"
 	"fmt"
-	"io"
 	"slices"
 	"time"
 
@@ -113,7 +112,7 @@ type Mempool interface {
 	ServerNodesUpdated(committeePubKeys []*cryptolib.PublicKey, serverNodePubKeys []*cryptolib.PublicKey)
 	AccessNodesUpdated(committeePubKeys []*cryptolib.PublicKey, accessNodePubKeys []*cryptolib.PublicKey)
 
-	GetContents() io.Reader
+	Iterate(f func(req isc.Request) bool)
 }
 
 type Settings struct {
@@ -347,16 +346,28 @@ func (mpi *mempoolImpl) ConsensusRequestsAsync(ctx context.Context, requestRefs 
 	return res
 }
 
-func (mpi *mempoolImpl) writeContentAndClose(pw *io.PipeWriter) {
-	defer pw.Close()
-	mpi.onLedgerPool.WriteContent(pw)
-	mpi.offLedgerPool.WriteContent(pw)
-}
+func (mpi *mempoolImpl) Iterate(f func(req isc.Request) bool) {
+	// TODO: This makes unprotected concurrent access to the MP state.
 
-func (mpi *mempoolImpl) GetContents() io.Reader {
-	pr, pw := io.Pipe()
-	go mpi.writeContentAndClose(pw) // TODO: This makes unprotected concurrent access to the MP state.
-	return pr
+	continueIter := true
+
+	mpi.offLedgerPool.Iterate(func(account string, requests []*OrderedPoolEntry) bool {
+		for _, entry := range requests {
+			if !f(entry.req) {
+				continueIter = false
+				return false
+			}
+		}
+		return true
+	})
+
+	if !continueIter {
+		return
+	}
+
+	mpi.onLedgerPool.Iterate(func(entry *typedPoolEntry[isc.OnLedgerRequest]) bool {
+		return f(entry.req)
+	})
 }
 
 func (mpi *mempoolImpl) run(ctx context.Context, cleanupFunc context.CancelFunc) { //nolint:gocyclo
@@ -909,13 +920,15 @@ func (mpi *mempoolImpl) handleRePublishTimeTick() {
 }
 
 func (mpi *mempoolImpl) handleForceCleanMempool() {
-	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) {
+	mpi.offLedgerPool.Iterate(func(account string, entries []*OrderedPoolEntry) bool {
 		for _, e := range entries {
 			if time.Since(e.ts) > mpi.settings.TTL && !e.proposedForAny(mpi.consensusInstances) {
 				mpi.log.LogDebugf("handleForceCleanMempool, request TTL expired, removing: %s", e.req.ID().String())
 				mpi.offLedgerPool.Remove(e.req)
 			}
 		}
+
+		return true
 	})
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/iotaledger/wasp/packages/kvstore"
 
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/packages/isc/isctest"
@@ -174,6 +174,11 @@ func (ckv *countingKVStore) Clear() error {
 func (ckv *countingKVStore) Get(key kvstore.Key) (value kvstore.Value, err error) {
 	ckv.rCount.Add(1)
 	return ckv.nested.Get(key)
+}
+
+func (ckv *countingKVStore) MultiGet(keys []kvstore.Key) (values []kvstore.Value, err error) {
+	ckv.rCount.Add(1)
+	return ckv.nested.MultiGet(keys)
 }
 
 func (ckv *countingKVStore) Set(key kvstore.Key, value kvstore.Value) error {

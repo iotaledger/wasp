@@ -239,7 +239,10 @@ func (tr *TrieReader) iteratePrefix(f func(k []byte, v []byte) bool, prefix []by
 }
 
 func (tr *TrieReader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) {
-	tr.iterateNodes(0, root, triePath, func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
+	rootNode, found := tr.nodeStore.FetchNodeData(root)
+	assertf(found, "root node not found: %s", tr.root)
+
+	tr.iterateNodes(0, rootNode, triePath, func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
 		if n.Terminal != nil {
 			key, err := packUnpackedBytes(concat(nodeKey, n.PathExtension))
 			assertNoError(err)
@@ -270,19 +273,23 @@ const (
 
 // IterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
 func (tr *TrieReader) IterateNodes(fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) {
-	tr.iterateNodes(0, tr.root, nil, fun)
+	root, found := tr.nodeStore.FetchNodeData(tr.root)
+	assertf(found, "root node not found: %s", tr.root)
+
+	tr.iterateNodes(0, root, nil, fun)
 }
 
-func (tr *TrieReader) iterateNodes(depth int, commitment Hash, path []byte, fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) bool {
-	n, found := tr.nodeStore.FetchNodeData(commitment)
-	assertf(found, "can't fetch node. triePath: '%s', node commitment: %s", hex.EncodeToString(path), commitment)
-
+func (tr *TrieReader) iterateNodes(depth int, n *NodeData, path []byte, fun func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction) bool {
 	action := fun(path, n, depth)
 	if action == IterateContinue {
-		if !n.iterateChildren(func(childIndex byte, childCommitment Hash) bool {
-			return tr.iterateNodes(depth+1, childCommitment, concat(path, n.PathExtension, []byte{childIndex}), fun)
-		}) {
-			return false
+		childrenNodes := tr.nodeStore.FetchChildrenNodeData(n)
+		for childIndex := range NumChildren {
+			if childrenNodes[childIndex] == nil {
+				continue
+			}
+			if !tr.iterateNodes(depth+1, childrenNodes[childIndex], concat(path, n.PathExtension, []byte{byte(childIndex)}), fun) {
+				break
+			}
 		}
 	}
 	return action != IterateStop

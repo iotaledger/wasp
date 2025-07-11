@@ -1,7 +1,7 @@
-// Package decode provides utilities for decoding various data formats
+// Package codec provides utilities for encoding and decoding various data formats
 // used in the IOTA smart contract ecosystem, including metadata, gas policies,
 // and transaction outputs.
-package decode
+package codec
 
 import (
 	"encoding/json"
@@ -22,16 +22,50 @@ import (
 )
 
 func Init(rootCmd *cobra.Command) {
-	rootCmd.AddCommand(initDecodeCmd())
-	rootCmd.AddCommand(initDecodeMetadataCmd())
-	rootCmd.AddCommand(initDecodeGasFeePolicy())
-	rootCmd.AddCommand(initEncodeGasFeePolicy())
-	rootCmd.AddCommand(initDecodeWALCmd())
+	codecCmd := createSubCmd("codec", "Encoding and decoding tools")
+	rootCmd.AddCommand(codecCmd)
+
+	decodeCmd := createSubCmd("decode", "Decoding tools")
+	codecCmd.AddCommand(decodeCmd)
+	encodeCmd := createSubCmd("encode", "Encoding tools")
+	codecCmd.AddCommand(encodeCmd)
+
+	decodeCmd.AddCommand(initDecodeCmd())
+	decodeCmd.AddCommand(initDecodeMetadataCmd())
+	decodeCmd.AddCommand(initDecodeGasFeePolicy())
+	decodeCmd.AddCommand(initDecodeWALCmd())
+
+	encodeCmd.AddCommand(initEncodeGasFeePolicy())
+
+	rootCmd.AddCommand(deprecated("decode", "use codec decode call-result"))
+	rootCmd.AddCommand(deprecated("decode-metadata", "use codec decode metadata"))
+	rootCmd.AddCommand(deprecated("decode-feepolicy", "use codec decode fee-policy"))
+	rootCmd.AddCommand(deprecated("decode-wal", "use codec decode wal"))
+
+	rootCmd.AddCommand(deprecated("encode-feepolicy", "use codec encode fee-policy"))
+}
+
+func deprecated(cmd, msg string) *cobra.Command {
+	return &cobra.Command{
+		Use:        cmd,
+		Deprecated: msg,
+	}
+}
+
+func createSubCmd(use, short string) *cobra.Command {
+	return &cobra.Command{
+		Use:   use,
+		Short: short,
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			log.Check(cmd.Help())
+		},
+	}
 }
 
 func initDecodeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "decode <type> <type> ...",
+		Use:   "call-result <type> <type> ...",
 		Short: "Decode the output of a contract function call",
 		Args:  cobra.MinimumNArgs(2),
 		Run: func(cmd *cobra.Command, cmdArgs []string) {
@@ -60,7 +94,7 @@ func initDecodeCmd() *cobra.Command {
 
 func initDecodeWALCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "decode-wal <path>",
+		Use:   "wal <path>",
 		Short: "Parses and dumps a WAL file",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -111,7 +145,7 @@ func initDecodeWALCmd() *cobra.Command {
 
 func initDecodeMetadataCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "decode-metadata <0x...>",
+		Use:   "metadata <0x...>",
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -126,7 +160,7 @@ func initDecodeMetadataCmd() *cobra.Command {
 
 func initDecodeGasFeePolicy() *cobra.Command {
 	return &cobra.Command{
-		Use:   "decode-feepolicy <0x...>",
+		Use:   "fee-policy <0x...>",
 		Short: "Translates gas fee policy from Hex to a humanly-readable format",
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -145,7 +179,7 @@ func initEncodeGasFeePolicy() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "encode-feepolicy",
+		Use:   "fee-policy",
 		Short: "Translates metadata from Hex to a humanly-readable format",
 		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {

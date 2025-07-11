@@ -10,7 +10,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
@@ -203,7 +203,7 @@ func (bfT *BlockFactory) GetNextBlock(
 		increment = 1
 	}
 	counterBin = codec.Encode(counter + increment)
-	stateDraft.Mutations().Set(counterKey, counterBin)
+	stateDraft.Set(counterKey, counterBin)
 	block := bfT.store.Commit(stateDraft)
 	newCommitment := block.L1Commitment()
 

@@ -2,6 +2,8 @@ package trie
 
 import (
 	"encoding/hex"
+
+	"github.com/samber/lo"
 )
 
 // nodeStore immutable node store
@@ -50,6 +52,47 @@ func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*NodeData, bool) {
 		err, hex.EncodeToString(nodeBin), nodeCommitment)
 	ret.Commitment = nodeCommitment
 	return ret, true
+}
+
+func (ns *nodeStore) FetchChildrenNodeData(n *NodeData) [NumChildren]*NodeData {
+	// fetch using a single call to MultiGet
+	var dbKeys [NumChildren][]byte
+	var positions [NumChildren]int
+	numChildren := 0
+	for i := range NumChildren {
+		hash := n.Children[i]
+		if hash == nil {
+			continue
+		}
+		dbKeys[numChildren] = hash.Bytes()
+		positions[i] = numChildren
+		numChildren++
+	}
+
+	children := [NumChildren]*NodeData{}
+	if numChildren == 0 {
+		// nothing to fetch
+		return children
+	}
+
+	nodeBins := ns.trieStore.MultiGet(dbKeys[:numChildren])
+
+	// decode results
+	for i := range NumChildren {
+		if n.Children[i] == nil {
+			continue
+		}
+		p := positions[i]
+		nodeBin := nodeBins[p]
+		assertf(nodeBin != nil, "NodeStore::FetchChildrenNodeData: nodeBin is nil for child index %d, commitment: %s",
+			i, n.Commitment.String())
+		nodeData, err := nodeDataFromBytes(nodeBin)
+		assertf(err == nil, "NodeStore::FetchChildrenNodeData err: '%v' nodeBin: '%s', commitment: %x",
+			err, hex.EncodeToString(nodeBin), dbKeys[p])
+		nodeData.Commitment = lo.Must(HashFromBytes(dbKeys[p]))
+		children[i] = nodeData
+	}
+	return children
 }
 
 func (ns *nodeStore) MustFetchNodeData(nodeCommitment Hash) *NodeData {

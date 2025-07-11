@@ -64,8 +64,6 @@ func IsBaseToken(t string) (bool, error) {
 // Two instances of Type are equal iif they represent the same coin type.
 type Type = iotago.ObjectType
 
-type TypeJSON = iotago.ObjectTypeJSON
-
 func TypeFromString(s string) (Type, error) {
 	return iotago.ObjectTypeFromString(s)
 }

@@ -86,7 +86,7 @@ func (n *NodeData) String() string {
 		n.Commitment, n.PathExtension, t)
 }
 
-func (n *NodeData) iterateChildren(f func(byte, Hash) bool) bool {
+func (n *NodeData) iterateChildren(f func(byte, Hash) bool) bool { //nolint:unparam
 	for i, v := range n.Children {
 		if v != nil {
 			if !f(byte(i), *v) {
