@@ -12,8 +12,10 @@ import (
 	"github.com/samber/lo"
 )
 
-var TestChainID = lo.Must(isc.ChainIDFromBytes(testutil.TestBytes(iotago.AddressLen)))
-var TestAgentID = isc.NewContractAgentID(isc.Hn("test-contract"))
+var (
+	TestChainID = lo.Must(isc.ChainIDFromBytes(testutil.TestBytes(iotago.AddressLen)))
+	TestAgentID = isc.NewContractAgentID(isc.Hn("test-contract"))
+)
 
 func testRequestWithRef(ref *iotago.ObjectRef, sender *cryptolib.Address, assetBagID *iotago.Address) *iscmove.RefWithObject[iscmove.Request] {
 	return &iscmove.RefWithObject[iscmove.Request]{

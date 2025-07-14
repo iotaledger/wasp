@@ -49,8 +49,8 @@ func TestIscCodec(t *testing.T) {
 	bcs.TestCodec(t, anchorRef)
 
 	anchorRef.Object = &iscmovetest.TestAnchor
-	anchorRef.ObjectRef.ObjectID = &anchorRef.Object.ID
-	anchorRef.ObjectRef.Digest = iotatest.TestDigest
+	anchorRef.ObjectID = &anchorRef.Object.ID
+	anchorRef.Digest = iotatest.TestDigest
 	bcs.TestCodecAndHash(t, anchorRef, "2ed70074c011")
 
 	bcs.TestCodecAndHash(t, iscmove.AssetsBagWithBalances{

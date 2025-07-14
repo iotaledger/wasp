@@ -126,7 +126,7 @@ func TestRequestDataSerialization(t *testing.T) {
 		})
 
 		onledgerReq.ObjectRef = *iotatest.TestObjectRef
-		onledgerReq.Object.ID = *onledgerReq.ObjectRef.ObjectID
+		onledgerReq.Object.ID = *onledgerReq.ObjectID
 		onledgerReq.Object.Sender = cryptolib.TestAddress
 		onledgerReq.Object.AssetsBag.AssetsBag = iscmovetest.TestAssetsBag
 		req, err = isc.OnLedgerFromMoveRequest(&onledgerReq, cryptolib.TestAddress)

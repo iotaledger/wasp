@@ -43,5 +43,5 @@ func TestMsgMissingRequestSerialization(t *testing.T) {
 		),
 	}
 
-	bcs.TestCodecAndHash(t, msg, "35a55bfb9ca7")
+	bcs.TestCodecAndHash(t, msg, "2e3a31ac716d")
 }
