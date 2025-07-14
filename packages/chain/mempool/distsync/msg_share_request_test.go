@@ -36,7 +36,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 			req,
 		}
 
-		bcs.TestCodecAndHash(t, msg, "efa672554b1a")
+		bcs.TestCodecAndHash(t, msg, "dd92e98588cb")
 	}
 	{
 		sender := cryptolib.NewRandomAddress()
@@ -62,6 +62,6 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 			req,
 		}
 
-		bcs.TestCodecAndHash(t, msg, "82a90c016194")
+		bcs.TestCodecAndHash(t, msg, "113393f61482")
 	}
 }
