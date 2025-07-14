@@ -20,4 +20,14 @@ func TestMsgBlockProducedSerialization(t *testing.T) {
 	bcs.TestCodec(t, msg, &msgBlockProduced{
 		block: state.NewBlock(),
 	})
+
+	msg = &msgBlockProduced{
+		gpa.BasicMessage{},
+		&iotasignertest.TestSignedTransaction,
+		state.TestBlock,
+	}
+
+	bcs.TestCodecAndHash(t, msg, "6b906810f98b", &msgBlockProduced{
+		block: state.NewBlock(),
+	})
 }

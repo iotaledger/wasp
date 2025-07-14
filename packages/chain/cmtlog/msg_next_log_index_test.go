@@ -23,12 +23,34 @@ func TestMsgNextLogIndexSerialization(t *testing.T) {
 
 		bcs.TestCodec(t, msg)
 	}
-	msg := &cmtlog.MsgNextLogIndex{
-		gpa.BasicMessage{},
-		cmtlog.LogIndex(rand.Int31()),
-		cmtlog.MsgNextLogIndexCauseStarted,
-		true,
-	}
+	{
+		msg := &cmtlog.MsgNextLogIndex{
+			gpa.BasicMessage{},
+			cmtlog.LogIndex(758493),
+			cmtlog.MsgNextLogIndexCauseStarted,
+			false,
+		}
 
-	bcs.TestCodec(t, msg)
+		bcs.TestCodecAndHash(t, msg, "ad96fc92cd96")
+	}
+	{
+		msg := &cmtlog.MsgNextLogIndex{
+			gpa.BasicMessage{},
+			cmtlog.LogIndex(rand.Int31()),
+			cmtlog.MsgNextLogIndexCauseStarted,
+			true,
+		}
+
+		bcs.TestCodec(t, msg)
+	}
+	{
+		msg := &cmtlog.MsgNextLogIndex{
+			gpa.BasicMessage{},
+			cmtlog.LogIndex(59329892),
+			cmtlog.MsgNextLogIndexCauseStarted,
+			true,
+		}
+
+		bcs.TestCodecAndHash(t, msg, "c721637c3e91")
+	}
 }

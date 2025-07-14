@@ -16,5 +16,5 @@ func TestMsgVoteCodec(t *testing.T) {
 		true,
 	}
 
-	bcs.TestCodec(t, msg)
+	bcs.TestCodecAndHash(t, msg, "d54055d73f91")
 }

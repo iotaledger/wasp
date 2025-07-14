@@ -29,6 +29,16 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
+		req := isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.TestKeyPair)
+		msg := &msgShareRequest{
+			gpa.BasicMessage{},
+			123,
+			req,
+		}
+
+		bcs.TestCodecAndHash(t, msg, "efa672554b1a")
+	}
+	{
 		sender := cryptolib.NewRandomAddress()
 		req, err := isc.OnLedgerFromMoveRequest(isctest.RandomRequestWithRef(), sender)
 		require.NoError(t, err)
@@ -40,5 +50,18 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		}
 
 		bcs.TestCodec(t, msg)
+	}
+	{
+		sender := cryptolib.TestAddress
+		req, err := isc.OnLedgerFromMoveRequest(isctest.TestRequestWithRef, sender)
+		require.NoError(t, err)
+
+		msg := &msgShareRequest{
+			gpa.BasicMessage{},
+			123,
+			req,
+		}
+
+		bcs.TestCodecAndHash(t, msg, "82a90c016194")
 	}
 }

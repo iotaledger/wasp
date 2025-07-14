@@ -16,4 +16,6 @@ func TestHnameSerialize(t *testing.T) {
 	hname := isc.Hname(rand.Uint32())
 	bcs.TestCodec(t, hname)
 	rwutil.StringTest(t, hname, isc.HnameFromString)
+
+	bcs.TestCodecAndHash(t, isc.Hname(12345678), "c24fc2b805ef")
 }

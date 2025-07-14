@@ -8,7 +8,6 @@ import (
 	"github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
 	"github.com/iotaledger/wasp/clients/iscmove"
 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
@@ -109,26 +108,11 @@ func RandomChainID(seed ...[]byte) isc.ChainID {
 }
 
 func RandomRequestWithRef() *iscmove.RefWithObject[iscmove.Request] {
-	ref := iotatest.RandomObjectRef()
-	return &iscmove.RefWithObject[iscmove.Request]{
-		ObjectRef: *ref,
-		Object: &iscmove.Request{
-			ID:     *ref.ObjectID,
-			Sender: cryptolib.NewRandomAddress(),
-			AssetsBag: iscmove.AssetsBagWithBalances{
-				AssetsBag: iscmove.AssetsBag{ID: *iotatest.RandomAddress(), Size: 1},
-				Assets:    *iscmove.NewAssets(1000),
-			},
-			Message: iscmove.Message{
-				Contract: 123,
-				Function: 456,
-				Args:     [][]byte{[]byte("testarg1"), []byte("testarg2")},
-			},
-			AllowanceBCS: bcs.MustMarshal(iscmove.NewAssets(111).
-				SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::coin::TEST_A"), 222)),
-			GasBudget: 1000,
-		},
-	}
+	return testRequestWithRef(
+		iotatest.RandomObjectRef(),
+		cryptolib.NewRandomAddress(),
+		iotatest.RandomAddress(),
+	)
 }
 
 func RandomOnLedgerRequest() isc.OnLedgerRequest {

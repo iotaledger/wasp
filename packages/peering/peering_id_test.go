@@ -4,14 +4,16 @@
 package peering_test
 
 import (
+	"crypto/ed25519"
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/packages/testutil"
 )
 
 func TestPeeringIDSerialization(t *testing.T) {
 	peeringID := peering.RandomPeeringID()
-
 	bcs.TestCodec(t, &peeringID)
+	bcs.TestCodecAndHash(t, peering.PeeringID(testutil.TestBytes(ed25519.PublicKeySize)), "b4ff315a20ce")
 }

@@ -10,6 +10,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iscmove"
+	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/hashing"
 	"github.com/iotaledger/wasp/packages/isc"
@@ -88,6 +89,9 @@ func TestRequestDataSerialization(t *testing.T) {
 		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {
 			return bcs.Unmarshal[isc.Request](data)
 		})
+
+		req = isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.TestKeyPair)
+		bcs.TestCodecAndHash(t, isc.Request(req), "94051c6b730a")
 	})
 
 	t.Run("on ledger", func(t *testing.T) {
@@ -120,13 +124,21 @@ func TestRequestDataSerialization(t *testing.T) {
 		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {
 			return bcs.Unmarshal[isc.Request](data)
 		})
+
+		onledgerReq.ObjectRef = *iotatest.TestObjectRef
+		onledgerReq.Object.ID = *onledgerReq.ObjectRef.ObjectID
+		onledgerReq.Object.Sender = cryptolib.TestAddress
+		onledgerReq.Object.AssetsBag.AssetsBag = iscmovetest.TestAssetsBag
+		req, err = isc.OnLedgerFromMoveRequest(&onledgerReq, cryptolib.TestAddress)
+		require.NoError(t, err)
+		bcs.TestCodecAndHash(t, isc.Request(req), "5e4b3106e265")
 	})
 }
 
 func TestRequestIDSerialization(t *testing.T) {
 	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
-	bcs.TestCodec(t, requestID)
+	bcs.TestCodecAndHash(t, requestID, "xxx-dummy-hash")
 	rwutil.StringTest(t, requestID, isc.RequestIDFromString)
 }
 
@@ -142,5 +154,5 @@ func TestRequestRefSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, reqRef0, reqRef1)
 
-	bcs.TestCodec(t, reqRef0)
+	bcs.TestCodecAndHash(t, reqRef0, "xxx-dummy-hash")
 }

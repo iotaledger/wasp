@@ -34,4 +34,7 @@ func TestStateMetadataSerialization(t *testing.T) {
 		"https://iota.org",
 	)
 	bcs.TestCodec(t, s)
+
+	s.L1Commitment = statetest.TestL1Commitment
+	bcs.TestCodecAndHash(t, s, "0dd16b4478ba")
 }

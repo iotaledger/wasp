@@ -28,6 +28,12 @@ func TestIscCodec(t *testing.T) {
 		Owner:     iotago.MustAddressFromHex(testcommon.TestAddress),
 	})
 
+	bcs.TestCodecAndHash(t, iscmove.RefWithObject[ExampleObj]{
+		ObjectRef: *iotatest.TestObjectRef,
+		Object:    &ExampleObj{A: 42},
+		Owner:     iotago.MustAddressFromHex(testcommon.TestAddress),
+	}, "15ca3116a5d0")
+
 	anchor := iscmovetest.RandomAnchor()
 
 	anchorRef := iscmove.RefWithObject[iscmove.Anchor]{
@@ -41,6 +47,18 @@ func TestIscCodec(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, anchorRef)
+
+	anchorRef.Object = &iscmovetest.TestAnchor
+	anchorRef.ObjectRef.ObjectID = &anchorRef.Object.ID
+	anchorRef.ObjectRef.Digest = iotatest.TestDigest
+	bcs.TestCodecAndHash(t, anchorRef, "2ed70074c011")
+
+	bcs.TestCodecAndHash(t, iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmovetest.TestAssetsBag,
+		Assets: *iscmove.NewAssets(123456).
+			SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::a::A"), 100).
+			AddObject(*iotatest.TestAddress, iotago.MustTypeFromString("0x2::a::B")),
+	}, "17fd55be42d7")
 }
 
 func TestUnmarshalBCS(t *testing.T) {
