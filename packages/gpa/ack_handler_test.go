@@ -112,8 +112,8 @@ func (g *testGPA) UnmarshalMessage(data []byte) (Message, error) {
 }
 
 func TestAckHandlerResetCodec(t *testing.T) {
-	bcs.TestCodec(t, ackHandlerReset{
+	bcs.TestCodecAndHash(t, ackHandlerReset{
 		response: true,
 		latestID: 123,
-	})
+	}, "85add3e79841")
 }

@@ -15,5 +15,5 @@ func TestPublicChainMetadataSerialization(t *testing.T) {
 		Description:     "Description",
 		Website:         "Website",
 	}
-	bcs.TestCodec(t, metadata)
+	bcs.TestCodecAndHash(t, metadata, "72d016e59cb1")
 }

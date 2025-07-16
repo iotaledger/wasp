@@ -21,5 +21,5 @@ func TestFixedSizeBitVector(t *testing.T) {
 
 func TestFixedSizeBitVectorSerialization(t *testing.T) {
 	bv := util.NewFixedSizeBitVector(10).SetBits([]int{0, 3, 7, 8, 9})
-	bcs.TestCodec(t, bv)
+	bcs.TestCodecAndHash(t, bv, "ee8ae6ba7c02")
 }

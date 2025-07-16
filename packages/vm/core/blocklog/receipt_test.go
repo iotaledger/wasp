@@ -33,6 +33,19 @@ func TestReceiptCodec(t *testing.T) {
 			Params:    []isc.VMErrorParam{uint8(1), uint8(2), "string"},
 		},
 	})
+
+	bcs.TestCodecAndHash(t, blocklog.RequestReceipt{
+		Request: isc.NewOffLedgerRequest(
+			isctest.TestChainID,
+			isc.NewMessage(isc.Hn("account"), isc.Hn("deposit")),
+			123,
+			gas.LimitsDefault.MaxGasPerRequest,
+		).Sign(cryptolib.TestKeyPair),
+		Error: &isc.UnresolvedVMError{
+			ErrorCode: blocklog.ErrBlockNotFound.Code(),
+			Params:    []isc.VMErrorParam{uint8(1), uint8(2), "string"},
+		},
+	}, "2e59447923e2")
 }
 
 func TestReceiptCodecEVM(t *testing.T) {

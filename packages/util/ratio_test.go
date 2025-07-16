@@ -24,5 +24,5 @@ func TestRatioSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, ratio2, ratio3)
 
-	bcs.TestCodec(t, &ratio1, new(util.Ratio32))
+	bcs.TestCodecAndHash(t, &ratio1, "d5320ee425a9", new(util.Ratio32))
 }

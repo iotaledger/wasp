@@ -11,6 +11,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/testutil"
 )
 
 func TestMsgSigShareSerialization(t *testing.T) {
@@ -22,4 +23,10 @@ func TestMsgSigShareSerialization(t *testing.T) {
 		b,
 	}
 	bcs.TestCodec(t, msg)
+
+	msg = &msgSigShare{
+		gpa.BasicMessage{},
+		testutil.TestBytes(10),
+	}
+	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")
 }

@@ -27,25 +27,5 @@ func RandomDigest() *iotago.Digest {
 }
 
 func RandomTransactionData() *iotago.TransactionData {
-	ptb := iotago.NewProgrammableTransactionBuilder()
-	ptb.Command(
-		iotago.Command{
-			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       RandomAddress(),
-				Module:        "test_module",
-				Function:      "test_func",
-				TypeArguments: []iotago.TypeTag{},
-				Arguments:     []iotago.Argument{},
-			},
-		},
-	)
-	pt := ptb.Finish()
-	tx := iotago.NewProgrammable(
-		RandomAddress(),
-		pt,
-		[]*iotago.ObjectRef{},
-		10000,
-		100,
-	)
-	return &tx
+	return testTransactionData(RandomAddress(), RandomAddress())
 }

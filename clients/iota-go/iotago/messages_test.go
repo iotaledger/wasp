@@ -48,5 +48,5 @@ func TestTransactionData(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, targetHash, digest.Bytes())
 
-	bcs.TestCodec(t, tx)
+	bcs.TestCodecAndHash(t, tx, "2ce05d5947a7")
 }

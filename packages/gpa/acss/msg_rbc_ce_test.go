@@ -11,6 +11,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/packages/testutil"
 )
 
 func TestMsgRBCCEPayloadSerialization(t *testing.T) {
@@ -25,4 +26,13 @@ func TestMsgRBCCEPayloadSerialization(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, msg)
+
+	msg = &msgRBCCEPayload{
+		gpa.BasicMessage{},
+		nil,
+		testutil.TestBytes(10),
+		nil,
+	}
+
+	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")
 }

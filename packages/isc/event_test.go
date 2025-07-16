@@ -20,4 +20,12 @@ func TestEventSerialize(t *testing.T) {
 	rwutil.BytesTest(t, event, func(data []byte) (*isc.Event, error) {
 		return bcs.Unmarshal[*isc.Event](data)
 	})
+
+	event = &isc.Event{
+		ContractID: isc.Hname(1223),
+		Topic:      "this is a topic",
+		Timestamp:  uint64(123456789),
+		Payload:    []byte("message payload"),
+	}
+	bcs.TestCodecAndHash(t, event, "ac816b79c1ca")
 }

@@ -3,9 +3,9 @@ package iotasignertest
 import (
 	"crypto/rand"
 
-	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/samber/lo"
 )
 
 func RandomSigner() iotasigner.Signer {
@@ -18,18 +18,5 @@ func RandomSigner() iotasigner.Signer {
 }
 
 func RandomSignedTransaction(signers ...iotasigner.Signer) iotasigner.SignedTransaction {
-	tx := iotatest.RandomTransactionData()
-	txBytes, err := bcs.Marshal(&tx.V1.Kind)
-	if err != nil {
-		panic(err)
-	}
-	var signer iotasigner.Signer
-	if len(signers) == 0 {
-		signer = RandomSigner()
-	}
-	signature, err := signer.SignTransactionBlock(txBytes, iotasigner.DefaultIntent())
-	if err != nil {
-		panic(err)
-	}
-	return *iotasigner.NewSignedTransaction(tx, signature)
+	return testSignedTransaction(iotatest.RandomTransactionData(), lo.FirstOr(signers, RandomSigner()))
 }
