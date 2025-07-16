@@ -138,8 +138,12 @@ func TestRequestDataSerialization(t *testing.T) {
 func TestRequestIDSerialization(t *testing.T) {
 	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
-	bcs.TestCodecAndHash(t, requestID, "xxx-dummy-hash")
+	bcs.TestCodec(t, requestID)
 	rwutil.StringTest(t, requestID, isc.RequestIDFromString)
+
+	req = isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.TestKeyPair)
+	requestID = req.ID()
+	bcs.TestCodecAndHash(t, requestID, "16ff060b83fc")
 }
 
 func TestRequestRefSerialization(t *testing.T) {
@@ -154,5 +158,11 @@ func TestRequestRefSerialization(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, reqRef0, reqRef1)
 
-	bcs.TestCodecAndHash(t, reqRef0, "xxx-dummy-hash")
+	bcs.TestCodec(t, reqRef0)
+
+	req = isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.TestKeyPair)
+	bcs.TestCodecAndHash(t, &isc.RequestRef{
+		ID:   req.ID(),
+		Hash: hashing.TestHash,
+	}, "2aae7f94c0f4")
 }
