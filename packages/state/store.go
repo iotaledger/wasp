@@ -164,7 +164,7 @@ func (s *store) ExtractBlock(d StateDraft) Block {
 	return block
 }
 
-func (s *store) Commit(d StateDraft) Block {
+func (s *store) Commit(d StateDraft) (Block, trie.CommitStats) {
 	s.writeMutex.Lock()
 	defer s.writeMutex.Unlock()
 
@@ -174,7 +174,7 @@ func (s *store) Commit(d StateDraft) Block {
 	if s.metrics != nil {
 		s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
 	}
-	return block
+	return block, stats
 }
 
 func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {

@@ -8,14 +8,14 @@ import (
 	"math/rand"
 
 	"golang.org/x/crypto/blake2b"
-
-	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/hive.go/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
 	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
@@ -103,7 +103,7 @@ func RandomBlock() Block {
 		draft.Set(kv.Key([]byte{byte(rand.Intn(math.MaxInt8))}), []byte{byte(rand.Intn(math.MaxInt8))})
 	}
 
-	return store.Commit(draft)
+	return lo.Return1(store.Commit(draft))
 }
 
 var TestBlock = func() Block {

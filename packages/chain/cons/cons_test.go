@@ -244,7 +244,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.NeedStateMgrSaveBlock)
-		block := chainStates[nid].Commit(out.NeedStateMgrSaveBlock)
+		block, _ := chainStates[nid].Commit(out.NeedStateMgrSaveBlock)
 		require.NotNil(t, block)
 		tc.WithInput(nid, cons.NewInputStateMgrBlockSaved(block))
 	}

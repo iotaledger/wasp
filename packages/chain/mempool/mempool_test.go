@@ -517,7 +517,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 	}
 	vmResult, err := vmimpl.Run(vmTask)
 	require.NoError(te.t, err)
-	block := store.Commit(vmResult.StateDraft)
+	block, _ := store.Commit(vmResult.StateDraft)
 	chainState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(te.t, err)
 	anchor, err = te.tcl.RunOnChainStateTransition(anchor, vmResult.UnsignedTransaction)

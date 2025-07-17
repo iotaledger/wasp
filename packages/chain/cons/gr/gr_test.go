@@ -357,7 +357,7 @@ func (tsm *testStateMgr) ConsensusProducedBlock(ctx context.Context, stateDraft 
 	tsm.lock.Lock()
 	defer tsm.lock.Unlock()
 	resp := make(chan state.Block, 1)
-	block := tsm.chainStore.Commit(stateDraft)
+	block, _ := tsm.chainStore.Commit(stateDraft)
 	resp <- block
 	close(resp)
 	return resp

@@ -117,7 +117,7 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 }
 
 func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
-	block := ch.store.Commit(stateDraft)
+	block, _ := ch.store.Commit(stateDraft)
 	err := ch.store.SetLatest(block.TrieRoot())
 	if err != nil {
 		panic(err)

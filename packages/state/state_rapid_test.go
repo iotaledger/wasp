@@ -55,7 +55,7 @@ func (sm *stateSM) KVDel(t *rapid.T) {
 // Action: Commit a block, start new empty draft.
 func (sm *stateSM) CommitAddEmpty(t *rapid.T) {
 	var err error
-	block := sm.store.Commit(sm.draft)
+	block, _ := sm.store.Commit(sm.draft)
 	//
 	// Validate, if the committed state is correct.
 	blockState, err := sm.store.StateByTrieRoot(block.TrieRoot())
@@ -107,7 +107,7 @@ func TestRapidReproduced(t *testing.T) {
 	draft.Set(kv.Key([]byte{1}), []byte{0})
 	draft.Set(kv.Key([]byte{0x10}), []byte{0})
 	//
-	block := store.Commit(draft)
+	block, _ := store.Commit(draft)
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
 	//
@@ -130,7 +130,7 @@ func TestRapidReproduced2(t *testing.T) {
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 
-	block := store.Commit(draft)
+	block, _ := store.Commit(draft)
 	root1 := block.TrieRoot()
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	t.Log(block.TrieRoot())
@@ -147,6 +147,6 @@ func TestRapidReproduced2(t *testing.T) {
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x0})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 
-	block = store.Commit(draft)
+	block, _ = store.Commit(draft)
 	require.NotEqualValues(t, root1, block.TrieRoot())
 }

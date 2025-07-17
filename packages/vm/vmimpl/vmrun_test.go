@@ -178,7 +178,7 @@ func runRequestsAndTransitionAnchor(
 	require.NotNil(t, res.UnsignedTransaction)
 	require.NotNil(t, res.StateDraft)
 
-	block := store.Commit(res.StateDraft)
+	block, _ := store.Commit(res.StateDraft)
 	store.SetLatest(block.TrieRoot())
 	anchor = transitionAnchor(t, anchor, store, block)
 	return block, anchor

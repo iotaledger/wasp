@@ -67,7 +67,7 @@ func (ros *readOnlyStore) NewEmptyStateDraft(prevL1Commitment *state.L1Commitmen
 	return nil, fmt.Errorf("cannot create empty state draft in read-only store")
 }
 
-func (ros *readOnlyStore) Commit(state.StateDraft) state.Block {
+func (ros *readOnlyStore) Commit(state.StateDraft) (state.Block, trie.CommitStats) {
 	panic("Cannot commit to read-only store")
 }
 

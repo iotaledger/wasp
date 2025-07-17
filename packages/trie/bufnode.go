@@ -29,34 +29,6 @@ func newBufferedNode(n *NodeData, triePath []byte) *bufferedNode {
 	return ret
 }
 
-// commitNode re-calculates node commitment and, recursively, its children commitments
-func (n *bufferedNode) commitNode(triePartition, valuePartition KVWriter, refcounts *Refcounts, stats *CommitStats) {
-	childUpdates := make(map[byte]*Hash)
-	for idx, child := range n.uncommittedChildren {
-		if child == nil {
-			childUpdates[idx] = nil
-		} else {
-			child.commitNode(triePartition, valuePartition, refcounts, stats)
-			hashCopy := child.nodeData.Commitment
-			childUpdates[idx] = &hashCopy
-		}
-	}
-	n.nodeData.update(childUpdates, n.terminal, n.pathExtension)
-
-	n.mustPersist(triePartition)
-	if len(n.value) > 0 {
-		valuePartition.Set(n.terminal.Bytes(), n.value)
-	}
-
-	nodeCount, valueCount := refcounts.Inc(n)
-	if nodeCount == 1 {
-		stats.CreatedNodes++
-	}
-	if valueCount == 1 {
-		stats.CreatedValues++
-	}
-}
-
 func (n *bufferedNode) mustPersist(partition KVWriter) {
 	dbKey := n.nodeData.Commitment.Bytes()
 	partition.Set(dbKey, n.nodeData.Bytes())
@@ -147,8 +119,8 @@ func (n *bufferedNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *bufferedNode
 	}
 	var theOnlyChildCommitted *bufferedNode
 
-	for i := 0; i < NumChildren; i++ {
-		child := n.getChild(byte(i), nodeStore)
+	for i := range byte(NumChildren) {
+		child := n.getChild(i, nodeStore)
 		if child != nil {
 			if theOnlyChildCommitted != nil {
 				// at least 2 children
@@ -158,4 +130,22 @@ func (n *bufferedNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *bufferedNode
 		}
 	}
 	return true, theOnlyChildCommitted
+}
+
+func (n *bufferedNode) traversePreOrder(f func(*bufferedNode)) {
+	f(n)
+	for i := range byte(NumChildren) {
+		if child := n.uncommittedChildren[i]; child != nil {
+			child.traversePreOrder(f)
+		}
+	}
+}
+
+func (n *bufferedNode) traversePostOrder(f func(*bufferedNode)) {
+	for i := range byte(NumChildren) {
+		if child := n.uncommittedChildren[i]; child != nil {
+			child.traversePostOrder(f)
+		}
+	}
+	f(n)
 }

@@ -115,7 +115,7 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 	})
 }
 
-var initArgs = origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
+var initArgs = origin.DefaultInitParams(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())).Encode()
 
 func initializedStore(db kvstore.KVStore) state.Store {
 	st := state.NewStoreWithUniqueWriteMutex(db)
@@ -175,7 +175,7 @@ func Test1Block(t *testing.T) {
 		d.Set("a", []byte{1})
 
 		require.EqualValues(t, []byte{1}, d.Get("a"))
-		block := cs.Commit(d)
+		block, _ := cs.Commit(d)
 		require.False(t, cs.IsEmpty())
 
 		return block
@@ -199,7 +199,7 @@ func TestReorg(t *testing.T) {
 	for i := 1; i < 10; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("k", []byte("a"))
-		block := cs.Commit(d)
+		block, _ := cs.Commit(d)
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
 	}
@@ -209,7 +209,7 @@ func TestReorg(t *testing.T) {
 	for i := 6; i < 15; i++ {
 		d := cs.NewStateDraft(time.Now(), block.L1Commitment())
 		d.Set("k", []byte("b"))
-		block = cs.Commit(d)
+		block, _ = cs.Commit(d)
 	}
 
 	// no reorg yet
@@ -240,7 +240,7 @@ func TestReplay(t *testing.T) {
 	for i := 1; i < 10; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("k", fmt.Appendf(nil, "a%d", i))
-		block := cs.Commit(d)
+		block, _ := cs.Commit(d)
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
 	}
@@ -267,17 +267,17 @@ func TestEqualStates(t *testing.T) {
 	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
 	draft1.Set("b", []byte("variable b"))
-	block1 := cs1.Commit(draft1)
+	block1, _ := cs1.Commit(draft1)
 	time2 := time.Now()
 	draft2 := cs1.NewStateDraft(time2, block1.L1Commitment())
 	draft2.Set("b", []byte("another value of b"))
 	draft2.Set("c", []byte("new variable c"))
-	block2 := cs1.Commit(draft2)
+	block2, _ := cs1.Commit(draft2)
 	time3 := time.Now()
 	draft3 := cs1.NewStateDraft(time3, block2.L1Commitment())
 	draft3.Del("a")
 	draft3.Set("d", []byte("newest variable d"))
-	block3 := cs1.Commit(draft3)
+	block3, _ := cs1.Commit(draft3)
 	state1 := cs1.StateByTrieRoot(block3.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
@@ -285,15 +285,15 @@ func TestEqualStates(t *testing.T) {
 	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("b", []byte("variable b"))
 	draft1.Set("a", []byte("variable a"))
-	block1 = cs2.Commit(draft1)
+	block1, _ = cs2.Commit(draft1)
 	draft2 = cs2.NewStateDraft(time2, block1.L1Commitment())
 	draft2.Set("c", []byte("new variable c"))
 	draft2.Set("b", []byte("another value of b"))
-	block2 = cs2.Commit(draft2)
+	block2, _ = cs2.Commit(draft2)
 	draft3 = cs2.NewStateDraft(time3, block2.L1Commitment())
 	draft3.Set("d", []byte("newest variable d"))
 	draft3.Del("a")
-	block3 = cs2.Commit(draft3)
+	block3, _ = cs2.Commit(draft3)
 	state2 := cs2.StateByTrieRoot(block3.TrieRoot())
 
 	require.True(t, state1.Equals(state2))
@@ -337,14 +337,14 @@ func TestDiffStatesValues(t *testing.T) {
 	time1 := time.Now()
 	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 := cs1.Commit(draft1)
+	block1, _ := cs1.Commit(draft1)
 	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
 	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("other value of a"))
-	block1 = cs2.Commit(draft1)
+	block1, _ = cs2.Commit(draft1)
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
 
 	require.False(t, state1.Equals(state2))
@@ -357,11 +357,11 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 	time1 := time.Now()
 	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 := cs1.Commit(draft1)
+	block1, _ := cs1.Commit(draft1)
 	time2 := time.Now()
 	draft2 := cs1.NewStateDraft(time2, block1.L1Commitment())
 	draft1.Set("b", []byte("variable b"))
-	block2 := cs1.Commit(draft2)
+	block2, _ := cs1.Commit(draft2)
 	state1 := cs1.StateByTrieRoot(block2.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
@@ -369,7 +369,7 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
 	draft1.Set("b", []byte("variable b"))
-	block1 = cs2.Commit(draft1)
+	block1, _ = cs2.Commit(draft1)
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
 
 	require.Equal(t, uint32(2), state1.BlockIndex())
@@ -383,14 +383,14 @@ func TestDiffStatesTimestamp(t *testing.T) {
 	cs1 := mustChainStore{initializedStore(db1)}
 	draft1 := cs1.NewStateDraft(time.Now(), origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 := cs1.Commit(draft1)
+	block1, _ := cs1.Commit(draft1)
 	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
 	draft1 = cs2.NewStateDraft(time.Now(), origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 = cs2.Commit(draft1)
+	block1, _ = cs2.Commit(draft1)
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
 
 	require.NotEqual(t, state1.Timestamp(), state2.Timestamp())
@@ -428,10 +428,10 @@ func TestDoubleCommit(t *testing.T) {
 		newValue := fmt.Appendf(nil, "a%d", i)
 		d1 := cs.NewStateDraft(now, latestCommitment)
 		d1.Set(keyChanged, newValue)
-		block1 := cs.Commit(d1)
+		block1, _ := cs.Commit(d1)
 		d2 := cs.NewStateDraft(now, latestCommitment)
 		d2.Set(keyChanged, newValue)
-		block2 := cs.Commit(d2)
+		block2, _ := cs.Commit(d2)
 		require.Equal(t, block1.L1Commitment(), block2.L1Commitment())
 		err := cs.SetLatest(block1.TrieRoot())
 		require.NoError(t, err)
@@ -482,7 +482,7 @@ func (r *randomState) randomValue() []byte {
 	return b
 }
 
-func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Time) state.Block {
+func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Time) (state.Block, trie.CommitStats) {
 	d := r.cs.NewStateDraft(timestamp, latestBlock.L1Commitment())
 	for range 50 {
 		d.Set(r.randomKey(), r.randomValue())
@@ -490,10 +490,10 @@ func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Tim
 	for range 10 {
 		d.Del(r.randomKey())
 	}
-	block := r.cs.Commit(d)
+	block, stats := r.cs.Commit(d)
 	err := r.cs.SetLatest(block.TrieRoot())
 	require.NoError(r.t, err)
-	return block
+	return block, stats
 }
 
 func dbSize(db kvstore.KVStore) int {
@@ -513,12 +513,13 @@ func TestPruning(t *testing.T) {
 		var sizes []int
 
 		r := newRandomState(t)
+		t.Logf("committed block %d, %s", 0, r.cs.LatestBlock().TrieRoot())
 
 		for i := 1; i <= 20; i++ {
-			block := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
+			block, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
 
 			index := block.StateIndex()
-			t.Logf("committed block %d", index)
+			t.Logf("committed block %d, %+v, %s", index, stats, block.TrieRoot())
 
 			if keepLatest > 0 && index >= uint32(keepLatest) {
 				p := index - uint32(keepLatest)
@@ -567,7 +568,8 @@ func TestPruning2(t *testing.T) {
 	var n int64 = 1
 
 	for i := 1; i <= 20; i++ {
-		block := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(n, 0))
+		block, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(n, 0))
+		t.Logf("committed block %d, %+v", block.StateIndex(), stats)
 		n++
 		trieRoots = append(trieRoots, block.TrieRoot())
 	}
@@ -602,7 +604,8 @@ func TestPruning2(t *testing.T) {
 
 		// commit a new block based off a random trie root
 		trieRoot := trieRoots[0]
-		block := r.commitNewBlock(r.cs.BlockByTrieRoot(trieRoot), time.Unix(n, 0))
+		block, stats := r.commitNewBlock(r.cs.BlockByTrieRoot(trieRoot), time.Unix(n, 0))
+		t.Logf("committed block %d, %+v", block.StateIndex(), stats)
 		n++
 		trieRoots = append(trieRoots, block.TrieRoot())
 		t.Logf("committed block: %d", len(trieRoots))
@@ -620,7 +623,7 @@ func makeRandomDB(t *testing.T, nBlocks int) (mustChainStore, kvstore.KVStore) {
 		if i == 1 {
 			d.Set("x", []byte(strings.Repeat("v", 70)))
 		}
-		block := cs.Commit(d)
+		block, _ := cs.Commit(d)
 		require.False(t, cs.IsEmpty())
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
@@ -705,10 +708,10 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 func TestPrunedSnapshot(t *testing.T) {
 	r := newRandomState(t)
 	for i := 1; i <= 20; i++ {
-		block := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
+		block, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
 		require.False(t, r.cs.IsEmpty())
 		index := block.StateIndex()
-		t.Logf("committed block %d", index)
+		t.Logf("committed block %d, %+v", index, stats)
 	}
 	_, err := r.cs.LargestPrunedBlockIndex()
 	require.Error(t, err)

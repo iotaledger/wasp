@@ -2,6 +2,7 @@ package test
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/dgryski/go-clockpro"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pingcap/go-ycsb/pkg/generator"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/packages/trie"
@@ -458,6 +460,64 @@ func TestDeterminism(t *testing.T) {
 		name := "commit-simple-"
 		t.Run(name+"1", tf(s1, s2))
 	}
+}
+
+func TestRefcounts(t *testing.T) {
+	store := NewInMemoryKVStore()
+	root0 := trie.MustInitRoot(store)
+
+	var root1 trie.Hash
+	{
+		tr := lo.Must(trie.NewTrieUpdatable(store, root0))
+		tr.Update([]byte("key1"), bytes.Repeat([]byte{'x'}, 100))
+		root1, _ = tr.Commit(store)
+	}
+
+	refcounts := trie.NewRefcounts(store)
+	checkNode := func(h string, n uint32) {
+		require.Equal(t, n, refcounts.GetNode(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
+	}
+	checkValue := func(v string, n uint32) {
+		require.Equal(t, n, refcounts.GetValue(lo.Must(hex.DecodeString(v))))
+	}
+
+	// trie.DebugDump(store, []trie.Hash{root0, root1})
+	// [trie store]
+	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
+	//  [] c:e71db7c574e3b92e39ae790f08b1a12321a75586 ext:[] term:<nil>
+	//      [6] c:9d1a773be81d04ec2ccd0f82511fe4325c74b825 ext:[11 6 5 7 9 3 1] term:ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0
+	//          [v: ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0 -> "xxxxxxxxxxxxxxxxx..."]
+	//
+	// all nodes and values have refcount = 1
+	checkNode("e71db7c574e3b92e39ae790f08b1a12321a75586", 1)
+	checkNode("534f98b3ad630819d284287b647283a1d5dbcf90", 1)
+	checkNode("9d1a773be81d04ec2ccd0f82511fe4325c74b825", 1)
+	checkValue("ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0", 1)
+
+	var root2 trie.Hash
+	{
+		tr := lo.Must(trie.NewTrieUpdatable(store, root1))
+		tr.Update([]byte("yyyy"), bytes.Repeat([]byte{'y'}, 100))
+		root2, _ = tr.Commit(store)
+	}
+
+	_ = root2
+	// trie.DebugDump(store, []trie.Hash{root0, root1, root2})
+	// [trie store]
+	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
+	//  [] c:e71db7c574e3b92e39ae790f08b1a12321a75586 ext:[] term:<nil>
+	//      [6] c:9d1a773be81d04ec2ccd0f82511fe4325c74b825 ext:[11 6 5 7 9 3 1] term:ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0
+	//          [v: ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0 -> "xxxxxxxxxxxxxxxxx..."]
+	//  [] c:72c1b1df73c0765419c296f6a2765f685dd5bfe9 ext:[] term:<nil>
+	//      [6] c:9d1a773be81d04ec2ccd0f82511fe4325c74b825 ext:[11 6 5 7 9 3 1] term:ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0
+	//          [v: ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0 -> "xxxxxxxxxxxxxxxxx..."]
+	//      [7] c:17a2f463569bbc3e2bd810c2d327819a6ff95e17 ext:[9 7 9 7 9 7 9] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//          [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//
+	// note that node 9d1a773be81d04ec2ccd0f82511fe4325c74b825 should have refcount = 2
+	checkNode("9d1a773be81d04ec2ccd0f82511fe4325c74b825", 2)
+	checkNode("17a2f463569bbc3e2bd810c2d327819a6ff95e17", 1)
+	checkValue("ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0", 1)
 }
 
 func TestIterate(t *testing.T) {

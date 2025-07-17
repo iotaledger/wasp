@@ -65,7 +65,7 @@ func runTestChainOfBlocks(
 
 	for _, block := range blocksToCommit {
 		sd := bf.GetStateDraft(block)
-		block2 := store.Commit(sd)
+		block2, _ := store.Commit(sd)
 		require.True(t, block.Equals(block2))
 		log.LogDebugf("Committed block: %v %s", block.StateIndex(), block.L1Commitment())
 	}

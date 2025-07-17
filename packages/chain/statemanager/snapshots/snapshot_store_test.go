@@ -57,7 +57,7 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 			stateDraft, err := storeNew.NewEmptyStateDraft(blocks[i].PreviousL1Commitment())
 			require.NoError(t, err)
 			blocks[i].Mutations().ApplyTo(stateDraft)
-			block := storeNew.Commit(stateDraft)
+			block, _ := storeNew.Commit(stateDraft)
 			require.True(t, blocks[i].TrieRoot().Equals(block.TrieRoot()))
 			require.True(t, blocks[i].Hash().Equals(block.Hash()))
 		}

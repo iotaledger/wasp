@@ -204,7 +204,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	}
 	counterBin = codec.Encode(counter + increment)
 	stateDraft.Set(counterKey, counterBin)
-	block := bfT.store.Commit(stateDraft)
+	block, _ := bfT.store.Commit(stateDraft)
 	newCommitment := block.L1Commitment()
 
 	consumedAnchor := bfT.GetAnchor(commitment)

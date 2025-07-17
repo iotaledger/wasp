@@ -159,7 +159,7 @@ func InitChain(
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
 
-	block := store.Commit(d)
+	block, _ := store.Commit(d)
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}

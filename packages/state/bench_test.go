@@ -34,7 +34,7 @@ func BenchmarkTriePruning(b *testing.B) {
 	r := newRandomStateWithDB(b, kvs)
 	trieRoots := make([]trie.Hash, 0)
 	for i := 1; i <= b.N; i++ {
-		b := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
+		b, _ := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
 		trieRoots = append(trieRoots, b.TrieRoot())
 	}
 	kvs.Flush()

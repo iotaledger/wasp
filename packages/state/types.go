@@ -67,7 +67,7 @@ type Store interface {
 
 	// Commit commits the given state, creating a new block and trie root in the DB.
 	// SetLatest must be called manually to consider the new state as the latest one.
-	Commit(StateDraft) Block
+	Commit(StateDraft) (Block, trie.CommitStats)
 
 	// ExtractBlock performs a dry-run of Commit, discarding all changes that would be
 	// made to the DB.

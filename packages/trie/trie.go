@@ -79,10 +79,10 @@ func (tr *TrieUpdatable) SetRoot(h Hash) error {
 func (tr *TrieUpdatable) Commit(store KVStore) (Hash, CommitStats) {
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
-	refcounts := newRefcounts(store)
 
-	var stats CommitStats
-	tr.mutatedRoot.commitNode(triePartition, valuePartition, refcounts, &stats)
+	commitNode(tr.mutatedRoot, triePartition, valuePartition)
+	stats := newRefcounts(store).inc(tr.mutatedRoot)
+
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
@@ -91,6 +91,26 @@ func (tr *TrieUpdatable) Commit(store KVStore) (Hash, CommitStats) {
 	assertNoError(err)
 
 	return newTrieRoot, stats
+}
+
+// commitNode re-calculates node commitment and, recursively, its children commitments
+func commitNode(root *bufferedNode, triePartition, valuePartition KVWriter) {
+	root.traversePostOrder(func(node *bufferedNode) {
+		childUpdates := make(map[byte]*Hash)
+		for idx, child := range node.uncommittedChildren {
+			if child == nil {
+				childUpdates[idx] = nil
+			} else {
+				hashCopy := child.nodeData.Commitment
+				childUpdates[idx] = &hashCopy
+			}
+		}
+		node.nodeData.update(childUpdates, node.terminal, node.pathExtension)
+		node.mustPersist(triePartition)
+		if len(node.value) > 0 {
+			valuePartition.Set(node.terminal.Bytes(), node.value)
+		}
+	})
 }
 
 func (tr *TrieUpdatable) newTerminalNode(triePath, pathExtension, value []byte) *bufferedNode {

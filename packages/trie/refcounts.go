@@ -7,102 +7,137 @@ import (
 )
 
 type Refcounts struct {
-	nodes  KVStore
-	values KVStore
+	store KVStore
+}
+
+func NewRefcounts(store KVStore) *Refcounts {
+	return newRefcounts(store)
 }
 
 func newRefcounts(store KVStore) *Refcounts {
-	return &Refcounts{
-		nodes:  makeKVStorePartition(store, partitionRefcountNodes),
-		values: makeKVStorePartition(store, partitionRefcountValues),
-	}
+	return &Refcounts{store: store}
 }
 
 func (r *Refcounts) GetNode(commitment Hash) uint32 {
-	return getRefcount(r.nodes, commitment[:])
+	return r.getRefcount(nodeRefcountKey(commitment[:]))
 }
 
-func (r *Refcounts) Inc(node *bufferedNode) (uint32, uint32) {
-	nodeCount, valueCount := r.incNodeAndValue(node.nodeData)
-	node.nodeData.iterateChildren(func(i byte, commitment Hash) bool {
-		if _, ok := node.uncommittedChildren[i]; !ok {
-			// the new node adds a reference to an "old" node
-			n := r.incNode(commitment)
-			assertf(n > 1, "inconsistency")
+func (r *Refcounts) GetValue(commitment []byte) uint32 {
+	return r.getRefcount(valueRefcountKey(commitment))
+}
+
+// inc is called after a commit operation, and increments the refcounts for all affected nodes
+func (r *Refcounts) inc(root *bufferedNode) CommitStats {
+	// use MultiGet to read all refcounts that are affected
+	var dbKeys [][]byte
+	root.traversePreOrder(func(node *bufferedNode) {
+		dbKeys = append(dbKeys, nodeRefcountKey(node.nodeData.Commitment[:]))
+		if node.terminal != nil && !node.terminal.IsValue {
+			dbKeys = append(dbKeys, valueRefcountKey(node.terminal.Data))
 		}
-		return true
+		// also fetch old nodes referenced by this node
+		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
+			if _, ok := node.uncommittedChildren[i]; !ok {
+				dbKeys = append(dbKeys, nodeRefcountKey(childCommitment[:]))
+			}
+			return true
+		})
 	})
-	return nodeCount, valueCount
-}
+	refCountBytes := r.store.MultiGet(dbKeys)
+	refCounts := lo.Map(refCountBytes, func(v []byte, _ int) uint32 {
+		if v == nil {
+			return 0
+		}
+		return codec.MustDecode[uint32](v)
+	})
 
-func (r *Refcounts) incNodeAndValue(node *NodeData) (uint32, uint32) {
-	n := r.incNode(node.Commitment)
-	v := uint32(0)
-	if n == 1 && node.Terminal != nil && !node.Terminal.IsValue {
-		v = incRefcount(r.values, node.Terminal.Data)
+	// increment and write updated refcounts
+	//
+	// writing updated values in a batch is not necessary here because it is
+	// already handled by the underlying store
+	incrementAndSet := func(refcount uint32, dbKey []byte, createdCount *uint) uint32 {
+		refcount++
+		r.setRefcount(dbKey, refcount)
+		if createdCount != nil && refcount == 1 {
+			*createdCount++
+		}
+		return refcount
 	}
-	return n, v
+	stats := CommitStats{}
+	root.traversePreOrder(func(node *bufferedNode) {
+		var nodeRefcount uint32
+		nodeRefcount, refCounts = refCounts[0], refCounts[1:]
+		nodeRefcount = incrementAndSet(nodeRefcount, nodeRefcountKey(node.nodeData.Commitment[:]), &stats.CreatedNodes)
+
+		if node.terminal != nil && !node.terminal.IsValue {
+			var valueRefcount uint32
+			valueRefcount, refCounts = refCounts[0], refCounts[1:]
+			if nodeRefcount == 1 {
+				// a new node adds a reference to a value
+				valueRefcount = incrementAndSet(valueRefcount, valueRefcountKey(node.terminal.Data), &stats.CreatedValues)
+			}
+		}
+
+		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
+			if _, ok := node.uncommittedChildren[i]; !ok {
+				var childRefcount uint32
+				childRefcount, refCounts = refCounts[0], refCounts[1:]
+				if nodeRefcount == 1 {
+					// a new node adds a reference to an old node
+					assertf(childRefcount > 0, "inconsistency %s %s %d", node.nodeData.Commitment, childCommitment, childRefcount)
+					childRefcount = incrementAndSet(childRefcount, nodeRefcountKey(childCommitment[:]), nil)
+				}
+			}
+			return true
+		})
+	})
+	assertf(len(refCounts) == 0, "inconsistency: remaining refCounts")
+	return stats
 }
 
-func (r *Refcounts) incNode(commitment Hash) uint32 {
-	return incRefcount(r.nodes, commitment[:])
+func (r *Refcounts) SetNode(hash Hash, n uint32) {
+	r.setRefcount(nodeRefcountKey(hash[:]), n)
 }
 
-func (r *Refcounts) Dec(node *NodeData, currentNodeRefcount uint32) (deleteNode, deleteValue bool) {
-	n := decRefcount(r.nodes, node.Commitment[:], currentNodeRefcount)
-	deleteNode = n == 0
-	if n == 0 && node.Terminal != nil && !node.Terminal.IsValue {
-		nv := getRefcount(r.values, node.Terminal.Data)
-		nv = decRefcount(r.values, node.Terminal.Data, nv)
-		deleteValue = nv == 0
-	}
-	return
+func (r *Refcounts) SetValue(key []byte, n uint32) {
+	r.setRefcount(valueRefcountKey(key), n)
 }
 
 func (r *Refcounts) DebugDump() {
 	fmt.Print("[node refcounts]\n")
-	r.nodes.IterateKeys(func(k []byte) bool {
-		n := getRefcount(r.nodes, k)
+	makeKVStorePartition(r.store, partitionRefcountNodes).IterateKeys(func(k []byte) bool {
+		n := r.getRefcount(nodeRefcountKey(k))
 		fmt.Printf("   %x: %d\n", k, n)
 		return true
 	})
 	fmt.Print("[value refcounts]\n")
-	r.values.IterateKeys(func(k []byte) bool {
-		n := getRefcount(r.values, k)
+	makeKVStorePartition(r.store, partitionRefcountValues).IterateKeys(func(k []byte) bool {
+		n := r.getRefcount(valueRefcountKey(k))
 		fmt.Printf("   %x: %d\n", k, n)
 		return true
 	})
 }
 
-func incRefcount(s KVStore, key []byte) uint32 {
-	n := getRefcount(s, key)
-	n++
-	setRefcount(s, key, n)
-	return n
+func nodeRefcountKey(nodeCommitment []byte) []byte {
+	return append([]byte{partitionRefcountNodes}, nodeCommitment...)
 }
 
-func decRefcount(s KVStore, key []byte, currentRefcount uint32) uint32 {
-	if currentRefcount == 0 {
-		panic("inconsistency: negative refcount")
-	}
-
-	newRefcount := currentRefcount - 1
-	setRefcount(s, key, newRefcount)
-	return newRefcount
+func valueRefcountKey(valueCommitment []byte) []byte {
+	return append([]byte{partitionRefcountValues}, valueCommitment...)
 }
 
-func getRefcount(s KVStore, key []byte) uint32 {
-	b := s.Get(key)
+func (r *Refcounts) getRefcount(key []byte) uint32 {
+	b := r.store.Get(key)
 	if b == nil {
 		return 0
 	}
 	return codec.MustDecode[uint32](b)
 }
 
-func setRefcount(s KVStore, key []byte, n uint32) {
+func (r *Refcounts) setRefcount(key []byte, n uint32) {
 	if n == 0 {
-		s.Del(key)
+		r.store.Del(key)
 	} else {
-		s.Set(key, codec.Encode[uint32](n))
+		r.store.Set(key, codec.Encode[uint32](n))
 	}
 }
