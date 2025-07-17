@@ -28,4 +28,20 @@ func TestMsgMissingRequestSerialization(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, msg)
+
+	msg = &msgMissingRequest{
+		gpa.BasicMessage{},
+		isc.RequestRefFromRequest(
+			isc.NewOffLedgerRequest(
+				isctest.TestChainID,
+				isc.NewMessage(contract, entryPoint, nil),
+				0,
+				gasBudget,
+			).Sign(
+				cryptolib.TestKeyPair,
+			),
+		),
+	}
+
+	bcs.TestCodecAndHash(t, msg, "2e3a31ac716d")
 }

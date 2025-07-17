@@ -26,7 +26,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/holiman/uint256 v1.3.2
-	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
+	github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593
 	github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7
 	github.com/iotaledger/hive.go/app v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/constraints v0.0.0-20250409140545-e1a365dbea74

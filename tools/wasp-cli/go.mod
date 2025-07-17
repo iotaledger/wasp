@@ -18,7 +18,7 @@ require (
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
+	github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593
 	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74

@@ -22,4 +22,15 @@ func TestMsgCmtLogSerialization(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, msg)
+
+	msg = &msgCmtLog{
+		*cryptolib.TestAddress,
+		&cmtlog.MsgNextLogIndex{
+			BasicMessage: gpa.BasicMessage{},
+			NextLogIndex: cmtlog.LogIndex(1234567890),
+			PleaseRepeat: false,
+		},
+	}
+
+	bcs.TestCodecAndHash(t, msg, "27abfd74cb8e")
 }

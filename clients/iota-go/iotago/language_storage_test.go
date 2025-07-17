@@ -22,7 +22,7 @@ func TestTypeTagEncoding(t *testing.T) {
 			TypeParams: []iotago.TypeTag{},
 		},
 	}
-	bcs.TestCodec(t, &typeTagStruct)
+	bcs.TestCodecAndHash(t, &typeTagStruct, "ae8b80292a4d")
 }
 
 func TestTypeTagString(t *testing.T) {
