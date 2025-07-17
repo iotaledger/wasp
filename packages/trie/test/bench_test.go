@@ -67,7 +67,7 @@ func BenchmarkCommit(b *testing.B) {
 	// before MultiGet:
 	//    7052109 ns/op   4386 kvs/op   4386 reads/op   4833882 B/op   100044 allocs/op
 	// after MultiGet:
-	//    8291757 ns/op   4299 kvs/op      2 reads/op   5375003 B/op   106012 allocs/op
+	//    9486585 ns/op   4221 kvs/op      2 reads/op   6279097 B/op   108977 allocs/op
 
 	b.StopTimer()
 

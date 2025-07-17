@@ -132,15 +132,25 @@ func (n *bufferedNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *bufferedNode
 	return true, theOnlyChildCommitted
 }
 
-func (n *bufferedNode) traversePreOrder(f func(*bufferedNode)) {
-	f(n)
-	for i := range byte(NumChildren) {
-		if child := n.uncommittedChildren[i]; child != nil {
-			child.traversePreOrder(f)
+// traversePreOrder traverses the modified nodes pre-order
+func (n *bufferedNode) traversePreOrder(f func(*bufferedNode) IterateNodesAction) bool {
+	action := f(n)
+	if action == IterateStop {
+		return false
+	}
+	if action != IterateSkipSubtree {
+		for i := range byte(NumChildren) {
+			if child := n.uncommittedChildren[i]; child != nil {
+				if !child.traversePreOrder(f) {
+					return false
+				}
+			}
 		}
 	}
+	return true
 }
 
+// traversePostOrder traverses the modified nodes post-order
 func (n *bufferedNode) traversePostOrder(f func(*bufferedNode)) {
 	for i := range byte(NumChildren) {
 		if child := n.uncommittedChildren[i]; child != nil {

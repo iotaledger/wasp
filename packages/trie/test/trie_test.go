@@ -520,6 +520,74 @@ func TestRefcounts(t *testing.T) {
 	checkValue("ddeb47bbcdfd1d2b4355c1a66f22d302ecb05bb0", 1)
 }
 
+func TestTrieDAGEdgeCase(t *testing.T) {
+	store := NewInMemoryKVStore()
+	root0 := trie.MustInitRoot(store)
+
+	// Compose a degenerate trie that is actually a DAG
+	var root1 trie.Hash
+	{
+		tr := lo.Must(trie.NewTrieUpdatable(store, root0))
+		tr.Update([]byte("a"), bytes.Repeat([]byte{'y'}, 100))
+		tr.Update([]byte("axc"), bytes.Repeat([]byte{'y'}, 100))
+		tr.Update([]byte("ayc"), bytes.Repeat([]byte{'y'}, 100))
+		tr.Update([]byte("A"), bytes.Repeat([]byte{'y'}, 100))
+		tr.Update([]byte("Axc"), bytes.Repeat([]byte{'y'}, 100))
+		tr.Update([]byte("Ayc"), bytes.Repeat([]byte{'y'}, 100))
+		root1, _ = tr.Commit(store)
+	}
+
+	refcounts := trie.NewRefcounts(store)
+	checkNode := func(h string, n uint32) {
+		require.Equal(t, n, refcounts.GetNode(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
+	}
+	checkValue := func(v string, n uint32) {
+		require.Equal(t, n, refcounts.GetValue(lo.Must(hex.DecodeString(v))))
+	}
+
+	// trie.DebugDump(store, []trie.Hash{root0, root1})
+	// [trie store]
+	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
+	//  [] c:21d8e5ebf834af2b24e5bba418dd59929b2e6017 ext:[] term:<nil>
+	//      [4] c:465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b ext:[1] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//          [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//          [7] c:c5b0cdba802bc5300c4c475096b678276d480b68 ext:[] term:<nil>
+	//              [8] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//              [9] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//      [6] c:465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b ext:[1] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//          [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//          [7] c:c5b0cdba802bc5300c4c475096b678276d480b68 ext:[] term:<nil>
+	//              [8] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//              [9] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
+	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	// [node refcounts]
+	//    534f98b3ad630819d284287b647283a1d5dbcf90: 1
+	//    21d8e5ebf834af2b24e5bba418dd59929b2e6017: 1
+	//    c5b0cdba802bc5300c4c475096b678276d480b68: 1
+	//    23a7faaaa299574c0553d3b10592033ae839a76f: 2
+	//    465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b: 2
+	// [value refcounts]
+	//    4c234c80dfe3d0069436a290ad85582b40835179: 2
+
+	checkNode("534f98b3ad630819d284287b647283a1d5dbcf90", 1)
+	checkNode("21d8e5ebf834af2b24e5bba418dd59929b2e6017", 1)
+	checkNode("c5b0cdba802bc5300c4c475096b678276d480b68", 1)
+	checkNode("23a7faaaa299574c0553d3b10592033ae839a76f", 2)
+	checkNode("465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b", 2)
+	checkValue("4c234c80dfe3d0069436a290ad85582b40835179", 2)
+
+	stats, err := trie.Prune(store, root1)
+	require.NoError(t, err)
+	require.EqualValues(t, 4, stats.DeletedNodes)
+	require.EqualValues(t, 1, stats.DeletedValues)
+	stats, err = trie.Prune(store, root0)
+	require.EqualValues(t, 1, stats.DeletedNodes)
+	require.EqualValues(t, 0, stats.DeletedValues)
+}
+
 func TestIterate(t *testing.T) {
 	iterTest := func(scenario []string) func(t *testing.T) {
 		return func(t *testing.T) {

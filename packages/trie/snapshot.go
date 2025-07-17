@@ -49,7 +49,7 @@ func (tr *TrieReader) TakeSnapshot(w io.Writer) error {
 func RestoreSnapshot(r io.Reader, store KVStore) error {
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
-	refcounts := newRefcounts(store)
+	refcounts := NewRefcounts(store)
 	rr := rwutil.NewReader(r)
 	for rr.Err == nil {
 		nodeBytes := rr.ReadBytes()

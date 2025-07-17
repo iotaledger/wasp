@@ -14,7 +14,7 @@ type PruneStats struct {
 // Prune decrements the refcount of the trie root and all its children,
 // and then deletes all nodes and values that have a refcount of 0.
 func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
-	refcounts := newRefcounts(store)
+	refcounts := NewRefcounts(store)
 
 	tr, err := NewTrieReader(store, trieRoot)
 	if err != nil {

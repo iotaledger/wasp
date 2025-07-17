@@ -81,7 +81,7 @@ func (tr *TrieUpdatable) Commit(store KVStore) (Hash, CommitStats) {
 	valuePartition := makeWriterPartition(store, partitionValues)
 
 	commitNode(tr.mutatedRoot, triePartition, valuePartition)
-	stats := newRefcounts(store).inc(tr.mutatedRoot)
+	stats := NewRefcounts(store).inc(tr.mutatedRoot)
 
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
@@ -93,8 +93,9 @@ func (tr *TrieUpdatable) Commit(store KVStore) (Hash, CommitStats) {
 	return newTrieRoot, stats
 }
 
-// commitNode re-calculates node commitment and, recursively, its children commitments
+// commitNode re-calculates the node commitment and, recursively, its children commitments
 func commitNode(root *bufferedNode, triePartition, valuePartition KVWriter) {
+	// traverse post-order so that we compute the commitments bottom-up
 	root.traversePostOrder(func(node *bufferedNode) {
 		childUpdates := make(map[byte]*Hash)
 		for idx, child := range node.uncommittedChildren {
@@ -159,5 +160,5 @@ func DebugDump(store KVStore, roots []Hash) {
 		assertNoError(err)
 		tr.DebugDump()
 	}
-	newRefcounts(store).DebugDump()
+	NewRefcounts(store).DebugDump()
 }

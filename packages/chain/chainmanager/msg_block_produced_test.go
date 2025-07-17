@@ -24,7 +24,7 @@ func TestMsgBlockProducedSerialization(t *testing.T) {
 	msg = &msgBlockProduced{
 		gpa.BasicMessage{},
 		&iotasignertest.TestSignedTransaction,
-		state.TestBlock,
+		statetest.TestBlock,
 	}
 
 	bcs.TestCodecAndHash(t, msg, "6b906810f98b", &msgBlockProduced{

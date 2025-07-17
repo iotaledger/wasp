@@ -11,10 +11,6 @@ type Refcounts struct {
 }
 
 func NewRefcounts(store KVStore) *Refcounts {
-	return newRefcounts(store)
-}
-
-func newRefcounts(store KVStore) *Refcounts {
 	return &Refcounts{store: store}
 }
 
@@ -30,7 +26,15 @@ func (r *Refcounts) GetValue(commitment []byte) uint32 {
 func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 	// use MultiGet to read all refcounts that are affected
 	var dbKeys [][]byte
-	root.traversePreOrder(func(node *bufferedNode) {
+
+	visited := make(map[Hash]struct{})
+	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+		if _, ok := visited[node.nodeData.Commitment]; ok {
+			// this node was already visited, don't fetch twice
+			return IterateSkipSubtree
+		}
+		visited[node.nodeData.Commitment] = struct{}{}
+
 		dbKeys = append(dbKeys, nodeRefcountKey(node.nodeData.Commitment[:]))
 		if node.terminal != nil && !node.terminal.IsValue {
 			dbKeys = append(dbKeys, valueRefcountKey(node.terminal.Data))
@@ -42,6 +46,7 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 			}
 			return true
 		})
+		return IterateContinue
 	})
 	refCountBytes := r.store.MultiGet(dbKeys)
 	refCounts := lo.Map(refCountBytes, func(v []byte, _ int) uint32 {
@@ -50,13 +55,21 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 		}
 		return codec.MustDecode[uint32](v)
 	})
+	// treat the refCounts slice as a queue
+	nextRefcout := func() (r uint32) {
+		r, refCounts = refCounts[0], refCounts[1:]
+		return r
+	}
 
 	// increment and write updated refcounts
 	//
 	// writing updated values in a batch is not necessary here because it is
 	// already handled by the underlying store
+	touchedRefcounts := make(map[string]uint32)
 	incrementAndSet := func(refcount uint32, dbKey []byte, createdCount *uint) uint32 {
+		refcount = lo.ValueOr(touchedRefcounts, string(dbKey), refcount)
 		refcount++
+		touchedRefcounts[string(dbKey)] = refcount
 		r.setRefcount(dbKey, refcount)
 		if createdCount != nil && refcount == 1 {
 			*createdCount++
@@ -64,14 +77,23 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 		return refcount
 	}
 	stats := CommitStats{}
-	root.traversePreOrder(func(node *bufferedNode) {
-		var nodeRefcount uint32
-		nodeRefcount, refCounts = refCounts[0], refCounts[1:]
-		nodeRefcount = incrementAndSet(nodeRefcount, nodeRefcountKey(node.nodeData.Commitment[:]), &stats.CreatedNodes)
+	visited = make(map[Hash]struct{})
+	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+		if _, ok := visited[node.nodeData.Commitment]; ok {
+			// this node was already visited, we only want to incremtnt its
+			// refcount but not its children's
+			dbKey := nodeRefcountKey(node.nodeData.Commitment[:])
+			nodeRefcount := touchedRefcounts[string(dbKey)]
+			assertf(nodeRefcount > 0, "inconsistency %s %d", node.nodeData.Commitment, nodeRefcount)
+			incrementAndSet(nodeRefcount, dbKey, &stats.CreatedNodes)
+			return IterateSkipSubtree
+		}
+		visited[node.nodeData.Commitment] = struct{}{}
+
+		nodeRefcount := incrementAndSet(nextRefcout(), nodeRefcountKey(node.nodeData.Commitment[:]), &stats.CreatedNodes)
 
 		if node.terminal != nil && !node.terminal.IsValue {
-			var valueRefcount uint32
-			valueRefcount, refCounts = refCounts[0], refCounts[1:]
+			valueRefcount := nextRefcout()
 			if nodeRefcount == 1 {
 				// a new node adds a reference to a value
 				valueRefcount = incrementAndSet(valueRefcount, valueRefcountKey(node.terminal.Data), &stats.CreatedValues)
@@ -80,8 +102,7 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 
 		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
 			if _, ok := node.uncommittedChildren[i]; !ok {
-				var childRefcount uint32
-				childRefcount, refCounts = refCounts[0], refCounts[1:]
+				childRefcount := nextRefcout()
 				if nodeRefcount == 1 {
 					// a new node adds a reference to an old node
 					assertf(childRefcount > 0, "inconsistency %s %s %d", node.nodeData.Commitment, childCommitment, childRefcount)
@@ -90,7 +111,10 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 			}
 			return true
 		})
+
+		return IterateContinue
 	})
+
 	assertf(len(refCounts) == 0, "inconsistency: remaining refCounts")
 	return stats
 }
