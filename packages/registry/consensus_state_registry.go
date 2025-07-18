@@ -14,12 +14,12 @@ import (
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/chain/cmtlog"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/onchangemap"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/onchangemap"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 const comparableChainCommitteeIDKeyLength = isc.ChainIDLength + iotago.AddressLen

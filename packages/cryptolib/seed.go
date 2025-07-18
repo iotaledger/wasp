@@ -9,7 +9,7 @@ import (
 
 	hivecrypto "github.com/iotaledger/hive.go/crypto/ed25519"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 )
 
 // TestnetCoinType is used by testnet/alphanet with COIN_TYPE = 1

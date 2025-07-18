@@ -1,7 +1,7 @@
 package accounts
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 func (s *StateReader) GetAssets(agentID isc.AgentID) *isc.Assets {

@@ -2,7 +2,7 @@ package sbtestsc
 
 import (
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 func eventCounter(ctx isc.Sandbox, value uint64) {

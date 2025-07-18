@@ -3,9 +3,9 @@ package accounts
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/kv/collections"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
 )
 
 func (s *StateWriter) coinInfosMap() *collections.Map {

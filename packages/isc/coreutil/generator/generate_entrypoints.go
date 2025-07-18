@@ -143,7 +143,7 @@ func main() {
 package coreutil
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 	"fmt"
 )
 

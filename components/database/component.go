@@ -8,10 +8,10 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	hivedb "github.com/iotaledger/hive.go/db"
 
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/daemon"
+	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 func init() {

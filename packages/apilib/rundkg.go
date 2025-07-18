@@ -12,8 +12,8 @@ import (
 
 	"fortio.org/safecast"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 // RunDKG runs DKG procedure on specific Wasp hosts: generates new keys and puts corresponding committee records

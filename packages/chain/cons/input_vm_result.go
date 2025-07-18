@@ -6,8 +6,8 @@ package cons
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/vm"
 )
 
 type inputVMResult struct {

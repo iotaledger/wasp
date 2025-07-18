@@ -5,7 +5,7 @@ import (
 	"runtime"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/packages/kvstore/rocksdb"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 )
 
 // NewRocksDB creates a new RocksDB instance.

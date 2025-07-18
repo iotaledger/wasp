@@ -3,7 +3,7 @@ package util
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 const WindowsOS = "windows"

@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
-	"github.com/iotaledger/wasp/tools/cluster"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/tools/cluster"
 )
 
 type waspClusterOpts struct {
@@ -24,7 +24,7 @@ var l1 l1starter.IotaNodeEndpoint
 // by default, when running the cluster tests we will automatically setup a private tangle,
 // however it's possible to run the tests on any compatible network, by providing the L1 node configuration.
 // example:
-// go test -timeout 30m github.com/iotaledger/wasp/tools/cluster/tests -layer1-api="http://1.1.1.123:3000" -layer1-faucet="http://1.1.1.123:5000"
+// go test -timeout 30m github.com/iotaledger/wasp/v2/tools/cluster/tests -layer1-api="http://1.1.1.123:3000" -layer1-faucet="http://1.1.1.123:5000"
 
 func parseConfig() l1starter.L1EndpointConfig {
 	config := l1starter.L1EndpointConfig{}

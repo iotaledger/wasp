@@ -1,7 +1,7 @@
 package util
 
 import (
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 type ComparableString string

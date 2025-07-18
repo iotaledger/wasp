@@ -2,7 +2,7 @@
 // allowing users to interact with cryptocurrency wallets.
 package wallets
 
-import "github.com/iotaledger/wasp/packages/cryptolib"
+import "github.com/iotaledger/wasp/v2/packages/cryptolib"
 
 type Wallet interface {
 	cryptolib.Signer

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/iotaledger/wasp/packages/chain/dss"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/chain/dss"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type SyncDSS interface {

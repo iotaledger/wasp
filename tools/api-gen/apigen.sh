@@ -4,7 +4,7 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
 GIT_REF_TAG=$(git describe --tags)
-BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/components/app.Version=$GIT_REF_TAG"
+BUILD_LD_FLAGS="-X=github.com/iotaledger/wasp/v2/components/app.Version=$GIT_REF_TAG"
 
 # To generate with the current commit version:
 # go run -ldflags="$BUILD_LD_FLAGS" ./main.go "$@"

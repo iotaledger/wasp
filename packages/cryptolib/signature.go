@@ -15,7 +15,7 @@ import (
 	"filippo.io/edwards25519"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 )
 
 const SignatureSize = ed25519.SignatureSize

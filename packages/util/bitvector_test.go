@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 func TestFixedSizeBitVector(t *testing.T) {

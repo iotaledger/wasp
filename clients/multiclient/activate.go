@@ -4,8 +4,8 @@ package multiclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // ActivateChain sends a request to activate a chain in all wasp nodes

@@ -4,8 +4,8 @@
 package codec
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/dict"
 )
 
 func MakeDict(vars map[string]interface{}) dict.Dict {

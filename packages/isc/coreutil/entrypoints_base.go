@@ -1,6 +1,6 @@
 package coreutil
 
-import "github.com/iotaledger/wasp/packages/isc"
+import "github.com/iotaledger/wasp/v2/packages/isc"
 
 //go:generate go run generator/generate_entrypoints.go
 

@@ -11,8 +11,8 @@ import (
 	"golang.org/x/crypto/blake2b"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 // OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest

@@ -10,10 +10,10 @@ package cmtlog_test
 
 // 	"github.com/stretchr/testify/require"
 
-// 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
-// 	"github.com/iotaledger/wasp/packages/isc"
-// 	"github.com/iotaledger/wasp/packages/isc/isctest"
-// 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+// 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+// 	"github.com/iotaledger/wasp/v2/packages/isc"
+// 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+// 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 // )
 
 // func TestVarLocalView(t *testing.T) {

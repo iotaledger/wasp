@@ -3,7 +3,7 @@ package iotajsonrpc
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
 const MAX_INPUT_COUNT_MERGE = 256 - 1 // TODO find reference in Iota monorepo repo

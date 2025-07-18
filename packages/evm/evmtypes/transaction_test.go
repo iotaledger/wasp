@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
 )
 
 type StructWithTransaction struct {

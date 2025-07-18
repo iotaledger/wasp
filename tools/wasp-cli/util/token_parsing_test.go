@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/coin"
 )
 
 func TestTokenParsing(t *testing.T) {

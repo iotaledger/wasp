@@ -1,6 +1,6 @@
 package models
 
-import "github.com/iotaledger/wasp/packages/vm/gas"
+import "github.com/iotaledger/wasp/v2/packages/vm/gas"
 
 /*
 Both Gov* structs should be removed at some point.

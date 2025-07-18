@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv"
 )
 
 func CatchPanicReturnError(fun func(), catchErrors ...error) error {

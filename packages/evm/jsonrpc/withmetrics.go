@@ -3,7 +3,7 @@ package jsonrpc
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
 )
 
 func withMetrics[T any](

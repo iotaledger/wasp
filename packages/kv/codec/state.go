@@ -1,6 +1,6 @@
 package codec
 
-import "github.com/iotaledger/wasp/packages/kv"
+import "github.com/iotaledger/wasp/v2/packages/kv"
 
 func StateGetOr[T any](s kv.KVReader, key kv.Key, def T) T {
 	b := s.Get(key)

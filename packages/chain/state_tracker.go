@@ -8,10 +8,10 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/inputs"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 // StateTracker tracks a single chain of state transitions. We will have 2 instances of it:

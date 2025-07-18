@@ -2,8 +2,8 @@
 package statetest
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 func NewRandL1Commitment() *state.L1Commitment {

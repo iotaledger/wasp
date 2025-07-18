@@ -4,8 +4,8 @@ package chainclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // ContractStateGet fetches the raw value associated with the given key in the chain state

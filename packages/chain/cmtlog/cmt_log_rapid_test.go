@@ -7,16 +7,16 @@ package cmtlog_test
 // 	"github.com/stretchr/testify/require"
 // 	"pgregory.net/rapid"
 
-// 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-// 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-// 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
-// 	"github.com/iotaledger/wasp/packages/cryptolib"
-// 	"github.com/iotaledger/wasp/packages/gpa"
-// 	"github.com/iotaledger/wasp/packages/isc"
-// 	"github.com/iotaledger/wasp/packages/isc/isctest"
-// 	"github.com/iotaledger/wasp/packages/testutil"
-// 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-// 	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+// 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+// 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+// 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+// 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+// 	"github.com/iotaledger/wasp/v2/packages/gpa"
+// 	"github.com/iotaledger/wasp/v2/packages/isc"
+// 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+// 	"github.com/iotaledger/wasp/v2/packages/testutil"
+// 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+// 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 // )
 
 // type cmtLogTestRapidSM struct {

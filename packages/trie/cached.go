@@ -1,7 +1,7 @@
 package trie
 
 import (
-	"github.com/iotaledger/wasp/packages/cache"
+	"github.com/iotaledger/wasp/v2/packages/cache"
 )
 
 type cachedKVReader struct {

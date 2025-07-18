@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 // L1Commitment represents the data stored as metadata in the anchor output

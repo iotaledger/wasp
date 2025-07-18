@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 // run with: go test -tags rocksdb -benchmem -cpu=1 -run=' ' -bench='Bench.*' -benchtime 100x

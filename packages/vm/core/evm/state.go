@@ -4,8 +4,8 @@
 package evm
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/subrealm"
 )
 
 // The evm core contract state stores two subrealms.

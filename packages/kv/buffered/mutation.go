@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv"
 )
 
 // Mutations is a set of mutations: one for each key

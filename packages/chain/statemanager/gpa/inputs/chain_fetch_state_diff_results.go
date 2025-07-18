@@ -1,6 +1,6 @@
 package inputs
 
-import "github.com/iotaledger/wasp/packages/state"
+import "github.com/iotaledger/wasp/v2/packages/state"
 
 type ChainFetchStateDiffResults struct {
 	newState state.State   // state for newL1Commitment
