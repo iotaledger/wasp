@@ -330,6 +330,23 @@ func (c *Client) GetRequestsSorted(ctx context.Context, packageID iotago.Package
 		return err
 	}
 
+	events, err := c.Client.QueryEvents(ctx, iotaclient.QueryEventsRequest{
+		Query: &iotajsonrpc.EventFilter{MoveEventField: &iotajsonrpc.EventFilterMoveEventField{
+			Path:  "/anchor",
+			Value: *anchorAddress,
+		}}})
+	fmt.Println(events)
+	fmt.Println(err)
+
+	events2, err := c.Client.QueryEvents(ctx, iotaclient.QueryEventsRequest{
+		Query: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
+			Address: &packageID,
+			Module:  iscmove.RequestModuleName,
+			Name:    iscmove.RequestEventObjectName,
+		}}})
+	fmt.Println(events2)
+	fmt.Println(err)
+
 	objectKeys := maps.Keys(pulledRequests)
 	sort.Slice(objectKeys, func(i, j int) bool {
 		return bytes.Compare(objectKeys[i][:], objectKeys[j][:]) < 0

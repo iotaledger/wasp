@@ -57,7 +57,7 @@ type nodeConnection struct {
 	iscPackageID        iotago.PackageID
 	httpClient          *iscmoveclient.Client
 	l1ParamsFetcher     parameters.L1ParamsFetcher
-	wsURL               string
+	socketURL           string
 	httpURL             string
 	maxNumberOfRequests int
 	chainsLock          sync.RWMutex
@@ -72,7 +72,7 @@ func New(
 	ctx context.Context,
 	iscPackageID iotago.PackageID,
 	maxNumberOfRequests int,
-	wsURL string,
+	socketURL string,
 	httpURL string,
 	log log.Logger,
 	shutdownHandler *shutdown.ShutdownHandler,
@@ -82,7 +82,7 @@ func New(
 	return &nodeConnection{
 		Logger:              log,
 		iscPackageID:        iscPackageID,
-		wsURL:               wsURL,
+		socketURL:           socketURL,
 		httpURL:             httpURL,
 		httpClient:          httpClient,
 		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.Client, log),
@@ -107,7 +107,7 @@ func (nc *nodeConnection) AttachChain(
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.socketURL, nc.httpURL)
 		if err != nil {
 			return nil, err
 		}

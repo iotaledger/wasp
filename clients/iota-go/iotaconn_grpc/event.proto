@@ -1,0 +1,41 @@
+// Copyright (c) 2025 IOTA Stiftung
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+package iota.grpc.events;
+
+option go_package = "github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpc";
+
+service EventService {
+    rpc StreamEvents (EventStreamRequest) returns (stream Event);
+}
+
+message EventStreamRequest {
+    EventFilter filter = 1;
+}
+
+message Event {
+    bytes event_data = 1;
+    EventID event_id = 2;
+    optional uint64 timestamp_ms = 3;
+}
+
+message EventID {
+    uint64 tx_seq = 1;
+    uint64 event_seq = 2;
+    string tx_digest = 3;
+}
+
+// WASP-specific event filter for ISC package events
+message EventFilter {
+    // ISC package ID (hex string)
+    string isc_package_id = 1;
+    // Move module name (e.g., "request")
+    string module = 2;
+    // Event name (e.g., "RequestEvent")
+    string event_name = 3;
+    // JSON path for the field to filter on (e.g., RequestEventAnchorFieldName)
+    string path = 4;
+    // Value to match in the specified path (e.g., anchor ID)
+    string value = 5;
+}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpc"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
@@ -15,8 +16,68 @@ import (
 	"github.com/iotaledger/wasp/packages/transaction"
 )
 
+type EventClient interface {
+	SubscribeEvent(ctx context.Context, packageID iotago.PackageID, anchorID iotago.ObjectID) (chan *iotajsonrpc.IotaEvent, error)
+	WaitUntilStopped()
+}
+
+type GRpcClientWrapper struct {
+	client *iotaconn_grpc.EventStreamClient
+}
+
+func (g *GRpcClientWrapper) SubscribeEvent(ctx context.Context, packageID iotago.PackageID, anchorID iotago.ObjectID) (chan *iotajsonrpc.IotaEvent, error) {
+	/*events, errors, err := g.client.SubscribeEvents(&iotaconn_grpc.EventFilter{
+		Path:         iscmove.RequestEventAnchorFieldName,
+		Value:        anchorID.String(),
+		IscPackageId: packageID.String(),
+		Module:       iscmove.RequestModuleName,
+		EventName:    iscmove.RequestEventObjectName,
+	})*/
+
+	return nil, nil
+}
+
+func (g *GRpcClientWrapper) WaitUntilStopped() {
+}
+
+func NewGRpcClientWrapper(client *iotaconn_grpc.EventStreamClient) EventClient {
+	return &GRpcClientWrapper{client: client}
+}
+
+type WebsocketClientWrapper struct {
+	client *Client
+}
+
+func NewWebSocketClientWrapper(client *Client) EventClient {
+	return &WebsocketClientWrapper{
+		client: client,
+	}
+}
+
+func (w *WebsocketClientWrapper) WaitUntilStopped() {}
+
+func (w *WebsocketClientWrapper) SubscribeEvent(ctx context.Context, packageID iotago.PackageID, anchorID iotago.ObjectID) (chan *iotajsonrpc.IotaEvent, error) {
+	events := make(chan *iotajsonrpc.IotaEvent)
+
+	err := w.client.SubscribeEvent(ctx, &iotajsonrpc.EventFilter{
+		And: &iotajsonrpc.AndOrEventFilter{
+			Filter1: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
+				Address: &packageID,
+				Module:  iscmove.RequestModuleName,
+				Name:    iscmove.RequestEventObjectName,
+			}},
+			Filter2: &iotajsonrpc.EventFilter{MoveEventField: &iotajsonrpc.EventFilterMoveEventField{
+				Path:  iscmove.RequestEventAnchorFieldName,
+				Value: anchorID.String(),
+			}},
+		},
+	}, events)
+
+	return events, err
+}
+
 type ChainFeed struct {
-	wsClient      *Client
+	wsClient      *iotaconn_grpc.EventStreamClient
 	httpClient    *Client
 	iscPackageID  iotago.PackageID
 	anchorAddress iotago.ObjectID
@@ -28,18 +89,23 @@ func NewChainFeed(
 	iscPackageID iotago.PackageID,
 	anchorAddress iotago.ObjectID,
 	log log.Logger,
-	wsURL string,
+	socketURL string,
 	httpURL string,
 ) (*ChainFeed, error) {
-	wsClient, err := NewWebsocketClient(ctx, wsURL, "", iotaclient.WaitForEffectsEnabled, log)
+	/*wsClient, err := NewWebsocketClient(ctx, socketURL, "", iotaclient.WaitForEffectsEnabled, log)
 	if err != nil {
+		return nil, err
+	}*/
+
+	cl := iotaconn_grpc.NewEventStreamClient(socketURL)
+	if err := cl.Connect(); err != nil {
 		return nil, err
 	}
 
 	httpClient := NewHTTPClient(httpURL, "", iotaclient.WaitForEffectsEnabled)
 
 	return &ChainFeed{
-		wsClient:      wsClient,
+		wsClient:      cl,
 		httpClient:    httpClient,
 		iscPackageID:  iscPackageID,
 		anchorAddress: anchorAddress,
@@ -48,7 +114,7 @@ func NewChainFeed(
 }
 
 func (f *ChainFeed) WaitUntilStopped() {
-	f.wsClient.WaitUntilStopped()
+
 }
 
 func (f *ChainFeed) GetCurrentAnchor(ctx context.Context) (*iscmove.AnchorWithRef, error) {
@@ -93,34 +159,23 @@ func (f *ChainFeed) subscribeToNewRequests(
 	anchorID iotago.ObjectID,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
+
 	for {
-		events := make(chan *iotajsonrpc.IotaEvent)
-		err := f.wsClient.SubscribeEvent(
-			ctx,
-			&iotajsonrpc.EventFilter{
-				And: &iotajsonrpc.AndOrEventFilter{
-					Filter1: &iotajsonrpc.EventFilter{MoveEventType: &iotago.StructTag{
-						Address: &f.iscPackageID,
-						Module:  iscmove.RequestModuleName,
-						Name:    iscmove.RequestEventObjectName,
-					}},
-					Filter2: &iotajsonrpc.EventFilter{MoveEventField: &iotajsonrpc.EventFilterMoveEventField{
-						Path:  iscmove.RequestEventAnchorFieldName,
-						Value: anchorID.String(),
-					}},
-				},
-			},
-			events,
-		)
+		events, _, _ := f.wsClient.SubscribeEvents(&iotaconn_grpc.EventFilter{
+			//Path:         "/anchor",
+			//Value:        anchorID.String(),
+			IscPackageId: f.iscPackageID.String(),
+			Module:       iscmove.RequestModuleName,
+			EventName:    iscmove.RequestEventObjectName,
+		})
+
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
 			return
 		}
-		if err != nil {
-			f.log.LogErrorf("subscribeToNewRequests: failed to call SubscribeEvent(): %s", err)
-		} else {
-			f.consumeRequestEvents(ctx, events, requests)
-		}
+
+		f.consumeRequestEvents(ctx, events, requests)
+
 		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
@@ -131,7 +186,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 
 func (f *ChainFeed) consumeRequestEvents(
 	ctx context.Context,
-	events <-chan *iotajsonrpc.IotaEvent,
+	events <-chan *iotaconn_grpc.Event,
 	requests chan<- *iscmove.RefWithObject[iscmove.Request],
 ) {
 	for {
@@ -143,7 +198,7 @@ func (f *ChainFeed) consumeRequestEvents(
 				return
 			}
 			var reqEvent iscmove.RequestEvent
-			err := iotaclient.UnmarshalBCS(ev.Bcs, &reqEvent)
+			err := iotaclient.UnmarshalBCS(ev.EventData, &reqEvent)
 			if err != nil {
 				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
@@ -168,22 +223,28 @@ func (f *ChainFeed) subscribeToAnchorUpdates(
 ) {
 	for {
 		changes := make(chan *serialization.TagJson[iotajsonrpc.IotaTransactionBlockEffects])
-		err := f.wsClient.SubscribeTransaction(
-			ctx,
-			&iotajsonrpc.TransactionFilter{
-				ChangedObject: &f.anchorAddress,
-			},
-			changes,
-		)
+		res, err := f.httpClient.QueryTransactionBlocks(ctx, iotaclient.QueryTransactionBlocksRequest{
+			Query: &iotajsonrpc.IotaTransactionBlockResponseQuery{
+				Filter: &iotajsonrpc.TransactionFilter{
+					ChangedObject: &f.anchorAddress,
+				},
+			}})
+
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
 			return
 		}
+
 		if err != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: failed to call SubscribeEvent(): %s", err)
 		} else {
+			for _, v := range res.Data {
+				changes <- v.Effects
+			}
+
 			f.consumeAnchorUpdates(ctx, changes, anchorCh)
 		}
+
 		time.Sleep(1 * time.Second)
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToAnchorUpdates: ctx.Err(): %s", ctx.Err())
