@@ -13,7 +13,21 @@ func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.Assets, e
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewTotalAssets.DecodeOutput(ret)
+
+	coinBalances, err := accounts.ViewTotalAssets.DecodeOutput(ret)
+	if err != nil {
+		return nil, err
+	}
+
+	assets := isc.NewEmptyAssets()
+	for coinType, balance := range coinBalances.Iterate() {
+		assets.AddCoin(coinType, balance)
+	}
+
+	// Objects currently unsupported
+	// TODO: Create some kind of ViewTotalObjects function and map both.
+
+	return assets, nil
 }
 
 func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) (*isc.Assets, error) {
@@ -21,7 +35,21 @@ func GetAccountBalance(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot
 	if err != nil {
 		return nil, err
 	}
-	return accounts.ViewBalance.DecodeOutput(ret)
+
+	coinBalances, err := accounts.ViewBalance.DecodeOutput(ret)
+	if err != nil {
+		return nil, err
+	}
+
+	assets := isc.NewEmptyAssets()
+	for coinType, balance := range coinBalances.Iterate() {
+		assets.AddCoin(coinType, balance)
+	}
+
+	// Objects currently unsupported
+	// TODO: Create some kind of ViewObjects function and map both.
+
+	return assets, nil
 }
 
 func GetAccountObjects(ch chain.Chain, agentID isc.AgentID, blockIndexOrTrieRoot string) ([]isc.IotaObject, error) {

@@ -319,7 +319,7 @@ func (ch *Chain) SendRequestWithL1GasBudget(
 	if err != nil {
 		return nil, nil, err
 	}
-	reqRef, err := res.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := res.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(ch.Env.T, err)
 
 	l1req := ch.GetL1RequestData(*reqRef.ObjectID)

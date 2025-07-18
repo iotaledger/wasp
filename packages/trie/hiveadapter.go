@@ -3,7 +3,9 @@ package trie
 import (
 	"errors"
 
-	"github.com/iotaledger/hive.go/kvstore"
+	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/packages/kvstore"
 )
 
 // HiveKVStoreAdapter maps a partition of the Hive KVStore to trie_go.KVStore
@@ -39,6 +41,14 @@ func (kvs *HiveKVStoreAdapter) Get(key []byte) []byte {
 	if len(v) == 0 {
 		return nil
 	}
+	return v
+}
+
+func (kvs *HiveKVStoreAdapter) MultiGet(keys [][]byte) [][]byte {
+	v, err := kvs.kvs.MultiGet(lo.Map(keys, func(k []byte, _ int) []byte {
+		return makeKey(kvs.prefix, k)
+	}))
+	mustNoErr(err)
 	return v
 }
 

@@ -26,6 +26,7 @@ func Init(rootCmd *cobra.Command) {
 	rootCmd.AddCommand(waspNodesCmd)
 
 	waspNodesCmd.AddCommand(initAddWaspNodeCmd())
+	waspNodesCmd.AddCommand(initCheckVersionsCmd())
 }
 
 func initAddWaspNodeCmd() *cobra.Command {

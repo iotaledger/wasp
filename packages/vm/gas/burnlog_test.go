@@ -19,5 +19,5 @@ func TestBurnLogSerialization(t *testing.T) {
 			GasBurned: 80,
 		},
 	}
-	bcs.TestCodec(t, burnLog)
+	bcs.TestCodecAndHash(t, burnLog, "6a9acdb8be5b")
 }

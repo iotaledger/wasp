@@ -104,11 +104,6 @@ type UnresolvedVMError struct {
 
 var _ VMErrorBase = &UnresolvedVMError{}
 
-type UnresolvedVMErrorJSON struct {
-	ErrorCode string   `json:"code"`
-	Params    []string `json:"params"`
-}
-
 func (e *UnresolvedVMError) AsGoError() error {
 	// this is necessary because *UnresolvedVMError(nil) != error(nil)
 	if e == nil {
@@ -127,28 +122,6 @@ func (e *UnresolvedVMError) Code() VMErrorCode {
 
 func (e *UnresolvedVMError) Error() string {
 	return fmt.Sprintf("UnresolvedVMError(code: %s)", e.ErrorCode)
-}
-
-// ToJSONStruct produces the params as humanly readable json, and the uints as strings
-func (e *UnresolvedVMError) ToJSONStruct() *UnresolvedVMErrorJSON {
-	if e == nil {
-		return &UnresolvedVMErrorJSON{
-			Params:    []string{},
-			ErrorCode: "",
-		}
-	}
-	return &UnresolvedVMErrorJSON{
-		Params:    humanlyReadableParams(e.Params),
-		ErrorCode: e.ErrorCode.String(),
-	}
-}
-
-func humanlyReadableParams(params []VMErrorParam) []string {
-	res := make([]string, len(params))
-	for i, param := range params {
-		res[i] = fmt.Sprintf("%v:%s", param, reflect.TypeOf(param).String())
-	}
-	return res
 }
 
 type VMError struct {

@@ -137,7 +137,7 @@ func (ncc *ncChain) postTxLoop(ctx context.Context) {
 			return nil, fmt.Errorf("error executing tx: %s Digest: %s", res.Effects.Data.V1.Status.Error, res.Digest)
 		}
 
-		anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+		anchorInfo, err := res.GetMutatedObjectByID(ncc.chainID.AsObjectID())
 		if err != nil {
 			return nil, err
 		}

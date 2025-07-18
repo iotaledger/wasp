@@ -9,8 +9,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	hivelog "github.com/iotaledger/hive.go/log"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"

@@ -8,8 +8,8 @@ import (
 	"github.com/samber/lo"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/hive.go/runtime/options"
+	"github.com/iotaledger/wasp/packages/kvstore"
 
 	"github.com/iotaledger/wasp/packages/isc"
 	"github.com/iotaledger/wasp/packages/registry"
@@ -102,7 +102,6 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 	databaseChainState, err := newDatabaseWithHealthTracker(
 		path.Join(m.databasePath, chainID.String()),
 		m.engine,
-		false,
 		m.cacheSize,
 		StoreVersionChainState,
 		nil,

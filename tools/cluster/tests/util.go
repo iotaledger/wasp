@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/packages/vm/core/governance"
 	"github.com/iotaledger/wasp/packages/vm/core/root"
 	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/iotaledger/wasp/packages/webapi/models"
 )
 
 func (e *ChainEnv) checkCoreContracts() {
@@ -171,7 +172,7 @@ func (e *ChainEnv) balanceEquals(agentID isc.AgentID, amount int) conditionFn {
 			apiclient.ContractCallViewRequest{
 				ContractHName: accounts.Contract.Hname().String(),
 				FunctionHName: accounts.ViewBalanceBaseToken.Hname().String(),
-				Arguments:     accounts.ViewBalanceBaseToken.Message(&agentID).Params.ToCallArgumentsJSON(),
+				Arguments:     models.ToCallArgumentsJSON(accounts.ViewBalanceBaseToken.Message(&agentID).Params),
 			})
 		if err != nil {
 			e.t.Logf("chainEnv::counterEquals: failed to call GetCounter: %v", err)

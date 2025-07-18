@@ -24,8 +24,8 @@ func (c *Controller) getTotalAssets(e echo.Context) error {
 
 	assetsResponse := &models.AssetsResponse{
 		BaseTokens: assets.BaseTokens().String(),
-		Coins:      assets.Coins.JSON(),
-		Objects:    assets.Objects.JSON(),
+		Coins:      models.ToCoinBalancesJSON(assets.Coins),
+		Objects:    models.ToIotaObjectsJSON(&assets.Objects),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)
@@ -49,8 +49,8 @@ func (c *Controller) getAccountBalance(e echo.Context) error {
 
 	assetsResponse := &models.AssetsResponse{
 		BaseTokens: assets.BaseTokens().String(),
-		Coins:      assets.Coins.JSON(),
-		Objects:    assets.Objects.JSON(),
+		Coins:      models.ToCoinBalancesJSON(assets.Coins),
+		Objects:    models.ToIotaObjectsJSON(&assets.Objects),
 	}
 
 	return e.JSON(http.StatusOK, assetsResponse)

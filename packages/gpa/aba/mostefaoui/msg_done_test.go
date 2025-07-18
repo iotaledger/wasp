@@ -25,5 +25,5 @@ func TestMsgDoneSerialization(t *testing.T) {
 		math.MaxUint16,
 	}
 
-	bcs.TestCodec(t, msg)
+	bcs.TestCodecAndHash(t, msg, "ab2affdd99ab")
 }

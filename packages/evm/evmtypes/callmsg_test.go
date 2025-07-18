@@ -11,18 +11,18 @@ import (
 )
 
 func TestCallMsgCodec(t *testing.T) {
-	bcs.TestCodec(t, ethereum.CallMsg{
+	bcs.TestCodecAndHash(t, ethereum.CallMsg{
 		From:  common.Address{1, 2, 3},
 		To:    &common.Address{4, 5, 6},
 		Gas:   100,
 		Data:  []byte{1, 2, 3, 4},
 		Value: big.NewInt(100),
-	})
+	}, "7da86767081f")
 
-	bcs.TestCodec(t, ethereum.CallMsg{
+	bcs.TestCodecAndHash(t, ethereum.CallMsg{
 		From:  common.Address{1, 2, 3},
 		Gas:   100,
 		Data:  []byte{1, 2, 3, 4},
 		Value: big.NewInt(100),
-	})
+	}, "c96aa68bc702")
 }

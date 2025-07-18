@@ -33,7 +33,7 @@ func TestRequestsFeed(t *testing.T) {
 	// create AssetsBag owned by iscOwner
 	txnResponse, err := newAssetsBag(client, iscOwner)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	log := testlogger.NewLogger(t)
@@ -71,7 +71,7 @@ func TestRequestsFeed(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	requestRef, err := txnResponse.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	requestRef, err := txnResponse.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	req := <-newRequests

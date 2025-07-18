@@ -98,10 +98,10 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 
 	fmt.Println(response)
 
-	selectedCoinToFillUpGasCoin, err := response.GetMutatedCoin("iota", "IOTA")
+	selectedCoinToFillUpGasCoin, err := response.GetMutatedCoinByType("iota", "IOTA")
 	require.NoError(t, err)
 
-	selectedCoinToPayForGas, err := response2.GetMutatedCoin("iota", "IOTA")
+	selectedCoinToPayForGas, err := response2.GetMutatedCoinByType("iota", "IOTA")
 	require.NoError(t, err)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()

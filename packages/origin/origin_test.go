@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
@@ -19,6 +18,7 @@ import (
 	"github.com/iotaledger/wasp/packages/isc/isctest"
 	"github.com/iotaledger/wasp/packages/kv"
 	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/origin"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/packages/state"
@@ -178,7 +178,7 @@ func startNewChain(
 	)
 	require.NoError(t, err)
 
-	anchorRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorRef, err := txnResponse.GetCreatedObjectByName(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
 	require.NoError(t, err)
 	anchor, err := client.GetAnchorFromObjectID(context.Background(), anchorRef.ObjectID)
 	return txnResponse, anchor, err

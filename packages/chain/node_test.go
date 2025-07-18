@@ -15,7 +15,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
@@ -35,6 +34,7 @@ import (
 	"github.com/iotaledger/wasp/packages/cryptolib"
 	"github.com/iotaledger/wasp/packages/gpa"
 	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/packages/metrics"
 	"github.com/iotaledger/wasp/packages/parameters"
 	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
@@ -143,7 +143,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			GasBudget:        iotaclient.DefaultGasBudget,
 		})
 		require.NoError(t, err)
-		reqRef, err := req.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		reqRef, err := req.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 		require.NoError(t, err)
 		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 		require.NoError(t, err)
@@ -371,7 +371,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
 
-	anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
 	if err != nil {
 		return err
 	}

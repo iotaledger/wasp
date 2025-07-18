@@ -22,6 +22,12 @@ func TestMsgBLSPartialSigSerialization(t *testing.T) {
 		nil,
 		b,
 	}
-
 	bcs.TestCodec(t, msg)
+
+	msg = &msgBLSPartialSig{
+		gpa.BasicMessage{},
+		nil,
+		[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+	}
+	bcs.TestCodecAndHash(t, msg, "9a5a2e001fcf")
 }

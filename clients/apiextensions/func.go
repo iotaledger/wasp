@@ -50,7 +50,7 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 }
 
 func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.APIClient, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
-	req, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	req, err := tx.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
 		return nil, err
 	}

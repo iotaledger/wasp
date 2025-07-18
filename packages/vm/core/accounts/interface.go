@@ -36,6 +36,10 @@ var (
 	DeleteCoinMetadata = coreutil.NewEP1(Contract, "deleteCoinMetadata",
 		coreutil.Field[coin.Type]("coinType"),
 	)
+	AdjustCommonAccountBaseTokens = coreutil.NewEP2(Contract, "adjustCommonAccountBaseTokens",
+		coreutil.Field[coin.Value]("credit"),
+		coreutil.Field[coin.Value]("debit"),
+	)
 
 	// Views
 	// TODO: implement pagination
@@ -46,7 +50,7 @@ var (
 	// TODO: implement pagination
 	ViewBalance = coreutil.NewViewEP11(Contract, "balance",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
-		coreutil.Field[*isc.Assets]("coinBalances"),
+		coreutil.Field[isc.CoinBalances]("coinBalances"),
 	)
 	ViewBalanceBaseToken = coreutil.NewViewEP11(Contract, "balanceBaseToken",
 		coreutil.FieldOptional[isc.AgentID]("agentID"),
@@ -68,6 +72,6 @@ var (
 	)
 	// TODO: implement pagination
 	ViewTotalAssets = coreutil.NewViewEP01(Contract, "totalAssets",
-		coreutil.Field[*isc.Assets]("coinBalances"),
+		coreutil.Field[isc.CoinBalances]("coinBalances"),
 	)
 )

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/hive.go/kvstore"
 	"github.com/iotaledger/wasp/packages/chaindb"
+	"github.com/iotaledger/wasp/packages/kvstore"
 	"github.com/iotaledger/wasp/packages/trie"
 )
 

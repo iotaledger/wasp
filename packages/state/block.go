@@ -9,7 +9,7 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/hive.go/kvstore/mapdb"
+	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/packages/isc/coreutil"
@@ -105,3 +105,13 @@ func RandomBlock() Block {
 
 	return store.Commit(draft)
 }
+
+var TestBlock = func() Block {
+	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	draft := store.NewOriginStateDraft()
+	for i := 0; i < 3; i++ {
+		draft.Set(kv.Key([]byte{byte((i + 1) * 6973)}), []byte{byte((i + 1) * 9137)})
+	}
+
+	return store.Commit(draft)
+}()
