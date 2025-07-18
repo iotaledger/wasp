@@ -1,11 +1,13 @@
 package iotajsonrpc
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/samber/lo"
 )
 
 type ExecuteTransactionRequestType string
@@ -309,13 +311,17 @@ func (r *IotaTransactionBlockResponse) GetPublishedPackageID() (*iotago.PackageI
 }
 
 // requires `ShowObjectChanges: true`
-func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objectName string) (
+func (r *IotaTransactionBlockResponse) GetCreatedObjectByName(module string, objectName string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevCreatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
 			// some possible examples
@@ -326,25 +332,41 @@ func (r *IotaTransactionBlockResponse) GetCreatedObjectInfo(module string, objec
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
 			if resource.Contains(nil, module, objectName) {
-				ref := iotago.ObjectRef{
+				if ref != nil {
+					return nil, fmt.Errorf("multiple created objects found for %s::%s: first = %v, second = %v",
+						module, objectName,
+						string(lo.Must(json.Marshal(prevCreatedObj))),
+						string(lo.Must(json.Marshal(change.Data.Created))),
+					)
+				}
+
+				ref = &iotago.ObjectRef{
 					ObjectID: &change.Data.Created.ObjectID,
 					Version:  change.Data.Created.Version.Uint64(),
 					Digest:   &change.Data.Created.Digest,
 				}
-				return &ref, nil
+				prevCreatedObj = change.Data.Created
 			}
 		}
 	}
-	return nil, fmt.Errorf("not found")
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
 }
 
-func (r *IotaTransactionBlockResponse) GetMutatedObjectInfo(module string, objectName string) (
+func (r *IotaTransactionBlockResponse) GetMutatedObjectByName(module string, objectName string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevMutatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Mutated != nil {
 			// some possible examples
@@ -355,26 +377,80 @@ func (r *IotaTransactionBlockResponse) GetMutatedObjectInfo(module string, objec
 				return nil, fmt.Errorf("invalid resource string: %w", err)
 			}
 			if resource.Contains(nil, module, objectName) {
-				ref := iotago.ObjectRef{
+				if ref != nil {
+					return nil, fmt.Errorf("multiple mutated objects found for %s::%s: first = %v, second = %v",
+						module, objectName,
+						string(lo.Must(json.Marshal(prevMutatedObj))),
+						string(lo.Must(json.Marshal(change.Data.Mutated))),
+					)
+				}
+
+				ref = &iotago.ObjectRef{
 					ObjectID: &change.Data.Mutated.ObjectID,
 					Version:  change.Data.Mutated.Version.Uint64(),
 					Digest:   &change.Data.Mutated.Digest,
 				}
-				return &ref, nil
+				prevMutatedObj = change.Data.Mutated
 			}
 		}
 	}
-	return nil, fmt.Errorf("not found")
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
 }
 
-// requires `ShowObjectChanges: true`
-func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType string) (
+func (r *IotaTransactionBlockResponse) GetMutatedObjectByID(objectID iotago.ObjectID) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevMutatedObj any
+
+	for _, change := range r.ObjectChanges {
+		if change.Data.Mutated != nil {
+			if change.Data.Mutated.ObjectID == objectID {
+				if ref != nil {
+					return nil, fmt.Errorf("multiple mutated objects found for %v: first = %v, second = %v",
+						objectID.String(),
+						string(lo.Must(json.Marshal(prevMutatedObj))),
+						string(lo.Must(json.Marshal(change.Data.Mutated))),
+					)
+				}
+
+				ref = &iotago.ObjectRef{
+					ObjectID: &change.Data.Mutated.ObjectID,
+					Version:  change.Data.Mutated.Version.Uint64(),
+					Digest:   &change.Data.Mutated.Digest,
+				}
+				prevMutatedObj = change.Data.Mutated
+			}
+		}
+	}
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
+}
+
+// requires `ShowObjectChanges: true`
+func (r *IotaTransactionBlockResponse) GetCreatedCoinByType(module string, coinType string) (
+	*iotago.ObjectRef,
+	error,
+) {
+	if r.ObjectChanges == nil {
+		return nil, errors.New("expected ObjectChanges != nil")
+	}
+
+	var ref *iotago.ObjectRef
+	var prevCreatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Created != nil {
 			resource, err := iotago.NewResourceType(change.Data.Created.ObjectType)
@@ -383,27 +459,43 @@ func (r *IotaTransactionBlockResponse) GetCreatedCoin(module string, coinType st
 			}
 			if resource.Module == "coin" && resource.SubType1 != nil {
 				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
-					ref := iotago.ObjectRef{
+					if ref != nil {
+						return nil, fmt.Errorf("multiple created coins found for %s::%s: first = %v, second = %v",
+							module, coinType,
+							string(lo.Must(json.Marshal(prevCreatedObj))),
+							string(lo.Must(json.Marshal(change.Data.Created))),
+						)
+					}
+
+					ref = &iotago.ObjectRef{
 						ObjectID: &change.Data.Created.ObjectID,
 						Version:  change.Data.Created.Version.Uint64(),
 						Digest:   &change.Data.Created.Digest,
 					}
-					return &ref, nil
+					prevCreatedObj = change.Data.Created
 				}
 			}
 		}
 	}
-	return nil, errors.New("not found")
+
+	if ref == nil {
+		return nil, fmt.Errorf("not found")
+	}
+	return ref, nil
 }
 
 // requires `ShowObjectChanges: true`
-func (r *IotaTransactionBlockResponse) GetMutatedCoin(module string, coinType string) (
+func (r *IotaTransactionBlockResponse) GetMutatedCoinByType(module string, coinType string) (
 	*iotago.ObjectRef,
 	error,
 ) {
 	if r.ObjectChanges == nil {
 		return nil, errors.New("expected ObjectChanges != nil")
 	}
+
+	var ref *iotago.ObjectRef
+	var prevMutatedObj any
+
 	for _, change := range r.ObjectChanges {
 		if change.Data.Mutated != nil {
 			resource, err := iotago.NewResourceType(change.Data.Mutated.ObjectType)
@@ -412,17 +504,29 @@ func (r *IotaTransactionBlockResponse) GetMutatedCoin(module string, coinType st
 			}
 			if resource.Module == "coin" && resource.SubType1 != nil {
 				if resource.SubType1.Module == module && resource.SubType1.ObjectName == coinType {
-					ref := iotago.ObjectRef{
+					if ref != nil {
+						return nil, fmt.Errorf("multiple mutated coins found for %s::%s: first = %v, second = %v",
+							module, coinType,
+							string(lo.Must(json.Marshal(prevMutatedObj))),
+							string(lo.Must(json.Marshal(change.Data.Mutated))),
+						)
+					}
+
+					ref = &iotago.ObjectRef{
 						ObjectID: &change.Data.Mutated.ObjectID,
 						Version:  change.Data.Mutated.Version.Uint64(),
 						Digest:   &change.Data.Mutated.Digest,
 					}
-					return &ref, nil
+					prevMutatedObj = change.Data.Mutated
 				}
 			}
 		}
 	}
-	return nil, errors.New("not found")
+
+	if ref == nil {
+		return nil, errors.New("not found")
+	}
+	return ref, nil
 }
 
 type (

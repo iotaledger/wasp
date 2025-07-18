@@ -116,7 +116,7 @@ func CreateAndSendGasCoin(ctx context.Context, client clients.L1Client, wallet w
 		return iotago.ObjectID{}, fmt.Errorf("failed to create GasCoin: %w", err)
 	}
 
-	gasCoin, err := result.GetCreatedCoin("iota", "IOTA")
+	gasCoin, err := result.GetCreatedCoinByType("iota", "IOTA")
 	if err != nil {
 		return iotago.ObjectID{}, err
 	}

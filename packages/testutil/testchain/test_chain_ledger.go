@@ -134,7 +134,7 @@ func (tcl *TestChainLedger) MakeTxAccountsDeposit(account *cryptolib.KeyPair) (i
 	if err != nil {
 		return nil, err
 	}
-	reqRef, err := resp.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := resp.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
 		return nil, err
 	}

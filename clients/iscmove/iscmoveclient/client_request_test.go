@@ -132,7 +132,7 @@ func TestCreateAndSendRequest(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
-		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+		assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
 		createAndSendRequestRes, err := client.CreateAndSendRequest(
@@ -150,14 +150,14 @@ func TestCreateAndSendRequest(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		_, err = createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 		require.NoError(t, err)
 	})
 
 	t.Run("max size AssetsBag", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
-		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+		assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
 		for i := range 25 {
@@ -216,14 +216,14 @@ func TestCreateAndSendRequest(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		_, err = createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 		require.NoError(t, err)
 	})
 
 	t.Run("oversized AssetsBag", func(t *testing.T) {
 		txnResponse, err := newAssetsBag(client, cryptolibSigner)
 		require.NoError(t, err)
-		assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+		assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 		require.NoError(t, err)
 
 		for i := range 26 {
@@ -310,7 +310,7 @@ func TestCreateAndSendRequestWithAssets(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	_, err = createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 }
 
@@ -322,7 +322,7 @@ func TestGetRequestFromObjectID(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	allowance := iscmove.NewAssets(0).
@@ -344,7 +344,7 @@ func TestGetRequestFromObjectID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	reqInfo, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqInfo, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	req, err := client.GetRequestFromObjectID(context.Background(), reqInfo.ObjectID)

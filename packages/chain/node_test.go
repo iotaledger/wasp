@@ -143,7 +143,7 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			GasBudget:        iotaclient.DefaultGasBudget,
 		})
 		require.NoError(t, err)
-		reqRef, err := req.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+		reqRef, err := req.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 		require.NoError(t, err)
 		reqWithObj, err := te.l2Client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
 		require.NoError(t, err)
@@ -367,7 +367,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
 
-	anchorInfo, err := res.GetMutatedObjectInfo(iscmove.AnchorModuleName, iscmove.AnchorObjectName)
+	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
 	if err != nil {
 		return err
 	}

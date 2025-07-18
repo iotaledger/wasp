@@ -36,7 +36,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	assetsDestroyEmptyRes, err := PTBTestWrapper(
@@ -53,7 +53,7 @@ func TestAssetsBagNewAndDestroyEmpty(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	_, err = assetsDestroyEmptyRes.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	_, err = assetsDestroyEmptyRes.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.Error(t, err, "not found")
 }
 
@@ -63,7 +63,7 @@ func TestAssetsBagPlaceCoin(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -109,7 +109,7 @@ func TestAssetsBagPlaceCoinAmount(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -156,7 +156,7 @@ func TestAssetsBagTakeCoinBalanceMergeTo(t *testing.T) {
 	const topUpAmount = 123
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	getCoinsRes, err := client.GetCoins(context.Background(), iotaclient.GetCoinsRequest{Owner: cryptolibSigner.Address().AsIotaAddress()})
@@ -225,7 +225,7 @@ func TestGetAssetsBagFromAssetsBagID(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	assetsBagMainRef, err := txnResponse.GetCreatedObjectInfo("assets_bag", "AssetsBag")
+	assetsBagMainRef, err := txnResponse.GetCreatedObjectByName("assets_bag", "AssetsBag")
 	require.NoError(t, err)
 
 	coinRef, _ := buildDeployMintTestcoin(t, client, cryptolibSigner)
@@ -419,7 +419,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 
 	txnResponse, err := newAssetsBag(client, cryptolibSigner)
 	require.NoError(t, err)
-	assetsBagRef, err := txnResponse.GetCreatedObjectInfo(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
+	assetsBagRef, err := txnResponse.GetCreatedObjectByName(iscmove.AssetsBagModuleName, iscmove.AssetsBagObjectName)
 	require.NoError(t, err)
 
 	_, err = PTBTestWrapper(
@@ -464,7 +464,7 @@ func TestGetAssetsBagFromRequestID(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	reqRef, err := createAndSendRequestRes.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	reqRef, err := createAndSendRequestRes.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	require.NoError(t, err)
 
 	reqWithObj, err := client.GetRequestFromObjectID(context.Background(), reqRef.ObjectID)
