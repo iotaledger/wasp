@@ -1,3 +1,4 @@
+// Package testval provides utility functions for generating test values.
 package testval
 
 import (

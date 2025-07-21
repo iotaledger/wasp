@@ -1,4 +1,4 @@
-package testcons
+package testcons //nolint:staticcheck
 
 import (
 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
