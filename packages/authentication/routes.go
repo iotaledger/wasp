@@ -9,10 +9,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/users"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/authentication/shared"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/users"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
 
 const (

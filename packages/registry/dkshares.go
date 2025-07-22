@@ -13,10 +13,10 @@ import (
 
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/onchangemap"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/onchangemap"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 type DKSharesRegistry struct {

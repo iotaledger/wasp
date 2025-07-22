@@ -13,10 +13,10 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 // Dict is an implementation kv.KVStore interface backed by an in-memory map.

@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 )
 
 func TestLogIndex(t *testing.T) {

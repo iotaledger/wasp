@@ -1,10 +1,10 @@
 package iscmovetest
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/samber/lo"
 )
 

@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
 )
 
 func TestVMErrorCodeSerialization(t *testing.T) {

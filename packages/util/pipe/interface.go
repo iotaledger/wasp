@@ -1,6 +1,6 @@
 package pipe
 
-import "github.com/iotaledger/wasp/packages/hashing"
+import "github.com/iotaledger/wasp/v2/packages/hashing"
 
 type Hashable interface {
 	GetHash() hashing.HashValue

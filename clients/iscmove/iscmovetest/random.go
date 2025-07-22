@@ -8,14 +8,14 @@ import (
 
 	"fortio.org/safecast"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 type RandomAnchorOption struct {

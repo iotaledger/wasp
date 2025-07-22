@@ -3,8 +3,8 @@ package chain
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/corecontracts"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/corecontracts"
 )
 
 func (c *Controller) getReceipt(e echo.Context) error {

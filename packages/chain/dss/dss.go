@@ -32,9 +32,9 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/adkg/nonce"
-	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg/nonce"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
 type DSS interface {

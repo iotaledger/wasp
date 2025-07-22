@@ -1,6 +1,6 @@
 GIT_REF_TAG := $(shell git describe --tags)
 BUILD_TAGS = rocksdb
-BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/components/app.Version=$(GIT_REF_TAG)"
+BUILD_LD_FLAGS = "-X=github.com/iotaledger/wasp/v2/components/app.Version=$(GIT_REF_TAG)"
 DOCKER_BUILD_ARGS = # E.g. make docker-build "DOCKER_BUILD_ARGS=--tag wasp:devel"
 
 #

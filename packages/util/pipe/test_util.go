@@ -3,7 +3,7 @@ package pipe
 import (
 	"encoding/binary"
 
-	"github.com/iotaledger/wasp/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
 )
 
 type IntConvertible interface {

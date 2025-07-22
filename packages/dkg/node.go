@@ -18,12 +18,12 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/byzquorum"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/util/byzquorum"
 )
 
 type NodeProvider func() *Node

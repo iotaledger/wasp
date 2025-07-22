@@ -14,7 +14,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common/hexutil"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 const HashSize = 32

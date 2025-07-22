@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util/expiringcache"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/util/expiringcache"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
 
 type OffLedgerService struct {

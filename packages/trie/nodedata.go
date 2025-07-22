@@ -6,7 +6,7 @@ import (
 
 	"fortio.org/safecast"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 const (

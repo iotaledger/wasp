@@ -9,11 +9,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func TestWaitReq(t *testing.T) {

@@ -8,7 +8,7 @@ import (
 	"github.com/awnumar/memguard"
 	"golang.org/x/term"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func ReadPasswordFromStdin() *memguard.Enclave {

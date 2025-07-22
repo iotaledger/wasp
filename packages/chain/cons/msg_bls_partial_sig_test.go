@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgBLSPartialSigSerialization(t *testing.T) {

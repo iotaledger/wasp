@@ -8,9 +8,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/solo"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/solo"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
 func initBenchmark(b *testing.B) (*solo.Chain, []isc.Request) {

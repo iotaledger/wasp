@@ -3,10 +3,10 @@ package chainutil
 
 import (
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/vm/viewcontext"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/vm/processors"
+	"github.com/iotaledger/wasp/v2/packages/vm/viewcontext"
 )
 
 // CallView executes a view call on the latest block of the chain

@@ -8,8 +8,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
 func TestGetRandomOtherNodeIDs(t *testing.T) {

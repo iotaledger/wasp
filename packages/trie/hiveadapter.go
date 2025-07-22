@@ -5,7 +5,7 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 )
 
 // HiveKVStoreAdapter maps a partition of the Hive KVStore to trie_go.KVStore

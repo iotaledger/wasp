@@ -7,7 +7,7 @@ import (
 	"github.com/samber/lo"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 // NodeOwnershipCertificate is a proof that a specified address is an owner of the specified node.

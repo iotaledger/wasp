@@ -7,7 +7,7 @@ package craig
 import (
 	"errors"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type abaImpl struct{}

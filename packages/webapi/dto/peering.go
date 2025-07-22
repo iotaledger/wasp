@@ -1,7 +1,7 @@
 // Package dto implements the webapi dto
 package dto
 
-import "github.com/iotaledger/wasp/packages/cryptolib"
+import "github.com/iotaledger/wasp/v2/packages/cryptolib"
 
 type PeeringNodeStatus struct {
 	Name       string

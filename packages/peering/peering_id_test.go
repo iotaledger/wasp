@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/testutil"
 )
 
 func TestPeeringIDSerialization(t *testing.T) {

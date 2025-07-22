@@ -6,15 +6,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/chainclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/chainclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
 /*

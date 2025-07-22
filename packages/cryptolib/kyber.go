@@ -3,7 +3,7 @@ package cryptolib
 import (
 	"go.dedis.ch/kyber/v3"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func PointFromBytes(data []byte, factory interface{ Point() kyber.Point }) (point kyber.Point, err error) {

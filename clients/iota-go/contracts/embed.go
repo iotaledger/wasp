@@ -3,7 +3,7 @@ package contracts
 import (
 	_ "embed"
 
-	"github.com/iotaledger/wasp/clients/iota-go/move"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/move"
 )
 
 // If you change any of the move contracts, you must recompile.  You will need

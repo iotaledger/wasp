@@ -13,8 +13,8 @@ import (
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 
-	consGR "github.com/iotaledger/wasp/packages/chain/cons/gr"
-	"github.com/iotaledger/wasp/packages/isc"
+	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type RequestPool[V isc.Request] interface {

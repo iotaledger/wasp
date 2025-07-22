@@ -3,7 +3,7 @@ package trie
 import (
 	"io"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func (tr *TrieReader) TakeSnapshot(w io.Writer) error {

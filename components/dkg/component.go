@@ -9,9 +9,9 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 func init() {

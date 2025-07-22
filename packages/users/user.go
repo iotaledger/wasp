@@ -6,8 +6,8 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/lo"
-	"github.com/iotaledger/wasp/packages/onchangemap"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/onchangemap"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 type User struct {

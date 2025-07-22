@@ -10,16 +10,16 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/collections"
-	"github.com/iotaledger/wasp/packages/kv/dict"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/collections"
+	"github.com/iotaledger/wasp/v2/packages/kv/dict"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func TestSerdeRequestReceipt(t *testing.T) {

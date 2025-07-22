@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/chaindb"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/chaindb"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 type trieStatsData struct {

@@ -8,11 +8,11 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/peering/lpp"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/daemon"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/peering/lpp"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 func init() {

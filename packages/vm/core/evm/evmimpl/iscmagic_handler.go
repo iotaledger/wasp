@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // magicContractHandler has one public receiver for each ISC magic method, with

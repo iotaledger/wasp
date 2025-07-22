@@ -3,8 +3,8 @@ package sbtestsc
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // testSplitFunds calls Send in a loop by sending 200 base tokens back to the caller

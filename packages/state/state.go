@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
 )
 
 // state is the implementation of the State interface

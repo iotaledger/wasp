@@ -11,9 +11,9 @@ import (
 	"github.com/pangpanglabs/echoswagger/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/webapi"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/node"
-	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/webapi"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/node"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 )
 
 func TestNodeVersion(t *testing.T) {

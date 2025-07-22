@@ -1,8 +1,8 @@
 package inccounter
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func eventCounter(ctx isc.Sandbox, val int64) {

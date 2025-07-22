@@ -7,13 +7,13 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/assert"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/vm/execution"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/assert"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/vm/execution"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 type SandboxBase struct {

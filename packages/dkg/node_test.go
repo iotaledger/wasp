@@ -15,12 +15,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivelog "github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/dkg"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/testutil"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/v2/packages/dkg"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 )
 
 // TestBasic checks if DKG procedure is executed successfully in a common case.

@@ -3,9 +3,9 @@ package legacy
 import (
 	"math/big"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 )
 
 const (

@@ -3,7 +3,7 @@ package trie
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 )
 
 type Refcounts struct {

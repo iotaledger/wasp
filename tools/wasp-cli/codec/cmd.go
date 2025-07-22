@@ -11,14 +11,14 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	wasputil "github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	wasputil "github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/util"
 )
 
 func Init(rootCmd *cobra.Command) {

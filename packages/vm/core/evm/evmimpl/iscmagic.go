@@ -11,10 +11,10 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/holiman/uint256"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	iscvm "github.com/iotaledger/wasp/packages/vm"
-	"github.com/iotaledger/wasp/packages/vm/core/errors/coreerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/iscmagic"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	iscvm "github.com/iotaledger/wasp/v2/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors/coreerrors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/iscmagic"
 )
 
 var allMethods = make(map[string]*magicMethod)

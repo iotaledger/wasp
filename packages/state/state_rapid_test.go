@@ -6,10 +6,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 type stateSM struct {

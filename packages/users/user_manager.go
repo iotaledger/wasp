@@ -10,8 +10,8 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/iotaledger/hive.go/web/basicauth"
-	"github.com/iotaledger/wasp/packages/onchangemap"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/onchangemap"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 var AllowedPermissions = []string{"read", "write"}

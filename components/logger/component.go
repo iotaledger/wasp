@@ -4,7 +4,7 @@ package logger
 import (
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/packages/evm/evmlogger"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmlogger"
 )
 
 func init() {

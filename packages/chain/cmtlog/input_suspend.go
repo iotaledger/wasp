@@ -4,7 +4,7 @@
 package cmtlog
 
 import (
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 // Sent by the Chain, when another committee has received control over this chain.

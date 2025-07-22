@@ -1,11 +1,11 @@
 package corecontracts
 
 import (
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/webapi/common"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/webapi/common"
 )
 
 func GetTotalAssets(ch chain.Chain, blockIndexOrTrieRoot string) (*isc.Assets, error) {

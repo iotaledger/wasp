@@ -4,7 +4,7 @@
 package governanceimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 var Processor = governance.Contract.Processor(nil,

@@ -1,10 +1,10 @@
 package testutil
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func DummyStateMetadata(commitment *state.L1Commitment) *transaction.StateMetadata {

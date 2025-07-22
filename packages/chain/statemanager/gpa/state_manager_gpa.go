@@ -10,18 +10,18 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/inputs"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/messages"
-	gpautils "github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/utils"
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/util/pipe"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/inputs"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/messages"
+	gpautils "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/utils"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/util/pipe"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 type blockInfo struct {

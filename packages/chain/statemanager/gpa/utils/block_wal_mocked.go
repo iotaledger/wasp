@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 // May be used in tests or (very unlikely) in production as a memory only WAL.

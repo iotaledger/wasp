@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/packages/coin"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/coin"
 )
 
 // L1ParamsFetcher provides the latest version of L1Params, and

@@ -15,9 +15,9 @@ import (
 	kyberDSS "go.dedis.ch/kyber/v3/sign/dss"
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/adkg"
-	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/adkg"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
 // Just to debug DSS/DKG with a simple Shamir Secret Sharing.

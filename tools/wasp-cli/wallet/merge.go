@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/util"
 )
 
 func initMergeCmd() *cobra.Command {

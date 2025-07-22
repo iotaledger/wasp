@@ -6,7 +6,7 @@ package mostefaoui
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 // Represents the `binValues` variable and sends/handles the BVAL messages.

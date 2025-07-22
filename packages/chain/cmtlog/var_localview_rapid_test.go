@@ -12,15 +12,15 @@ package cmtlog_test
 // 	"github.com/stretchr/testify/require"
 // 	"pgregory.net/rapid"
 
-// 	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+// 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 
-// 	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-// 	"github.com/iotaledger/wasp/clients/iscmove"
-// 	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-// 	"github.com/iotaledger/wasp/packages/chain/cmtlog"
-// 	"github.com/iotaledger/wasp/packages/cryptolib"
-// 	"github.com/iotaledger/wasp/packages/isc"
-// 	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+// 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+// 	"github.com/iotaledger/wasp/v2/clients/iscmove"
+// 	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmovetest"
+// 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+// 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+// 	"github.com/iotaledger/wasp/v2/packages/isc"
+// 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 // )
 
 // // A State Machine for for the property based test.

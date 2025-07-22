@@ -1,12 +1,12 @@
 package services
 
 import (
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/webapi/dto"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/webapi/dto"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 )
 
 type MetricsService struct {

@@ -9,7 +9,7 @@ import (
 	"github.com/awnumar/memguard"
 	"golang.org/x/term"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 /**

@@ -4,7 +4,7 @@ package apiextensions
 import (
 	"encoding/json"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
 )
 
 type APIDetailError struct {

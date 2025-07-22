@@ -1,4 +1,4 @@
-module github.com/iotaledger/wasp
+module github.com/iotaledger/wasp/v2
 
 go 1.23.8
 

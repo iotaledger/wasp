@@ -1,6 +1,6 @@
 package isc
 
-import "github.com/iotaledger/wasp/clients/iota-go/iotaclient"
+import "github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 
 const (
 	Million = 1_000_000

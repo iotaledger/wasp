@@ -1,8 +1,8 @@
 package vmtxbuilder
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type TransactionBuilder interface {

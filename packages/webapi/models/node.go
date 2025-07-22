@@ -1,6 +1,6 @@
 package models
 
-import "github.com/iotaledger/wasp/packages/parameters"
+import "github.com/iotaledger/wasp/v2/packages/parameters"
 
 type NodeOwnerCertificateResponse struct {
 	Certificate string `json:"certificate" swagger:"desc(Certificate stating the ownership. (Hex)),required"`

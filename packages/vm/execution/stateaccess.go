@@ -2,8 +2,8 @@ package execution
 
 import (
 	"fortio.org/safecast"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 type kvStoreWithGasBurn struct {

@@ -12,11 +12,11 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/shutdown"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/components/chains"
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/nodeconn"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/components/chains"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/daemon"
+	"github.com/iotaledger/wasp/v2/packages/nodeconn"
 )
 
 func init() {

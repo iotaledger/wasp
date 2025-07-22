@@ -1,8 +1,8 @@
 package sbtestsc
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/assert"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/assert"
 )
 
 func testCheckContextFromFullEP(ctx isc.Sandbox, chainAdmin isc.AgentID, caller isc.AgentID, agentID isc.AgentID) {

@@ -4,7 +4,7 @@
 package cmtlog
 
 import (
-	"github.com/iotaledger/wasp/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 )
 
 // LogIndex starts from 1. 0 is used as a nil value.

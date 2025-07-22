@@ -9,7 +9,7 @@ import (
 
 	"github.com/iotaledger/hive.go/ds/types"
 	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
-	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 )
 
 // mapDB is a simple implementation of KVStore using a map.

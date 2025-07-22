@@ -7,12 +7,12 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
-	"github.com/iotaledger/wasp/packages/webapi/common"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
-	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/v2/packages/webapi/common"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 )
 
 func (c *Controller) estimateGasOnLedger(e echo.Context) error {

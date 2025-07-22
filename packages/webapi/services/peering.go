@@ -3,11 +3,11 @@ package services
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/chains"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/webapi/dto"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/chains"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/webapi/dto"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
 
 type PeeringService struct {

@@ -1,8 +1,8 @@
 package statetest
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/samber/lo"
 )
 

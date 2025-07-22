@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/testutil/testmisc"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testmisc"
 
-	"github.com/iotaledger/wasp/packages/testutil/l1starter"
+	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 
 	"github.com/stretchr/testify/require"
 )

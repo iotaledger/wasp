@@ -3,7 +3,7 @@
 
 package acs
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import "github.com/iotaledger/wasp/v2/packages/gpa"
 
 // Here we track the termination condition.
 type uponTermCondition struct {

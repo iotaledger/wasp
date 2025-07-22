@@ -6,8 +6,8 @@ import (
 	"fortio.org/safecast"
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/webapi/corecontracts"
-	"github.com/iotaledger/wasp/packages/webapi/params"
+	"github.com/iotaledger/wasp/v2/packages/webapi/corecontracts"
+	"github.com/iotaledger/wasp/v2/packages/webapi/params"
 )
 
 type ErrorMessageFormatResponse struct {

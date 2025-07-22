@@ -3,8 +3,8 @@ package sbtestsc
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
 )
 
 // testEventLogGenericData is called several times in log_test.go

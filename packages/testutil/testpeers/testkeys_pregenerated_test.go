@@ -10,11 +10,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 // To update the pregenerated keys uncomment the t.Skip temporarily and run:

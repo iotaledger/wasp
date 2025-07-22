@@ -4,7 +4,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/peering"
 )
 
 type PeeringMetricsProvider struct {

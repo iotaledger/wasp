@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 func TestNewChainStateDatabaseManager(t *testing.T) {
