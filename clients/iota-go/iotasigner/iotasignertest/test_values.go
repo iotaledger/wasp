@@ -5,10 +5,10 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/v2/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
-var TestSeedEd25519 = testutil.TestBytes(32)
+var TestSeedEd25519 = testval.TestBytes(32)
 
 var TestSigner = iotasigner.NewSignerByIndex(
 	TestSeedEd25519,

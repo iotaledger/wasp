@@ -13,7 +13,7 @@ import (
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/testutil"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testval"
 )
 
 func TestMsgImplicateRecoverSerialization(t *testing.T) {
@@ -37,7 +37,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 			gpa.NodeID{},
 			msgImplicateRecoverKindIMPLICATE,
 			int(math.MaxUint16),
-			testutil.TestBytes(10),
+			testval.TestBytes(10),
 		}
 
 		bcs.TestCodecAndHash(t, msg, "f470a650139e")
@@ -62,7 +62,7 @@ func TestMsgImplicateRecoverSerialization(t *testing.T) {
 			gpa.NodeID{},
 			msgImplicateRecoverKindRECOVER,
 			int(math.MaxUint16),
-			testutil.TestBytes(10),
+			testval.TestBytes(10),
 		}
 
 		bcs.TestCodecAndHash(t, msg, "5f77ae537172")
