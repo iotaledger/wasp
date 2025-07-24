@@ -585,6 +585,7 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 	require.EqualValues(t, 4, stats.DeletedNodes)
 	require.EqualValues(t, 1, stats.DeletedValues)
 	stats, err = trie.Prune(store, root0)
+	require.NoError(t, err)
 	require.EqualValues(t, 1, stats.DeletedNodes)
 	require.EqualValues(t, 0, stats.DeletedValues)
 }

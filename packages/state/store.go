@@ -119,7 +119,6 @@ func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, 
 func (s *store) extractBlock(d StateDraft) (
 	newBlock Block,
 	muts *buffered.Mutations,
-	refcountsEnabled bool,
 	stats *trie.CommitStats,
 	err error,
 ) {
@@ -128,25 +127,25 @@ func (s *store) extractBlock(d StateDraft) (
 	var baseTrieRoot trie.Hash
 	{
 		if d == nil {
-			return nil, nil, false, nil, errors.New("state.StateDraft is nil")
+			return nil, nil, nil, errors.New("state.StateDraft is nil")
 		}
 
 		baseL1Commitment := d.BaseL1Commitment()
 		if baseL1Commitment != nil {
 			if !s.db.hasBlock(baseL1Commitment.TrieRoot()) {
-				return nil, nil, false, nil, errors.New("cannot commit state: base trie root not found")
+				return nil, nil, nil, errors.New("cannot commit state: base trie root not found")
 			}
 			baseTrieRoot = baseL1Commitment.TrieRoot()
 		} else {
 			baseTrieRoot, err = bufDB.initTrie(s.refcountsEnabled)
 			if err != nil {
-				return nil, nil, false, nil, err
+				return nil, nil, nil, err
 			}
 		}
 	}
 
 	// compute state db mutations
-	newBlock, refcountsEnabled, stats = func() (Block, bool, *trie.CommitStats) {
+	newBlock, stats = func() (Block, *trie.CommitStats) {
 		trie, err := bufDB.trieUpdatable(baseTrieRoot)
 		if err != nil {
 			// should not happen
@@ -158,21 +157,21 @@ func (s *store) extractBlock(d StateDraft) (
 		for k := range d.Mutations().Dels {
 			trie.Delete([]byte(k))
 		}
-		trieRoot, refcountsEnabled, stats := trie.Commit(trieStore(bufDB))
+		trieRoot, _, commitStats := trie.Commit(trieStore(bufDB))
 		block := &block{
 			trieRoot:             trieRoot,
 			mutations:            d.Mutations(),
 			previousL1Commitment: d.BaseL1Commitment(),
 		}
 		bufDB.saveBlock(block)
-		return block, refcountsEnabled, stats
+		return block, commitStats
 	}()
 
-	return newBlock, buf.muts, refcountsEnabled, stats, nil
+	return newBlock, buf.muts, stats, nil
 }
 
 func (s *store) ExtractBlock(d StateDraft) (Block, error) {
-	block, _, _, _, err := s.extractBlock(d)
+	block, _, _, err := s.extractBlock(d)
 	return block, err
 }
 
@@ -181,20 +180,20 @@ func (s *store) Commit(d StateDraft) (Block, bool, *trie.CommitStats, error) {
 	defer s.writeMutex.Unlock()
 
 	start := time.Now()
-	block, muts, refcountsEnabled, stats, err := s.extractBlock(d)
+	block, muts, stats, err := s.extractBlock(d)
 	if err != nil {
 		return nil, false, nil, err
 	}
 	s.db.commitToDB(muts)
 	if s.metrics != nil {
 		var createdNodes, createdValues uint
-		if refcountsEnabled {
+		if s.refcountsEnabled {
 			createdNodes = stats.CreatedNodes
 			createdValues = stats.CreatedValues
 		}
-		s.metrics.BlockCommitted(time.Since(start), refcountsEnabled, createdNodes, createdValues)
+		s.metrics.BlockCommitted(time.Since(start), s.refcountsEnabled, createdNodes, createdValues)
 	}
-	return block, refcountsEnabled, stats, nil
+	return block, s.refcountsEnabled, stats, nil
 }
 
 func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {

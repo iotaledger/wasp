@@ -27,7 +27,7 @@ func NewRefcounts(store KVStore) (bool, *Refcounts) {
 	return true, &Refcounts{store: store}
 }
 
-// isRefcountsEnabled reads the enabled flag from the db.
+// IsRefcountsEnabled reads the enabled flag from the db.
 // It returns true only after EnableRefcounts is called on an empty DB.
 func IsRefcountsEnabled(store KVStore) bool {
 	return lo.Must(codec.Decode[bool](store.Get([]byte{partitionRefcountsEnabled}), false))
@@ -142,7 +142,7 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 			valueRefcount := nextRefcout()
 			if nodeRefcount == 1 {
 				// a new node adds a reference to a value
-				valueRefcount = incrementAndSet(valueRefcount, valueRefcountKey(node.terminal.Data), &stats.CreatedValues)
+				incrementAndSet(valueRefcount, valueRefcountKey(node.terminal.Data), &stats.CreatedValues)
 			}
 		}
 
@@ -152,7 +152,7 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 				if nodeRefcount == 1 {
 					// a new node adds a reference to an old node
 					assertf(childRefcount > 0, "inconsistency %s %s %d", node.nodeData.Commitment, childCommitment, childRefcount)
-					childRefcount = incrementAndSet(childRefcount, nodeRefcountKey(childCommitment[:]), nil)
+					incrementAndSet(childRefcount, nodeRefcountKey(childCommitment[:]), nil)
 				}
 			}
 			return true
