@@ -8,7 +8,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 func keyMaker() func() []byte {
@@ -35,7 +35,7 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 	// reads/op measures the amount of times the DB is called to fetch data
 
 	store := NewInMemoryKVStore()
-	root := trie.MustInitRoot(store)
+	root := lo.Must(trie.InitRoot(store, true))
 
 	// compose trie
 	{
@@ -47,7 +47,7 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 			value := values.Next()
 			tr.Update(key, []byte(value))
 		}
-		root, _ = tr.Commit(store)
+		root, _, _ = tr.Commit(store)
 	}
 
 	r := lo.Must(trie.NewTrieReader(store, root))
@@ -77,7 +77,7 @@ func BenchmarkCommit(b *testing.B) {
 	makeKey := keyMaker()
 	values := NewScrambledZipfian(1000)
 
-	root := trie.MustInitRoot(store)
+	root := lo.Must(trie.InitRoot(store, true))
 	for i := 0; i < b.N; i++ {
 		tr := lo.Must(trie.NewTrieUpdatable(store, root))
 		for range 1000 {
@@ -87,7 +87,7 @@ func BenchmarkCommit(b *testing.B) {
 		}
 		store.Stats = stats
 		b.StartTimer()
-		root, _ = tr.Commit(store)
+		root, _, _ = tr.Commit(store)
 		b.StopTimer()
 		stats = store.Stats
 	}

@@ -21,6 +21,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/coreprocessors"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
@@ -79,7 +80,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 
 func TestEVMCall(t *testing.T) {
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	anchor := initChain(chainCreator, store)
 
 	magicContract := common.HexToAddress("1074000000000000000000000000000000000000")

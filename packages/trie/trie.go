@@ -73,24 +73,26 @@ func (tr *TrieUpdatable) SetRoot(h Hash) error {
 
 // Commit calculates a new mutatedRoot commitment value from the cache, commits all mutations
 // and writes it into the store.
-// The nodes and values are written into separate partitions
-// The buffered nodes are garbage collected, except the mutated ones
-// By default, it sets new root in the end and clears the trie reader cache. To override, use notSetNewRoot = true
-func (tr *TrieUpdatable) Commit(store KVStore) (Hash, CommitStats) {
+// The returned CommitStats are only valid if refcounts are enabled.
+func (tr *TrieUpdatable) Commit(store KVStore) (newTrieRoot Hash, refcountsEnabled bool, stats *CommitStats) {
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
 
 	commitNode(tr.mutatedRoot, triePartition, valuePartition)
-	stats := NewRefcounts(store).inc(tr.mutatedRoot)
+	refcountsEnabled, refcounts := NewRefcounts(store)
+	if refcountsEnabled {
+		commitStats := refcounts.inc(tr.mutatedRoot)
+		stats = &commitStats
+	}
 
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
 	tr.mutatedRoot.uncommittedChildren = make(map[byte]*bufferedNode)
 
-	newTrieRoot := tr.mutatedRoot.nodeData.Commitment
+	newTrieRoot = tr.mutatedRoot.nodeData.Commitment
 	err := tr.SetRoot(newTrieRoot) // always clear cache because NodeData-s are mutated and not valid anymore
 	assertNoError(err)
 
-	return newTrieRoot, stats
+	return newTrieRoot, refcountsEnabled, stats
 }
 
 // commitNode re-calculates the node commitment and, recursively, its children commitments
@@ -160,5 +162,10 @@ func DebugDump(store KVStore, roots []Hash) {
 		assertNoError(err)
 		tr.DebugDump()
 	}
-	NewRefcounts(store).DebugDump()
+	enabled, refcounts := NewRefcounts(store)
+	if enabled {
+		refcounts.DebugDump()
+	} else {
+		fmt.Printf("[node refcounts disabled]\n")
+	}
 }

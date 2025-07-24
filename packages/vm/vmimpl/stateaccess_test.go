@@ -12,13 +12,13 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/vm"
 )
 
 func TestSetThenGet(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.NewStoreWithUniqueWriteMutex(db)
+	cs := statetest.NewStoreWithUniqueWriteMutex(db)
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
 	_ = initChain(chainCreator, cs)
 	latest, err := cs.LatestBlock()
@@ -81,7 +81,7 @@ func TestSetThenGet(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	db := mapdb.NewMapDB()
-	cs := state.NewStoreWithUniqueWriteMutex(db)
+	cs := statetest.NewStoreWithUniqueWriteMutex(db)
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
 	_ = initChain(chainCreator, cs)
 	latest, err := cs.LatestBlock()

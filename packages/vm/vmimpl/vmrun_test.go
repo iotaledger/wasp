@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm"
@@ -178,7 +179,7 @@ func runRequestsAndTransitionAnchor(
 	require.NotNil(t, res.UnsignedTransaction)
 	require.NotNil(t, res.StateDraft)
 
-	block, _ := store.Commit(res.StateDraft)
+	block, _, _ := lo.Must3(store.Commit(res.StateDraft))
 	store.SetLatest(block.TrieRoot())
 	anchor = transitionAnchor(t, anchor, store, block)
 	return block, anchor
@@ -186,7 +187,7 @@ func runRequestsAndTransitionAnchor(
 
 func TestOnLedgerAccountsDeposit(t *testing.T) {
 	chainCreator := cryptolib.KeyPairFromSeed(cryptolib.SeedFromBytes([]byte("chainCreator")))
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 	anchor := initChain(chainCreator, store)
 	chainID := anchor.ChainID()
 

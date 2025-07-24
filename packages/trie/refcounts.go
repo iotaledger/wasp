@@ -3,6 +3,8 @@ package trie
 import (
 	"fmt"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 )
 
@@ -10,8 +12,52 @@ type Refcounts struct {
 	store KVStore
 }
 
-func NewRefcounts(store KVStore) *Refcounts {
-	return &Refcounts{store: store}
+func initRefcounts(store KVStore, root *bufferedNode) {
+	enabled, refcounts := NewRefcounts(store)
+	if enabled {
+		refcounts.inc(root)
+	}
+}
+
+func NewRefcounts(store KVStore) (bool, *Refcounts) {
+	enabled := IsRefcountsEnabled(store)
+	if !enabled {
+		return false, nil
+	}
+	return true, &Refcounts{store: store}
+}
+
+// isRefcountsEnabled reads the enabled flag from the db.
+// It returns true only after EnableRefcounts is called on an empty DB.
+func IsRefcountsEnabled(store KVStore) bool {
+	return lo.Must(codec.Decode[bool](store.Get([]byte{partitionRefcountsEnabled}), false))
+}
+
+// UpdateRefcountsFlag enables or disables trie reference counting.
+// Note that the flag can only be set to true on an empty DB.
+func UpdateRefcountsFlag(store KVStore, enable bool) error {
+	if !enable {
+		// flag can be disabled without restrictions
+		store.Set([]byte{partitionRefcountsEnabled}, codec.Encode(false))
+		return nil
+	}
+	enabled := IsRefcountsEnabled(store)
+	if enabled {
+		// already enabled
+		return nil
+	}
+	// flag can be enabled only on an empty store
+	isEmpty := true
+	store.IterateKeys(func(k []byte) bool {
+		isEmpty = false
+		return false
+	})
+	if !isEmpty {
+		return fmt.Errorf("cannot enable refcounts on a non-empty store")
+	}
+
+	store.Set([]byte{partitionRefcountsEnabled}, codec.Encode(true))
+	return nil
 }
 
 func (r *Refcounts) GetNode(commitment Hash) uint32 {

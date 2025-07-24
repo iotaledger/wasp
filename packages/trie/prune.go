@@ -1,9 +1,11 @@
 package trie
 
 import (
+	"errors"
+
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 type PruneStats struct {
@@ -14,7 +16,10 @@ type PruneStats struct {
 // Prune decrements the refcount of the trie root and all its children,
 // and then deletes all nodes and values that have a refcount of 0.
 func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
-	refcounts := NewRefcounts(store)
+	enabled, refcounts := NewRefcounts(store)
+	if !enabled {
+		return PruneStats{}, errors.New("refcounts disabled, cannot prune trie")
+	}
 
 	tr, err := NewTrieReader(store, trieRoot)
 	if err != nil {

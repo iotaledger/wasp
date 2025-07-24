@@ -6,7 +6,7 @@ import (
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 func TestBlockMessageSerialization(t *testing.T) {
@@ -22,7 +22,7 @@ func TestBlockMessageSerialization(t *testing.T) {
 func TestSerializationBlockMessage(t *testing.T) {
 	msg := &BlockMessage{
 		gpa.BasicMessage{},
-		state.RandomBlock(),
+		statetest.RandomBlock(),
 	}
 
 	bcs.TestCodec(t, msg)

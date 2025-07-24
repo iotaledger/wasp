@@ -22,6 +22,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
@@ -37,7 +38,7 @@ func TestOrigin(t *testing.T) {
 	initParams := origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
 	originDepositVal := coin.Value(100)
 	l1commitment := origin.L1Commitment(schemaVersion, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	initBlock, _ := origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
 	latestBlock, err := store.LatestBlock()
 	require.NoError(t, err)
@@ -129,12 +130,12 @@ func TestInitChainByStateMetadataBytes(t *testing.T) {
 
 	var stateMetadata *transaction.StateMetadata
 	{
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, stateMetadata = origin.InitChain(schemaVersion, store, initParams, iotago.ObjectID{}, originDepositVal, parameterstest.L1Mock)
 	}
 
 	{
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		stateMetadataBytes := stateMetadata.Bytes()
 		_, err := origin.InitChainByStateMetadataBytes(store, stateMetadataBytes, originDepositVal, parameterstest.L1Mock)
 		require.NoError(t, err)
@@ -146,7 +147,7 @@ func TestInitChainByStateMetadataBytes(t *testing.T) {
 		stateMetadata.L1Commitment = &state.L1Commitment{}
 		stateMetadataBytes := stateMetadata.Bytes()
 
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err := origin.InitChainByStateMetadataBytes(store, stateMetadataBytes, originDepositVal, parameterstest.L1Mock)
 		require.ErrorContains(t, err, "L1Commitment mismatch")
 	}

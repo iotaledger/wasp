@@ -36,7 +36,7 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32) {
 	})
 
 	store := db.KVStore()
-	rebasedDBStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(store))
+	rebasedDBStore := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(store))
 
 	latestBlock := lo.Must(rebasedDBStore.LatestBlock())
 	latestState := lo.Must(rebasedDBStore.LatestState())

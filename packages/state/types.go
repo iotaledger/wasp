@@ -67,11 +67,11 @@ type Store interface {
 
 	// Commit commits the given state, creating a new block and trie root in the DB.
 	// SetLatest must be called manually to consider the new state as the latest one.
-	Commit(StateDraft) (Block, trie.CommitStats)
+	Commit(StateDraft) (Block, bool, *trie.CommitStats, error)
 
 	// ExtractBlock performs a dry-run of Commit, discarding all changes that would be
 	// made to the DB.
-	ExtractBlock(StateDraft) Block
+	ExtractBlock(StateDraft) (Block, error)
 
 	// Prune deletes the trie with the given root from the DB
 	Prune(trie.Hash) (trie.PruneStats, error)
@@ -84,7 +84,9 @@ type Store interface {
 
 	// RestoreSnapshot restores the block and trie from the given snapshot.
 	// It is not required for the previous trie root to be present in the DB.
-	RestoreSnapshot(trie.Hash, io.Reader) error
+	RestoreSnapshot(trie.Hash, io.Reader, bool) error
+
+	IsRefcountsEnabled() bool
 }
 
 // A Block contains the mutations between the previous and current states,

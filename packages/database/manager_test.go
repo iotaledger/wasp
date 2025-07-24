@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	hivedb "github.com/iotaledger/hive.go/db"
@@ -73,13 +74,13 @@ func TestWriteAmplification(t *testing.T) {
 	chainKVStore, writeMutex, err := chainStateDatabaseManager.ChainStateKVStore(chainID)
 	require.NoError(t, err)
 	countKVStore := newCountingKVStore(chainKVStore)
-	chainStore := state.NewStore(countKVStore, writeMutex)
+	chainStore := lo.Must(state.NewStore(countKVStore, true, writeMutex))
 	require.NotNil(t, chainStore)
 
 	originSD := chainStore.NewOriginStateDraft()
 	originSD.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode[uint32](uint32(0)))
 	originSD.Set(kv.Key(coreutil.StatePrefixTimestamp), codec.Encode[time.Time](time.Unix(0, 0)))
-	originBlock, _ := chainStore.Commit(originSD)
+	originBlock, _, _ := lo.Must3(chainStore.Commit(originSD))
 	require.NotNil(t, originBlock)
 
 	b := originBlock
@@ -93,7 +94,7 @@ func TestWriteAmplification(t *testing.T) {
 			allBytes += len(k) + len(v)
 			sd.Set(k, v)
 		}
-		b, _ = chainStore.Commit(sd)
+		b, _, _ = lo.Must3(chainStore.Commit(sd))
 	}
 
 	printDu("DU-End", tempDir, t)

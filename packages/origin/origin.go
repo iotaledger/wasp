@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
-
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
@@ -16,6 +15,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
@@ -83,7 +83,7 @@ func L1Commitment(
 ) *state.L1Commitment {
 	block, _ := InitChain(
 		v,
-		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
+		statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
 		args,
 		gasCoinObjectID,
 		originDeposit,
@@ -159,7 +159,10 @@ func InitChain(
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
 
-	block, _ := store.Commit(d)
+	block, _, _, err := store.Commit(d)
+	if err != nil {
+		panic(err)
+	}
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}

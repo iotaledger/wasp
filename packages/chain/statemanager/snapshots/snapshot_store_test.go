@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 func TestNewerSnapshotKeepsOlderSnapshot(t *testing.T) {
@@ -16,11 +18,11 @@ func TestNewerSnapshotKeepsOlderSnapshot(t *testing.T) {
 		intermediateTrieRoot := blocks[0].TrieRoot()
 		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
 
-		err := storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot)
+		err := storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot, true)
 		require.NoError(t, err)
 		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
 
-		err = storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
+		err = storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot, true)
 		require.NoError(t, err)
 		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
 		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
@@ -32,11 +34,11 @@ func TestOlderSnapshotKeepsNewerSnapshot(t *testing.T) {
 		intermediateTrieRoot := blocks[0].TrieRoot()
 		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
 
-		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
+		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot, true)
 		require.NoError(t, err)
 		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
 
-		err = storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot)
+		err = storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot, true)
 		require.NoError(t, err)
 		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
 		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
@@ -47,9 +49,9 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 	twoSnapshotsCheckEnds(t, func(t *testing.T, storeOrig, storeNew state.Store, intermediateSnapshot, lastSnapshot *bytes.Buffer, blocks []state.Block) {
 		intermediateTrieRoot := blocks[0].TrieRoot()
 		lastTrieRoot := blocks[len(blocks)-1].TrieRoot()
-		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot)
+		err := storeNew.RestoreSnapshot(lastTrieRoot, lastSnapshot, true)
 		require.NoError(t, err)
-		err = storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot)
+		err = storeNew.RestoreSnapshot(intermediateTrieRoot, intermediateSnapshot, true)
 		require.NoError(t, err)
 		require.True(t, storeNew.HasTrieRoot(intermediateTrieRoot))
 		require.True(t, storeNew.HasTrieRoot(lastTrieRoot))
@@ -57,7 +59,7 @@ func TestFillTheBlocksBetweenSnapshots(t *testing.T) {
 			stateDraft, err := storeNew.NewEmptyStateDraft(blocks[i].PreviousL1Commitment())
 			require.NoError(t, err)
 			blocks[i].Mutations().ApplyTo(stateDraft)
-			block, _ := storeNew.Commit(stateDraft)
+			block, _, _ := lo.Must3(storeNew.Commit(stateDraft))
 			require.True(t, blocks[i].TrieRoot().Equals(block.TrieRoot()))
 			require.True(t, blocks[i].Hash().Equals(block.Hash()))
 		}
@@ -75,7 +77,7 @@ func twoSnapshotsCheckEnds(t *testing.T, performTestFun func(t *testing.T, store
 	factory := utils.NewBlockFactory(t)
 	blocks := factory.GetBlocks(numberOfBlocks, 1)
 	storeOrig := factory.GetStore()
-	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	storeNew := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 
 	intermediateBlock := blocks[intermediateBlockIndex]
 	intermediateCommitment := intermediateBlock.L1Commitment()

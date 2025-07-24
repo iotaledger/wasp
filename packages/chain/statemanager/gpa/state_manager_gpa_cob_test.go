@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/util/pipe"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
@@ -27,7 +28,7 @@ func initTestChainOfBlocks(t *testing.T) (
 ) {
 	bf := utils.NewBlockFactory(t)
 	log := testlogger.NewLogger(t)
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	smGPA, err := New(bf.GetChainID(), 0, nil, nil, store, mockStateManagerMetrics(), log, NewStateManagerParameters())
 	require.NoError(t, err)
 	sm, ok := smGPA.(*stateManagerGPA)
@@ -65,7 +66,7 @@ func runTestChainOfBlocks(
 
 	for _, block := range blocksToCommit {
 		sd := bf.GetStateDraft(block)
-		block2, _ := store.Commit(sd)
+		block2, _, _ := lo.Must3(store.Commit(sd))
 		require.True(t, block.Equals(block2))
 		log.LogDebugf("Committed block: %v %s", block.StateIndex(), block.L1Commitment())
 	}
