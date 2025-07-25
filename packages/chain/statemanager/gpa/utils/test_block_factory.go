@@ -10,8 +10,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/clients/iscmove"
@@ -21,9 +19,11 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
@@ -55,7 +55,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 
 	chainID := isctest.RandomChainID()
 	chainIDObjID := chainID.AsObjectID()
-	chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	chainStore := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	originBlock, _ := origin.InitChain(allmigrations.LatestSchemaVersion, chainStore, chainInitParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	originCommitment := originBlock.L1Commitment()
 	originStateMetadata := transaction.NewStateMetadata(
@@ -117,7 +117,7 @@ func NewBlockFactory(t require.TestingT, chainInitParamsOpt ...BlockFactoryCallA
 	   aliasOutputs := make(map[state.BlockHash]*isc.StateAnchor)
 	   originOutput := isc.NewAliasOutputWithID(aliasOutput0, aliasOutput0ID)
 	   aliasOutputs[originCommitment.BlockHash()] = originOutput
-	   chainStore := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	   chainStore := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	   origin.InitChain(0, chainStore, chainInitParams, 0)
 
 	   	return &BlockFactory{
@@ -204,7 +204,7 @@ func (bfT *BlockFactory) GetNextBlock(
 	}
 	counterBin = codec.Encode(counter + increment)
 	stateDraft.Set(counterKey, counterBin)
-	block := bfT.store.Commit(stateDraft)
+	block, _, _ := lo.Must3(bfT.store.Commit(stateDraft))
 	newCommitment := block.L1Commitment()
 
 	consumedAnchor := bfT.GetAnchor(commitment)

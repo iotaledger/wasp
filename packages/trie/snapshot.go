@@ -46,56 +46,93 @@ func (tr *TrieReader) TakeSnapshot(w io.Writer) error {
 	return ww.Err
 }
 
-func RestoreSnapshot(r io.Reader, store KVStore) error {
+func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
+	err := UpdateRefcountsFlag(store, refcountsEnabled)
+	if err != nil {
+		return err
+	}
+
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
-	refcounts := newRefcounts(store)
+	_, refcounts := NewRefcounts(store)
 	rr := rwutil.NewReader(r)
 	for rr.Err == nil {
 		nodeBytes := rr.ReadBytes()
 		if rr.Err == io.EOF {
 			return nil
 		}
+		if rr.Err != nil {
+			return rr.Err
+		}
 		n, err := nodeDataFromBytes(nodeBytes)
 		if err != nil {
 			return err
 		}
 		n.updateCommitment()
-		nodeKey := n.Commitment.Bytes()
 
 		var valueKey, value []byte
 		if n.Terminal != nil && !n.Terminal.IsValue {
 			if rr.ReadBool() {
 				value = rr.ReadBytes()
 				if rr.Err != nil {
-					break
+					return rr.Err
 				}
 				valueKey = n.Terminal.Bytes()
 			}
 		}
 
-		if refcounts.GetNode(n.Commitment) == 0 {
-			// node is new -- save it and set node and value refcounts to 1
-			triePartition.Set(nodeKey, nodeBytes)
+		if refcountsEnabled {
+			restoreNodeFromSnapshotWithRefcounts(
+				triePartition,
+				valuePartition,
+				refcounts,
+				n,
+				nodeBytes,
+				valueKey,
+				value,
+			)
+		} else {
+			triePartition.Set(n.Commitment.Bytes(), nodeBytes)
 			if valueKey != nil {
 				valuePartition.Set(valueKey, value)
 			}
-			refcounts.incNodeAndValue(n)
-
-			// Increment the refcounts of the children that already exist
-			// (for the others, their refcount will be set to 1 in a
-			// later iteration, when they are read from the snapshot).
-			n.iterateChildren(func(i byte, commitment Hash) bool {
-				if refcounts.GetNode(commitment) > 0 {
-					refcounts.incNode(commitment)
-				}
-				return true
-			})
-		}
-
-		if rr.Err != nil {
-			break
 		}
 	}
-	return rr.Err
+	return nil
+}
+
+func restoreNodeFromSnapshotWithRefcounts(
+	triePartition KVWriter,
+	valuePartition KVWriter,
+	refcounts *Refcounts,
+	n *NodeData,
+	nodeBytes []byte,
+	valueKey []byte,
+	value []byte,
+) {
+	nodeRefcount := refcounts.GetNode(n.Commitment)
+	if nodeRefcount == 0 {
+		// node is new -- save it and set node/value refcounts
+		triePartition.Set(n.Commitment.Bytes(), nodeBytes)
+		nodeRefcount++
+		refcounts.SetNode(n.Commitment, nodeRefcount)
+		if valueKey != nil {
+			valuePartition.Set(valueKey, value)
+			valueRefcount := refcounts.GetValue(n.Terminal.Data)
+			valueRefcount++
+			refcounts.SetValue(n.Terminal.Data, valueRefcount)
+		}
+
+		// Increment the refcounts of the children that already exist
+		// (for the others, their refcount will be set to 1 in a
+		// later iteration, when they are read from the snapshot).
+		n.iterateChildren(func(i byte, childCommitment Hash) bool {
+			childRefcount := refcounts.GetNode(childCommitment)
+			if childRefcount > 0 {
+				childRefcount++
+				refcounts.SetNode(childCommitment, childRefcount)
+			}
+			return true
+		})
+	}
 }

@@ -129,7 +129,7 @@ func (msmT *MockedSnapshotManager) loadSnapshot() SnapshotInfo {
 	snapshot := new(bytes.Buffer)
 	err := msmT.origStore.TakeSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
 	require.NoError(msmT.t, err)
-	err = msmT.nodeStore.RestoreSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot)
+	err = msmT.nodeStore.RestoreSnapshot(msmT.snapshotToLoad.TrieRoot(), snapshot, true)
 	require.NoError(msmT.t, err)
 	msmT.log.LogDebugf("Loading snapshot %s: snapshot loaded", msmT.snapshotToLoad)
 	return msmT.snapshotToLoad

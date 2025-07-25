@@ -32,30 +32,33 @@ type store struct {
 	// writeMutex ensures that writes cannot be executed in parallel, because
 	// the trie refcounts are mutable
 	writeMutex *sync.Mutex
+
+	refcountsEnabled bool
 }
 
-func NewStore(db kvstore.KVStore, writeMutex *sync.Mutex) Store {
-	return NewStoreWithMetrics(db, writeMutex, nil)
+func NewStore(db kvstore.KVStore, refcountsEnabled bool, writeMutex *sync.Mutex) (Store, error) {
+	return NewStoreWithMetrics(db, refcountsEnabled, writeMutex, nil)
 }
 
-// NewStoreWithUniqueWriteMutex creates a store with a unique write mutex.
-// Use only for testing -- writes will not be protected from parallel execution
-func NewStoreWithUniqueWriteMutex(db kvstore.KVStore) Store {
-	return NewStoreWithMetrics(db, new(sync.Mutex), nil)
-}
-
-func NewStoreWithMetrics(db kvstore.KVStore, writeMutex *sync.Mutex, metrics *metrics.ChainStateMetrics) Store {
+func NewStoreWithMetrics(db kvstore.KVStore, refcountsEnabled bool, writeMutex *sync.Mutex, metrics *metrics.ChainStateMetrics) (Store, error) {
 	stateCache, err := lru.New[trie.Hash, *state](100)
 	if err != nil {
-		panic(err)
+		return nil, err
+	}
+
+	storedb := &storeDB{db}
+	err = trie.UpdateRefcountsFlag(trieStore(storedb), refcountsEnabled)
+	if err != nil {
+		return nil, err
 	}
 
 	return &store{
-		db:         &storeDB{db},
-		stateCache: stateCache,
-		metrics:    metrics,
-		writeMutex: writeMutex,
-	}
+		db:               storedb,
+		stateCache:       stateCache,
+		metrics:          metrics,
+		writeMutex:       writeMutex,
+		refcountsEnabled: refcountsEnabled,
+	}, nil
 }
 
 func (s *store) blockByTrieRoot(root trie.Hash) (Block, error) {
@@ -113,28 +116,36 @@ func (s *store) NewEmptyStateDraft(prevL1Commitment *L1Commitment) (StateDraft, 
 	return newEmptyStateDraft(prevL1Commitment, prevState), nil
 }
 
-func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations, trie.CommitStats) {
+func (s *store) extractBlock(d StateDraft) (
+	newBlock Block,
+	muts *buffered.Mutations,
+	stats *trie.CommitStats,
+	err error,
+) {
 	buf, bufDB := s.db.buffered()
 
 	var baseTrieRoot trie.Hash
 	{
 		if d == nil {
-			panic("state.StateDraft is nil")
+			return nil, nil, nil, errors.New("state.StateDraft is nil")
 		}
 
 		baseL1Commitment := d.BaseL1Commitment()
 		if baseL1Commitment != nil {
 			if !s.db.hasBlock(baseL1Commitment.TrieRoot()) {
-				panic("cannot commit state: base trie root not found")
+				return nil, nil, nil, errors.New("cannot commit state: base trie root not found")
 			}
 			baseTrieRoot = baseL1Commitment.TrieRoot()
 		} else {
-			baseTrieRoot = bufDB.initTrie()
+			baseTrieRoot, err = bufDB.initTrie(s.refcountsEnabled)
+			if err != nil {
+				return nil, nil, nil, err
+			}
 		}
 	}
 
 	// compute state db mutations
-	block, stats := func() (Block, trie.CommitStats) {
+	newBlock, stats = func() (Block, *trie.CommitStats) {
 		trie, err := bufDB.trieUpdatable(baseTrieRoot)
 		if err != nil {
 			// should not happen
@@ -146,35 +157,43 @@ func (s *store) extractBlock(d StateDraft) (Block, *buffered.Mutations, trie.Com
 		for k := range d.Mutations().Dels {
 			trie.Delete([]byte(k))
 		}
-		trieRoot, stats := trie.Commit(trieStore(bufDB))
+		trieRoot, _, commitStats := trie.Commit(trieStore(bufDB))
 		block := &block{
 			trieRoot:             trieRoot,
 			mutations:            d.Mutations(),
 			previousL1Commitment: d.BaseL1Commitment(),
 		}
 		bufDB.saveBlock(block)
-		return block, stats
+		return block, commitStats
 	}()
 
-	return block, buf.muts, stats
+	return newBlock, buf.muts, stats, nil
 }
 
-func (s *store) ExtractBlock(d StateDraft) Block {
-	block, _, _ := s.extractBlock(d)
-	return block
+func (s *store) ExtractBlock(d StateDraft) (Block, error) {
+	block, _, _, err := s.extractBlock(d)
+	return block, err
 }
 
-func (s *store) Commit(d StateDraft) Block {
+func (s *store) Commit(d StateDraft) (Block, bool, *trie.CommitStats, error) {
 	s.writeMutex.Lock()
 	defer s.writeMutex.Unlock()
 
 	start := time.Now()
-	block, muts, stats := s.extractBlock(d)
+	block, muts, stats, err := s.extractBlock(d)
+	if err != nil {
+		return nil, false, nil, err
+	}
 	s.db.commitToDB(muts)
 	if s.metrics != nil {
-		s.metrics.BlockCommitted(time.Since(start), stats.CreatedNodes, stats.CreatedValues)
+		var createdNodes, createdValues uint
+		if s.refcountsEnabled {
+			createdNodes = stats.CreatedNodes
+			createdValues = stats.CreatedValues
+		}
+		s.metrics.BlockCommitted(time.Since(start), s.refcountsEnabled, createdNodes, createdValues)
 	}
-	return block
+	return block, s.refcountsEnabled, stats, nil
 }
 
 func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
@@ -261,7 +280,7 @@ func (s *store) TakeSnapshot(root trie.Hash, w io.Writer) error {
 	return s.db.takeSnapshot(root, w)
 }
 
-func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader) error {
+func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled bool) error {
 	if s.db.hasBlock(root) {
 		return nil
 	}
@@ -269,5 +288,9 @@ func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader) error {
 	s.writeMutex.Lock()
 	defer s.writeMutex.Unlock()
 
-	return s.db.restoreSnapshot(root, r)
+	return s.db.restoreSnapshot(root, r, refcountsEnabled)
+}
+
+func (s *store) IsRefcountsEnabled() bool {
+	return trie.IsRefcountsEnabled(trieStore(s.db))
 }

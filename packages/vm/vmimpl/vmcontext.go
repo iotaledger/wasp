@@ -111,7 +111,10 @@ func (vmctx *vmContext) extractBlock(
 		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.Timestamp)
 	})
 
-	block := vmctx.task.Store.ExtractBlock(vmctx.stateDraft)
+	block, err := vmctx.task.Store.ExtractBlock(vmctx.stateDraft)
+	if err != nil {
+		panic("vmctx.extractBlock: " + err.Error())
+	}
 
 	l1Commitment := block.L1Commitment()
 

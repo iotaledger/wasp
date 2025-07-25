@@ -97,7 +97,7 @@ func (n *NodeData) iterateChildren(f func(byte, Hash) bool) bool { //nolint:unpa
 	return true
 }
 
-// update computes update to the node data and its commitment.
+// update computes updates to the node data and its commitment.
 func (n *NodeData) update(childUpdates map[byte]*Hash, newTerminalUpdate *Tcommitment, pathExtension []byte) {
 	for i, upd := range childUpdates {
 		n.Children[i] = upd

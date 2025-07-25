@@ -52,7 +52,7 @@ func (sn *snapshotterImpl) loadSnapshot(snapshotInfo SnapshotInfo, r io.Reader) 
 	if !readSnapshotInfo.Equals(snapshotInfo) {
 		return fmt.Errorf("snapshot read %s is different than expected %v", readSnapshotInfo, snapshotInfo)
 	}
-	err = sn.store.RestoreSnapshot(readSnapshotInfo.TrieRoot(), r)
+	err = sn.store.RestoreSnapshot(readSnapshotInfo.TrieRoot(), r, true)
 	if err != nil {
 		return fmt.Errorf("failed restoring snapshot: %w", err)
 	}

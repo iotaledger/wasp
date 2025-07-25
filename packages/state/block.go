@@ -4,18 +4,14 @@
 package state
 
 import (
-	"math"
-	"math/rand"
-
 	"golang.org/x/crypto/blake2b"
-
-	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 
 	bcs "github.com/iotaledger/bcs-go"
 	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/v2/packages/kv"
 	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
 	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
@@ -94,24 +90,3 @@ func (b *block) StateIndex() uint32 {
 func (b *block) TrieRoot() trie.Hash {
 	return b.trieRoot
 }
-
-// RandomBlock is a test only function
-func RandomBlock() Block {
-	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	draft := store.NewOriginStateDraft()
-	for i := 0; i < 3; i++ {
-		draft.Set(kv.Key([]byte{byte(rand.Intn(math.MaxInt8))}), []byte{byte(rand.Intn(math.MaxInt8))})
-	}
-
-	return store.Commit(draft)
-}
-
-var TestBlock = func() Block {
-	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
-	draft := store.NewOriginStateDraft()
-	for i := 0; i < 3; i++ {
-		draft.Set(kv.Key([]byte{byte((i + 1) * 6973)}), []byte{byte((i + 1) * 9137)})
-	}
-
-	return store.Commit(draft)
-}()

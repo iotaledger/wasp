@@ -83,11 +83,13 @@ type ChainStateMetrics struct {
 	chainID   isc.ChainID
 }
 
-func (m *ChainStateMetrics) BlockCommitted(elapsed time.Duration, createdNodes, createdValues uint) {
+func (m *ChainStateMetrics) BlockCommitted(elapsed time.Duration, refcountsEnabled bool, createdNodes, createdValues uint) {
 	labels := getChainLabels(m.chainID)
 	m.collector.blockCommitTimes.With(labels).Observe(elapsed.Seconds())
-	m.collector.blockCommitNewTrieNodes.With(labels).Add(float64(createdNodes))
-	m.collector.blockCommitNewTrieValues.With(labels).Add(float64(createdValues))
+	if refcountsEnabled {
+		m.collector.blockCommitNewTrieNodes.With(labels).Add(float64(createdNodes))
+		m.collector.blockCommitNewTrieValues.With(labels).Add(float64(createdValues))
+	}
 }
 
 func (m *ChainStateMetrics) BlockPruned(elapsed time.Duration, deletedNodes, deletedValues uint) {

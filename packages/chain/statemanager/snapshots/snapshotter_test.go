@@ -8,7 +8,7 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
@@ -32,7 +32,7 @@ func TestWriteReadDifferentStores(t *testing.T) {
 	err = f.Close()
 	require.NoError(t, err)
 
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	snapshotterNew := newSnapshotter(store)
 	f, err = os.Open(fileName)
 	require.NoError(t, err)
