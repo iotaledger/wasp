@@ -239,7 +239,7 @@ func GetAuthTokenForImport() map[string]string {
 func GetTestingSeed() string     { return Config.String("wallet.testing_seed") }
 func SetTestingSeed(seed string) { log.Check(Config.Set("wallet.testing_seed", seed)) }
 
-// Custom json parser for kaonf that supports formatting of JSON output
+// JSON is a custom JSON parser for kaonf that supports formatting of output
 type JSON struct {
 	prettyPrint bool
 }
