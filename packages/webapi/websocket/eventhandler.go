@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/iotaledger/hive.go/runtime/event"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/publisher"
-	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 )
 
 type ISCEvent struct {

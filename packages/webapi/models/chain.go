@@ -3,9 +3,9 @@ package models
 import (
 	"net/url"
 
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/packages/webapi/dto"
-	"github.com/iotaledger/wasp/packages/webapi/routes"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/webapi/dto"
+	"github.com/iotaledger/wasp/v2/packages/webapi/routes"
 )
 
 type CommitteeNode struct {

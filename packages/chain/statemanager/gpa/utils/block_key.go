@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 // BlockKey is a type for block identifier to be used when putting blocks in maps.

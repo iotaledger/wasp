@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	ledgergo "github.com/iotaledger/wasp/clients/iota-go/hw_ledger/ledger-go"
+	ledgergo "github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger/ledger-go"
 )
 
 var (

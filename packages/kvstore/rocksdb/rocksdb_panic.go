@@ -2,7 +2,7 @@
 
 package rocksdb
 
-import "github.com/iotaledger/wasp/packages/kvstore"
+import "github.com/iotaledger/wasp/v2/packages/kvstore"
 
 const (
 	panicMissingRocksDB = "For RocksDB support please compile with '-tags rocksdb'"

@@ -3,8 +3,8 @@ package dto
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
 )
 
 type MetricItem[T interface{}] struct {

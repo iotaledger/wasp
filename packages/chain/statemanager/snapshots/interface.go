@@ -3,8 +3,8 @@ package snapshots
 import (
 	"io"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 // SnapshotManager is responsible for servicing snapshot related queries in appropriate

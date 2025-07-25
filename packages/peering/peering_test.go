@@ -3,8 +3,8 @@ package peering_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func TestPeerMessageSerialization(t *testing.T) {

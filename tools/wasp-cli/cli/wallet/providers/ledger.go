@@ -1,10 +1,10 @@
 package providers
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/hw_ledger"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 type ExternalWallet struct {

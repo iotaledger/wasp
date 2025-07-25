@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/collections"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv/collections"
 )
 
 func (s *StateReader) GetRequestReceiptsInBlock(blockIndex uint32) (*BlockInfo, []*RequestReceipt, error) {

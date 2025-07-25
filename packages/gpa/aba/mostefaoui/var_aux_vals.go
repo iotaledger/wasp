@@ -6,7 +6,7 @@ package mostefaoui
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 // Here we implement the derivation of the `vals` (auxVals) variable in the following:

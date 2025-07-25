@@ -5,7 +5,7 @@ package isc
 
 import (
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 // ChainInfo is an API structure containing the main parameters of the chain

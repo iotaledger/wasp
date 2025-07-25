@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/webapi"
-	"github.com/iotaledger/wasp/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/webapi"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
 )
 
 func TestMockingOfPtrStructure(t *testing.T) {

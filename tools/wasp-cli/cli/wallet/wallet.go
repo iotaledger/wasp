@@ -6,14 +6,14 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/hw_ledger"
-	ledger_go "github.com/iotaledger/wasp/clients/iota-go/hw_ledger/ledger-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/wallets"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger"
+	ledger_go "github.com/iotaledger/wasp/v2/clients/iota-go/hw_ledger/ledger-go"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet/providers"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet/wallets"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 var AddressIndex uint32

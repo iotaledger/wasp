@@ -8,9 +8,9 @@ package rootimpl
 import (
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
 )
 
 var Processor = root.Contract.Processor(nil,

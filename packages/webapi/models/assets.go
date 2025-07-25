@@ -1,6 +1,6 @@
 package models
 
-import "github.com/iotaledger/wasp/packages/isc"
+import "github.com/iotaledger/wasp/v2/packages/isc"
 
 type AssetsJSON struct {
 	// Coins is a set of coin balances

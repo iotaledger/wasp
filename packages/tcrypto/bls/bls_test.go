@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/tcrypto/bls"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto/bls"
 )
 
 var dataToSign = []byte("Hello BLS Test!")

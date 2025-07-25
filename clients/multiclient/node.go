@@ -3,7 +3,7 @@ package multiclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
 )
 
 // NodeVersion returns the versions of all the nodes

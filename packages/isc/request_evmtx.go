@@ -10,9 +10,9 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 
 	bcs "github.com/iotaledger/bcs-go"
-	_ "github.com/iotaledger/wasp/packages/evm/evmtypes" // register BCS custom encoder for Transaction
-	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
+	_ "github.com/iotaledger/wasp/v2/packages/evm/evmtypes" // register BCS custom encoder for Transaction
+	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/evmnames"
 )
 
 // evmOffLedgerTxRequest is used to wrap an EVM tx

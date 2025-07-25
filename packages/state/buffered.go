@@ -4,9 +4,9 @@
 package state
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 )
 
 // bufferedKVStore is a KVStore backed by some other KVStore. Writes are cached in-memory;

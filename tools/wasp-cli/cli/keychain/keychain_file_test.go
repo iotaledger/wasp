@@ -7,7 +7,7 @@ import (
 	"github.com/awnumar/memguard"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 func TestGetSetSeed(t *testing.T) {

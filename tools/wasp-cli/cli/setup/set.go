@@ -3,7 +3,7 @@ package setup
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
 )
 
 func initConfigSetCmd() *cobra.Command {

@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 // refer BCS doc https://github.com/diem/bcs/blob/master/README.md#externally-tagged-enumerations

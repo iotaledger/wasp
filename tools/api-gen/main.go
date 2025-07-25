@@ -10,12 +10,12 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/components/app"
-	"github.com/iotaledger/wasp/components/webapi"
-	"github.com/iotaledger/wasp/packages/authentication"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
-	v2 "github.com/iotaledger/wasp/packages/webapi"
+	"github.com/iotaledger/wasp/v2/components/app"
+	"github.com/iotaledger/wasp/v2/components/webapi"
+	"github.com/iotaledger/wasp/v2/packages/authentication"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
+	v2 "github.com/iotaledger/wasp/v2/packages/webapi"
 )
 
 type NodeIdentityProviderMock struct{}

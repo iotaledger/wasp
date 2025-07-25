@@ -8,8 +8,8 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	"github.com/iotaledger/wasp/packages/chaindb"
-	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/chaindb"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 )
 
 var AllowedEngines = []hivedb.Engine{

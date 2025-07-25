@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	"github.com/iotaledger/hive.go/app/configuration"
 
-	"github.com/iotaledger/wasp/packages/users"
+	"github.com/iotaledger/wasp/v2/packages/users"
 )
 
 func init() {

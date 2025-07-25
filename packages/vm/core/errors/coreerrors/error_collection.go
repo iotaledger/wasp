@@ -1,7 +1,7 @@
 package coreerrors
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // CoreErrorCollection implements ErrorCollection. Is used for global errors. Does not require vm context state.

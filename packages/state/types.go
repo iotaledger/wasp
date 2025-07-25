@@ -7,10 +7,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 // Store manages the storage of a chain's state.

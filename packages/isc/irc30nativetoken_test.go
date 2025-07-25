@@ -3,8 +3,8 @@ package isc_test
 import (
 	"testing"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func TestIRC30NativeTokenSerialization(t *testing.T) {

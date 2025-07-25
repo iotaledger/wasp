@@ -10,7 +10,7 @@ import (
 	flag "github.com/spf13/pflag"
 
 	"github.com/iotaledger/hive.go/app/configuration"
-	"github.com/iotaledger/wasp/clients/apiextensions"
+	"github.com/iotaledger/wasp/v2/clients/apiextensions"
 )
 
 func nodeHealth(args []string) error {

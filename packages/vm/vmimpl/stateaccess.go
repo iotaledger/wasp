@@ -1,10 +1,10 @@
 package vmimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
-	"github.com/iotaledger/wasp/packages/vm/execution"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/v2/packages/vm/execution"
 )
 
 func (reqctx *requestContext) chainState(gasBurn bool) kv.KVStore {

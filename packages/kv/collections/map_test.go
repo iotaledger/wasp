@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/kv/dict"
+	"github.com/iotaledger/wasp/v2/packages/kv/dict"
 )
 
 func TestBasicMap(t *testing.T) {

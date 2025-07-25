@@ -6,7 +6,7 @@ package coreutil
 
 import (
 	"fmt"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // EP1 is a utility type for entry points that receive 1 parameter(s)

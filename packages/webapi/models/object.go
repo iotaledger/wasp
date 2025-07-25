@@ -1,8 +1,8 @@
 package models
 
 import (
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // ObjectTypeJSON is the representation of a Iota object type that is used in the JSON API

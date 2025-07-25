@@ -8,7 +8,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 
-	"github.com/iotaledger/wasp/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
 )
 
 type Parameters struct {

@@ -1,6 +1,6 @@
 package cmtlog
 
-import "github.com/iotaledger/wasp/packages/gpa"
+import "github.com/iotaledger/wasp/v2/packages/gpa"
 
 // This event is introduced to avoid too-often consensus runs.
 // They can produce more blocks than the PoV allows to confirm them.

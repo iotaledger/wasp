@@ -8,9 +8,9 @@ import (
 	echojwt "github.com/labstack/echo-jwt/v4"
 	"github.com/labstack/echo/v4"
 
-	"github.com/iotaledger/wasp/packages/authentication/shared"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/users"
+	"github.com/iotaledger/wasp/v2/packages/authentication/shared"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/users"
 )
 
 var DefaultJWTDuration time.Duration

@@ -3,8 +3,8 @@ package apiextensions
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 func WaspAPIClientByHostName(hostname string) (*apiclient.APIClient, error) {

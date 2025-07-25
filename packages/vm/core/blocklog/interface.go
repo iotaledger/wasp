@@ -18,8 +18,8 @@ import (
 
 	"fortio.org/safecast"
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 )
 
 var Contract = coreutil.NewContract(coreutil.CoreContractBlocklog)

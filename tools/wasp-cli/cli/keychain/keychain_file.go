@@ -10,7 +10,7 @@ import (
 	"github.com/awnumar/memguard"
 	jose "github.com/dvsekhvalnov/jose2go"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 const (
