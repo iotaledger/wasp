@@ -415,32 +415,3 @@ func PTBReceiveRequestsAndTransition(
 
 	return ptb
 }
-
-func PTBReceiveRequestsAndTransitionForRotation(
-	ptb *iotago.ProgrammableTransactionBuilder,
-	packageID iotago.PackageID,
-	argAnchor iotago.Argument,
-	consumedRequests []ConsumedRequest,
-	sentAssets []SentAssets,
-	stateMetadata []byte,
-	topUpAmount uint64,
-) *iotago.ProgrammableTransactionBuilder {
-	var argReceipts iotago.Argument
-	ptb, argReceipts = internalPTBReceiveRequestsAndTransition(ptb, packageID, argAnchor, consumedRequests, sentAssets, topUpAmount)
-	ptb.Command(
-		iotago.Command{
-			MoveCall: &iotago.ProgrammableMoveCall{
-				Package:       &packageID,
-				Module:        iscmove.AnchorModuleName,
-				Function:      "transition_for_rotation",
-				TypeArguments: []iotago.TypeTag{},
-				Arguments: []iotago.Argument{
-					argAnchor,
-					ptb.MustPure(stateMetadata),
-					argReceipts,
-				},
-			},
-		},
-	)
-	return ptb
-}

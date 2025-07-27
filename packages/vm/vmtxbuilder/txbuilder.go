@@ -121,15 +121,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 	var ptb *iotago.ProgrammableTransactionBuilder
 
 	if isRotation {
-		ptb = iscmoveclient.PTBReceiveRequestsAndTransitionForRotation(
-			txb.ptb,
-			txb.iscPackage,
-			txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-			txb.consumed,
-			txb.sent,
-			stateMetadata,
-			topUpAmount,
-		)
+		ptb = txb.ptb
 		ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{

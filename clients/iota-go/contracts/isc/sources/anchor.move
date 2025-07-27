@@ -90,11 +90,7 @@ module isc::anchor {
         (Receipt { request_id }, assets)
     }
 
-    fun transition_internal(
-        self: &mut Anchor,
-        new_state_metadata: vector<u8>,
-        mut receipts: vector<Receipt>
-    ) {
+    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, mut receipts: vector<Receipt>) {
         let receipts_len = receipts.length();
         let mut i = 0;
         while (i < receipts_len) {
@@ -106,16 +102,7 @@ module isc::anchor {
         };
         receipts.destroy_empty();
         self.state_metadata = new_state_metadata;
-    }
-
-    public fun transition(self: &mut Anchor, new_state_metadata: vector<u8>, receipts: vector<Receipt>) {
-        transition_internal(self, new_state_metadata, receipts);
         self.state_index = self.state_index + 1;
-    }
-
-    /// This function performs transition for rotation (without modifying the state index)
-    public fun transition_for_rotation(self: &mut Anchor, new_state_metadata: vector<u8>, receipts: vector<Receipt>) {
-        transition_internal(self, new_state_metadata, receipts)
     }
 
     // === Migration helpers === 
