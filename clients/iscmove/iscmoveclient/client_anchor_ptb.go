@@ -246,14 +246,15 @@ type SentAssets struct {
 }
 
 //nolint:funlen
-func internalPTBReceiveRequestsAndTransition(
+func PTBReceiveRequestsAndTransition(
 	ptb *iotago.ProgrammableTransactionBuilder,
 	packageID iotago.PackageID,
 	argAnchor iotago.Argument,
 	consumedRequests []ConsumedRequest,
 	sentAssets []SentAssets,
+	stateMetadata []byte,
 	topUpAmount uint64,
-) (*iotago.ProgrammableTransactionBuilder, iotago.Argument) {
+) *iotago.ProgrammableTransactionBuilder {
 	typeReceipt, err := iotago.TypeTagFromString(fmt.Sprintf("%s::%s::%s", packageID, iscmove.AnchorModuleName, iscmove.ReceiptObjectName))
 	if err != nil {
 		panic(fmt.Sprintf("can't parse Receipt's TypeTag: %s", err))
@@ -381,21 +382,6 @@ func internalPTBReceiveRequestsAndTransition(
 	for _, sent := range sentAssets {
 		ptb = PTBTakeAndTransferAssets(ptb, packageID, argAnchor, &sent.Target, &sent.Assets)
 	}
-
-	return ptb, argReceipts
-}
-
-func PTBReceiveRequestsAndTransition(
-	ptb *iotago.ProgrammableTransactionBuilder,
-	packageID iotago.PackageID,
-	argAnchor iotago.Argument,
-	consumedRequests []ConsumedRequest,
-	sentAssets []SentAssets,
-	stateMetadata []byte,
-	topUpAmount uint64,
-) *iotago.ProgrammableTransactionBuilder {
-	var argReceipts iotago.Argument
-	ptb, argReceipts = internalPTBReceiveRequestsAndTransition(ptb, packageID, argAnchor, consumedRequests, sentAssets, topUpAmount)
 
 	ptb.Command(
 		iotago.Command{
