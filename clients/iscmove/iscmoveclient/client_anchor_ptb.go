@@ -398,6 +398,5 @@ func PTBReceiveRequestsAndTransition(
 			},
 		},
 	)
-
 	return ptb
 }
