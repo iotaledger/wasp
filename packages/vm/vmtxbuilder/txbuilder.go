@@ -118,28 +118,25 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 
 	isRotation := txb.rotateToAddr != nil
 
-	var ptb *iotago.ProgrammableTransactionBuilder
-
 	if isRotation {
-		ptb = txb.ptb
-		ptb.Command(iotago.Command{
+		txb.ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
-					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+					txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 				},
-				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+				Address: txb.ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
-		ptb.Command(iotago.Command{
+		txb.ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
 					iotago.GetArgumentGasCoin(),
 				},
-				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+				Address: txb.ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
 	} else {
-		ptb = iscmoveclient.PTBReceiveRequestsAndTransition(
+		txb.ptb = iscmoveclient.PTBReceiveRequestsAndTransition(
 			txb.ptb,
 			txb.iscPackage,
 			txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
@@ -149,7 +146,7 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 			topUpAmount,
 		)
 	}
-	return ptb.Finish()
+	return txb.ptb.Finish()
 }
 
 func (txb *AnchorTransactionBuilder) ViewPTB() *iotago.ProgrammableTransactionBuilder {
