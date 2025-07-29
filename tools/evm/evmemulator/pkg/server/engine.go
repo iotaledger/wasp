@@ -10,9 +10,9 @@ import (
 // --- JSON-RPC types (as above) ---
 
 type PayloadStatus struct {
-	Status          string      `json:"status"`
-	LatestValidHash string      `json:"latestValidHash"`
-	ValidationError interface{} `json:"validationError"`
+	Status          string  `json:"status"`
+	LatestValidHash string  `json:"latestValidHash"`
+	ValidationError *string `json:"validationError"` // pointer is important here otherwise it will be omitted and cause a validation error.
 }
 
 type ForkchoiceResult struct {
@@ -20,10 +20,10 @@ type ForkchoiceResult struct {
 	PayloadID     string        `json:"payloadId"`
 }
 
-type ForkchoiceResponse struct {
-	Jsonrpc string           `json:"jsonrpc"`
-	ID      interface{}      `json:"id"`
-	Result  ForkchoiceResult `json:"result"`
+type JsonRPCResponse struct {
+	Jsonrpc string      `json:"jsonrpc"`
+	ID      interface{} `json:"id"`
+	Result  any         `json:"result"`
 }
 
 type ErrorResponse struct {
@@ -65,8 +65,19 @@ func engineMockHandler(w http.ResponseWriter, r *http.Request) {
 	var respBytes []byte
 	var resp interface{}
 
-	if req.Method == "engine_newPayloadV3" || req.Method == "engine_forkchoiceUpdatedV3" || req.Method == "engine_forkchoiceUpdatedV2" || req.Method == "engine_forkchoiceUpdatedV1" {
-		resp = ForkchoiceResponse{
+	switch req.Method {
+	case "engine_newPayloadV3":
+		resp = JsonRPCResponse{
+			Jsonrpc: "2.0",
+			ID:      req.ID,
+			Result: PayloadStatus{
+				Status:          "VALID",
+				LatestValidHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+				ValidationError: nil,
+			},
+		}
+	case "engine_forkchoiceUpdatedV3", "engine_forkchoiceUpdatedV2", "engine_forkchoiceUpdatedV1":
+		resp = JsonRPCResponse{
 			Jsonrpc: "2.0",
 			ID:      req.ID,
 			Result: ForkchoiceResult{
@@ -75,10 +86,10 @@ func engineMockHandler(w http.ResponseWriter, r *http.Request) {
 					LatestValidHash: "0x0000000000000000000000000000000000000000000000000000000000000000",
 					ValidationError: nil,
 				},
-				PayloadID: "0x123456789abcdef",
+				PayloadID: "0x0000000021f32cc1",
 			},
 		}
-	} else {
+	default:
 		var errResp ErrorResponse
 		errResp.Jsonrpc = "2.0"
 		errResp.ID = req.ID
