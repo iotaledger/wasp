@@ -65,7 +65,7 @@ func engineMockHandler(w http.ResponseWriter, r *http.Request) {
 	var respBytes []byte
 	var resp interface{}
 
-	if req.Method == "engine_forkchoiceUpdatedV3" || req.Method == "engine_forkchoiceUpdatedV2" || req.Method == "engine_forkchoiceUpdatedV1" {
+	if req.Method == "engine_newPayloadV3" || req.Method == "engine_forkchoiceUpdatedV3" || req.Method == "engine_forkchoiceUpdatedV2" || req.Method == "engine_forkchoiceUpdatedV1" {
 		resp = ForkchoiceResponse{
 			Jsonrpc: "2.0",
 			ID:      req.ID,
