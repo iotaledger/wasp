@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -167,7 +166,7 @@ func TestBlockInfoMarshalling(t *testing.T) {
 			NumSuccessfulRequests: 8,
 			NumOffLedgerRequests:  2,
 			GasBurned:             1000,
-			GasFeeCharged:         coin.Value(500),
+			GasFeeCharged:         500,
 			Entropy:               hashing.HashData(bcs.MustMarshal(&blockIndex)),
 		}
 
@@ -176,7 +175,7 @@ func TestBlockInfoMarshalling(t *testing.T) {
 		require.EqualValues(t, expected, bi)
 	})
 
-	t.Run("v1", func(t *testing.T) {
+	t.Run("v6", func(t *testing.T) {
 		biv1 := &BlockInfo{
 			SchemaVersion:         blockInfoSchemaVersionAddedEntropy,
 			BlockIndex:            42,
@@ -188,8 +187,30 @@ func TestBlockInfoMarshalling(t *testing.T) {
 			NumOffLedgerRequests:  2,
 
 			GasBurned:     1000,
-			GasFeeCharged: coin.Value(500),
+			GasFeeCharged: 500,
 			Entropy:       hashing.PseudoRandomHash(nil),
+		}
+
+		bi, err := BlockInfoFromBytes(biv1.Bytes())
+		require.NoError(t, err)
+		require.EqualValues(t, biv1, bi)
+	})
+
+	t.Run("v7", func(t *testing.T) {
+		biv1 := &BlockInfo{
+			SchemaVersion:         blockInfoSchemaVersionAddedGasCoinTopUp,
+			BlockIndex:            42,
+			Timestamp:             time.Unix(1234, 0),
+			PreviousAnchor:        nil,
+			L1Params:              parameterstest.L1Mock,
+			TotalRequests:         10,
+			NumSuccessfulRequests: 8,
+			NumOffLedgerRequests:  2,
+
+			GasBurned:     1000,
+			GasFeeCharged: 500,
+			Entropy:       hashing.PseudoRandomHash(nil),
+			GasCoinTopUp:  1234,
 		}
 
 		bi, err := BlockInfoFromBytes(biv1.Bytes())

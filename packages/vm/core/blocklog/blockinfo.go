@@ -21,8 +21,9 @@ const (
 	// During migration, the block info schema version was incorrectly set to 5 instead of 0.
 	// To support additional changes, we now have to start with schema version 6.
 	blockInfoSchemaVersionAddedEntropy = iota + 5
+	blockInfoSchemaVersionAddedGasCoinTopUp
 
-	BlockInfoLatestSchemaVersion = blockInfoSchemaVersionAddedEntropy
+	BlockInfoLatestSchemaVersion = blockInfoSchemaVersionAddedGasCoinTopUp
 )
 
 type BlockInfo struct {
@@ -36,7 +37,8 @@ type BlockInfo struct {
 	NumOffLedgerRequests  uint16
 	GasBurned             uint64            `bcs:"compact"`
 	GasFeeCharged         coin.Value        `bcs:"compact"`
-	Entropy               hashing.HashValue // since v1
+	Entropy               hashing.HashValue // since v6
+	GasCoinTopUp          coin.Value        // since v7
 }
 
 func (bi *BlockInfo) MarshalBCS(e *bcs.Encoder) error {
@@ -52,6 +54,9 @@ func (bi *BlockInfo) MarshalBCS(e *bcs.Encoder) error {
 	e.WriteCompactUint64(bi.GasFeeCharged.Uint64())
 	if bi.SchemaVersion >= blockInfoSchemaVersionAddedEntropy {
 		e.Encode(bi.Entropy)
+	}
+	if bi.SchemaVersion >= blockInfoSchemaVersionAddedGasCoinTopUp {
+		e.Encode(bi.GasCoinTopUp)
 	}
 	return nil
 }
@@ -72,6 +77,9 @@ func (bi *BlockInfo) UnmarshalBCS(d *bcs.Decoder) error {
 	} else {
 		// we are missing entropy information; assign some unique hash for the given block index
 		bi.Entropy = hashing.HashData(bcs.MustMarshal(&bi.BlockIndex))
+	}
+	if bi.SchemaVersion >= blockInfoSchemaVersionAddedGasCoinTopUp {
+		d.Decode(&bi.GasCoinTopUp)
 	}
 	return nil
 }
@@ -99,6 +107,7 @@ func (bi *BlockInfo) String() string {
 	ret += fmt.Sprintf("\tPrev L1Commitment: %v\n", bi.PreviousL1Commitment())
 	ret += fmt.Sprintf("\tGas burned: %d\n", bi.GasBurned)
 	ret += fmt.Sprintf("\tGas fee charged: %d\n", bi.GasFeeCharged)
+	ret += fmt.Sprintf("\tGas coin top-up: %s\n", bi.GasCoinTopUp)
 	ret += "}\n"
 	return ret
 }

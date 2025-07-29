@@ -105,9 +105,10 @@ func (vmctx *vmContext) withStateUpdate(f func(chainState kv.KVStore)) {
 // extractBlock does the closing actions on the block
 func (vmctx *vmContext) extractBlock(
 	numRequests, numSuccess, numOffLedger uint16,
+	gasCoinTopUp coin.Value,
 ) (uint32, *state.L1Commitment, time.Time) {
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
-		vmctx.saveBlockInfo(chainState, numRequests, numSuccess, numOffLedger)
+		vmctx.saveBlockInfo(chainState, numRequests, numSuccess, numOffLedger, gasCoinTopUp)
 		evmimpl.MintBlock(evm.Contract.StateSubrealm(chainState), vmctx.chainInfo, vmctx.task.Timestamp)
 	})
 
@@ -125,7 +126,11 @@ func (vmctx *vmContext) extractBlock(
 }
 
 // saveBlockInfo is in the blocklog partition context
-func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuccess, numOffLedger uint16) {
+func (vmctx *vmContext) saveBlockInfo(
+	chainState kv.KVStore,
+	numRequests, numSuccess, numOffLedger uint16,
+	gasCoinTopUp coin.Value,
+) {
 	blockInfo := &blocklog.BlockInfo{
 		SchemaVersion:         blocklog.BlockInfoLatestSchemaVersion,
 		BlockIndex:            vmctx.stateDraft.BlockIndex(),
@@ -138,6 +143,7 @@ func (vmctx *vmContext) saveBlockInfo(chainState kv.KVStore, numRequests, numSuc
 		GasBurned:             vmctx.blockGas.burned,
 		GasFeeCharged:         vmctx.blockGas.feeCharged,
 		Entropy:               vmctx.task.Entropy,
+		GasCoinTopUp:          gasCoinTopUp,
 	}
 
 	blocklogState := blocklog.NewStateWriter(blocklog.Contract.StateSubrealm(chainState))

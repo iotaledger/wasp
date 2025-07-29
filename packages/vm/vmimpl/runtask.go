@@ -122,7 +122,7 @@ func runTask(task *vm.VMTask) *vm.VMTaskResult {
 	}
 
 	blockIndex, l1Commitment, timestamp := vmctx.extractBlock(
-		numProcessed, numSuccess, numOffLedger,
+		numProcessed, numSuccess, numOffLedger, topUpFee,
 	)
 
 	vmctx.task.Log.LogDebugf("closed vmContext: block index: %d, state hash: %s timestamp: %v",
