@@ -144,7 +144,7 @@ func start(cmd *cobra.Command, args []string) {
 		log.Check(err)
 	}()
 	log.Printf("starting JSONRPC server on %s...\n", ":8551")
-	e := server.StartEngineMockServer(":8551")
+	e := server.StartEngineMockServer("0.0.0.0:8551")
 	err = e.ListenAndServe()
 	log.Check(err)
 }
