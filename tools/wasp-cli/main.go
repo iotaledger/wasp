@@ -73,6 +73,7 @@ func init() {
 
 	rootCmd = initRootCmd(waspVersion)
 	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", true, "skip-version-check")
+	rootCmd.PersistentFlags().BoolVar(&config.PrettyPrintConfig, "format-config", true, "format the config file when saving")
 
 	log.Init(rootCmd)
 	rootCmd.AddCommand(&cobra.Command{
