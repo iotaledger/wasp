@@ -66,7 +66,7 @@ func engineMockHandler(w http.ResponseWriter, r *http.Request) {
 	var resp interface{}
 
 	switch req.Method {
-	case "engine_newPayloadV3":
+	case "engine_newPayloadV3", "engine_newPayloadV2", "engine_newPayloadV1":
 		resp = JsonRPCResponse{
 			Jsonrpc: "2.0",
 			ID:      req.ID,
