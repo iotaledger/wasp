@@ -11,16 +11,20 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"time"
 
 	"fortio.org/safecast"
+	"github.com/samber/lo"
 
+	"github.com/iotaledger/bcs-go"
 	hivedb "github.com/iotaledger/hive.go/db"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
-
-	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
 )
 
 type processFunc func(context.Context, kvstore.KVStore)
@@ -50,11 +54,77 @@ func main() {
 		f = trieStats
 	case "trie-diff":
 		f = trieDiff
+	case "spent-gas":
+		f = calculateGas
 	default:
 		log.Fatalf("unknown command: %s", args[0])
 	}
 
 	process(args[1], f)
+}
+
+type BlocksWithRequests struct {
+	Blocks   map[uint32][]byte
+	Requests map[uint32][]byte
+}
+
+func calculateGas(ctx context.Context, store kvstore.KVStore) {
+	state := getState(store, -1)
+
+	firstRebasedBlock, err := time.Parse(time.RFC822, "05 May 25 08:00 CET")
+	if err != nil {
+		panic(err)
+	}
+
+	blockIndex := state.BlockIndex()
+
+	countedBlocks := 0
+	countedFees := coin.Value(0)
+	countedRequests := 0
+
+	fmt.Println("Summing up all paid gas since Rebased")
+	fmt.Printf("Latest block index: %d\n", blockIndex)
+
+	state = getState(store, int64(blockIndex))
+	reader := blocklog.NewStateReaderFromChainState(state)
+	fmt.Printf("Latest block timestamp: %v\n", lo.Must(reader.GetBlockInfo(blockIndex)).Timestamp)
+
+	blocks := map[uint32][]byte{}
+	requestMap := map[uint32][]byte{}
+
+	for {
+		if countedBlocks%9999 == 0 {
+			fmt.Printf("Getting new state %d\n", countedBlocks)
+			state = getState(store, int64(blockIndex))
+		}
+
+		reader = blocklog.NewStateReaderFromChainState(state)
+		block, requests, err := reader.GetRequestReceiptsInBlock(blockIndex)
+		if err != nil {
+			panic(err)
+		}
+
+		countedBlocks++
+		countedRequests += int(block.TotalRequests)
+		countedFees += block.GasFeeCharged
+
+		if block.Timestamp.Before(firstRebasedBlock) {
+			break
+		}
+
+		if countedBlocks%10000 == 0 {
+			fmt.Printf("counted %d blocks so far\n", countedBlocks)
+		}
+
+		blocks[blockIndex] = block.Bytes()
+		requestMap[blockIndex] = bcs.MustMarshal(&requests)
+
+		blockIndex--
+	}
+
+	fmt.Printf("Total Gas spent: %d\n", countedFees)
+	fmt.Printf("Total amount of blocks: %d\n", countedBlocks)
+	fmt.Printf("Total requests: %d\n", countedRequests)
 }
 
 func getState(kvs kvstore.KVStore, index int64) state.State {
