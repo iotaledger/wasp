@@ -2,6 +2,7 @@ package trie
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/samber/lo"
 
@@ -70,9 +71,84 @@ func (r *Refcounts) GetValue(commitment []byte) uint32 {
 
 // inc is called after a commit operation, and increments the refcounts for all affected nodes
 func (r *Refcounts) inc(root *bufferedNode) CommitStats {
-	// use MultiGet to read all refcounts that are affected
-	var dbKeys [][]byte
+	nodeRefcounts, valueRefcounts := r.fetchBeforeCommit(root)
 
+	// increment and write updated refcounts
+	//
+	// writing updated values in a batch is not necessary here because it is
+	// already handled by the underlying store
+	stats := CommitStats{}
+	incrementNode := func(commitment Hash) uint32 {
+		refcount := nodeRefcounts[commitment]
+		refcount++
+		nodeRefcounts[commitment] = refcount
+		r.setRefcount(nodeRefcountKey(commitment[:]), refcount)
+		if refcount == 1 {
+			stats.CreatedNodes++
+		}
+		return refcount
+	}
+	incrementValue := func(data []byte) uint32 {
+		refcount := valueRefcounts[string(data)]
+		refcount++
+		valueRefcounts[string(data)] = refcount
+		r.setRefcount(valueRefcountKey(data), refcount)
+		if refcount == 1 {
+			stats.CreatedValues++
+		}
+		return refcount
+	}
+	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+		nodeRefcount := incrementNode(node.nodeData.Commitment)
+		if nodeRefcount > 1 {
+			// don't increment its children refcounts
+			return IterateSkipSubtree
+		}
+		// this is a new node, increment its children refcounts
+		if node.terminal != nil && !node.terminal.IsValue {
+			_ = incrementValue(node.terminal.Data)
+		}
+		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
+			if _, ok := node.uncommittedChildren[i]; !ok {
+				// a new node adds a reference to an old node
+				childRefcount := incrementNode(childCommitment)
+				assertf(childRefcount > 1, "inconsistency %s %s %d", node.nodeData.Commitment, childCommitment, childRefcount)
+			}
+			return true
+		})
+		return IterateContinue
+	})
+	return stats
+}
+
+// fetchBeforeCommit fetches all affected refcounts, using a single call to
+// MultiGet
+func (r *Refcounts) fetchBeforeCommit(root *bufferedNode) (
+	nodeRefcounts map[Hash]uint32,
+	valueRefcounts map[string]uint32,
+) {
+	type fetch struct {
+		isNode         bool
+		dbKey          []byte
+		nodeCommitment Hash
+		valueData      []byte
+	}
+	var toFetch []fetch
+
+	addNode := func(commitment Hash) {
+		toFetch = append(toFetch, fetch{
+			isNode:         true,
+			dbKey:          nodeRefcountKey(commitment[:]),
+			nodeCommitment: commitment,
+		})
+	}
+	addValue := func(nodeData []byte) {
+		toFetch = append(toFetch, fetch{
+			isNode:    false,
+			dbKey:     valueRefcountKey(nodeData),
+			valueData: nodeData,
+		})
+	}
 	visited := make(map[Hash]struct{})
 	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
 		if _, ok := visited[node.nodeData.Commitment]; ok {
@@ -81,88 +157,32 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 		}
 		visited[node.nodeData.Commitment] = struct{}{}
 
-		dbKeys = append(dbKeys, nodeRefcountKey(node.nodeData.Commitment[:]))
+		addNode(node.nodeData.Commitment)
 		if node.terminal != nil && !node.terminal.IsValue {
-			dbKeys = append(dbKeys, valueRefcountKey(node.terminal.Data))
+			addValue(node.terminal.Data)
 		}
 		// also fetch old nodes referenced by this node
 		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
 			if _, ok := node.uncommittedChildren[i]; !ok {
-				dbKeys = append(dbKeys, nodeRefcountKey(childCommitment[:]))
+				addNode(childCommitment)
 			}
 			return true
 		})
 		return IterateContinue
 	})
-	refCountBytes := r.store.MultiGet(dbKeys)
-	refCounts := lo.Map(refCountBytes, func(v []byte, _ int) uint32 {
-		if v == nil {
-			return 0
+	refCountBytes := r.store.MultiGet(lo.Map(toFetch, func(f fetch, _ int) []byte {
+		return f.dbKey
+	}))
+	nodeRefcounts = make(map[Hash]uint32)
+	valueRefcounts = make(map[string]uint32)
+	for i, f := range toFetch {
+		if f.isNode {
+			nodeRefcounts[f.nodeCommitment] = codec.MustDecode[uint32](refCountBytes[i], 0)
+		} else {
+			valueRefcounts[string(f.valueData)] = codec.MustDecode[uint32](refCountBytes[i], 0)
 		}
-		return codec.MustDecode[uint32](v)
-	})
-	// treat the refCounts slice as a queue
-	nextRefcout := func() (r uint32) {
-		r, refCounts = refCounts[0], refCounts[1:]
-		return r
 	}
-
-	// increment and write updated refcounts
-	//
-	// writing updated values in a batch is not necessary here because it is
-	// already handled by the underlying store
-	touchedRefcounts := make(map[string]uint32)
-	incrementAndSet := func(refcount uint32, dbKey []byte, createdCount *uint) uint32 {
-		refcount = lo.ValueOr(touchedRefcounts, string(dbKey), refcount)
-		refcount++
-		touchedRefcounts[string(dbKey)] = refcount
-		r.setRefcount(dbKey, refcount)
-		if createdCount != nil && refcount == 1 {
-			*createdCount++
-		}
-		return refcount
-	}
-	stats := CommitStats{}
-	visited = make(map[Hash]struct{})
-	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
-		if _, ok := visited[node.nodeData.Commitment]; ok {
-			// this node was already visited, we only want to incremtnt its
-			// refcount but not its children's
-			dbKey := nodeRefcountKey(node.nodeData.Commitment[:])
-			nodeRefcount := touchedRefcounts[string(dbKey)]
-			assertf(nodeRefcount > 0, "inconsistency %s %d", node.nodeData.Commitment, nodeRefcount)
-			incrementAndSet(nodeRefcount, dbKey, &stats.CreatedNodes)
-			return IterateSkipSubtree
-		}
-		visited[node.nodeData.Commitment] = struct{}{}
-
-		nodeRefcount := incrementAndSet(nextRefcout(), nodeRefcountKey(node.nodeData.Commitment[:]), &stats.CreatedNodes)
-
-		if node.terminal != nil && !node.terminal.IsValue {
-			valueRefcount := nextRefcout()
-			if nodeRefcount == 1 {
-				// a new node adds a reference to a value
-				incrementAndSet(valueRefcount, valueRefcountKey(node.terminal.Data), &stats.CreatedValues)
-			}
-		}
-
-		node.nodeData.iterateChildren(func(i byte, childCommitment Hash) bool {
-			if _, ok := node.uncommittedChildren[i]; !ok {
-				childRefcount := nextRefcout()
-				if nodeRefcount == 1 {
-					// a new node adds a reference to an old node
-					assertf(childRefcount > 0, "inconsistency %s %s %d", node.nodeData.Commitment, childCommitment, childRefcount)
-					incrementAndSet(childRefcount, nodeRefcountKey(childCommitment[:]), nil)
-				}
-			}
-			return true
-		})
-
-		return IterateContinue
-	})
-
-	assertf(len(refCounts) == 0, "inconsistency: remaining refCounts")
-	return stats
+	return nodeRefcounts, valueRefcounts
 }
 
 func (r *Refcounts) SetNode(hash Hash, n uint32) {
@@ -173,19 +193,28 @@ func (r *Refcounts) SetValue(key []byte, n uint32) {
 	r.setRefcount(valueRefcountKey(key), n)
 }
 
-func (r *Refcounts) DebugDump() {
-	fmt.Print("[node refcounts]\n")
+func (r *Refcounts) DebugDump(w io.Writer) (
+	nodeRefcounts map[Hash]uint32,
+	valueRefcounts map[string]uint32,
+) {
+	nodeRefcounts = make(map[Hash]uint32)
+	valueRefcounts = make(map[string]uint32)
+
+	fmt.Fprint(w, "[node refcounts]\n")
 	makeKVStorePartition(r.store, partitionRefcountNodes).IterateKeys(func(k []byte) bool {
 		n := r.getRefcount(nodeRefcountKey(k))
-		fmt.Printf("   %x: %d\n", k, n)
+		fmt.Fprintf(w, "   %x: %d\n", k, n)
+		nodeRefcounts[Hash(k)] = n
 		return true
 	})
-	fmt.Print("[value refcounts]\n")
+	fmt.Fprint(w, "[value refcounts]\n")
 	makeKVStorePartition(r.store, partitionRefcountValues).IterateKeys(func(k []byte) bool {
 		n := r.getRefcount(valueRefcountKey(k))
-		fmt.Printf("   %x: %d\n", k, n)
+		fmt.Fprintf(w, "   %x: %d\n", k, n)
+		valueRefcounts[string(k)] = n
 		return true
 	})
+	return
 }
 
 func nodeRefcountKey(nodeCommitment []byte) []byte {

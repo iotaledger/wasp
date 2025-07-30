@@ -1,6 +1,7 @@
 package test
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -18,7 +19,10 @@ func TestProofScenariosBlake2b(t *testing.T) {
 			tr, err := trie.NewTrieUpdatable(store, initRoot)
 			require.NoError(t, err)
 
-			checklist, root := runUpdateScenario(tr, store, scenario)
+			checklist, roots := runUpdateScenario(tr, store, scenario)
+			trie.DebugDump(store, append([]trie.Hash{initRoot}, roots...), io.Discard)
+
+			root := roots[len(roots)-1]
 			trr, err := trie.NewTrieReader(store, root)
 			require.NoError(t, err)
 			for k, v := range checklist {
