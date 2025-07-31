@@ -108,7 +108,7 @@ func (tr *TrieReader) Iterator(prefix []byte) KVIterator {
 
 func (tr *TrieUpdatable) update(triePath []byte, value []byte) {
 	assertf(len(value) > 0, "len(value) > 0")
-	assertf(len(triePath) < KeyMaxLength, "len(key) = %d, must under KeyMaxLength", len(triePath))
+	assertf(len(triePath) < KeyMaxLength, "len(key) = %d, must under KeyMaxLength %x", len(triePath))
 
 	nodes := make([]*bufferedNode, 0)
 	var ends pathEndingCode

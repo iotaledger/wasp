@@ -94,3 +94,7 @@ func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, io.Reader, bool) error {
 func (ros *readOnlyStore) IsRefcountsEnabled() bool {
 	return ros.store.IsRefcountsEnabled()
 }
+
+func (ros *readOnlyStore) CheckIntegrity(w io.Writer) {
+	ros.store.CheckIntegrity(w)
+}

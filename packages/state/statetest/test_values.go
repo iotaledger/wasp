@@ -11,7 +11,7 @@ import (
 
 var TestL1Commitment = lo.Must(state.NewL1CommitmentFromBytes(testval.TestBytes(state.L1CommitmentSize)))
 
-var TestBlock = func() state.Block {
+func TestBlock() state.Block {
 	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	for i := 0; i < 3; i++ {
@@ -20,4 +20,4 @@ var TestBlock = func() state.Block {
 
 	block, _, _ := lo.Must3(store.Commit(draft))
 	return block
-}()
+}

@@ -29,6 +29,6 @@ func TestSerializationBlockMessage(t *testing.T) {
 
 	bcs.TestCodecAndHash(t, &BlockMessage{
 		gpa.BasicMessage{},
-		statetest.TestBlock,
+		statetest.TestBlock(),
 	}, "453dabc9e5e2")
 }

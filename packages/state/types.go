@@ -86,7 +86,11 @@ type Store interface {
 	// It is not required for the previous trie root to be present in the DB.
 	RestoreSnapshot(trie.Hash, io.Reader, bool) error
 
+	// IsRefcountsEnabled returns true if reference counting is enabled.
 	IsRefcountsEnabled() bool
+
+	// CheckIntegrity verifies the data integrity, for testing or debugging purposes.
+	CheckIntegrity(w io.Writer)
 }
 
 // A Block contains the mutations between the previous and current states,

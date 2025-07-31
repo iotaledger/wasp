@@ -6,11 +6,13 @@ package state
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sync"
 	"time"
 
 	lru "github.com/hashicorp/golang-lru/v2"
+	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
@@ -137,6 +139,7 @@ func (s *store) extractBlock(d StateDraft) (
 			}
 			baseTrieRoot = baseL1Commitment.TrieRoot()
 		} else {
+			// will be pruned later
 			baseTrieRoot, err = bufDB.initTrie(s.refcountsEnabled)
 			if err != nil {
 				return nil, nil, nil, err
@@ -146,18 +149,18 @@ func (s *store) extractBlock(d StateDraft) (
 
 	// compute state db mutations
 	newBlock, stats = func() (Block, *trie.CommitStats) {
-		trie, err := bufDB.trieUpdatable(baseTrieRoot)
+		tr, err := bufDB.trieUpdatable(baseTrieRoot)
 		if err != nil {
 			// should not happen
 			panic(err)
 		}
 		for k, v := range d.Mutations().Sets {
-			trie.Update([]byte(k), v)
+			tr.Update([]byte(k), v)
 		}
 		for k := range d.Mutations().Dels {
-			trie.Delete([]byte(k))
+			tr.Delete([]byte(k))
 		}
-		trieRoot, _, commitStats := trie.Commit(trieStore(bufDB))
+		trieRoot, _, commitStats := tr.Commit(trieStore(bufDB))
 		block := &block{
 			trieRoot:             trieRoot,
 			mutations:            d.Mutations(),
@@ -166,6 +169,14 @@ func (s *store) extractBlock(d StateDraft) (
 		bufDB.saveBlock(block)
 		return block, commitStats
 	}()
+
+	if s.refcountsEnabled && d.BaseL1Commitment() == nil {
+		// we must prune the baseTrieRoot that we created above
+		_, err := trie.Prune(trieStore(bufDB), baseTrieRoot)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	}
 
 	return newBlock, buf.muts, stats, nil
 }
@@ -214,18 +225,22 @@ func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
 	s.db.pruneBlock(trieRoot)
 	s.db.commitToDB(buf.muts)
 	s.stateCache.Remove(trieRoot)
-	largestPrunedBlockIndex, err := s.db.largestPrunedBlockIndex()
-	if errors.Is(err, ErrNoBlocksPruned) {
-		s.db.setLargestPrunedBlockIndex(blockIndex)
-	} else if err != nil {
-		panic(err) // should not happen: no other error can be returned from `largestPrunedBlockIndex`
-	} else if blockIndex > largestPrunedBlockIndex {
-		s.db.setLargestPrunedBlockIndex(blockIndex)
-	}
+	s.updateLargestPrunedBlockIndex(blockIndex)
 	if s.metrics != nil {
 		s.metrics.BlockPruned(time.Since(start), stats.DeletedNodes, stats.DeletedValues)
 	}
 	return stats, nil
+}
+
+func (s *store) updateLargestPrunedBlockIndex(prunedBlockIndex uint32) {
+	largestPrunedBlockIndex, err := s.db.largestPrunedBlockIndex()
+	if errors.Is(err, ErrNoBlocksPruned) {
+		s.db.setLargestPrunedBlockIndex(prunedBlockIndex)
+	} else if err != nil {
+		panic(err) // should not happen: no other error can be returned from `largestPrunedBlockIndex`
+	} else if prunedBlockIndex > largestPrunedBlockIndex {
+		s.db.setLargestPrunedBlockIndex(prunedBlockIndex)
+	}
 }
 
 func (s *store) LargestPrunedBlockIndex() (uint32, error) {
@@ -288,9 +303,83 @@ func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled bo
 	s.writeMutex.Lock()
 	defer s.writeMutex.Unlock()
 
-	return s.db.restoreSnapshot(root, r, refcountsEnabled)
+	err := s.db.restoreSnapshot(root, r, refcountsEnabled)
+	if err != nil {
+		return err
+	}
+
+	block, err := s.blockByTrieRoot(root)
+	if err != nil {
+		return err
+	}
+	previousTrieRoot := block.PreviousL1Commitment().TrieRoot()
+	if !s.db.hasBlock(previousTrieRoot) {
+		s.updateLargestPrunedBlockIndex(block.StateIndex() - 1)
+	}
+	return nil
 }
 
 func (s *store) IsRefcountsEnabled() bool {
 	return trie.IsRefcountsEnabled(trieStore(s.db))
+}
+
+func (s *store) CheckIntegrity(w io.Writer) {
+	fmt.Fprint(w, "[begin store::CheckIntegrity]\n")
+
+	// check PrefixLatestTrieRoot
+	if s.db.hasLatestTrieRoot() {
+		latestTrieRoot := lo.Must(s.LatestTrieRoot())
+		if !s.HasTrieRoot(latestTrieRoot) {
+			panic(fmt.Sprintf("latest trie root %s not found", latestTrieRoot))
+		}
+		fmt.Fprintf(w, "latest trie root: %s\n", latestTrieRoot)
+	}
+
+	// check PrefixLargestPrunedBlockIndex
+	latestPruned, latestErr := s.db.largestPrunedBlockIndex()
+	hasPrunedBlocks := latestErr == nil
+	if hasPrunedBlocks {
+		fmt.Fprintf(w, "latest pruned block index: %d\n", latestPruned)
+	}
+
+	// check PrefixBlockByTrieRoot
+	fmt.Fprint(w, "checking blocks...\n")
+	var trieRoots []trie.Hash
+	_, refcounts := trie.NewRefcounts(trieStore(s.db))
+	lo.Must0(s.db.IterateKeys(keyBlockByTrieRootNoTrieRoot(), func(key kvstore.Key) bool {
+		trieRoot := trie.Hash(key[1:])
+		var n uint32
+		if refcounts != nil {
+			n = refcounts.GetNode(trieRoot)
+			if n == 0 {
+				panic(fmt.Sprintf("trie root %s has refcount 0", trieRoot))
+			}
+		} else {
+			n = 1
+		}
+		for range n {
+			trieRoots = append(trieRoots, trieRoot)
+		}
+		return true
+	}))
+	for _, trieRoot := range trieRoots {
+		block := lo.Must(s.BlockByTrieRoot(trieRoot))
+		if block.PreviousL1Commitment() != nil {
+			previousTrieRoot := block.PreviousL1Commitment().TrieRoot()
+			if s.HasTrieRoot(previousTrieRoot) {
+				previousBlock := lo.Must(s.BlockByTrieRoot(previousTrieRoot))
+				if block.StateIndex() != previousBlock.StateIndex()+1 {
+					panic(fmt.Sprintf("block index mismatch: expected %d, got %d", previousBlock.StateIndex()+1, block.StateIndex()))
+				}
+			} else if !hasPrunedBlocks || latestPruned < block.StateIndex()-1 {
+				panic(fmt.Sprintf("previous block %d %s not found", block.StateIndex()-1, previousTrieRoot))
+			}
+		}
+		fmt.Fprintf(w, "block %d %s .. ok\n", block.StateIndex(), block.TrieRoot())
+	}
+
+	// check PrefixTrie
+	trie.DebugDump(trieStore(s.db), trieRoots, w)
+
+	fmt.Fprint(w, "[end store::CheckIntegrity]\n")
 }

@@ -54,12 +54,12 @@ func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
 
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
-	_, refcounts := NewRefcounts(store)
 	rr := rwutil.NewReader(r)
+	var trieRoot *Hash
 	for rr.Err == nil {
 		nodeBytes := rr.ReadBytes()
 		if rr.Err == io.EOF {
-			return nil
+			break
 		}
 		if rr.Err != nil {
 			return rr.Err
@@ -70,69 +70,41 @@ func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
 		}
 		n.updateCommitment()
 
-		var valueKey, value []byte
-		if n.Terminal != nil && !n.Terminal.IsValue {
-			if rr.ReadBool() {
-				value = rr.ReadBytes()
-				if rr.Err != nil {
-					return rr.Err
-				}
-				valueKey = n.Terminal.Bytes()
-			}
+		triePartition.Set(n.Commitment.Bytes(), nodeBytes)
+		if trieRoot == nil {
+			trieRoot = &n.Commitment
 		}
-
-		if refcountsEnabled {
-			restoreNodeFromSnapshotWithRefcounts(
-				triePartition,
-				valuePartition,
-				refcounts,
-				n,
-				nodeBytes,
-				valueKey,
-				value,
-			)
-		} else {
-			triePartition.Set(n.Commitment.Bytes(), nodeBytes)
-			if valueKey != nil {
-				valuePartition.Set(valueKey, value)
+		if n.Terminal != nil && !n.Terminal.IsValue && rr.ReadBool() {
+			value := rr.ReadBytes()
+			if rr.Err != nil {
+				return rr.Err
 			}
+			valueKey := n.Terminal.Bytes()
+			valuePartition.Set(valueKey, value)
 		}
 	}
-	return nil
-}
 
-func restoreNodeFromSnapshotWithRefcounts(
-	triePartition KVWriter,
-	valuePartition KVWriter,
-	refcounts *Refcounts,
-	n *NodeData,
-	nodeBytes []byte,
-	valueKey []byte,
-	value []byte,
-) {
-	nodeRefcount := refcounts.GetNode(n.Commitment)
-	if nodeRefcount == 0 {
-		// node is new -- save it and set node/value refcounts
-		triePartition.Set(n.Commitment.Bytes(), nodeBytes)
-		nodeRefcount++
-		refcounts.SetNode(n.Commitment, nodeRefcount)
-		if valueKey != nil {
-			valuePartition.Set(valueKey, value)
-			valueRefcount := refcounts.GetValue(n.Terminal.Data)
-			valueRefcount++
-			refcounts.SetValue(n.Terminal.Data, valueRefcount)
+	// TODO: improve performance
+	if refcountsEnabled {
+		_, refcounts := NewRefcounts(store)
+		tr, err := NewTrieReader(store, *trieRoot)
+		if err != nil {
+			return err
 		}
-
-		// Increment the refcounts of the children that already exist
-		// (for the others, their refcount will be set to 1 in a
-		// later iteration, when they are read from the snapshot).
-		n.iterateChildren(func(i byte, childCommitment Hash) bool {
-			childRefcount := refcounts.GetNode(childCommitment)
-			if childRefcount > 0 {
-				childRefcount++
-				refcounts.SetNode(childCommitment, childRefcount)
+		tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
+			nodeRefcount := refcounts.GetNode(n.Commitment)
+			nodeRefcount++
+			refcounts.SetNode(n.Commitment, nodeRefcount)
+			if nodeRefcount > 1 {
+				return IterateSkipSubtree
 			}
-			return true
+			if n.Terminal != nil && !n.Terminal.IsValue {
+				valueRefcount := refcounts.GetValue(n.Terminal.Data)
+				valueRefcount++
+				refcounts.SetValue(n.Terminal.Data, valueRefcount)
+			}
+			return IterateContinue
 		})
 	}
+	return nil
 }
