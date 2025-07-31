@@ -11,14 +11,14 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
-	wasputil "github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/gas"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/util"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	wasputil "github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/util"
 )
 
 func Init(rootCmd *cobra.Command) {
@@ -65,16 +65,11 @@ func createSubCmd(use, short string) *cobra.Command {
 
 func initDecodeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "call-result <type> <type> ...",
+		Use:   "call-result <type> [<type> ...]",
 		Short: "Decode the output of a contract function call",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, cmdArgs []string) {
 			callResults := util.ReadCallResultsAsJSON()
-
-			if len(cmdArgs) < 1 {
-				log.Check(cmd.Help())
-				return
-			}
 
 			if len(callResults) != len(cmdArgs) {
 				log.Printf("Number of provided result types does not match number of results: types = %v, results = %v\n",
@@ -83,7 +78,7 @@ func initDecodeCmd() *cobra.Command {
 				return
 			}
 
-			for i := 0; i < len(cmdArgs); i++ {
+			for i := range cmdArgs {
 				vtype := cmdArgs[i]
 				val := util.ValueToString(vtype, callResults[i])
 				log.Printf("[%v]: %s\n", i, val)

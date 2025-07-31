@@ -3,10 +3,10 @@ package iscmoveclient
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 func PTBUpdateAnchorStateMetadata(ptb *iotago.ProgrammableTransactionBuilder, packageID iotago.PackageID, anchorRef iotago.Argument, stateMetadata []byte, stateIndex uint32) *iotago.ProgrammableTransactionBuilder {

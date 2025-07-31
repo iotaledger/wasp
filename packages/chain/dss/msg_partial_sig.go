@@ -13,7 +13,7 @@ import (
 	"go.dedis.ch/kyber/v3/suites"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 type msgPartialSig struct {

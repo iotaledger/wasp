@@ -6,7 +6,7 @@ import (
 
 	"github.com/testcontainers/testcontainers-go"
 
-	"github.com/iotaledger/wasp/packages/testutil/testconfig"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testconfig"
 )
 
 type L1EndpointConfig struct {

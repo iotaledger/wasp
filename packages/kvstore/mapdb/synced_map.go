@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/iotaledger/hive.go/serializer/v2/byteutils"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/kvstore/utils"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/utils"
 )
 
 type syncedKVMap struct {

@@ -9,17 +9,18 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 func TestBlockSerialization(t *testing.T) {
-	block1 := state.RandomBlock()
+	block1 := statetest.RandomBlock()
 	b := block1.Bytes()
 	block2, err := state.BlockFromBytes(b)
 	require.NoError(t, err)
 	require.Equal(t, block1, block2)
 
-	block3 := state.RandomBlock()
+	block3 := statetest.RandomBlock()
 	vEnc := bcs.MustMarshal(&block3)
 	block3Dec := state.NewBlock()
 	bcs.MustUnmarshalInto(vEnc, &block3Dec)

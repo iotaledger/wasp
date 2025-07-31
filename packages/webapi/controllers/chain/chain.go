@@ -13,17 +13,17 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/webapi/apierrors"
-	"github.com/iotaledger/wasp/packages/webapi/controllers/controllerutils"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
-	"github.com/iotaledger/wasp/packages/webapi/models"
-	"github.com/iotaledger/wasp/packages/webapi/params"
-	"github.com/iotaledger/wasp/packages/webapi/services"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
+	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/webapi/params"
+	"github.com/iotaledger/wasp/v2/packages/webapi/services"
 )
 
 func (c *Controller) getCommitteeInfo(e echo.Context) error {

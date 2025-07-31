@@ -9,20 +9,20 @@ import (
 	goversion "github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 
-	"github.com/iotaledger/wasp/components/app"
-	"github.com/iotaledger/wasp/tools/wasp-cli/authentication"
-	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/setup"
-	"github.com/iotaledger/wasp/tools/wasp-cli/codec"
-	"github.com/iotaledger/wasp/tools/wasp-cli/disrec"
-	"github.com/iotaledger/wasp/tools/wasp-cli/inspection"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
-	"github.com/iotaledger/wasp/tools/wasp-cli/metrics"
-	"github.com/iotaledger/wasp/tools/wasp-cli/peering"
-	"github.com/iotaledger/wasp/tools/wasp-cli/wallet"
-	"github.com/iotaledger/wasp/tools/wasp-cli/waspcmd"
+	"github.com/iotaledger/wasp/v2/components/app"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/authentication"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/chain"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/setup"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/codec"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/disrec"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/inspection"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/metrics"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/peering"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/wallet"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/waspcmd"
 )
 
 var rootCmd *cobra.Command
@@ -73,6 +73,7 @@ func init() {
 
 	rootCmd = initRootCmd(waspVersion)
 	rootCmd.PersistentFlags().BoolVar(&cliclients.SkipCheckVersions, "skip-version-check", true, "skip-version-check")
+	rootCmd.PersistentFlags().BoolVar(&config.PrettyPrintConfig, "format-config", true, "format the config file when saving")
 
 	log.Init(rootCmd)
 	rootCmd.AddCommand(&cobra.Command{

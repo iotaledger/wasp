@@ -5,30 +5,30 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/core/errors"
-	"github.com/iotaledger/wasp/packages/vm/core/evm"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmimpl"
-	"github.com/iotaledger/wasp/packages/vm/core/governance"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/inccounter"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/manyevents"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/contracts/testerrors"
-	"github.com/iotaledger/wasp/packages/vm/core/testcore/sbtests/sbtestsc"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/errors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/evmimpl"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/governance"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/inccounter"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/manyevents"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/contracts/testerrors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/testcore/sbtests/sbtestsc"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 type InitParams struct {
@@ -83,7 +83,7 @@ func L1Commitment(
 ) *state.L1Commitment {
 	block, _ := InitChain(
 		v,
-		state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
+		statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()),
 		args,
 		gasCoinObjectID,
 		originDeposit,
@@ -159,7 +159,10 @@ func InitChain(
 		inccounter.SetInitialState(inccounter.Contract.StateSubrealm(d))
 	}
 
-	block := store.Commit(d)
+	block, _, _, err := store.Commit(d)
+	if err != nil {
+		panic(err)
+	}
 	if err := store.SetLatest(block.TrieRoot()); err != nil {
 		panic(err)
 	}

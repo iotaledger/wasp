@@ -6,27 +6,32 @@ package state_test
 import (
 	"bytes"
 	"fmt"
+	"hash/crc32"
 	"math/rand"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/coreutil"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/origin"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/packages/chaindb"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/origin"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
 )
 
 type mustChainStore struct {
@@ -115,10 +120,10 @@ func (m mustChainStore) checkTrie(trieRoot trie.Hash) {
 	})
 }
 
-var initArgs = origin.DefaultInitParams(isctest.NewRandomAgentID()).Encode()
+var initArgs = origin.DefaultInitParams(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())).Encode()
 
 func initializedStore(db kvstore.KVStore) state.Store {
-	st := state.NewStoreWithUniqueWriteMutex(db)
+	st := statetest.NewStoreWithUniqueWriteMutex(db)
 	origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 	return st
 }
@@ -140,8 +145,8 @@ func TestOriginBlock(t *testing.T) {
 	require.EqualValues(t, 0, s.BlockIndex())
 	require.True(t, s.Timestamp().IsZero())
 
-	validateBlock0(state.NewStoreWithUniqueWriteMutex(db).BlockByTrieRoot(block0.TrieRoot()))
-	validateBlock0(state.NewStoreWithUniqueWriteMutex(db).LatestBlock())
+	validateBlock0(statetest.NewStoreWithUniqueWriteMutex(db).BlockByTrieRoot(block0.TrieRoot()))
+	validateBlock0(statetest.NewStoreWithUniqueWriteMutex(db).LatestBlock())
 
 	require.EqualValues(t, 0, cs.LatestBlockIndex())
 }
@@ -150,14 +155,14 @@ func TestOriginBlockDeterminism(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		deposit := coin.Value(rapid.Uint64().Draw(t, "deposit"))
 		db := mapdb.NewMapDB()
-		st := state.NewStoreWithUniqueWriteMutex(db)
+		st := statetest.NewStoreWithUniqueWriteMutex(db)
 		require.True(t, st.IsEmpty())
 		blockA, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock)
 		blockB, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock)
 		require.False(t, st.IsEmpty())
 		require.Equal(t, blockA.L1Commitment(), blockB.L1Commitment())
 		db2 := mapdb.NewMapDB()
-		st2 := state.NewStoreWithUniqueWriteMutex(db2)
+		st2 := statetest.NewStoreWithUniqueWriteMutex(db2)
 		require.True(t, st2.IsEmpty())
 		blockC, _ := origin.InitChain(allmigrations.LatestSchemaVersion, st2, initArgs, iotago.ObjectID{}, deposit, parameterstest.L1Mock)
 		require.False(t, st2.IsEmpty())
@@ -175,7 +180,7 @@ func Test1Block(t *testing.T) {
 		d.Set("a", []byte{1})
 
 		require.EqualValues(t, []byte{1}, d.Get("a"))
-		block := cs.Commit(d)
+		block, _, _ := lo.Must3(cs.Commit(d))
 		require.False(t, cs.IsEmpty())
 
 		return block
@@ -199,7 +204,7 @@ func TestReorg(t *testing.T) {
 	for i := 1; i < 10; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("k", []byte("a"))
-		block := cs.Commit(d)
+		block, _, _ := lo.Must3(cs.Commit(d))
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
 	}
@@ -209,7 +214,7 @@ func TestReorg(t *testing.T) {
 	for i := 6; i < 15; i++ {
 		d := cs.NewStateDraft(time.Now(), block.L1Commitment())
 		d.Set("k", []byte("b"))
-		block = cs.Commit(d)
+		block, _, _ = lo.Must3(cs.Commit(d))
 	}
 
 	// no reorg yet
@@ -240,7 +245,7 @@ func TestReplay(t *testing.T) {
 	for i := 1; i < 10; i++ {
 		d := cs.NewStateDraft(time.Now(), cs.LatestBlock().L1Commitment())
 		d.Set("k", fmt.Appendf(nil, "a%d", i))
-		block := cs.Commit(d)
+		block, _, _ := lo.Must3(cs.Commit(d))
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
 	}
@@ -267,17 +272,17 @@ func TestEqualStates(t *testing.T) {
 	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
 	draft1.Set("b", []byte("variable b"))
-	block1 := cs1.Commit(draft1)
+	block1, _, _ := lo.Must3(cs1.Commit(draft1))
 	time2 := time.Now()
 	draft2 := cs1.NewStateDraft(time2, block1.L1Commitment())
 	draft2.Set("b", []byte("another value of b"))
 	draft2.Set("c", []byte("new variable c"))
-	block2 := cs1.Commit(draft2)
+	block2, _, _ := lo.Must3(cs1.Commit(draft2))
 	time3 := time.Now()
 	draft3 := cs1.NewStateDraft(time3, block2.L1Commitment())
 	draft3.Del("a")
 	draft3.Set("d", []byte("newest variable d"))
-	block3 := cs1.Commit(draft3)
+	block3, _, _ := lo.Must3(cs1.Commit(draft3))
 	state1 := cs1.StateByTrieRoot(block3.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
@@ -285,15 +290,15 @@ func TestEqualStates(t *testing.T) {
 	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("b", []byte("variable b"))
 	draft1.Set("a", []byte("variable a"))
-	block1 = cs2.Commit(draft1)
+	block1, _, _ = lo.Must3(cs2.Commit(draft1))
 	draft2 = cs2.NewStateDraft(time2, block1.L1Commitment())
 	draft2.Set("c", []byte("new variable c"))
 	draft2.Set("b", []byte("another value of b"))
-	block2 = cs2.Commit(draft2)
+	block2, _, _ = lo.Must3(cs2.Commit(draft2))
 	draft3 = cs2.NewStateDraft(time3, block2.L1Commitment())
 	draft3.Set("d", []byte("newest variable d"))
 	draft3.Del("a")
-	block3 = cs2.Commit(draft3)
+	block3, _, _ = lo.Must3(cs2.Commit(draft3))
 	state2 := cs2.StateByTrieRoot(block3.TrieRoot())
 
 	require.True(t, state1.Equals(state2))
@@ -337,14 +342,14 @@ func TestDiffStatesValues(t *testing.T) {
 	time1 := time.Now()
 	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 := cs1.Commit(draft1)
+	block1, _, _ := lo.Must3(cs1.Commit(draft1))
 	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
 	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("other value of a"))
-	block1 = cs2.Commit(draft1)
+	block1, _, _ = lo.Must3(cs2.Commit(draft1))
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
 
 	require.False(t, state1.Equals(state2))
@@ -357,11 +362,11 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 	time1 := time.Now()
 	draft1 := cs1.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 := cs1.Commit(draft1)
+	block1, _, _ := lo.Must3(cs1.Commit(draft1))
 	time2 := time.Now()
 	draft2 := cs1.NewStateDraft(time2, block1.L1Commitment())
 	draft1.Set("b", []byte("variable b"))
-	block2 := cs1.Commit(draft2)
+	block2, _, _ := lo.Must3(cs1.Commit(draft2))
 	state1 := cs1.StateByTrieRoot(block2.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
@@ -369,7 +374,7 @@ func TestDiffStatesBlockIndex(t *testing.T) {
 	draft1 = cs2.NewStateDraft(time1, origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
 	draft1.Set("b", []byte("variable b"))
-	block1 = cs2.Commit(draft1)
+	block1, _, _ = lo.Must3(cs2.Commit(draft1))
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
 
 	require.Equal(t, uint32(2), state1.BlockIndex())
@@ -383,14 +388,14 @@ func TestDiffStatesTimestamp(t *testing.T) {
 	cs1 := mustChainStore{initializedStore(db1)}
 	draft1 := cs1.NewStateDraft(time.Now(), origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 := cs1.Commit(draft1)
+	block1, _, _ := lo.Must3(cs1.Commit(draft1))
 	state1 := cs1.StateByTrieRoot(block1.TrieRoot())
 
 	db2 := mapdb.NewMapDB()
 	cs2 := mustChainStore{initializedStore(db2)}
 	draft1 = cs2.NewStateDraft(time.Now(), origin.L1Commitment(allmigrations.LatestSchemaVersion, initArgs, iotago.ObjectID{}, 0, parameterstest.L1Mock))
 	draft1.Set("a", []byte("variable a"))
-	block1 = cs2.Commit(draft1)
+	block1, _, _ = lo.Must3(cs2.Commit(draft1))
 	state2 := cs2.StateByTrieRoot(block1.TrieRoot())
 
 	require.NotEqual(t, state1.Timestamp(), state2.Timestamp())
@@ -428,10 +433,10 @@ func TestDoubleCommit(t *testing.T) {
 		newValue := fmt.Appendf(nil, "a%d", i)
 		d1 := cs.NewStateDraft(now, latestCommitment)
 		d1.Set(keyChanged, newValue)
-		block1 := cs.Commit(d1)
+		block1, _, _ := lo.Must3(cs.Commit(d1))
 		d2 := cs.NewStateDraft(now, latestCommitment)
 		d2.Set(keyChanged, newValue)
-		block2 := cs.Commit(d2)
+		block2, _, _ := lo.Must3(cs.Commit(d2))
 		require.Equal(t, block1.L1Commitment(), block2.L1Commitment())
 		err := cs.SetLatest(block1.TrieRoot())
 		require.NoError(t, err)
@@ -482,7 +487,7 @@ func (r *randomState) randomValue() []byte {
 	return b
 }
 
-func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Time) state.Block {
+func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Time) (state.Block, bool, *trie.CommitStats) {
 	d := r.cs.NewStateDraft(timestamp, latestBlock.L1Commitment())
 	for range 50 {
 		d.Set(r.randomKey(), r.randomValue())
@@ -490,10 +495,11 @@ func (r *randomState) commitNewBlock(latestBlock state.Block, timestamp time.Tim
 	for range 10 {
 		d.Del(r.randomKey())
 	}
-	block := r.cs.Commit(d)
-	err := r.cs.SetLatest(block.TrieRoot())
+	block, refcountsEnabled, stats, err := r.cs.Commit(d)
 	require.NoError(r.t, err)
-	return block
+	err = r.cs.SetLatest(block.TrieRoot())
+	require.NoError(r.t, err)
+	return block, refcountsEnabled, stats
 }
 
 func dbSize(db kvstore.KVStore) int {
@@ -513,12 +519,13 @@ func TestPruning(t *testing.T) {
 		var sizes []int
 
 		r := newRandomState(t)
+		t.Logf("committed block %d, %s", 0, r.cs.LatestBlock().TrieRoot())
 
 		for i := 1; i <= 20; i++ {
-			block := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
+			block, _, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
 
 			index := block.StateIndex()
-			t.Logf("committed block %d", index)
+			t.Logf("committed block %d, %+v, %s", index, stats, block.TrieRoot())
 
 			if keepLatest > 0 && index >= uint32(keepLatest) {
 				p := index - uint32(keepLatest)
@@ -567,7 +574,8 @@ func TestPruning2(t *testing.T) {
 	var n int64 = 1
 
 	for i := 1; i <= 20; i++ {
-		block := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(n, 0))
+		block, _, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(n, 0))
+		t.Logf("committed block %d, %+v", block.StateIndex(), stats)
 		n++
 		trieRoots = append(trieRoots, block.TrieRoot())
 	}
@@ -602,7 +610,8 @@ func TestPruning2(t *testing.T) {
 
 		// commit a new block based off a random trie root
 		trieRoot := trieRoots[0]
-		block := r.commitNewBlock(r.cs.BlockByTrieRoot(trieRoot), time.Unix(n, 0))
+		block, _, stats := r.commitNewBlock(r.cs.BlockByTrieRoot(trieRoot), time.Unix(n, 0))
+		t.Logf("committed block %d, %+v", block.StateIndex(), stats)
 		n++
 		trieRoots = append(trieRoots, block.TrieRoot())
 		t.Logf("committed block: %d", len(trieRoots))
@@ -620,7 +629,7 @@ func makeRandomDB(t *testing.T, nBlocks int) (mustChainStore, kvstore.KVStore) {
 		if i == 1 {
 			d.Set("x", []byte(strings.Repeat("v", 70)))
 		}
-		block := cs.Commit(d)
+		block, _, _ := lo.Must3(cs.Commit(d))
 		require.False(t, cs.IsEmpty())
 		err := cs.SetLatest(block.TrieRoot())
 		require.NoError(t, err)
@@ -641,9 +650,9 @@ func TestSnapshot(t *testing.T) {
 	trieRoot, blockHash, snapshot := makeRandomDBSnapshot(t, 10)
 
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
+	cs := mustChainStore{statetest.NewStoreWithUniqueWriteMutex(db)}
 	require.True(t, cs.IsEmpty())
-	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
+	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()), true)
 	require.NoError(t, err)
 	cs.SetLatest(trieRoot)
 	require.False(t, cs.IsEmpty())
@@ -668,8 +677,8 @@ func TestRestoreSnapshotEmptyDB(t *testing.T) {
 
 	// restore the snapshot on empty DB
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
-	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
+	cs := mustChainStore{statetest.NewStoreWithUniqueWriteMutex(db)}
+	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()), true)
 	require.NoError(t, err)
 
 	// at this point the DB contains a single trie root with all refcounts = 1
@@ -692,7 +701,7 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 	// restore the snapshot, then prune it -- the DB should be left unchanged,
 	// except largest pruned block index, which is added after pruning. See
 	// addLargestPrunedBlockIndex for details.
-	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()))
+	err := cs.RestoreSnapshot(trieRoot, bytes.NewReader(snapshot.Bytes()), true)
 	require.NoError(t, err)
 	_, err = cs.Prune(trieRoot)
 	require.NoError(t, err)
@@ -705,10 +714,10 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 func TestPrunedSnapshot(t *testing.T) {
 	r := newRandomState(t)
 	for i := 1; i <= 20; i++ {
-		block := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
+		block, _, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
 		require.False(t, r.cs.IsEmpty())
 		index := block.StateIndex()
-		t.Logf("committed block %d", index)
+		t.Logf("committed block %d, %+v", index, stats)
 	}
 	_, err := r.cs.LargestPrunedBlockIndex()
 	require.Error(t, err)
@@ -734,13 +743,70 @@ func TestPrunedSnapshot(t *testing.T) {
 	t.Logf("snapshotted block index %v", blockToSnapshot.StateIndex())
 
 	db := mapdb.NewMapDB()
-	cs := mustChainStore{state.NewStoreWithUniqueWriteMutex(db)}
+	cs := mustChainStore{statetest.NewStoreWithUniqueWriteMutex(db)}
 	require.True(t, cs.IsEmpty())
-	err = cs.RestoreSnapshot(blockToSnapshot.TrieRoot(), bytes.NewReader(snapshot.Bytes()))
+	err = cs.RestoreSnapshot(blockToSnapshot.TrieRoot(), bytes.NewReader(snapshot.Bytes()), true)
 	require.NoError(t, err)
 	_, err = cs.LargestPrunedBlockIndex()
 	require.Error(t, err)
 	require.False(t, cs.IsEmpty())
+}
+
+func TestRefcountsToggle(t *testing.T) {
+	// calculate hash from trie data (excluding refcounts)
+	calculateHash := func(store mustChainStore, latestTrieRoot trie.Hash) uint32 {
+		h := crc32.NewIEEE()
+		block := store.BlockByTrieRoot(latestTrieRoot)
+		for {
+			store.StateByTrieRoot(block.TrieRoot()).Iterate("", func(key kv.Key, value []byte) bool {
+				h.Write([]byte(key))
+				h.Write(value)
+				return true
+			})
+			prev := block.PreviousL1Commitment()
+			if prev == nil {
+				break
+			}
+			block = store.BlockByTrieRoot(block.PreviousL1Commitment().TrieRoot())
+		}
+		return h.Sum32()
+	}
+
+	r := newRandomState(t)
+	for i := 1; i <= 20; i++ {
+		block, _, stats := r.commitNewBlock(r.cs.LatestBlock(), time.Now())
+		require.False(t, r.cs.IsEmpty())
+		index := block.StateIndex()
+		t.Logf("committed block %d, %+v", index, stats)
+	}
+	require.True(t, r.cs.IsRefcountsEnabled())
+	hash1 := calculateHash(r.cs, r.cs.LatestBlock().TrieRoot())
+
+	// refcounts can be disabled anytime
+	newStore, err := state.NewStoreWithMetrics(r.db, false, new(sync.Mutex), nil)
+	require.NoError(t, err)
+	storeWithoutRefcounts := mustChainStore{Store: newStore}
+	require.False(t, r.cs.IsRefcountsEnabled())
+	// trie can be iterated and produces the same hash
+	hash2 := calculateHash(storeWithoutRefcounts, r.cs.LatestBlock().TrieRoot())
+	require.Equal(t, hash1, hash2)
+
+	// can commit a new block
+	r.commitNewBlock(r.cs.LatestBlock(), time.Now())
+	// trie can be iterated from the new block
+	hash3 := calculateHash(storeWithoutRefcounts, r.cs.LatestBlock().TrieRoot())
+	require.NotEqual(t, hash1, hash3)
+	// trie can be iterated from the previous block and produces the same hash
+	hash4 := calculateHash(storeWithoutRefcounts, r.cs.LatestBlock().PreviousL1Commitment().TrieRoot())
+	require.Equal(t, hash1, hash4)
+
+	// attempting to prune produces an error
+	_, err = storeWithoutRefcounts.Prune(storeWithoutRefcounts.LatestBlock().TrieRoot())
+	require.ErrorContains(t, err, "refcounts disabled")
+
+	// once disabled, refcounts cannot be enabled again
+	_, err = state.NewStoreWithMetrics(r.db, true, new(sync.Mutex), nil)
+	require.ErrorContains(t, err, "non-empty store")
 }
 
 func toMap(store kvstore.KVStore) map[string][]byte {
@@ -758,6 +824,9 @@ func toMap(store kvstore.KVStore) map[string][]byte {
 // If state index is not larger than 127, its value fits in the least significant
 // byte and other three bytes are 0.
 func addLargestPrunedBlockIndex(db map[string][]byte, indexOfLeastSignificantByte byte) map[string][]byte {
-	db["\x03"] = []byte{indexOfLeastSignificantByte, 0, 0, 0}
+	db[string([]byte{chaindb.PrefixLargestPrunedBlockIndex})] = []byte{indexOfLeastSignificantByte, 0, 0, 0}
+
+	// refcounts enabled flag
+	db[string([]byte{chaindb.PrefixTrie, 4})] = []byte{1}
 	return db
 }

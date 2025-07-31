@@ -3,9 +3,9 @@ package chainmanager
 import (
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 // VarAccessNodeState tracks the active state at the access nodes. If this node is part of the committee,

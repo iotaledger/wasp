@@ -3,7 +3,7 @@ package iotaclient
 import (
 	"context"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotaconn"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaconn"
 )
 
 type httpTransport struct {

@@ -5,8 +5,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 type readOnlyStore struct {
@@ -67,11 +67,11 @@ func (ros *readOnlyStore) NewEmptyStateDraft(prevL1Commitment *state.L1Commitmen
 	return nil, fmt.Errorf("cannot create empty state draft in read-only store")
 }
 
-func (ros *readOnlyStore) Commit(state.StateDraft) state.Block {
+func (ros *readOnlyStore) Commit(state.StateDraft) (state.Block, bool, *trie.CommitStats, error) {
 	panic("Cannot commit to read-only store")
 }
 
-func (ros *readOnlyStore) ExtractBlock(stateDraft state.StateDraft) state.Block {
+func (ros *readOnlyStore) ExtractBlock(stateDraft state.StateDraft) (state.Block, error) {
 	return ros.store.ExtractBlock(stateDraft)
 }
 
@@ -87,6 +87,10 @@ func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, w io.Writer) error {
 	return ros.store.TakeSnapshot(trieRoot, w)
 }
 
-func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, io.Reader) error {
+func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, io.Reader, bool) error {
 	return fmt.Errorf("cannot write snapshot into read-only store")
+}
+
+func (ros *readOnlyStore) IsRefcountsEnabled() bool {
+	return ros.store.IsRefcountsEnabled()
 }

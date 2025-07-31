@@ -3,13 +3,15 @@ package state_test
 import (
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 )
 
 type stateSM struct {
@@ -23,7 +25,7 @@ var _ rapid.StateMachine = &stateSM{}
 // State Machine initialization.
 func newStateSM() *stateSM {
 	sm := new(stateSM)
-	sm.store = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	sm.store = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
 	sm.model = mapdb.NewMapDB()
 	return sm
@@ -55,7 +57,7 @@ func (sm *stateSM) KVDel(t *rapid.T) {
 // Action: Commit a block, start new empty draft.
 func (sm *stateSM) CommitAddEmpty(t *rapid.T) {
 	var err error
-	block := sm.store.Commit(sm.draft)
+	block, _, _ := lo.Must3(sm.store.Commit(sm.draft))
 	//
 	// Validate, if the committed state is correct.
 	blockState, err := sm.store.StateByTrieRoot(block.TrieRoot())
@@ -101,13 +103,13 @@ func TestRapid(t *testing.T) {
 
 func TestRapidReproduced(t *testing.T) {
 	var err error
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})
 	draft.Set(kv.Key([]byte{0x10}), []byte{0})
 	//
-	block := store.Commit(draft)
+	block, _, _ := lo.Must3(store.Commit(draft))
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
 	//
@@ -125,12 +127,12 @@ func TestRapidReproduced(t *testing.T) {
 }
 
 func TestRapidReproduced2(t *testing.T) {
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 
-	block := store.Commit(draft)
+	block, _, _ := lo.Must3(store.Commit(draft))
 	root1 := block.TrieRoot()
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	t.Log(block.TrieRoot())
@@ -147,6 +149,6 @@ func TestRapidReproduced2(t *testing.T) {
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x0})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 
-	block = store.Commit(draft)
+	block, _, _ = lo.Must3(store.Commit(draft))
 	require.NotEqualValues(t, root1, block.TrieRoot())
 }

@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/evm/evmutil"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/isc/isctest"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/blocklog"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func TestReceiptCodec(t *testing.T) {
@@ -33,6 +33,19 @@ func TestReceiptCodec(t *testing.T) {
 			Params:    []isc.VMErrorParam{uint8(1), uint8(2), "string"},
 		},
 	})
+
+	bcs.TestCodecAndHash(t, blocklog.RequestReceipt{
+		Request: isc.NewOffLedgerRequest(
+			isctest.TestChainID,
+			isc.NewMessage(isc.Hn("account"), isc.Hn("deposit")),
+			123,
+			gas.LimitsDefault.MaxGasPerRequest,
+		).Sign(cryptolib.TestKeyPair),
+		Error: &isc.UnresolvedVMError{
+			ErrorCode: blocklog.ErrBlockNotFound.Code(),
+			Params:    []isc.VMErrorParam{uint8(1), uint8(2), "string"},
+		},
+	}, "2e59447923e2")
 }
 
 func TestReceiptCodecEVM(t *testing.T) {

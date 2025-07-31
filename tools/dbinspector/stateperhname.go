@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/vm/core/corecontracts"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/corecontracts"
 )
 
 func stateStatsPerHname(ctx context.Context, kvs kvstore.KVStore) {

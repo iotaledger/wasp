@@ -1,6 +1,6 @@
 package metrics
 
-import "github.com/iotaledger/wasp/packages/isc"
+import "github.com/iotaledger/wasp/v2/packages/isc"
 
 type ChainStateLag map[isc.ChainID]*chainSyncLagEntry
 

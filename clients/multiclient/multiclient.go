@@ -3,8 +3,8 @@ package multiclient
 import (
 	"time"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/util/multicall"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/packages/util/multicall"
 )
 
 type ClientResolver func(apiHost string) *apiclient.APIClient

@@ -4,7 +4,7 @@
 package evmimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // handler for ISCUtil::hn

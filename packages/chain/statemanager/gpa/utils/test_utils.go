@@ -6,7 +6,7 @@ package utils
 import (
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state"
 )
 
 func CheckBlockInStore(t require.TestingT, store state.Store, origBlock state.Block) {

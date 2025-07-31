@@ -8,9 +8,9 @@ package coreutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/kv/subrealm"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/subrealm"
 )
 
 type Handler[S isc.SandboxBase] func(ctx S) isc.CallArguments

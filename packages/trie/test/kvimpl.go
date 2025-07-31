@@ -10,76 +10,100 @@ import (
 
 	"github.com/samber/lo"
 
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 // ----------------------------------------------------------------------------
 // InMemoryKVStore is a KVStore implementation. Mostly used for testing
 var (
-	_ trie.KVStore     = InMemoryKVStore{}
-	_ trie.Traversable = InMemoryKVStore{}
+	_ trie.KVStore     = &InMemoryKVStore{}
+	_ trie.Traversable = &InMemoryKVStore{}
 	_ trie.KVIterator  = &simpleInMemoryIterator{}
 )
 
 type (
-	InMemoryKVStore map[string][]byte
+	InMemoryKVStore struct {
+		m     map[string][]byte
+		Stats InMemoryKVStoreStats
+	}
+
+	InMemoryKVStoreStats struct {
+		Get          uint
+		MultiGet     uint
+		MultiGetKeys uint
+		Has          uint
+		Set          uint
+		Del          uint
+	}
 
 	simpleInMemoryIterator struct {
-		store  InMemoryKVStore
+		store  *InMemoryKVStore
 		prefix []byte
 	}
 )
 
-func NewInMemoryKVStore() InMemoryKVStore {
-	return make(InMemoryKVStore)
+func NewInMemoryKVStore() *InMemoryKVStore {
+	return &InMemoryKVStore{
+		m: make(map[string][]byte),
+	}
 }
 
-func (im InMemoryKVStore) Get(k []byte) []byte {
-	return im[string(k)]
+func (im *InMemoryKVStore) ResetStats() {
+	im.Stats = InMemoryKVStoreStats{}
 }
 
-func (im InMemoryKVStore) MultiGet(ks [][]byte) [][]byte {
+func (im *InMemoryKVStore) Get(k []byte) []byte {
+	im.Stats.Get++
+	return im.m[string(k)]
+}
+
+func (im *InMemoryKVStore) MultiGet(ks [][]byte) [][]byte {
+	im.Stats.MultiGet++
+	im.Stats.MultiGetKeys += uint(len(ks))
 	return lo.Map(ks, func(k []byte, _ int) []byte {
-		return im[string(k)]
+		return im.m[string(k)]
 	})
 }
 
-func (im InMemoryKVStore) Has(k []byte) bool {
-	_, ok := im[string(k)]
+func (im *InMemoryKVStore) Has(k []byte) bool {
+	im.Stats.Has++
+	_, ok := im.m[string(k)]
 	return ok
 }
 
-func (im InMemoryKVStore) Iterate(f func(k []byte, v []byte) bool) {
-	for k, v := range im {
+func (im *InMemoryKVStore) Iterate(f func(k []byte, v []byte) bool) {
+	for k, v := range im.m {
 		if !f([]byte(k), v) {
 			return
 		}
 	}
 }
 
-func (im InMemoryKVStore) IterateKeys(f func(k []byte) bool) {
-	for k := range im {
+func (im *InMemoryKVStore) IterateKeys(f func(k []byte) bool) {
+	for k := range im.m {
 		if !f([]byte(k)) {
 			return
 		}
 	}
 }
 
-func (im InMemoryKVStore) Set(k, v []byte) {
+func (im *InMemoryKVStore) Set(k, v []byte) {
+	im.Stats.Set++
 	if len(v) != 0 {
-		im[string(k)] = v
+		im.m[string(k)] = v
 	} else {
-		delete(im, string(k))
+		delete(im.m, string(k))
 	}
 }
 
-func (im InMemoryKVStore) Del(k []byte) {
-	delete(im, string(k))
+func (im *InMemoryKVStore) Del(k []byte) {
+	im.Stats.Del++
+	delete(im.m, string(k))
 }
 
-func (im InMemoryKVStore) Iterator(prefix []byte) trie.KVIterator {
+func (im *InMemoryKVStore) Iterator(prefix []byte) trie.KVIterator {
 	return &simpleInMemoryIterator{
 		store:  im,
 		prefix: prefix,
@@ -88,7 +112,7 @@ func (im InMemoryKVStore) Iterator(prefix []byte) trie.KVIterator {
 
 func (si *simpleInMemoryIterator) Iterate(f func(k []byte, v []byte) bool) {
 	var key []byte
-	for k, v := range si.store {
+	for k, v := range si.store.m {
 		key = []byte(k)
 		if bytes.HasPrefix(key, si.prefix) {
 			if !f(key, v) {
@@ -100,7 +124,7 @@ func (si *simpleInMemoryIterator) Iterate(f func(k []byte, v []byte) bool) {
 
 func (si *simpleInMemoryIterator) IterateKeys(f func(k []byte) bool) {
 	var key []byte
-	for k := range si.store {
+	for k := range si.store.m {
 		key = []byte(k)
 		if bytes.HasPrefix(key, si.prefix) {
 			if !f(key) {

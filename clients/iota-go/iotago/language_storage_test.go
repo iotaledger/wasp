@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/serialization"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/serialization"
 )
 
 func TestTypeTagEncoding(t *testing.T) {
@@ -22,7 +22,7 @@ func TestTypeTagEncoding(t *testing.T) {
 			TypeParams: []iotago.TypeTag{},
 		},
 	}
-	bcs.TestCodec(t, &typeTagStruct)
+	bcs.TestCodecAndHash(t, &typeTagStruct, "ae8b80292a4d")
 }
 
 func TestTypeTagString(t *testing.T) {

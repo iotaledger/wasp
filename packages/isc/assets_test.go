@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 func TestAssetsNativeToken(t *testing.T) {
@@ -45,7 +45,7 @@ func TestAssetsSerialization(t *testing.T) {
 		AddBaseTokens(42).
 		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
 		AddObject(isc.NewIotaObject(iotago.ObjectID{1, 2, 3}, iotago.MustTypeFromString("0xa1::c::C")))
-	bcs.TestCodec(t, assets)
+	bcs.TestCodecAndHash(t, assets, "1d7bc26ebfeb")
 	rwutil.BytesTest(t, assets, isc.AssetsFromBytes)
 }
 
@@ -111,11 +111,17 @@ func TestAssetsCodec(t *testing.T) {
 		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
 		AddObject(isc.NewIotaObject(*iotatest.RandomAddress(), iotago.MustTypeFromString("0xa1::c::C")))
 	bcs.TestCodec(t, assets)
+
+	assets = isc.NewEmptyAssets().
+		AddBaseTokens(42).
+		AddCoin(coin.MustTypeFromString("0xa1::a::A"), 100).
+		AddObject(isc.NewIotaObject(*iotatest.TestAddress, iotago.MustTypeFromString("0xa1::c::C")))
+	bcs.TestCodecAndHash(t, assets, "d005fba295b6")
 }
 
 func TestCoinBalancesCodec(t *testing.T) {
 	coinBalance := isc.NewCoinBalances().
 		Set(coin.MustTypeFromString("0xa1::a::A"), 100).
 		Set(coin.MustTypeFromString("0xa2::b::B"), 200)
-	bcs.TestCodec(t, coinBalance)
+	bcs.TestCodecAndHash(t, coinBalance, "9d070cb05d31")
 }

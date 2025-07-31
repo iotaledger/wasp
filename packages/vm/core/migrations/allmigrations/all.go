@@ -3,9 +3,9 @@ package allmigrations
 
 import (
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/kv"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations"
-	"github.com/iotaledger/wasp/packages/vm/core/root"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/root"
 )
 
 const (

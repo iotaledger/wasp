@@ -6,7 +6,7 @@ import (
 
 	"github.com/iotaledger/hive.go/web/subscriptionmanager"
 	"github.com/iotaledger/hive.go/web/websockethub"
-	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
 )
 
 type SubscriptionValidator struct {

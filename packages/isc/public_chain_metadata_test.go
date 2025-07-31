@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 func TestPublicChainMetadataSerialization(t *testing.T) {
@@ -15,5 +15,5 @@ func TestPublicChainMetadataSerialization(t *testing.T) {
 		Description:     "Description",
 		Website:         "Website",
 	}
-	bcs.TestCodec(t, metadata)
+	bcs.TestCodecAndHash(t, metadata, "72d016e59cb1")
 }

@@ -12,8 +12,8 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/packages/cache"
-	"github.com/iotaledger/wasp/packages/daemon"
+	"github.com/iotaledger/wasp/v2/packages/cache"
+	"github.com/iotaledger/wasp/v2/packages/daemon"
 )
 
 func init() {

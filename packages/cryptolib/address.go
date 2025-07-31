@@ -9,7 +9,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/samber/lo"
 )
 
 const AddressSize = 32
@@ -35,6 +36,8 @@ func NewRandomAddress() *Address {
 	}
 	return address
 }
+
+var TestAddress = lo.Must(NewAddressFromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"))
 
 func newAddressFromArray(addr [AddressSize]byte) *Address {
 	result := Address(addr)

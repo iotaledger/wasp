@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 func TestFixedSizeBitVector(t *testing.T) {
@@ -21,5 +21,5 @@ func TestFixedSizeBitVector(t *testing.T) {
 
 func TestFixedSizeBitVectorSerialization(t *testing.T) {
 	bv := util.NewFixedSizeBitVector(10).SetBits([]int{0, 3, 7, 8, 9})
-	bcs.TestCodec(t, bv)
+	bcs.TestCodecAndHash(t, bv, "ee8ae6ba7c02")
 }

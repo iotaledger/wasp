@@ -7,7 +7,7 @@ import (
 
 	"github.com/pangpanglabs/echoswagger/v2"
 
-	"github.com/iotaledger/wasp/packages/webapi/websocket"
+	"github.com/iotaledger/wasp/v2/packages/webapi/websocket"
 )
 
 func addWebSocketEndpoint(e echoswagger.ApiRoot, websocketPublisher *websocket.Service) {

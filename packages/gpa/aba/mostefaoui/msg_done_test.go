@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgDoneSerialization(t *testing.T) {
@@ -25,5 +25,5 @@ func TestMsgDoneSerialization(t *testing.T) {
 		math.MaxUint16,
 	}
 
-	bcs.TestCodec(t, msg)
+	bcs.TestCodecAndHash(t, msg, "ab2affdd99ab")
 }

@@ -9,8 +9,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
 // TODO this is a 1:1 copy of l1client.WaitForNextVersionForTesting

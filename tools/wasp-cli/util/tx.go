@@ -7,13 +7,13 @@ import (
 
 	"fortio.org/safecast"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/apiextensions"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/config"
-	"github.com/iotaledger/wasp/tools/wasp-cli/log"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/apiextensions"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
 )
 
 func WithOffLedgerRequest(ctx context.Context, client *apiclient.APIClient, f func() (isc.OffLedgerRequest, error)) {
@@ -41,7 +41,7 @@ func WithSCTransaction(ctx context.Context, client *apiclient.APIClient, f func(
 	log.Check(err)
 	log.Printf("Posted on-ledger transaction %s\n", tx.Digest)
 
-	ref, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	ref, err := tx.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	log.Check(err)
 	log.Printf("Request ID: %s\n", ref.ObjectID.String())
 

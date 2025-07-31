@@ -8,9 +8,9 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/shutdown"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/v2/packages/shutdown"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/util/pipe"
 )
 
 // To avoid code duplication, a common parts of regular and mocked snapshot managers

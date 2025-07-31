@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 // Interfaces for writing/reading persistent streams of key/values

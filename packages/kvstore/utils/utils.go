@@ -4,7 +4,7 @@ package utils
 import (
 	"sort"
 
-	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 )
 
 // CopyBytes returns a copy of the source slice.

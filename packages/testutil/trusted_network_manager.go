@@ -8,8 +8,8 @@ import (
 	"errors"
 
 	"github.com/iotaledger/hive.go/runtime/event"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/peering"
 )
 
 type trustedNetworkManager struct {

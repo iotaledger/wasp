@@ -6,8 +6,8 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/packages/vm/core/coreprocessors"
-	"github.com/iotaledger/wasp/packages/vm/processors"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/coreprocessors"
+	"github.com/iotaledger/wasp/v2/packages/vm/processors"
 )
 
 func init() {

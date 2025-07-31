@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/iotaledger/wasp/components/app"
-)
+import "github.com/iotaledger/wasp/v2/components/app"
 
 func main() {
 	app.App().Run()

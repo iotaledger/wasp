@@ -1,8 +1,8 @@
 package evmimpl
 
 import (
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/vm"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/vm"
 )
 
 // this must only be callable from webapi or directly by the ISC VM, not from contract execution

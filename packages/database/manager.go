@@ -9,10 +9,10 @@ import (
 
 	hivedb "github.com/iotaledger/hive.go/db"
 	"github.com/iotaledger/hive.go/runtime/options"
-	"github.com/iotaledger/wasp/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 )
 
 func TestTransactionData(t *testing.T) {
@@ -48,5 +48,5 @@ func TestTransactionData(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, targetHash, digest.Bytes())
 
-	bcs.TestCodec(t, tx)
+	bcs.TestCodecAndHash(t, tx, "2ce05d5947a7")
 }

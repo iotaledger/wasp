@@ -9,13 +9,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/gpa"
-	"github.com/iotaledger/wasp/packages/gpa/acs"
-	"github.com/iotaledger/wasp/packages/gpa/cc/blssig"
-	"github.com/iotaledger/wasp/packages/gpa/cc/semi"
-	"github.com/iotaledger/wasp/packages/tcrypto"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
-	"github.com/iotaledger/wasp/packages/testutil/testpeers"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa/acs"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/blssig"
+	"github.com/iotaledger/wasp/v2/packages/gpa/cc/semi"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 )
 
 func TestBasic(t *testing.T) {

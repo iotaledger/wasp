@@ -3,9 +3,9 @@ package apiextensions
 import (
 	"strconv"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 // AssetsFromAPIResponse TODO: Handle Coins (other than base tokens) and Objects

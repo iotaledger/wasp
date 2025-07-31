@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgVoteSerialization(t *testing.T) {
@@ -17,7 +17,7 @@ func TestMsgVoteSerialization(t *testing.T) {
 			msgVoteOK,
 		}
 
-		bcs.TestCodec(t, msg)
+		bcs.TestCodecAndHash(t, msg, "93b889cd9f71")
 	}
 	{
 		msg := &msgVote{
@@ -25,6 +25,6 @@ func TestMsgVoteSerialization(t *testing.T) {
 			msgVoteREADY,
 		}
 
-		bcs.TestCodec(t, msg)
+		bcs.TestCodecAndHash(t, msg, "55a589aadf41")
 	}
 }

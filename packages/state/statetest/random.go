@@ -2,8 +2,14 @@
 package statetest
 
 import (
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/util"
+	"math"
+	"math/rand"
+
+	"github.com/iotaledger/hive.go/lo"
+	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/util"
 )
 
 func NewRandL1Commitment() *state.L1Commitment {
@@ -14,4 +20,15 @@ func NewRandL1Commitment() *state.L1Commitment {
 		panic(err)
 	}
 	return ret
+}
+
+// RandomBlock is a test only function
+func RandomBlock() state.Block {
+	store := NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	draft := store.NewOriginStateDraft()
+	for i := 0; i < 3; i++ {
+		draft.Set(kv.Key([]byte{byte(rand.Intn(math.MaxInt8))}), []byte{byte(rand.Intn(math.MaxInt8))})
+	}
+
+	return lo.Return1(store.Commit(draft))
 }

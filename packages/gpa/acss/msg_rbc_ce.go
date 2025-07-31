@@ -6,7 +6,7 @@ package acss
 import (
 	"go.dedis.ch/kyber/v3/suites"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 // This message is used as a payload of the RBC:

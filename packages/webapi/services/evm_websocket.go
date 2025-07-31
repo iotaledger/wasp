@@ -16,7 +16,7 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/evm/jsonrpc"
+	"github.com/iotaledger/wasp/v2/packages/evm/jsonrpc"
 )
 
 type activityRateLimiter struct {

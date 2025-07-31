@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/iotaledger/wasp/packages/chaindb"
-	"github.com/iotaledger/wasp/packages/kv/buffered"
-	"github.com/iotaledger/wasp/packages/kv/codec"
-	"github.com/iotaledger/wasp/packages/kvstore"
-	"github.com/iotaledger/wasp/packages/trie"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/chaindb"
+	"github.com/iotaledger/wasp/v2/packages/kv/buffered"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 var (
@@ -106,8 +106,8 @@ func (db *storeDB) trieUpdatable(root trie.Hash) (*trie.TrieUpdatable, error) {
 	return trie.NewTrieUpdatable(trieStore(db), root)
 }
 
-func (db *storeDB) initTrie() trie.Hash {
-	return trie.MustInitRoot(trieStore(db))
+func (db *storeDB) initTrie(refcountsEnabled bool) (trie.Hash, error) {
+	return trie.InitRoot(trieStore(db), refcountsEnabled)
 }
 
 func (db *storeDB) trieReader(root trie.Hash) (*trie.TrieReader, error) {
@@ -201,7 +201,7 @@ func (db *storeDB) takeSnapshot(root trie.Hash, w io.Writer) error {
 	return trie.TakeSnapshot(w)
 }
 
-func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
+func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled bool) error {
 	rr := rwutil.NewReader(r)
 	v := rr.ReadUint8()
 	if v != snapshotVersion {
@@ -220,7 +220,7 @@ func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader) error {
 	}
 	db.saveBlock(block)
 
-	err = trie.RestoreSnapshot(r, trieStore(db))
+	err = trie.RestoreSnapshot(r, trieStore(db), refcountsEnabled)
 	if err != nil {
 		return err
 	}

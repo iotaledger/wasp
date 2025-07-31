@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/util/pipe"
+	"github.com/iotaledger/wasp/v2/packages/util/pipe"
 )
 
 func TestSimple(t *testing.T) {

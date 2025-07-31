@@ -1,4 +1,4 @@
-module github.com/iotaledger/wasp/tools/wasp-cli
+module github.com/iotaledger/wasp/v2/tools/wasp-cli
 
 go 1.23.8
 
@@ -6,7 +6,7 @@ toolchain go1.24.3
 
 replace (
 	github.com/ethereum/go-ethereum => github.com/iotaledger/go-ethereum v1.15.5-wasp1
-	github.com/iotaledger/wasp => ../../
+	github.com/iotaledger/wasp/v2 => ../../
 	go.dedis.ch/kyber/v3 => github.com/kape1395/kyber/v3 v3.0.14-0.20230124095845-ec682ff08c93 // branch: dkg-2suites
 )
 
@@ -18,11 +18,11 @@ require (
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.7.0
-	github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4
+	github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593
 	github.com/iotaledger/hive.go/crypto v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/db v0.0.0-20250409140545-e1a365dbea74
 	github.com/iotaledger/hive.go/log v0.0.0-20250409140545-e1a365dbea74
-	github.com/iotaledger/wasp v1.0.0-00010101000000-000000000000
+	github.com/iotaledger/wasp/v2 v2.0.0-00010101000000-000000000000
 	github.com/knadh/koanf v1.5.0
 	github.com/knadh/koanf/v2 v2.2.0
 	github.com/samber/lo v1.49.1

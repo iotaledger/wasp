@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotasigner"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 type KeyPair struct {

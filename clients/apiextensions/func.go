@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/iotaledger/wasp/clients/apiclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/isc"
+	"github.com/iotaledger/wasp/v2/clients/apiclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 func CallArgsToAPIArgs(args isc.CallArguments) []string {
@@ -50,7 +50,7 @@ func APIResultToCallArgs(res []string) (isc.CallResults, error) {
 }
 
 func APIWaitUntilAllRequestsProcessed(ctx context.Context, client *apiclient.APIClient, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
-	req, err := tx.GetCreatedObjectInfo(iscmove.RequestModuleName, iscmove.RequestObjectName)
+	req, err := tx.GetCreatedObjectByName(iscmove.RequestModuleName, iscmove.RequestObjectName)
 	if err != nil {
 		return nil, err
 	}

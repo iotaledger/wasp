@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 func TestBurnLogSerialization(t *testing.T) {
@@ -19,5 +19,5 @@ func TestBurnLogSerialization(t *testing.T) {
 			GasBurned: 80,
 		},
 	}
-	bcs.TestCodec(t, burnLog)
+	bcs.TestCodecAndHash(t, burnLog, "6a9acdb8be5b")
 }

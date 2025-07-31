@@ -16,26 +16,26 @@ import (
 	"github.com/iotaledger/hive.go/lo"
 	"github.com/iotaledger/hive.go/log"
 
-	"github.com/iotaledger/wasp/packages/chain"
-	"github.com/iotaledger/wasp/packages/chain/cmtlog"
-	"github.com/iotaledger/wasp/packages/chain/mempool"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/snapshots"
-	"github.com/iotaledger/wasp/packages/chains/accessmanager"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/peering"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/shutdown"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/state/indexedstore"
-	"github.com/iotaledger/wasp/packages/util"
-	"github.com/iotaledger/wasp/packages/vm/core/accounts"
-	"github.com/iotaledger/wasp/packages/vm/processors"
-	"github.com/iotaledger/wasp/packages/webapi/interfaces"
+	"github.com/iotaledger/wasp/v2/packages/chain"
+	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
+	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
+	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/peering"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/shutdown"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/util"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
+	"github.com/iotaledger/wasp/v2/packages/vm/processors"
+	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
 
 type Provider func() *Chains // TODO: Use DI instead of that.
@@ -364,8 +364,12 @@ func (c *Chains) activateWithoutLocking(chainID isc.ChainID) error { //nolint:fu
 	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
 
-	// Initialize Snapshotter
-	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, writeMutex, chainMetrics.State))
+	refcountsEnabled := c.smPruningMinStatesToKeep > 0
+	store, err := state.NewStoreWithMetrics(chainKVStore, refcountsEnabled, writeMutex, chainMetrics.State)
+	if err != nil {
+		panic(fmt.Sprintf("cannot initialize store: %s", err.Error()))
+	}
+	chainStore := indexedstore.New(store)
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {

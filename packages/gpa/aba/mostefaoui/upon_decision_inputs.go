@@ -6,7 +6,7 @@ package mostefaoui
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 // This object implements a synchronization before the decision.

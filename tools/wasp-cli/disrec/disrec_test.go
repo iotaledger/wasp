@@ -10,17 +10,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/packages/coin"
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/parameters"
-	"github.com/iotaledger/wasp/packages/parameters/parameterstest"
-	"github.com/iotaledger/wasp/tools/wasp-cli/chain"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/cliclients"
-	"github.com/iotaledger/wasp/tools/wasp-cli/cli/wallet/providers"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/packages/coin"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/parameters"
+	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/chain"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
+	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet/providers"
 )
 
 /*
@@ -98,10 +98,10 @@ func TestDepositFundsToGasCoin(t *testing.T) {
 
 	fmt.Println(response)
 
-	selectedCoinToFillUpGasCoin, err := response.GetMutatedCoin("iota", "IOTA")
+	selectedCoinToFillUpGasCoin, err := response.GetMutatedCoinByType("iota", "IOTA")
 	require.NoError(t, err)
 
-	selectedCoinToPayForGas, err := response2.GetMutatedCoin("iota", "IOTA")
+	selectedCoinToPayForGas, err := response2.GetMutatedCoinByType("iota", "IOTA")
 	require.NoError(t, err)
 
 	ptb := iotago.NewProgrammableTransactionBuilder()

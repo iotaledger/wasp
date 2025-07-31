@@ -6,8 +6,8 @@ import (
 
 	"github.com/iotaledger/hive.go/app"
 
-	"github.com/iotaledger/wasp/packages/daemon"
-	"github.com/iotaledger/wasp/packages/publisher"
+	"github.com/iotaledger/wasp/v2/packages/daemon"
+	"github.com/iotaledger/wasp/v2/packages/publisher"
 )
 
 func init() {

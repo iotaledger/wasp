@@ -6,15 +6,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/clients/iota-go/iotaclient"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iota-go/iotajsonrpc"
-	testcommon "github.com/iotaledger/wasp/clients/iota-go/test_common"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmoveclient"
-	"github.com/iotaledger/wasp/clients/iscmove/iscmovetest"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotajsonrpc"
+	testcommon "github.com/iotaledger/wasp/v2/clients/iota-go/test_common"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmoveclient"
+	"github.com/iotaledger/wasp/v2/clients/iscmove/iscmovetest"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 func TestIscCodec(t *testing.T) {
@@ -27,6 +27,12 @@ func TestIscCodec(t *testing.T) {
 		Object:    &ExampleObj{A: 42},
 		Owner:     iotago.MustAddressFromHex(testcommon.TestAddress),
 	})
+
+	bcs.TestCodecAndHash(t, iscmove.RefWithObject[ExampleObj]{
+		ObjectRef: *iotatest.TestObjectRef,
+		Object:    &ExampleObj{A: 42},
+		Owner:     iotago.MustAddressFromHex(testcommon.TestAddress),
+	}, "15ca3116a5d0")
 
 	anchor := iscmovetest.RandomAnchor()
 
@@ -41,6 +47,18 @@ func TestIscCodec(t *testing.T) {
 	}
 
 	bcs.TestCodec(t, anchorRef)
+
+	anchorRef.Object = &iscmovetest.TestAnchor
+	anchorRef.ObjectID = &anchorRef.Object.ID
+	anchorRef.Digest = iotatest.TestDigest
+	bcs.TestCodecAndHash(t, anchorRef, "2ed70074c011")
+
+	bcs.TestCodecAndHash(t, iscmove.AssetsBagWithBalances{
+		AssetsBag: iscmovetest.TestAssetsBag,
+		Assets: *iscmove.NewAssets(123456).
+			SetCoin(iotajsonrpc.MustCoinTypeFromString("0x1::a::A"), 100).
+			AddObject(*iotatest.TestAddress, iotago.MustTypeFromString("0x2::a::B")),
+	}, "17fd55be42d7")
 }
 
 func TestUnmarshalBCS(t *testing.T) {

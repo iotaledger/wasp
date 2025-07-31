@@ -13,10 +13,10 @@ import (
 	"io"
 	"sync"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/util/pipe"
-	"github.com/iotaledger/wasp/packages/util/rwutil"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/util/pipe"
+	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 // PeerMessageData is an envelope for all the messages exchanged via the peering module.

@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	hivedb "github.com/iotaledger/hive.go/db"
-	"github.com/iotaledger/wasp/packages/database"
-	"github.com/iotaledger/wasp/packages/trie"
+	"github.com/iotaledger/wasp/v2/packages/database"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 // run with: go test -tags rocksdb -benchmem -cpu=1 -run=' ' -bench='Bench.*' -benchtime 100x
@@ -34,7 +34,7 @@ func BenchmarkTriePruning(b *testing.B) {
 	r := newRandomStateWithDB(b, kvs)
 	trieRoots := make([]trie.Hash, 0)
 	for i := 1; i <= b.N; i++ {
-		b := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
+		b, _, _ := r.commitNewBlock(r.cs.LatestBlock(), time.Unix(int64(i), 0))
 		trieRoots = append(trieRoots, b.TrieRoot())
 	}
 	kvs.Flush()

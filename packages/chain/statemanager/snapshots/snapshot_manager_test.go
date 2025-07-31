@@ -15,12 +15,13 @@ import (
 
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
-	"github.com/iotaledger/wasp/packages/chain/statemanager/gpa/utils"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/kvstore/mapdb"
-	"github.com/iotaledger/wasp/packages/metrics"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
+	"github.com/iotaledger/wasp/v2/packages/metrics"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
 const localSnapshotsPathConst = "testSnapshots"
@@ -212,7 +213,7 @@ func testSnapshotManagerAny(
 	} else {
 		snapshotToLoad = nil
 	}
-	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	storeNew := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), snapshotToLoad, storeNew, log)
 	require.Equal(t, uint32(snapshotToLoadStateIndex), snapshotManagerNew.GetLoadedSnapshotStateIndex())
 

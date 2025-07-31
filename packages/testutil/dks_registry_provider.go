@@ -6,9 +6,9 @@ package testutil
 import (
 	"fmt"
 
-	"github.com/iotaledger/wasp/packages/cryptolib"
-	"github.com/iotaledger/wasp/packages/registry"
-	"github.com/iotaledger/wasp/packages/tcrypto"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/registry"
+	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 )
 
 // DkgRegistryProvider stands for a mock for dkg.DKShareRegistryProvider.

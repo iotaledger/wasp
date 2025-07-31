@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 )
 
 // PeeringNetDynamic provides a behavior of a network with dynamically

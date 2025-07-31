@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/iotaledger/wasp/packages/cryptolib"
+import "github.com/iotaledger/wasp/v2/packages/cryptolib"
 
 type ChainNodeStatus struct {
 	AccessAPI    string

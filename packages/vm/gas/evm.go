@@ -1,6 +1,6 @@
 package gas
 
-import "github.com/iotaledger/wasp/packages/util"
+import "github.com/iotaledger/wasp/v2/packages/util"
 
 // DefaultEVMGasRatio defines the gas ratio using the formula <ISC gas> = <EVM Gas> * <A> / <B>
 var DefaultEVMGasRatio = util.Ratio32{A: 1, B: 1}

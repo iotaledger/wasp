@@ -360,8 +360,8 @@ github.com/huin/goupnp v1.3.0/go.mod h1:gnGPsThkYa7bFi/KWmEysQRf48l2dvR5bxr2OFck
 github.com/iancoleman/orderedmap v0.3.0 h1:5cbR2grmZR/DiVt+VJopEhtVs9YGInGIxAoMJn+Ichc=
 github.com/iancoleman/orderedmap v0.3.0/go.mod h1:XuLcCUkdL5owUCQeF2Ue9uuw1EptkJDkXXS7VoV7XGE=
 github.com/ianlancetaylor/demangle v0.0.0-20230524184225-eabc099b10ab/go.mod h1:gx7rwoVhcfuVKG5uya9Hs3Sxj7EIvldVofAWIUtGouw=
-github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4 h1:aIto4GH4O+y/z2y3gR5UGw2JQaIO+Fu1sR90XPlwoK0=
-github.com/iotaledger/bcs-go v0.0.0-20250306194908-c8bf0ba9c5f4/go.mod h1:yTxBDTSAbTPf9Xz0JAiBTVRM9RlJCCZd6amEA85L6ac=
+github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593 h1:gfl7sPlhXPd+9YBb3V+C5U8bRvOozsOaubKwgQZWZ1w=
+github.com/iotaledger/bcs-go v0.0.0-20250716100925-71f848cac593/go.mod h1:yTxBDTSAbTPf9Xz0JAiBTVRM9RlJCCZd6amEA85L6ac=
 github.com/iotaledger/go-ethereum v1.15.5-wasp1 h1:MlwX0FvZiErZcR6TjyZrZ1yMXThVNZfCGNdIMEjWZ7I=
 github.com/iotaledger/go-ethereum v1.15.5-wasp1/go.mod h1:1LG2LnMOx2yPRHR/S+xuipXH29vPr6BIH6GElD8N/fo=
 github.com/iotaledger/grocksdb v1.7.5-0.20230220105546-5162e18885c7 h1:dTrD7X2PTNgli6EbS4tV9qu3QAm/kBU3XaYZV2xdzys=

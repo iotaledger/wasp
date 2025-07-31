@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/gpa"
+	"github.com/iotaledger/wasp/v2/packages/gpa"
 )
 
 func TestMsgVoteCodec(t *testing.T) {
@@ -16,5 +16,5 @@ func TestMsgVoteCodec(t *testing.T) {
 		true,
 	}
 
-	bcs.TestCodec(t, msg)
+	bcs.TestCodecAndHash(t, msg, "d54055d73f91")
 }

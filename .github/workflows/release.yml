@@ -129,7 +129,7 @@ jobs:
             iotaledger/wasp:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
+            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/v2/components/app.Version=${{ steps.tagger.outputs.tag }}
 
       - name: Build and push WASP CLI to Dockerhub
         uses: docker/build-push-action@v6
@@ -143,7 +143,7 @@ jobs:
             iotaledger/sandbox-wasp-cli:${{ steps.tagger.outputs.tag }}
           labels: ${{ steps.meta-cli.outputs.labels }}
           build-args: |
-            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/components/app.Version=${{ steps.tagger.outputs.tag }}
+            BUILD_LD_FLAGS=-X=github.com/iotaledger/wasp/v2/components/app.Version=${{ steps.tagger.outputs.tag }}
 
        # Push wasp-cli README to Docker Hub
 #      - name: git checkout

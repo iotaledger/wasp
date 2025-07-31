@@ -8,21 +8,22 @@ import (
 
 	"fortio.org/safecast"
 
-	"github.com/iotaledger/wasp/clients/iota-go/iotago"
-	"github.com/iotaledger/wasp/clients/iota-go/iotago/iotatest"
-	"github.com/iotaledger/wasp/clients/iscmove"
-	"github.com/iotaledger/wasp/packages/isc"
-	"github.com/iotaledger/wasp/packages/state"
-	"github.com/iotaledger/wasp/packages/transaction"
-	"github.com/iotaledger/wasp/packages/vm/core/migrations/allmigrations"
-	"github.com/iotaledger/wasp/packages/vm/gas"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/transaction"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/migrations/allmigrations"
+	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
 type RandomAnchorOption struct {
-	ID            *iotago.ObjectID
-	Assets        *iscmove.AssetsBag
-	StateMetadata *[]byte
-	StateIndex    *uint32
+	ID               *iotago.ObjectID
+	Assets           *iscmove.AssetsBag
+	AssetsReferentID *iotago.Address
+	StateMetadata    *[]byte
+	StateIndex       *uint32
 }
 
 func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
@@ -31,6 +32,7 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		ID:   *iotatest.RandomAddress(),
 		Size: safecast.MustConvert[uint64](rand.Int63()),
 	}
+	assetsReferentID := *iotatest.RandomAddress()
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	initParams := isc.NewCallArguments([]byte{1, 2, 3})
 	stateMetadata := transaction.NewStateMetadata(
@@ -56,11 +58,14 @@ func RandomAnchor(opts ...RandomAnchorOption) iscmove.Anchor {
 		if opts[0].StateIndex != nil {
 			stateIndex = *opts[0].StateIndex
 		}
+		if opts[0].AssetsReferentID != nil {
+			assetsReferentID = *opts[0].AssetsReferentID
+		}
 	}
 	return iscmove.Anchor{
 		ID: id,
 		Assets: iscmove.Referent[iscmove.AssetsBag]{
-			ID:    *iotatest.RandomAddress(),
+			ID:    assetsReferentID,
 			Value: &assets,
 		},
 		StateMetadata: stateMetadata,

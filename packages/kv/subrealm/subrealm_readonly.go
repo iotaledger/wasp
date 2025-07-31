@@ -1,7 +1,7 @@
 package subrealm
 
 import (
-	"github.com/iotaledger/wasp/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv"
 )
 
 type subrealmReadOnly struct {

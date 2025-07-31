@@ -8,9 +8,9 @@ import (
 	"github.com/ethereum/go-ethereum"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/packages/evm/evmtypes"
-	"github.com/iotaledger/wasp/packages/hashing"
-	"github.com/iotaledger/wasp/packages/vm/core/evm/evmnames"
+	"github.com/iotaledger/wasp/v2/packages/evm/evmtypes"
+	"github.com/iotaledger/wasp/v2/packages/hashing"
+	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/evmnames"
 )
 
 // ----------------------------------------------------------------

@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/packages/shutdown"
-	"github.com/iotaledger/wasp/packages/testutil/testlogger"
+	"github.com/iotaledger/wasp/v2/packages/shutdown"
+	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
 func TestShutdownCoordinator(t *testing.T) {
