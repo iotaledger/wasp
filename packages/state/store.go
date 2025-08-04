@@ -259,6 +259,14 @@ func (s *store) SetLatest(trieRoot trie.Hash) error {
 	return nil
 }
 
+func (s *store) ClearLatest() error {
+	s.writeMutex.Lock()
+	defer s.writeMutex.Unlock()
+
+	s.db.mustDel(keyLatestTrieRoot())
+	return nil
+}
+
 func (s *store) LatestBlock() (Block, error) {
 	root, err := s.db.latestTrieRoot()
 	if err != nil {
@@ -312,9 +320,11 @@ func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled bo
 	if err != nil {
 		return err
 	}
-	previousTrieRoot := block.PreviousL1Commitment().TrieRoot()
-	if !s.db.hasBlock(previousTrieRoot) {
-		s.updateLargestPrunedBlockIndex(block.StateIndex() - 1)
+	if block.PreviousL1Commitment() != nil {
+		previousTrieRoot := block.PreviousL1Commitment().TrieRoot()
+		if !s.db.hasBlock(previousTrieRoot) {
+			s.updateLargestPrunedBlockIndex(block.StateIndex() - 1)
+		}
 	}
 	return nil
 }

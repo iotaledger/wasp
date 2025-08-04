@@ -40,6 +40,8 @@ type Store interface {
 
 	// SetLatest sets the given trie root to be considered the latest one in the chain.
 	SetLatest(trieRoot trie.Hash) error
+	// ClearLatest unsets the latest trie root, so that the chain has no latest state.
+	ClearLatest() error
 	// LatestBlockIndex returns the index of the latest block, if set (see SetLatest)
 	LatestBlockIndex() (uint32, error)
 	// LatestBlock returns the latest block of the chain, if set (see SetLatest)

@@ -9,6 +9,7 @@ import (
 	"hash/crc32"
 	"io"
 	"math/rand"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -25,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
@@ -727,6 +729,7 @@ func TestRestoreSnapshotEmptyDB(t *testing.T) {
 	require.NoError(t, err)
 	cs.CheckIntegrity(io.Discard)
 	expectedMap := addLargestPrunedBlockIndex(map[string][]byte{}, 10)
+	expectedMap = setRefcountsEnabled(expectedMap)
 	require.EqualValues(t, expectedMap, toMap(db))
 }
 
@@ -748,7 +751,9 @@ func TestRestoreSnapshotNonEmptyDB(t *testing.T) {
 
 	dbCopy2 := toMap(db)
 
-	require.EqualValues(t, addLargestPrunedBlockIndex(dbCopy, 10), dbCopy2)
+	expectedMap := addLargestPrunedBlockIndex(dbCopy, 10)
+	expectedMap = setRefcountsEnabled(expectedMap)
+	require.EqualValues(t, expectedMap, dbCopy2)
 }
 
 func TestPrunedSnapshot(t *testing.T) {
@@ -865,15 +870,97 @@ func toMap(store kvstore.KVStore) map[string][]byte {
 	return m
 }
 
-// Just for testing; works for small indexes (0-127). Key of added entry is
-// `[]byte{3}` (see keyLargestPrunedBlockIndex function) converted to string.
-// Value of added entry is state index put in four bytes little endian format.
-// If state index is not larger than 127, its value fits in the least significant
-// byte and other three bytes are 0.
-func addLargestPrunedBlockIndex(db map[string][]byte, indexOfLeastSignificantByte byte) map[string][]byte {
-	db[string([]byte{chaindb.PrefixLargestPrunedBlockIndex})] = []byte{indexOfLeastSignificantByte, 0, 0, 0}
+func addLargestPrunedBlockIndex(db map[string][]byte, i uint32) map[string][]byte {
+	db[string([]byte{chaindb.PrefixLargestPrunedBlockIndex})] = codec.Encode(i)
+	return db
+}
 
-	// refcounts enabled flag
+func setRefcountsEnabled(db map[string][]byte) map[string][]byte {
 	db[string([]byte{chaindb.PrefixTrie, 4})] = []byte{1}
 	return db
+}
+
+func TestManyRandomBlocks(t *testing.T) {
+	r := newRandomState(t)
+
+	// make sure keys and values are used repeatedly so that refcounts are > 1
+	var keys []kv.Key
+	for range 100 {
+		keys = append(keys, r.randomKey())
+	}
+	values := [][]byte{
+		bytes.Repeat([]byte("a"), 3),
+		bytes.Repeat([]byte("b"), 3),
+		bytes.Repeat([]byte("a"), 200),
+		bytes.Repeat([]byte("b"), 200),
+	}
+
+	// commit 10 blocks
+	const n = 10
+	roots := []trie.Hash{r.cs.LatestBlock().TrieRoot()}
+	for i := range int64(n) {
+		d := r.cs.NewStateDraft(time.UnixMilli(i), r.cs.LatestBlock().L1Commitment())
+		for range 50 {
+			key := keys[r.rnd.Intn(len(keys))]
+			val := values[r.rnd.Intn(len(values))]
+			d.Set(key, val)
+		}
+		for range 10 {
+			key := keys[r.rnd.Intn(len(keys))]
+			d.Del(key)
+		}
+		block, _, _, err := r.cs.Commit(d)
+		require.NoError(r.t, err)
+		err = r.cs.SetLatest(block.TrieRoot())
+		require.NoError(r.t, err)
+		r.cs.CheckIntegrity(io.Discard)
+		roots = append(roots, block.TrieRoot())
+	}
+
+	// snapshot / restore all roots to a different store, in random order
+	// then check that the resulting store is identical
+	{
+		shuffledRoots := slices.Clone(roots)
+		r.rnd.Shuffle(len(shuffledRoots), func(i int, j int) {
+			shuffledRoots[i], shuffledRoots[j] = shuffledRoots[j], shuffledRoots[i]
+		})
+
+		db2 := mapdb.NewMapDB()
+		store2 := statetest.NewStoreWithUniqueWriteMutex(db2)
+
+		for _, root := range shuffledRoots {
+			buf := bytes.NewBuffer(nil)
+			err := r.cs.TakeSnapshot(root, buf)
+			require.NoError(t, err)
+			err = store2.RestoreSnapshot(root, buf, true)
+			require.NoError(t, err)
+			store2.CheckIntegrity(io.Discard)
+		}
+		lo.Must0(store2.SetLatest(r.cs.LatestBlock().TrieRoot()))
+
+		expectedMap := addLargestPrunedBlockIndex(toMap(r.db), lo.Must(store2.LargestPrunedBlockIndex()))
+		expectedMap = setRefcountsEnabled(expectedMap)
+		require.Equal(t, expectedMap, toMap(db2))
+	}
+
+	// prune all roots one by one, in random order.
+	// then check that the resulting store is empty
+	{
+		shuffledRoots := slices.Clone(roots)
+		r.rnd.Shuffle(len(shuffledRoots), func(i int, j int) {
+			shuffledRoots[i], shuffledRoots[j] = shuffledRoots[j], shuffledRoots[i]
+		})
+
+		r.cs.ClearLatest()
+		for len(shuffledRoots) > 0 {
+			root := shuffledRoots[0]
+			shuffledRoots = shuffledRoots[1:]
+			_, err := r.cs.Prune(root)
+			require.NoError(t, err)
+			r.cs.CheckIntegrity(io.Discard)
+		}
+		expectedMap := addLargestPrunedBlockIndex(map[string][]byte{}, lo.Must(r.cs.LargestPrunedBlockIndex()))
+		expectedMap = setRefcountsEnabled(expectedMap)
+		require.Equal(t, expectedMap, toMap(r.db))
+	}
 }

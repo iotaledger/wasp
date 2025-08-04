@@ -39,6 +39,10 @@ func (ros *readOnlyStore) SetLatest(trie.Hash) error {
 	return fmt.Errorf("cannot write to read-only store")
 }
 
+func (ros *readOnlyStore) ClearLatest() error {
+	return fmt.Errorf("cannot write to read-only store")
+}
+
 func (ros *readOnlyStore) LatestBlockIndex() (uint32, error) {
 	return ros.store.LatestBlockIndex()
 }

@@ -607,14 +607,35 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 	checkNode("465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b", 2)
 	checkValue("4c234c80dfe3d0069436a290ad85582b40835179", 2)
 
-	stats, err := trie.Prune(store, root1)
-	require.NoError(t, err)
-	require.EqualValues(t, 4, stats.DeletedNodes)
-	require.EqualValues(t, 1, stats.DeletedValues)
-	stats, err = trie.Prune(store, root0)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, stats.DeletedNodes)
-	require.EqualValues(t, 0, stats.DeletedValues)
+	// snapshot / restore all roots to a different store,
+	// then check that the resulting store is identical
+	{
+		store2 := NewInMemoryKVStore()
+		var roots2 []trie.Hash
+		for _, root := range []trie.Hash{root0, root1} {
+			buf := bytes.NewBuffer(nil)
+			lo.Must(trie.NewTrieReader(store, root)).TakeSnapshot(buf)
+			err := trie.RestoreSnapshot(buf, store2, true)
+			require.NoError(t, err)
+			roots2 = append(roots2, root)
+			trie.DebugDump(store2, roots2, io.Discard)
+		}
+		require.Equal(t, store.m, store2.m)
+	}
+
+	// prune all roots one by one, then check that the resulting store is empty
+	{
+		roots := []trie.Hash{root0, root1}
+		for len(roots) > 0 {
+			root := roots[0]
+			roots = roots[1:]
+			_, err := trie.Prune(store, root)
+			require.NoError(t, err)
+			trie.DebugDump(store, roots, io.Discard)
+		}
+		trie.DeleteRefcountsFlag(store)
+		require.Empty(t, store.m)
+	}
 }
 
 func TestIterate(t *testing.T) {

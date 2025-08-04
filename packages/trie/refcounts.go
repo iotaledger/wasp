@@ -61,6 +61,12 @@ func UpdateRefcountsFlag(store KVStore, enable bool) error {
 	return nil
 }
 
+// DeleteRefcountsFlag deletes the refcounts enabled flag from the store.
+// This is useful for testing purposes, to reset the state of the store.
+func DeleteRefcountsFlag(store KVStore) {
+	store.Del([]byte{partitionRefcountsEnabled})
+}
+
 func (r *Refcounts) GetNode(commitment Hash) uint32 {
 	return r.getRefcount(nodeRefcountKey(commitment[:]))
 }
