@@ -46,13 +46,10 @@ func DecodeCreateAndSendRequest(msg *EstimationRequest, cmd iotago.ProgrammableM
 	}
 
 	// allowance
-	var allowanceBCS string
-	err = json.Unmarshal(inputs[*cmd.Arguments[5].Input].Value, &allowanceBCS)
+	err = json.Unmarshal(inputs[*cmd.Arguments[5].Input].Value, &msg.AllowanceBCS)
 	if err != nil {
 		return fmt.Errorf("failed to decode allowance: %v", err)
 	}
-	// TODO: check why this is needed
-	msg.AllowanceBCS = []byte(allowanceBCS)
 
 	// gasBudget
 	err = json.Unmarshal(inputs[*cmd.Arguments[6].Input].Value, &msg.GasBudget)
