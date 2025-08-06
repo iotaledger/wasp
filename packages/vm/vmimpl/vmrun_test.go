@@ -83,7 +83,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 func makeOnLedgerRequest(
 	t *testing.T,
 	sender *cryptolib.KeyPair,
-	chainID isc.ChainID,
+
 	msg isc.Message,
 	baseTokens uint64,
 ) isc.OnLedgerRequest {

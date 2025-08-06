@@ -10,7 +10,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
 )
 
-func DecodeChainID(e echo.Context) (isc.ChainID, error) {
+func DecodeChainID(e echo.Context) error {
 	chainID, err := isc.ChainIDFromString(e.Param(ParamChainID))
 	if err != nil {
 		return isc.ChainID{}, apierrors.InvalidPropertyError(ParamChainID, err)

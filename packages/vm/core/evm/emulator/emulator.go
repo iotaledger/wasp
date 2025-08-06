@@ -91,7 +91,7 @@ func getConfig(chainID int) *params.ChainConfig {
 	if !c.IsShanghai(common.Big0, 0) {
 		panic("ChainConfig should report EVM version as Shanghai")
 	}
-	configCache.Add(chainID, c)
+	configCache.Add(c)
 	return c
 }
 
@@ -128,7 +128,7 @@ func Init(
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
-	bdb.Init(chainID, timestamp)
+	bdb.Init(timestamp)
 
 	stateDBSubrealm := StateDBSubrealm(emulatorState)
 	for addr, account := range alloc {

@@ -131,7 +131,7 @@ func (teT *testEnv) addVariedNodes(
 		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)
 		loadedSnapshotStateIndex := snapshotManager.GetLoadedSnapshotStateIndex()
 		stores[nodeID] = store
-		sms[nodeID], err = New(chainID, loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
+		sms[nodeID], err = New(loadedSnapshotStateIndex, nr, wal, store, mockStateManagerMetrics(), smLog, teT.parameters)
 		require.NoError(teT.t, err)
 		snapms[nodeID] = snapshotManager
 		origin.InitChain(allmigrations.LatestSchemaVersion, store, teT.bf.GetChainInitParameters(), iotago.ObjectID{}, 0, parameterstest.L1Mock)

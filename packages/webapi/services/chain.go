@@ -46,7 +46,7 @@ func NewChainService(
 	}
 }
 
-func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
+func (c *ChainService) ActivateChain() error {
 	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
 	if err != nil {
 		return err
@@ -55,7 +55,7 @@ func (c *ChainService) ActivateChain(chainID isc.ChainID) error {
 	return c.chainsProvider().Activate(chainID)
 }
 
-func (c *ChainService) DeactivateChain(chainID isc.ChainID) error {
+func (c *ChainService) DeactivateChain() error {
 	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
 	if err != nil {
 		return err

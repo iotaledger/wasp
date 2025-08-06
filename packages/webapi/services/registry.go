@@ -2,7 +2,6 @@ package services
 
 import (
 	"github.com/iotaledger/wasp/v2/packages/chains"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/webapi/interfaces"
 )
@@ -19,6 +18,6 @@ func NewRegistryService(chainsProvider chains.Provider, chainRecordRegistryProvi
 	}
 }
 
-func (c *RegistryService) GetChainRecordByChainID(chainID isc.ChainID) (*registry.ChainRecord, error) {
+func (c *RegistryService) GetChainRecordByChainID() (*registry.ChainRecord, error) {
 	return c.chainRecordRegistryProvider.ChainRecord(chainID)
 }

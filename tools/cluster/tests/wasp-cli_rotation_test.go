@@ -120,7 +120,7 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 	}
 
 	// activate the chain on the new nodes
-	w2.MustRun("chain", "add", "chain1", chainID)
+	w2.MustRun("chain", "add", "chain1")
 	for _, idx := range w2.Cluster.AllNodes() {
 		w2.MustRun("chain", "activate", fmt.Sprintf("--node=%d", idx))
 	}

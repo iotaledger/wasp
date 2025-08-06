@@ -126,7 +126,7 @@ func TestNodeConn(t *testing.T) {
 	// require.NoError(t, err)
 
 	// ctxPublish, cancelPublish := context.WithCancel(context.Background())
-	// nc.PublishTX(ctxPublish, chainID, tx, func(tx *iotago.Transaction, confirmed bool) {
+	// nc.PublishTX(ctxPublish, tx, func(tx *iotago.Transaction, confirmed bool) {
 	// 	require.True(t, confirmed)
 	// 	cancelPublish()
 	// })

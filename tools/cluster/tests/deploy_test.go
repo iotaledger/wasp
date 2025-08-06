@@ -12,7 +12,7 @@ import (
 // executed in cluster_test.go
 func (e *ChainEnv) testDeployChain(t *testing.T) {
 	chainID, chainAdmin := e.getChainInfo()
-	require.EqualValues(t, chainID, e.Chain.ChainID)
+	require.EqualValues(t, e.Chain.ChainID)
 	require.EqualValues(t, chainAdmin, isc.NewAddressAgentID(e.Chain.OriginatorAddress()))
 	t.Logf("--- chainID: %s", chainID.String())
 	t.Logf("--- chainAdmin: %s", chainAdmin.String())

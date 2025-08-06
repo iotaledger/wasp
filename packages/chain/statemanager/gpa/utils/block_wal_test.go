@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
@@ -161,7 +160,7 @@ func TestBlockWALRestart(t *testing.T) {
 	}
 }
 
-func testReadAllByStateIndex(t *testing.T, addToWALFun func(isc.ChainID, BlockWAL, []state.Block)) {
+func testReadAllByStateIndex(t *testing.T, addToWALFun func(BlockWAL, []state.Block)) {
 	log := testlogger.NewLogger(t)
 	defer log.Shutdown()
 	defer cleanupAfterTest(t)
@@ -204,7 +203,7 @@ func testReadAllByStateIndex(t *testing.T, addToWALFun func(isc.ChainID, BlockWA
 }
 
 func TestReadAllByStateIndexV1(t *testing.T) {
-	testReadAllByStateIndex(t, func(chainID isc.ChainID, wal BlockWAL, blocks []state.Block) {
+	testReadAllByStateIndex(t, func(wal BlockWAL, blocks []state.Block) {
 		for _, block := range blocks {
 			err := wal.Write(block)
 			require.NoError(t, err)
@@ -213,22 +212,22 @@ func TestReadAllByStateIndexV1(t *testing.T) {
 }
 
 func TestReadAllByStateIndexLegacy(t *testing.T) {
-	testReadAllByStateIndex(t, func(chainID isc.ChainID, wal BlockWAL, blocks []state.Block) {
-		writeBlocksLegacy(t, chainID, blocks)
+	testReadAllByStateIndex(t, func(wal BlockWAL, blocks []state.Block) {
+		writeBlocksLegacy(t, blocks)
 	})
 }
 
-func walPathFromHash(chainID isc.ChainID, blockHash state.BlockHash) string {
+func walPathFromHash(blockHash state.BlockHash) string {
 	return filepath.Join(constTestFolder, chainID.String(), blockWALSubFolderName(blockHash), blockWALFileName(blockHash))
 }
 
-func walPathNoSubfolderFromHash(chainID isc.ChainID, blockHash state.BlockHash) string {
+func walPathNoSubfolderFromHash(blockHash state.BlockHash) string {
 	return filepath.Join(constTestFolder, chainID.String(), blockWALFileName(blockHash))
 }
 
-func writeBlocksLegacy(t *testing.T, chainID isc.ChainID, blocks []state.Block) {
+func writeBlocksLegacy(t *testing.T, blocks []state.Block) {
 	for _, block := range blocks {
-		filePath := walPathNoSubfolderFromHash(chainID, block.Hash())
+		filePath := walPathNoSubfolderFromHash(block.Hash())
 		f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 		require.NoError(t, err)
 		err = bcs.MarshalStream(&block, f)

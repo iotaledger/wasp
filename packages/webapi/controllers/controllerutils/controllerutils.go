@@ -14,14 +14,14 @@ const (
 	EchoContextKeyOperation = "operation"
 )
 
-func ChainIDFromParams(c echo.Context) (isc.ChainID, error) {
+func ChainIDFromParams(c echo.Context) error {
 	chainID, err := params.DecodeChainID(c)
 	if err != nil {
 		return isc.ChainID{}, err
 	}
 
 	// set chainID to be used by the prometheus metrics
-	c.Set(EchoContextKeyChainID, chainID)
+	c.Set(EchoContextKeyChainID)
 	return chainID, nil
 }
 

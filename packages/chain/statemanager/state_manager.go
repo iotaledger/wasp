@@ -110,7 +110,7 @@ const (
 
 func New(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	me *cryptolib.PublicKey,
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
@@ -125,7 +125,7 @@ func New(
 ) (StateMgr, error) {
 	smLog := log.NewChildLogger("SM")
 	nr := utils.NewNodeRandomiserNoInit(gpa.NodeIDFromPublicKey(me), smLog)
-	stateManagerGPA, err := smgpa.New(chainID, snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
+	stateManagerGPA, err := smgpa.New(snapshotManager.GetLoadedSnapshotStateIndex(), nr, wal, store, metrics, smLog, parameters)
 	if err != nil {
 		smLog.LogErrorf("failed to create state manager GPA: %w", err)
 		return nil, err

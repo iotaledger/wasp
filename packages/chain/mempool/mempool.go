@@ -87,7 +87,7 @@ type ChainListener interface {
 	// This function is called by the chain when new block is applied to the
 	// state. This block might be not confirmed yet, but the chain is going
 	// to build the next block on top of this one.
-	BlockApplied(chainID isc.ChainID, block state.Block, latestState kv.KVStoreReader)
+	BlockApplied(block state.Block, latestState kv.KVStoreReader)
 }
 
 type Mempool interface {
@@ -212,7 +212,7 @@ type reqTrackNewChainHead struct {
 
 func New(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log log.Logger,

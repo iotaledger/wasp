@@ -16,8 +16,6 @@ import (
 	hivelog "github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
@@ -81,8 +79,8 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	nodeServers := make([][]*cryptolib.PublicKey, len(peerIdentities)) // That's the output.
 	for i := range accessMgrs {
 		ii := i
-		serversUpdatedCB := func(chainID isc.ChainID, servers []*cryptolib.PublicKey) {
-			t.Logf("servers updated, ChainID=%v, servers=%+v", chainID, servers)
+		serversUpdatedCB := func(servers []*cryptolib.PublicKey) {
+			t.Logf("servers updated, ChainID=%v, servers=%+v", servers)
 			nodeServers[ii] = servers
 		}
 		accessMgrs[i] = accessmanager.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.NewChildLogger(fmt.Sprintf("N#%v", i)))
@@ -94,9 +92,8 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	}
 	//
 	// Everyone gives access to everyone.
-	chainID := isctest.RandomChainID()
 	for _, am := range accessMgrs {
-		am.ChainAccessNodes(chainID, peerPubKeys)
+		am.ChainAccessNodes(peerPubKeys)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), testmisc.GetTimeout(1*time.Minute))

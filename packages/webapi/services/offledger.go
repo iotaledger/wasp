@@ -38,7 +38,7 @@ func (c *OffLedgerService) ParseRequest(binaryRequest []byte) (isc.Request, erro
 	return request, nil
 }
 
-func (c *OffLedgerService) EnqueueOffLedgerRequest(chainID isc.ChainID, binaryRequest []byte) error {
+func (c *OffLedgerService) EnqueueOffLedgerRequest(binaryRequest []byte) error {
 	request, err := c.ParseRequest(binaryRequest)
 	if err != nil {
 		return err

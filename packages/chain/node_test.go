@@ -288,7 +288,7 @@ func (tnc *testNodeConn) L1ParamsFetcher() parameters.L1ParamsFetcher {
 	return tnc.l1ParamsFetcher
 }
 
-func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
+func (tnc *testNodeConn) GetGasCoinRef(ctx context.Context) (*coin.CoinWithRef, error) {
 	panic("implement me")
 }
 
@@ -310,7 +310,7 @@ func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotag
 
 func (tnc *testNodeConn) PublishTX(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
@@ -388,7 +388,7 @@ func (tnc *testNodeConn) PublishTX(
 
 func (tnc *testNodeConn) AttachChain(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	recvRequest chain.RequestHandler,
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
@@ -474,7 +474,7 @@ func (tgi *testNodeConnL1Info) GetGasCoins() []*coin.CoinWithRef  { return tgi.g
 func (tgi *testNodeConnL1Info) GetL1Params() *parameters.L1Params { return tgi.l1params }
 
 // RefreshOnLedgerRequests implements chain.NodeConnection.
-func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {
+func (tnc *testNodeConn) RefreshOnLedgerRequests(ctx context.Context) {
 	// noop
 }
 

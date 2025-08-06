@@ -272,7 +272,7 @@ func New(
 	mempoolBroadcastInterval time.Duration,
 	originDeposit coin.Value,
 ) (Chain, error) {
-	log.LogDebugf("Starting the chain, chainID=%v", chainID)
+	log.LogDebugf("Starting the chain, chainID=%v")
 	if listener == nil {
 		listener = NewEmptyChainListener()
 	}
@@ -344,7 +344,6 @@ func New(
 	// Create sub-components.
 	chainMgr, err := chainmanager.New(
 		cni.me,
-		cni.chainID,
 		cni.chainStore,
 		consensusStateRegistry,
 		dkShareRegistryProvider,
@@ -402,7 +401,6 @@ func New(
 	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
 	stateMgr, err := statemanager.New(
 		ctx,
-		cni.chainID,
 		nodeIdentity.GetPublicKey(),
 		peerPubKeys,
 		net,
@@ -420,7 +418,6 @@ func New(
 	}
 	mempool := mempool.New(
 		ctx,
-		chainID,
 		nodeIdentity,
 		net,
 		cni.log.NewChildLogger("MP"),
@@ -429,7 +426,7 @@ func New(
 		cni.listener,
 		mempoolSettings,
 		mempoolBroadcastInterval,
-		func() { nodeConn.RefreshOnLedgerRequests(ctx, chainID) },
+		func() { nodeConn.RefreshOnLedgerRequests(ctx) },
 	)
 
 	cni.chainMgr = gpa.NewAckHandler(cni.me, chainMgr.AsGPA(), RedeliveryPeriod)
@@ -466,7 +463,7 @@ func New(
 		cni.chainMetrics.NodeConn.L1AnchorReceived()
 		recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
 	}
-	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	err = nodeConn.AttachChain(ctx, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
 	if err != nil {
 		return nil, err
 	}
@@ -797,7 +794,7 @@ func (cni *chainNodeImpl) handleNeedPublishTX(ctx context.Context, upd *chainman
 			cni.publishingTXes.Set(txDigest.HashValue(), subCancel)
 			publishStart := time.Now()
 			cni.log.LogDebugf("XXX: PublishTX %s ..., consumed anchor=%v", txDigest, needPublishTx.BaseAnchorRef)
-			if err := cni.nodeConn.PublishTX(subCtx, cni.chainID, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
+			if err := cni.nodeConn.PublishTX(subCtx, *txToPost.Tx, func(_ iotasigner.SignedTransaction, newStateAnchor *isc.StateAnchor, err error) {
 				cni.log.LogDebugf("XXX: PublishTX %s done, next anchor=%v, err=%v", txDigest, newStateAnchor, err)
 				cni.chainMetrics.NodeConn.TXPublishResult(err == nil, time.Since(publishStart))
 
@@ -882,7 +879,7 @@ func (cni *chainNodeImpl) ensureConsensusInst(ctx context.Context, needConsensus
 			consGrCtx, consGrCancel := context.WithCancel(ctx)
 			logIndexCopy := addLogIndex
 			cgr := consGR.New(
-				consGrCtx, cni.chainID, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
+				consGrCtx, cni.chainStore, dkShare, &logIndexCopy, cni.nodeIdentity,
 				cni.procCache, cni.mempool, cni.stateMgr,
 				cni.nodeConn,
 				cni.net,
@@ -988,7 +985,7 @@ func (cni *chainNodeImpl) updateAccessNodes(update func()) {
 	cnSame := util.Same(oldCommitteeNodes, activeCommitteeNodes)
 	if !anSame {
 		cni.log.LogInfof("Access nodes updated, active=%+v", activeAccessNodes)
-		cni.listener.AccessNodesUpdated(cni.chainID, activeAccessNodes)
+		cni.listener.AccessNodesUpdated(activeAccessNodes)
 	}
 	if !anSame || !cnSame {
 		if !cnSame {
@@ -1010,7 +1007,7 @@ func (cni *chainNodeImpl) updateServerNodes(serverNodes []*cryptolib.PublicKey) 
 		cni.log.LogInfof("Server nodes updated, servers=%+v", serverNodes)
 		cni.mempool.ServerNodesUpdated(activeCommitteeNodes, serverNodes)
 		cni.stateMgr.ChainNodesUpdated(serverNodes, activeAccessNodes, activeCommitteeNodes)
-		cni.listener.ServerNodesUpdated(cni.chainID, serverNodes)
+		cni.listener.ServerNodesUpdated(serverNodes)
 	}
 }
 
@@ -1077,7 +1074,7 @@ func (cni *chainNodeImpl) LatestAnchor(freshness StateFreshness) (*isc.StateAnch
 }
 
 func (cni *chainNodeImpl) LatestGasCoin(freshness StateFreshness) (*coin.CoinWithRef, error) {
-	return cni.nodeConn.GetGasCoinRef(context.Background(), cni.chainID)
+	return cni.nodeConn.GetGasCoinRef(context.Background())
 }
 
 func (cni *chainNodeImpl) LatestState(freshness StateFreshness) (state.State, error) {

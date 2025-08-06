@@ -20,7 +20,7 @@ const (
 	CacheSizeDefault            = 1024 * 1024 * 32
 )
 
-type ChainStateKVStoreProvider func(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex, error)
+type ChainStateKVStoreProvider func() (kvstore.KVStore, *sync.Mutex, error)
 
 type ChainStateDatabaseManager struct {
 	mutex sync.RWMutex
@@ -79,7 +79,7 @@ func NewChainStateDatabaseManager(chainRecordRegistryProvider registry.ChainReco
 	return m, nil
 }
 
-func (m *ChainStateDatabaseManager) chainStateKVStore(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex) {
+func (m *ChainStateDatabaseManager) chainStateKVStore() (kvstore.KVStore, *sync.Mutex) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -91,7 +91,7 @@ func (m *ChainStateDatabaseManager) chainStateKVStore(chainID isc.ChainID) (kvst
 	return databaseChainState.database.KVStore(), &databaseChainState.database.writeMutex
 }
 
-func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databaseWithHealthTracker, error) {
+func (m *ChainStateDatabaseManager) createDatabase() (*databaseWithHealthTracker, error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -114,7 +114,7 @@ func (m *ChainStateDatabaseManager) createDatabase(chainID isc.ChainID) (*databa
 	return databaseChainState, nil
 }
 
-func (m *ChainStateDatabaseManager) ChainStateKVStore(chainID isc.ChainID) (kvstore.KVStore, *sync.Mutex, error) {
+func (m *ChainStateDatabaseManager) ChainStateKVStore() (kvstore.KVStore, *sync.Mutex, error) {
 	if store, writeMutex := m.chainStateKVStore(chainID); store != nil {
 		return store, writeMutex, nil
 	}

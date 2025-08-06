@@ -124,7 +124,7 @@ func (e *EVMService) HandleJSONRPC(request *http.Request, response *echo.Respons
 	return nil
 }
 
-func (e *EVMService) getWebsocketContext(ctx context.Context, chainID isc.ChainID) *websocketContext {
+func (e *EVMService) getWebsocketContext(ctx context.Context) *websocketContext {
 	e.websocketContextMutex.Lock()
 	defer e.websocketContextMutex.Unlock()
 

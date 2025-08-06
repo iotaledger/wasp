@@ -18,7 +18,7 @@ import (
 func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 	panic("TODO")
 	// controllerutils.SetOperation(e, "estimate_gas_onledger")
-	// ch, chainID, err := controllerutils.ChainFromParams(e, c.chainService)
+	// ch, err := controllerutils.ChainFromParams(e, c.chainService)
 	// if err != nil {
 	// 	return err
 	// }

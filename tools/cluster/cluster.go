@@ -360,7 +360,7 @@ func (clu *Cluster) DeployChain(allPeers, committeeNodes []int, quorum uint16, s
 	}
 
 	// activate chain on nodes
-	err = apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, chain.CommitteeAPIHosts(), chainID)
+	err = apilib.ActivateChainOnNodes(clu.WaspClientFromHostName, chain.CommitteeAPIHosts())
 	if err != nil {
 		clu.t.Fatalf("activating chain %s.. FAILED: %v\n", chainID.String(), err)
 	}

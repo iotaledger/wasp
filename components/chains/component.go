@@ -44,7 +44,7 @@ type dependencies struct {
 	dig.In
 
 	ShutdownHandler *hiveshutdown.ShutdownHandler
-	Chains          *chains.Chains
+	Chains          *chains.ChainRunner
 }
 
 func initConfigParams(c *dig.Container) error {
@@ -89,7 +89,7 @@ func provide(c *dig.Container) error {
 	type chainsResult struct {
 		dig.Out
 
-		Chains *chains.Chains
+		Chains *chains.ChainRunner
 	}
 
 	if err := c.Provide(func(deps chainsDeps) chainsResult {

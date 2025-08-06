@@ -11,8 +11,8 @@ API version: 0
 package apiclient
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -26,11 +26,11 @@ type ChainInfoResponse struct {
 	// ChainID (Hex Address)
 	ChainID string `json:"chainID"`
 	// The EVM chain ID
-	EvmChainId uint32 `json:"evmChainId"`
+	EvmChainId   uint32    `json:"evmChainId"`
 	GasFeePolicy FeePolicy `json:"gasFeePolicy"`
-	GasLimits Limits `json:"gasLimits"`
+	GasLimits    Limits    `json:"gasLimits"`
 	// Whether or not the chain is active
-	IsActive bool `json:"isActive"`
+	IsActive bool                `json:"isActive"`
 	Metadata PublicChainMetadata `json:"metadata"`
 	// The fully qualified public url leading to the chains metadata
 	PublicURL string `json:"publicURL"`
@@ -42,7 +42,7 @@ type _ChainInfoResponse ChainInfoResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewChainInfoResponse(chainAdmin string, chainID string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
+func NewChainInfoResponse(chainAdmin string, evmChainId uint32, gasFeePolicy FeePolicy, gasLimits Limits, isActive bool, metadata PublicChainMetadata, publicURL string) *ChainInfoResponse {
 	this := ChainInfoResponse{}
 	this.ChainAdmin = chainAdmin
 	this.ChainID = chainID
@@ -256,7 +256,7 @@ func (o *ChainInfoResponse) SetPublicURL(v string) {
 }
 
 func (o ChainInfoResponse) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -296,10 +296,10 @@ func (o *ChainInfoResponse) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err;
+		return err
 	}
 
-	for _, requiredProperty := range(requiredProperties) {
+	for _, requiredProperty := range requiredProperties {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -355,5 +355,3 @@ func (v *NullableChainInfoResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

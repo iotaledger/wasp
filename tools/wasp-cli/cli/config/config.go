@@ -156,8 +156,8 @@ func AddWaspNode(name, apiURL string) {
 	Set("wasp."+name, apiURL)
 }
 
-func AddChain(name, chainID string) {
-	Set("chains."+name, chainID)
+func AddChain(name) {
+	Set("chains." + name)
 }
 
 func WriteConfig() error {

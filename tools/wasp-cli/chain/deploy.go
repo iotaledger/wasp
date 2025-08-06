@@ -215,7 +215,7 @@ func initDeployCmd() *cobra.Command {
 			chainID := finalizeChainDeployment(ctx, node, *result, stateMetadata)
 
 			config.AddChain(chainName, chainID.String())
-			activateChain(ctx, node, chainName, chainID)
+			activateChain(ctx, node, chainName)
 		},
 	}
 

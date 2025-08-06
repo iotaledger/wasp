@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/v2/clients/chainclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/components/app"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/wallet"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
@@ -65,7 +64,7 @@ func L1Client() clients.L1Client {
 	}, iotaclient.WaitForEffectsEnabled)
 }
 
-func ChainClient(waspClient *apiclient.APIClient, chainID isc.ChainID) *chainclient.Client {
+func ChainClient(waspClient *apiclient.APIClient) *chainclient.Client {
 	iscPackageID := config.GetPackageID()
 
 	return chainclient.New(

@@ -6,7 +6,6 @@ import (
 
 	"github.com/iotaledger/hive.go/app/shutdown"
 	"github.com/iotaledger/wasp/v2/packages/chains"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/parameters"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
@@ -41,13 +40,13 @@ func NewNodeService(
 	}
 }
 
-func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
+func (n *NodeService) AddAccessNode(peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
 	}
 
-	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	if _, err = n.chainRecordRegistryProvider.UpdateChainRecord(func(rec *registry.ChainRecord) bool {
 		return rec.AddAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")
@@ -56,13 +55,13 @@ func (n *NodeService) AddAccessNode(chainID isc.ChainID, peerPubKeyOrName string
 	return nil
 }
 
-func (n *NodeService) DeleteAccessNode(chainID isc.ChainID, peerPubKeyOrName string) error {
+func (n *NodeService) DeleteAccessNode(peerPubKeyOrName string) error {
 	peers, err := n.trustedNetworkManager.TrustedPeersByPubKeyOrName([]string{peerPubKeyOrName})
 	if err != nil {
 		return err
 	}
 
-	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(chainID, func(rec *registry.ChainRecord) bool {
+	if _, err := n.chainRecordRegistryProvider.UpdateChainRecord(func(rec *registry.ChainRecord) bool {
 		return rec.RemoveAccessNode(peers[0].PubKey())
 	}); err != nil {
 		return errors.New("error saving chain record")

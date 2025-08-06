@@ -54,7 +54,7 @@ const (
 func NewSnapshotManager(
 	ctx context.Context,
 	shutdownCoordinator *shutdown.Coordinator,
-	chainID isc.ChainID,
+
 	snapshotToLoad *state.BlockHash,
 	createPeriod uint32,
 	delayPeriod uint32,

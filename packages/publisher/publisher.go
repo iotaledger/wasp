@@ -59,19 +59,19 @@ func New(log log.Logger) *Publisher {
 
 // BlockApplied implements the chain.ChainListener interface.
 // NOTE: Do not block the caller!
-func (p *Publisher) BlockApplied(chainID isc.ChainID, block state.Block, latestState kv.KVStoreReader) {
+func (p *Publisher) BlockApplied(block state.Block, latestState kv.KVStoreReader) {
 	p.blockAppliedPipe.In() <- &blockApplied{chainID: chainID, block: block, latestState: latestState}
 }
 
 // AccessNodesUpdated implements the chain.ChainListener interface.
 // NOTE: Do not block the caller!
-func (p *Publisher) AccessNodesUpdated(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
+func (p *Publisher) AccessNodesUpdated(accessNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
 
 // ServerNodesUpdated implements the chain.ChainListener interface.
 // NOTE: Do not block the caller!
-func (p *Publisher) ServerNodesUpdated(chainID isc.ChainID, serverNodes []*cryptolib.PublicKey) {
+func (p *Publisher) ServerNodesUpdated(serverNodes []*cryptolib.PublicKey) {
 	// We don't need this event.
 }
 

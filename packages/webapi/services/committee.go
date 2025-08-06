@@ -5,7 +5,6 @@ import (
 
 	"github.com/iotaledger/wasp/v2/packages/chains"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
@@ -34,7 +33,7 @@ func (c *CommitteeService) GetPublicKey() *cryptolib.PublicKey {
 	return c.networkProvider.Self().PubKey()
 }
 
-func (c *CommitteeService) GetCommitteeInfo(chainID isc.ChainID) (*dto.ChainNodeInfo, error) {
+func (c *CommitteeService) GetCommitteeInfo() (*dto.ChainNodeInfo, error) {
 	chain, err := c.chainsProvider().Get(chainID)
 	if err != nil {
 		return nil, err

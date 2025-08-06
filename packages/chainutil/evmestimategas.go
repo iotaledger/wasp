@@ -152,7 +152,7 @@ func EVMEstimateGas(
 	return hi, nil
 }
 
-func getChainInfo(chainID isc.ChainID, chainState state.State) *isc.ChainInfo {
+func getChainInfo(chainState state.State) *isc.ChainInfo {
 	return governance.NewStateReaderFromChainState(chainState).GetChainInfo(chainID)
 }
 

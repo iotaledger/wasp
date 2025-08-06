@@ -546,7 +546,7 @@ func TestRPCEthChainID(t *testing.T) {
 	var chainID hexutil.Uint
 	err := env.RawClient.Call(&chainID, "eth_chainId")
 	require.NoError(t, err)
-	require.EqualValues(t, evm.DefaultChainID, chainID)
+	require.EqualValues(t, evm.DefaultChainID)
 }
 
 func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {

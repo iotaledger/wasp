@@ -29,7 +29,7 @@ type varAccessNodeStateImpl struct {
 	log     log.Logger
 }
 
-func NewVarAccessNodeState(chainID isc.ChainID, log log.Logger) VarAccessNodeState {
+func NewVarAccessNodeState(log log.Logger) VarAccessNodeState {
 	return &varAccessNodeStateImpl{
 		chainID: chainID,
 		tipAO:   nil,

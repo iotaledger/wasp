@@ -157,7 +157,7 @@ type ConsGr struct {
 
 func New(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	chainStore state.Store,
 	dkShare tcrypto.DKShare,
 	logIndex *cmtlog.LogIndex,

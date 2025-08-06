@@ -78,7 +78,7 @@ func (c *Controller) setChainRecord(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	record := registry.NewChainRecord(chainID, request.IsActive, []*cryptolib.PublicKey{})
+	record := registry.NewChainRecord(request.IsActive, []*cryptolib.PublicKey{})
 
 	for _, publicKeyStr := range request.AccessNodes {
 		publicKey, err := cryptolib.PublicKeyFromString(publicKeyStr)

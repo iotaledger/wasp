@@ -104,7 +104,7 @@ func (e *ChainEnv) checkBalanceOnChain(agentID isc.AgentID, coinType coin.Type, 
 	require.EqualValues(e.t, expected, actual)
 }
 
-func (e *ChainEnv) getChainInfo() (isc.ChainID, isc.AgentID) {
+func (e *ChainEnv) getChainInfo() isc.AgentID {
 	chainInfo, _, err := e.Chain.Cluster.WaspClient(0).ChainsAPI.
 		GetChainInfo(context.Background()).
 		Execute()

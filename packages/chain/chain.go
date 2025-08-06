@@ -32,7 +32,7 @@ type ChainNodeConn interface {
 	// detached.
 	AttachChain(
 		ctx context.Context,
-		chainID isc.ChainID,
+
 		recvRequest RequestHandler,
 		recvAnchor AnchorHandler,
 		onChainConnect func(),
@@ -42,15 +42,15 @@ type ChainNodeConn interface {
 	// confirmed or an error is detected, or the ctx is canceled.
 	PublishTX(
 		ctx context.Context,
-		chainID isc.ChainID,
+
 		tx iotasigner.SignedTransaction,
 		callback TxPostHandler,
 	) error
 	// RefreshOnLedgerRequests synchronously fetches all owned requests by the
 	// previously attached chain, and calls recvRequest for each one.
-	RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID)
+	RefreshOnLedgerRequests(ctx context.Context)
 
-	GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error)
+	GetGasCoinRef(ctx context.Context) (*coin.CoinWithRef, error)
 }
 
 type NodeConnection interface {

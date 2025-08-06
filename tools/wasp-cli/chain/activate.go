@@ -7,7 +7,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/iotaledger/wasp/v2/clients/apiclient"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/cliclients"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/config"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
@@ -26,7 +25,7 @@ func initActivateCmd() *cobra.Command {
 			chainName = defaultChainFallback(chainName)
 			chainID := config.GetChain(chainName)
 			ctx := context.Background()
-			activateChain(ctx, node, chainName, chainID)
+			activateChain(ctx, node, chainName)
 		},
 	}
 
@@ -36,7 +35,7 @@ func initActivateCmd() *cobra.Command {
 	return cmd
 }
 
-func activateChain(ctx context.Context, node string, chainName string, chainID isc.ChainID) {
+func activateChain(ctx context.Context, node string, chainName string) {
 	client := cliclients.WaspClientWithVersionCheck(ctx, node)
 	r, httpStatus, err := client.ChainsAPI.GetChainInfo(ctx).Execute() //nolint:bodyclose // false positive
 
@@ -60,7 +59,7 @@ func activateChain(ctx context.Context, node string, chainName string, chainID i
 		log.Check(err)
 	}
 
-	log.Printf("Chain: %v (%v)\nActivated\n", chainID, chainName)
+	log.Printf("Chain: %v (%v)\nActivated\n", chainName)
 }
 
 func initDeactivateCmd() *cobra.Command {

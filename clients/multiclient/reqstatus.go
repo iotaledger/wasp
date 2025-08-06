@@ -14,7 +14,7 @@ import (
 )
 
 // WaitUntilRequestProcessed blocks until the request has been processed by all nodes
-func (m *MultiClient) WaitUntilRequestProcessed(ctx context.Context, chainID isc.ChainID, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilRequestProcessed(ctx context.Context, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -37,8 +37,8 @@ func (m *MultiClient) WaitUntilRequestProcessed(ctx context.Context, chainID isc
 
 // WaitUntilRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
 // but also checks the receipt and return an error if the request was processed with an error
-func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(ctx context.Context, chainID isc.ChainID, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
-	receipt, err := m.WaitUntilRequestProcessed(ctx, chainID, reqID, waitForL1Confirmation, timeout)
+func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(ctx context.Context, reqID isc.RequestID, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+	receipt, err := m.WaitUntilRequestProcessed(ctx, reqID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipt, err
 	}
@@ -50,9 +50,9 @@ func (m *MultiClient) WaitUntilRequestProcessedSuccessfully(ctx context.Context,
 
 // WaitUntilEVMRequestProcessedSuccessfully is similar to WaitUntilRequestProcessed,
 // but also checks the receipt and return an error if the request was processed with an error
-func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(ctx context.Context, chainID isc.ChainID, txHash common.Hash, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(ctx context.Context, txHash common.Hash, waitForL1Confirmation bool, timeout time.Duration) (*apiclient.ReceiptResponse, error) {
 	requestID := isc.RequestIDFromEVMTxHash(txHash)
-	receipt, err := m.WaitUntilRequestProcessed(ctx, chainID, requestID, waitForL1Confirmation, timeout)
+	receipt, err := m.WaitUntilRequestProcessed(ctx, requestID, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipt, err
 	}
@@ -64,7 +64,7 @@ func (m *MultiClient) WaitUntilEVMRequestProcessedSuccessfully(ctx context.Conte
 
 // WaitUntilAllRequestsProcessed blocks until all requests in the given transaction have been processed
 // by all nodes
-func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID isc.ChainID, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
 	oldTimeout := m.Timeout
 	defer func() { m.Timeout = oldTimeout }()
 
@@ -82,8 +82,8 @@ func (m *MultiClient) WaitUntilAllRequestsProcessed(ctx context.Context, chainID
 
 // WaitUntilAllRequestsProcessedSuccessfully is similar to WaitUntilAllRequestsProcessed
 // but also checks the receipts and return an error if any of the requests was processed with an error
-func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(ctx context.Context, chainID isc.ChainID, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
-	receipts, err := m.WaitUntilAllRequestsProcessed(ctx, chainID, tx, waitForL1Confirmation, timeout)
+func (m *MultiClient) WaitUntilAllRequestsProcessedSuccessfully(ctx context.Context, tx *iotajsonrpc.IotaTransactionBlockResponse, waitForL1Confirmation bool, timeout time.Duration) ([]*apiclient.ReceiptResponse, error) {
+	receipts, err := m.WaitUntilAllRequestsProcessed(ctx, tx, waitForL1Confirmation, timeout)
 	if err != nil {
 		return receipts, err
 	}

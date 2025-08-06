@@ -63,14 +63,14 @@ func TestValidatorFees(t *testing.T) {
 	// assert each validator has received fees
 	userWallet, _, err := chEnv.Clu.NewKeyPairWithFunds()
 	require.NoError(t, err)
-	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), chainID, clu.Config.ISCPackageID(), userWallet)
+	scClient := chainclient.New(clu.L1Client(), clu.WaspClient(0), clu.Config.ISCPackageID(), userWallet)
 	for i := 0; i < 20; i++ {
 		reqTx, err := scClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), chainclient.PostRequestParams{
 			Transfer:  isc.NewAssets(iotaclient.DefaultGasBudget + 100),
 			GasBudget: iotaclient.DefaultGasBudget,
 		})
 		require.NoError(t, err)
-		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), chainID, reqTx, false, 30*time.Second)
+		_, err = chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), reqTx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 	for _, validatorKp := range validatorKps {

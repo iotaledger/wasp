@@ -143,7 +143,7 @@ var (
 )
 
 func New( //nolint:funlen
-	chainID isc.ChainID,
+
 	chainStore state.Store,
 	me gpa.NodeID,
 	mySK *cryptolib.PrivateKey,

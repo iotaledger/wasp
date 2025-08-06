@@ -97,7 +97,7 @@ func New(
 
 func (nc *nodeConnection) AttachChain(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	recvRequest chain.RequestHandler,
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
@@ -107,14 +107,14 @@ func (nc *nodeConnection) AttachChain(
 		nc.chainsLock.Lock()
 		defer nc.chainsLock.Unlock()
 
-		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err := newNCChain(ctx, nc, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
 		if err != nil {
 			return nil, err
 		}
 
-		nc.chainsMap.Set(chainID, ncc)
+		nc.chainsMap.Set(ncc)
 		util.ExecuteIfNotNil(onChainConnect)
-		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
+		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString())
 
 		return ncc, nil
 	}()
@@ -123,7 +123,7 @@ func (nc *nodeConnection) AttachChain(
 	}
 
 	if err := ncc.syncChainState(ctx); err != nil {
-		nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", chainID, err.Error()))
+		nc.LogError(fmt.Sprintf("synchronizing chain state %s failed: %s", err.Error()))
 		nc.shutdownHandler.SelfShutdown(
 			fmt.Sprintf("Cannot sync chain %s with L1, %s", ncc.chainID, err.Error()),
 			true)
@@ -140,13 +140,13 @@ func (nc *nodeConnection) AttachChain(
 
 		nc.chainsMap.Delete(chainID)
 		util.ExecuteIfNotNil(onChainDisconnect)
-		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
+		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), nc.chainsMap.Size())
 	}()
 
 	return nil
 }
 
-func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
+func (nc *nodeConnection) GetGasCoinRef(ctx context.Context) (*coin.CoinWithRef, error) {
 	ncChain, ok := nc.chainsMap.Get(chainID)
 	if !ok {
 		panic("unexpected chainID")
@@ -210,7 +210,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 	return t
 }
 
-func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context, chainID isc.ChainID) {
+func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context) {
 	ncChain, ok := nc.chainsMap.Get(chainID)
 	if !ok {
 		panic("unexpected chainID")
@@ -249,7 +249,7 @@ func (nc *nodeConnection) L1ParamsFetcher() parameters.L1ParamsFetcher {
 }
 
 // GetChain returns the chain if it was registered, otherwise it returns an error.
-func (nc *nodeConnection) getChain(chainID isc.ChainID) (*ncChain, error) {
+func (nc *nodeConnection) getChain() (*ncChain, error) {
 	nc.chainsLock.RLock()
 	defer nc.chainsLock.RUnlock()
 
@@ -262,7 +262,7 @@ func (nc *nodeConnection) getChain(chainID isc.ChainID) (*ncChain, error) {
 
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
-	chainID isc.ChainID,
+
 	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
