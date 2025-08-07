@@ -2,7 +2,6 @@ package iotaconn_grpc
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"log"
 	"sync"
@@ -14,44 +13,39 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// EventStreamClient wraps the gRPC client with automatic reconnection
+// EventStreamClient provides a simple, reconnecting gRPC event stream client
 type EventStreamClient struct {
-	address     string
-	dialOptions []grpc.DialOption
-	conn        *grpc.ClientConn
-	client      EventServiceClient
+	address string
+	filter  *EventFilter
+	options []grpc.DialOption
 
-	mu          sync.RWMutex
-	subscribers map[string]*subscription
+	conn   *grpc.ClientConn
+	client EventServiceClient
+
+	events chan *Event
+	errors chan error
+
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	wg sync.WaitGroup
+	mu sync.RWMutex
 
 	// Reconnection settings
 	reconnectInterval time.Duration
 	maxReconnectDelay time.Duration
-
-	// Context for shutting down
-	ctx    context.Context
-	cancel context.CancelFunc
 }
 
-type subscription struct {
-	id     string
-	filter *EventFilter
-	events chan *Event
-	errors chan error
-	ctx    context.Context
-	cancel context.CancelFunc
-}
-
-// NewEventStreamClient creates a new client with automatic reconnection
-func NewEventStreamClient(address string, opts ...grpc.DialOption) *EventStreamClient {
+// NewEventStreamClient creates a new event stream client
+func NewEventStreamClient(address string, filter *EventFilter, opts ...grpc.DialOption) *EventStreamClient {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	defaultOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithKeepaliveParams(
 			keepalive.ClientParameters{
-				Time:                10 * time.Second,
-				Timeout:             5 * time.Second,
+				Time:                30 * time.Second,
+				Timeout:             10 * time.Second,
 				PermitWithoutStream: true,
 			},
 		),
@@ -62,26 +56,150 @@ func NewEventStreamClient(address string, opts ...grpc.DialOption) *EventStreamC
 
 	return &EventStreamClient{
 		address:           address,
-		dialOptions:       allOpts,
-		subscribers:       make(map[string]*subscription),
-		reconnectInterval: time.Second,
-		maxReconnectDelay: 30 * time.Second,
+		filter:            filter,
+		options:           allOpts,
+		events:            make(chan *Event, 100),
+		errors:            make(chan error, 10),
 		ctx:               ctx,
 		cancel:            cancel,
+		reconnectInterval: time.Second,
+		maxReconnectDelay: 30 * time.Second,
 	}
 }
 
-// Connect establishes connection to the gRPC server
-func (c *EventStreamClient) Connect() error {
+// Start begins the event streaming and returns channels for events and errors
+func (c *EventStreamClient) Start() (<-chan *Event, <-chan error) {
+	c.wg.Add(1)
+	go c.streamLoop()
+	return c.events, c.errors
+}
+
+// streamLoop is the main event streaming loop with reconnection logic
+func (c *EventStreamClient) streamLoop() {
+	defer c.wg.Done()
+	defer close(c.events)
+	defer close(c.errors)
+
+	backoff := c.reconnectInterval
+	log.Printf("Starting event stream client for %s", c.address)
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			log.Printf("Event stream client shutting down")
+			return
+		default:
+		}
+
+		// Ensure we have a healthy connection
+		if err := c.ensureConnected(); err != nil {
+			c.sendError(err)
+			c.sleep(backoff)
+			backoff = c.increaseBackoff(backoff)
+			continue
+		}
+
+		// Reset backoff on successful connection
+		backoff = c.reconnectInterval
+
+		// Process the stream
+		if c.processStream() {
+			// Stream ended normally, wait before reconnecting
+			c.sleep(c.reconnectInterval)
+		}
+	}
+}
+
+// processStream handles a single stream connection
+func (c *EventStreamClient) processStream() bool {
+	c.mu.RLock()
+	client := c.client
+	c.mu.RUnlock()
+
+	if client == nil {
+		return false
+	}
+
+	req := &EventStreamRequest{
+		Filter: c.filter,
+	}
+
+	stream, err := client.StreamEvents(c.ctx, req)
+	if err != nil {
+		log.Printf("Failed to create stream: %v", err)
+		c.sendError(err)
+		return false
+	}
+
+	log.Printf("Event stream established")
+
+	for {
+		select {
+		case <-c.ctx.Done():
+			return true
+		default:
+		}
+
+		event, err := stream.Recv()
+		if err == io.EOF {
+			log.Printf("Stream ended normally")
+			return true
+		}
+		if err != nil {
+			log.Printf("Stream receive error: %v", err)
+			c.sendError(err)
+			return false
+		}
+
+		// Send event to channel (non-blocking with drop policy)
+		select {
+		case c.events <- event:
+		case <-c.ctx.Done():
+			return true
+		default:
+			// Channel is full, drop the event
+			log.Printf("Event channel full, dropping event")
+		}
+	}
+}
+
+// ensureConnected ensures we have a healthy gRPC connection
+func (c *EventStreamClient) ensureConnected() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if c.conn != nil {
-		c.conn.Close()
+	// Check if we need to connect/reconnect
+	if c.conn == nil || c.isConnectionUnhealthy() {
+		return c.connectLocked()
 	}
 
-	conn, err := grpc.DialContext(c.ctx, c.address, c.dialOptions...)
+	return nil
+}
+
+// isConnectionUnhealthy checks if the current connection is unhealthy
+func (c *EventStreamClient) isConnectionUnhealthy() bool {
+	if c.conn == nil {
+		return true
+	}
+
+	state := c.conn.GetState()
+	return state == connectivity.TransientFailure ||
+		state == connectivity.Shutdown
+}
+
+// connectLocked establishes a new connection (must be called with mutex held)
+func (c *EventStreamClient) connectLocked() error {
+	// Close existing connection
+	if c.conn != nil {
+		c.conn.Close()
+		c.conn = nil
+		c.client = nil
+	}
+
+	// Create new connection
+	conn, err := grpc.DialContext(c.ctx, c.address, c.options...)
 	if err != nil {
+		log.Printf("Failed to connect to %s: %v", c.address, err)
 		return err
 	}
 
@@ -92,199 +210,17 @@ func (c *EventStreamClient) Connect() error {
 	return nil
 }
 
-// SubscribeEvents subscribes to events matching the filter and returns channels for events and errors
-func (c *EventStreamClient) SubscribeEvents(filter *EventFilter) (<-chan *Event, <-chan error, func()) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Generate unique subscription ID
-	subID := generateSubscriptionID()
-
-	// Create subscription context
-	subCtx, subCancel := context.WithCancel(c.ctx)
-
-	sub := &subscription{
-		id:     subID,
-		filter: filter,
-		events: make(chan *Event, 100), // Buffered channel
-		errors: make(chan error, 10),
-		ctx:    subCtx,
-		cancel: subCancel,
-	}
-
-	c.subscribers[subID] = sub
-
-	// Start the streaming goroutine
-	go c.streamEvents(sub)
-
-	// Return channels and unsubscribe function
-	unsubscribe := func() {
-		c.unsubscribe(subID)
-	}
-
-	return sub.events, sub.errors, unsubscribe
-}
-
-// streamEvents handles the streaming for a specific subscription
-func (c *EventStreamClient) streamEvents(sub *subscription) {
-	defer func() {
-		close(sub.events)
-		close(sub.errors)
-	}()
-
-	backoff := c.reconnectInterval
-
-	for {
-		select {
-		case <-sub.ctx.Done():
-			return
-		default:
-		}
-
-		// Ensure we have a connection
-		if err := c.ensureConnection(); err != nil {
-			sub.errors <- err
-			c.sleep(backoff)
-			backoff = c.increaseBackoff(backoff)
-			continue
-		}
-
-		// Create stream request
-		req := &EventStreamRequest{
-			Filter: sub.filter,
-		}
-
-		// Start streaming
-		stream, err := c.client.StreamEvents(sub.ctx, req)
-		if err != nil {
-			sub.errors <- err
-			c.sleep(backoff)
-			backoff = c.increaseBackoff(backoff)
-			continue
-		}
-
-		// Reset backoff on successful connection
-		backoff = c.reconnectInterval
-		h, err := stream.Header()
-
-		fmt.Println(h)
-		fmt.Println(err)
-
-		// Process events from stream
-		for {
-			select {
-			case <-sub.ctx.Done():
-				return
-			default:
-			}
-
-			event, err := stream.Recv()
-			if err == io.EOF {
-				log.Printf("Stream ended for subscription %s", sub.id)
-				break // Will reconnect
-			}
-			if err != nil {
-				log.Printf("Stream error for subscription %s: %v", sub.id, err)
-				sub.errors <- err
-				break // Will reconnect
-			}
-
-			// Send event to channel (non-blocking)
-			select {
-			case sub.events <- event:
-			case <-sub.ctx.Done():
-				return
-			default:
-				// Channel is full, drop oldest event
-				log.Printf("Event channel full for subscription %s, dropping event", sub.id)
-				select {
-				case <-sub.events:
-				default:
-				}
-				select {
-				case sub.events <- event:
-				default:
-				}
-			}
-		}
-
-		// Wait before reconnecting
-		c.sleep(time.Second)
+// sendError sends an error to the error channel (non-blocking)
+func (c *EventStreamClient) sendError(err error) {
+	select {
+	case c.errors <- err:
+	default:
+		// Error channel is full, drop the error
+		log.Printf("Error channel full, dropping error: %v", err)
 	}
 }
 
-// ensureConnection checks if connection is healthy and reconnects if needed
-func (c *EventStreamClient) ensureConnection() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if c.conn == nil {
-		return c.connectLocked()
-	}
-
-	state := c.conn.GetState()
-	if state == connectivity.TransientFailure || state == connectivity.Shutdown {
-		log.Printf("Connection state: %v, reconnecting...", state)
-		return c.connectLocked()
-	}
-
-	return nil
-}
-
-// connectLocked connects to server (must be called with mutex held)
-func (c *EventStreamClient) connectLocked() error {
-	if c.conn != nil {
-		c.conn.Close()
-	}
-
-	conn, err := grpc.DialContext(c.ctx, c.address, c.dialOptions...)
-	if err != nil {
-		return err
-	}
-
-	c.conn = conn
-	c.client = NewEventServiceClient(conn)
-
-	log.Printf("Reconnected to gRPC server at %s", c.address)
-	return nil
-}
-
-// unsubscribe removes a subscription
-func (c *EventStreamClient) unsubscribe(subID string) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	if sub, exists := c.subscribers[subID]; exists {
-		sub.cancel()
-		delete(c.subscribers, subID)
-		log.Printf("Unsubscribed subscription %s", subID)
-	}
-}
-
-// Close closes all subscriptions and the connection
-func (c *EventStreamClient) Close() error {
-	c.cancel()
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	// Cancel all subscriptions
-	for id, sub := range c.subscribers {
-		sub.cancel()
-		delete(c.subscribers, id)
-	}
-
-	// Close connection
-	if c.conn != nil {
-		err := c.conn.Close()
-		c.conn = nil
-		return err
-	}
-
-	return nil
-}
-
-// Helper methods
+// sleep waits for the specified duration or until context is cancelled
 func (c *EventStreamClient) sleep(duration time.Duration) {
 	timer := time.NewTimer(duration)
 	defer timer.Stop()
@@ -295,6 +231,7 @@ func (c *EventStreamClient) sleep(duration time.Duration) {
 	}
 }
 
+// increaseBackoff implements exponential backoff with maximum delay
 func (c *EventStreamClient) increaseBackoff(current time.Duration) time.Duration {
 	next := current * 2
 	if next > c.maxReconnectDelay {
@@ -303,6 +240,52 @@ func (c *EventStreamClient) increaseBackoff(current time.Duration) time.Duration
 	return next
 }
 
-func generateSubscriptionID() string {
-	return fmt.Sprintf("sub_%d", time.Now().UnixNano())
+// Close gracefully shuts down the client
+func (c *EventStreamClient) Close() error {
+	log.Printf("Closing event stream client")
+
+	// Cancel context to stop all operations
+	c.cancel()
+
+	// Wait for stream loop to finish
+	c.wg.Wait()
+
+	// Close connection
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.conn != nil {
+		err := c.conn.Close()
+		c.conn = nil
+		c.client = nil
+		return err
+	}
+
+	log.Printf("Event stream client closed")
+	return nil
+}
+
+// IsConnected returns whether the client is currently connected
+func (c *EventStreamClient) IsConnected() bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if c.conn == nil {
+		return false
+	}
+
+	state := c.conn.GetState()
+	return state == connectivity.Ready || state == connectivity.Idle
+}
+
+// GetConnectionState returns the current connection state
+func (c *EventStreamClient) GetConnectionState() connectivity.State {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if c.conn == nil {
+		return connectivity.Shutdown
+	}
+
+	return c.conn.GetState()
 }

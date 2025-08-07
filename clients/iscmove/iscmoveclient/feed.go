@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
+
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/clients/iota-go/iotaconn_grpc"
 
@@ -97,8 +99,25 @@ func NewChainFeed(
 		return nil, err
 	}*/
 
-	cl := iotaconn_grpc.NewEventStreamClient(socketURL)
-	if err := cl.Connect(); err != nil {
+	cl := iotaconn_grpc.NewEventStreamClient(socketURL, &iotaconn_grpc.EventFilter{
+		Filter: &iotaconn_grpc.EventFilter_And{
+			And: &iotaconn_grpc.AndFilter{
+				Filters: []*iotaconn_grpc.EventFilter{
+
+					{
+						Filter: &iotaconn_grpc.EventFilter_MoveEventType{
+							MoveEventType: &iotaconn_grpc.MoveEventTypeFilter{
+								Module:  iscmove.RequestModuleName,
+								Name:    iscmove.RequestEventObjectName,
+								Address: iscPackageID.String(),
+							},
+						},
+					},
+				},
+			},
+		},
+	})
+	if err := cl.Start(); err != nil {
 		return nil, err
 	}
 
@@ -161,13 +180,7 @@ func (f *ChainFeed) subscribeToNewRequests(
 ) {
 
 	for {
-		events, _, _ := f.wsClient.SubscribeEvents(&iotaconn_grpc.EventFilter{
-			//Path:         "/anchor",
-			//Value:        anchorID.String(),
-			IscPackageId: f.iscPackageID.String(),
-			Module:       iscmove.RequestModuleName,
-			EventName:    iscmove.RequestEventObjectName,
-		})
+		events, _, _ := f.wsClient.SubscribeEvents()
 
 		if ctx.Err() != nil {
 			f.log.LogErrorf("subscribeToNewRequests: ctx.Err(): %s", ctx.Err())
@@ -197,12 +210,18 @@ func (f *ChainFeed) consumeRequestEvents(
 			if !ok {
 				return
 			}
-			var reqEvent iscmove.RequestEvent
-			err := iotaclient.UnmarshalBCS(ev.EventData, &reqEvent)
+
+			fmt.Printf("EventBCS: %s\n", hexutil.Encode(ev.EventData))
+
+			var grpcEvent iotaconn_grpc.IotaRpcEvent
+			fmt.Println(ev)
+			err := iotaclient.UnmarshalBCS(ev.EventData, &grpcEvent)
 			if err != nil {
 				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
 				continue
 			}
+
+			var reqEvent iscmove.RequestEvent
 
 			reqWithObj, err := f.httpClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
