@@ -92,10 +92,16 @@ func SetInitialStateWithGenesis(evmPartition kv.KVStore, l1Commitment *state.L1C
 	}
 
 	for addr, acc := range genesis.Alloc {
+		fundVal := int64(0)
+		if acc.Balance.Int64() > 10000 {
+			fundVal = 10000
+		} else {
+			fundVal = acc.Balance.Int64()
+		}
 		genesisAlloc[addr] = types.Account{
 			Code:    acc.Code,
 			Storage: acc.Storage,
-			Balance: acc.Balance,
+			Balance: big.NewInt(fundVal),
 		}
 	}
 

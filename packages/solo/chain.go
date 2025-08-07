@@ -7,7 +7,9 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"math/rand/v2"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -283,6 +285,36 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 	}
 }
 
+func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, depositorSeed []byte, baseTokens ...coin.Value) {
+	seed := cryptolib.SeedFromBytes(depositorSeed)
+	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
+	if ch.Env.L1BaseTokens(walletAddr) == 0 {
+		ch.Env.GetFundsFromFaucet(walletAddr)
+	}
+
+	var amount coin.Value
+	if len(baseTokens) > 0 {
+		amount = baseTokens[0]
+	} else {
+		amount = ch.Env.L1BaseTokens(walletAddr) / 10
+	}
+
+	iterTimes := amount / 5000000000000
+	for i := 0; i < int(iterTimes)+2; i++ {
+		ch.Env.GetFundsFromFaucet(walletAddr)
+	}
+
+	// this only make collosion less likely
+	rint := rand.IntN(100) + 1
+	time.Sleep(time.Duration(rint) * 100 * time.Millisecond)
+	err := ch.TransferAllowanceTo(
+		isc.NewAssets(amount),
+		agentID,
+		walletKey,
+	)
+	require.NoError(ch.Env.T, err)
+}
+
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {
 	seed := cryptolib.SeedFromBytes([]byte("GetL2FundsFromFaucet" + ch.Env.T.Name()))
 	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
@@ -301,6 +333,10 @@ func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Va
 	for i := 0; i < int(iterTimes)+2; i++ {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
+
+	// this only make collosion less likely
+	rint := rand.IntN(100) + 1
+	time.Sleep(time.Duration(rint) * 100 * time.Millisecond)
 	err := ch.TransferAllowanceTo(
 		isc.NewAssets(amount),
 		agentID,

@@ -156,11 +156,9 @@ func StartNode(ctx context.Context) (IotaNodeEndpoint, func()) {
 }
 
 func ConnectNode(ctx context.Context) (IotaNodeEndpoint, func()) {
-	in := NewLocalIotaNode(ISCPackageOwner)
+	in := NewRemoteIotaNode("http://host.docker.internal:9000", "http://host.docker.internal:9123/gas", ISCPackageOwner)
 
-	in.connectService(ctx)
+	in.start(ctx)
 
-	return in, func() {
-		in.stop(ctx)
-	}
+	return in, func() {}
 }

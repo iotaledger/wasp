@@ -1,6 +1,8 @@
 package chains
 
 import (
+	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/ethereum/go-ethereum/core"
@@ -12,6 +14,8 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/evm/evmemulator/pkg/log"
 )
 
+const MaxPreFundAmount = 10_000
+
 func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 	ctx := &SoloContext{}
 
@@ -22,7 +26,17 @@ func InitSolo(genesis *core.Genesis) (*SoloContext, *solo.Chain) {
 
 	// prefund the account against genesis
 	for addr, acc := range genesis.Alloc {
-		chain.GetL2FundsFromFaucet(isc.NewEthereumAddressAgentID(addr), coin.Value(acc.Balance.Uint64()))
+		randDepositorSeed := []byte("GetL2FundsFromFaucet" + fmt.Sprintf("%d", rand.Int()))
+
+		// limit the amount of the prefund
+		preFundAmount := coin.Value(0)
+		if acc.Balance.Uint64() > MaxPreFundAmount {
+			preFundAmount = MaxPreFundAmount
+		} else {
+			preFundAmount = coin.Value(acc.Balance.Uint64())
+		}
+		acc.Balance = preFundAmount.BigInt()
+		chain.GetL2FundsFromFaucetWithDepositor(isc.NewEthereumAddressAgentID(addr), randDepositorSeed, preFundAmount)
 	}
 
 	return ctx, chain

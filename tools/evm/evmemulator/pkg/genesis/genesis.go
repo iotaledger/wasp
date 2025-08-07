@@ -2,6 +2,7 @@ package genesis
 
 import (
 	"encoding/json"
+	"io"
 	"os"
 
 	"github.com/ethereum/go-ethereum/core"
@@ -15,8 +16,13 @@ func InitGenesis(genesisPath string) (*core.Genesis, error) {
 	}
 	defer file.Close()
 
+	data, err := io.ReadAll(file)
+	if err != nil {
+		log.Fatalf("failed to read genesis file: %v", err)
+	}
+
 	genesis := new(core.Genesis)
-	if err := json.NewDecoder(file).Decode(genesis); err != nil {
+	if err := json.Unmarshal(data, genesis); err != nil {
 		log.Fatalf("invalid genesis file: %v", err)
 	}
 
