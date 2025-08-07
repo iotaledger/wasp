@@ -1,7 +1,9 @@
 package test
 
 import (
+	"bytes"
 	"io"
+	"maps"
 	"math/rand/v2"
 	"testing"
 
@@ -27,6 +29,25 @@ func keyMaker() func() []byte {
 	}
 }
 
+func makeTrie(n int) (*InMemoryKVStore, []trie.Hash) {
+	store := NewInMemoryKVStore()
+	roots := []trie.Hash{lo.Must(trie.InitRoot(store, true))}
+	makeKey := keyMaker()
+	values := NewScrambledZipfian(1000, 0)
+
+	for range n {
+		tr := lo.Must(trie.NewTrieUpdatable(store, roots[len(roots)-1]))
+		for range 10000 {
+			key := makeKey()
+			value := values.Next()
+			tr.Update(key, []byte(value))
+		}
+		root, _, _ := tr.Commit(store)
+		roots = append(roots, root)
+	}
+	return store, roots
+}
+
 func BenchmarkTakeSnapshot(b *testing.B) {
 	// before MultiGet:
 	//  10739041 ns/op   6540 kvs/op    6540 reads/op    8354404 B/op   194195 allocs/op
@@ -34,33 +55,70 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 	//  12394280 ns/op   6540 kvs/op    3720 reads/op   11556460 B/op   214444 allocs/op
 	// reads/op measures the amount of times the DB is called to fetch data
 
-	store := NewInMemoryKVStore()
-	root := lo.Must(trie.InitRoot(store, true))
-
-	// compose trie
-	{
-		makeKey := keyMaker()
-		values := NewScrambledZipfian(1000)
-		tr := lo.Must(trie.NewTrieUpdatable(store, root))
-		for range 10000 {
-			key := makeKey()
-			value := values.Next()
-			tr.Update(key, []byte(value))
-		}
-		root, _, _ = tr.Commit(store)
-	}
-
-	r := lo.Must(trie.NewTrieReader(store, root))
-
+	store, roots := makeTrie(1)
+	r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
 	store.ResetStats()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		err := r.TakeSnapshot(io.Discard)
 		require.NoError(b, err)
 	}
-
 	b.ReportMetric(float64(store.Stats.Get+store.Stats.MultiGet)/float64(b.N), "reads/op")
 	b.ReportMetric(float64(store.Stats.Get+store.Stats.MultiGetKeys)/float64(b.N), "kvs/op")
+}
+
+func BenchmarkRestoreSnapshot(b *testing.B) {
+	// before MultiGet:
+	//   39849739 ns/op    418.7 kvs/op    124.3 reads/op    22335484 B/op    389557 allocs/op
+	// after MultiGet:
+	//   56669109 ns/op    19623 kvs/op    13983 reads/op    27847469 B/op    402029 allocs/op
+	// reads/op measures the amount of times the DB is called to fetch data
+
+	b.StopTimer()
+	buf := bytes.NewBuffer(nil)
+	{
+		store, roots := makeTrie(1)
+		r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
+		err := r.TakeSnapshot(buf)
+		require.NoError(b, err)
+	}
+
+	stats := InMemoryKVStoreStats{}
+	for i := 0; i < b.N; i++ {
+		newStore := NewInMemoryKVStore()
+		newStore.Stats = stats
+		b.StartTimer()
+		trie.RestoreSnapshot(bytes.NewReader(buf.Bytes()), newStore, true)
+		b.StopTimer()
+		stats = newStore.Stats
+	}
+
+	b.ReportMetric(float64(stats.Get+stats.MultiGet)/float64(b.N), "reads/op")
+	b.ReportMetric(float64(stats.Get+stats.MultiGetKeys)/float64(b.N), "kvs/op")
+}
+
+func BenchmarkPrune(b *testing.B) {
+	// before MultiGet:
+	//   36128153 ns/op    1191 kvs/op    339.0 reads/op    15634332 B/op    314407 allocs/op
+	// after MultiGet:
+	//   24594662 ns/op    16476 kvs/op    9132 reads/op    19913272 B/op    307635 allocs/op
+
+	b.StopTimer()
+	store, roots := makeTrie(3)
+	penultimateRoot := roots[len(roots)-2]
+	stats := InMemoryKVStoreStats{}
+	for i := 0; i < b.N; i++ {
+		storeClone := NewInMemoryKVStore()
+		storeClone.m = maps.Clone(store.m)
+		storeClone.Stats = stats
+		b.StartTimer()
+		_, err := trie.Prune(storeClone, penultimateRoot)
+		b.StopTimer()
+		require.NoError(b, err)
+		stats = storeClone.Stats
+	}
+	b.ReportMetric(float64(stats.Get+stats.MultiGet)/float64(b.N), "reads/op")
+	b.ReportMetric(float64(stats.Get+stats.MultiGetKeys)/float64(b.N), "kvs/op")
 }
 
 func BenchmarkCommit(b *testing.B) {
@@ -75,7 +133,7 @@ func BenchmarkCommit(b *testing.B) {
 	stats := store.Stats
 
 	makeKey := keyMaker()
-	values := NewScrambledZipfian(1000)
+	values := NewScrambledZipfian(1000, 0)
 
 	root := lo.Must(trie.InitRoot(store, true))
 	for i := 0; i < b.N; i++ {
