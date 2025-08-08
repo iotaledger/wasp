@@ -196,7 +196,6 @@ func testNodeBasic(t *testing.T, n, f int, reliable bool, timeout time.Duration,
 			// That's because the gossip in the mempool is primitive for now.
 			for ii := range incCount {
 				scRequest := isc.NewOffLedgerRequest(
-					te.chainID,
 					inccounter.FuncIncCounter.Message(nil),
 					uint64(ii),
 					20000,

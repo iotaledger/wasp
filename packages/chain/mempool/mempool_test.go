@@ -114,7 +114,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 
 	offLedgerReq := isc.NewOffLedgerRequest(
-		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -164,7 +163,6 @@ func testMempoolBasic(t *testing.T, n, f int, reliable bool) {
 	//
 	// Add a message, we should get it now.
 	offLedgerReq2 := isc.NewOffLedgerRequest(
-		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		1,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -219,7 +217,6 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	// send nonces 0,1,3,6,10
 	createReqWithNonce := func(nonce uint64) isc.OffLedgerRequest {
 		return isc.NewOffLedgerRequest(
-			te.chainID,
 			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 			nonce,
 			gas.LimitsDefault.MaxGasPerRequest,
@@ -332,7 +329,6 @@ func TestMempoolsNonceGaps(t *testing.T) {
 	t.Run("request with not enough funds is rejected", func(t *testing.T) {
 		kp := cryptolib.NewKeyPair()
 		req := isc.NewOffLedgerRequest(
-			te.chainID,
 			isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 			0,
 			gas.LimitsDefault.MaxGasPerRequest,
@@ -401,7 +397,6 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	te.anchor = blockFn(te, []isc.Request{onLedgerReq}, te.anchor, tangleTime)
 
 	initialReq := isc.NewOffLedgerRequest(
-		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -411,7 +406,6 @@ func TestMempoolOverrideNonce(t *testing.T) {
 	time.Sleep(200 * time.Millisecond) // give some time for the requests to reach the pool
 
 	overwritingReq := isc.NewOffLedgerRequest(
-		te.chainID,
 		isc.NewMessage(isc.Hn("baz"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
@@ -468,7 +462,6 @@ func TestTTL(t *testing.T) {
 
 	// send offledger request, assert it is returned, make 201ms pass, assert it is not returned anymore
 	offLedgerReq := isc.NewOffLedgerRequest(
-		te.chainID,
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), isc.NewCallArguments()),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,

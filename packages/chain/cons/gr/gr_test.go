@@ -172,7 +172,7 @@ func testGrBasic(t *testing.T, n, f int, reliable bool) {
 	for i := range nodes {
 		nodes[i].Time(time.Now())
 		mempools[i].addRequests(anchor.GetObjectRef(), []isc.Request{
-			isc.NewOffLedgerRequest(anchor.ChainID(), isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
+			isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(originator),
 		})
 		stateMgrs[i].addOriginState(anchor)
 	}

@@ -19,7 +19,7 @@ import (
 
 func TestMsgShareRequestSerialization(t *testing.T) {
 	{
-		req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.NewKeyPair())
+		req := isc.NewOffLedgerRequest(isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.NewKeyPair())
 		msg := &msgShareRequest{
 			gpa.BasicMessage{},
 			byte(rand.Intn(math.MaxUint8)),
@@ -29,7 +29,7 @@ func TestMsgShareRequestSerialization(t *testing.T) {
 		bcs.TestCodec(t, msg)
 	}
 	{
-		req := isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.TestKeyPair)
+		req := isc.NewOffLedgerRequest(isc.NewMessage(3, 14, isc.NewCallArguments([]byte{1, 2, 3})), 1337, 100).Sign(cryptolib.TestKeyPair)
 		msg := &msgShareRequest{
 			gpa.BasicMessage{},
 			123,

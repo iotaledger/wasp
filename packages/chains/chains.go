@@ -316,7 +316,7 @@ func (c *ChainRunner) activateWithoutLocking(chainID isc.ChainID) error { //noli
 		}
 	}
 
-	chainKVStore, writeMutex, err := c.chainStateStoreProvider()
+	chainKVStore, writeMutex, err := c.chainStateStoreProvider(c.chain.ID())
 	if err != nil {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}

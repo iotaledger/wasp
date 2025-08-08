@@ -12,7 +12,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
 
@@ -21,9 +20,9 @@ func TestWaitReq(t *testing.T) {
 
 	ctxA := context.Background()
 	ctxM := context.Background()
-	req0 := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
-	req1 := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
-	req2 := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 2, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
+	req0 := isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
+	req1 := isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
+	req2 := isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil), 2, gas.LimitsDefault.MaxGasPerRequest).Sign(kp)
 	ref0 := isc.RequestRefFromRequest(req0)
 	ref1 := isc.RequestRefFromRequest(req1)
 	ref2 := isc.RequestRefFromRequest(req2)

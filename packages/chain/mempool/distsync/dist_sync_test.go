@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
 )
@@ -48,7 +47,6 @@ func testBasic(t *testing.T, n, cmtN, cmtF int) {
 	}
 
 	req := isc.NewOffLedgerRequest(
-		isctest.RandomChainID(),
 		isc.NewMessage(isc.Hn("foo"), isc.Hn("bar"), nil),
 		0,
 		gas.LimitsDefault.MaxGasPerRequest,
