@@ -80,7 +80,6 @@ func (r *reqPreliminaryBlock) Respond(err error) {
 
 type stateManager struct {
 	log                  log.Logger
-	chainID              isc.ChainID
 	stateManagerGPA      gpa.GPA
 	nodeRandomiser       utils.NodeRandomiser
 	nodeIDToPubKey       map[gpa.NodeID]*cryptolib.PublicKey
@@ -110,7 +109,7 @@ const (
 
 func New(
 	ctx context.Context,
-
+	chainID isc.ChainID,
 	me *cryptolib.PublicKey,
 	peerPubKeys []*cryptolib.PublicKey,
 	net peering.NetworkProvider,
@@ -132,7 +131,6 @@ func New(
 	}
 	result := &stateManager{
 		log:                  smLog,
-		chainID:              chainID,
 		stateManagerGPA:      stateManagerGPA,
 		nodeRandomiser:       nr,
 		inputPipe:            pipe.NewInfinitePipe[gpa.Input](),

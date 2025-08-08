@@ -34,7 +34,7 @@ func newBlockWALTestSM(t *rapid.T) *blockWALTestSM {
 	bwtsmT.factory = NewBlockFactory(t)
 	bwtsmT.lastBlockCommitment = bwtsmT.factory.GetOriginBlock().L1Commitment()
 	bwtsmT.log = testlogger.NewLogger(t)
-	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, mockBlockWALMetrics())
 	require.NoError(t, err)
 	bwtsmT.blocks = make(map[state.BlockHash]state.Block)
 	bwtsmT.blocksMoved = make([]state.BlockHash, 0)
@@ -105,8 +105,8 @@ func (bwtsmT *blockWALTestSM) MoveBlock(t *rapid.T) {
 	if blockHashOrig.Equals(blockHashToDamage) {
 		t.Skip()
 	}
-	fileOrigPath := walPathFromHash(bwtsmT.factory.GetChainID(), blockHashOrig)
-	fileToDamagePath := walPathFromHash(bwtsmT.factory.GetChainID(), blockHashToDamage)
+	fileOrigPath := walPathFromHash(blockHashOrig)
+	fileToDamagePath := walPathFromHash(blockHashToDamage)
 	data, err := os.ReadFile(fileOrigPath)
 	require.NoError(t, err)
 	err = os.WriteFile(fileToDamagePath, data, 0o644)
@@ -122,7 +122,7 @@ func (bwtsmT *blockWALTestSM) DamageBlock(t *rapid.T) {
 		t.Skip()
 	}
 	blockHash := rapid.SampledFrom(blockHashes).Example()
-	filePath := walPathFromHash(bwtsmT.factory.GetChainID(), blockHash)
+	filePath := walPathFromHash(blockHash)
 	data := make([]byte, 50)
 	_, err := rand.Read(data)
 	require.NoError(t, err)
@@ -171,7 +171,7 @@ func (bwtsmT *blockWALTestSM) ReadDamagedBlock(t *rapid.T) {
 
 func (bwtsmT *blockWALTestSM) Restart(t *rapid.T) {
 	var err error
-	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, bwtsmT.factory.GetChainID(), mockBlockWALMetrics())
+	bwtsmT.bw, err = NewBlockWAL(bwtsmT.log, constTestFolder, mockBlockWALMetrics())
 	require.NoError(t, err)
 	t.Log("Block WAL restarted")
 }

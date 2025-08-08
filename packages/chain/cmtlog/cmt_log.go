@@ -45,8 +45,8 @@ type State struct {
 // ConsensusStateRegistry is the interface used to store and recover the existing persistent state.
 // To be implemented by the registry.
 type ConsensusStateRegistry interface {
-	Get(committeeAddress *cryptolib.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
-	Set(committeeAddress *cryptolib.Address, state *State) error
+	Get(chainID isc.ChainID, committeeAddress *cryptolib.Address) (*State, error) // Can return ErrCmtLogStateNotFound.
+	Set(chainID isc.ChainID, committeeAddress *cryptolib.Address, state *State) error
 }
 
 var ErrCmtLogStateNotFound = errors.New("errCmtLogStateNotFound")
@@ -60,7 +60,6 @@ type Output = map[LogIndex]*isc.StateAnchor
 
 // Protocol implementation.
 type cmtLogImpl struct {
-	chainID                isc.ChainID            // Chain, for which this log is maintained by this committee.
 	cmtAddr                *cryptolib.Address     // Address of the committee running this chain.
 	consensusStateRegistry ConsensusStateRegistry // Persistent storage.
 	varLogIndex            VarLogIndex            // Calculates the current log index.
@@ -83,7 +82,7 @@ var _ gpa.GPA = &cmtLogImpl{}
 // >     ...
 func New(
 	me gpa.NodeID,
-
+	chainID isc.ChainID,
 	dkShare tcrypto.DKShare,
 	consensusStateRegistry ConsensusStateRegistry,
 	nodeIDFromPubKey func(pubKey *cryptolib.PublicKey) gpa.NodeID,
@@ -96,7 +95,7 @@ func New(
 	//
 	// Load the last LogIndex we were working on.
 	var prevLI LogIndex
-	state, err := consensusStateRegistry.Get(cmtAddr)
+	state, err := consensusStateRegistry.Get(chainID, cmtAddr)
 	if err != nil {
 		if !errors.Is(err, ErrCmtLogStateNotFound) {
 			return nil, fmt.Errorf("cannot load cmtLogState for %v: %w", cmtAddr, err)
@@ -129,7 +128,6 @@ func New(
 	//
 	// Create it.
 	cl := &cmtLogImpl{
-		chainID:                chainID,
 		cmtAddr:                cmtAddr,
 		consensusStateRegistry: consensusStateRegistry,
 		varLogIndex:            nil, // Set bellow.
@@ -141,7 +139,7 @@ func New(
 		log:                    log,
 	}
 	persistLIFunc := func(li LogIndex) {
-		if err := consensusStateRegistry.Set(cmtAddr, &State{LogIndex: li}); err != nil {
+		if err := consensusStateRegistry.Set(chainID, cmtAddr, &State{LogIndex: li}); err != nil {
 			// Nothing to do, if we cannot persist this.
 			panic(fmt.Errorf("cannot persist the cmtLog state: %w", err))
 		}

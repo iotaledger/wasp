@@ -32,7 +32,7 @@ type CreateChainParams struct {
 }
 
 // DeployChain creates a new chain on specified committee address
-func DeployChain(ctx context.Context, par CreateChainParams, anchorOwner *cryptolib.Address) error {
+func DeployChain(ctx context.Context, par CreateChainParams, anchorOwner *cryptolib.Address) (isc.ChainID, error) {
 	var err error
 	textout := io.Discard
 	if par.Textout != nil {
@@ -71,8 +71,8 @@ func DeployChain(ctx context.Context, par CreateChainParams, anchorOwner *crypto
 }
 
 // ActivateChainOnNodes puts chain records into nodes and activates its
-func ActivateChainOnNodes(clientResolver multiclient.ClientResolver, apiHosts []string) error {
+func ActivateChainOnNodes(clientResolver multiclient.ClientResolver, apiHosts []string, chainID isc.ChainID) error {
 	nodes := multiclient.New(clientResolver, apiHosts)
 	// ------------ put chain records to hosts
-	return nodes.PutChainRecord(registry.NewChainRecord(true, []*cryptolib.PublicKey{}))
+	return nodes.PutChainRecord(registry.NewChainRecord(chainID, true, []*cryptolib.PublicKey{}))
 }

@@ -39,7 +39,7 @@ func ChainIDFromBytes(data []byte) (ret ChainID, err error) {
 	return bcs.Unmarshal[ChainID](data)
 }
 
-func ChainIDFromString(hexAddress string) error {
+func ChainIDFromString(hexAddress string) (ChainID, error) {
 	addr, err := cryptolib.NewAddressFromHexString(hexAddress)
 	if err != nil {
 		return ChainID{}, err

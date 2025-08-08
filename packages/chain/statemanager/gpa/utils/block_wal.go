@@ -32,8 +32,7 @@ const (
 	constBlockWALTmpFileSuffix = ".tmp"
 )
 
-func NewBlockWAL(log log.Logger, baseDir string, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
-	dir := filepath.Join(baseDir, chainID.String())
+func NewBlockWAL(log log.Logger, dir string, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
 	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
 	}

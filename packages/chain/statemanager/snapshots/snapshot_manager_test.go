@@ -26,8 +26,8 @@ import (
 const localSnapshotsPathConst = "testSnapshots"
 
 type (
-	createNewNodeFun      func(*state.BlockHash, state.Store, log.Logger) SnapshotManager
-	snapshotsAvailableFun func([]SnapshotInfo)
+	createNewNodeFun      func(isc.ChainID, *state.BlockHash, state.Store, log.Logger) SnapshotManager
+	snapshotsAvailableFun func(isc.ChainID, []SnapshotInfo)
 )
 
 var (
@@ -69,7 +69,7 @@ func testSnapshotManager(
 }
 
 func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
-	return func(snapshotToLoad *state.BlockHash, store state.Store, log log.Logger) SnapshotManager {
+	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log log.Logger) SnapshotManager {
 			snapshotManager, err := NewSnapshotManager(
 				context.Background(),
 				nil,
@@ -86,7 +86,7 @@ func getLocalFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
 			require.NoError(t, err)
 			return snapshotManager
 		},
-		func([]SnapshotInfo) {}
+		func(isc.ChainID, []SnapshotInfo) {}
 }
 
 func getNetworkHTTPFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) {
@@ -104,7 +104,7 @@ func getNetworkFileFuns(t *testing.T) (createNewNodeFun, snapshotsAvailableFun) 
 }
 
 func getNetworkFuns(t *testing.T, networkPaths []string) (createNewNodeFun, snapshotsAvailableFun) {
-	return func(snapshotToLoad *state.BlockHash, store state.Store, log log.Logger) SnapshotManager {
+	return func(chainID isc.ChainID, snapshotToLoad *state.BlockHash, store state.Store, log log.Logger) SnapshotManager {
 			snapshotManager, err := NewSnapshotManager(
 				context.Background(),
 				nil,
@@ -121,7 +121,7 @@ func getNetworkFuns(t *testing.T, networkPaths []string) (createNewNodeFun, snap
 			require.NoError(t, err)
 			return snapshotManager
 		},
-		func(snapshotInfos []SnapshotInfo) {
+		func(chainID isc.ChainID, snapshotInfos []SnapshotInfo) {
 			indexFilePath := filepath.Join(localSnapshotsCreatePathConst, chainID.String(), constIndexFileName)
 			f, err := os.OpenFile(indexFilePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 			require.NoError(t, err)
@@ -228,7 +228,7 @@ func testSnapshotManagerAny(
 	}
 }
 
-func snapshotExists(t *testing.T, stateIndex uint32, commitment *state.L1Commitment) bool {
+func snapshotExists(t *testing.T, chainID isc.ChainID, stateIndex uint32, commitment *state.L1Commitment) bool {
 	path := filepath.Join(localSnapshotsCreatePathConst, chainID.String(), snapshotFileName(stateIndex, commitment.BlockHash()))
 	exists, isDir, err := ioutils.PathExists(path)
 	require.False(t, isDir)
@@ -236,11 +236,11 @@ func snapshotExists(t *testing.T, stateIndex uint32, commitment *state.L1Commitm
 	return exists
 }
 
-func waitForBlock(t *testing.T, block state.Block, maxIterations int, sleep time.Duration) bool {
+func waitForBlock(t *testing.T, chainID isc.ChainID, block state.Block, maxIterations int, sleep time.Duration) bool {
 	updateAndWaitFun := func() {
 		time.Sleep(sleep)
 	}
-	snapshotExistsFun := func() bool { return snapshotExists(t, block.StateIndex(), block.L1Commitment()) }
+	snapshotExistsFun := func() bool { return snapshotExists(t, chainID, block.StateIndex(), block.L1Commitment()) }
 	return ensureTrue(t, fmt.Sprintf("block %v to be committed", block.StateIndex()), snapshotExistsFun, maxIterations, updateAndWaitFun)
 }
 

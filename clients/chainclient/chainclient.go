@@ -33,7 +33,7 @@ type Client struct {
 func New(
 	l1Client clients.L1Client,
 	waspClient *apiclient.APIClient,
-
+	chainID isc.ChainID,
 	iscPackageID iotago.PackageID,
 	keyPair cryptolib.Signer,
 ) *Client {

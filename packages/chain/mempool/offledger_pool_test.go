@@ -12,7 +12,6 @@ import (
 	consGR "github.com/iotaledger/wasp/v2/packages/chain/cons/gr"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testkey"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
@@ -26,10 +25,10 @@ func TestOffledgerMempoolAccountNonce(t *testing.T) {
 	kp, addr := testkey.GenKeyAddr()
 	agentID := isc.NewAddressAgentID(addr)
 
-	req0 := testutil.DummyOffledgerRequestForAccount(isctest.RandomChainID(), 0, kp)
-	req1 := testutil.DummyOffledgerRequestForAccount(isctest.RandomChainID(), 1, kp)
-	req2 := testutil.DummyOffledgerRequestForAccount(isctest.RandomChainID(), 2, kp)
-	req2new := testutil.DummyOffledgerRequestForAccount(isctest.RandomChainID(), 2, kp)
+	req0 := testutil.DummyOffledgerRequestForAccount(0, kp)
+	req1 := testutil.DummyOffledgerRequestForAccount(1, kp)
+	req2 := testutil.DummyOffledgerRequestForAccount(2, kp)
+	req2new := testutil.DummyOffledgerRequestForAccount(2, kp)
 	pool.Add(req0)
 	pool.Add(req1)
 	pool.Add(req1) // try to add the same request many times, old will be replaced.
@@ -68,9 +67,9 @@ func TestOffledgerMempoolLimit(t *testing.T) {
 	pool := NewOffledgerPool(poolSizeLimit, poolSizeLimit, waitReq, func(int) {}, func(time.Duration) {}, testlogger.NewSilentLogger("", true))
 
 	// create requests with different gas prices
-	req0 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(1))
-	req1 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(2))
-	req2 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(3))
+	req0 := testutil.DummyEVMRequest(big.NewInt(1))
+	req1 := testutil.DummyEVMRequest(big.NewInt(2))
+	req2 := testutil.DummyEVMRequest(big.NewInt(3))
 	pool.Add(req0)
 	pool.Add(req1)
 	pool.Add(req2)
@@ -91,17 +90,17 @@ func TestOffledgerMempoolLimit(t *testing.T) {
 	assertPoolSize()
 
 	// add a request with high
-	req3 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(3))
+	req3 := testutil.DummyEVMRequest(big.NewInt(3))
 	pool.Add(req3)
 	assertPoolSize()
 	contains(req1, req2, req3) // assert req3 was added and req0 was removed
 
-	req4 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(1))
+	req4 := testutil.DummyEVMRequest(big.NewInt(1))
 	pool.Add(req4)
 	assertPoolSize()
 	contains(req1, req2, req3) // assert req4 is not added
 
-	req5 := testutil.DummyEVMRequest(isctest.RandomChainID(), big.NewInt(4))
+	req5 := testutil.DummyEVMRequest(big.NewInt(4))
 	pool.Add(req5)
 	assertPoolSize()
 

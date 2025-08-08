@@ -1872,7 +1872,6 @@ func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormat(ctx context.Contex
 	return ApiErrorsGetErrorMessageFormatRequest{
 		ApiService:    a,
 		ctx:           ctx,
-		chainID:       chainID,
 		contractHname: contractHname,
 		errorID:       errorID,
 	}

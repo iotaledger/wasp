@@ -358,6 +358,7 @@ func (c *ChainRunner) activateWithoutLocking(chainID isc.ChainID) error { //noli
 	chainSnapshotManager, err := snapshots.NewSnapshotManager(
 		chainCtx,
 		chainShutdownCoordinator.Nested("SnapMgr"),
+		chainID,
 		c.snapshotToLoad,
 		c.snapshotPeriod,
 		c.snapshotDelay,

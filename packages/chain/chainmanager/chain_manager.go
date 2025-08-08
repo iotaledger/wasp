@@ -228,7 +228,7 @@ var (
 
 func New(
 	me gpa.NodeID,
-
+	chainID isc.ChainID,
 	chainStore state.Store,
 	consensusStateRegistry cmtlog.ConsensusStateRegistry,
 	dkShareRegistryProvider registry.DKShareRegistryProvider,

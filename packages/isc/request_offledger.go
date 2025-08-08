@@ -18,7 +18,6 @@ import (
 // OffLedgerRequestDataEssence implements UnsignedOffLedgerRequest
 type OffLedgerRequestDataEssence struct {
 	allowance *Assets `bcs:"export,optional"`
-	chainID   ChainID `bcs:"export"`
 	msg       Message `bcs:"export"`
 	gasBudget uint64  `bcs:"export"`
 	nonce     uint64  `bcs:"export"`
@@ -48,7 +47,6 @@ func NewImpersonatedOffLedgerRequest(request *OffLedgerRequestDataEssence) Imper
 		OffLedgerRequestData: OffLedgerRequestData{
 			OffLedgerRequestDataEssence: OffLedgerRequestDataEssence{
 				allowance: request.allowance,
-				chainID:   request.chainID,
 				msg:       request.msg,
 				gasBudget: request.gasBudget,
 				nonce:     request.nonce,
@@ -69,13 +67,11 @@ func (r *ImpersonatedOffLedgerRequestData) SenderAccount() AgentID {
 }
 
 func NewOffLedgerRequest(
-	chainID ChainID,
 	msg Message,
 	nonce uint64,
 	gasBudget uint64,
 ) UnsignedOffLedgerRequest {
 	return &OffLedgerRequestDataEssence{
-		chainID:   chainID,
 		msg:       msg,
 		nonce:     nonce,
 		allowance: NewEmptyAssets(),
@@ -104,10 +100,6 @@ func (req *OffLedgerRequestData) Bytes() []byte {
 
 func (req *OffLedgerRequestData) Message() Message {
 	return req.msg
-}
-
-func (req *OffLedgerRequestData) ChainID() ChainID {
-	return req.chainID
 }
 
 func (req *OffLedgerRequestDataEssence) Bytes() []byte {

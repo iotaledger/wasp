@@ -61,7 +61,7 @@ func testCmtLogBasic(t *testing.T, n, f int) {
 		dkShare, err := committeeKeyShares[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
 		consensusStateRegistry := testutil.NewConsensusStateRegistry() // Empty store in this case.
-		cmtLogInst, err := cmtlog.New(gpaNodeIDs[i], dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
+		cmtLogInst, err := cmtlog.New(gpaNodeIDs[i], chainID, dkShare, consensusStateRegistry, gpa.NodeIDFromPublicKey, true, -1, nil, log.NewChildLogger(fmt.Sprintf("N%v", i)))
 		require.NoError(t, err)
 		gpaNodes[gpaNodeIDs[i]] = cmtLogInst.AsGPA()
 	}

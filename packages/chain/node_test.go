@@ -310,15 +310,11 @@ func newTestNodeConn(t *testing.T, l1Client clients.L1Client, iscPackageID iotag
 
 func (tnc *testNodeConn) PublishTX(
 	ctx context.Context,
-
 	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	if tnc.chainID.Empty() {
 		tnc.t.Error("NodeConn::PublishTX before attach.")
-	}
-	if !tnc.chainID.Equals(chainID) {
-		tnc.t.Error("unexpected chain id")
 	}
 
 	txBytes, err := bcs.Marshal(tx.Data)
@@ -367,7 +363,7 @@ func (tnc *testNodeConn) PublishTX(
 
 	tnc.t.Logf("PublishTX, GetTransactionBlock, result=%+v", res)
 
-	anchorInfo, err := res.GetMutatedObjectByID(chainID.AsObjectID())
+	anchorInfo, err := res.GetMutatedObjectByID(tnc.chainID.AsObjectID())
 	if err != nil {
 		return err
 	}
@@ -388,7 +384,7 @@ func (tnc *testNodeConn) PublishTX(
 
 func (tnc *testNodeConn) AttachChain(
 	ctx context.Context,
-
+	chainID isc.ChainID,
 	recvRequest chain.RequestHandler,
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),

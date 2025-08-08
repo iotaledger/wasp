@@ -12,9 +12,9 @@ import (
 
 func TestChainIDSerialization(t *testing.T) {
 	chainID := isc.ChainID(*iotatest.RandomAddress())
-	bcs.TestCodec(t)
-	rwutil.BytesTest(t, isc.ChainIDFromBytes)
-	rwutil.StringTest(t, isc.ChainIDFromString)
+	bcs.TestCodec(t, chainID)
+	rwutil.BytesTest(t, chainID, isc.ChainIDFromBytes)
+	rwutil.StringTest(t, chainID, isc.ChainIDFromString)
 
 	bcs.TestCodecAndHash(t, isctest.TestChainID, "b4ff315a20ce")
 }

@@ -39,7 +39,7 @@ ActivateChain Activate a chain
 	@param chainID ChainID (Hex Address)
 	@return ApiActivateChainRequest
 */
-func (a *ChainsAPIService) ActivateChain(ctx context.Context) ApiActivateChainRequest {
+func (a *ChainsAPIService) ActivateChain(ctx context.Context, chainID string) ApiActivateChainRequest {
 	return ApiActivateChainRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -1761,7 +1761,6 @@ func (a *ChainsAPIService) SetChainRecord(ctx context.Context) ApiSetChainRecord
 	return ApiSetChainRecordRequest{
 		ApiService: a,
 		ctx:        ctx,
-		chainID:    chainID,
 	}
 }
 

@@ -212,7 +212,7 @@ type reqTrackNewChainHead struct {
 
 func New(
 	ctx context.Context,
-
+	chainID isc.ChainID,
 	nodeIdentity *cryptolib.KeyPair,
 	net peering.NetworkProvider,
 	log log.Logger,
@@ -833,7 +833,7 @@ func (mpi *mempoolImpl) handleTrackNewChainHead(req *reqTrackNewChainHead) {
 			panic(fmt.Errorf("cannot extract receipts from block: %w", err))
 		}
 		mpi.metrics.IncBlocksPerChain()
-		mpi.listener.BlockApplied(mpi.chainID, block, mpi.chainHeadState)
+		mpi.listener.BlockApplied(block, mpi.chainHeadState)
 		for _, receipt := range blockReceipts {
 			mpi.metrics.IncRequestsProcessed()
 			mpi.tryRemoveRequest(receipt.Request)

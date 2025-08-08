@@ -15,7 +15,6 @@ import (
 	gpautils "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/trie"
@@ -31,7 +30,6 @@ type blockInfo struct {
 
 type stateManagerGPA struct {
 	log                      log.Logger
-	chainID                  isc.ChainID
 	blockCache               gpautils.BlockCache
 	blocksToFetch            blockFetchers
 	blocksFetched            blockFetchers
@@ -68,7 +66,6 @@ func New(
 	}
 	result := &stateManagerGPA{
 		log:                      smLog,
-		chainID:                  chainID,
 		blockCache:               blockCache,
 		blocksToFetch:            newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksFetching, metrics.DecBlocksFetching, metrics.StateManagerBlockFetched)),
 		blocksFetched:            newBlockFetchers(newBlockFetchersMetrics(metrics.IncBlocksPending, metrics.DecBlocksPending, bfmNopDurationFun)),

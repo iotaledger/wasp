@@ -24,16 +24,14 @@ type VarAccessNodeState interface {
 }
 
 type varAccessNodeStateImpl struct {
-	chainID isc.ChainID
-	tipAO   *isc.StateAnchor
-	log     log.Logger
+	tipAO *isc.StateAnchor
+	log   log.Logger
 }
 
 func NewVarAccessNodeState(log log.Logger) VarAccessNodeState {
 	return &varAccessNodeStateImpl{
-		chainID: chainID,
-		tipAO:   nil,
-		log:     log,
+		tipAO: nil,
+		log:   log,
 	}
 }
 

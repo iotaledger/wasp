@@ -344,6 +344,7 @@ func New(
 	// Create sub-components.
 	chainMgr, err := chainmanager.New(
 		cni.me,
+		chainID,
 		cni.chainStore,
 		consensusStateRegistry,
 		dkShareRegistryProvider,
@@ -401,6 +402,7 @@ func New(
 	peerPubKeys = append(peerPubKeys, cni.accessNodesFromNode...)
 	stateMgr, err := statemanager.New(
 		ctx,
+		chainID,
 		nodeIdentity.GetPublicKey(),
 		peerPubKeys,
 		net,
@@ -418,6 +420,7 @@ func New(
 	}
 	mempool := mempool.New(
 		ctx,
+		chainID,
 		nodeIdentity,
 		net,
 		cni.log.NewChildLogger("MP"),
@@ -463,7 +466,7 @@ func New(
 		cni.chainMetrics.NodeConn.L1AnchorReceived()
 		recvAnchorPipeInCh <- lo.T2(anchor, l1Params)
 	}
-	err = nodeConn.AttachChain(ctx, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
+	err = nodeConn.AttachChain(ctx, chainID, recvRequestCB, recvAnchorCB, onChainConnect, onChainDisconnect)
 	if err != nil {
 		return nil, err
 	}

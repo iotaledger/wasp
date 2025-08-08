@@ -121,7 +121,6 @@ func (teT *testEnv) addVariedNodes(
 	sms := make(map[gpa.NodeID]gpa.GPA)
 	stores := make(map[gpa.NodeID]state.Store)
 	snapms := make(map[gpa.NodeID]snapshots.SnapshotManager)
-	chainID := teT.bf.GetChainID()
 	for _, nodeID := range nodeIDs {
 		var err error
 		smLog := teT.log.NewChildLogger(nodeID.ShortString())

@@ -32,7 +32,7 @@ type ChainNodeConn interface {
 	// detached.
 	AttachChain(
 		ctx context.Context,
-
+		chainID isc.ChainID,
 		recvRequest RequestHandler,
 		recvAnchor AnchorHandler,
 		onChainConnect func(),

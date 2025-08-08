@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/iotaledger/hive.go/app/shutdown"
-	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
@@ -60,8 +59,9 @@ type nodeConnection struct {
 	wsURL               string
 	httpURL             string
 	maxNumberOfRequests int
-	chainsLock          sync.RWMutex
-	chainsMap           *shrinkingmap.ShrinkingMap[isc.ChainID, *ncChain]
+	chainLock           sync.RWMutex
+	chainID             isc.ChainID
+	chain               *ncChain
 
 	shutdownHandler *shutdown.ShutdownHandler
 }
@@ -87,32 +87,29 @@ func New(
 		httpClient:          httpClient,
 		l1ParamsFetcher:     parameters.NewL1ParamsFetcher(httpClient.Client, log),
 		maxNumberOfRequests: maxNumberOfRequests,
-		chainsMap: shrinkingmap.New[isc.ChainID, *ncChain](
-			shrinkingmap.WithShrinkingThresholdRatio(chainsCleanupThresholdRatio),
-			shrinkingmap.WithShrinkingThresholdCount(chainsCleanupThresholdCount),
-		),
-		shutdownHandler: shutdownHandler,
+		shutdownHandler:     shutdownHandler,
 	}, nil
 }
 
 func (nc *nodeConnection) AttachChain(
 	ctx context.Context,
-
+	chainID isc.ChainID,
 	recvRequest chain.RequestHandler,
 	recvAnchor chain.AnchorHandler,
 	onChainConnect func(),
 	onChainDisconnect func(),
 ) error {
 	ncc, err := func() (*ncChain, error) {
-		nc.chainsLock.Lock()
-		defer nc.chainsLock.Unlock()
+		nc.chainLock.Lock()
+		defer nc.chainLock.Unlock()
 
 		ncc, err := newNCChain(ctx, nc, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
 		if err != nil {
 			return nil, err
 		}
 
-		nc.chainsMap.Set(ncc)
+		nc.chainID = chainID
+		nc.chain = ncc
 		util.ExecuteIfNotNil(onChainConnect)
 		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString())
 
@@ -135,23 +132,20 @@ func (nc *nodeConnection) AttachChain(
 		<-ctx.Done()
 		ncc.WaitUntilStopped()
 
-		nc.chainsLock.Lock()
-		defer nc.chainsLock.Unlock()
+		nc.chainLock.Lock()
+		defer nc.chainLock.Unlock()
 
-		nc.chainsMap.Delete(chainID)
+		nc.chain = nil
+		nc.chainID = isc.ChainID{}
 		util.ExecuteIfNotNil(onChainDisconnect)
-		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), nc.chainsMap.Size())
+		nc.LogDebugf("chain unregistered: %s = %s", chainID.ShortString())
 	}()
 
 	return nil
 }
 
 func (nc *nodeConnection) GetGasCoinRef(ctx context.Context) (*coin.CoinWithRef, error) {
-	ncChain, ok := nc.chainsMap.Get(chainID)
-	if !ok {
-		panic("unexpected chainID")
-	}
-	gasCoinRef, gasCoinBal, err := ncChain.feed.GetChainGasCoin(ctx)
+	gasCoinRef, gasCoinBal, err := nc.chain.feed.GetChainGasCoin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -211,11 +205,7 @@ func (nc *nodeConnection) ConsensusL1InfoProposal(
 }
 
 func (nc *nodeConnection) RefreshOnLedgerRequests(ctx context.Context) {
-	ncChain, ok := nc.chainsMap.Get(chainID)
-	if !ok {
-		panic("unexpected chainID")
-	}
-	if err := ncChain.syncChainState(ctx); err != nil {
+	if err := nc.chain.syncChainState(ctx); err != nil {
 		nc.LogError(fmt.Sprintf("error refreshing outputs: %s", err.Error()))
 	}
 }
@@ -248,30 +238,16 @@ func (nc *nodeConnection) L1ParamsFetcher() parameters.L1ParamsFetcher {
 	return nc.l1ParamsFetcher
 }
 
-// GetChain returns the chain if it was registered, otherwise it returns an error.
-func (nc *nodeConnection) getChain() (*ncChain, error) {
-	nc.chainsLock.RLock()
-	defer nc.chainsLock.RUnlock()
-
-	ncc, exists := nc.chainsMap.Get(chainID)
-	if !exists {
-		return nil, fmt.Errorf("chain %v is not connected", chainID.String())
-	}
-	return ncc, nil
-}
-
 func (nc *nodeConnection) PublishTX(
 	ctx context.Context,
-
 	tx iotasigner.SignedTransaction,
 	callback chain.TxPostHandler,
 ) error {
 	// check if the chain exists
-	ncc, err := nc.getChain(chainID)
-	if err != nil {
-		return err
+	if nc.chain == nil {
+		return fmt.Errorf("chain not attached")
 	}
-	ncc.publishTxQueue <- publishTxTask{
+	nc.chain.publishTxQueue <- publishTxTask{
 		ctx: ctx,
 		tx:  tx,
 		cb:  callback,

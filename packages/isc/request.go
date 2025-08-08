@@ -71,7 +71,6 @@ type ImpersonatedOffLedgerRequest interface {
 
 type OffLedgerRequest interface {
 	Request
-	ChainID() ChainID
 	Nonce() uint64
 	VerifySignature() error
 	GasPrice() *big.Int
