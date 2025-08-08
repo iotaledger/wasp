@@ -41,7 +41,7 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		os.RemoveAll(dir)
 	})
 
-	err = os.WriteFile(path.Join(dir, "wasp-cli.json"), []byte("{\"test_key\": \"test_value\"}"), 0644)
+	err = os.WriteFile(path.Join(dir, "wasp-cli.json"), []byte("{}"), 0644)
 	require.NoError(t, err)
 
 	w := &WaspCLITest{
