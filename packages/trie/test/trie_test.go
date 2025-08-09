@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -38,7 +40,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots)
+	trie.DebugDump(store, roots, os.Stdout)
 
 	{
 		tr, err := trie.NewTrieUpdatable(store, roots[0])
@@ -53,7 +55,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots)
+	trie.DebugDump(store, roots, os.Stdout)
 
 	{
 		tr, err := trie.NewTrieUpdatable(store, roots[1])
@@ -68,7 +70,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots)
+	trie.DebugDump(store, roots, os.Stdout)
 
 	{
 		tr, err := trie.NewTrieUpdatable(store, roots[2])
@@ -84,7 +86,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots)
+	trie.DebugDump(store, roots, os.Stdout)
 
 	state, err := trie.NewTrieReader(store, roots[3])
 	require.NoError(t, err)
@@ -129,6 +131,8 @@ func TestBasic2(t *testing.T) {
 	require.True(t, tr.Has([]byte{0x00}))
 	require.True(t, tr.Has([]byte{0x01}))
 	require.True(t, tr.Has([]byte{0x10}))
+
+	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
 }
 
 func TestBasic3(t *testing.T) {
@@ -151,8 +155,11 @@ func TestBasic3(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte{1}, tr.Get([]byte{0x30}))
 	require.Equal(t, []byte{1}, tr.Get([]byte{0x31}))
+	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
 	require.Equal(t, []byte{1}, tr.Get([]byte{0xb0}))
 	require.Equal(t, []byte{1}, tr.Get([]byte{0xb2}))
+
+	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
 }
 
 func TestKeyTooLong(t *testing.T) {
@@ -196,6 +203,7 @@ func TestCreateTrie(t *testing.T) {
 
 		tr.UpdateStr(key, value)
 		rootCnext, _, _ := tr.Commit(store)
+		trie.DebugDump(store, []trie.Hash{rootInitial, rootCnext}, io.Discard)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
@@ -228,6 +236,7 @@ func TestCreateTrie(t *testing.T) {
 		require.NotZero(t, stats.CreatedValues)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
+		trie.DebugDump(store, []trie.Hash{rootInitial, rootCnext}, io.Discard)
 
 		require.Equal(t, rootCnext, tr.Root())
 
@@ -258,6 +267,8 @@ func TestBaseUpdate(t *testing.T) {
 			rootNext, _, _ := tr.Commit(store)
 			t.Logf("after commit: %s", rootNext)
 
+			trie.DebugDump(store, []trie.Hash{rootInitial, rootNext}, io.Discard)
+
 			err = tr.SetRoot(rootNext)
 			require.NoError(t, err)
 
@@ -277,8 +288,11 @@ func TestBaseUpdate(t *testing.T) {
 
 var traceScenarios = false
 
-func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, scenario []string) (map[string]string, trie.Hash) {
-	checklist := make(map[string]string)
+func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, scenario []string) (
+	checklist map[string]string,
+	committedRoots []trie.Hash,
+) {
+	checklist = make(map[string]string)
 	uncommitted := false
 	var ret trie.Hash
 	for _, cmd := range scenario {
@@ -287,6 +301,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 		}
 		if cmd == "*" {
 			ret, _, _ = trieUpdatable.Commit(store)
+			committedRoots = append(committedRoots, ret)
 			if traceScenarios {
 				fmt.Printf("+++ commit. Root: '%s'\n", ret)
 			}
@@ -297,7 +312,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 		before, after, found := strings.Cut(cmd, "/")
 		if found {
 			if before == "" {
-				continue // key must not be empty
+				panic("key must not be empty")
 			}
 			key = []byte(before)
 			if after != "" {
@@ -320,6 +335,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 	}
 	if uncommitted {
 		ret, _, _ = trieUpdatable.Commit(store)
+		committedRoots = append(committedRoots, ret)
 		if traceScenarios {
 			fmt.Printf("+++ commit. Root: '%s'\n", ret)
 		}
@@ -327,7 +343,7 @@ func runUpdateScenario(trieUpdatable *trie.TrieUpdatable, store trie.KVStore, sc
 	if traceScenarios {
 		fmt.Printf("+++ return root: '%s'\n", ret)
 	}
-	return checklist, trieUpdatable.Root()
+	return checklist, committedRoots
 }
 
 func checkResult(t *testing.T, trie *trie.TrieUpdatable, checklist map[string]string) {
@@ -359,8 +375,10 @@ func TestBaseScenarios(t *testing.T) {
 			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
-			checklist, _ := runUpdateScenario(tr, store, data)
+			checklist, newRoots := runUpdateScenario(tr, store, data)
 			checkResult(t, tr, checklist)
+
+			trie.DebugDump(store, append([]trie.Hash{rootInitial}, newRoots...), io.Discard)
 		}
 	}
 	data1 := []string{"ab", "acd", "-a", "-ab", "abc", "abd", "abcdafgh", "-acd", "aaaaaaaaaaaaaaaa", "klmnt"}
@@ -395,12 +413,17 @@ func TestDeletionLoop(t *testing.T) {
 	runTest := func(initScenario, scenario []string) {
 		store := NewInMemoryKVStore()
 		beginRoot := lo.Must(trie.InitRoot(store, true))
+		roots := []trie.Hash{beginRoot}
 		tr, err := trie.NewTrieUpdatable(store, beginRoot)
 		require.NoError(t, err)
 		t.Logf("TestDeletionLoop: model: '%s', init='%s', scenario='%s'", "", initScenario, scenario)
-		_, beginRoot = runUpdateScenario(tr, store, initScenario)
-		_, endRoot := runUpdateScenario(tr, store, scenario)
-		require.Equal(t, beginRoot, endRoot)
+		_, roots1 := runUpdateScenario(tr, store, initScenario)
+		roots = append(roots, roots1...)
+		trie.DebugDump(store, roots, io.Discard)
+		_, roots2 := runUpdateScenario(tr, store, scenario)
+		require.Equal(t, roots[len(roots)-1], roots2[len(roots2)-1])
+		roots = append(roots, roots2...)
+		trie.DebugDump(store, roots, io.Discard)
 	}
 	runAll := func(init, sc []string) {
 		runTest(init, sc)
@@ -420,24 +443,35 @@ func TestDeletionLoop(t *testing.T) {
 func TestDeterminism(t *testing.T) {
 	tf := func(scenario1, scenario2 []string) func(t *testing.T) {
 		return func(t *testing.T) {
-			store1 := NewInMemoryKVStore()
-			initRoot1 := lo.Must(trie.InitRoot(store1, true))
+			var root1, root2 trie.Hash
+			{
+				store1 := NewInMemoryKVStore()
+				initRoot1 := lo.Must(trie.InitRoot(store1, true))
+				roots1 := []trie.Hash{initRoot1}
 
-			tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
-			require.NoError(t, err)
+				tr1, err := trie.NewTrieUpdatable(store1, initRoot1)
+				require.NoError(t, err)
 
-			checklist1, root1 := runUpdateScenario(tr1, store1, scenario1)
-			checkResult(t, tr1, checklist1)
+				checklist1, newRoots1 := runUpdateScenario(tr1, store1, scenario1)
+				roots1 = append(roots1, newRoots1...)
+				trie.DebugDump(store1, roots1, io.Discard)
+				checkResult(t, tr1, checklist1)
+				root1 = roots1[len(roots1)-1]
+			}
+			{
+				store2 := NewInMemoryKVStore()
+				initRoot2 := lo.Must(trie.InitRoot(store2, true))
+				roots2 := []trie.Hash{initRoot2}
 
-			store2 := NewInMemoryKVStore()
-			initRoot2 := lo.Must(trie.InitRoot(store2, true))
+				tr2, err := trie.NewTrieUpdatable(store2, initRoot2)
+				require.NoError(t, err)
 
-			tr2, err := trie.NewTrieUpdatable(store2, initRoot2)
-			require.NoError(t, err)
-
-			checklist2, root2 := runUpdateScenario(tr2, store2, scenario2)
-			checkResult(t, tr2, checklist2)
-
+				checklist2, newRoots2 := runUpdateScenario(tr2, store2, scenario2)
+				roots2 = append(roots2, newRoots2...)
+				trie.DebugDump(store2, roots2, io.Discard)
+				checkResult(t, tr2, checklist2)
+				root2 = roots2[len(roots2)-1]
+			}
 			require.Equal(t, root1, root2)
 		}
 	}
@@ -481,7 +515,7 @@ func TestRefcounts(t *testing.T) {
 		require.Equal(t, n, refcounts.GetValue(lo.Must(hex.DecodeString(v))))
 	}
 
-	// trie.DebugDump(store, []trie.Hash{root0, root1})
+	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
 	// [trie store]
 	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
 	//  [] c:e71db7c574e3b92e39ae790f08b1a12321a75586 ext:[] term:<nil>
@@ -502,7 +536,7 @@ func TestRefcounts(t *testing.T) {
 	}
 
 	_ = root2
-	// trie.DebugDump(store, []trie.Hash{root0, root1, root2})
+	trie.DebugDump(store, []trie.Hash{root0, root1, root2}, io.Discard)
 	// [trie store]
 	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
 	//  [] c:e71db7c574e3b92e39ae790f08b1a12321a75586 ext:[] term:<nil>
@@ -546,30 +580,23 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 		require.Equal(t, n, refcounts.GetValue(lo.Must(hex.DecodeString(v))))
 	}
 
-	// trie.DebugDump(store, []trie.Hash{root0, root1})
+	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
 	// [trie store]
-	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
-	//  [] c:21d8e5ebf834af2b24e5bba418dd59929b2e6017 ext:[] term:<nil>
-	//      [4] c:465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b ext:[1] term:4c234c80dfe3d0069436a290ad85582b40835179
-	//          [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
-	//          [7] c:c5b0cdba802bc5300c4c475096b678276d480b68 ext:[] term:<nil>
-	//              [8] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
-	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
-	//              [9] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
-	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
-	//      [6] c:465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b ext:[1] term:4c234c80dfe3d0069436a290ad85582b40835179
-	//          [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
-	//          [7] c:c5b0cdba802bc5300c4c475096b678276d480b68 ext:[] term:<nil>
-	//              [8] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
-	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
-	//              [9] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179
-	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."]
+	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil> (seen: 1)
+	//  [] c:21d8e5ebf834af2b24e5bba418dd59929b2e6017 ext:[] term:<nil> (seen: 1)
+	//      [4] c:465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b ext:[1] term:4c234c80dfe3d0069436a290ad85582b40835179 (seen: 1)
+	//          [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."] (seen: 1)
+	//          [7] c:c5b0cdba802bc5300c4c475096b678276d480b68 ext:[] term:<nil> (seen: 1)
+	//              [8] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179 (seen: 1)
+	//                  [v: 4c234c80dfe3d0069436a290ad85582b40835179 -> "yyyyyyyyyyyyyyyyy..."] (seen: 2)
+	//              [9] c:23a7faaaa299574c0553d3b10592033ae839a76f ext:[6 3] term:4c234c80dfe3d0069436a290ad85582b40835179 (seen: 2)
+	//      [6] c:465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b ext:[1] term:4c234c80dfe3d0069436a290ad85582b40835179 (seen: 2)
 	// [node refcounts]
-	//    534f98b3ad630819d284287b647283a1d5dbcf90: 1
 	//    21d8e5ebf834af2b24e5bba418dd59929b2e6017: 1
+	//    465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b: 2
 	//    c5b0cdba802bc5300c4c475096b678276d480b68: 1
 	//    23a7faaaa299574c0553d3b10592033ae839a76f: 2
-	//    465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b: 2
+	//    534f98b3ad630819d284287b647283a1d5dbcf90: 1
 	// [value refcounts]
 	//    4c234c80dfe3d0069436a290ad85582b40835179: 2
 
@@ -580,14 +607,35 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 	checkNode("465d25b13ec4bc17e35a30ed9a459c6a1a1ed04b", 2)
 	checkValue("4c234c80dfe3d0069436a290ad85582b40835179", 2)
 
-	stats, err := trie.Prune(store, root1)
-	require.NoError(t, err)
-	require.EqualValues(t, 4, stats.DeletedNodes)
-	require.EqualValues(t, 1, stats.DeletedValues)
-	stats, err = trie.Prune(store, root0)
-	require.NoError(t, err)
-	require.EqualValues(t, 1, stats.DeletedNodes)
-	require.EqualValues(t, 0, stats.DeletedValues)
+	// snapshot / restore all roots to a different store,
+	// then check that the resulting store is identical
+	{
+		store2 := NewInMemoryKVStore()
+		var roots2 []trie.Hash
+		for _, root := range []trie.Hash{root0, root1} {
+			buf := bytes.NewBuffer(nil)
+			lo.Must(trie.NewTrieReader(store, root)).TakeSnapshot(buf)
+			err := trie.RestoreSnapshot(buf, store2, true)
+			require.NoError(t, err)
+			roots2 = append(roots2, root)
+			trie.DebugDump(store2, roots2, io.Discard)
+		}
+		require.Equal(t, store.m, store2.m)
+	}
+
+	// prune all roots one by one, then check that the resulting store is empty
+	{
+		roots := []trie.Hash{root0, root1}
+		for len(roots) > 0 {
+			root := roots[0]
+			roots = roots[1:]
+			_, err := trie.Prune(store, root)
+			require.NoError(t, err)
+			trie.DebugDump(store, roots, io.Discard)
+		}
+		trie.DeleteRefcountsFlag(store)
+		require.Empty(t, store.m)
+	}
 }
 
 func TestIterate(t *testing.T) {
@@ -600,10 +648,11 @@ func TestIterate(t *testing.T) {
 			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
-			checklist, root := runUpdateScenario(tr, store, scenario)
+			checklist, roots := runUpdateScenario(tr, store, scenario)
 			checkResult(t, tr, checklist)
+			trie.DebugDump(store, append([]trie.Hash{rootInitial}, roots...), io.Discard)
 
-			trr, err := trie.NewTrieReader(store, root)
+			trr, err := trie.NewTrieReader(store, roots[len(roots)-1])
 			require.NoError(t, err)
 			var iteratedKeys1 [][]byte
 			trr.Iterate(func(k []byte, v []byte) bool {
@@ -654,9 +703,10 @@ func TestIteratePrefix(t *testing.T) {
 			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
-			_, root := runUpdateScenario(tr, store, scenario)
+			_, roots := runUpdateScenario(tr, store, scenario)
+			trie.DebugDump(store, append([]trie.Hash{rootInitial}, roots...), io.Discard)
 
-			trr, err := trie.NewTrieReader(store, root)
+			trr, err := trie.NewTrieReader(store, roots[len(roots)-1])
 			require.NoError(t, err)
 
 			countIter := 0
@@ -709,17 +759,22 @@ func TestDeletePrefix(t *testing.T) {
 			store := NewInMemoryKVStore()
 			rootInitial := lo.Must(trie.InitRoot(store, true))
 			require.NotNil(t, rootInitial)
+			roots := []trie.Hash{rootInitial}
 
 			tr, err := trie.NewTrieUpdatable(store, rootInitial)
 			require.NoError(t, err)
 
-			_, root := runUpdateScenario(tr, store, scenario)
+			_, newRoots := runUpdateScenario(tr, store, scenario)
+			roots = append(roots, newRoots...)
+			trie.DebugDump(store, roots, io.Discard)
 
-			tr, err = trie.NewTrieUpdatable(store, root)
+			tr, err = trie.NewTrieUpdatable(store, roots[len(roots)-1])
 			require.NoError(t, err)
 
 			deleted := tr.DeletePrefix([]byte(prefix))
-			tr.Commit(store)
+			newRoot, _, _ := tr.Commit(store)
+			roots = append(roots, newRoot)
+			trie.DebugDump(store, roots, io.Discard)
 
 			tr.Iterator([]byte(prefix)).Iterate(func(k []byte, v []byte) bool {
 				if traceScenarios {
