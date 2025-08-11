@@ -546,7 +546,7 @@ func TestRPCEthChainID(t *testing.T) {
 	var chainID hexutil.Uint
 	err := env.RawClient.Call(&chainID, "eth_chainId")
 	require.NoError(t, err)
-	require.EqualValues(t, evm.DefaultChainID)
+	require.EqualValues(t, chainID, evm.DefaultChainID)
 }
 
 func TestRPCTxRejectedIfNotEnoughFunds(t *testing.T) {
@@ -633,8 +633,8 @@ func TestRPCTraceTx(t *testing.T) {
 			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(1))),
 		})
 
-	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
-	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx2))
 
 	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
@@ -839,7 +839,7 @@ func addNRequests(n int, env *soloTestEnv, creator *ecdsa.PrivateKey, creatorAdd
 				Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))),
 			})
 
-		req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+		req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx1))
 		rqs = append(rqs, req1)
 	}
 
@@ -938,8 +938,8 @@ func TestRPCTraceBlock(t *testing.T) {
 			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))),
 		})
 
-	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
-	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx2))
 	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()
@@ -1147,7 +1147,7 @@ func TestRPCTraceBlockSingleCall(t *testing.T) {
 			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x1}, big.NewInt(2))),
 		})
 
-	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx1))
 	env.soloChain.RunRequestsSync([]isc.Request{req1})
 
 	bi := env.soloChain.GetLatestBlockInfo()
@@ -1241,8 +1241,8 @@ func TestRPCBlockReceipt(t *testing.T) {
 			Data:     lo.Must(contractABI.Pack("sendTo", common.Address{0x2}, big.NewInt(3))),
 		})
 
-	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx1))
-	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(env.soloChain.ChainID, tx2))
+	req1 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx1))
+	req2 := lo.Must(isc.NewEVMOffLedgerTxRequest(tx2))
 	env.soloChain.RunRequestsSync([]isc.Request{req1, req2})
 
 	bi := env.soloChain.GetLatestBlockInfo()

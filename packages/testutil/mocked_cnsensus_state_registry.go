@@ -3,6 +3,7 @@ package testutil
 import (
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/isc"
 )
 
 type mockedConsensusStateRegistry struct {
@@ -23,14 +24,14 @@ func NewConsensusStateRegistry() cmtlog.ConsensusStateRegistry {
 	return &mockedConsensusStateRegistry{data: map[cryptolib.AddressKey]*cmtlog.State{}}
 }
 
-func (s *mockedConsensusStateRegistry) Get(cmtAddr *cryptolib.Address) (*cmtlog.State, error) {
+func (s *mockedConsensusStateRegistry) Get(_ isc.ChainID, cmtAddr *cryptolib.Address) (*cmtlog.State, error) {
 	if store, ok := s.data[cmtAddr.Key()]; ok {
 		return store, nil
 	}
 	return nil, cmtlog.ErrCmtLogStateNotFound
 }
 
-func (s *mockedConsensusStateRegistry) Set(cmtAddr *cryptolib.Address, state *cmtlog.State) error {
+func (s *mockedConsensusStateRegistry) Set(_ isc.ChainID, cmtAddr *cryptolib.Address, state *cmtlog.State) error {
 	s.data[cmtAddr.Key()] = state
 	return nil
 }

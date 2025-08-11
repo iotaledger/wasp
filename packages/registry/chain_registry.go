@@ -193,7 +193,7 @@ func (p *ChainRecordRegistryImpl) loadChainRecordsJSON() error {
 	}
 
 	for i := range tmpChainRecords.ChainRecords {
-		if err := p.AddChainRecord(tmpChainRecords.ChainRecords[i]); err != nil {
+		if err := p.SaveChainRecord(tmpChainRecords.ChainRecords[i]); err != nil {
 			return fmt.Errorf("unable to add ChainRecord to registry: %w", err)
 		}
 	}
@@ -255,7 +255,7 @@ func (p *ChainRecordRegistryImpl) ForEachActiveChainRecord(consumer func(*ChainR
 	return nil
 }
 
-func (p *ChainRecordRegistryImpl) AddChainRecord(chainRecord *ChainRecord) error {
+func (p *ChainRecordRegistryImpl) SaveChainRecord(chainRecord *ChainRecord) error {
 	chains := len(p.onChangeMap.All())
 	// Only allow a single chain
 	if chains != 0 {

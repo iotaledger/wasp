@@ -16,7 +16,7 @@ import (
 func DummyOffledgerRequest() isc.OffLedgerRequest {
 	contract := isc.Hn("somecontract")
 	entrypoint := isc.Hn("someentrypoint")
-	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(contract, entrypoint), 0, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(isc.NewMessage(contract, entrypoint), 0, gas.LimitsDefault.MaxGasPerRequest)
 	keys, _ := testkey.GenKeyAddr()
 	return req.Sign(keys)
 }

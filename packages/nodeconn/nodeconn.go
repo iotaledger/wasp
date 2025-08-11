@@ -103,7 +103,7 @@ func (nc *nodeConnection) AttachChain(
 		nc.chainLock.Lock()
 		defer nc.chainLock.Unlock()
 
-		ncc, err := newNCChain(ctx, nc, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
+		ncc, err := newNCChain(ctx, nc, chainID, recvRequest, recvAnchor, nc.wsURL, nc.httpURL)
 		if err != nil {
 			return nil, err
 		}

@@ -120,7 +120,7 @@ func provide(c *dig.Container) error {
 				ParamsStateManager.StateManagerTimerTickPeriod,
 				ParamsStateManager.PruningMinStatesToKeep,
 				ParamsStateManager.PruningMaxStatesToDelete,
-				ParamsSnapshotManager.SnapshotsToLoad,
+				ParamsSnapshotManager.SnapshotToLoad,
 				ParamsSnapshotManager.Period,
 				ParamsSnapshotManager.Delay,
 				ParamsSnapshotManager.LocalPath,

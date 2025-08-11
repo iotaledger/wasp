@@ -147,7 +147,7 @@ func (ch *Chain) DeployEVMContract(creator *ecdsa.PrivateKey, abiJSON string, by
 //   - chainID
 //   - agentID of the chain admin
 //   - list of contracts deployed on the chain
-func (ch *Chain) GetInfo() (isc.AgentID, map[isc.Hname]*root.ContractRecord) {
+func (ch *Chain) GetInfo() (isc.ChainID, isc.AgentID, map[isc.Hname]*root.ContractRecord) {
 	res, err := ch.CallView(governance.ViewGetChainAdmin.Message())
 	require.NoError(ch.Env.T, err)
 

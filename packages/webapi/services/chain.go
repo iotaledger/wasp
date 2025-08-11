@@ -87,7 +87,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 			return err
 		}
 	} else {
-		if err := c.chainRecordRegistryProvider.AddChainRecord(chainRecord); err != nil {
+		if err := c.chainRecordRegistryProvider.SaveChainRecord(chainRecord); err != nil {
 			c.log.LogInfof("AddChainRec %v %v", chainRecord, err)
 
 			return err

@@ -4,28 +4,24 @@
 package testutil
 
 import (
-	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/registry"
 )
 
 // Mock implementation of a ChainRecordRegistryProvider for testing purposes
 
 type ChainRecordRegistryProvider struct {
-	DB map[isc.ChainID]*registry.ChainRecord
+	rec *registry.ChainRecord
 }
 
 func NewChainRecordRegistryProvider() *ChainRecordRegistryProvider {
-	return &ChainRecordRegistryProvider{
-		DB: map[isc.ChainID]*registry.ChainRecord{},
-	}
+	return &ChainRecordRegistryProvider{}
 }
 
-func (p *ChainRecordRegistryProvider) AddChainRecord(chainRecord *registry.ChainRecord) error {
-	p.DB[chainRecord.ChainID()] = chainRecord
+func (p *ChainRecordRegistryProvider) SaveChainRecord(chainRecord *registry.ChainRecord) error {
+	p.rec = chainRecord
 	return nil
 }
 
 func (p *ChainRecordRegistryProvider) LoadChainRecord() (*registry.ChainRecord, error) {
-	ret := p.DB[chainID]
-	return ret, nil
+	return p.rec, nil
 }

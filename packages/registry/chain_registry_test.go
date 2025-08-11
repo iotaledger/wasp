@@ -15,7 +15,7 @@ func TestNewChainStateDatabaseManager(t *testing.T) {
 
 	chainID := isctest.RandomChainID()
 
-	err = chainRecordRegistry.AddChainRecord(registry.NewChainRecord(chainID, false, nil))
+	err = chainRecordRegistry.SaveChainRecord(registry.NewChainRecord(chainID, false, nil))
 	require.NoError(t, err)
 
 	modified := false

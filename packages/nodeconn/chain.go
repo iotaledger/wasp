@@ -45,7 +45,7 @@ type publishTxTask struct {
 func newNCChain(
 	ctx context.Context,
 	nodeConn *nodeConnection,
-
+	chainID isc.ChainID,
 	requestHandler chain.RequestHandler,
 	anchorHandler chain.AnchorHandler,
 	wsURL string,

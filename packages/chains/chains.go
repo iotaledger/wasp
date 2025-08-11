@@ -123,7 +123,7 @@ func New(
 	smStateManagerTimerTickPeriod time.Duration,
 	smPruningMinStatesToKeep int,
 	smPruningMaxStatesToDelete int,
-	snapshotsToLoad string,
+	snapshotToLoad string,
 	snapshotPeriod uint32,
 	snapshotDelay uint32,
 	snapshotFolderPath string,
@@ -186,7 +186,7 @@ func New(
 		chainMetricsProvider:                chainMetricsProvider,
 		validatorFeeAddr:                    validatorFeeAddr,
 	}
-	ret.initSnapshotToLoad(snapshotsToLoad)
+	ret.initSnapshotToLoad(snapshotToLoad)
 	ret.chainListener = NewChainsListener(chainListener, ret.chainAccessUpdatedCB)
 	return ret
 }

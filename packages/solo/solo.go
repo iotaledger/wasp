@@ -171,7 +171,7 @@ func New(t Context, initOptions ...*InitOptions) *Solo {
 		ctx:                  ctx,
 	}
 	_ = ret.publisher.Events.Published.Hook(func(ev *publisher.ISCEvent[any]) {
-		ret.logger.LogInfof("solo publisher: %s %s %v", ev.Kind, ev.ChainID, ev.String())
+		ret.logger.LogInfof("solo publisher: %s %v", ev.Kind, ev.String())
 	})
 
 	go ret.publisher.Run(ctx)
