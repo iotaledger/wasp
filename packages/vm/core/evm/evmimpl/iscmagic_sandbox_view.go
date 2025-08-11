@@ -11,11 +11,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/iscmagic"
 )
 
-// handler for ISCSandbox::getChainID
-func (h *magicContractHandler) GetChainID() isc.ChainID {
-	return h.ctx.ChainID()
-}
-
 // handler for ISCSandbox::getChainAdmin
 func (h *magicContractHandler) GetChainAdmin() iscmagic.ISCAgentID {
 	return iscmagic.WrapISCAgentID(h.ctx.ChainAdmin())

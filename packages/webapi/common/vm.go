@@ -73,7 +73,7 @@ func CallView(ch chainpkg.Chain, msg isc.Message, blockIndexOrHash string) (isc.
 		}
 	}
 
-	return chainutil.CallView(ch.ID(), chainState, ch.Processors(), ch.Log(), msg)
+	return chainutil.CallView(chainState, ch.Processors(), ch.Log(), msg)
 }
 
 func EstimateGas(ch chainpkg.Chain, req isc.Request) (*isc.Receipt, error) {

@@ -31,7 +31,6 @@ import (
 type ViewContext struct {
 	processors            *processors.Config
 	stateReader           state.State
-	chainID               isc.ChainID
 	log                   log.Logger
 	chainInfo             *isc.ChainInfo
 	gasBurnLog            *gas.BurnLog
@@ -54,7 +53,6 @@ func New(
 	return &ViewContext{
 		processors:            processors,
 		stateReader:           stateReader,
-		chainID:               chainID,
 		log:                   log,
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 		schemaVersion:         stateReader.SchemaVersion(),
@@ -152,10 +150,6 @@ func (ctx *ViewContext) ChainInfo() *isc.ChainInfo {
 	return ctx.chainInfo
 }
 
-func (ctx *ViewContext) ChainID() isc.ChainID {
-	return ctx.chainInfo.ChainID
-}
-
 func (ctx *ViewContext) ChainAdmin() isc.AgentID {
 	return ctx.chainInfo.ChainAdmin
 }
@@ -225,7 +219,7 @@ func (ctx *ViewContext) callView(msg isc.Message) (ret isc.CallArguments) {
 
 func (ctx *ViewContext) initAndCallView(msg isc.Message) (ret isc.CallArguments) {
 	ctx.chainInfo = governance.NewStateReader(ctx.contractStateReaderWithGasBurn(governance.Contract.Hname())).
-		GetChainInfo(ctx.chainID)
+		GetChainInfo()
 	ctx.gasBudget = ctx.chainInfo.GasLimits.MaxGasExternalViewCall
 	if ctx.gasBurnLoggingEnabled {
 		ctx.gasBurnLog = gas.NewGasBurnLog()

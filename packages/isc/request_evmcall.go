@@ -17,15 +17,13 @@ import (
 
 // evmOffLedgerCallRequest is used to wrap an EVM call (for the eth_call or eth_estimateGas jsonrpc methods)
 type evmOffLedgerCallRequest struct {
-	chainID ChainID          `bcs:"export"`
 	callMsg ethereum.CallMsg `bcs:"export"`
 }
 
 var _ OffLedgerRequest = &evmOffLedgerCallRequest{}
 
-func NewEVMOffLedgerCallRequest(chainID ChainID, callMsg ethereum.CallMsg) OffLedgerRequest {
+func NewEVMOffLedgerCallRequest(callMsg ethereum.CallMsg) OffLedgerRequest {
 	return &evmOffLedgerCallRequest{
-		chainID: chainID,
 		callMsg: callMsg,
 	}
 }
@@ -49,10 +47,6 @@ func (req *evmOffLedgerCallRequest) Message() Message {
 		Hn(evmnames.FuncCallContract),
 		NewCallArguments(evmtypes.EncodeCallMsg(req.callMsg)),
 	)
-}
-
-func (req *evmOffLedgerCallRequest) ChainID() ChainID {
-	return req.chainID
 }
 
 func (req *evmOffLedgerCallRequest) GasBudget() (gas uint64, isEVM bool) {

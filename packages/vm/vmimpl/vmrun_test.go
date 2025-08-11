@@ -83,7 +83,7 @@ func initChain(chainCreator *cryptolib.KeyPair, store state.Store) *isc.StateAnc
 func makeOnLedgerRequest(
 	t *testing.T,
 	sender *cryptolib.KeyPair,
-
+	chainID isc.ChainID,
 	msg isc.Message,
 	baseTokens uint64,
 ) isc.OnLedgerRequest {
@@ -128,7 +128,7 @@ func transitionAnchor(
 
 	state := lo.Must(store.StateByTrieRoot(block.TrieRoot()))
 	chainInfo := governance.NewStateReaderFromChainState(state).
-		GetChainInfo(anchor.ChainID())
+		GetChainInfo()
 
 	newStateMetadata := transaction.NewStateMetadata(
 		stateMetadata.SchemaVersion,

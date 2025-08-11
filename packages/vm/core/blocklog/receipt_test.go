@@ -14,7 +14,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/v2/packages/isc"
-	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/blocklog"
 	"github.com/iotaledger/wasp/v2/packages/vm/gas"
@@ -23,7 +22,6 @@ import (
 func TestReceiptCodec(t *testing.T) {
 	bcs.TestCodec(t, blocklog.RequestReceipt{
 		Request: isc.NewOffLedgerRequest(
-			isc.EmptyChainID(),
 			isc.NewMessage(isc.Hn("0"), isc.Hn("0")),
 			123,
 			gas.LimitsDefault.MaxGasPerRequest,
@@ -36,7 +34,6 @@ func TestReceiptCodec(t *testing.T) {
 
 	bcs.TestCodecAndHash(t, blocklog.RequestReceipt{
 		Request: isc.NewOffLedgerRequest(
-			isctest.TestChainID,
 			isc.NewMessage(isc.Hn("account"), isc.Hn("deposit")),
 			123,
 			gas.LimitsDefault.MaxGasPerRequest,
@@ -62,7 +59,6 @@ func TestReceiptCodecEVM(t *testing.T) {
 
 	rec := blocklog.RequestReceipt{
 		Request: lo.Must(isc.NewEVMOffLedgerTxRequest(
-			isctest.RandomChainID(),
 			tx,
 		)),
 	}

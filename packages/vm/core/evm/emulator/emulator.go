@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"sync/atomic"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -19,7 +20,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/params"
-	lru "github.com/hashicorp/golang-lru/v2"
 
 	"github.com/iotaledger/wasp/v2/packages/evm/evmutil"
 	"github.com/iotaledger/wasp/v2/packages/kv"
@@ -57,20 +57,13 @@ type GasLimits struct {
 	Call  uint64
 }
 
-var configCache *lru.Cache[int, *params.ChainConfig]
-
-func init() {
-	var err error
-	configCache, err = lru.New[int, *params.ChainConfig](100)
-	if err != nil {
-		panic(err)
-	}
-}
+var configCache atomic.Pointer[params.ChainConfig]
 
 func getConfig(chainID int) *params.ChainConfig {
-	if c, ok := configCache.Get(chainID); ok {
+	if c := configCache.Load(); c != nil {
 		return c
 	}
+
 	c := &params.ChainConfig{
 		ChainID:             big.NewInt(int64(chainID)),
 		HomesteadBlock:      big.NewInt(0),
@@ -91,7 +84,7 @@ func getConfig(chainID int) *params.ChainConfig {
 	if !c.IsShanghai(common.Big0, 0) {
 		panic("ChainConfig should report EVM version as Shanghai")
 	}
-	configCache.Add(c)
+	configCache.Store(c)
 	return c
 }
 
@@ -128,7 +121,7 @@ func Init(
 	if bdb.Initialized() {
 		panic("evm state already initialized in kvstore")
 	}
-	bdb.Init(timestamp)
+	bdb.Init(chainID, timestamp)
 
 	stateDBSubrealm := StateDBSubrealm(emulatorState)
 	for addr, account := range alloc {

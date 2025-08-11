@@ -461,7 +461,6 @@ func TestInvalidSignatureRequestsAreNotProcessed(t *testing.T) {
 
 	// produce a badly signed off-ledger request
 	req := isc.NewOffLedgerRequest(
-		ch.ChainID,
 		isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil),
 		0,
 		math.MaxUint64,
@@ -510,8 +509,8 @@ func TestBatchWithSkippedRequestsReceipts(t *testing.T) {
 	require.NoError(t, err)
 
 	// create a request with an invalid nonce that must be skipped
-	skipReq := isc.NewOffLedgerRequest(ch.ChainID, isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(9999).Sign(user)
-	validReq := isc.NewOffLedgerRequest(ch.ChainID, isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(0).Sign(user)
+	skipReq := isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(9999).Sign(user)
+	validReq := isc.NewOffLedgerRequest(isc.NewMessage(isc.Hn("contract"), isc.Hn("entrypoint"), nil), 0, math.MaxUint64).WithNonce(0).Sign(user)
 
 	ch.RunRequestsSync([]isc.Request{skipReq, validReq})
 

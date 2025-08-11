@@ -32,8 +32,6 @@ type SandboxBase interface {
 	Balance
 	// Params returns the parameters of the current call
 	Params() CallArguments
-	// ChainID returns the chain ID
-	ChainID() ChainID
 	// ChainAdmin returns the chain admin AgentID (not necessarily the same as "anchor owner")
 	ChainAdmin() AgentID
 	// ChainInfo returns information and configuration parameters of the chain

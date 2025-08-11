@@ -44,7 +44,7 @@ func TestGetInfo(t *testing.T) {
 
 	chainID, admin, contracts := chain.GetInfo()
 
-	require.EqualValues(t, chain.ChainID)
+	require.EqualValues(t, chainID, chain.ChainID)
 	require.EqualValues(t, chain.AdminAgentID(), admin)
 	require.GreaterOrEqual(t, len(contracts), len(corecontracts.All))
 

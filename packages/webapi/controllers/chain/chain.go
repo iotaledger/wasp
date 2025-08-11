@@ -34,7 +34,7 @@ func (c *Controller) getCommitteeInfo(e echo.Context) error {
 		return apierrors.ChainNotFoundError()
 	}
 
-	chainNodeInfo, err := c.committeeService.GetCommitteeInfo(chain.ChainID)
+	chainNodeInfo, err := c.committeeService.GetCommitteeInfo()
 	if err != nil {
 		if errors.Is(err, services.ErrNotInCommittee) {
 			return e.JSON(http.StatusOK, models.CommitteeInfoResponse{})

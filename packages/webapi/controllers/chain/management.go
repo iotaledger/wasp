@@ -11,7 +11,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/v2/packages/webapi/models"
-	"github.com/iotaledger/wasp/v2/packages/webapi/params"
 )
 
 func (c *Controller) activateChain(e echo.Context) error {
@@ -30,12 +29,8 @@ func (c *Controller) activateChain(e echo.Context) error {
 
 func (c *Controller) deactivateChain(e echo.Context) error {
 	controllerutils.SetOperation(e, "deactivate_chain")
-	chain, err := c.chainService.GetChain()
-	if err != nil {
-		return err
-	}
 
-	if err := c.chainService.DeactivateChain(chain.ID()); err != nil {
+	if err := c.chainService.DeactivateChain(); err != nil {
 		return err
 	}
 
@@ -66,10 +61,6 @@ func (c *Controller) rotateChain(e echo.Context) error {
 
 func (c *Controller) setChainRecord(e echo.Context) error {
 	controllerutils.SetOperation(e, "set_chain_record")
-	chainID, err := params.DecodeChainID(e)
-	if err != nil {
-		return err
-	}
 
 	// No need to validate the chain existence here (like above), as the service will create a chain record if it does not exist.
 

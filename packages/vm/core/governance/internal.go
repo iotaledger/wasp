@@ -32,7 +32,6 @@ func (s *StateWriter) SetInitialState(chainAdmin isc.AgentID, blockKeepAmount in
 func (s *StateReader) GetChainInfo() *isc.ChainInfo {
 	ret := &isc.ChainInfo{
 		Metadata: &isc.PublicChainMetadata{},
-		ChainID:  chainID,
 	}
 	ret.ChainAdmin = s.GetChainAdmin()
 	ret.GasFeePolicy = s.GetGasFeePolicy()

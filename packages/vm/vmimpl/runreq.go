@@ -496,5 +496,5 @@ func (reqctx *requestContext) GetContractRecord(contractHname isc.Hname) (ret *r
 }
 
 func (vmctx *vmContext) loadChainConfig() {
-	vmctx.chainInfo = governance.NewStateReaderFromChainState(vmctx.stateDraft).GetChainInfo(vmctx.ChainID())
+	vmctx.chainInfo = governance.NewStateReaderFromChainState(vmctx.stateDraft).GetChainInfo()
 }

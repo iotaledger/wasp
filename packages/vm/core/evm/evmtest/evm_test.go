@@ -2050,7 +2050,7 @@ func testEVMWithdrawWithFailedTx(t *testing.T, withdrawFirst bool) {
 		iscmagic.WrapISCAssets(isc.NewEmptyAssets()),
 	)
 	require.NoError(t, err)
-	withdrawRequest, err := isc.NewEVMOffLedgerTxRequest(env.Chain.ChainID, tx)
+	withdrawRequest, err := isc.NewEVMOffLedgerTxRequest(tx)
 	require.NoError(t, err)
 
 	failingRequest := solo.NewCallParams(accounts.FuncWithdraw.Message()).
