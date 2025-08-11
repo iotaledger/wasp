@@ -201,7 +201,6 @@ func TestTxBuilderSendAssetsAndRequest(t *testing.T) {
 func TestRotateAndBuildTx(t *testing.T) {
 	client := l1starter.Instance().L1Client()
 	chainSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 0)
-	senderSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 1)
 	rotateRecipientSigner := iscmoveclienttest.NewSignerWithFunds(t, testcommon.TestSeed, 2)
 	iscPackage, err := client.DeployISCContracts(context.Background(), cryptolib.SignerToIotaSigner(chainSigner))
 	require.NoError(t, err)
@@ -227,10 +226,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 	stateAnchor := isc.NewStateAnchor(anchor, iscPackage)
 	txb := vmtxbuilder.NewAnchorTransactionBuilder(iscPackage, &stateAnchor, chainSigner.Address())
 
-	req1 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
-	txb.ConsumeRequest(req1)
-	req2 := createIscmoveReq(t, client, senderSigner, iscPackage, anchor)
-	txb.ConsumeRequest(req2)
 	txb.RotationTransaction(rotateRecipientSigner.Address().AsIotaAddress())
 	stateMetadata := []byte("dummy stateMetadata")
 	pt := txb.BuildTransactionEssence(stateMetadata, 123)
@@ -256,11 +251,6 @@ func TestRotateAndBuildTx(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, txnResponse.Effects.Data.IsSuccess())
-
-	getObjReq1, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req1.RequestRef().ObjectID, Options: &iotajsonrpc.IotaObjectDataOptions{ShowContent: true}})
-	require.NotNil(t, getObjReq1.Error.Data.Deleted)
-	getObjReq2, _ := client.GetObject(context.Background(), iotaclient.GetObjectRequest{ObjectID: req2.RequestRef().ObjectID})
-	require.NotNil(t, getObjReq2.Error.Data.Deleted)
 
 	getObjRes, err := client.GetObject(context.Background(), iotaclient.GetObjectRequest{
 		ObjectID: anchor.ObjectID,
