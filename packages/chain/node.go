@@ -24,12 +24,10 @@ import (
 	"time"
 
 	"fortio.org/safecast"
-
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/ds/shrinkingmap"
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
 	"github.com/iotaledger/wasp/v2/packages/chain/chainmanager"
@@ -1248,7 +1246,10 @@ func (cni *chainNodeImpl) recoverStoreFromWAL(chainStore indexedstore.IndexedSto
 			}
 		}
 		block.Mutations().ApplyTo(stateDraft)
-		chainStore.Commit(stateDraft)
+		_, _, _, err := chainStore.Commit(stateDraft)
+		if err != nil {
+			panic(err)
+		}
 		blocksAdded++
 		return true
 	})

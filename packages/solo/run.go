@@ -133,12 +133,8 @@ func (ch *Chain) runRequestsNolock(reqs []isc.Request) (
 }
 
 func (ch *Chain) settleStateTransition(stateDraft state.StateDraft) {
-	block := ch.store.Commit(stateDraft)
-	err := ch.store.SetLatest(block.TrieRoot())
-	if err != nil {
-		panic(err)
-	}
-
+	block, _, _ := lo.Must3(ch.store.Commit(stateDraft))
+	lo.Must0(ch.store.SetLatest(block.TrieRoot()))
 	latestState := lo.Must(ch.LatestState())
 
 	ch.Env.Publisher().BlockApplied(ch.ChainID, block, latestState)

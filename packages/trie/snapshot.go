@@ -46,56 +46,65 @@ func (tr *TrieReader) TakeSnapshot(w io.Writer) error {
 	return ww.Err
 }
 
-func RestoreSnapshot(r io.Reader, store KVStore) error {
+func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
+	err := UpdateRefcountsFlag(store, refcountsEnabled)
+	if err != nil {
+		return err
+	}
+
 	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	valuePartition := makeWriterPartition(store, partitionValues)
-	refcounts := newRefcounts(store)
 	rr := rwutil.NewReader(r)
+	var trieRoot *Hash
 	for rr.Err == nil {
 		nodeBytes := rr.ReadBytes()
 		if rr.Err == io.EOF {
-			return nil
+			break
+		}
+		if rr.Err != nil {
+			return rr.Err
 		}
 		n, err := nodeDataFromBytes(nodeBytes)
 		if err != nil {
 			return err
 		}
 		n.updateCommitment()
-		nodeKey := n.Commitment.Bytes()
 
-		var valueKey, value []byte
-		if n.Terminal != nil && !n.Terminal.IsValue {
-			if rr.ReadBool() {
-				value = rr.ReadBytes()
-				if rr.Err != nil {
-					break
-				}
-				valueKey = n.Terminal.Bytes()
-			}
+		triePartition.Set(n.Commitment.Bytes(), nodeBytes)
+		if trieRoot == nil {
+			trieRoot = &n.Commitment
 		}
-
-		if refcounts.GetNode(n.Commitment) == 0 {
-			// node is new -- save it and set node and value refcounts to 1
-			triePartition.Set(nodeKey, nodeBytes)
-			if valueKey != nil {
-				valuePartition.Set(valueKey, value)
+		if n.Terminal != nil && !n.Terminal.IsValue && rr.ReadBool() {
+			value := rr.ReadBytes()
+			if rr.Err != nil {
+				return rr.Err
 			}
-			refcounts.incNodeAndValue(n)
-
-			// Increment the refcounts of the children that already exist
-			// (for the others, their refcount will be set to 1 in a
-			// later iteration, when they are read from the snapshot).
-			n.iterateChildren(func(i byte, commitment Hash) bool {
-				if refcounts.GetNode(commitment) > 0 {
-					refcounts.incNode(commitment)
-				}
-				return true
-			})
-		}
-
-		if rr.Err != nil {
-			break
+			valueKey := n.Terminal.Bytes()
+			valuePartition.Set(valueKey, value)
 		}
 	}
-	return rr.Err
+
+	// TODO: improve performance
+	if refcountsEnabled {
+		_, refcounts := NewRefcounts(store)
+		tr, err := NewTrieReader(store, *trieRoot)
+		if err != nil {
+			return err
+		}
+		tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
+			nodeRefcount := refcounts.GetNode(n.Commitment)
+			nodeRefcount++
+			refcounts.SetNode(n.Commitment, nodeRefcount)
+			if nodeRefcount > 1 {
+				return IterateSkipSubtree
+			}
+			if n.Terminal != nil && !n.Terminal.IsValue {
+				valueRefcount := refcounts.GetValue(n.Terminal.Data)
+				valueRefcount++
+				refcounts.SetValue(n.Terminal.Data, valueRefcount)
+			}
+			return IterateContinue
+		})
+	}
+	return nil
 }

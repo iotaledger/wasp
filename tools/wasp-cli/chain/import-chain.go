@@ -16,8 +16,8 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/rocksdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
-	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/evm/emulator"
@@ -36,7 +36,7 @@ func openChainAndRead(dbPath string) (transaction.StateMetadata, uint32) {
 	})
 
 	store := db.KVStore()
-	rebasedDBStore := indexedstore.New(state.NewStoreWithUniqueWriteMutex(store))
+	rebasedDBStore := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(store))
 
 	latestBlock := lo.Must(rebasedDBStore.LatestBlock())
 	latestState := lo.Must(rebasedDBStore.LatestState())

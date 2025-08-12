@@ -17,20 +17,24 @@ const (
 	partitionValues
 	partitionRefcountNodes
 	partitionRefcountValues
+	partitionRefcountsEnabled
 )
 
-// MustInitRoot initializes a new empty trie
-func MustInitRoot(store KVStore) Hash {
+// InitRoot initializes a new empty trie
+func InitRoot(store KVStore, refcountsEnabled bool) (Hash, error) {
+	err := UpdateRefcountsFlag(store, refcountsEnabled)
+	if err != nil {
+		return Hash{}, err
+	}
+
 	rootNodeData := newNodeData()
 	n := newBufferedNode(rootNodeData, nil)
 
 	trieStore := makeWriterPartition(store, partitionTrieNodes)
 	valueStore := makeWriterPartition(store, partitionValues)
-	refcounts := newRefcounts(store)
-	var stats CommitStats
-	n.commitNode(trieStore, valueStore, refcounts, &stats)
-
-	return n.nodeData.Commitment
+	commitNode(n, trieStore, valueStore)
+	initRefcounts(store, n)
+	return n.nodeData.Commitment, nil
 }
 
 func openNodeStore(store KVReader) *nodeStore {

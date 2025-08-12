@@ -46,6 +46,7 @@ func (c *cachedKVReader) MultiGet(keys [][]byte) [][]byte {
 		} else {
 			values[i] = missingValues[0]
 			missingValues = missingValues[1:]
+			c.cache.Add(key, values[i])
 		}
 	}
 	return values

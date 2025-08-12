@@ -18,7 +18,7 @@ import (
 //		require.NoError(t, err)
 //
 //		initParams := origin.DefaultInitParams(isc.NewAddressAgentID(originator.Address())).Encode()
-//		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
+//		store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB()))
 //		origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, coin.BaseTokenType)
 //		return isc.ChainID{}
 //	}

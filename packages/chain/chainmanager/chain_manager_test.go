@@ -11,8 +11,6 @@ import (
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
-	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
@@ -20,9 +18,11 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/tcrypto"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
@@ -81,7 +81,7 @@ func testChainMgrBasic(t *testing.T, n, f int) {
 	needCons := map[gpa.NodeID]*chainmanager.NeedConsensusMap{}
 	for i, nid := range nodeIDs {
 		consensusStateRegistry := testutil.NewConsensusStateRegistry()
-		stores[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		stores[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err := origin.InitChainByStateMetadataBytes(stores[nid], anchor.GetStateMetadata(), deposit, parameterstest.L1Mock)
 		require.NoError(t, err)
 		activeAccessNodesCB := func() ([]*cryptolib.PublicKey, []*cryptolib.PublicKey) {

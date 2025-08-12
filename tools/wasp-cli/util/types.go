@@ -10,8 +10,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/samber/lo"
+
+	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
@@ -137,6 +138,14 @@ func ValueToString(vtype string, v []byte) string {
 		addr, err := codec.Decode[*cryptolib.Address](v)
 		log.Check(err)
 		return addr.String()
+	case "coinbalances":
+		cbs, err := codec.Decode[*isc.CoinBalances](v)
+		log.Check(err)
+		return cbs.String()
+	case "assets":
+		assets, err := codec.Decode[*isc.Assets](v)
+		log.Check(err)
+		return assets.String()
 	case "agentid":
 		aid, err := codec.Decode[isc.AgentID](v)
 		log.Check(err)
