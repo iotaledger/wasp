@@ -45,7 +45,7 @@ type accessMgrSM struct {
 
 var _ rapid.StateMachine = &accessMgrSM{}
 
-func newAccessMgrSM(t *rapid.T, nodeCount, chainCount int) *accessMgrSM {
+func newAccessMgrSM(t *rapid.T, nodeCount int) *accessMgrSM {
 	sm := new(accessMgrSM)
 	if !sm.initialized {
 		sm.log = testlogger.NewLogger(t)
@@ -69,7 +69,7 @@ func newAccessMgrSM(t *rapid.T, nodeCount, chainCount int) *accessMgrSM {
 		sm.nodes[nid] = dist.NewAccessMgr(
 			gpa.NodeIDFromPublicKey,
 			func(servers []*cryptolib.PublicKey) {
-				t.Logf("serversUpdatedCB: nodeID=%v, chainID=%v, servers=%v", nidCopy, servers)
+				t.Logf("serversUpdatedCB: nodeID=%v, servers=%v", nidCopy, servers)
 				sm.servers[nidCopy] = servers
 			},
 			func(pk *cryptolib.PublicKey) {},
@@ -118,7 +118,7 @@ func (sm *accessMgrSM) Reboot(t *rapid.T) {
 	sm.nodes[nodeID] = dist.NewAccessMgr(
 		gpa.NodeIDFromPublicKey,
 		func(servers []*cryptolib.PublicKey) {
-			t.Logf("serversUpdatedCB: nodeID=%v, chainID=%v, servers=%v", nodeID, servers)
+			t.Logf("serversUpdatedCB: nodeID=%v, servers=%v", nodeID, servers)
 			sm.servers[nodeID] = servers
 		},
 		func(pk *cryptolib.PublicKey) {},
@@ -161,15 +161,14 @@ func (sm *accessMgrSM) Check(t *rapid.T) {
 func TestAccessMgrRapid(t *testing.T) {
 	tests := []struct {
 		n int
-		c int
 	}{
-		{n: 1, c: 1},
-		{n: 2, c: 1},
-		{n: 4, c: 3},
+		{n: 1},
+		{n: 2},
+		{n: 4},
 	}
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("N%d C%d", test.n, test.c), rapid.MakeCheck(func(t *rapid.T) {
-			sm := newAccessMgrSM(t, test.n, test.c)
+		t.Run(fmt.Sprintf("N%d", test.n), rapid.MakeCheck(func(t *rapid.T) {
+			sm := newAccessMgrSM(t, test.n)
 			t.Repeat(rapid.StateMachineActions(sm))
 		}))
 	}

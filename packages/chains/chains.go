@@ -411,7 +411,7 @@ func (c *ChainRunner) Deactivate() error {
 	}
 
 	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(); err != nil {
-		return fmt.Errorf("cannot deactivate chain %v: %w", err)
+		return fmt.Errorf("cannot deactivate chain %v: %w", c.chain.ID(), err)
 	}
 
 	c.chainCancelFunc()

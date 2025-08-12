@@ -80,7 +80,7 @@ func testBasic(t *testing.T, n int, reliable bool) {
 	for i := range accessMgrs {
 		ii := i
 		serversUpdatedCB := func(servers []*cryptolib.PublicKey) {
-			t.Logf("servers updated, ChainID=%v, servers=%+v", servers)
+			t.Logf("servers updated, servers=%+v", servers)
 			nodeServers[ii] = servers
 		}
 		accessMgrs[i] = accessmanager.New(ctx, serversUpdatedCB, peerIdentities[i], networkProviders[i], log.NewChildLogger(fmt.Sprintf("N#%v", i)))
