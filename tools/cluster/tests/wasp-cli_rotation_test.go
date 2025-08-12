@@ -202,18 +202,53 @@ func testWaspCLIExternalRotation(t *testing.T, addAccessNode func(*WaspCLITest, 
 }
 
 func TestRotateOnOrigin(t *testing.T) {
-	t.Skip("TODO: fix or remove test")
+	if testing.Short() {
+		t.Skip("Skipping cluster tests in short mode")
+	}
 
 	w := newWaspCLITest(t, waspClusterOpts{
-		nNodes: 4,
+		nNodes: 1,
 	})
 	// start a chain on node 0
 	w.MustRun("chain", "deploy", "--chain=chain1", "--node=0")
 	w.ActivateChainOnAllNodes("chain1", 0)
-	// immediately rotate to a committee with nodes 1,2,3 (no need to add as access nodes first, because there is no state to sync)
-	w.MustRun("chain", "rotate-with-dkg", "--node=1", "--peers=2,3", "--skip-maintenance") // NOTE: must skip "start/stop maintenance" because node1 isn't part of the committee
-	w.MustRun("chain", "deposit", "base:10000000", "--node=1")                             // deposit works
-	// assert `rotate-with-dkg` works with maintenance (when the node is part of the initial/final committee)
-	w.MustRun("chain", "rotate-with-dkg", "--node=1")
-	w.MustRun("chain", "deposit", "base:10000000", "--node=1") // deposit works
+	dkg := w.MustRun("chain", "rundkg", "--peers", "me")
+	require.Greater(t, len(dkg), 1)
+	rotateAddress := strings.TrimPrefix(dkg[1], "Address: ")
+
+	blockIndex1 := getBlockIndex(t, w)
+
+	w.MustRun("chain", "rotate", rotateAddress, "--chain=chain1")
+
+	blockIndex2 := getBlockIndex(t, w)
+
+	// block index should be the same until deposit is called
+	require.Equal(t, blockIndex2, blockIndex1)
+
+	w.MustRun("chain", "deposit", "base|1000000", "--chain=chain1")
+
+	blockIndex3 := getBlockIndex(t, w)
+	require.Equal(t, blockIndex2+1, blockIndex3)
+
+	chainInfo := w.MustRun("chain", "info", "--chain=chain1")
+	stateAddress := extractStateAddress(chainInfo)
+	require.Equal(t, rotateAddress, stateAddress)
+}
+
+func getBlockIndex(t *testing.T, w *WaspCLITest) uint32 {
+	block, _, err := w.Cluster.WaspClient(0).CorecontractsAPI.BlocklogGetLatestBlockInfo(context.Background()).Execute()
+	require.NoError(t, err)
+	return block.BlockIndex
+}
+
+var stateAddressRegex = regexp.MustCompile(`State address: (0x[0-9a-fA-F]+)`)
+
+func extractStateAddress(lines []string) string {
+	for _, line := range lines {
+		matches := stateAddressRegex.FindStringSubmatch(line)
+		if len(matches) > 1 {
+			return matches[1]
+		}
+	}
+	return ""
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/bcs-go"
@@ -25,6 +26,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testpeers"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
@@ -73,7 +75,7 @@ func testConsBasic(t *testing.T, n, f int) {
 
 	initParams := origin.DefaultInitParams(isc.NewAddressAgentID(committeeAddress)).Encode()
 	db := mapdb.NewMapDB()
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
 	_, stateMetadata := origin.InitChain(allmigrations.LatestSchemaVersion, store, initParams, iotago.ObjectID{}, 0, parameterstest.L1Mock)
 
 	stateAnchor0x := isctest.RandomStateAnchor(isctest.RandomAnchorOption{StateMetadata: stateMetadata})
@@ -152,7 +154,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		nodeSK := peerIdentities[i].GetPrivateKey()
 		nodeDKShare, err := dkShareProviders[i].LoadDKShare(committeeAddress)
 		require.NoError(t, err)
-		chainStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		chainStates[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		_, err = origin.InitChainByStateMetadataBytes(chainStates[nid], stateAnchor0.GetStateMetadata(), 0, parameterstest.L1Mock)
 		require.NoError(t, err)
 		nodes[nid] = cons.New(
@@ -244,7 +246,7 @@ func testConsBasic(t *testing.T, n, f int) {
 		require.Nil(t, out.NeedStateMgrDecidedState)
 		require.Nil(t, out.NeedVMResult)
 		require.NotNil(t, out.NeedStateMgrSaveBlock)
-		block := chainStates[nid].Commit(out.NeedStateMgrSaveBlock)
+		block, _, _ := lo.Must3(chainStates[nid].Commit(out.NeedStateMgrSaveBlock))
 		require.NotNil(t, block)
 		tc.WithInput(nid, cons.NewInputStateMgrBlockSaved(block))
 	}
@@ -361,7 +363,7 @@ func testChained(t *testing.T, n, f, b int) {
 	}
 	testNodeStates := map[gpa.NodeID]state.Store{}
 	for _, nid := range nodeIDs {
-		testNodeStates[nid] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		testNodeStates[nid] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		origin.InitChainByAnchor(testNodeStates[nid], anchor)
 	}
 	testChainInsts := make([]testConsInst, b)

@@ -7,6 +7,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
@@ -117,6 +118,7 @@ func TestLedgerBaseConsistencyWithRequiredTopUpFee(t *testing.T) {
 		initialCommonAccountBalance+addedToCommonAccount,
 		isc.GasCoinTargetValue-gasCoinValueBefore,
 	)
+	require.Equal(t, deductedForGasCoin, lo.Must(ch.GetBlockInfo()).GasCoinTopUp)
 	require.EqualValues(t,
 		initialCommonAccountBalance+addedToCommonAccount-deductedForGasCoin,
 		ch.L2BaseTokens(accounts.CommonAccount()),

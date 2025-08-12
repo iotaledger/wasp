@@ -41,6 +41,10 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 		os.RemoveAll(dir)
 	})
 
+	// creating a config in a temp dir per test. If not provided, wasp-cli will reuse the config from HOME dir, which could mess up other tests or local configuration.
+	err = os.WriteFile(path.Join(dir, "wasp-cli.json"), []byte("{}"), 0644)
+	require.NoError(t, err)
+
 	w := &WaspCLITest{
 		T:       t,
 		Cluster: clu,
@@ -50,9 +54,9 @@ func newWaspCLITest(t *testing.T, opt ...waspClusterOpts) *WaspCLITest {
 	w.MustRun("wallet", "init")
 
 	// FIXME make them into parameters
-	w.MustRun("set", "l1.apiAddress", clu.Config.L1APIAddress())
-	w.MustRun("set", "l1.faucetAddress", clu.Config.L1FaucetAddress())
-	w.MustRun("set", "l1.packageId", clu.Config.ISCPackageID().String())
+	w.MustRun("set", "l1.apiaddress", clu.Config.L1APIAddress())
+	w.MustRun("set", "l1.faucetaddress", clu.Config.L1FaucetAddress())
+	w.MustRun("set", "l1.packageid", clu.Config.ISCPackageID().String())
 	for _, node := range clu.Config.AllNodes() {
 		w.MustRun("wasp", "add", fmt.Sprintf("%d", node), clu.Config.APIHost(node))
 	}

@@ -1,9 +1,11 @@
 package test
 
 import (
+	"io"
 	"strings"
 	"testing"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/wasp/v2/packages/trie"
@@ -13,11 +15,14 @@ func TestProofScenariosBlake2b(t *testing.T) {
 	runScenario := func(name string, scenario []string) {
 		t.Run(name, func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			initRoot := trie.MustInitRoot(store)
+			initRoot := lo.Must(trie.InitRoot(store, true))
 			tr, err := trie.NewTrieUpdatable(store, initRoot)
 			require.NoError(t, err)
 
-			checklist, root := runUpdateScenario(tr, store, scenario)
+			checklist, roots := runUpdateScenario(tr, store, scenario)
+			trie.DebugDump(store, append([]trie.Hash{initRoot}, roots...), io.Discard)
+
+			root := roots[len(roots)-1]
 			trr, err := trie.NewTrieReader(store, root)
 			require.NoError(t, err)
 			for k, v := range checklist {

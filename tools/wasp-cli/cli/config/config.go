@@ -3,6 +3,7 @@
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -17,7 +18,6 @@ import (
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/cli/keychain"
 	"github.com/iotaledger/wasp/v2/tools/wasp-cli/log"
-	"github.com/knadh/koanf/parsers/json"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/v2"
 	"github.com/samber/lo"
@@ -27,6 +27,7 @@ var (
 	BaseDir           string
 	ConfigPath        string
 	WaitForCompletion string
+	PrettyPrintConfig bool
 
 	Config = koanf.New(".")
 )
@@ -77,7 +78,7 @@ func Read() {
 	locateBaseDir()
 	locateConfigFile()
 
-	if err := Config.Load(file.Provider(ConfigPath), json.Parser()); err != nil {
+	if err := Config.Load(file.Provider(ConfigPath), NewParser(PrettyPrintConfig)); err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return
 		}
@@ -161,7 +162,7 @@ func AddChain(name, chainID string) {
 }
 
 func WriteConfig() error {
-	b, err := Config.Marshal(json.Parser())
+	b, err := Config.Marshal(NewParser(PrettyPrintConfig))
 	if err != nil {
 		return err
 	}
@@ -237,3 +238,27 @@ func GetAuthTokenForImport() map[string]string {
 
 func GetTestingSeed() string     { return Config.String("wallet.testing_seed") }
 func SetTestingSeed(seed string) { log.Check(Config.Set("wallet.testing_seed", seed)) }
+
+// JSON is a custom JSON parser for kaonf that supports formatting of output
+type JSON struct {
+	prettyPrint bool
+}
+
+func NewParser(prettyPrint bool) *JSON {
+	return &JSON{prettyPrint: prettyPrint}
+}
+
+func (p *JSON) Unmarshal(b []byte) (map[string]interface{}, error) {
+	var out map[string]interface{}
+	if err := json.Unmarshal(b, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (p *JSON) Marshal(o map[string]interface{}) ([]byte, error) {
+	if p.prettyPrint {
+		return json.MarshalIndent(o, "", "  ")
+	}
+	return json.Marshal(o)
+}

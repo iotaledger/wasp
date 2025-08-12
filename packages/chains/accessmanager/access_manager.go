@@ -11,7 +11,6 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/hive.go/log"
-
 	"github.com/iotaledger/wasp/v2/packages/chains/accessmanager/dist"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/gpa"

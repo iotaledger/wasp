@@ -11,11 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotaclient"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago/iotatest"
 	"github.com/iotaledger/wasp/v2/packages/chain"
@@ -25,11 +24,13 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/peering"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testchain"
@@ -510,7 +511,7 @@ func blockFn(te *testEnv, reqs []isc.Request, anchor *isc.StateAnchor, tangleTim
 	}
 	vmResult, err := vmimpl.Run(vmTask)
 	require.NoError(te.t, err)
-	block := store.Commit(vmResult.StateDraft)
+	block, _, _ := lo.Must3(store.Commit(vmResult.StateDraft))
 	chainState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(te.t, err)
 	anchor, err = te.tcl.RunOnChainStateTransition(anchor, vmResult.UnsignedTransaction)
@@ -615,7 +616,7 @@ func newEnv(t *testing.T, n, f int, reliable bool) *testEnv {
 	te.mempools = make([]mempool.Mempool, len(te.peerIdentities))
 	te.stores = make([]state.Store, len(te.peerIdentities))
 	for i := range te.peerIdentities {
-		te.stores[i] = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		te.stores[i] = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		origin.InitChainByStateMetadataBytes(te.stores[i], te.anchor.GetStateMetadata(), originDepositVal, parameterstest.L1Mock)
 		require.NoError(t, err)
 		chainMetrics := metrics.NewChainMetricsProvider().GetChainMetrics(isc.EmptyChainID())

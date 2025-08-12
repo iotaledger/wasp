@@ -1,15 +1,22 @@
 package state_test
 
 import (
+	"io"
 	"testing"
+	"time"
 
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 	"pgregory.net/rapid"
 
+	"github.com/iotaledger/wasp/v2/packages/isc/coreutil"
 	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
+	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
 type stateSM struct {
@@ -23,9 +30,11 @@ var _ rapid.StateMachine = &stateSM{}
 // State Machine initialization.
 func newStateSM() *stateSM {
 	sm := new(stateSM)
-	sm.store = state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	sm.store = statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	sm.draft = sm.store.NewOriginStateDraft()
+	sm.draft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	sm.model = mapdb.NewMapDB()
+	sm.model.Set([]byte(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	return sm
 }
 
@@ -40,6 +49,10 @@ func (sm *stateSM) KVSet(t *rapid.T) {
 // Action: Set a value for the KV store (a longer slice).
 func (sm *stateSM) KVSetSlices(t *rapid.T) {
 	keyBin := rapid.SliceOfBytesMatching(".+").Draw(t, "key")
+	const maxKeyLength = trie.KeyMaxLength/2 - 1
+	if len(keyBin) > maxKeyLength {
+		keyBin = keyBin[:maxKeyLength]
+	}
 	valBin := rapid.SliceOfBytesMatching(".+").Draw(t, "val") // Nil values are not supported.
 	sm.draft.Set(kv.Key(keyBin), valBin)
 	require.NoError(t, sm.model.Set(keyBin, valBin))
@@ -55,16 +68,20 @@ func (sm *stateSM) KVDel(t *rapid.T) {
 // Action: Commit a block, start new empty draft.
 func (sm *stateSM) CommitAddEmpty(t *rapid.T) {
 	var err error
-	block := sm.store.Commit(sm.draft)
-	//
+	block, _, _ := lo.Must3(sm.store.Commit(sm.draft))
+	sm.store.CheckIntegrity(io.Discard)
+
 	// Validate, if the committed state is correct.
 	blockState, err := sm.store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
 	sm.checkStateReaderMatchesModel(t, blockState)
-	//
+
 	// Proceed to the next transition.
-	sm.draft, err = sm.store.NewEmptyStateDraft(block.L1Commitment())
+	sm.draft, err = sm.store.NewStateDraft(time.Time{}, block.L1Commitment())
 	require.NoError(t, err)
+	for k, v := range sm.draft.Mutations().Sets {
+		sm.model.Set([]byte(k), v)
+	}
 }
 
 // Invariants to check.
@@ -76,7 +93,7 @@ func (sm *stateSM) Check(t *rapid.T) {
 func (sm *stateSM) checkStateReaderMatchesModel(t *rapid.T, reader kv.KVStoreReader) {
 	require.NoError(t, sm.model.Iterate(kvstore.EmptyPrefix, func(key, value kvstore.Value) bool {
 		draftHasVal := reader.Has(kv.Key(key))
-		require.True(t, draftHasVal, "Should have key %v", key)
+		require.True(t, draftHasVal, "Should have key %x", key)
 		draftValue := reader.Get(kv.Key(key))
 		require.Equal(t, value, draftValue, "Values for key %v should be equal", key)
 		return true
@@ -84,7 +101,7 @@ func (sm *stateSM) checkStateReaderMatchesModel(t *rapid.T, reader kv.KVStoreRea
 	reader.Iterate(kv.EmptyPrefix, func(key kv.Key, value kvstore.Value) bool {
 		modelHasVal, err := sm.model.Has([]byte(key))
 		require.NoError(t, err)
-		require.True(t, modelHasVal, "Should have key %v", key)
+		require.True(t, modelHasVal, "Should have key %x", key)
 		modelValue, err := sm.model.Get([]byte(key))
 		require.NoError(t, err)
 		require.Equal(t, value, modelValue, "Values for key %v should be equal", key)
@@ -101,16 +118,18 @@ func TestRapid(t *testing.T) {
 
 func TestRapidReproduced(t *testing.T) {
 	var err error
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
+	draft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	draft.Set(kv.Key([]byte{0}), []byte{0})
 	draft.Set(kv.Key([]byte{1}), []byte{0})
 	draft.Set(kv.Key([]byte{0x10}), []byte{0})
-	//
-	block := store.Commit(draft)
+
+	block, _, _ := lo.Must3(store.Commit(draft))
+	store.CheckIntegrity(io.Discard)
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	require.NoError(t, err)
-	//
+
 	check := func(b byte) {
 		keyBin := []byte{b}
 		key := kv.Key(keyBin)
@@ -125,12 +144,14 @@ func TestRapidReproduced(t *testing.T) {
 }
 
 func TestRapidReproduced2(t *testing.T) {
-	store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	draft := store.NewOriginStateDraft()
+	draft.Set(kv.Key(coreutil.StatePrefixBlockIndex), codec.Encode(uint32(0)))
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x1})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 
-	block := store.Commit(draft)
+	block, _, _ := lo.Must3(store.Commit(draft))
+	store.CheckIntegrity(io.Discard)
 	root1 := block.TrieRoot()
 	blockState, err := store.StateByTrieRoot(block.TrieRoot())
 	t.Log(block.TrieRoot())
@@ -141,12 +162,13 @@ func TestRapidReproduced2(t *testing.T) {
 
 	//
 	// Proceed to the next transition.
-	draft, err = store.NewEmptyStateDraft(block.L1Commitment())
+	draft, err = store.NewStateDraft(time.Time{}, block.L1Commitment())
 	require.NoError(t, err)
 
 	draft.Set(kv.Key([]byte{0x2}), []byte{0x0})
 	draft.Set(kv.Key([]byte{0x7}), []byte{0x1})
 
-	block = store.Commit(draft)
+	block, _, _ = lo.Must3(store.Commit(draft))
+	store.CheckIntegrity(io.Discard)
 	require.NotEqualValues(t, root1, block.TrieRoot())
 }

@@ -673,20 +673,30 @@ func TestAccounts_AdjustCommonAccountBaseTokens(t *testing.T) {
 	sender, _ := env.NewKeyPairWithFunds(env.NewSeedFromTestNameAndTimestamp(t.Name()))
 	ch := env.NewChain()
 
-	err := ch.DepositBaseTokensToL2(100_000, sender)
+	err := ch.DepositBaseTokensToL2(10*isc.Million, sender)
 	require.NoError(t, err)
 
 	l1Bal1 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
 	l2Total1 := ch.L2TotalAssets().BaseTokens()
 	require.Equal(t, l1Bal1, l2Total1)
 
-	ch.PostRequestOffLedger(solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(1000, 0)), ch.ChainAdmin)
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(1_000, 0)).
+			WithMaxAffordableGasBudget(),
+		ch.ChainAdmin,
+	)
+	require.NoError(t, err)
 
 	l1Bal2 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
 	l2Total2 := ch.L2TotalAssets().BaseTokens()
 	require.Equal(t, l1Bal2+1000, l2Total2)
 
-	ch.PostRequestOffLedger(solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(0, 1000)), ch.ChainAdmin)
+	_, err = ch.PostRequestOffLedger(
+		solo.NewCallParams(accounts.AdjustCommonAccountBaseTokens.Message(0, 1_000)).
+			WithMaxAffordableGasBudget(),
+		ch.ChainAdmin,
+	)
+	require.NoError(t, err)
 
 	l1Bal3 := lo.Return2(ch.GetLatestAnchorWithBalances()).BaseTokens()
 	l2Total3 := ch.L2TotalAssets().BaseTokens()

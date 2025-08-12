@@ -1,4 +1,5 @@
-package testutil
+// Package testval provides utility functions for generation of test values.
+package testval
 
 import (
 	"encoding/hex"

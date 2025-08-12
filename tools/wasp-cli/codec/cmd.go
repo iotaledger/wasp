@@ -65,16 +65,11 @@ func createSubCmd(use, short string) *cobra.Command {
 
 func initDecodeCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "call-result <type> <type> ...",
+		Use:   "call-result <type> [<type> ...]",
 		Short: "Decode the output of a contract function call",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, cmdArgs []string) {
 			callResults := util.ReadCallResultsAsJSON()
-
-			if len(cmdArgs) < 1 {
-				log.Check(cmd.Help())
-				return
-			}
 
 			if len(callResults) != len(cmdArgs) {
 				log.Printf("Number of provided result types does not match number of results: types = %v, results = %v\n",
@@ -83,7 +78,7 @@ func initDecodeCmd() *cobra.Command {
 				return
 			}
 
-			for i := 0; i < len(cmdArgs); i++ {
+			for i := range cmdArgs {
 				vtype := cmdArgs[i]
 				val := util.ValueToString(vtype, callResults[i])
 				log.Printf("[%v]: %s\n", i, val)

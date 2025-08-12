@@ -8,24 +8,22 @@ import (
 	"time"
 
 	"fortio.org/safecast"
-
-	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/iotaledger/hive.go/log"
-	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
-
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/inputs"
 	gpautils "github.com/iotaledger/wasp/v2/packages/chain/statemanager/gpa/utils"
+	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/utils"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/origin"
 	"github.com/iotaledger/wasp/v2/packages/parameters/parameterstest"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/util"
 	"github.com/iotaledger/wasp/v2/packages/util/timeutil"
@@ -126,7 +124,7 @@ func (teT *testEnv) addVariedNodes(
 		smLog := teT.log.NewChildLogger(nodeID.ShortString())
 		nr := utils.NewNodeRandomiser(nodeID, nodeIDs, smLog)
 		wal := createWALFun(nodeID)
-		store := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+		store := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 		snapshotManager := createSnapMFun(nodeID, teT.bf.GetStore(), store, teT.parameters.TimeProvider, smLog)
 		loadedSnapshotStateIndex := snapshotManager.GetLoadedSnapshotStateIndex()
 		stores[nodeID] = store

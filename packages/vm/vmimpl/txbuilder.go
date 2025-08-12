@@ -37,11 +37,9 @@ func (vmctx *vmContext) restoreTxBuilderSnapshot(snapshot vmtxbuilder.Transactio
 }
 
 func (vmctx *vmContext) deductTopUpFeeFromCommonAccount(fee coin.Value) {
-	bal := isc.NewCoinBalances()
-	bal.AddBaseTokens(fee)
 	vmctx.withStateUpdate(func(chainState kv.KVStore) {
 		vmctx.accountsStateWriterFromChainState(chainState).
-			DebitFromAccount(accounts.CommonAccount(), bal)
+			DebitFromAccount(accounts.CommonAccount(), isc.NewCoinBalances().AddBaseTokens(fee))
 	})
 }
 

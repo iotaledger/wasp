@@ -39,6 +39,10 @@ func (ros *readOnlyStore) SetLatest(trie.Hash) error {
 	return fmt.Errorf("cannot write to read-only store")
 }
 
+func (ros *readOnlyStore) ClearLatest() error {
+	return fmt.Errorf("cannot write to read-only store")
+}
+
 func (ros *readOnlyStore) LatestBlockIndex() (uint32, error) {
 	return ros.store.LatestBlockIndex()
 }
@@ -67,11 +71,11 @@ func (ros *readOnlyStore) NewEmptyStateDraft(prevL1Commitment *state.L1Commitmen
 	return nil, fmt.Errorf("cannot create empty state draft in read-only store")
 }
 
-func (ros *readOnlyStore) Commit(state.StateDraft) state.Block {
+func (ros *readOnlyStore) Commit(state.StateDraft) (state.Block, bool, *trie.CommitStats, error) {
 	panic("Cannot commit to read-only store")
 }
 
-func (ros *readOnlyStore) ExtractBlock(stateDraft state.StateDraft) state.Block {
+func (ros *readOnlyStore) ExtractBlock(stateDraft state.StateDraft) (state.Block, error) {
 	return ros.store.ExtractBlock(stateDraft)
 }
 
@@ -87,6 +91,14 @@ func (ros *readOnlyStore) TakeSnapshot(trieRoot trie.Hash, w io.Writer) error {
 	return ros.store.TakeSnapshot(trieRoot, w)
 }
 
-func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, io.Reader) error {
+func (ros *readOnlyStore) RestoreSnapshot(trie.Hash, io.Reader, bool) error {
 	return fmt.Errorf("cannot write snapshot into read-only store")
+}
+
+func (ros *readOnlyStore) IsRefcountsEnabled() bool {
+	return ros.store.IsRefcountsEnabled()
+}
+
+func (ros *readOnlyStore) CheckIntegrity(w io.Writer) {
+	ros.store.CheckIntegrity(w)
 }

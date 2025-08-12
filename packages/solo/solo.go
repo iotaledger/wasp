@@ -35,6 +35,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/publisher"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/state/indexedstore"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/l1starter"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 	"github.com/iotaledger/wasp/v2/packages/transaction"
@@ -207,7 +208,7 @@ func (env *Solo) IterateChainLatestStates(
 	slices.SortFunc(chainIDs, func(a, b isc.ChainID) int { return bytes.Compare(a.Bytes(), b.Bytes()) })
 	for _, chID := range chainIDs {
 		ch := env.chains[chID]
-		store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(ch.db))
+		store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(ch.db))
 		state, err := store.LatestState()
 		require.NoError(env.T, err)
 		state.IterateSorted(prefix, func(k kv.Key, v []byte) bool {
@@ -285,7 +286,7 @@ func (env *Solo) deployChain(chainAdmin *cryptolib.KeyPair, initCommonAccountBas
 
 	schemaVersion := allmigrations.DefaultScheme.LatestSchemaVersion()
 	db := mapdb.NewMapDB()
-	store := indexedstore.New(state.NewStoreWithUniqueWriteMutex(db))
+	store := indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(db))
 
 	gasCoinRef := env.makeBaseTokenCoin(anchorOwner, isc.GasCoinTargetValue, nil)
 	env.logger.LogInfof("Chain Originator address: %v\n", anchorOwner)
@@ -407,7 +408,7 @@ func (env *Solo) addChain(chData chainData) *Chain {
 	ch := &Chain{
 		chainData:       chData,
 		Env:             env,
-		store:           indexedstore.New(state.NewStoreWithUniqueWriteMutex(chData.db)),
+		store:           indexedstore.New(statetest.NewStoreWithUniqueWriteMutex(chData.db)),
 		proc:            env.processorConfig,
 		log:             env.logger.NewChildLogger(chData.Name),
 		migrationScheme: chData.migrationScheme,

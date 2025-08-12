@@ -321,8 +321,12 @@ func (c *ChainRunner) activateWithoutLocking() error { //nolint:funlen
 	stateManagerParameters.PruningMinStatesToKeep = c.smPruningMinStatesToKeep
 	stateManagerParameters.PruningMaxStatesToDelete = c.smPruningMaxStatesToDelete
 
-	// Initialize Snapshotter
-	chainStore := indexedstore.New(state.NewStoreWithMetrics(chainKVStore, writeMutex, chainMetrics.State))
+	refcountsEnabled := c.smPruningMinStatesToKeep > 0
+	store, err := state.NewStoreWithMetrics(chainKVStore, refcountsEnabled, writeMutex, chainMetrics.State)
+	if err != nil {
+		panic(fmt.Sprintf("cannot initialize store: %s", err.Error()))
+	}
+	chainStore := indexedstore.New(store)
 	chainCtx, chainCancel := context.WithCancel(c.ctx)
 	validatorAgentID := accounts.CommonAccount()
 	if c.validatorFeeAddr != nil {

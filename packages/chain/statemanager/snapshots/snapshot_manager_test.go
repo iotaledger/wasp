@@ -20,6 +20,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/state"
+	"github.com/iotaledger/wasp/v2/packages/state/statetest"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
 
@@ -212,7 +213,7 @@ func testSnapshotManagerAny(
 	} else {
 		snapshotToLoad = nil
 	}
-	storeNew := state.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
+	storeNew := statetest.NewStoreWithUniqueWriteMutex(mapdb.NewMapDB())
 	snapshotManagerNew := createNewNodeFun(factory.GetChainID(), snapshotToLoad, storeNew, log)
 	require.Equal(t, uint32(snapshotToLoadStateIndex), snapshotManagerNew.GetLoadedSnapshotStateIndex())
 

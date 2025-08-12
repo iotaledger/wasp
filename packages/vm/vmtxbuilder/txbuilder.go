@@ -115,35 +115,38 @@ func (txb *AnchorTransactionBuilder) BuildTransactionEssence(stateMetadata []byt
 	if txb.ptb == nil {
 		txb.ptb = iotago.NewProgrammableTransactionBuilder()
 	}
-	ptb := iscmoveclient.PTBReceiveRequestsAndTransition(
-		txb.ptb,
-		txb.iscPackage,
-		txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
-		txb.consumed,
-		txb.sent,
-		stateMetadata,
-		topUpAmount,
-	)
 
-	if txb.rotateToAddr != nil {
-		ptb.Command(iotago.Command{
+	isRotation := txb.rotateToAddr != nil
+
+	if isRotation {
+		txb.ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
-					ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+					txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
 				},
-				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+				Address: txb.ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
-		ptb.Command(iotago.Command{
+		txb.ptb.Command(iotago.Command{
 			TransferObjects: &iotago.ProgrammableTransferObjects{
 				Objects: []iotago.Argument{
 					iotago.GetArgumentGasCoin(),
 				},
-				Address: ptb.MustForceSeparatePure(txb.rotateToAddr),
+				Address: txb.ptb.MustForceSeparatePure(txb.rotateToAddr),
 			},
 		})
+	} else {
+		txb.ptb = iscmoveclient.PTBReceiveRequestsAndTransition(
+			txb.ptb,
+			txb.iscPackage,
+			txb.ptb.MustObj(iotago.ObjectArg{ImmOrOwnedObject: txb.anchor.GetObjectRef()}),
+			txb.consumed,
+			txb.sent,
+			stateMetadata,
+			topUpAmount,
+		)
 	}
-	return ptb.Finish()
+	return txb.ptb.Finish()
 }
 
 func (txb *AnchorTransactionBuilder) ViewPTB() *iotago.ProgrammableTransactionBuilder {
