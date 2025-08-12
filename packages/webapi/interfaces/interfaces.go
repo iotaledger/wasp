@@ -34,10 +34,9 @@ type APIController interface {
 }
 
 type ChainService interface {
-	ActivateChain(chainID isc.ChainID) error
+	ActivateChain() error
 	SetChainRecord(chainRecord *registry.ChainRecord) error
 	DeactivateChain() error
-	GetAllChainIDs() ([]isc.ChainID, error)
 	GetChain() (chain.Chain, error)
 	GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error)
 	GetContracts(blockIndexOrTrieRoot string) ([]lo.Tuple2[*isc.Hname, *root.ContractRecord], error)
@@ -71,7 +70,7 @@ type NodeService interface {
 }
 
 type RegistryService interface {
-	GetChainRecordByChainID() (*registry.ChainRecord, error)
+	GetChainRecord() (*registry.ChainRecord, error)
 }
 
 type CommitteeService interface {

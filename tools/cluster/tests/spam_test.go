@@ -98,7 +98,7 @@ func (e *ChainEnv) testSpamOnledger(t *testing.T) {
 
 	for range numRequests {
 		tx := <-txCh
-		_, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, &tx, false, 30*time.Second)
+		_, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), &tx, false, 30*time.Second)
 		require.NoError(t, err)
 	}
 
@@ -154,7 +154,7 @@ func (e *ChainEnv) testSpamOffLedger(t *testing.T) {
 				}
 				reqSentTime := time.Now()
 				// wait for the request to be processed
-				_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 1*time.Minute)
+				_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), req.ID(), false, 1*time.Minute)
 				if err != nil {
 					reqErrorChan <- err
 					return
@@ -241,7 +241,7 @@ func (e *ChainEnv) testSpamEVM(t *testing.T) {
 
 	// await txs confirmed
 	for _, tx := range transactions {
-		_, err2 := e.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, tx.Hash(), false, 30*time.Second)
+		_, err2 := e.Clu.MultiClient().WaitUntilEVMRequestProcessedSuccessfully(context.Background(), tx.Hash(), false, 30*time.Second)
 		require.NoError(t, err2)
 	}
 

@@ -226,7 +226,7 @@ func (c *ChainRunner) Run(ctx context.Context) error {
 	}).Unhook
 	c.cleanupFunc = unhook
 
-	return c.activateFromRegistry() //nolint:contextcheck
+	return c.activateWithoutLocking() //nolint:contextcheck
 }
 
 func (c *ChainRunner) Close() {
@@ -260,32 +260,8 @@ func (c *ChainRunner) chainAccessUpdatedCB(accessNodes []*cryptolib.PublicKey) {
 	c.accessMgr.ChainAccessNodes(accessNodes)
 }
 
-func (c *ChainRunner) activateFromRegistry() error {
-	var innerErr error
-	var activatedChainID isc.ChainID
-	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool {
-		if !activatedChainID.Empty() {
-			innerErr = fmt.Errorf("more than one active chain in the registry: %s and %s", activatedChainID.String(), chainRecord.ChainID().String())
-			return false
-		}
-
-		chainID := chainRecord.ChainID()
-		if err := c.activateWithoutLocking(chainID); err != nil {
-			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
-			return false
-		}
-
-		activatedChainID = chainID
-		return true
-	}); err != nil {
-		return err
-	}
-
-	return innerErr
-}
-
 // activateWithoutLocking activates a chain in the node.
-func (c *ChainRunner) activateWithoutLocking(chainID isc.ChainID) error { //nolint:funlen
+func (c *ChainRunner) activateWithoutLocking() error { //nolint:funlen
 	if c.ctx == nil {
 		return errors.New("run chains first")
 	}
@@ -296,27 +272,25 @@ func (c *ChainRunner) activateWithoutLocking(chainID isc.ChainID) error { //noli
 	//
 	// Check, maybe it is already running.
 	if c.chain != nil {
-		if c.chain.ID() == chainID {
-			c.log.LogDebugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
-			return nil
-		}
-
-		return fmt.Errorf("cannot activate chain %v, another chain is already running: %v", chainID.ShortString(), c.chain.ID().ShortString())
+		c.log.LogDebugf("Chain is already activated")
+		return nil
 	}
 
 	//
 	// Activate the chain in the persistent store, if it is not activated yet.
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord()
 	if err != nil {
-		return fmt.Errorf("cannot get chain record for %v: %w", err)
+		return fmt.Errorf("chain record does not exist: %w", err)
 	}
 	if !chainRecord.Active {
-		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err2 != nil {
+		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(); err2 != nil {
 			return fmt.Errorf("cannot activate chain: %w", err2)
 		}
 	}
 
-	chainKVStore, writeMutex, err := c.chainStateStoreProvider(c.chain.ID())
+	chainID := chainRecord.ChainID()
+
+	chainKVStore, writeMutex, err := c.chainStateStoreProvider(chainID)
 	if err != nil {
 		return fmt.Errorf("error when creating chain KV store: %w", err)
 	}
@@ -415,11 +389,11 @@ func (c *ChainRunner) activateWithoutLocking(chainID isc.ChainID) error { //noli
 }
 
 // Activate activates a chain in the node.
-func (c *ChainRunner) Activate(chainID isc.ChainID) error {
+func (c *ChainRunner) Activate() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	return c.activateWithoutLocking(chainID)
+	return c.activateWithoutLocking()
 }
 
 // Deactivate a chain in the node.
@@ -432,7 +406,7 @@ func (c *ChainRunner) Deactivate() error {
 		return nil
 	}
 
-	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(c.chain.ID()); err != nil {
+	if _, err := c.chainRecordRegistryProvider.DeactivateChainRecord(); err != nil {
 		return fmt.Errorf("cannot deactivate chain %v: %w", err)
 	}
 

@@ -26,7 +26,6 @@ func TestMissingRequests(t *testing.T) {
 
 	chain, err := clu.DeployChain(clu.Config.AllNodes(), cmt, threshold, addr)
 	require.NoError(t, err)
-	chainID := chain.ChainID
 
 	chEnv := newChainEnv(t, clu, chain)
 

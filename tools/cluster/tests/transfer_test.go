@@ -37,7 +37,7 @@ func TestDepositWithdraw(t *testing.T) {
 	reqTx, err := chClient.PostRequest(context.Background(), accounts.FuncDeposit.Message(), params)
 	require.NoError(t, err)
 
-	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), e.Chain.ChainID, reqTx, true, 30*time.Second)
+	receipts, err := e.Chain.CommitteeMultiClient().WaitUntilAllRequestsProcessedSuccessfully(context.Background(), reqTx, true, 30*time.Second)
 	require.NoError(t, err)
 
 	gasFees1, err := util.DecodeUint64(receipts[0].GasFeeCharged)
@@ -57,7 +57,7 @@ func TestDepositWithdraw(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	receipt, err := e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), true, 30*time.Second)
+	receipt, err := e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), req.ID(), true, 30*time.Second)
 	require.NoError(t, err)
 
 	gasFees2, err := util.DecodeUint64(receipt.GasFeeCharged)

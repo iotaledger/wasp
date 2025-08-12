@@ -18,6 +18,6 @@ func NewRegistryService(chainsProvider chains.Provider, chainRecordRegistryProvi
 	}
 }
 
-func (c *RegistryService) GetChainRecordByChainID() (*registry.ChainRecord, error) {
-	return c.chainRecordRegistryProvider.ChainRecord(chainID)
+func (c *RegistryService) GetChainRecord() (*registry.ChainRecord, error) {
+	return c.chainRecordRegistryProvider.ChainRecord()
 }

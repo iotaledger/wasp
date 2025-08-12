@@ -69,7 +69,7 @@ func EVMEstimateGas(
 	blockTime := time.Now()
 	executable := func(gas uint64) (failed bool, result *vm.RequestResult, err error) {
 		call.Gas = gas
-		iscReq := isc.NewEVMOffLedgerCallRequest(info.ChainID, call)
+		iscReq := isc.NewEVMOffLedgerCallRequest(call)
 		res, err := runISCRequest(
 			anchor,
 			l1Params,

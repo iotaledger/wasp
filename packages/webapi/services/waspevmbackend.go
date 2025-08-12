@@ -65,7 +65,7 @@ func (b *WaspEVMBackend) EVMSendTransaction(tx *types.Transaction) error {
 		return core.ErrIntrinsicGas
 	}
 
-	req, err := isc.NewEVMOffLedgerTxRequest(b.chain.ID(), tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(tx)
 	if err != nil {
 		return err
 	}
@@ -123,12 +123,7 @@ func (b *WaspEVMBackend) EVMTrace(
 }
 
 func (b *WaspEVMBackend) ISCCallView(chainState state.State, msg isc.Message) (isc.CallArguments, error) {
-	latestAnchor, err := b.chain.LatestAnchor(chain.ActiveOrCommittedState)
-	if err != nil {
-		return nil, err
-	}
 	return chainutil.CallView(
-		latestAnchor.ChainID(),
 		chainState,
 		b.chain.Processors(),
 		b.chain.Log(),

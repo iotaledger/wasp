@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/samber/lo"
@@ -47,25 +48,25 @@ func NewChainService(
 }
 
 func (c *ChainService) ActivateChain() error {
-	_, err := c.chainRecordRegistryProvider.ActivateChainRecord(chainID)
+	_, err := c.chainRecordRegistryProvider.ActivateChainRecord()
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Activate(chainID)
+	return c.chainsProvider().Activate()
 }
 
 func (c *ChainService) DeactivateChain() error {
-	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord(chainID)
+	_, err := c.chainRecordRegistryProvider.DeactivateChainRecord()
 	if err != nil {
 		return err
 	}
 
-	return c.chainsProvider().Deactivate(chainID)
+	return c.chainsProvider().Deactivate()
 }
 
 func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
-	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord(chainRecord.ChainID())
+	storedChainRec, err := c.chainRecordRegistryProvider.ChainRecord()
 	if err != nil {
 		return err
 	}
@@ -73,8 +74,12 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	c.log.LogInfof("StoredChainRec %v %v", storedChainRec, err)
 
 	if storedChainRec != nil {
+		if storedChainRec.ChainID() != chainRecord.ChainID() {
+			return fmt.Errorf("cannot update chain record with different chain ID: %v != %v",
+				storedChainRec.ChainID().String(), chainRecord.ChainID().String())
+		}
+
 		_, err = c.chainRecordRegistryProvider.UpdateChainRecord(
-			chainRecord.ChainID(),
 			func(rec *registry.ChainRecord) bool {
 				rec.AccessNodes = chainRecord.AccessNodes
 				rec.Active = chainRecord.Active
@@ -87,7 +92,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 			return err
 		}
 	} else {
-		if err := c.chainRecordRegistryProvider.SaveChainRecord(chainRecord); err != nil {
+		if err := c.chainRecordRegistryProvider.SetChainRecord(chainRecord); err != nil {
 			c.log.LogInfof("AddChainRec %v %v", chainRecord, err)
 
 			return err
@@ -98,11 +103,11 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	c.log.LogInfof("Chainrecord active %v", chainRecord.Active)
 
 	if chainRecord.Active {
-		if err := c.chainsProvider().Activate(chainRecord.ChainID()); err != nil {
+		if err := c.chainsProvider().Activate(); err != nil {
 			return err
 		}
 	} else if storedChainRec != nil {
-		if err := c.chainsProvider().Deactivate(chainRecord.ChainID()); err != nil {
+		if err := c.chainsProvider().Deactivate(); err != nil {
 			return err
 		}
 	}
@@ -111,7 +116,7 @@ func (c *ChainService) SetChainRecord(chainRecord *registry.ChainRecord) error {
 }
 
 func (c *ChainService) GetChain() (chainpkg.Chain, error) {
-	return c.chainsProvider().GetFirst()
+	return c.chainsProvider().Get()
 }
 
 func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error) {
@@ -126,28 +131,13 @@ func (c *ChainService) GetEVMChainID(blockIndexOrTrieRoot string) (uint16, error
 	return evm.ViewGetChainID.DecodeOutput(ret)
 }
 
-func (c *ChainService) GetAllChainIDs() ([]isc.ChainID, error) {
-	records, err := c.chainRecordRegistryProvider.ChainRecords()
-	if err != nil {
-		return nil, err
-	}
-
-	chainIDs := make([]isc.ChainID, 0, len(records))
-
-	for _, chainRecord := range records {
-		chainIDs = append(chainIDs, chainRecord.ChainID())
-	}
-
-	return chainIDs, nil
-}
-
 func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo, error) {
 	ch, err := c.GetChain()
 	if err != nil {
 		return nil, err
 	}
 
-	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(ch.ID())
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord()
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +151,7 @@ func (c *ChainService) GetChainInfo(blockIndexOrTrieRoot string) (*dto.ChainInfo
 		return nil, err
 	}
 
-	chainInfo := dto.MapChainInfo(governanceChainInfo, chainRecord.Active)
+	chainInfo := dto.MapChainInfo(ch.ID(), governanceChainInfo, chainRecord.Active)
 
 	return chainInfo, nil
 }

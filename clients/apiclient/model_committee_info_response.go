@@ -11,8 +11,8 @@ API version: 0
 package apiclient
 
 import (
-	"bytes"
 	"encoding/json"
+	"bytes"
 	"fmt"
 )
 
@@ -31,7 +31,7 @@ type CommitteeInfoResponse struct {
 	ChainId string `json:"chainId"`
 	// A list of all committee nodes and their peering info.
 	CommitteeNodes []CommitteeNode `json:"committeeNodes"`
-	StateAddress   string          `json:"stateAddress"`
+	StateAddress string `json:"stateAddress"`
 }
 
 type _CommitteeInfoResponse CommitteeInfoResponse
@@ -40,7 +40,7 @@ type _CommitteeInfoResponse CommitteeInfoResponse
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewCommitteeInfoResponse(accessNodes []CommitteeNode, active bool, candidateNodes []CommitteeNode, committeeNodes []CommitteeNode, stateAddress string) *CommitteeInfoResponse {
+func NewCommitteeInfoResponse(accessNodes []CommitteeNode, active bool, candidateNodes []CommitteeNode, chainId string, committeeNodes []CommitteeNode, stateAddress string) *CommitteeInfoResponse {
 	this := CommitteeInfoResponse{}
 	this.AccessNodes = accessNodes
 	this.Active = active
@@ -204,7 +204,7 @@ func (o *CommitteeInfoResponse) SetStateAddress(v string) {
 }
 
 func (o CommitteeInfoResponse) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
+	toSerialize,err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -240,10 +240,10 @@ func (o *CommitteeInfoResponse) UnmarshalJSON(data []byte) (err error) {
 	err = json.Unmarshal(data, &allProperties)
 
 	if err != nil {
-		return err
+		return err;
 	}
 
-	for _, requiredProperty := range requiredProperties {
+	for _, requiredProperty := range(requiredProperties) {
 		if _, exists := allProperties[requiredProperty]; !exists {
 			return fmt.Errorf("no value given for required property %v", requiredProperty)
 		}
@@ -299,3 +299,5 @@ func (v *NullableCommitteeInfoResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+

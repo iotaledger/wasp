@@ -13,7 +13,6 @@ type ISCEvent struct {
 	Kind      publisher.ISCEventType `json:"kind"`
 	Issuer    string                 `json:"issuer"`    // (isc.AgentID) nil means issued by the VM
 	RequestID string                 `json:"requestID"` // (isc.RequestID)
-	ChainID   string                 `json:"chainID"`   // (isc.ChainID)
 	Payload   any                    `json:"payload"`
 }
 
@@ -27,7 +26,6 @@ func MapISCEvent[T any](iscEvent *publisher.ISCEvent[T], mappedPayload any) *ISC
 
 	return &ISCEvent{
 		Kind:      iscEvent.Kind,
-		ChainID:   iscEvent.ChainID.String(),
 		RequestID: iscEvent.RequestID.String(),
 		Issuer:    issuer,
 		Payload:   mappedPayload,
@@ -61,7 +59,7 @@ func batch(callbacks ...func()) func() {
 func (p *EventHandler) AttachToEvents() context.CancelFunc {
 	return batch(
 		p.publisher.Events.NewBlock.Hook(func(block *publisher.ISCEvent[*publisher.BlockWithTrieRoot]) {
-			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
+			if !p.subscriptionValidator.shouldProcessEvent(block.Kind) {
 				return
 			}
 
@@ -71,7 +69,7 @@ func (p *EventHandler) AttachToEvents() context.CancelFunc {
 		}).Unhook,
 
 		p.publisher.Events.RequestReceipt.Hook(func(block *publisher.ISCEvent[*publisher.ReceiptWithError]) {
-			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
+			if !p.subscriptionValidator.shouldProcessEvent(block.Kind) {
 				return
 			}
 
@@ -81,7 +79,7 @@ func (p *EventHandler) AttachToEvents() context.CancelFunc {
 		}).Unhook,
 
 		p.publisher.Events.BlockEvents.Hook(func(block *publisher.ISCEvent[[]*isc.Event]) {
-			if !p.subscriptionValidator.shouldProcessEvent(block.ChainID.String(), block.Kind) {
+			if !p.subscriptionValidator.shouldProcessEvent(block.Kind) {
 				return
 			}
 

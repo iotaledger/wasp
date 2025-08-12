@@ -72,7 +72,7 @@ func (p *Service) onClientCreated(client *websockethub.Client) {
 
 	go func() {
 		unhook := p.publisherEvent.Hook(func(iscEvent *ISCEvent) {
-			if !p.subscriptionValidator.isClientAllowed(client, iscEvent.ChainID, iscEvent.Kind) {
+			if !p.subscriptionValidator.isClientAllowed(client, iscEvent.Kind) {
 				return
 			}
 

@@ -19,13 +19,14 @@ import (
 	"strings"
 )
 
+
 // ChainsAPIService ChainsAPI service
 type ChainsAPIService service
 
 type ApiActivateChainRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	chainID    string
+	chainID string
 }
 
 func (r ApiActivateChainRequest) Execute() (*http.Response, error) {
@@ -35,24 +36,24 @@ func (r ApiActivateChainRequest) Execute() (*http.Response, error) {
 /*
 ActivateChain Activate a chain
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param chainID ChainID (Hex Address)
-	@return ApiActivateChainRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param chainID ChainID (Hex Address)
+ @return ApiActivateChainRequest
 */
 func (a *ChainsAPIService) ActivateChain(ctx context.Context, chainID string) ApiActivateChainRequest {
 	return ApiActivateChainRequest{
 		ApiService: a,
-		ctx:        ctx,
-		chainID:    chainID,
+		ctx: ctx,
+		chainID: chainID,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) ActivateChainExecute(r ApiActivateChainRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPost
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.ActivateChain")
@@ -127,8 +128,8 @@ func (a *ChainsAPIService) ActivateChainExecute(r ApiActivateChainRequest) (*htt
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -137,9 +138,9 @@ func (a *ChainsAPIService) ActivateChainExecute(r ApiActivateChainRequest) (*htt
 }
 
 type ApiAddAccessNodeRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	peer       string
+	peer string
 }
 
 func (r ApiAddAccessNodeRequest) Execute() (*http.Response, error) {
@@ -149,24 +150,24 @@ func (r ApiAddAccessNodeRequest) Execute() (*http.Response, error) {
 /*
 AddAccessNode Configure a trusted node to be an access node.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param peer Name or PubKey (hex) of the trusted peer
-	@return ApiAddAccessNodeRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param peer Name or PubKey (hex) of the trusted peer
+ @return ApiAddAccessNodeRequest
 */
 func (a *ChainsAPIService) AddAccessNode(ctx context.Context, peer string) ApiAddAccessNodeRequest {
 	return ApiAddAccessNodeRequest{
 		ApiService: a,
-		ctx:        ctx,
-		peer:       peer,
+		ctx: ctx,
+		peer: peer,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPut
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPut
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.AddAccessNode")
@@ -241,8 +242,8 @@ func (a *ChainsAPIService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -251,8 +252,8 @@ func (a *ChainsAPIService) AddAccessNodeExecute(r ApiAddAccessNodeRequest) (*htt
 }
 
 type ApiCallViewRequest struct {
-	ctx                     context.Context
-	ApiService              *ChainsAPIService
+	ctx context.Context
+	ApiService *ChainsAPIService
 	contractCallViewRequest *ContractCallViewRequest
 }
 
@@ -271,25 +272,24 @@ CallView Call a view function on a contract by Hname
 
 Execute a view call. Either use HName or Name properties. If both are supplied, HName are used.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiCallViewRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiCallViewRequest
 */
 func (a *ChainsAPIService) CallView(ctx context.Context) ApiCallViewRequest {
 	return ApiCallViewRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return []string
+//  @return []string
 func (a *ChainsAPIService) CallViewExecute(r ApiCallViewRequest) ([]string, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue []string
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  []string
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.CallView")
@@ -363,7 +363,7 @@ func (a *ChainsAPIService) CallViewExecute(r ApiCallViewRequest) ([]string, *htt
 }
 
 type ApiDeactivateChainRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
 }
 
@@ -374,22 +374,22 @@ func (r ApiDeactivateChainRequest) Execute() (*http.Response, error) {
 /*
 DeactivateChain Deactivate a chain
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiDeactivateChainRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiDeactivateChainRequest
 */
 func (a *ChainsAPIService) DeactivateChain(ctx context.Context) ApiDeactivateChainRequest {
 	return ApiDeactivateChainRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPost
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.DeactivateChain")
@@ -463,8 +463,8 @@ func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -473,7 +473,7 @@ func (a *ChainsAPIService) DeactivateChainExecute(r ApiDeactivateChainRequest) (
 }
 
 type ApiDumpAccountsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
 }
 
@@ -484,22 +484,22 @@ func (r ApiDumpAccountsRequest) Execute() (*http.Response, error) {
 /*
 DumpAccounts dump accounts information into a humanly-readable format
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiDumpAccountsRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiDumpAccountsRequest
 */
 func (a *ChainsAPIService) DumpAccounts(ctx context.Context) ApiDumpAccountsRequest {
 	return ApiDumpAccountsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) DumpAccountsExecute(r ApiDumpAccountsRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPost
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.DumpAccounts")
@@ -573,8 +573,8 @@ func (a *ChainsAPIService) DumpAccountsExecute(r ApiDumpAccountsRequest) (*http.
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -583,9 +583,9 @@ func (a *ChainsAPIService) DumpAccountsExecute(r ApiDumpAccountsRequest) (*http.
 }
 
 type ApiEstimateGasOffledgerRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	request    *EstimateGasRequestOffledger
+	request *EstimateGasRequestOffledger
 }
 
 // Request
@@ -601,25 +601,24 @@ func (r ApiEstimateGasOffledgerRequest) Execute() (*ReceiptResponse, *http.Respo
 /*
 EstimateGasOffledger Estimates gas for a given off-ledger ISC request
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiEstimateGasOffledgerRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiEstimateGasOffledgerRequest
 */
 func (a *ChainsAPIService) EstimateGasOffledger(ctx context.Context) ApiEstimateGasOffledgerRequest {
 	return ApiEstimateGasOffledgerRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ReceiptResponse
+//  @return ReceiptResponse
 func (a *ChainsAPIService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledgerRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ReceiptResponse
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.EstimateGasOffledger")
@@ -693,9 +692,9 @@ func (a *ChainsAPIService) EstimateGasOffledgerExecute(r ApiEstimateGasOffledger
 }
 
 type ApiEstimateGasOnledgerRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	request    *EstimateGasRequestOnledger
+	request *EstimateGasRequestOnledger
 }
 
 // Request
@@ -711,25 +710,24 @@ func (r ApiEstimateGasOnledgerRequest) Execute() (*ReceiptResponse, *http.Respon
 /*
 EstimateGasOnledger Estimates gas for a given on-ledger ISC request
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiEstimateGasOnledgerRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiEstimateGasOnledgerRequest
 */
 func (a *ChainsAPIService) EstimateGasOnledger(ctx context.Context) ApiEstimateGasOnledgerRequest {
 	return ApiEstimateGasOnledgerRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ReceiptResponse
+//  @return ReceiptResponse
 func (a *ChainsAPIService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodPost
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ReceiptResponse
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.EstimateGasOnledger")
@@ -803,9 +801,9 @@ func (a *ChainsAPIService) EstimateGasOnledgerExecute(r ApiEstimateGasOnledgerRe
 }
 
 type ApiGetChainInfoRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -821,25 +819,24 @@ func (r ApiGetChainInfoRequest) Execute() (*ChainInfoResponse, *http.Response, e
 /*
 GetChainInfo Get information about a specific chain
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGetChainInfoRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGetChainInfoRequest
 */
 func (a *ChainsAPIService) GetChainInfo(ctx context.Context) ApiGetChainInfoRequest {
 	return ApiGetChainInfoRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ChainInfoResponse
+//  @return ChainInfoResponse
 func (a *ChainsAPIService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*ChainInfoResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ChainInfoResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ChainInfoResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetChainInfo")
@@ -911,9 +908,9 @@ func (a *ChainsAPIService) GetChainInfoExecute(r ApiGetChainInfoRequest) (*Chain
 }
 
 type ApiGetCommitteeInfoRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -929,25 +926,24 @@ func (r ApiGetCommitteeInfoRequest) Execute() (*CommitteeInfoResponse, *http.Res
 /*
 GetCommitteeInfo Get information about the deployed committee
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGetCommitteeInfoRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGetCommitteeInfoRequest
 */
 func (a *ChainsAPIService) GetCommitteeInfo(ctx context.Context) ApiGetCommitteeInfoRequest {
 	return ApiGetCommitteeInfoRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return CommitteeInfoResponse
+//  @return CommitteeInfoResponse
 func (a *ChainsAPIService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest) (*CommitteeInfoResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *CommitteeInfoResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *CommitteeInfoResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetCommitteeInfo")
@@ -1024,8 +1020,8 @@ func (a *ChainsAPIService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest)
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1043,9 +1039,9 @@ func (a *ChainsAPIService) GetCommitteeInfoExecute(r ApiGetCommitteeInfoRequest)
 }
 
 type ApiGetContractsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1061,25 +1057,24 @@ func (r ApiGetContractsRequest) Execute() ([]ContractInfoResponse, *http.Respons
 /*
 GetContracts Get all available chain contracts
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGetContractsRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGetContractsRequest
 */
 func (a *ChainsAPIService) GetContracts(ctx context.Context) ApiGetContractsRequest {
 	return ApiGetContractsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return []ContractInfoResponse
+//  @return []ContractInfoResponse
 func (a *ChainsAPIService) GetContractsExecute(r ApiGetContractsRequest) ([]ContractInfoResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue []ContractInfoResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  []ContractInfoResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetContracts")
@@ -1156,8 +1151,8 @@ func (a *ChainsAPIService) GetContractsExecute(r ApiGetContractsRequest) ([]Cont
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1175,7 +1170,7 @@ func (a *ChainsAPIService) GetContractsExecute(r ApiGetContractsRequest) ([]Cont
 }
 
 type ApiGetMempoolContentsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
 }
 
@@ -1186,25 +1181,24 @@ func (r ApiGetMempoolContentsRequest) Execute() ([]int32, *http.Response, error)
 /*
 GetMempoolContents Get the contents of the mempool.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGetMempoolContentsRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGetMempoolContentsRequest
 */
 func (a *ChainsAPIService) GetMempoolContents(ctx context.Context) ApiGetMempoolContentsRequest {
 	return ApiGetMempoolContentsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return []int32
+//  @return []int32
 func (a *ChainsAPIService) GetMempoolContentsExecute(r ApiGetMempoolContentsRequest) ([]int32, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue []int32
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  []int32
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetMempoolContents")
@@ -1278,8 +1272,8 @@ func (a *ChainsAPIService) GetMempoolContentsExecute(r ApiGetMempoolContentsRequ
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1297,9 +1291,9 @@ func (a *ChainsAPIService) GetMempoolContentsExecute(r ApiGetMempoolContentsRequ
 }
 
 type ApiGetReceiptRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	requestID  string
+	requestID string
 }
 
 func (r ApiGetReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error) {
@@ -1309,27 +1303,26 @@ func (r ApiGetReceiptRequest) Execute() (*ReceiptResponse, *http.Response, error
 /*
 GetReceipt Get a receipt from a request ID
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param requestID RequestID (Hex)
-	@return ApiGetReceiptRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param requestID RequestID (Hex)
+ @return ApiGetReceiptRequest
 */
 func (a *ChainsAPIService) GetReceipt(ctx context.Context, requestID string) ApiGetReceiptRequest {
 	return ApiGetReceiptRequest{
 		ApiService: a,
-		ctx:        ctx,
-		requestID:  requestID,
+		ctx: ctx,
+		requestID: requestID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ReceiptResponse
+//  @return ReceiptResponse
 func (a *ChainsAPIService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ReceiptResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetReceipt")
@@ -1399,9 +1392,9 @@ func (a *ChainsAPIService) GetReceiptExecute(r ApiGetReceiptRequest) (*ReceiptRe
 }
 
 type ApiGetStateValueRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	stateKey   string
+	stateKey string
 }
 
 func (r ApiGetStateValueRequest) Execute() (*StateResponse, *http.Response, error) {
@@ -1411,27 +1404,26 @@ func (r ApiGetStateValueRequest) Execute() (*StateResponse, *http.Response, erro
 /*
 GetStateValue Fetch the raw value associated with the given key in the chain state
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param stateKey State Key (Hex)
-	@return ApiGetStateValueRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param stateKey State Key (Hex)
+ @return ApiGetStateValueRequest
 */
 func (a *ChainsAPIService) GetStateValue(ctx context.Context, stateKey string) ApiGetStateValueRequest {
 	return ApiGetStateValueRequest{
 		ApiService: a,
-		ctx:        ctx,
-		stateKey:   stateKey,
+		ctx: ctx,
+		stateKey: stateKey,
 	}
 }
 
 // Execute executes the request
-//
-//	@return StateResponse
+//  @return StateResponse
 func (a *ChainsAPIService) GetStateValueExecute(r ApiGetStateValueRequest) (*StateResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *StateResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *StateResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.GetStateValue")
@@ -1501,9 +1493,9 @@ func (a *ChainsAPIService) GetStateValueExecute(r ApiGetStateValueRequest) (*Sta
 }
 
 type ApiRemoveAccessNodeRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
-	peer       string
+	peer string
 }
 
 func (r ApiRemoveAccessNodeRequest) Execute() (*http.Response, error) {
@@ -1513,24 +1505,24 @@ func (r ApiRemoveAccessNodeRequest) Execute() (*http.Response, error) {
 /*
 RemoveAccessNode Remove an access node.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param peer Name or PubKey (hex) of the trusted peer
-	@return ApiRemoveAccessNodeRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param peer Name or PubKey (hex) of the trusted peer
+ @return ApiRemoveAccessNodeRequest
 */
 func (a *ChainsAPIService) RemoveAccessNode(ctx context.Context, peer string) ApiRemoveAccessNodeRequest {
 	return ApiRemoveAccessNodeRequest{
 		ApiService: a,
-		ctx:        ctx,
-		peer:       peer,
+		ctx: ctx,
+		peer: peer,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodDelete
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodDelete
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.RemoveAccessNode")
@@ -1605,8 +1597,8 @@ func (a *ChainsAPIService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest)
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -1615,8 +1607,8 @@ func (a *ChainsAPIService) RemoveAccessNodeExecute(r ApiRemoveAccessNodeRequest)
 }
 
 type ApiRotateChainRequest struct {
-	ctx           context.Context
-	ApiService    *ChainsAPIService
+	ctx context.Context
+	ApiService *ChainsAPIService
 	rotateRequest *RotateChainRequest
 }
 
@@ -1633,22 +1625,22 @@ func (r ApiRotateChainRequest) Execute() (*http.Response, error) {
 /*
 RotateChain Rotate a chain
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiRotateChainRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiRotateChainRequest
 */
 func (a *ChainsAPIService) RotateChain(ctx context.Context) ApiRotateChainRequest {
 	return ApiRotateChainRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) RotateChainExecute(r ApiRotateChainRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPost
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.RotateChain")
@@ -1724,8 +1716,8 @@ func (a *ChainsAPIService) RotateChainExecute(r ApiRotateChainRequest) (*http.Re
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -1734,9 +1726,9 @@ func (a *ChainsAPIService) RotateChainExecute(r ApiRotateChainRequest) (*http.Re
 }
 
 type ApiSetChainRecordRequest struct {
-	ctx         context.Context
-	ApiService  *ChainsAPIService
-	chainID     string
+	ctx context.Context
+	ApiService *ChainsAPIService
+	chainID string
 	chainRecord *ChainRecord
 }
 
@@ -1753,23 +1745,24 @@ func (r ApiSetChainRecordRequest) Execute() (*http.Response, error) {
 /*
 SetChainRecord Sets the chain record.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param chainID ChainID (Hex Address)
-	@return ApiSetChainRecordRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param chainID ChainID (Hex Address)
+ @return ApiSetChainRecordRequest
 */
-func (a *ChainsAPIService) SetChainRecord(ctx context.Context) ApiSetChainRecordRequest {
+func (a *ChainsAPIService) SetChainRecord(ctx context.Context, chainID string) ApiSetChainRecordRequest {
 	return ApiSetChainRecordRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
+		chainID: chainID,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPost
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.SetChainRecord")
@@ -1849,8 +1842,8 @@ func (a *ChainsAPIService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 				newErr.error = err.Error()
 				return localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarHTTPResponse, newErr
 	}
@@ -1859,7 +1852,7 @@ func (a *ChainsAPIService) SetChainRecordExecute(r ApiSetChainRecordRequest) (*h
 }
 
 type ApiV1ChainEvmPostRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
 }
 
@@ -1870,22 +1863,22 @@ func (r ApiV1ChainEvmPostRequest) Execute() (*http.Response, error) {
 /*
 V1ChainEvmPost Ethereum JSON-RPC
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiV1ChainEvmPostRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiV1ChainEvmPostRequest
 */
 func (a *ChainsAPIService) V1ChainEvmPost(ctx context.Context) ApiV1ChainEvmPostRequest {
 	return ApiV1ChainEvmPostRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) V1ChainEvmPostExecute(r ApiV1ChainEvmPostRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodPost
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodPost
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.V1ChainEvmPost")
@@ -1945,7 +1938,7 @@ func (a *ChainsAPIService) V1ChainEvmPostExecute(r ApiV1ChainEvmPostRequest) (*h
 }
 
 type ApiV1ChainEvmWsGetRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *ChainsAPIService
 }
 
@@ -1956,22 +1949,22 @@ func (r ApiV1ChainEvmWsGetRequest) Execute() (*http.Response, error) {
 /*
 V1ChainEvmWsGet Ethereum JSON-RPC (Websocket transport)
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiV1ChainEvmWsGetRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiV1ChainEvmWsGetRequest
 */
 func (a *ChainsAPIService) V1ChainEvmWsGet(ctx context.Context) ApiV1ChainEvmWsGetRequest {
 	return ApiV1ChainEvmWsGetRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
 func (a *ChainsAPIService) V1ChainEvmWsGetExecute(r ApiV1ChainEvmWsGetRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod = http.MethodGet
-		localVarPostBody   interface{}
-		formFiles          []formFile
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.V1ChainEvmWsGet")
@@ -2031,10 +2024,10 @@ func (a *ChainsAPIService) V1ChainEvmWsGetExecute(r ApiV1ChainEvmWsGetRequest) (
 }
 
 type ApiWaitForRequestRequest struct {
-	ctx                   context.Context
-	ApiService            *ChainsAPIService
-	requestID             string
-	timeoutSeconds        *int32
+	ctx context.Context
+	ApiService *ChainsAPIService
+	requestID string
+	timeoutSeconds *int32
 	waitForL1Confirmation *bool
 }
 
@@ -2057,27 +2050,26 @@ func (r ApiWaitForRequestRequest) Execute() (*ReceiptResponse, *http.Response, e
 /*
 WaitForRequest Wait until the given request has been processed by the node
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param requestID RequestID (Hex)
-	@return ApiWaitForRequestRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param requestID RequestID (Hex)
+ @return ApiWaitForRequestRequest
 */
 func (a *ChainsAPIService) WaitForRequest(ctx context.Context, requestID string) ApiWaitForRequestRequest {
 	return ApiWaitForRequestRequest{
 		ApiService: a,
-		ctx:        ctx,
-		requestID:  requestID,
+		ctx: ctx,
+		requestID: requestID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ReceiptResponse
+//  @return ReceiptResponse
 func (a *ChainsAPIService) WaitForRequestExecute(r ApiWaitForRequestRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ReceiptResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "ChainsAPIService.WaitForRequest")

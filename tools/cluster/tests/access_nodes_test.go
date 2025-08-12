@@ -98,7 +98,7 @@ func (e *ChainEnv) testPermissionlessAccessNode(t *testing.T) {
 	require.NoError(t, err)
 
 	// request has been processed
-	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 1*time.Minute)
+	_, err = e.Chain.CommitteeMultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), req.ID(), false, 1*time.Minute)
 	require.NoError(t, err)
 
 	// remove the access node from cluster1 node 0

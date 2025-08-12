@@ -292,7 +292,7 @@ func TestRebootDuringTasks(t *testing.T) {
 			chainclient.PostRequestParams{Allowance: isc.NewAssets(5000)},
 		)
 		require.NoError(t, err)
-		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(context.Background(), env.Chain.ChainID, req.ID(), true, 10*time.Second)
+		_, err = env.Clu.MultiClient().WaitUntilRequestProcessed(context.Background(), req.ID(), true, 10*time.Second)
 		require.NoError(t, err)
 		env.checkBalanceOnChain(targetAgentID, coin.BaseTokenType, 5000)
 	}

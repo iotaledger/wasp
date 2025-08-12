@@ -19,14 +19,15 @@ import (
 	"strings"
 )
 
+
 // CorecontractsAPIService CorecontractsAPI service
 type CorecontractsAPIService service
 
 type ApiAccountsGetAccountBalanceRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	agentID    string
-	block      *string
+	agentID string
+	block *string
 }
 
 // Block index or trie root
@@ -42,27 +43,26 @@ func (r ApiAccountsGetAccountBalanceRequest) Execute() (*AssetsResponse, *http.R
 /*
 AccountsGetAccountBalance Get all assets belonging to an account
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-	@return ApiAccountsGetAccountBalanceRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
+ @return ApiAccountsGetAccountBalanceRequest
 */
 func (a *CorecontractsAPIService) AccountsGetAccountBalance(ctx context.Context, agentID string) ApiAccountsGetAccountBalanceRequest {
 	return ApiAccountsGetAccountBalanceRequest{
 		ApiService: a,
-		ctx:        ctx,
-		agentID:    agentID,
+		ctx: ctx,
+		agentID: agentID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return AssetsResponse
+//  @return AssetsResponse
 func (a *CorecontractsAPIService) AccountsGetAccountBalanceExecute(r ApiAccountsGetAccountBalanceRequest) (*AssetsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *AssetsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *AssetsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountBalance")
@@ -126,8 +126,8 @@ func (a *CorecontractsAPIService) AccountsGetAccountBalanceExecute(r ApiAccounts
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -145,10 +145,10 @@ func (a *CorecontractsAPIService) AccountsGetAccountBalanceExecute(r ApiAccounts
 }
 
 type ApiAccountsGetAccountNonceRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	agentID    string
-	block      *string
+	agentID string
+	block *string
 }
 
 // Block index or trie root
@@ -164,27 +164,26 @@ func (r ApiAccountsGetAccountNonceRequest) Execute() (*AccountNonceResponse, *ht
 /*
 AccountsGetAccountNonce Get the current nonce of an account
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
-	@return ApiAccountsGetAccountNonceRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param agentID AgentID (Hex Address for L1 accounts | Hex for EVM)
+ @return ApiAccountsGetAccountNonceRequest
 */
 func (a *CorecontractsAPIService) AccountsGetAccountNonce(ctx context.Context, agentID string) ApiAccountsGetAccountNonceRequest {
 	return ApiAccountsGetAccountNonceRequest{
 		ApiService: a,
-		ctx:        ctx,
-		agentID:    agentID,
+		ctx: ctx,
+		agentID: agentID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return AccountNonceResponse
+//  @return AccountNonceResponse
 func (a *CorecontractsAPIService) AccountsGetAccountNonceExecute(r ApiAccountsGetAccountNonceRequest) (*AccountNonceResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *AccountNonceResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *AccountNonceResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetAccountNonce")
@@ -248,8 +247,8 @@ func (a *CorecontractsAPIService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -267,9 +266,9 @@ func (a *CorecontractsAPIService) AccountsGetAccountNonceExecute(r ApiAccountsGe
 }
 
 type ApiAccountsGetTotalAssetsRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -285,25 +284,24 @@ func (r ApiAccountsGetTotalAssetsRequest) Execute() (*AssetsResponse, *http.Resp
 /*
 AccountsGetTotalAssets Get all stored assets
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiAccountsGetTotalAssetsRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiAccountsGetTotalAssetsRequest
 */
 func (a *CorecontractsAPIService) AccountsGetTotalAssets(ctx context.Context) ApiAccountsGetTotalAssetsRequest {
 	return ApiAccountsGetTotalAssetsRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return AssetsResponse
+//  @return AssetsResponse
 func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGetTotalAssetsRequest) (*AssetsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *AssetsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *AssetsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.AccountsGetTotalAssets")
@@ -366,8 +364,8 @@ func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -385,10 +383,10 @@ func (a *CorecontractsAPIService) AccountsGetTotalAssetsExecute(r ApiAccountsGet
 }
 
 type ApiBlocklogGetBlockInfoRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
 	blockIndex uint32
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -404,27 +402,26 @@ func (r ApiBlocklogGetBlockInfoRequest) Execute() (*BlockInfoResponse, *http.Res
 /*
 BlocklogGetBlockInfo Get the block info of a certain block index
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param blockIndex BlockIndex (uint32)
-	@return ApiBlocklogGetBlockInfoRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param blockIndex BlockIndex (uint32)
+ @return ApiBlocklogGetBlockInfoRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetBlockInfo(ctx context.Context, blockIndex uint32) ApiBlocklogGetBlockInfoRequest {
 	return ApiBlocklogGetBlockInfoRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 		blockIndex: blockIndex,
 	}
 }
 
 // Execute executes the request
-//
-//	@return BlockInfoResponse
+//  @return BlockInfoResponse
 func (a *CorecontractsAPIService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBlockInfoRequest) (*BlockInfoResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *BlockInfoResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *BlockInfoResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetBlockInfo")
@@ -491,8 +488,8 @@ func (a *CorecontractsAPIService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -510,9 +507,9 @@ func (a *CorecontractsAPIService) BlocklogGetBlockInfoExecute(r ApiBlocklogGetBl
 }
 
 type ApiBlocklogGetControlAddressesRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -528,25 +525,24 @@ func (r ApiBlocklogGetControlAddressesRequest) Execute() (*ControlAddressesRespo
 /*
 BlocklogGetControlAddresses Get the control addresses
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiBlocklogGetControlAddressesRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiBlocklogGetControlAddressesRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetControlAddresses(ctx context.Context) ApiBlocklogGetControlAddressesRequest {
 	return ApiBlocklogGetControlAddressesRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ControlAddressesResponse
+//  @return ControlAddressesResponse
 func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlocklogGetControlAddressesRequest) (*ControlAddressesResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ControlAddressesResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ControlAddressesResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetControlAddresses")
@@ -609,8 +605,8 @@ func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlockl
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -628,10 +624,10 @@ func (a *CorecontractsAPIService) BlocklogGetControlAddressesExecute(r ApiBlockl
 }
 
 type ApiBlocklogGetEventsOfBlockRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
 	blockIndex uint32
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -647,27 +643,26 @@ func (r ApiBlocklogGetEventsOfBlockRequest) Execute() (*EventsResponse, *http.Re
 /*
 BlocklogGetEventsOfBlock Get events of a block
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param blockIndex BlockIndex (uint32)
-	@return ApiBlocklogGetEventsOfBlockRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param blockIndex BlockIndex (uint32)
+ @return ApiBlocklogGetEventsOfBlockRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetEventsOfBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetEventsOfBlockRequest {
 	return ApiBlocklogGetEventsOfBlockRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 		blockIndex: blockIndex,
 	}
 }
 
 // Execute executes the request
-//
-//	@return EventsResponse
+//  @return EventsResponse
 func (a *CorecontractsAPIService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogGetEventsOfBlockRequest) (*EventsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *EventsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *EventsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetEventsOfBlock")
@@ -734,8 +729,8 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -753,9 +748,9 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfBlockExecute(r ApiBlocklogG
 }
 
 type ApiBlocklogGetEventsOfLatestBlockRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -771,25 +766,24 @@ func (r ApiBlocklogGetEventsOfLatestBlockRequest) Execute() (*EventsResponse, *h
 /*
 BlocklogGetEventsOfLatestBlock Get events of the latest block
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiBlocklogGetEventsOfLatestBlockRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiBlocklogGetEventsOfLatestBlockRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlock(ctx context.Context) ApiBlocklogGetEventsOfLatestBlockRequest {
 	return ApiBlocklogGetEventsOfLatestBlockRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return EventsResponse
+//  @return EventsResponse
 func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlocklogGetEventsOfLatestBlockRequest) (*EventsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *EventsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *EventsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetEventsOfLatestBlock")
@@ -852,8 +846,8 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -871,10 +865,10 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfLatestBlockExecute(r ApiBlo
 }
 
 type ApiBlocklogGetEventsOfRequestRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	requestID  string
-	block      *string
+	requestID string
+	block *string
 }
 
 // Block index or trie root
@@ -890,27 +884,26 @@ func (r ApiBlocklogGetEventsOfRequestRequest) Execute() (*EventsResponse, *http.
 /*
 BlocklogGetEventsOfRequest Get events of a request
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param requestID RequestID (Hex)
-	@return ApiBlocklogGetEventsOfRequestRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param requestID RequestID (Hex)
+ @return ApiBlocklogGetEventsOfRequestRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetEventsOfRequest(ctx context.Context, requestID string) ApiBlocklogGetEventsOfRequestRequest {
 	return ApiBlocklogGetEventsOfRequestRequest{
 		ApiService: a,
-		ctx:        ctx,
-		requestID:  requestID,
+		ctx: ctx,
+		requestID: requestID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return EventsResponse
+//  @return EventsResponse
 func (a *CorecontractsAPIService) BlocklogGetEventsOfRequestExecute(r ApiBlocklogGetEventsOfRequestRequest) (*EventsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *EventsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *EventsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetEventsOfRequest")
@@ -974,8 +967,8 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -993,9 +986,9 @@ func (a *CorecontractsAPIService) BlocklogGetEventsOfRequestExecute(r ApiBlocklo
 }
 
 type ApiBlocklogGetLatestBlockInfoRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1011,25 +1004,24 @@ func (r ApiBlocklogGetLatestBlockInfoRequest) Execute() (*BlockInfoResponse, *ht
 /*
 BlocklogGetLatestBlockInfo Get the block info of the latest block
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiBlocklogGetLatestBlockInfoRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiBlocklogGetLatestBlockInfoRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfo(ctx context.Context) ApiBlocklogGetLatestBlockInfoRequest {
 	return ApiBlocklogGetLatestBlockInfoRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return BlockInfoResponse
+//  @return BlockInfoResponse
 func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklogGetLatestBlockInfoRequest) (*BlockInfoResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *BlockInfoResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *BlockInfoResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetLatestBlockInfo")
@@ -1092,8 +1084,8 @@ func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1111,10 +1103,10 @@ func (a *CorecontractsAPIService) BlocklogGetLatestBlockInfoExecute(r ApiBlocklo
 }
 
 type ApiBlocklogGetRequestIDsForBlockRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
 	blockIndex uint32
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1130,27 +1122,26 @@ func (r ApiBlocklogGetRequestIDsForBlockRequest) Execute() (*RequestIDsResponse,
 /*
 BlocklogGetRequestIDsForBlock Get the request ids for a certain block index
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param blockIndex BlockIndex (uint32)
-	@return ApiBlocklogGetRequestIDsForBlockRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param blockIndex BlockIndex (uint32)
+ @return ApiBlocklogGetRequestIDsForBlockRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetRequestIDsForBlockRequest {
 	return ApiBlocklogGetRequestIDsForBlockRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 		blockIndex: blockIndex,
 	}
 }
 
 // Execute executes the request
-//
-//	@return RequestIDsResponse
+//  @return RequestIDsResponse
 func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlockExecute(r ApiBlocklogGetRequestIDsForBlockRequest) (*RequestIDsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *RequestIDsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *RequestIDsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestIDsForBlock")
@@ -1217,8 +1208,8 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1236,9 +1227,9 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForBlockExecute(r ApiBloc
 }
 
 type ApiBlocklogGetRequestIDsForLatestBlockRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1254,25 +1245,24 @@ func (r ApiBlocklogGetRequestIDsForLatestBlockRequest) Execute() (*RequestIDsRes
 /*
 BlocklogGetRequestIDsForLatestBlock Get the request ids for the latest block
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiBlocklogGetRequestIDsForLatestBlockRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiBlocklogGetRequestIDsForLatestBlockRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlock(ctx context.Context) ApiBlocklogGetRequestIDsForLatestBlockRequest {
 	return ApiBlocklogGetRequestIDsForLatestBlockRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return RequestIDsResponse
+//  @return RequestIDsResponse
 func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlockExecute(r ApiBlocklogGetRequestIDsForLatestBlockRequest) (*RequestIDsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *RequestIDsResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *RequestIDsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestIDsForLatestBlock")
@@ -1335,8 +1325,8 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1354,10 +1344,10 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIDsForLatestBlockExecute(r A
 }
 
 type ApiBlocklogGetRequestIsProcessedRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	requestID  string
-	block      *string
+	requestID string
+	block *string
 }
 
 // Block index or trie root
@@ -1373,27 +1363,26 @@ func (r ApiBlocklogGetRequestIsProcessedRequest) Execute() (*RequestProcessedRes
 /*
 BlocklogGetRequestIsProcessed Get the request processing status
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param requestID RequestID (Hex)
-	@return ApiBlocklogGetRequestIsProcessedRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param requestID RequestID (Hex)
+ @return ApiBlocklogGetRequestIsProcessedRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessed(ctx context.Context, requestID string) ApiBlocklogGetRequestIsProcessedRequest {
 	return ApiBlocklogGetRequestIsProcessedRequest{
 		ApiService: a,
-		ctx:        ctx,
-		requestID:  requestID,
+		ctx: ctx,
+		requestID: requestID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return RequestProcessedResponse
+//  @return RequestProcessedResponse
 func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessedExecute(r ApiBlocklogGetRequestIsProcessedRequest) (*RequestProcessedResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *RequestProcessedResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *RequestProcessedResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestIsProcessed")
@@ -1457,8 +1446,8 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1476,10 +1465,10 @@ func (a *CorecontractsAPIService) BlocklogGetRequestIsProcessedExecute(r ApiBloc
 }
 
 type ApiBlocklogGetRequestReceiptRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	requestID  string
-	block      *string
+	requestID string
+	block *string
 }
 
 // Block index or trie root
@@ -1495,27 +1484,26 @@ func (r ApiBlocklogGetRequestReceiptRequest) Execute() (*ReceiptResponse, *http.
 /*
 BlocklogGetRequestReceipt Get the receipt of a certain request id
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param requestID RequestID (Hex)
-	@return ApiBlocklogGetRequestReceiptRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param requestID RequestID (Hex)
+ @return ApiBlocklogGetRequestReceiptRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetRequestReceipt(ctx context.Context, requestID string) ApiBlocklogGetRequestReceiptRequest {
 	return ApiBlocklogGetRequestReceiptRequest{
 		ApiService: a,
-		ctx:        ctx,
-		requestID:  requestID,
+		ctx: ctx,
+		requestID: requestID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ReceiptResponse
+//  @return ReceiptResponse
 func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklogGetRequestReceiptRequest) (*ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ReceiptResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestReceipt")
@@ -1579,8 +1567,8 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1598,10 +1586,10 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptExecute(r ApiBlocklog
 }
 
 type ApiBlocklogGetRequestReceiptsOfBlockRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
 	blockIndex uint32
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1617,27 +1605,26 @@ func (r ApiBlocklogGetRequestReceiptsOfBlockRequest) Execute() ([]ReceiptRespons
 /*
 BlocklogGetRequestReceiptsOfBlock Get all receipts of a certain block
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param blockIndex BlockIndex (uint32)
-	@return ApiBlocklogGetRequestReceiptsOfBlockRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param blockIndex BlockIndex (uint32)
+ @return ApiBlocklogGetRequestReceiptsOfBlockRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlock(ctx context.Context, blockIndex uint32) ApiBlocklogGetRequestReceiptsOfBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfBlockRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 		blockIndex: blockIndex,
 	}
 }
 
 // Execute executes the request
-//
-//	@return []ReceiptResponse
+//  @return []ReceiptResponse
 func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlockExecute(r ApiBlocklogGetRequestReceiptsOfBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue []ReceiptResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  []ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestReceiptsOfBlock")
@@ -1704,8 +1691,8 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1723,9 +1710,9 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfBlockExecute(r Api
 }
 
 type ApiBlocklogGetRequestReceiptsOfLatestBlockRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1741,25 +1728,24 @@ func (r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) Execute() ([]ReceiptR
 /*
 BlocklogGetRequestReceiptsOfLatestBlock Get all receipts of the latest block
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest
 */
 func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlock(ctx context.Context) ApiBlocklogGetRequestReceiptsOfLatestBlockRequest {
 	return ApiBlocklogGetRequestReceiptsOfLatestBlockRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return []ReceiptResponse
+//  @return []ReceiptResponse
 func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlockExecute(r ApiBlocklogGetRequestReceiptsOfLatestBlockRequest) ([]ReceiptResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue []ReceiptResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  []ReceiptResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.BlocklogGetRequestReceiptsOfLatestBlock")
@@ -1822,8 +1808,8 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1841,12 +1827,12 @@ func (a *CorecontractsAPIService) BlocklogGetRequestReceiptsOfLatestBlockExecute
 }
 
 type ApiErrorsGetErrorMessageFormatRequest struct {
-	ctx           context.Context
-	ApiService    *CorecontractsAPIService
-	chainID       string
+	ctx context.Context
+	ApiService *CorecontractsAPIService
+	chainID string
 	contractHname string
-	errorID       uint32
-	block         *string
+	errorID uint32
+	block *string
 }
 
 // Block index or trie root
@@ -1862,30 +1848,30 @@ func (r ApiErrorsGetErrorMessageFormatRequest) Execute() (*ErrorMessageFormatRes
 /*
 ErrorsGetErrorMessageFormat Get the error message format of a specific error id
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@param chainID ChainID (Hex Address)
-	@param contractHname Contract (Hname as Hex)
-	@param errorID Error Id (uint16)
-	@return ApiErrorsGetErrorMessageFormatRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @param chainID ChainID (Hex Address)
+ @param contractHname Contract (Hname as Hex)
+ @param errorID Error Id (uint16)
+ @return ApiErrorsGetErrorMessageFormatRequest
 */
-func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormat(ctx context.Context, contractHname string, errorID uint32) ApiErrorsGetErrorMessageFormatRequest {
+func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormat(ctx context.Context, chainID string, contractHname string, errorID uint32) ApiErrorsGetErrorMessageFormatRequest {
 	return ApiErrorsGetErrorMessageFormatRequest{
-		ApiService:    a,
-		ctx:           ctx,
+		ApiService: a,
+		ctx: ctx,
+		chainID: chainID,
 		contractHname: contractHname,
-		errorID:       errorID,
+		errorID: errorID,
 	}
 }
 
 // Execute executes the request
-//
-//	@return ErrorMessageFormatResponse
+//  @return ErrorMessageFormatResponse
 func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrorsGetErrorMessageFormatRequest) (*ErrorMessageFormatResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *ErrorMessageFormatResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *ErrorMessageFormatResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.ErrorsGetErrorMessageFormat")
@@ -1954,8 +1940,8 @@ func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -1973,9 +1959,9 @@ func (a *CorecontractsAPIService) ErrorsGetErrorMessageFormatExecute(r ApiErrors
 }
 
 type ApiGovernanceGetChainAdminRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -1993,25 +1979,24 @@ GovernanceGetChainAdmin Get the chain admin
 
 Returns the chain admin
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGovernanceGetChainAdminRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGovernanceGetChainAdminRequest
 */
 func (a *CorecontractsAPIService) GovernanceGetChainAdmin(ctx context.Context) ApiGovernanceGetChainAdminRequest {
 	return ApiGovernanceGetChainAdminRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return GovChainAdminResponse
+//  @return GovChainAdminResponse
 func (a *CorecontractsAPIService) GovernanceGetChainAdminExecute(r ApiGovernanceGetChainAdminRequest) (*GovChainAdminResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *GovChainAdminResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *GovChainAdminResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetChainAdmin")
@@ -2074,8 +2059,8 @@ func (a *CorecontractsAPIService) GovernanceGetChainAdminExecute(r ApiGovernance
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}
@@ -2093,9 +2078,9 @@ func (a *CorecontractsAPIService) GovernanceGetChainAdminExecute(r ApiGovernance
 }
 
 type ApiGovernanceGetChainInfoRequest struct {
-	ctx        context.Context
+	ctx context.Context
 	ApiService *CorecontractsAPIService
-	block      *string
+	block *string
 }
 
 // Block index or trie root
@@ -2113,25 +2098,24 @@ GovernanceGetChainInfo Get the chain info
 
 If you are using the common API functions, you most likely rather want to use '/v1/chains/:chainID' to get information about a chain.
 
-	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
-	@return ApiGovernanceGetChainInfoRequest
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiGovernanceGetChainInfoRequest
 */
 func (a *CorecontractsAPIService) GovernanceGetChainInfo(ctx context.Context) ApiGovernanceGetChainInfoRequest {
 	return ApiGovernanceGetChainInfoRequest{
 		ApiService: a,
-		ctx:        ctx,
+		ctx: ctx,
 	}
 }
 
 // Execute executes the request
-//
-//	@return GovChainInfoResponse
+//  @return GovChainInfoResponse
 func (a *CorecontractsAPIService) GovernanceGetChainInfoExecute(r ApiGovernanceGetChainInfoRequest) (*GovChainInfoResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod  = http.MethodGet
-		localVarPostBody    interface{}
-		formFiles           []formFile
-		localVarReturnValue *GovChainInfoResponse
+		localVarHTTPMethod   = http.MethodGet
+		localVarPostBody     interface{}
+		formFiles            []formFile
+		localVarReturnValue  *GovChainInfoResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "CorecontractsAPIService.GovernanceGetChainInfo")
@@ -2194,8 +2178,8 @@ func (a *CorecontractsAPIService) GovernanceGetChainInfoExecute(r ApiGovernanceG
 				newErr.error = err.Error()
 				return localVarReturnValue, localVarHTTPResponse, newErr
 			}
-			newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-			newErr.model = v
+					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
+					newErr.model = v
 		}
 		return localVarReturnValue, localVarHTTPResponse, newErr
 	}

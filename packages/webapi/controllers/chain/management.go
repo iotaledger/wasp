@@ -11,16 +11,13 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/webapi/apierrors"
 	"github.com/iotaledger/wasp/v2/packages/webapi/controllers/controllerutils"
 	"github.com/iotaledger/wasp/v2/packages/webapi/models"
+	"github.com/iotaledger/wasp/v2/packages/webapi/params"
 )
 
 func (c *Controller) activateChain(e echo.Context) error {
 	controllerutils.SetOperation(e, "activate_chain")
-	chainID, err := controllerutils.ChainIDFromParams(e)
-	if err != nil {
-		return err
-	}
 
-	if err := c.chainService.ActivateChain(chainID); err != nil {
+	if err := c.chainService.ActivateChain(); err != nil {
 		return err
 	}
 
@@ -61,6 +58,10 @@ func (c *Controller) rotateChain(e echo.Context) error {
 
 func (c *Controller) setChainRecord(e echo.Context) error {
 	controllerutils.SetOperation(e, "set_chain_record")
+	chainID, err := params.DecodeChainID(e)
+	if err != nil {
+		return err
+	}
 
 	// No need to validate the chain existence here (like above), as the service will create a chain record if it does not exist.
 
@@ -69,7 +70,7 @@ func (c *Controller) setChainRecord(e echo.Context) error {
 		return apierrors.InvalidPropertyError("body", err)
 	}
 
-	record := registry.NewChainRecord(request.IsActive, []*cryptolib.PublicKey{})
+	record := registry.NewChainRecord(chainID, request.IsActive, []*cryptolib.PublicKey{})
 
 	for _, publicKeyStr := range request.AccessNodes {
 		publicKey, err := cryptolib.PublicKeyFromString(publicKeyStr)

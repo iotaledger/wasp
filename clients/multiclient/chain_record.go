@@ -16,7 +16,7 @@ func (m *MultiClient) PutChainRecord(bd *registry.ChainRecord) error {
 			accessNodes[k] = v.String()
 		}
 
-		_, err := w.ChainsAPI.SetChainRecord(context.Background()).ChainRecord(apiclient.ChainRecord{
+		_, err := w.ChainsAPI.SetChainRecord(context.Background(), bd.ChainID().String()).ChainRecord(apiclient.ChainRecord{
 			IsActive:    true,
 			AccessNodes: accessNodes,
 		}).Execute()

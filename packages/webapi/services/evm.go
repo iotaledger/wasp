@@ -29,7 +29,7 @@ type EVMService struct {
 	evmChainServers map[isc.ChainID]*chainServer
 
 	websocketContextMutex sync.Mutex
-	websocketContexts     map[isc.ChainID]*websocketContext
+	websocketContext      *websocketContext
 
 	chainsProvider  chains.Provider
 	chainService    interfaces.ChainService
@@ -56,7 +56,6 @@ func NewEVMService(
 		chainService:          chainService,
 		evmChainServers:       map[isc.ChainID]*chainServer{},
 		evmBackendMutex:       sync.Mutex{},
-		websocketContexts:     map[isc.ChainID]*websocketContext{},
 		websocketContextMutex: sync.Mutex{},
 		networkProvider:       networkProvider,
 		publisher:             pub,
@@ -128,14 +127,14 @@ func (e *EVMService) getWebsocketContext(ctx context.Context) *websocketContext 
 	e.websocketContextMutex.Lock()
 	defer e.websocketContextMutex.Unlock()
 
-	if e.websocketContexts[chainID] != nil {
-		return e.websocketContexts[chainID]
+	if e.websocketContext != nil {
+		return e.websocketContext
 	}
 
-	e.websocketContexts[chainID] = newWebsocketContext(e.log, e.jsonrpcParams)
-	go e.websocketContexts[chainID].runCleanupTimer(ctx)
+	e.websocketContext = newWebsocketContext(e.log, e.jsonrpcParams)
+	go e.websocketContext.runCleanupTimer(ctx)
 
-	return e.websocketContexts[chainID]
+	return e.websocketContext
 }
 
 func (e *EVMService) HandleWebsocket(ctx context.Context, echoCtx echo.Context) error {
@@ -144,12 +143,7 @@ func (e *EVMService) HandleWebsocket(ctx context.Context, echoCtx echo.Context) 
 		return err
 	}
 
-	ch, err := e.chainService.GetChain()
-	if err != nil {
-		return err
-	}
-
-	wsContext := e.getWebsocketContext(ctx, ch.ID())
+	wsContext := e.getWebsocketContext(ctx)
 	websocketHandler(evmServer, wsContext, echoCtx.RealIP()).ServeHTTP(echoCtx.Response(), echoCtx.Request())
 	return nil
 }

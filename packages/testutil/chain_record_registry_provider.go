@@ -17,7 +17,7 @@ func NewChainRecordRegistryProvider() *ChainRecordRegistryProvider {
 	return &ChainRecordRegistryProvider{}
 }
 
-func (p *ChainRecordRegistryProvider) SaveChainRecord(chainRecord *registry.ChainRecord) error {
+func (p *ChainRecordRegistryProvider) SetChainRecord(chainRecord *registry.ChainRecord) error {
 	p.rec = chainRecord
 	return nil
 }

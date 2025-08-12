@@ -66,7 +66,6 @@ func (e *ChainEnv) testEstimateGasOffLedger(t *testing.T) {
 	e.DepositFunds(10*isc.Million, keyPair)
 
 	estimationReq := isc.NewOffLedgerRequest(
-		e.Chain.ChainID,
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		0,
 		1*isc.Million,
@@ -102,7 +101,7 @@ func (e *ChainEnv) testEstimateGasOffLedger(t *testing.T) {
 		par,
 	)
 	require.NoError(t, err)
-	rec, err := e.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), e.Chain.ChainID, req.ID(), false, 30*time.Second)
+	rec, err := e.Clu.MultiClient().WaitUntilRequestProcessedSuccessfully(context.Background(), req.ID(), false, 30*time.Second)
 	require.NoError(t, err)
 	require.Equal(t, rec.GasBurned, estimatedReceipt.GasBurned)
 	require.Equal(t, rec.GasFeeCharged, estimatedReceipt.GasFeeCharged)
