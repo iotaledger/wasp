@@ -30,9 +30,8 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 	touchedValues := make(map[string]uint32)
 
 	// decrement refcounts
-	// TODO: modify IterateNodes so that children refcounts are fetched using MultiGet
-	tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
-		nodeRefcount := lo.ValueOr(touchedNodes, n.Commitment, refcounts.GetNode(n.Commitment))
+	tr.IterateNodesWithRefcounts(refcounts, func(nodeKey []byte, n *NodeData, depth int, nr, vr uint32) IterateNodesAction {
+		nodeRefcount := lo.ValueOr(touchedNodes, n.Commitment, nr)
 		if nodeRefcount == 0 {
 			// node already deleted
 			return IterateSkipSubtree
@@ -41,7 +40,7 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 		touchedNodes[n.Commitment] = nodeRefcount
 		if nodeRefcount == 0 && n.Terminal != nil && !n.Terminal.IsValue {
 			valueBytes := string(n.Terminal.Bytes())
-			valueRefcount := lo.ValueOr(touchedValues, valueBytes, refcounts.GetValue(n.Terminal.Data))
+			valueRefcount := lo.ValueOr(touchedValues, valueBytes, vr)
 			if valueRefcount > 0 {
 				touchedValues[valueBytes] = valueRefcount - 1
 			}

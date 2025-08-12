@@ -3,7 +3,7 @@ package trie
 import (
 	"encoding/hex"
 
-	"github.com/samber/lo"
+	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 )
 
 // nodeStore immutable node store
@@ -58,45 +58,89 @@ func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*NodeData, bool) {
 	return ret, true
 }
 
-func (ns *nodeStore) FetchChildrenNodeData(n *NodeData) [NumChildren]*NodeData {
+// fetchChildrenNodeData fetches the children nodes of a given node in a single call to MultiGet.
+func (ns *nodeStore) fetchChildrenNodeData(n *NodeData) [NumChildren]*NodeData {
 	// fetch using a single call to MultiGet
-	var dbKeys [NumChildren][]byte
-	var positions [NumChildren]int
-	numChildren := 0
-	for i := range NumChildren {
-		hash := n.Children[i]
+	dbKeys := make([][]byte, 0, NumChildren)
+	for _, hash := range n.Children {
 		if hash == nil {
 			continue
 		}
-		dbKeys[numChildren] = hash.Bytes()
-		positions[i] = numChildren
-		numChildren++
+		dbKeys = append(dbKeys, hash.Bytes())
 	}
 
 	children := [NumChildren]*NodeData{}
-	if numChildren == 0 {
+	if len(dbKeys) == 0 {
 		// nothing to fetch
 		return children
 	}
 
-	nodeBins := ns.trieStore.MultiGet(dbKeys[:numChildren])
+	nodeBins := ns.trieStore.MultiGet(dbKeys)
 
 	// decode results
-	for i := range NumChildren {
-		if n.Children[i] == nil {
+	for i, hash := range n.Children {
+		if hash == nil {
 			continue
 		}
-		p := positions[i]
-		nodeBin := nodeBins[p]
+		nodeBin := nodeBins[0]
+		nodeBins = nodeBins[1:]
+
 		assertf(nodeBin != nil, "NodeStore::FetchChildrenNodeData: nodeBin is nil for child index %d, commitment: %s",
 			i, n.Commitment.String())
 		nodeData, err := nodeDataFromBytes(nodeBin)
 		assertf(err == nil, "NodeStore::FetchChildrenNodeData err: '%v' nodeBin: '%s', commitment: %x",
-			err, hex.EncodeToString(nodeBin), dbKeys[p])
-		nodeData.Commitment = lo.Must(HashFromBytes(dbKeys[p]))
+			err, hex.EncodeToString(nodeBin), *hash)
+		nodeData.Commitment = *hash
 		children[i] = nodeData
 	}
 	return children
+}
+
+type NodeDataWithRefcounts struct {
+	node          *NodeData
+	nodeRefcount  uint32
+	valueRefcount uint32
+}
+
+// fetchChildrenNodeDataWithRefcounts fetches the children nodes and their refcounts in two MultiGet calls.
+func (ns *nodeStore) fetchChildrenNodeDataWithRefcounts(refcounts *Refcounts, n *NodeData) [NumChildren]NodeDataWithRefcounts {
+	// fetch nodes with MultiGet
+	nodeDatas := ns.fetchChildrenNodeData(n)
+	// now fetch their refcounts with another MultiGet
+	dbKeys := make([][]byte, 0, NumChildren*2)
+	for _, child := range nodeDatas {
+		if child == nil {
+			continue
+		}
+		dbKeys = append(dbKeys, nodeRefcountKey(child.Commitment[:]))
+		if child.Terminal != nil && !child.Terminal.IsValue {
+			dbKeys = append(dbKeys, valueRefcountKey(child.Terminal.Data))
+		}
+	}
+	var ret [NumChildren]NodeDataWithRefcounts
+	if len(dbKeys) == 0 {
+		// nothing to fetch
+		return ret
+	}
+	refCountBytes := refcounts.store.MultiGet(dbKeys)
+	for i, child := range nodeDatas {
+		if child == nil {
+			continue
+		}
+		nodeRefcount := codec.MustDecode[uint32](refCountBytes[0], 0)
+		refCountBytes = refCountBytes[1:]
+		valueRefcount := uint32(0)
+		if child.Terminal != nil && !child.Terminal.IsValue {
+			valueRefcount = codec.MustDecode[uint32](refCountBytes[0], 0)
+			refCountBytes = refCountBytes[1:]
+		}
+		ret[i] = NodeDataWithRefcounts{
+			node:          child,
+			nodeRefcount:  nodeRefcount,
+			valueRefcount: valueRefcount,
+		}
+	}
+	return ret
 }
 
 func (ns *nodeStore) MustFetchNodeData(nodeCommitment Hash) *NodeData {

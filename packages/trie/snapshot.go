@@ -3,6 +3,8 @@ package trie
 import (
 	"io"
 
+	"github.com/samber/lo"
+
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
@@ -84,27 +86,35 @@ func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
 		}
 	}
 
-	// TODO: improve performance
 	if refcountsEnabled {
 		_, refcounts := NewRefcounts(store)
 		tr, err := NewTrieReader(store, *trieRoot)
 		if err != nil {
 			return err
 		}
-		tr.IterateNodes(func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
-			nodeRefcount := refcounts.GetNode(n.Commitment)
+		touchedNodes := make(map[Hash]uint32)
+		touchedValues := make(map[string]uint32)
+		tr.IterateNodesWithRefcounts(refcounts, func(nodeKey []byte, n *NodeData, depth int, nodeRefcount, valueRefcount uint32) IterateNodesAction {
+			nodeRefcount = lo.ValueOr(touchedNodes, n.Commitment, nodeRefcount)
 			nodeRefcount++
-			refcounts.SetNode(n.Commitment, nodeRefcount)
+			touchedNodes[n.Commitment] = nodeRefcount
 			if nodeRefcount > 1 {
 				return IterateSkipSubtree
 			}
 			if n.Terminal != nil && !n.Terminal.IsValue {
-				valueRefcount := refcounts.GetValue(n.Terminal.Data)
+				valueRefcount = lo.ValueOr(touchedValues, string(n.Terminal.Bytes()), valueRefcount)
 				valueRefcount++
-				refcounts.SetValue(n.Terminal.Data, valueRefcount)
+				touchedValues[string(n.Terminal.Bytes())] = valueRefcount
 			}
 			return IterateContinue
 		})
+		for hash, nodeRefcount := range touchedNodes {
+			refcounts.SetNode(hash, nodeRefcount)
+		}
+		for valueBytes, valueRefcount := range touchedValues {
+			t := lo.Must(rwutil.ReadFromBytes([]byte(valueBytes), &Tcommitment{}))
+			refcounts.SetValue(t.Data, valueRefcount)
+		}
 	}
 	return nil
 }

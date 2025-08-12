@@ -53,7 +53,7 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 	//  10739041 ns/op   6540 kvs/op    6540 reads/op    8354404 B/op   194195 allocs/op
 	// after MultiGet:
 	//  12394280 ns/op   6540 kvs/op    3720 reads/op   11556460 B/op   214444 allocs/op
-	// reads/op measures the amount of times the DB is called to fetch data
+	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
 	store, roots := makeTrie(1)
 	r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
@@ -69,10 +69,10 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 
 func BenchmarkRestoreSnapshot(b *testing.B) {
 	// before MultiGet:
-	//   39849739 ns/op    418.7 kvs/op    124.3 reads/op    22335484 B/op    389557 allocs/op
+	//   44839973 ns/op    13083 kvs/op    10263 reads/op    22344852 B/op    389676 allocs/op
 	// after MultiGet:
-	//   56669109 ns/op    19623 kvs/op    13983 reads/op    27847469 B/op    402029 allocs/op
-	// reads/op measures the amount of times the DB is called to fetch data
+	//   56646487 ns/op    13083 kvs/op     7443 reads/op    27590744 B/op    386339 allocs/op
+	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
 	b.StopTimer()
 	buf := bytes.NewBuffer(nil)
@@ -99,9 +99,10 @@ func BenchmarkRestoreSnapshot(b *testing.B) {
 
 func BenchmarkPrune(b *testing.B) {
 	// before MultiGet:
-	//   36128153 ns/op    1191 kvs/op    339.0 reads/op    15634332 B/op    314407 allocs/op
+	//   22620182 ns/op    16476 kvs/op    12804 reads/op    15628541 B/op    314546 allocs/op
 	// after MultiGet:
-	//   24594662 ns/op    16476 kvs/op    9132 reads/op    19913272 B/op    307635 allocs/op
+	//   24594662 ns/op    16476 kvs/op     9132 reads/op    19913272 B/op    307635 allocs/op
+	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
 	b.StopTimer()
 	store, roots := makeTrie(3)
@@ -126,6 +127,7 @@ func BenchmarkCommit(b *testing.B) {
 	//    7052109 ns/op   4386 kvs/op   4386 reads/op   4833882 B/op   100044 allocs/op
 	// after MultiGet:
 	//    9486585 ns/op   4221 kvs/op      2 reads/op   6279097 B/op   108977 allocs/op
+	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
 	b.StopTimer()
 
