@@ -675,10 +675,13 @@ func makeRandomDB(t *testing.T, nBlocks int) (mustChainStore, kvstore.KVStore) {
 }
 
 func makeRandomDBSnapshot(t *testing.T, nBlocks int) (trie.Hash, state.BlockHash, *bytes.Buffer) {
-	cs, _ := makeRandomDB(t, nBlocks)
-	block := cs.LatestBlock()
+	_, db := makeRandomDB(t, nBlocks)
+	cs, err := state.NewStoreReadonly(db)
+	require.NoError(t, err)
+	block, err := cs.LatestBlock()
+	require.NoError(t, err)
 	snapshot := new(bytes.Buffer)
-	err := cs.TakeSnapshot(block.TrieRoot(), snapshot)
+	err = cs.TakeSnapshot(block.TrieRoot(), snapshot)
 	require.NoError(t, err)
 	return block.TrieRoot(), block.Hash(), snapshot
 }

@@ -38,12 +38,14 @@ type store struct {
 	refcountsEnabled bool
 }
 
+const cacheSize = 100
+
 func NewStore(db kvstore.KVStore, refcountsEnabled bool, writeMutex *sync.Mutex) (Store, error) {
 	return NewStoreWithMetrics(db, refcountsEnabled, writeMutex, nil)
 }
 
 func NewStoreWithMetrics(db kvstore.KVStore, refcountsEnabled bool, writeMutex *sync.Mutex, metrics *metrics.ChainStateMetrics) (Store, error) {
-	stateCache, err := lru.New[trie.Hash, *state](100)
+	stateCache, err := lru.New[trie.Hash, *state](cacheSize)
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +61,24 @@ func NewStoreWithMetrics(db kvstore.KVStore, refcountsEnabled bool, writeMutex *
 		stateCache:       stateCache,
 		metrics:          metrics,
 		writeMutex:       writeMutex,
+		refcountsEnabled: refcountsEnabled,
+	}, nil
+}
+
+func NewStoreReadonly(db kvstore.KVStore) (Store, error) {
+	stateCache, err := lru.New[trie.Hash, *state](cacheSize)
+	if err != nil {
+		return nil, err
+	}
+
+	storedb := &storeDB{db}
+	refcountsEnabled := trie.IsRefcountsEnabled(trieStore(storedb))
+
+	return &store{
+		db:               storedb,
+		stateCache:       stateCache,
+		metrics:          nil,
+		writeMutex:       nil, // will not panic if only read-only methods are called
 		refcountsEnabled: refcountsEnabled,
 	}, nil
 }
