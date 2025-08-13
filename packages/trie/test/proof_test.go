@@ -16,15 +16,12 @@ func TestProofScenariosBlake2b(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			store := NewInMemoryKVStore()
 			initRoot := lo.Must(trie.InitRoot(store, true))
-			tr, err := trie.NewTrieUpdatable(store, initRoot)
-			require.NoError(t, err)
 
-			checklist, roots := runUpdateScenario(tr, store, scenario)
+			checklist, roots := runUpdateScenario(store, initRoot, scenario)
 			trie.DebugDump(store, append([]trie.Hash{initRoot}, roots...), io.Discard)
 
 			root := roots[len(roots)-1]
-			trr, err := trie.NewTrieReader(store, root)
-			require.NoError(t, err)
+			trr := trie.NewReader(store, root)
 			for k, v := range checklist {
 				vBin := trr.Get([]byte(k))
 				if v == "" {
@@ -33,7 +30,7 @@ func TestProofScenariosBlake2b(t *testing.T) {
 					require.EqualValues(t, []byte(v), vBin)
 				}
 				p := trr.MerkleProof([]byte(k))
-				err = p.Validate(root.Bytes())
+				err := p.Validate(root.Bytes())
 				require.NoError(t, err)
 				if v != "" {
 					cID := trie.CommitToData([]byte(v))

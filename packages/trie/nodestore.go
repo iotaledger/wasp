@@ -28,7 +28,7 @@ func InitRoot(store KVStore, refcountsEnabled bool) (Hash, error) {
 	}
 
 	rootNodeData := newNodeData()
-	n := newBufferedNode(rootNodeData, nil)
+	n := newDraftNode(rootNodeData, nil)
 
 	trieStore := makeWriterPartition(store, partitionTrieNodes)
 	valueStore := makeWriterPartition(store, partitionValues)

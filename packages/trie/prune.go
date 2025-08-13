@@ -21,10 +21,7 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 		return PruneStats{}, errors.New("refcounts disabled, cannot prune trie")
 	}
 
-	tr, err := NewTrieReader(store, trieRoot)
-	if err != nil {
-		return PruneStats{}, err
-	}
+	tr := NewReader(store, trieRoot)
 
 	touchedNodes := make(map[Hash]uint32)
 	touchedValues := make(map[string]uint32)

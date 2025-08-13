@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
-func (tr *TrieReader) TakeSnapshot(w io.Writer) error {
+func (tr *Reader) TakeSnapshot(w io.Writer) error {
 	// Some duplicated nodes and values might be written more than once in the snapshot;
 	// Using a size-capped map to prevent this.
 	// If the cap is reached, the generated snapshot will contain duplicate information,
@@ -88,10 +88,7 @@ func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
 
 	if refcountsEnabled {
 		_, refcounts := NewRefcounts(store)
-		tr, err := NewTrieReader(store, *trieRoot)
-		if err != nil {
-			return err
-		}
+		tr := NewReader(store, *trieRoot)
 		touchedNodes := make(map[Hash]uint32)
 		touchedValues := make(map[string]uint32)
 		tr.IterateNodesWithRefcounts(refcounts, func(nodeKey []byte, n *NodeData, depth int, nodeRefcount, valueRefcount uint32) IterateNodesAction {

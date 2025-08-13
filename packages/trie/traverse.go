@@ -29,37 +29,7 @@ func (e pathEndingCode) String() string {
 	}
 }
 
-// pathElement proof element is NodeData together with the index of
-// the next child in the path (except the last one in the proof path)
-// Sequence of pathElement is used to generate proof
-type pathElement struct {
-	NodeData   *NodeData
-	ChildIndex byte
-}
-
-// nodePath returns path PathElement-s along the triePath (the key) with the ending code
-// to determine is it a proof of inclusion or absence
-// Each path element contains index of the subsequent child, except the last one is set to 0
-func (tr *TrieReader) nodePath(triePath []byte) ([]*pathElement, pathEndingCode) {
-	ret := make([]*pathElement, 0)
-	var endingCode pathEndingCode
-	tr.traversePath(triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
-		elem := &pathElement{
-			NodeData: n,
-		}
-		nextChildIdx := len(trieKey) + len(n.PathExtension)
-		if nextChildIdx < len(triePath) {
-			elem.ChildIndex = triePath[nextChildIdx]
-		}
-		endingCode = ending
-		ret = append(ret, elem)
-	})
-	assertf(len(ret) > 0, "len(ret)>0")
-	ret[len(ret)-1].ChildIndex = 0
-	return ret, endingCode
-}
-
-func (tr *TrieReader) traversePath(target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
+func (tr *Reader) traversePath(target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
 	n, found := tr.nodeStore.FetchNodeData(tr.root)
 	if !found {
 		return
@@ -97,7 +67,7 @@ func (tr *TrieReader) traversePath(target []byte, fun func(*NodeData, []byte, pa
 	}
 }
 
-func (tr *TrieUpdatable) traverseMutatedPath(triePath []byte, fun func(n *bufferedNode, ending pathEndingCode)) {
+func (tr *Draft) traverseMutatedPath(triePath []byte, fun func(n *draftNode, ending pathEndingCode)) {
 	n := tr.mutatedRoot
 	for {
 		keyPlusPathExtension := concat(n.triePath, n.pathExtension)
@@ -120,7 +90,7 @@ func (tr *TrieUpdatable) traverseMutatedPath(triePath []byte, fun func(n *buffer
 				return
 			}
 			childIndex := triePath[len(keyPlusPathExtension)]
-			child := n.getChild(childIndex, tr.nodeStore)
+			child := n.getChild(childIndex, tr.base.nodeStore)
 			if child == nil {
 				fun(n, endingExtend)
 				return

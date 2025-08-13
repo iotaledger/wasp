@@ -14,7 +14,7 @@ import (
 
 // state is the implementation of the State interface
 type state struct {
-	trieReader *trie.TrieReader
+	trieReader *trie.Reader
 	kv.KVStoreReader
 }
 

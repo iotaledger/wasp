@@ -36,7 +36,7 @@ func makeTrie(n int) (*InMemoryKVStore, []trie.Hash) {
 	values := NewScrambledZipfian(1000, 0)
 
 	for range n {
-		tr := lo.Must(trie.NewTrieUpdatable(store, roots[len(roots)-1]))
+		tr := lo.Must(trie.NewDraft(store, roots[len(roots)-1]))
 		for range 10000 {
 			key := makeKey()
 			value := values.Next()
@@ -56,7 +56,7 @@ func BenchmarkTakeSnapshot(b *testing.B) {
 	// reads/op measures the amount of times the DB is called to fetch data (which is the bottleneck when using RocksDB)
 
 	store, roots := makeTrie(1)
-	r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
+	r := trie.NewReader(store, roots[len(roots)-1])
 	store.ResetStats()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -78,7 +78,7 @@ func BenchmarkRestoreSnapshot(b *testing.B) {
 	buf := bytes.NewBuffer(nil)
 	{
 		store, roots := makeTrie(1)
-		r := lo.Must(trie.NewTrieReader(store, roots[len(roots)-1]))
+		r := trie.NewReader(store, roots[len(roots)-1])
 		err := r.TakeSnapshot(buf)
 		require.NoError(b, err)
 	}
@@ -139,7 +139,7 @@ func BenchmarkCommit(b *testing.B) {
 
 	root := lo.Must(trie.InitRoot(store, true))
 	for i := 0; i < b.N; i++ {
-		tr := lo.Must(trie.NewTrieUpdatable(store, root))
+		tr := lo.Must(trie.NewDraft(store, root))
 		for range 1000 {
 			key := makeKey()
 			value := values.Next()

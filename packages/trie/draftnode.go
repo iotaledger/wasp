@@ -4,48 +4,48 @@ import (
 	"encoding/hex"
 )
 
-// bufferedNode is a modified node
-type bufferedNode struct {
+// draftNode is a modified node
+type draftNode struct {
 	// persistent
 	nodeData            *NodeData
 	value               []byte // will be persisted in value store if not nil
 	terminal            *Tcommitment
 	pathExtension       []byte
-	uncommittedChildren map[byte]*bufferedNode // children which has been modified
+	uncommittedChildren map[byte]*draftNode // children which has been modified
 	triePath            []byte
 }
 
-func newBufferedNode(n *NodeData, triePath []byte) *bufferedNode {
+func newDraftNode(n *NodeData, triePath []byte) *draftNode {
 	if n == nil {
 		n = newNodeData()
 	}
-	ret := &bufferedNode{
+	ret := &draftNode{
 		nodeData:            n,
 		terminal:            n.Terminal,
 		pathExtension:       n.PathExtension,
-		uncommittedChildren: make(map[byte]*bufferedNode),
+		uncommittedChildren: make(map[byte]*draftNode),
 		triePath:            triePath,
 	}
 	return ret
 }
 
-func (n *bufferedNode) mustPersist(partition KVWriter) {
+func (n *draftNode) mustPersist(partition KVWriter) {
 	dbKey := n.nodeData.Commitment.Bytes()
 	partition.Set(dbKey, n.nodeData.Bytes())
 }
 
-func (n *bufferedNode) isRoot() bool {
+func (n *draftNode) isRoot() bool {
 	return len(n.triePath) == 0
 }
 
 // indexAsChild return index of the node as a child in the parent commitment and flag if it is a mutatedRoot
-func (n *bufferedNode) indexAsChild() byte {
+func (n *draftNode) indexAsChild() byte {
 	assertf(!n.isRoot(), "indexAsChild:: receiver can't be a root node")
 	return n.triePath[len(n.triePath)-1]
 }
 
 //nolint:unparam // for later use of idx
-func (n *bufferedNode) setModifiedChild(child *bufferedNode, idx ...byte) {
+func (n *draftNode) setModifiedChild(child *draftNode, idx ...byte) {
 	var index byte
 
 	if child != nil {
@@ -57,7 +57,7 @@ func (n *bufferedNode) setModifiedChild(child *bufferedNode, idx ...byte) {
 	n.uncommittedChildren[index] = child
 }
 
-func (n *bufferedNode) removeChild(child *bufferedNode, idx ...byte) {
+func (n *draftNode) removeChild(child *draftNode, idx ...byte) {
 	var index byte
 	if child == nil {
 		assertf(len(idx) > 0, "child index must be specified")
@@ -68,11 +68,11 @@ func (n *bufferedNode) removeChild(child *bufferedNode, idx ...byte) {
 	n.uncommittedChildren[index] = nil
 }
 
-func (n *bufferedNode) setPathExtension(pf []byte) {
+func (n *draftNode) setPathExtension(pf []byte) {
 	n.pathExtension = pf
 }
 
-func (n *bufferedNode) setValue(value []byte) {
+func (n *draftNode) setValue(value []byte) {
 	if len(value) == 0 {
 		n.terminal = nil
 		n.value = nil
@@ -87,11 +87,11 @@ func (n *bufferedNode) setValue(value []byte) {
 	}
 }
 
-func (n *bufferedNode) setTriePath(triePath []byte) {
+func (n *draftNode) setTriePath(triePath []byte) {
 	n.triePath = triePath
 }
 
-func (n *bufferedNode) getChild(childIndex byte, db *nodeStore) *bufferedNode {
+func (n *draftNode) getChild(childIndex byte, db *nodeStore) *draftNode {
 	if ret, already := n.uncommittedChildren[childIndex]; already {
 		return ret
 	}
@@ -102,10 +102,10 @@ func (n *bufferedNode) getChild(childIndex byte, db *nodeStore) *bufferedNode {
 	childTriePath := concat(n.triePath, n.pathExtension, []byte{childIndex})
 
 	nodeFetched, ok := db.FetchNodeData(*childCommitment)
-	assertf(ok, "TrieUpdatable::getChild: can't fetch node. triePath: '%s', dbKey: '%s",
+	assertf(ok, "TrieDraft::getChild: can't fetch node. triePath: '%s', dbKey: '%s",
 		hex.EncodeToString(childCommitment.Bytes()), hex.EncodeToString(childTriePath))
 
-	return newBufferedNode(nodeFetched, childTriePath)
+	return newDraftNode(nodeFetched, childTriePath)
 }
 
 // node is in the trie if at least one of the two is true:
@@ -113,11 +113,11 @@ func (n *bufferedNode) getChild(childIndex byte, db *nodeStore) *bufferedNode {
 // - it commits to at least 2 children
 // Otherwise node has to be merged/removed
 // It can only happen during deletion
-func (n *bufferedNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *bufferedNode) {
+func (n *draftNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *draftNode) {
 	if n.terminal != nil {
 		return false, nil
 	}
-	var theOnlyChildCommitted *bufferedNode
+	var theOnlyChildCommitted *draftNode
 
 	for i := range byte(NumChildren) {
 		child := n.getChild(i, nodeStore)
@@ -133,7 +133,7 @@ func (n *bufferedNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *bufferedNode
 }
 
 // traversePreOrder traverses the modified nodes pre-order
-func (n *bufferedNode) traversePreOrder(f func(*bufferedNode) IterateNodesAction) bool {
+func (n *draftNode) traversePreOrder(f func(*draftNode) IterateNodesAction) bool {
 	action := f(n)
 	if action == IterateStop {
 		return false
@@ -151,7 +151,7 @@ func (n *bufferedNode) traversePreOrder(f func(*bufferedNode) IterateNodesAction
 }
 
 // traversePostOrder traverses the modified nodes post-order
-func (n *bufferedNode) traversePostOrder(f func(*bufferedNode)) {
+func (n *draftNode) traversePostOrder(f func(*draftNode)) {
 	for i := range byte(NumChildren) {
 		if child := n.uncommittedChildren[i]; child != nil {
 			child.traversePostOrder(f)

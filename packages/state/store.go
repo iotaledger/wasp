@@ -169,7 +169,7 @@ func (s *store) extractBlock(d StateDraft) (
 
 	// compute state db mutations
 	newBlock, stats = func() (Block, *trie.CommitStats) {
-		tr, err := bufDB.trieUpdatable(baseTrieRoot)
+		tr, err := bufDB.trieDraft(baseTrieRoot)
 		if err != nil {
 			// should not happen
 			panic(err)

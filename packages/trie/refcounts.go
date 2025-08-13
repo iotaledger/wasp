@@ -13,7 +13,7 @@ type Refcounts struct {
 	store KVStore
 }
 
-func initRefcounts(store KVStore, root *bufferedNode) {
+func initRefcounts(store KVStore, root *draftNode) {
 	enabled, refcounts := NewRefcounts(store)
 	if enabled {
 		refcounts.inc(root)
@@ -76,7 +76,7 @@ func (r *Refcounts) GetValue(commitment []byte) uint32 {
 }
 
 // inc is called after a commit operation, and increments the refcounts for all affected nodes
-func (r *Refcounts) inc(root *bufferedNode) CommitStats {
+func (r *Refcounts) inc(root *draftNode) CommitStats {
 	nodeRefcounts, valueRefcounts := r.fetchBeforeCommit(root)
 
 	// increment and write updated refcounts
@@ -104,7 +104,7 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 		}
 		return refcount
 	}
-	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+	root.traversePreOrder(func(node *draftNode) IterateNodesAction {
 		nodeRefcount := incrementNode(node.nodeData.Commitment)
 		if nodeRefcount > 1 {
 			// don't increment its children refcounts
@@ -129,7 +129,7 @@ func (r *Refcounts) inc(root *bufferedNode) CommitStats {
 
 // fetchBeforeCommit fetches all affected refcounts, using a single call to
 // MultiGet
-func (r *Refcounts) fetchBeforeCommit(root *bufferedNode) (
+func (r *Refcounts) fetchBeforeCommit(root *draftNode) (
 	nodeRefcounts map[Hash]uint32,
 	valueRefcounts map[string]uint32,
 ) {
@@ -156,7 +156,7 @@ func (r *Refcounts) fetchBeforeCommit(root *bufferedNode) (
 		})
 	}
 	visited := make(map[Hash]struct{})
-	root.traversePreOrder(func(node *bufferedNode) IterateNodesAction {
+	root.traversePreOrder(func(node *draftNode) IterateNodesAction {
 		if _, ok := visited[node.nodeData.Commitment]; ok {
 			// this node was already visited, don't fetch twice
 			return IterateSkipSubtree
