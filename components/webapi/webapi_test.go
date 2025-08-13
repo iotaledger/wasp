@@ -46,8 +46,6 @@ func TestInternalServerErrors(t *testing.T) {
 		log.NewLogger(log.WithHandler(logger)),
 	)
 
-	time.Sleep(5 * time.Second)
-
 	// Add an endpoint that just panics with "foobar" and start the server
 	exceptionText := "foobar"
 	e.GET("/test", func(c echo.Context) error { panic(exceptionText) })
@@ -56,6 +54,8 @@ func TestInternalServerErrors(t *testing.T) {
 		require.ErrorIs(t, http.ErrServerClosed, err)
 	}()
 	defer e.Shutdown(context.Background())
+
+	time.Sleep(5 * time.Second)
 
 	// query the endpoint
 	req, err := http.NewRequest(http.MethodGet, "http://localhost:9999/test", http.NoBody)

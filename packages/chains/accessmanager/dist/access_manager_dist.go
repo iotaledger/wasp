@@ -155,7 +155,7 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 			continue
 		}
 		hasAccess := false
-		if amd.chain.IsAccessGrantedFor(trustedNodeID) {
+		if amd.chain != nil && amd.chain.IsAccessGrantedFor(trustedNodeID) {
 			hasAccess = true
 		}
 		trustedNode, trustedNodeMsgs := newAccessMgrNode(trustedNodeID, trustedNodePubKey, hasAccess)
@@ -168,9 +168,10 @@ func (amd *accessMgrDist) handleInputTrustedNodes(input *inputTrustedNodes) gpa.
 		if _, ok := trustedIndex[nodeID]; ok {
 			return true
 		}
-		amd.chain.MarkAsServerFor(node.pubKey, false)
-		msgs.AddAll(node.SetChainAccess(false))
-
+		if amd.chain != nil {
+			amd.chain.MarkAsServerFor(node.pubKey, false)
+			msgs.AddAll(node.SetChainAccess(false))
+		}
 		amd.nodes.Delete(nodeID)
 		amd.dismissPeerCB(node.pubKey)
 		return true
@@ -185,7 +186,9 @@ func (amd *accessMgrDist) handleMsgAccess(msg *msgAccess) gpa.OutMessages {
 	}
 	msgs := node.handleMsgAccess(msg)
 
-	amd.chain.MarkAsServerFor(node.pubKey, node.isServer)
+	if amd.chain != nil {
+		amd.chain.MarkAsServerFor(node.pubKey, node.isServer)
+	}
 
 	return msgs
 }
@@ -201,7 +204,6 @@ type accessMgrChain struct {
 }
 
 func newAccessMgrChain(
-
 	pubKeyToNodeID func(*cryptolib.PublicKey) gpa.NodeID,
 	initialServers []*cryptolib.PublicKey,
 	serversUpdatedCB func([]*cryptolib.PublicKey),

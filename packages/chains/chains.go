@@ -301,7 +301,7 @@ func (c *ChainRunner) activateWithoutLocking() error { //nolint:funlen
 	chainLog := c.log.NewChildLogger(chainID.ShortString())
 	var chainWAL utils.BlockWAL
 	if c.walEnabled {
-		chainWAL, err = utils.NewBlockWAL(chainLog, c.walFolderPath, chainMetrics.BlockWAL)
+		chainWAL, err = utils.NewBlockWAL(chainLog, c.walFolderPath, chainID, chainMetrics.BlockWAL)
 		if err != nil {
 			panic(fmt.Errorf("cannot create WAL: %w", err))
 		}

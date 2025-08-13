@@ -15,6 +15,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/hive.go/runtime/ioutils"
 
+	"github.com/iotaledger/wasp/v2/packages/isc"
 	"github.com/iotaledger/wasp/v2/packages/metrics"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
@@ -32,7 +33,9 @@ const (
 	constBlockWALTmpFileSuffix = ".tmp"
 )
 
-func NewBlockWAL(log log.Logger, dir string, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
+// Chain kept for backward compatibility
+func NewBlockWAL(log log.Logger, baseDir string, chainID isc.ChainID, metrics *metrics.ChainBlockWALMetrics) (BlockWAL, error) {
+	dir := filepath.Join(baseDir, chainID.String())
 	if err := ioutils.CreateDirectory(dir, 0o777); err != nil {
 		return nil, fmt.Errorf("BlockWAL cannot create folder %v: %w", dir, err)
 	}

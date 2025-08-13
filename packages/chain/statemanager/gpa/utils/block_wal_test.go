@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	bcs "github.com/iotaledger/bcs-go"
+	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/state"
 	"github.com/iotaledger/wasp/v2/packages/testutil/testlogger"
 )
@@ -22,9 +24,9 @@ func TestBlockWALBasic(t *testing.T) {
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(5, 1)
 	blocksInWAL := blocks[:4]
-	walGood, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	walGood, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
-	walBad, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	walBad, err := NewBlockWAL(log, constTestFolder, isctest.RandomChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocksInWAL {
 		err = walGood.Write(blocks[i])
@@ -57,9 +59,9 @@ func TestBlockWALLegacy(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
-	writeBlocksLegacy(t, blocks)
+	writeBlocksLegacy(t, factory.GetChainID(), blocks)
 	for i := range blocks {
 		block, err := wal.Read(blocks[i].Hash())
 		require.NoError(t, err)
@@ -75,15 +77,15 @@ func TestBlockWALNoSubfolder(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
 		require.NoError(t, err)
 	}
 	for _, block := range blocks {
-		pathWithSubfolder := walPathFromHash(block.Hash())
-		pathNoSubfolder := walPathNoSubfolderFromHash(block.Hash())
+		pathWithSubfolder := walPathFromHash(factory.GetChainID(), block.Hash())
+		pathNoSubfolder := walPathNoSubfolderFromHash(factory.GetChainID(), block.Hash())
 		err = os.Rename(pathWithSubfolder, pathNoSubfolder)
 		require.NoError(t, err)
 	}
@@ -103,14 +105,14 @@ func TestBlockWALOverwrite(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
 		require.NoError(t, err)
 	}
-	file0Path := walPathFromHash(blocks[0].Hash())
-	file1Path := walPathFromHash(blocks[1].Hash())
+	file0Path := walPathFromHash(factory.GetChainID(), blocks[0].Hash())
+	file1Path := walPathFromHash(factory.GetChainID(), blocks[1].Hash())
 	err = os.Rename(file1Path, file0Path)
 	require.NoError(t, err)
 	// block[1] is no longer in WAL
@@ -141,7 +143,7 @@ func TestBlockWALRestart(t *testing.T) {
 
 	factory := NewBlockFactory(t)
 	blocks := factory.GetBlocks(4, 1)
-	wal, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		err = wal.Write(blocks[i])
@@ -149,7 +151,7 @@ func TestBlockWALRestart(t *testing.T) {
 	}
 
 	// Restart: WAL object is recreated
-	wal, err = NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	wal, err = NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
 	for i := range blocks {
 		require.True(t, wal.Contains(blocks[i].Hash()))
@@ -159,7 +161,7 @@ func TestBlockWALRestart(t *testing.T) {
 	}
 }
 
-func testReadAllByStateIndex(t *testing.T, addToWALFun func(BlockWAL, []state.Block)) {
+func testReadAllByStateIndex(t *testing.T, addToWALFun func(isc.ChainID, BlockWAL, []state.Block)) {
 	log := testlogger.NewLogger(t)
 	defer log.Shutdown()
 	defer cleanupAfterTest(t)
@@ -170,10 +172,10 @@ func testReadAllByStateIndex(t *testing.T, addToWALFun func(BlockWAL, []state.Bl
 	branchBlockIndex := mainBlocks - branchBlocks - 1
 	blocksMain := factory.GetBlocks(mainBlocks, 1)
 	blocksBranch := factory.GetBlocksFrom(branchBlocks, 1, blocksMain[branchBlockIndex].L1Commitment(), 2)
-	wal, err := NewBlockWAL(log, constTestFolder, mockBlockWALMetrics())
+	wal, err := NewBlockWAL(log, constTestFolder, factory.GetChainID(), mockBlockWALMetrics())
 	require.NoError(t, err)
-	addToWALFun(wal, blocksMain)
-	addToWALFun(wal, blocksBranch)
+	addToWALFun(factory.GetChainID(), wal, blocksMain)
+	addToWALFun(factory.GetChainID(), wal, blocksBranch)
 
 	var blocksRead []state.Block
 	err = wal.ReadAllByStateIndex(func(stateIndex uint32, block state.Block) bool {
@@ -202,7 +204,7 @@ func testReadAllByStateIndex(t *testing.T, addToWALFun func(BlockWAL, []state.Bl
 }
 
 func TestReadAllByStateIndexV1(t *testing.T) {
-	testReadAllByStateIndex(t, func(wal BlockWAL, blocks []state.Block) {
+	testReadAllByStateIndex(t, func(chainID isc.ChainID, wal BlockWAL, blocks []state.Block) {
 		for _, block := range blocks {
 			err := wal.Write(block)
 			require.NoError(t, err)
@@ -211,22 +213,22 @@ func TestReadAllByStateIndexV1(t *testing.T) {
 }
 
 func TestReadAllByStateIndexLegacy(t *testing.T) {
-	testReadAllByStateIndex(t, func(wal BlockWAL, blocks []state.Block) {
-		writeBlocksLegacy(t, blocks)
+	testReadAllByStateIndex(t, func(chainID isc.ChainID, wal BlockWAL, blocks []state.Block) {
+		writeBlocksLegacy(t, chainID, blocks)
 	})
 }
 
-func walPathFromHash(blockHash state.BlockHash) string {
-	return filepath.Join(constTestFolder, blockWALSubFolderName(blockHash), blockWALFileName(blockHash))
+func walPathFromHash(chainID isc.ChainID, blockHash state.BlockHash) string {
+	return filepath.Join(constTestFolder, chainID.String(), blockWALSubFolderName(blockHash), blockWALFileName(blockHash))
 }
 
-func walPathNoSubfolderFromHash(blockHash state.BlockHash) string {
-	return filepath.Join(constTestFolder, blockWALFileName(blockHash))
+func walPathNoSubfolderFromHash(chainID isc.ChainID, blockHash state.BlockHash) string {
+	return filepath.Join(constTestFolder, chainID.String(), blockWALFileName(blockHash))
 }
 
-func writeBlocksLegacy(t *testing.T, blocks []state.Block) {
+func writeBlocksLegacy(t *testing.T, chainID isc.ChainID, blocks []state.Block) {
 	for _, block := range blocks {
-		filePath := walPathNoSubfolderFromHash(block.Hash())
+		filePath := walPathNoSubfolderFromHash(chainID, block.Hash())
 		f, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
 		require.NoError(t, err)
 		err = bcs.MarshalStream(&block, f)
