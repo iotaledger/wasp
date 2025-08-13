@@ -485,20 +485,27 @@ func newAssetsBag(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
 ) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
+	return NewAssetsBagWithPackageID(client, signer, l1starter.ISCPackageID())
+}
+
+func NewAssetsBagWithPackageID(
+	client *iscmoveclient.Client,
+	signer cryptolib.Signer,
+	packageID iotago.PackageID,
+) (*iotajsonrpc.IotaTransactionBlockResponse, error) {
 	return PTBTestWrapper(
 		&PTBTestWrapperRequest{
 			Client:    client,
 			Signer:    signer,
-			PackageID: l1starter.ISCPackageID(),
+			PackageID: packageID,
 			GasPrice:  iotaclient.DefaultGasPrice,
 			GasBudget: iotaclient.DefaultGasBudget,
 		},
 		func(ptb *iotago.ProgrammableTransactionBuilder) *iotago.ProgrammableTransactionBuilder {
-			return iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, l1starter.ISCPackageID(), signer.Address())
+			return iscmoveclient.PTBAssetsBagNewAndTransfer(ptb, packageID, signer.Address())
 		},
 	)
 }
-
 func assetsBagPlaceCoinAmountWithGasCoin(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,
