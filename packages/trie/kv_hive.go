@@ -76,15 +76,15 @@ func (kvs *HiveKVStoreAdapter) Del(key []byte) {
 	mustNoErr(err)
 }
 
-func (kvs *HiveKVStoreAdapter) Iterate(fun func(k []byte, v []byte) bool) {
-	err := kvs.kvs.Iterate(kvs.prefix, func(key kvstore.Key, value kvstore.Value) bool {
+func (kvs *HiveKVStoreAdapter) Iterate(prefix []byte, fun func(k []byte, v []byte) bool) {
+	err := kvs.kvs.Iterate(append(kvs.prefix, prefix...), func(key kvstore.Key, value kvstore.Value) bool {
 		return fun(key[len(kvs.prefix):], value)
 	})
 	mustNoErr(err)
 }
 
-func (kvs *HiveKVStoreAdapter) IterateKeys(fun func(k []byte) bool) {
-	err := kvs.kvs.IterateKeys(kvs.prefix, func(key kvstore.Key) bool {
+func (kvs *HiveKVStoreAdapter) IterateKeys(prefix []byte, fun func(k []byte) bool) {
+	err := kvs.kvs.IterateKeys(append(kvs.prefix, prefix...), func(key kvstore.Key) bool {
 		return fun(key[len(kvs.prefix):])
 	})
 	mustNoErr(err)

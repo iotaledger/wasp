@@ -2,7 +2,6 @@
 package test
 
 import (
-	"bytes"
 	"math"
 	"math/rand"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"github.com/samber/lo"
 
 	"github.com/iotaledger/wasp/v2/packages/kv"
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
+	"github.com/iotaledger/wasp/v2/packages/kvstore/mapdb"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 	"github.com/iotaledger/wasp/v2/packages/util"
 )
@@ -18,14 +19,12 @@ import (
 // ----------------------------------------------------------------------------
 // InMemoryKVStore is a KVStore implementation. Mostly used for testing
 var (
-	_ trie.KVStore     = &InMemoryKVStore{}
-	_ trie.Traversable = &InMemoryKVStore{}
-	_ trie.KVIterator  = &simpleInMemoryIterator{}
+	_ trie.KVStore = &InMemoryKVStore{}
 )
 
 type (
 	InMemoryKVStore struct {
-		m     map[string][]byte
+		m     kvstore.KVStore
 		Stats InMemoryKVStoreStats
 	}
 
@@ -37,16 +36,11 @@ type (
 		Set          uint
 		Del          uint
 	}
-
-	simpleInMemoryIterator struct {
-		store  *InMemoryKVStore
-		prefix []byte
-	}
 )
 
 func NewInMemoryKVStore() *InMemoryKVStore {
 	return &InMemoryKVStore{
-		m: make(map[string][]byte),
+		m: mapdb.NewMapDB(),
 	}
 }
 
@@ -56,82 +50,45 @@ func (im *InMemoryKVStore) ResetStats() {
 
 func (im *InMemoryKVStore) Get(k []byte) []byte {
 	im.Stats.Get++
-	return im.m[string(k)]
+	v, err := im.m.Get(k)
+	if err == kvstore.ErrKeyNotFound {
+		return nil
+	}
+	lo.Must0(err)
+	return v
 }
 
 func (im *InMemoryKVStore) MultiGet(ks [][]byte) [][]byte {
 	im.Stats.MultiGet++
 	im.Stats.MultiGetKeys += uint(len(ks))
-	return lo.Map(ks, func(k []byte, _ int) []byte {
-		return im.m[string(k)]
-	})
+	return lo.Must(im.m.MultiGet(ks))
 }
 
 func (im *InMemoryKVStore) Has(k []byte) bool {
 	im.Stats.Has++
-	_, ok := im.m[string(k)]
-	return ok
+	return lo.Must(im.m.Has(k))
 }
 
-func (im *InMemoryKVStore) Iterate(f func(k []byte, v []byte) bool) {
-	for k, v := range im.m {
-		if !f([]byte(k), v) {
-			return
-		}
-	}
+func (im *InMemoryKVStore) Iterate(prefix []byte, f func(k []byte, v []byte) bool) {
+	lo.Must0(im.m.Iterate(prefix, f))
 }
 
-func (im *InMemoryKVStore) IterateKeys(f func(k []byte) bool) {
-	for k := range im.m {
-		if !f([]byte(k)) {
-			return
-		}
-	}
+func (im *InMemoryKVStore) IterateKeys(prefix []byte, f func(k []byte) bool) {
+	lo.Must0(im.m.IterateKeys(prefix, f))
 }
 
 func (im *InMemoryKVStore) Set(k, v []byte) {
 	im.Stats.Set++
 	if len(v) != 0 {
-		im.m[string(k)] = v
+		lo.Must0(im.m.Set(k, v))
 	} else {
-		delete(im.m, string(k))
+		lo.Must0(im.m.Delete(k))
 	}
 }
 
 func (im *InMemoryKVStore) Del(k []byte) {
 	im.Stats.Del++
-	delete(im.m, string(k))
-}
-
-func (im *InMemoryKVStore) Iterator(prefix []byte) trie.KVIterator {
-	return &simpleInMemoryIterator{
-		store:  im,
-		prefix: prefix,
-	}
-}
-
-func (si *simpleInMemoryIterator) Iterate(f func(k []byte, v []byte) bool) {
-	var key []byte
-	for k, v := range si.store.m {
-		key = []byte(k)
-		if bytes.HasPrefix(key, si.prefix) {
-			if !f(key, v) {
-				return
-			}
-		}
-	}
-}
-
-func (si *simpleInMemoryIterator) IterateKeys(f func(k []byte) bool) {
-	var key []byte
-	for k := range si.store.m {
-		key = []byte(k)
-		if bytes.HasPrefix(key, si.prefix) {
-			if !f(key) {
-				return
-			}
-		}
-	}
+	lo.Must0(im.m.Delete(k))
 }
 
 // RandStreamIterator is a stream of random key/value pairs with the given parameters

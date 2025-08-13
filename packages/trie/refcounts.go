@@ -49,7 +49,7 @@ func UpdateRefcountsFlag(store KVStore, enable bool) error {
 	}
 	// flag can be enabled only on an empty store
 	isEmpty := true
-	store.IterateKeys(func(k []byte) bool {
+	store.IterateKeys(nil, func(k []byte) bool {
 		isEmpty = false
 		return false
 	})
@@ -207,14 +207,14 @@ func (r *Refcounts) DebugDump(w io.Writer) (
 	valueRefcounts = make(map[string]uint32)
 
 	fmt.Fprint(w, "[node refcounts]\n")
-	makeKVStorePartition(r.store, partitionRefcountNodes).IterateKeys(func(k []byte) bool {
+	makeKVStorePartition(r.store, partitionRefcountNodes).IterateKeys(nil, func(k []byte) bool {
 		n := r.getRefcount(nodeRefcountKey(k))
 		fmt.Fprintf(w, "   %x: %d\n", k, n)
 		nodeRefcounts[Hash(k)] = n
 		return true
 	})
 	fmt.Fprint(w, "[value refcounts]\n")
-	makeKVStorePartition(r.store, partitionRefcountValues).IterateKeys(func(k []byte) bool {
+	makeKVStorePartition(r.store, partitionRefcountValues).IterateKeys(nil, func(k []byte) bool {
 		n := r.getRefcount(valueRefcountKey(k))
 		fmt.Fprintf(w, "   %x: %d\n", k, n)
 		valueRefcounts[string(k)] = n

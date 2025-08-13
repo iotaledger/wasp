@@ -24,13 +24,13 @@ func (t *trieKVAdapter) Has(key kv.Key) bool {
 }
 
 func (t *trieKVAdapter) Iterate(prefix kv.Key, f func(kv.Key, []byte) bool) {
-	t.Reader.Iterator([]byte(prefix)).Iterate(func(k []byte, v []byte) bool {
+	t.Reader.Iterate([]byte(prefix), func(k []byte, v []byte) bool {
 		return f(kv.Key(k), v)
 	})
 }
 
 func (t *trieKVAdapter) IterateKeys(prefix kv.Key, f func(kv.Key) bool) {
-	t.Reader.Iterator([]byte(prefix)).IterateKeys(func(k []byte) bool {
+	t.Reader.IterateKeys([]byte(prefix), func(k []byte) bool {
 		return f(kv.Key(k))
 	})
 }

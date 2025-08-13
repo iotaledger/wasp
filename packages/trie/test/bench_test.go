@@ -3,13 +3,13 @@ package test
 import (
 	"bytes"
 	"io"
-	"maps"
 	"math/rand/v2"
 	"testing"
 
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/require"
 
+	"github.com/iotaledger/wasp/v2/packages/kvstore"
 	"github.com/iotaledger/wasp/v2/packages/trie"
 )
 
@@ -110,7 +110,7 @@ func BenchmarkPrune(b *testing.B) {
 	stats := InMemoryKVStoreStats{}
 	for i := 0; i < b.N; i++ {
 		storeClone := NewInMemoryKVStore()
-		storeClone.m = maps.Clone(store.m)
+		lo.Must0(kvstore.Copy(store.m, storeClone.m))
 		storeClone.Stats = stats
 		b.StartTimer()
 		_, err := trie.Prune(storeClone, penultimateRoot)

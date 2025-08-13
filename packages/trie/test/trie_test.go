@@ -612,7 +612,13 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 			trie.DebugDump(store, roots, io.Discard)
 		}
 		trie.DeleteRefcountsFlag(store)
-		require.Empty(t, store.m)
+
+		isEmpty := true
+		store.m.IterateKeys(nil, func(k []byte) bool {
+			isEmpty = false
+			return false
+		})
+		require.True(t, isEmpty)
 	}
 }
 
@@ -630,7 +636,7 @@ func TestIterate(t *testing.T) {
 
 			trr := trie.NewReader(store, roots[len(roots)-1])
 			var iteratedKeys1 [][]byte
-			trr.Iterate(func(k []byte, v []byte) bool {
+			trr.Iterate(nil, func(k []byte, v []byte) bool {
 				if traceScenarios {
 					fmt.Printf("---- iter --- '%s': '%s'\n", string(k), string(v))
 				}
@@ -644,7 +650,7 @@ func TestIterate(t *testing.T) {
 
 			// assert that iteration order is deterministic
 			var iteratedKeys2 [][]byte
-			trr.IterateKeys(func(k []byte) bool {
+			trr.IterateKeys(nil, func(k []byte) bool {
 				iteratedKeys2 = append(iteratedKeys2, k)
 				return true
 			})
@@ -681,7 +687,7 @@ func TestIteratePrefix(t *testing.T) {
 			trr := trie.NewReader(store, roots[len(roots)-1])
 
 			countIter := 0
-			trr.Iterator([]byte(prefix)).Iterate(func(k []byte, v []byte) bool {
+			trr.Iterate([]byte(prefix), func(k []byte, v []byte) bool {
 				if traceScenarios {
 					fmt.Printf("---- iter --- '%s': '%s'\n", string(k), string(v))
 				}
@@ -744,7 +750,7 @@ func TestDeletePrefix(t *testing.T) {
 			roots = append(roots, newRoot)
 			trie.DebugDump(store, roots, io.Discard)
 
-			trie.NewReader(store, newRoot).Iterator([]byte(prefix)).Iterate(func(k []byte, v []byte) bool {
+			trie.NewReader(store, newRoot).Iterate([]byte(prefix), func(k []byte, v []byte) bool {
 				if traceScenarios {
 					fmt.Printf("---- iter --- '%s': '%s'\n", string(k), string(v))
 				}

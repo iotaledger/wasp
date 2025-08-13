@@ -55,3 +55,11 @@ func (c *cachedKVReader) MultiGet(keys [][]byte) [][]byte {
 func (c *cachedKVReader) Has(key []byte) bool {
 	return c.Get(key) != nil
 }
+
+func (c *cachedKVReader) Iterate(prefix []byte, f func(k []byte, v []byte) bool) {
+	c.Iterate(prefix, f)
+}
+
+func (c *cachedKVReader) IterateKeys(prefix []byte, f func(k []byte) bool) {
+	c.IterateKeys(prefix, f)
+}

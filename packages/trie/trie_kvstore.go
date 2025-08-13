@@ -42,35 +42,13 @@ func (tr *Reader) Has(key []byte) bool {
 }
 
 // Iterate iterates all the key/value pairs in the trie
-func (tr *Reader) Iterate(f func(k []byte, v []byte) bool) {
-	tr.iteratePrefix(f, nil, true)
+func (tr *Reader) Iterate(prefix []byte, f func(k []byte, v []byte) bool) {
+	tr.iteratePrefix(f, prefix, true)
 }
 
 // IterateKeys iterates all the keys in the trie
-func (tr *Reader) IterateKeys(f func(k []byte) bool) {
-	tr.iteratePrefix(func(k []byte, v []byte) bool { return f(k) }, nil, false)
-}
-
-// TrieIterator implements KVIterator interface for keys in the trie with given prefix
-type TrieIterator struct {
-	prefix []byte
-	tr     *Reader
-}
-
-func (ti *TrieIterator) Iterate(fun func(k []byte, v []byte) bool) {
-	ti.tr.iteratePrefix(fun, ti.prefix, true)
-}
-
-func (ti *TrieIterator) IterateKeys(fun func(k []byte) bool) {
-	ti.tr.iteratePrefix(func(k []byte, v []byte) bool { return fun(k) }, ti.prefix, false)
-}
-
-// Iterator returns iterator for the sub-trie
-func (tr *Reader) Iterator(prefix []byte) KVIterator {
-	return &TrieIterator{
-		prefix: prefix,
-		tr:     tr,
-	}
+func (tr *Reader) IterateKeys(prefix []byte, f func(k []byte) bool) {
+	tr.iteratePrefix(func(k []byte, v []byte) bool { return f(k) }, prefix, false)
 }
 
 // iteratePrefix iterates the key/value with keys with prefix.
