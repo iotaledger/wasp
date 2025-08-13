@@ -1,6 +1,7 @@
 package trie
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io"
 	"maps"
@@ -190,9 +191,25 @@ func DebugDump(store KVStore, roots []Hash, w io.Writer) {
 	}
 	nodeCounts2, valueCounts2 := refcounts.DebugDump(w)
 	if !maps.Equal(nodeCounts, nodeCounts2) {
+		showDiff(w, nodeCounts, nodeCounts2, func(h Hash) string { return h.String() })
 		panic("inconsistency: node counts do not match")
 	}
 	if !maps.Equal(valueCounts, valueCounts2) {
+		showDiff(w, valueCounts, valueCounts2, func(s string) string { return hex.EncodeToString([]byte(s)) })
 		panic("inconsistency: value counts do not match")
+	}
+}
+
+func showDiff[T comparable](w io.Writer, a, b map[T]uint32, toString func(T) string) {
+	fmt.Fprint(w, "[counts diff]\n")
+	for k, v := range a {
+		if vb, ok := b[k]; !ok || v != vb {
+			fmt.Fprintf(w, "  <- %s: %d\n", toString(k), v)
+		}
+	}
+	for k, v := range b {
+		if va, ok := a[k]; !ok || v != va {
+			fmt.Fprintf(w, "  -> %s: %d\n", toString(k), v)
+		}
 	}
 }
