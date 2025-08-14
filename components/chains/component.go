@@ -3,6 +3,7 @@ package chains
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"go.uber.org/dig"
@@ -10,6 +11,7 @@ import (
 	"github.com/iotaledger/hive.go/app"
 	hiveshutdown "github.com/iotaledger/hive.go/app/shutdown"
 
+	comregistry "github.com/iotaledger/wasp/v2/components/registry"
 	"github.com/iotaledger/wasp/v2/packages/chain"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/chain/mempool"
@@ -45,6 +47,7 @@ type dependencies struct {
 
 	ShutdownHandler *hiveshutdown.ShutdownHandler
 	Chains          *chains.Chains
+	ReadOnlyPath    comregistry.ReadOnlyPath
 }
 
 func initConfigParams(c *dig.Container) error {
@@ -154,7 +157,14 @@ func provide(c *dig.Container) error {
 
 func run() error {
 	err := Component.Daemon().BackgroundWorker(Component.Name, func(ctx context.Context) {
-		if err := deps.Chains.Run(ctx); err != nil {
+		var err error
+		if string(deps.ReadOnlyPath) == "" {
+			err = deps.Chains.Run(ctx)
+		} else {
+			path := filepath.Join(string(deps.ReadOnlyPath), "data")
+			err = deps.Chains.RunReadOnly(ctx, path)
+		}
+		if err != nil {
 			deps.ShutdownHandler.SelfShutdown(fmt.Sprintf("Starting %s failed, error: %s", Component.Name, err.Error()), true)
 			return
 		}

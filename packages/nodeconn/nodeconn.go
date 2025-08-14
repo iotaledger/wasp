@@ -146,6 +146,47 @@ func (nc *nodeConnection) AttachChain(
 	return nil
 }
 
+func (nc *nodeConnection) AttachChainReadOnly(
+	ctx context.Context,
+	chainID isc.ChainID,
+	onChainConnect func(),
+	onChainDisconnect func(),
+) error {
+	ncc, err := func() (*ncChain, error) {
+		nc.chainsLock.Lock()
+		defer nc.chainsLock.Unlock()
+
+		ncc, err := newNCChain(ctx, nc, chainID, nil, nil, nc.wsURL, nc.httpURL)
+		if err != nil {
+			return nil, err
+		}
+
+		nc.chainsMap.Set(chainID, ncc)
+		util.ExecuteIfNotNil(onChainConnect)
+		nc.LogDebugf("chain registered: %s = %s", chainID.ShortString(), chainID)
+
+		return ncc, nil
+	}()
+	if err != nil {
+		return err
+	}
+
+	// disconnect the chain after the context is done
+	go func() {
+		<-ctx.Done()
+		ncc.WaitUntilStopped()
+
+		nc.chainsLock.Lock()
+		defer nc.chainsLock.Unlock()
+
+		nc.chainsMap.Delete(chainID)
+		util.ExecuteIfNotNil(onChainDisconnect)
+		nc.LogDebugf("chain unregistered: %s = %s, |remaining|=%v", chainID.ShortString(), chainID, nc.chainsMap.Size())
+	}()
+
+	return nil
+}
+
 func (nc *nodeConnection) GetGasCoinRef(ctx context.Context, chainID isc.ChainID) (*coin.CoinWithRef, error) {
 	ncChain, ok := nc.chainsMap.Get(chainID)
 	if !ok {

@@ -38,6 +38,12 @@ type ChainNodeConn interface {
 		onChainConnect func(),
 		onChainDisconnect func(),
 	) error
+	AttachChainReadOnly(
+		ctx context.Context,
+		chainID isc.ChainID,
+		onChainConnect func(),
+		onChainDisconnect func(),
+	) error
 	// PublishTX posts the PTB asynchronously and calls the callback when it is
 	// confirmed or an error is detected, or the ctx is canceled.
 	PublishTX(

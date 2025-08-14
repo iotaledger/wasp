@@ -6,7 +6,8 @@ import (
 
 type ParametersRegistries struct {
 	Chains struct {
-		FilePath string `default:"waspdb/chains/chain_registry.json" usage:"the path to the chain registry file"`
+		FilePath         string `default:"waspdb/chains/chain_registry.json" usage:"the path to the chain registry file"`
+		ReadOnlyFilePath string `default:"" usage:"the path to the chain registry file for a read only DB"`
 	}
 	DKShares struct {
 		Path string `default:"waspdb/dkshares" usage:"the path to the distributed key shares registries folder"`

@@ -19,6 +19,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -30,6 +31,7 @@ import (
 	"github.com/iotaledger/hive.go/log"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotago"
 	"github.com/iotaledger/wasp/v2/clients/iota-go/iotasigner"
+	"github.com/iotaledger/wasp/v2/clients/iscmove"
 	"github.com/iotaledger/wasp/v2/packages/chain/chainmanager"
 	"github.com/iotaledger/wasp/v2/packages/chain/cmtlog"
 	"github.com/iotaledger/wasp/v2/packages/chain/cons"
@@ -41,6 +43,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/chain/statemanager/snapshots"
 	"github.com/iotaledger/wasp/v2/packages/coin"
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
+	"github.com/iotaledger/wasp/v2/packages/database"
 	"github.com/iotaledger/wasp/v2/packages/gpa"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
@@ -472,6 +475,101 @@ func New(
 	// Run the main thread.
 
 	go cni.run(ctx, unhook)
+	return cni, nil
+}
+
+func NewReadOnly(
+	ctx context.Context,
+	readOnlyPath string,
+	log log.Logger,
+	chainID isc.ChainID,
+	chainStore indexedstore.IndexedStore,
+	nodeConn NodeConnection,
+	nodeIdentity *cryptolib.KeyPair,
+	processorConfig *processors.Config,
+	listener ChainListener,
+	net peering.NetworkProvider,
+	shutdownCoordinator *shutdown.Coordinator,
+	onChainConnect func(),
+	onChainDisconnect func(),
+	consensusDelay time.Duration,
+	recoveryTimeout time.Duration,
+	validatorAgentID isc.AgentID,
+) (Chain, error) {
+	log.LogDebugf("Starting the chain, chainID=%v", chainID)
+
+	readOnlyPath = filepath.Join(readOnlyPath, chainID.String())
+	readOnlyDB, err := database.NewReadOnlyDatabase(readOnlyPath)
+	if err != nil {
+		return nil, err
+	}
+	readOnlyDBStore, err := state.NewStoreReadonly(readOnlyDB.KVStore())
+	if err != nil {
+		return nil, err
+	}
+	latestState := lo.Must(readOnlyDBStore.LatestState())
+
+	// XXX use a fake PackageID here. PackageID should be unnecessary, because it is a readonly more
+	anchor := isc.NewStateAnchor(&iscmove.AnchorWithRef{
+		ObjectRef: iotago.ObjectRef{ObjectID: chainID.AsAddress().AsIotaAddress()},
+	}, *iotago.MustAddressFromHex("0x123"))
+
+	netPeeringID := peering.HashPeeringIDFromBytes(chainID.Bytes(), []byte("ChainManager")) // ChainID × ChainManager
+	cni := &chainNodeImpl{
+		nodeIdentity:         nodeIdentity,
+		chainID:              chainID,
+		chainStore:           chainStore,
+		nodeConn:             nodeConn,
+		tangleTime:           time.Time{}, // Zero time, while we haven't received it from the L1.
+		recvAnchorPipe:       pipe.NewInfinitePipe[lo.Tuple2[*isc.StateAnchor, *parameters.L1Params]](),
+		recvTxPublishedPipe:  pipe.NewInfinitePipe[*txPublished](),
+		consensusInsts:       shrinkingmap.New[cryptolib.AddressKey, *shrinkingmap.ShrinkingMap[cmtlog.LogIndex, *consensusInst]](),
+		consOutputPipe:       pipe.NewInfinitePipe[*consOutput](),
+		consRecoverPipe:      pipe.NewInfinitePipe[*consRecover](),
+		publishingTXes:       shrinkingmap.New[hashing.HashValue, context.CancelFunc](),
+		procCache:            processorConfig,
+		configUpdatedCh:      make(chan *configUpdate, 1),
+		serversUpdatedPipe:   pipe.NewInfinitePipe[*serversUpdate](),
+		rotateToPipe:         pipe.NewInfinitePipe[*iotago.Address](),
+		awaitReceiptActCh:    make(chan *awaitReceiptReq, 1),
+		awaitReceiptCnfCh:    make(chan *awaitReceiptReq, 1),
+		consensusDelay:       consensusDelay,
+		recoveryTimeout:      recoveryTimeout,
+		validatorAgentID:     validatorAgentID,
+		listener:             listener,
+		accessLock:           &sync.RWMutex{},
+		activeCommitteeNodes: []*cryptolib.PublicKey{},
+		latestConfirmedState: latestState,
+		latestActiveStateAO:  &anchor,
+		originDeposit:        0,
+		netRecvPipe:          pipe.NewInfinitePipe[*peering.PeerMessageIn](),
+		netPeeringID:         netPeeringID,
+		netPeerPubs:          map[gpa.NodeID]*cryptolib.PublicKey{},
+		net:                  net,
+		shutdownCoordinator:  shutdownCoordinator,
+		log:                  log,
+	}
+
+	// Attach to the L1.
+	err = nodeConn.AttachChainReadOnly(ctx, chainID, onChainConnect, onChainDisconnect)
+	if err != nil {
+		return nil, err
+	}
+
+	// cni.run()
+	go func() {
+		for {
+			if ctx.Err() != nil {
+				if cni.shutdownCoordinator == nil {
+					return
+				}
+				// needs to wait for state mgr and consensusInst
+				cni.shutdownCoordinator.WaitNestedWithLogging(1 * time.Second)
+				cni.shutdownCoordinator.Done()
+				return
+			}
+		}
+	}()
 	return cni, nil
 }
 

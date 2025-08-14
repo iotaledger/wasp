@@ -6,6 +6,7 @@ package registry
 
 import (
 	"path"
+	"path/filepath"
 
 	"go.uber.org/dig"
 
@@ -29,6 +30,8 @@ func init() {
 
 var Component *app.Component
 
+type ReadOnlyPath string
+
 func provide(c *dig.Container) error {
 	if err := c.Provide(func() registry.NodeIdentityProvider {
 		return nodeIdentityRegistry()
@@ -37,11 +40,22 @@ func provide(c *dig.Container) error {
 	}
 
 	if err := c.Provide(func() registry.ChainRecordRegistryProvider {
-		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(ParamsRegistries.Chains.FilePath)
+		path := ParamsRegistries.Chains.FilePath
+		if ParamsRegistries.Chains.ReadOnlyFilePath != "" {
+			path = ParamsRegistries.Chains.ReadOnlyFilePath
+		}
+		chainRecordRegistryProvider, err := registry.NewChainRecordRegistryImpl(path)
 		if err != nil {
 			Component.LogPanic(err.Error())
 		}
 		return chainRecordRegistryProvider
+	}); err != nil {
+		Component.LogPanic(err.Error())
+	}
+
+	if err := c.Provide(func() ReadOnlyPath {
+		path := filepath.Dir(ParamsRegistries.Chains.ReadOnlyFilePath)
+		return ReadOnlyPath(path)
 	}); err != nil {
 		Component.LogPanic(err.Error())
 	}

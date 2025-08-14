@@ -405,6 +405,15 @@ func (tnc *testNodeConn) AttachChain(
 	return nil
 }
 
+func (tnc *testNodeConn) AttachChainReadOnly(
+	ctx context.Context,
+	chainID isc.ChainID,
+	onChainConnect func(),
+	onChainDisconnect func(),
+) error {
+	panic("should not be called")
+}
+
 func (tnc *testNodeConn) Run(ctx context.Context) error {
 	panic("should be unused in test")
 }

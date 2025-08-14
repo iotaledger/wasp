@@ -228,6 +228,31 @@ func (c *Chains) initSnapshotsToLoad(configs []string) {
 	}
 }
 
+func (c *Chains) RunReadOnly(ctx context.Context, readOnlyPath string) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if c.ctx != nil {
+		return errors.New("chains already running")
+	}
+	c.ctx = ctx
+
+	var innerErr error
+	if err := c.chainRecordRegistryProvider.ForEachActiveChainRecord(func(chainRecord *registry.ChainRecord) bool { //nolint:contextcheck
+		chainID := chainRecord.ChainID()
+		if err := c.activateWithoutLockingReadOnly(chainID, readOnlyPath); err != nil {
+			innerErr = fmt.Errorf("cannot activate chain %s: %w", chainRecord.ChainID(), err)
+			return false
+		}
+
+		return true
+	}); err != nil {
+		return err
+	}
+
+	return innerErr
+}
+
 func (c *Chains) Run(ctx context.Context) error {
 	if err := c.nodeConnection.WaitUntilInitiallySynced(ctx); err != nil {
 		return fmt.Errorf("waiting for L1 node to become sync failed, error: %w", err)
@@ -287,6 +312,77 @@ func (c *Chains) chainServersUpdatedCB(chainID isc.ChainID, servers []*cryptolib
 
 func (c *Chains) chainAccessUpdatedCB(chainID isc.ChainID, accessNodes []*cryptolib.PublicKey) {
 	c.accessMgr.ChainAccessNodes(chainID, accessNodes)
+}
+
+func (c *Chains) activateWithoutLockingReadOnly(chainID isc.ChainID, readOnlyPath string) error {
+	if c.ctx == nil {
+		return errors.New("run chains first")
+	}
+	if c.ctx.Err() != nil {
+		return errors.New("node is shutting down")
+	}
+
+	// Check, maybe it is already running.
+	if c.allChains.Has(chainID) {
+		c.log.LogDebugf("Chain %v = %v is already activated", chainID.ShortString(), chainID.String())
+		return nil
+	}
+
+	// Activate the chain in the persistent store, if it is not activated yet.
+	chainRecord, err := c.chainRecordRegistryProvider.ChainRecord(chainID)
+	if err != nil {
+		return fmt.Errorf("cannot get chain record for %v: %w", chainID, err)
+	}
+	if !chainRecord.Active {
+		if _, err2 := c.chainRecordRegistryProvider.ActivateChainRecord(chainID); err2 != nil {
+			return fmt.Errorf("cannot activate chain: %w", err2)
+		}
+	}
+
+	chainKVStore, _, err := c.chainStateStoreProvider(chainID)
+	if err != nil {
+		return fmt.Errorf("error when creating chain KV store: %w", err)
+	}
+
+	chainLog := c.log.NewChildLogger(chainID.ShortString())
+	readOnlyDBStore, err := state.NewStoreReadonly(chainKVStore)
+	if err != nil {
+		return err
+	}
+	chainStore := indexedstore.New(readOnlyDBStore)
+	chainCtx, chainCancel := context.WithCancel(c.ctx)
+	validatorAgentID := accounts.CommonAccount()
+	chainShutdownCoordinator := c.shutdownCoordinator.Nested(fmt.Sprintf("Chain-%s", chainID.AsAddress().String()))
+
+	newChain, err := chain.NewReadOnly(
+		chainCtx,
+		readOnlyPath,
+		chainLog,
+		chainID,
+		chainStore,
+		c.nodeConnection,
+		c.nodeIdentityProvider.NodeIdentity(),
+		c.processorConfig,
+		c.chainListener,
+		c.networkProvider,
+		chainShutdownCoordinator,
+		func() { c.chainMetricsProvider.RegisterChain(chainID) },
+		func() { c.chainMetricsProvider.UnregisterChain(chainID) },
+		c.consensusDelay,
+		c.recoveryTimeout,
+		validatorAgentID,
+	)
+	if err != nil {
+		chainCancel()
+		return fmt.Errorf("Chains.Activate: failed to create chain object: %w", err)
+	}
+	c.allChains.Set(chainID, &activeChain{
+		chain:      newChain,
+		cancelFunc: chainCancel,
+	})
+
+	c.log.LogInfof("activated chain: %v = %s", chainID.ShortString(), chainID.String())
+	return nil
 }
 
 func (c *Chains) activateAllFromRegistry() error {
