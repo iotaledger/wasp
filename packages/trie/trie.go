@@ -8,34 +8,67 @@ import (
 	"strings"
 )
 
-// Reader direct read-only access to trie
-type Reader struct {
-	nodeStore *nodeStore
-	root      Hash
+// TrieR provides read-only access to the trie
+type TrieR struct {
+	store KVReader
 }
 
-func NewReader(store KVReader, root Hash) *Reader {
-	nodeStore := openNodeStore(store)
-	return &Reader{
-		nodeStore: nodeStore,
-		root:      root,
+// TrieRFromRoot provides read-only access to the trie from a given trie root
+type TrieRFromRoot struct {
+	R    *TrieR
+	Root Hash
+}
+
+// TrieRW provides read-write access to the trie
+type TrieRW struct {
+	*TrieR
+	store KVStore
+}
+
+func NewTrieR(store KVReader) *TrieR {
+	return &TrieR{store: store}
+}
+
+func NewTrieRFromRoot(store KVReader, root Hash) *TrieRFromRoot {
+	return &TrieRFromRoot{
+		R:    NewTrieR(store),
+		Root: root,
 	}
 }
 
-func (tr *Reader) Root() Hash {
-	return tr.root
+func NewTrieRW(store KVStore) *TrieRW {
+	return &TrieRW{
+		TrieR: NewTrieR(store),
+		store: store,
+	}
 }
 
-func (tr *Reader) VerifyRoot() error {
-	_, ok := tr.nodeStore.FetchNodeData(tr.root)
+// InitRoot initializes an empty trie store by committing a trie root
+func (tr *TrieRW) InitRoot(refcountsEnabled bool) (Hash, error) {
+	err := tr.UpdateRefcountsFlag(refcountsEnabled)
+	if err != nil {
+		return Hash{}, err
+	}
+
+	rootNodeData := newNodeData()
+	n := newDraftNode(rootNodeData, nil)
+
+	tr.commitNode(n)
+	tr.initRefcounts(n)
+	return n.nodeData.Commitment, nil
+}
+
+// VerifyRoot fetches the root node, and returns error if it is not found.
+func (tr *TrieRFromRoot) VerifyRoot() error {
+	_, ok := tr.R.fetchNodeData(tr.Root)
 	if !ok {
-		return fmt.Errorf("trie root not found: %s", tr.root)
+		return fmt.Errorf("trie root not found: %s", tr.Root)
 	}
 	return nil
 }
 
-// DebugDump prints the structure of the tree to stdout, for debugging purposes.
-func (tr *Reader) DebugDump(w io.Writer, nodeCounts map[Hash]uint32, valueCounts map[string]uint32) {
+// DebugDump prints the structure of the trie to w, for debugging purposes.
+func (tr *TrieRFromRoot) DebugDump(w io.Writer, nodeCounts map[Hash]uint32, valueCounts map[string]uint32) {
 	tr.IterateNodes(func(path []byte, n *NodeData, depth int) IterateNodesAction {
 		nodeCount := nodeCounts[n.Commitment]
 		nodeCount++
@@ -51,7 +84,7 @@ func (tr *Reader) DebugDump(w io.Writer, nodeCounts map[Hash]uint32, valueCounts
 		if nodeCount > 1 {
 			return IterateSkipSubtree
 		}
-		if n.Terminal != nil && !n.Terminal.IsValue {
+		if n.CommitsToExternalValue() {
 			valueCount := valueCounts[string(n.Terminal.Data)]
 			valueCount++
 			valueCounts[string(n.Terminal.Data)] = valueCount
@@ -61,7 +94,7 @@ func (tr *Reader) DebugDump(w io.Writer, nodeCounts map[Hash]uint32, valueCounts
 				"%s     [v: %x -> %q] (seen: %d)\n",
 				indent,
 				n.Terminal.Data,
-				ellipsis(tr.nodeStore.valueStore.Get(n.Terminal.Bytes()), 20),
+				ellipsis(tr.R.fetchValueOfTerminal(n.Terminal), 20),
 				valueCount,
 			)
 		}
@@ -79,24 +112,22 @@ func ellipsis(b []byte, maxLen int) string {
 	return string(b[0:maxLen-3]) + "..."
 }
 
-// DebugDump prints the structure of the whole DB to stdout, for debugging
+// DebugDump prints the structure of the whole DB to w, for debugging
 // purposes. It also verifies the refcounts, and panics if there is a mismatch.
-func DebugDump(store KVStore, roots []Hash, w io.Writer) {
+func (tr *TrieR) DebugDump(roots []Hash, w io.Writer) {
 	nodeCounts := make(map[Hash]uint32)
 	valueCounts := make(map[string]uint32)
 
 	fmt.Fprintf(w, "[trie store]\n")
 	for _, root := range roots {
-		tr := NewReader(store, root)
-		tr.DebugDump(w, nodeCounts, valueCounts)
+		NewTrieRFromRoot(tr.store, root).DebugDump(w, nodeCounts, valueCounts)
 	}
 
-	enabled, refcounts := NewRefcounts(store)
-	if !enabled {
+	if !tr.IsRefcountsEnabled() {
 		fmt.Fprint(w, "[node refcounts disabled]\n")
 		return
 	}
-	nodeCounts2, valueCounts2 := refcounts.DebugDump(w)
+	nodeCounts2, valueCounts2 := tr.DebugDumpRefcounts(w)
 	if !maps.Equal(nodeCounts, nodeCounts2) {
 		showDiff(w, nodeCounts, nodeCounts2, func(h Hash) string { return h.String() })
 		panic("inconsistency: node counts do not match")

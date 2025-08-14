@@ -29,16 +29,16 @@ func TestBasic(t *testing.T) {
 
 	var roots []trie.Hash
 	{
-		roots = append(roots, lo.Must(trie.InitRoot(store, true)))
+		roots = append(roots, lo.Must(trie.NewTrieRW(store).InitRoot(true)))
 	}
 	{
 		root0 := roots[0]
-		state := trie.NewReader(store, root0)
+		state := trie.NewTrieRFromRoot(store, root0)
 		require.EqualValues(t, []byte(nil), state.Get([]byte("a")))
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots, os.Stdout)
+	trie.NewTrieR(store).DebugDump(roots, os.Stdout)
 
 	{
 		tr, err := trie.NewDraft(store, roots[0])
@@ -53,7 +53,7 @@ func TestBasic(t *testing.T) {
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots, os.Stdout)
+	trie.NewTrieR(store).DebugDump(roots, os.Stdout)
 
 	{
 		trd, err := trie.NewDraft(store, roots[1])
@@ -63,13 +63,13 @@ func TestBasic(t *testing.T) {
 		roots = append(roots, root2)
 		require.NoError(t, err)
 
-		tr := trie.NewReader(store, root2)
+		tr := trie.NewTrieRFromRoot(store, root2)
 		require.EqualValues(t, []byte("a"), tr.Get([]byte("a")))
 		require.EqualValues(t, []byte("bb"), tr.Get([]byte("b")))
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots, os.Stdout)
+	trie.NewTrieR(store).DebugDump(roots, os.Stdout)
 
 	{
 		trd, err := trie.NewDraft(store, roots[2])
@@ -81,14 +81,14 @@ func TestBasic(t *testing.T) {
 		roots = append(roots, root3)
 		require.NoError(t, err)
 
-		tr := trie.NewReader(store, root3)
+		tr := trie.NewTrieRFromRoot(store, root3)
 		require.Nil(t, tr.Get([]byte("a")))
 	}
 
 	fmt.Printf("--- DebugDump %d\n", len(roots))
-	trie.DebugDump(store, roots, os.Stdout)
+	trie.NewTrieR(store).DebugDump(roots, os.Stdout)
 
-	state := trie.NewReader(store, roots[3])
+	state := trie.NewTrieRFromRoot(store, roots[3])
 	require.Nil(t, state.Get([]byte("a")))
 
 	{
@@ -101,7 +101,7 @@ func TestBasic(t *testing.T) {
 		roots = append(roots, root4)
 		require.NoError(t, err)
 
-		tr := trie.NewReader(store, root4)
+		tr := trie.NewTrieRFromRoot(store, root4)
 		require.Nil(t, tr.Get([]byte("a")))
 		require.Nil(t, tr.Get([]byte("b")))
 		require.Nil(t, tr.Get([]byte("cccddd")))
@@ -114,7 +114,7 @@ func TestBasic(t *testing.T) {
 func TestBasic2(t *testing.T) {
 	store := NewInMemoryKVStore()
 
-	root0 := lo.Must(trie.InitRoot(store, true))
+	root0 := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 
 	var root1 trie.Hash
 	{
@@ -126,18 +126,18 @@ func TestBasic2(t *testing.T) {
 		root1, _, _ = tr.Commit(store)
 	}
 
-	tr := trie.NewReader(store, root1)
+	tr := trie.NewTrieRFromRoot(store, root1)
 	require.True(t, tr.Has([]byte{0x00}))
 	require.True(t, tr.Has([]byte{0x01}))
 	require.True(t, tr.Has([]byte{0x10}))
 
-	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
+	trie.NewTrieR(store).DebugDump([]trie.Hash{root0, root1}, io.Discard)
 }
 
 func TestBasic3(t *testing.T) {
 	store := NewInMemoryKVStore()
 
-	root0 := lo.Must(trie.InitRoot(store, true))
+	root0 := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 
 	var root1 trie.Hash
 	{
@@ -150,21 +150,21 @@ func TestBasic3(t *testing.T) {
 		root1, _, _ = tr.Commit(store)
 	}
 
-	tr := trie.NewReader(store, root1)
+	tr := trie.NewTrieRFromRoot(store, root1)
 	require.Equal(t, []byte{1}, tr.Get([]byte{0x30}))
 	require.Equal(t, []byte{1}, tr.Get([]byte{0x31}))
-	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
+	trie.NewTrieR(store).DebugDump([]trie.Hash{root0, root1}, io.Discard)
 	require.Equal(t, []byte{1}, tr.Get([]byte{0xb0}))
 	require.Equal(t, []byte{1}, tr.Get([]byte{0xb2}))
 
-	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
+	trie.NewTrieR(store).DebugDump([]trie.Hash{root0, root1}, io.Discard)
 }
 
 func TestKeyTooLong(t *testing.T) {
 	store := NewInMemoryKVStore()
 
 	tooLongKey := make([]byte, trie.KeyMaxLength+1)
-	root0 := lo.Must(trie.InitRoot(store, true))
+	root0 := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 	{
 		tr, err := trie.NewDraft(store, root0)
 		require.NoError(t, err)
@@ -176,10 +176,10 @@ func TestKeyTooLong(t *testing.T) {
 
 func TestCreateTrie(t *testing.T) {
 	t.Run("ok init-"+"", func(t *testing.T) {
-		rootC1 := lo.Must(trie.InitRoot(NewInMemoryKVStore(), true))
+		rootC1 := lo.Must(trie.NewTrieRW(NewInMemoryKVStore()).InitRoot(true))
 		require.NotNil(t, rootC1)
 
-		rootC2 := lo.Must(trie.InitRoot(NewInMemoryKVStore(), true))
+		rootC2 := lo.Must(trie.NewTrieRW(NewInMemoryKVStore()).InitRoot(true))
 		require.NotNil(t, rootC2)
 
 		require.Equal(t, rootC1, rootC2)
@@ -192,26 +192,26 @@ func TestCreateTrie(t *testing.T) {
 			value    = []byte("value")
 		)
 
-		rootInitial := lo.Must(trie.InitRoot(store, true))
+		rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 		require.NotNil(t, rootInitial)
 
 		trd, err := trie.NewDraft(store, rootInitial)
 		require.NoError(t, err)
 
-		require.Empty(t, trie.NewReader(store, rootInitial).Get(emptyKey))
+		require.Empty(t, trie.NewTrieRFromRoot(store, rootInitial).Get(emptyKey))
 
 		trd.Update(key, value)
 		rootCnext, _, _ := trd.Commit(store)
-		trie.DebugDump(store, []trie.Hash{rootInitial, rootCnext}, io.Discard)
+		trie.NewTrieR(store).DebugDump([]trie.Hash{rootInitial, rootCnext}, io.Discard)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
 
-		require.Empty(t, trie.NewReader(store, rootInitial).Get(emptyKey))
+		require.Empty(t, trie.NewTrieRFromRoot(store, rootInitial).Get(emptyKey))
 
-		v := trie.NewReader(store, rootCnext).Get(key)
+		v := trie.NewTrieRFromRoot(store, rootCnext).Get(key)
 		require.EqualValues(t, value, v)
 
-		require.True(t, trie.NewReader(store, rootCnext).Has(key))
+		require.True(t, trie.NewTrieRFromRoot(store, rootCnext).Has(key))
 	})
 	t.Run("update 2 long value"+"", func(t *testing.T) {
 		store := NewInMemoryKVStore()
@@ -221,27 +221,27 @@ func TestCreateTrie(t *testing.T) {
 			value    = bytes.Repeat([]byte("value"), 500)
 		)
 
-		rootInitial := lo.Must(trie.InitRoot(store, true))
+		rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 		require.NotNil(t, rootInitial)
 
 		trd, err := trie.NewDraft(store, rootInitial)
 		require.NoError(t, err)
 
-		require.Empty(t, trie.NewReader(store, rootInitial).Get(emptyKey))
+		require.Empty(t, trie.NewTrieRFromRoot(store, rootInitial).Get(emptyKey))
 
 		trd.Update(key, value)
 		rootCnext, _, stats := trd.Commit(store)
 		require.NotZero(t, stats.CreatedValues)
 		t.Logf("initial root commitment: %s", rootInitial)
 		t.Logf("next root commitment: %s", rootCnext)
-		trie.DebugDump(store, []trie.Hash{rootInitial, rootCnext}, io.Discard)
+		trie.NewTrieR(store).DebugDump([]trie.Hash{rootInitial, rootCnext}, io.Discard)
 
-		require.Empty(t, trie.NewReader(store, rootInitial).Get(emptyKey))
+		require.Empty(t, trie.NewTrieRFromRoot(store, rootInitial).Get(emptyKey))
 
-		v := trie.NewReader(store, rootCnext).Get(key)
+		v := trie.NewTrieRFromRoot(store, rootCnext).Get(key)
 		require.EqualValues(t, value, v)
 
-		require.True(t, trie.NewReader(store, rootCnext).Has(key))
+		require.True(t, trie.NewTrieRFromRoot(store, rootCnext).Has(key))
 	})
 }
 
@@ -252,7 +252,7 @@ func TestBaseUpdate(t *testing.T) {
 		})
 		t.Run("update many", func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := lo.Must(trie.InitRoot(store, true))
+			rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 			require.NotNil(t, rootInitial)
 
 			trd, err := trie.NewDraft(store, rootInitial)
@@ -266,9 +266,9 @@ func TestBaseUpdate(t *testing.T) {
 			rootNext, _, _ := trd.Commit(store)
 			t.Logf("after commit: %s", rootNext)
 
-			trie.DebugDump(store, []trie.Hash{rootInitial, rootNext}, io.Discard)
+			trie.NewTrieR(store).DebugDump([]trie.Hash{rootInitial, rootNext}, io.Discard)
 
-			tr := trie.NewReader(store, rootNext)
+			tr := trie.NewTrieRFromRoot(store, rootNext)
 			for _, key := range data {
 				v := tr.Get(key)
 				require.EqualValues(t, bytes.Repeat(key, 5), v)
@@ -341,7 +341,7 @@ func runUpdateScenario(store trie.KVStore, root trie.Hash, scenario []string) (
 	return checklist, committedRoots
 }
 
-func checkResult(t *testing.T, tr *trie.Reader, checklist map[string]string) {
+func checkResult(t *testing.T, tr *trie.TrieRFromRoot, checklist map[string]string) {
 	for key, expectedValue := range checklist {
 		v := string(tr.Get([]byte(key)))
 		if traceScenarios {
@@ -364,7 +364,7 @@ func TestBaseScenarios(t *testing.T) {
 	tf := func(data []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := lo.Must(trie.InitRoot(store, true))
+			rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 			require.NotNil(t, rootInitial)
 
 			checklist, newRoots := runUpdateScenario(store, rootInitial, data)
@@ -372,9 +372,9 @@ func TestBaseScenarios(t *testing.T) {
 			if len(newRoots) > 0 {
 				root = newRoots[len(newRoots)-1]
 			}
-			checkResult(t, trie.NewReader(store, root), checklist)
+			checkResult(t, trie.NewTrieRFromRoot(store, root), checklist)
 
-			trie.DebugDump(store, append([]trie.Hash{rootInitial}, newRoots...), io.Discard)
+			trie.NewTrieR(store).DebugDump(append([]trie.Hash{rootInitial}, newRoots...), io.Discard)
 		}
 	}
 
@@ -398,16 +398,16 @@ func TestBaseScenarios(t *testing.T) {
 func TestDeletionLoop(t *testing.T) {
 	runTest := func(initScenario, scenario []string) {
 		store := NewInMemoryKVStore()
-		beginRoot := lo.Must(trie.InitRoot(store, true))
+		beginRoot := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 		roots := []trie.Hash{beginRoot}
 		t.Logf("TestDeletionLoop: model: '%s', init='%s', scenario='%s'", "", initScenario, scenario)
 		_, roots1 := runUpdateScenario(store, beginRoot, initScenario)
 		roots = append(roots, roots1...)
-		trie.DebugDump(store, roots, io.Discard)
+		trie.NewTrieR(store).DebugDump(roots, io.Discard)
 		_, roots2 := runUpdateScenario(store, roots[len(roots)-1], scenario)
 		require.Equal(t, roots[len(roots)-1], roots2[len(roots2)-1])
 		roots = append(roots, roots2...)
-		trie.DebugDump(store, roots, io.Discard)
+		trie.NewTrieR(store).DebugDump(roots, io.Discard)
 	}
 	runAll := func(init, sc []string) {
 		runTest(init, sc)
@@ -430,25 +430,25 @@ func TestDeterminism(t *testing.T) {
 			var root1, root2 trie.Hash
 			{
 				store1 := NewInMemoryKVStore()
-				initRoot1 := lo.Must(trie.InitRoot(store1, true))
+				initRoot1 := lo.Must(trie.NewTrieRW(store1).InitRoot(true))
 				roots1 := []trie.Hash{initRoot1}
 
 				checklist1, newRoots1 := runUpdateScenario(store1, initRoot1, scenario1)
 				roots1 = append(roots1, newRoots1...)
-				trie.DebugDump(store1, roots1, io.Discard)
+				trie.NewTrieR(store1).DebugDump(roots1, io.Discard)
 				root1 = roots1[len(roots1)-1]
-				checkResult(t, trie.NewReader(store1, root1), checklist1)
+				checkResult(t, trie.NewTrieRFromRoot(store1, root1), checklist1)
 			}
 			{
 				store2 := NewInMemoryKVStore()
-				initRoot2 := lo.Must(trie.InitRoot(store2, true))
+				initRoot2 := lo.Must(trie.NewTrieRW(store2).InitRoot(true))
 				roots2 := []trie.Hash{initRoot2}
 
 				checklist2, newRoots2 := runUpdateScenario(store2, initRoot2, scenario2)
 				roots2 = append(roots2, newRoots2...)
-				trie.DebugDump(store2, roots2, io.Discard)
+				trie.NewTrieR(store2).DebugDump(roots2, io.Discard)
 				root2 = roots2[len(roots2)-1]
-				checkResult(t, trie.NewReader(store2, root2), checklist2)
+				checkResult(t, trie.NewTrieRFromRoot(store2, root2), checklist2)
 			}
 			require.Equal(t, root1, root2)
 		}
@@ -475,7 +475,7 @@ func TestDeterminism(t *testing.T) {
 
 func TestRefcounts(t *testing.T) {
 	store := NewInMemoryKVStore()
-	root0 := lo.Must(trie.InitRoot(store, true))
+	root0 := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 
 	var root1 trie.Hash
 	{
@@ -484,16 +484,17 @@ func TestRefcounts(t *testing.T) {
 		root1, _, _ = tr.Commit(store)
 	}
 
-	enabled, refcounts := trie.NewRefcounts(store)
+	tr := trie.NewTrieR(store)
+	enabled := tr.IsRefcountsEnabled()
 	require.True(t, enabled)
 	checkNode := func(h string, n uint32) {
-		require.Equal(t, n, refcounts.GetNode(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
+		require.Equal(t, n, tr.GetNodeRefcount(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
 	}
 	checkValue := func(v string, n uint32) {
-		require.Equal(t, n, refcounts.GetValue(lo.Must(hex.DecodeString(v))))
+		require.Equal(t, n, tr.GetValueRefcount(lo.Must(hex.DecodeString(v))))
 	}
 
-	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
+	tr.DebugDump([]trie.Hash{root0, root1}, io.Discard)
 	// [trie store]
 	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
 	//  [] c:e71db7c574e3b92e39ae790f08b1a12321a75586 ext:[] term:<nil>
@@ -514,7 +515,7 @@ func TestRefcounts(t *testing.T) {
 	}
 
 	_ = root2
-	trie.DebugDump(store, []trie.Hash{root0, root1, root2}, io.Discard)
+	tr.DebugDump([]trie.Hash{root0, root1, root2}, io.Discard)
 	// [trie store]
 	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil>
 	//  [] c:e71db7c574e3b92e39ae790f08b1a12321a75586 ext:[] term:<nil>
@@ -534,7 +535,7 @@ func TestRefcounts(t *testing.T) {
 
 func TestTrieDAGEdgeCase(t *testing.T) {
 	store := NewInMemoryKVStore()
-	root0 := lo.Must(trie.InitRoot(store, true))
+	root0 := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 
 	// Compose a degenerate trie that is actually a DAG
 	var root1 trie.Hash
@@ -549,16 +550,17 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 		root1, _, _ = tr.Commit(store)
 	}
 
-	enabled, refcounts := trie.NewRefcounts(store)
+	tr := trie.NewTrieR(store)
+	enabled := tr.IsRefcountsEnabled()
 	require.True(t, enabled)
 	checkNode := func(h string, n uint32) {
-		require.Equal(t, n, refcounts.GetNode(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
+		require.Equal(t, n, tr.GetNodeRefcount(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
 	}
 	checkValue := func(v string, n uint32) {
-		require.Equal(t, n, refcounts.GetValue(lo.Must(hex.DecodeString(v))))
+		require.Equal(t, n, tr.GetValueRefcount(lo.Must(hex.DecodeString(v))))
 	}
 
-	trie.DebugDump(store, []trie.Hash{root0, root1}, io.Discard)
+	trie.NewTrieR(store).DebugDump([]trie.Hash{root0, root1}, io.Discard)
 	// [trie store]
 	//  [] c:534f98b3ad630819d284287b647283a1d5dbcf90 ext:[] term:<nil> (seen: 1)
 	//  [] c:21d8e5ebf834af2b24e5bba418dd59929b2e6017 ext:[] term:<nil> (seen: 1)
@@ -592,11 +594,11 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 		var roots2 []trie.Hash
 		for _, root := range []trie.Hash{root0, root1} {
 			buf := bytes.NewBuffer(nil)
-			lo.Must0(trie.NewReader(store, root).TakeSnapshot(buf))
-			err := trie.RestoreSnapshot(buf, store2, true)
+			lo.Must0(trie.NewTrieRFromRoot(store, root).TakeSnapshot(buf))
+			err := trie.NewTrieRW(store2).RestoreSnapshot(buf, true)
 			require.NoError(t, err)
 			roots2 = append(roots2, root)
-			trie.DebugDump(store2, roots2, io.Discard)
+			trie.NewTrieR(store2).DebugDump(roots2, io.Discard)
 		}
 		require.Equal(t, store.m, store2.m)
 	}
@@ -607,9 +609,9 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 		for len(roots) > 0 {
 			root := roots[0]
 			roots = roots[1:]
-			_, err := trie.Prune(store, root)
+			_, err := trie.NewTrieRW(store).Prune(root)
 			require.NoError(t, err)
-			trie.DebugDump(store, roots, io.Discard)
+			trie.NewTrieR(store).DebugDump(roots, io.Discard)
 		}
 		trie.DeleteRefcountsFlag(store)
 
@@ -626,15 +628,15 @@ func TestIterate(t *testing.T) {
 	iterTest := func(scenario []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := lo.Must(trie.InitRoot(store, true))
+			rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 			require.NotNil(t, rootInitial)
 
 			checklist, roots := runUpdateScenario(store, rootInitial, scenario)
 			allRoots := append([]trie.Hash{rootInitial}, roots...)
-			trie.DebugDump(store, allRoots, io.Discard)
-			checkResult(t, trie.NewReader(store, allRoots[len(allRoots)-1]), checklist)
+			trie.NewTrieR(store).DebugDump(allRoots, io.Discard)
+			checkResult(t, trie.NewTrieRFromRoot(store, allRoots[len(allRoots)-1]), checklist)
 
-			trr := trie.NewReader(store, roots[len(roots)-1])
+			trr := trie.NewTrieRFromRoot(store, roots[len(roots)-1])
 			var iteratedKeys1 [][]byte
 			trr.Iterate(nil, func(k []byte, v []byte) bool {
 				if traceScenarios {
@@ -678,13 +680,13 @@ func TestIteratePrefix(t *testing.T) {
 	iterTest := func(scenario []string, prefix string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := lo.Must(trie.InitRoot(store, true))
+			rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 			require.NotNil(t, rootInitial)
 
 			_, roots := runUpdateScenario(store, rootInitial, scenario)
-			trie.DebugDump(store, append([]trie.Hash{rootInitial}, roots...), io.Discard)
+			trie.NewTrieR(store).DebugDump(append([]trie.Hash{rootInitial}, roots...), io.Discard)
 
-			trr := trie.NewReader(store, roots[len(roots)-1])
+			trr := trie.NewTrieRFromRoot(store, roots[len(roots)-1])
 
 			countIter := 0
 			trr.Iterate([]byte(prefix), func(k []byte, v []byte) bool {
@@ -734,13 +736,13 @@ func TestDeletePrefix(t *testing.T) {
 	iterTest := func(scenario []string, prefix string) func(t *testing.T) {
 		return func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			rootInitial := lo.Must(trie.InitRoot(store, true))
+			rootInitial := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 			require.NotNil(t, rootInitial)
 			roots := []trie.Hash{rootInitial}
 
 			_, newRoots := runUpdateScenario(store, rootInitial, scenario)
 			roots = append(roots, newRoots...)
-			trie.DebugDump(store, roots, io.Discard)
+			trie.NewTrieR(store).DebugDump(roots, io.Discard)
 
 			trd, err := trie.NewDraft(store, roots[len(roots)-1])
 			require.NoError(t, err)
@@ -748,9 +750,9 @@ func TestDeletePrefix(t *testing.T) {
 			deleted := trd.DeletePrefix([]byte(prefix))
 			newRoot, _, _ := trd.Commit(store)
 			roots = append(roots, newRoot)
-			trie.DebugDump(store, roots, io.Discard)
+			trie.NewTrieR(store).DebugDump(roots, io.Discard)
 
-			trie.NewReader(store, newRoot).Iterate([]byte(prefix), func(k []byte, v []byte) bool {
+			trie.NewTrieRFromRoot(store, newRoot).Iterate([]byte(prefix), func(k []byte, v []byte) bool {
 				if traceScenarios {
 					fmt.Printf("---- iter --- '%s': '%s'\n", string(k), string(v))
 				}

@@ -29,8 +29,8 @@ func (e pathEndingCode) String() string {
 	}
 }
 
-func (tr *Reader) traversePath(target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
-	n, found := tr.nodeStore.FetchNodeData(tr.root)
+func (tr *TrieR) traversePath(root Hash, target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
+	n, found := tr.fetchNodeData(root)
 	if !found {
 		return
 	}
@@ -55,7 +55,7 @@ func (tr *Reader) traversePath(target []byte, fun func(*NodeData, []byte, pathEn
 				return
 			}
 			childIndex := target[len(pathPlusExtension)]
-			child, childTrieKey := tr.nodeStore.FetchChild(n, childIndex, path)
+			child, childTrieKey := tr.fetchChild(n, childIndex, path)
 			if child == nil {
 				fun(n, childTrieKey, endingExtend)
 				return
@@ -67,8 +67,8 @@ func (tr *Reader) traversePath(target []byte, fun func(*NodeData, []byte, pathEn
 	}
 }
 
-func (tr *Draft) traverseMutatedPath(triePath []byte, fun func(n *draftNode, ending pathEndingCode)) {
-	n := tr.mutatedRoot
+func (d *Draft) traverseMutatedPath(triePath []byte, fun func(n *draftNode, ending pathEndingCode)) {
+	n := d.mutatedRoot
 	for {
 		keyPlusPathExtension := concat(n.triePath, n.pathExtension)
 		switch {
@@ -90,7 +90,7 @@ func (tr *Draft) traverseMutatedPath(triePath []byte, fun func(n *draftNode, end
 				return
 			}
 			childIndex := triePath[len(keyPlusPathExtension)]
-			child := n.getChild(childIndex, tr.base.nodeStore)
+			child := n.getChild(childIndex, d.base.R)
 			if child == nil {
 				fun(n, endingExtend)
 				return

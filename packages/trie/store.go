@@ -6,12 +6,6 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/kv/codec"
 )
 
-// nodeStore immutable node store
-type nodeStore struct {
-	trieStore  KVReader
-	valueStore KVReader
-}
-
 const (
 	partitionTrieNodes = byte(iota)
 	partitionValues
@@ -20,34 +14,46 @@ const (
 	partitionRefcountsEnabled
 )
 
-// InitRoot initializes a new empty trie
-func InitRoot(store KVStore, refcountsEnabled bool) (Hash, error) {
-	err := UpdateRefcountsFlag(store, refcountsEnabled)
-	if err != nil {
-		return Hash{}, err
-	}
-
-	rootNodeData := newNodeData()
-	n := newDraftNode(rootNodeData, nil)
-
-	trieStore := makeWriterPartition(store, partitionTrieNodes)
-	valueStore := makeWriterPartition(store, partitionValues)
-	commitNode(n, trieStore, valueStore)
-	initRefcounts(store, n)
-	return n.nodeData.Commitment, nil
+func dbKeyNodeData(nodeCommitment Hash) []byte {
+	return append([]byte{partitionTrieNodes}, nodeCommitment.Bytes()...)
 }
 
-func openNodeStore(store KVReader) *nodeStore {
-	store = makeCachedKVReader(store)
-	return &nodeStore{
-		trieStore:  makeReaderPartition(store, partitionTrieNodes),
-		valueStore: makeReaderPartition(store, partitionValues),
-	}
+func dbKeyValue(terminalBytes []byte) []byte {
+	return append([]byte{partitionValues}, terminalBytes...)
 }
 
-func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*NodeData, bool) {
-	dbKey := nodeCommitment.Bytes()
-	nodeBin := ns.trieStore.Get(dbKey)
+func dbKeyNodeRefcount(nodeCommitment []byte) []byte {
+	return append([]byte{partitionRefcountNodes}, nodeCommitment...)
+}
+
+func dbKeyValueRefcount(terminalData []byte) []byte {
+	return append([]byte{partitionRefcountValues}, terminalData...)
+}
+
+func (terminal *Tcommitment) dbKeyValue() []byte {
+	assertf(!terminal.IsValue, "dbKeyValue called on non-external value")
+	return dbKeyValue(terminal.Bytes())
+}
+
+func (terminal *Tcommitment) dbKeyValueRefcount() []byte {
+	assertf(!terminal.IsValue, "dbKeyValueRefcount called on non-external value")
+	return dbKeyValueRefcount(terminal.Data)
+}
+
+func (n *NodeData) dbKey() []byte {
+	return dbKeyNodeData(n.Commitment)
+}
+
+func (n *NodeData) dbKeyNodeRefcount() []byte {
+	return dbKeyNodeRefcount(n.Commitment[:])
+}
+
+func dbKeyRefcountsEnabled() []byte {
+	return []byte{partitionRefcountsEnabled}
+}
+
+func (tr *TrieR) fetchNodeData(nodeCommitment Hash) (*NodeData, bool) {
+	nodeBin := tr.store.Get(dbKeyNodeData(nodeCommitment))
 	if len(nodeBin) == 0 {
 		return nil, false
 	}
@@ -58,15 +64,24 @@ func (ns *nodeStore) FetchNodeData(nodeCommitment Hash) (*NodeData, bool) {
 	return ret, true
 }
 
+func (tr TrieR) fetchValueOfTerminal(terminal *Tcommitment) []byte {
+	value, inTheCommitment := terminal.ExtractValue()
+	if !inTheCommitment {
+		value = tr.store.Get(terminal.dbKeyValue())
+	}
+	assertf(len(value) > 0, "can't fetch value. data commitment: %s", terminal)
+	return value
+}
+
 // fetchChildrenNodeData fetches the children nodes of a given node in a single call to MultiGet.
-func (ns *nodeStore) fetchChildrenNodeData(n *NodeData) [NumChildren]*NodeData {
+func (tr TrieR) fetchChildrenNodeData(n *NodeData) [NumChildren]*NodeData {
 	// fetch using a single call to MultiGet
 	dbKeys := make([][]byte, 0, NumChildren)
 	for _, hash := range n.Children {
 		if hash == nil {
 			continue
 		}
-		dbKeys = append(dbKeys, hash.Bytes())
+		dbKeys = append(dbKeys, dbKeyNodeData(*hash))
 	}
 
 	children := [NumChildren]*NodeData{}
@@ -75,7 +90,7 @@ func (ns *nodeStore) fetchChildrenNodeData(n *NodeData) [NumChildren]*NodeData {
 		return children
 	}
 
-	nodeBins := ns.trieStore.MultiGet(dbKeys)
+	nodeBins := tr.store.MultiGet(dbKeys)
 
 	// decode results
 	for i, hash := range n.Children {
@@ -103,18 +118,18 @@ type NodeDataWithRefcounts struct {
 }
 
 // fetchChildrenNodeDataWithRefcounts fetches the children nodes and their refcounts in two MultiGet calls.
-func (ns *nodeStore) fetchChildrenNodeDataWithRefcounts(refcounts *Refcounts, n *NodeData) [NumChildren]NodeDataWithRefcounts {
+func (tr TrieR) fetchChildrenNodeDataWithRefcounts(n *NodeData) [NumChildren]NodeDataWithRefcounts {
 	// fetch nodes with MultiGet
-	nodeDatas := ns.fetchChildrenNodeData(n)
+	nodeDatas := tr.fetchChildrenNodeData(n)
 	// now fetch their refcounts with another MultiGet
 	dbKeys := make([][]byte, 0, NumChildren*2)
 	for _, child := range nodeDatas {
 		if child == nil {
 			continue
 		}
-		dbKeys = append(dbKeys, nodeRefcountKey(child.Commitment[:]))
-		if child.Terminal != nil && !child.Terminal.IsValue {
-			dbKeys = append(dbKeys, valueRefcountKey(child.Terminal.Data))
+		dbKeys = append(dbKeys, child.dbKeyNodeRefcount())
+		if child.CommitsToExternalValue() {
+			dbKeys = append(dbKeys, child.Terminal.dbKeyValueRefcount())
 		}
 	}
 	var ret [NumChildren]NodeDataWithRefcounts
@@ -122,7 +137,7 @@ func (ns *nodeStore) fetchChildrenNodeDataWithRefcounts(refcounts *Refcounts, n 
 		// nothing to fetch
 		return ret
 	}
-	refCountBytes := refcounts.store.MultiGet(dbKeys)
+	refCountBytes := tr.store.MultiGet(dbKeys)
 	for i, child := range nodeDatas {
 		if child == nil {
 			continue
@@ -130,7 +145,7 @@ func (ns *nodeStore) fetchChildrenNodeDataWithRefcounts(refcounts *Refcounts, n 
 		nodeRefcount := codec.MustDecode[uint32](refCountBytes[0], 0)
 		refCountBytes = refCountBytes[1:]
 		valueRefcount := uint32(0)
-		if child.Terminal != nil && !child.Terminal.IsValue {
+		if child.CommitsToExternalValue() {
 			valueRefcount = codec.MustDecode[uint32](refCountBytes[0], 0)
 			refCountBytes = refCountBytes[1:]
 		}
@@ -143,20 +158,20 @@ func (ns *nodeStore) fetchChildrenNodeDataWithRefcounts(refcounts *Refcounts, n 
 	return ret
 }
 
-func (ns *nodeStore) MustFetchNodeData(nodeCommitment Hash) *NodeData {
-	ret, ok := ns.FetchNodeData(nodeCommitment)
+func (tr *TrieR) mustFetchNodeData(nodeCommitment Hash) *NodeData {
+	ret, ok := tr.fetchNodeData(nodeCommitment)
 	assertf(ok, "NodeStore::MustFetchNodeData: cannot find node data: commitment: '%s'", nodeCommitment.String())
 	return ret
 }
 
-func (ns *nodeStore) FetchChild(n *NodeData, childIdx byte, trieKey []byte) (*NodeData, []byte) {
+func (tr *TrieR) fetchChild(n *NodeData, childIdx byte, trieKey []byte) (*NodeData, []byte) {
 	c := n.Children[childIdx]
 	if c == nil {
 		return nil, nil
 	}
 	childTriePath := concat(trieKey, n.PathExtension, []byte{childIdx})
 
-	ret, ok := ns.FetchNodeData(*c)
+	ret, ok := tr.fetchNodeData(*c)
 	assertf(ok, "immutable::FetchChild: failed to fetch node. trieKey: '%s', childIndex: %d",
 		hex.EncodeToString(trieKey), childIdx)
 	return ret, childTriePath

@@ -2,14 +2,13 @@ package trie
 
 import (
 	"bytes"
-	"encoding/hex"
 )
 
-// Get reads the trie with the key
-func (tr *Reader) Get(key []byte) []byte {
+// Get reads the value associated with the given key in the trie
+func (tr *TrieRFromRoot) Get(key []byte) []byte {
 	unpackedTriePath := unpackBytes(key)
 	var terminal *Tcommitment
-	tr.traversePath(unpackedTriePath, func(n *NodeData, _ []byte, ending pathEndingCode) {
+	tr.R.traversePath(tr.Root, unpackedTriePath, func(n *NodeData, _ []byte, ending pathEndingCode) {
 		if ending == endingTerminal && n.Terminal != nil {
 			terminal = n.Terminal
 		}
@@ -17,23 +16,14 @@ func (tr *Reader) Get(key []byte) []byte {
 	if terminal == nil {
 		return nil
 	}
-	value, valueInCommitment := terminal.ExtractValue()
-	if valueInCommitment {
-		assertf(len(value) > 0, "value in commitment must be not nil. Unpacked key: '%s'",
-			hex.EncodeToString(unpackedTriePath))
-		return value
-	}
-	value = tr.nodeStore.valueStore.Get(terminal.Bytes())
-	assertf(len(value) > 0, "value in the value store must be not nil. Unpacked key: '%s'",
-		hex.EncodeToString(unpackedTriePath))
-	return value
+	return tr.R.fetchValueOfTerminal(terminal)
 }
 
-// Has check existence of the key in the trie
-func (tr *Reader) Has(key []byte) bool {
+// Has checks the existence of the key in the trie
+func (tr *TrieRFromRoot) Has(key []byte) bool {
 	unpackedTriePath := unpackBytes(key)
 	found := false
-	tr.traversePath(unpackedTriePath, func(n *NodeData, p []byte, ending pathEndingCode) {
+	tr.R.traversePath(tr.Root, unpackedTriePath, func(n *NodeData, p []byte, ending pathEndingCode) {
 		if ending == endingTerminal && n.Terminal != nil {
 			found = true
 		}
@@ -42,35 +32,35 @@ func (tr *Reader) Has(key []byte) bool {
 }
 
 // Iterate iterates all the key/value pairs in the trie
-func (tr *Reader) Iterate(prefix []byte, f func(k []byte, v []byte) bool) {
+func (tr *TrieRFromRoot) Iterate(prefix []byte, f func(k []byte, v []byte) bool) {
 	tr.iteratePrefix(f, prefix, true)
 }
 
 // IterateKeys iterates all the keys in the trie
-func (tr *Reader) IterateKeys(prefix []byte, f func(k []byte) bool) {
+func (tr *TrieRFromRoot) IterateKeys(prefix []byte, f func(k []byte) bool) {
 	tr.iteratePrefix(func(k []byte, v []byte) bool { return f(k) }, prefix, false)
 }
 
 // iteratePrefix iterates the key/value with keys with prefix.
 // The order of the iteration will be deterministic
-func (tr *Reader) iteratePrefix(f func(k []byte, v []byte) bool, prefix []byte, extractValue bool) {
+func (tr *TrieRFromRoot) iteratePrefix(f func(k []byte, v []byte) bool, prefix []byte, extractValue bool) {
 	var root *Hash
 	var triePath []byte
 	unpackedPrefix := unpackBytes(prefix)
-	tr.traversePath(unpackedPrefix, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
+	tr.R.traversePath(tr.Root, unpackedPrefix, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
 		if bytes.HasPrefix(concat(trieKey, n.PathExtension), unpackedPrefix) {
 			root = &n.Commitment
 			triePath = trieKey
 		}
 	})
 	if root != nil {
-		tr.iterate(*root, triePath, f, extractValue)
+		tr.R.iterate(*root, triePath, f, extractValue)
 	}
 }
 
-func (tr *Reader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) {
-	rootNode, found := tr.nodeStore.FetchNodeData(root)
-	assertf(found, "root node not found: %s", tr.root)
+func (tr *TrieR) iterate(root Hash, triePath []byte, fun func(k []byte, v []byte) bool, extractValue bool) {
+	rootNode, found := tr.fetchNodeData(root)
+	assertf(found, "root node not found: %s", root)
 
 	tr.iterateNodes(0, rootNode, triePath, func(nodeKey []byte, n *NodeData, depth int) IterateNodesAction {
 		if n.Terminal != nil {
@@ -78,12 +68,7 @@ func (tr *Reader) iterate(root Hash, triePath []byte, fun func(k []byte, v []byt
 			assertNoError(err)
 			var value []byte
 			if extractValue {
-				var inTheCommitment bool
-				value, inTheCommitment = n.Terminal.ExtractValue()
-				if !inTheCommitment {
-					value = tr.nodeStore.valueStore.Get(n.Terminal.Bytes())
-					assertf(len(value) > 0, "can't fetch value. triePath: '%s', data commitment: %s", hex.EncodeToString(key), n.Terminal)
-				}
+				value = tr.fetchValueOfTerminal(n.Terminal)
 			}
 			if !fun(key, value) {
 				return IterateStop
@@ -106,17 +91,16 @@ const (
 )
 
 // IterateNodes iterates nodes of the trie in the lexicographical order of trie keys in "depth first" order
-func (tr *Reader) IterateNodes(fun IterateNodesCallback) {
-	root, found := tr.nodeStore.FetchNodeData(tr.root)
-	assertf(found, "root node not found: %s", tr.root)
-
-	tr.iterateNodes(0, root, nil, fun)
+func (tr *TrieRFromRoot) IterateNodes(fun IterateNodesCallback) {
+	root, found := tr.R.fetchNodeData(tr.Root)
+	assertf(found, "root node not found: %s", tr.Root)
+	tr.R.iterateNodes(0, root, nil, fun)
 }
 
-func (tr *Reader) iterateNodes(depth int, n *NodeData, path []byte, fun IterateNodesCallback) bool {
+func (tr *TrieR) iterateNodes(depth int, n *NodeData, path []byte, fun IterateNodesCallback) bool {
 	action := fun(path, n, depth)
 	if action == IterateContinue {
-		childrenNodes := tr.nodeStore.fetchChildrenNodeData(n)
+		childrenNodes := tr.fetchChildrenNodeData(n)
 		for childIndex := range NumChildren {
 			if childrenNodes[childIndex] == nil {
 				continue
@@ -130,28 +114,27 @@ func (tr *Reader) iterateNodes(depth int, n *NodeData, path []byte, fun IterateN
 }
 
 // IterateNodesWithRefcounts is like IterateNodes but it also fetches each node's refcount
-func (tr *Reader) IterateNodesWithRefcounts(refcounts *Refcounts, fun IterateNodesWithRefcountsCallback) {
-	root, found := tr.nodeStore.FetchNodeData(tr.root)
-	assertf(found, "root node not found: %s", tr.root)
+func (tr *TrieRFromRoot) IterateNodesWithRefcounts(fun IterateNodesWithRefcountsCallback) {
+	root, found := tr.R.fetchNodeData(tr.Root)
+	assertf(found, "root node not found: %s", tr.Root)
 
-	nodeRefcount := refcounts.GetNode(root.Commitment)
+	nodeRefcount := tr.R.GetNodeRefcount(root.Commitment)
 	valueRefcount := uint32(0)
-	if root.Terminal != nil && !root.Terminal.IsValue {
-		valueRefcount = refcounts.GetValue(root.Terminal.Bytes())
+	if root.CommitsToExternalValue() {
+		valueRefcount = tr.R.GetValueRefcount(root.Terminal.Data)
 	}
-	tr.iterateNodesWithRefcounts(refcounts, 0, root, nil, nodeRefcount, valueRefcount, fun)
+	tr.R.iterateNodesWithRefcounts(0, root, nil, nodeRefcount, valueRefcount, fun)
 }
 
-func (tr *Reader) iterateNodesWithRefcounts(refcounts *Refcounts, depth int, n *NodeData, path []byte, nodeRefcount, valueRefcount uint32, fun IterateNodesWithRefcountsCallback) bool {
+func (tr *TrieR) iterateNodesWithRefcounts(depth int, n *NodeData, path []byte, nodeRefcount, valueRefcount uint32, fun IterateNodesWithRefcountsCallback) bool {
 	action := fun(path, n, depth, nodeRefcount, valueRefcount)
 	if action == IterateContinue {
-		childrenNodes := tr.nodeStore.fetchChildrenNodeDataWithRefcounts(refcounts, n)
+		childrenNodes := tr.fetchChildrenNodeDataWithRefcounts(n)
 		for childIndex := range NumChildren {
 			if childrenNodes[childIndex].node == nil {
 				continue
 			}
 			if !tr.iterateNodesWithRefcounts(
-				refcounts,
 				depth+1,
 				childrenNodes[childIndex].node,
 				concat(path, n.PathExtension, []byte{byte(childIndex)}),

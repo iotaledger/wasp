@@ -29,9 +29,8 @@ func newDraftNode(n *NodeData, triePath []byte) *draftNode {
 	return ret
 }
 
-func (n *draftNode) mustPersist(partition KVWriter) {
-	dbKey := n.nodeData.Commitment.Bytes()
-	partition.Set(dbKey, n.nodeData.Bytes())
+func (n *draftNode) CommitsToExternalValue() bool {
+	return n.terminal != nil && !n.terminal.IsValue
 }
 
 func (n *draftNode) isRoot() bool {
@@ -91,7 +90,7 @@ func (n *draftNode) setTriePath(triePath []byte) {
 	n.triePath = triePath
 }
 
-func (n *draftNode) getChild(childIndex byte, db *nodeStore) *draftNode {
+func (n *draftNode) getChild(childIndex byte, tr *TrieR) *draftNode {
 	if ret, already := n.uncommittedChildren[childIndex]; already {
 		return ret
 	}
@@ -101,7 +100,7 @@ func (n *draftNode) getChild(childIndex byte, db *nodeStore) *draftNode {
 	}
 	childTriePath := concat(n.triePath, n.pathExtension, []byte{childIndex})
 
-	nodeFetched, ok := db.FetchNodeData(*childCommitment)
+	nodeFetched, ok := tr.fetchNodeData(*childCommitment)
 	assertf(ok, "TrieDraft::getChild: can't fetch node. triePath: '%s', dbKey: '%s",
 		hex.EncodeToString(childCommitment.Bytes()), hex.EncodeToString(childTriePath))
 
@@ -113,14 +112,14 @@ func (n *draftNode) getChild(childIndex byte, db *nodeStore) *draftNode {
 // - it commits to at least 2 children
 // Otherwise node has to be merged/removed
 // It can only happen during deletion
-func (n *draftNode) hasToBeRemoved(nodeStore *nodeStore) (bool, *draftNode) {
+func (n *draftNode) hasToBeRemoved(tr *TrieR) (bool, *draftNode) {
 	if n.terminal != nil {
 		return false, nil
 	}
 	var theOnlyChildCommitted *draftNode
 
 	for i := range byte(NumChildren) {
-		child := n.getChild(i, nodeStore)
+		child := n.getChild(i, tr)
 		if child != nil {
 			if theOnlyChildCommitted != nil {
 				// at least 2 children

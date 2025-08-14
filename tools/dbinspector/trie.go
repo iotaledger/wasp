@@ -26,7 +26,7 @@ type trieStatsData struct {
 func trieStats(ctx context.Context, kvs kvstore.KVStore) {
 	state := getState(kvs, blockIndex)
 	blockIndex = int64(state.BlockIndex())
-	tr := trie.NewReader(trie.NewHiveKVStoreAdapter(kvs, []byte{chaindb.PrefixTrie}), state.TrieRoot())
+	tr := trie.NewTrieRFromRoot(trie.NewHiveKVStoreAdapter(kvs, []byte{chaindb.PrefixTrie}), state.TrieRoot())
 
 	data := trieStatsData{
 		start:     time.Now(),

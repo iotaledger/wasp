@@ -15,13 +15,13 @@ func TestProofScenariosBlake2b(t *testing.T) {
 	runScenario := func(name string, scenario []string) {
 		t.Run(name, func(t *testing.T) {
 			store := NewInMemoryKVStore()
-			initRoot := lo.Must(trie.InitRoot(store, true))
+			initRoot := lo.Must(trie.NewTrieRW(store).InitRoot(true))
 
 			checklist, roots := runUpdateScenario(store, initRoot, scenario)
-			trie.DebugDump(store, append([]trie.Hash{initRoot}, roots...), io.Discard)
+			trie.NewTrieR(store).DebugDump(append([]trie.Hash{initRoot}, roots...), io.Discard)
 
 			root := roots[len(roots)-1]
-			trr := trie.NewReader(store, root)
+			trr := trie.NewTrieRFromRoot(store, root)
 			for k, v := range checklist {
 				vBin := trr.Get([]byte(k))
 				if v == "" {

@@ -10,7 +10,7 @@ const KeyMaxLength = 256
 // Draft is an updatable trie implemented on top of the unpackedKey/value
 // store. It keeps all mutations in-memory until Commit is called.
 type Draft struct {
-	base        *Reader
+	base        *TrieRFromRoot
 	mutatedRoot *draftNode
 }
 
@@ -20,55 +20,55 @@ type CommitStats struct {
 }
 
 func NewDraft(store KVReader, root Hash) (*Draft, error) {
-	trieReader := NewReader(store, root)
-	rootNodeData, ok := trieReader.nodeStore.FetchNodeData(root)
+	tr := NewTrieRFromRoot(store, root)
+	rootNodeData, ok := tr.R.fetchNodeData(root)
 	if !ok {
 		return nil, fmt.Errorf("trie root not found: %s", root)
 	}
 	return &Draft{
-		base:        trieReader,
+		base:        tr,
 		mutatedRoot: newDraftNode(rootNodeData, nil),
 	}, nil
 }
 
 // Update updates TrieDraft with the unpackedKey/value. Reorganizes and re-calculates trie, keeps cache consistent
-func (tr *Draft) Update(key []byte, value []byte) {
+func (d *Draft) Update(key []byte, value []byte) {
 	assertf(len(key) > 0, "len(key) must be > 0")
 	unpackedTriePath := unpackBytes(key)
 	if len(value) == 0 {
-		tr.delete(unpackedTriePath)
+		d.delete(unpackedTriePath)
 	} else {
-		tr.update(unpackedTriePath, value)
+		d.update(unpackedTriePath, value)
 	}
 }
 
 // Delete deletes Key/value from the TrieDraft
-func (tr *Draft) Delete(key []byte) {
+func (d *Draft) Delete(key []byte) {
 	if len(key) == 0 {
 		// we do not want to delete root
 		return
 	}
-	tr.delete(unpackBytes(key))
+	d.delete(unpackBytes(key))
 }
 
 // DeletePrefix deletes all kv pairs with the prefix. It is a very fast operation, it modifies only one node
 // and all children (any number) disappears from the next root
-func (tr *Draft) DeletePrefix(pathPrefix []byte) bool {
+func (d *Draft) DeletePrefix(pathPrefix []byte) bool {
 	if len(pathPrefix) == 0 {
 		// we do not want to delete root, or do we?
 		return false
 	}
 	unpackedPrefix := unpackBytes(pathPrefix)
-	return tr.deletePrefix(unpackedPrefix)
+	return d.deletePrefix(unpackedPrefix)
 }
 
-func (tr *Draft) update(triePath []byte, value []byte) {
+func (d *Draft) update(triePath []byte, value []byte) {
 	assertf(len(value) > 0, "len(value) > 0")
 	assertf(len(triePath) < KeyMaxLength, "len(key) = %d, must under KeyMaxLength %x", len(triePath))
 
 	nodes := make([]*draftNode, 0)
 	var ends pathEndingCode
-	tr.traverseMutatedPath(triePath, func(n *draftNode, ending pathEndingCode) {
+	d.traverseMutatedPath(triePath, func(n *draftNode, ending pathEndingCode) {
 		nodes = append(nodes, n)
 		ends = ending
 	})
@@ -88,8 +88,8 @@ func (tr *Draft) update(triePath []byte, value []byte) {
 		assertf(len(keyPlusPathExtension) < len(triePath), "len(keyPlusPathExtension) < len(triePath)")
 		childTriePath := triePath[:len(keyPlusPathExtension)+1]
 		childIndex := childTriePath[len(childTriePath)-1]
-		assertf(lastNode.getChild(childIndex, tr.base.nodeStore) == nil, "lastNode.getChild(childIndex, tr.nodeStore)==nil")
-		child := tr.newTerminalNode(childTriePath, triePath[len(keyPlusPathExtension)+1:], value)
+		assertf(lastNode.getChild(childIndex, d.base.R) == nil, "lastNode.getChild(childIndex, tr.nodeStore)==nil")
+		child := d.newTerminalNode(childTriePath, triePath[len(keyPlusPathExtension)+1:], value)
 		lastNode.setModifiedChild(child)
 
 	case endingSplit:
@@ -124,7 +124,7 @@ func (tr *Draft) update(triePath []byte, value []byte) {
 			branchPathExtension := triePathTail[1:]
 			trieKeyToContinue = concat(trieKey, prefix, []byte{childIndexToBranch})
 
-			newNodeWithTerminal := tr.newTerminalNode(trieKeyToContinue, branchPathExtension, value)
+			newNodeWithTerminal := d.newTerminalNode(trieKeyToContinue, branchPathExtension, value)
 			forkingNode.setModifiedChild(newNodeWithTerminal)
 		}
 
@@ -133,17 +133,17 @@ func (tr *Draft) update(triePath []byte, value []byte) {
 	}
 }
 
-func (tr *Draft) newTerminalNode(triePath, pathExtension, value []byte) *draftNode {
+func (d *Draft) newTerminalNode(triePath, pathExtension, value []byte) *draftNode {
 	ret := newDraftNode(nil, triePath)
 	ret.setPathExtension(pathExtension)
 	ret.setValue(value)
 	return ret
 }
 
-func (tr *Draft) delete(triePath []byte) {
+func (d *Draft) delete(triePath []byte) {
 	nodes := make([]*draftNode, 0)
 	var ends pathEndingCode
-	tr.traverseMutatedPath(triePath, func(n *draftNode, ending pathEndingCode) {
+	d.traverseMutatedPath(triePath, func(n *draftNode, ending pathEndingCode) {
 		nodes = append(nodes, n)
 		ends = ending
 	})
@@ -157,7 +157,7 @@ func (tr *Draft) delete(triePath []byte) {
 
 	for i := len(nodes) - 1; i >= 1; i-- {
 		idxAsChild := nodes[i].indexAsChild()
-		n := tr.mergeNodeIfNeeded(nodes[i])
+		n := d.mergeNodeIfNeeded(nodes[i])
 		if n != nil {
 			nodes[i-1].removeChild(nodes[i])
 			nodes[i-1].setModifiedChild(n)
@@ -171,11 +171,11 @@ func (tr *Draft) delete(triePath []byte) {
 // deletePrefix deletes all k/v pairs from the trie with the specified prefix
 // It does nothing if prefix is nil, i.e. you can't delete the root
 // return if deleted something
-func (tr *Draft) deletePrefix(pathPrefix []byte) bool {
+func (d *Draft) deletePrefix(pathPrefix []byte) bool {
 	nodes := make([]*draftNode, 0)
 
 	prefixExists := false
-	tr.traverseMutatedPath(pathPrefix, func(n *draftNode, ending pathEndingCode) {
+	d.traverseMutatedPath(pathPrefix, func(n *draftNode, ending pathEndingCode) {
 		nodes = append(nodes, n)
 		if bytes.HasPrefix(concat(n.triePath, n.nodeData.PathExtension), pathPrefix) {
 			prefixExists = true
@@ -201,7 +201,7 @@ func (tr *Draft) deletePrefix(pathPrefix []byte) bool {
 	}
 	for i := len(nodes) - 1; i >= 1; i-- {
 		idxAsChild := nodes[i].indexAsChild()
-		n := tr.mergeNodeIfNeeded(nodes[i])
+		n := d.mergeNodeIfNeeded(nodes[i])
 		if n != nil {
 			nodes[i-1].removeChild(nodes[i])
 			nodes[i-1].setModifiedChild(n)
@@ -212,8 +212,8 @@ func (tr *Draft) deletePrefix(pathPrefix []byte) bool {
 	return true
 }
 
-func (tr *Draft) mergeNodeIfNeeded(node *draftNode) *draftNode {
-	toRemove, theOnlyChildToMergeWith := node.hasToBeRemoved(tr.base.nodeStore)
+func (d *Draft) mergeNodeIfNeeded(node *draftNode) *draftNode {
+	toRemove, theOnlyChildToMergeWith := node.hasToBeRemoved(d.base.R)
 	if !toRemove {
 		return node
 	}
@@ -231,27 +231,24 @@ func (tr *Draft) mergeNodeIfNeeded(node *draftNode) *draftNode {
 // Commit calculates a new mutatedRoot commitment value from the cache, commits all mutations
 // and writes it into the store.
 // The returned CommitStats are only valid if refcounts are enabled.
-func (tr *Draft) Commit(store KVStore) (newTrieRoot Hash, refcountsEnabled bool, stats *CommitStats) {
-	triePartition := makeWriterPartition(store, partitionTrieNodes)
-	valuePartition := makeWriterPartition(store, partitionValues)
-
-	commitNode(tr.mutatedRoot, triePartition, valuePartition)
-	refcountsEnabled, refcounts := NewRefcounts(store)
+func (d *Draft) Commit(store KVStore) (newTrieRoot Hash, refcountsEnabled bool, stats *CommitStats) {
+	tr := NewTrieRW(store)
+	tr.commitNode(d.mutatedRoot)
+	refcountsEnabled = d.base.R.IsRefcountsEnabled()
 	if refcountsEnabled {
-		commitStats := refcounts.inc(tr.mutatedRoot)
+		commitStats := tr.incRefcounts(d.mutatedRoot)
 		stats = &commitStats
 	}
 
 	// set uncommitted children in the root to empty -> the GC will collect the whole tree of buffered nodes
-	tr.mutatedRoot.uncommittedChildren = make(map[byte]*draftNode)
-
-	newTrieRoot = tr.mutatedRoot.nodeData.Commitment
-	tr.mutatedRoot = nil // prevent future mutations using this instance of TrieDraft
+	d.mutatedRoot.uncommittedChildren = make(map[byte]*draftNode)
+	newTrieRoot = d.mutatedRoot.nodeData.Commitment
+	d.mutatedRoot = nil // prevent future mutations using this instance of TrieDraft
 	return newTrieRoot, refcountsEnabled, stats
 }
 
 // commitNode re-calculates the node commitment and, recursively, its children commitments
-func commitNode(root *draftNode, triePartition, valuePartition KVWriter) {
+func (tr *TrieRW) commitNode(root *draftNode) {
 	// traverse post-order so that we compute the commitments bottom-up
 	root.traversePostOrder(func(node *draftNode) {
 		childUpdates := make(map[byte]*Hash)
@@ -264,9 +261,9 @@ func commitNode(root *draftNode, triePartition, valuePartition KVWriter) {
 			}
 		}
 		node.nodeData.update(childUpdates, node.terminal, node.pathExtension)
-		node.mustPersist(triePartition)
+		tr.store.Set(node.nodeData.dbKey(), node.nodeData.Bytes())
 		if len(node.value) > 0 {
-			valuePartition.Set(node.terminal.Bytes(), node.value)
+			tr.store.Set(node.terminal.dbKeyValue(), node.value)
 		}
 	})
 }

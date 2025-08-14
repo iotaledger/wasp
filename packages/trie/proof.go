@@ -13,7 +13,7 @@ type MerkleProofElement struct {
 	ChildIndex    int
 }
 
-func (tr *Reader) MerkleProof(key []byte) *MerkleProof {
+func (tr *TrieRFromRoot) MerkleProof(key []byte) *MerkleProof {
 	unpackedKey := unpackBytes(key)
 	nodePath, ending := tr.nodePath(unpackedKey)
 	ret := &MerkleProof{
@@ -66,10 +66,10 @@ type pathElement struct {
 // nodePath returns path PathElement-s along the triePath (the key) with the ending code
 // to determine is it a proof of inclusion or absence
 // Each path element contains index of the subsequent child, except the last one is set to 0
-func (tr *Reader) nodePath(triePath []byte) ([]*pathElement, pathEndingCode) {
+func (tr *TrieRFromRoot) nodePath(triePath []byte) ([]*pathElement, pathEndingCode) {
 	ret := make([]*pathElement, 0)
 	var endingCode pathEndingCode
-	tr.traversePath(triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
+	tr.R.traversePath(tr.Root, triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
 		elem := &pathElement{
 			NodeData: n,
 		}

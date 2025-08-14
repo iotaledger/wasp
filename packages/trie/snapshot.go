@@ -8,7 +8,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
-func (tr *Reader) TakeSnapshot(w io.Writer) error {
+func (tr *TrieRFromRoot) TakeSnapshot(w io.Writer) error {
 	// Some duplicated nodes and values might be written more than once in the snapshot;
 	// Using a size-capped map to prevent this.
 	// If the cap is reached, the generated snapshot will contain duplicate information,
@@ -27,11 +27,11 @@ func (tr *Reader) TakeSnapshot(w io.Writer) error {
 		}
 
 		ww.WriteBytes(n.Bytes())
-		if n.Terminal != nil && !n.Terminal.IsValue {
-			valueKey := n.Terminal.Bytes()
+		if n.CommitsToExternalValue() {
+			valueKey := n.Terminal.dbKeyValue()
 			if _, seen := seenValues[string(valueKey)]; !seen {
 				ww.WriteBool(true)
-				value := tr.nodeStore.valueStore.Get(valueKey)
+				value := tr.R.store.Get(valueKey)
 				ww.WriteBytes(value)
 				if len(seenValues) < mapSizeCap {
 					seenValues[string(valueKey)] = struct{}{}
@@ -48,14 +48,12 @@ func (tr *Reader) TakeSnapshot(w io.Writer) error {
 	return ww.Err
 }
 
-func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
-	err := UpdateRefcountsFlag(store, refcountsEnabled)
+func (tr *TrieRW) RestoreSnapshot(r io.Reader, refcountsEnabled bool) error {
+	err := tr.UpdateRefcountsFlag(refcountsEnabled)
 	if err != nil {
 		return err
 	}
 
-	triePartition := makeWriterPartition(store, partitionTrieNodes)
-	valuePartition := makeWriterPartition(store, partitionValues)
 	rr := rwutil.NewReader(r)
 	var trieRoot *Hash
 	for rr.Err == nil {
@@ -72,45 +70,43 @@ func RestoreSnapshot(r io.Reader, store KVStore, refcountsEnabled bool) error {
 		}
 		n.updateCommitment()
 
-		triePartition.Set(n.Commitment.Bytes(), nodeBytes)
+		tr.store.Set(n.dbKey(), nodeBytes)
 		if trieRoot == nil {
 			trieRoot = &n.Commitment
 		}
-		if n.Terminal != nil && !n.Terminal.IsValue && rr.ReadBool() {
+		if n.CommitsToExternalValue() && rr.ReadBool() {
 			value := rr.ReadBytes()
 			if rr.Err != nil {
 				return rr.Err
 			}
-			valueKey := n.Terminal.Bytes()
-			valuePartition.Set(valueKey, value)
+			tr.store.Set(n.Terminal.dbKeyValue(), value)
 		}
 	}
 
 	if refcountsEnabled {
-		_, refcounts := NewRefcounts(store)
-		tr := NewReader(store, *trieRoot)
 		touchedNodes := make(map[Hash]uint32)
 		touchedValues := make(map[string]uint32)
-		tr.IterateNodesWithRefcounts(refcounts, func(nodeKey []byte, n *NodeData, depth int, nodeRefcount, valueRefcount uint32) IterateNodesAction {
+		NewTrieRFromRoot(tr.store, *trieRoot).IterateNodesWithRefcounts(func(nodeKey []byte, n *NodeData, depth int, nodeRefcount, valueRefcount uint32) IterateNodesAction {
 			nodeRefcount = lo.ValueOr(touchedNodes, n.Commitment, nodeRefcount)
 			nodeRefcount++
 			touchedNodes[n.Commitment] = nodeRefcount
 			if nodeRefcount > 1 {
 				return IterateSkipSubtree
 			}
-			if n.Terminal != nil && !n.Terminal.IsValue {
-				valueRefcount = lo.ValueOr(touchedValues, string(n.Terminal.Bytes()), valueRefcount)
+			if n.CommitsToExternalValue() {
+				valueBytes := string(n.Terminal.Bytes())
+				valueRefcount = lo.ValueOr(touchedValues, valueBytes, valueRefcount)
 				valueRefcount++
-				touchedValues[string(n.Terminal.Bytes())] = valueRefcount
+				touchedValues[valueBytes] = valueRefcount
 			}
 			return IterateContinue
 		})
 		for hash, nodeRefcount := range touchedNodes {
-			refcounts.SetNode(hash, nodeRefcount)
+			tr.setNodeRefcount(hash, nodeRefcount)
 		}
 		for valueBytes, valueRefcount := range touchedValues {
 			t := lo.Must(rwutil.ReadFromBytes([]byte(valueBytes), &Tcommitment{}))
-			refcounts.SetValue(t.Data, valueRefcount)
+			tr.setValueRefcount(t.Data, valueRefcount)
 		}
 	}
 	return nil

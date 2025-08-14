@@ -51,7 +51,7 @@ func NewStoreWithMetrics(db kvstore.KVStore, refcountsEnabled bool, writeMutex *
 	}
 
 	storedb := &storeDB{db}
-	err = trie.UpdateRefcountsFlag(trieStore(storedb), refcountsEnabled)
+	err = trie.NewTrieRW(trieStore(storedb)).UpdateRefcountsFlag(refcountsEnabled)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func NewStoreReadonly(db kvstore.KVStore) (Store, error) {
 	}
 
 	storedb := &storeDB{db}
-	refcountsEnabled := trie.IsRefcountsEnabled(trieStore(storedb))
+	refcountsEnabled := trie.NewTrieR(trieStore(storedb)).IsRefcountsEnabled()
 
 	return &store{
 		db:               storedb,
@@ -192,7 +192,7 @@ func (s *store) extractBlock(d StateDraft) (
 
 	if s.refcountsEnabled && d.BaseL1Commitment() == nil {
 		// we must prune the baseTrieRoot that we created above
-		_, err := trie.Prune(trieStore(bufDB), baseTrieRoot)
+		_, err := trie.NewTrieRW(trieStore(bufDB)).Prune(baseTrieRoot)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -238,7 +238,7 @@ func (s *store) Prune(trieRoot trie.Hash) (trie.PruneStats, error) {
 	}
 	blockIndex := state.BlockIndex()
 	buf, bufDB := s.db.buffered()
-	stats, err := trie.Prune(trieStore(bufDB), trieRoot)
+	stats, err := trie.NewTrieRW(trieStore(bufDB)).Prune(trieRoot)
 	if err != nil {
 		return trie.PruneStats{}, err
 	}
@@ -350,7 +350,7 @@ func (s *store) RestoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled bo
 }
 
 func (s *store) IsRefcountsEnabled() bool {
-	return trie.IsRefcountsEnabled(trieStore(s.db))
+	return trie.NewTrieR(trieStore(s.db)).IsRefcountsEnabled()
 }
 
 func (s *store) CheckIntegrity(w io.Writer) {
@@ -375,12 +375,13 @@ func (s *store) CheckIntegrity(w io.Writer) {
 	// check PrefixBlockByTrieRoot
 	fmt.Fprint(w, "checking blocks...\n")
 	var trieRoots []trie.Hash
-	_, refcounts := trie.NewRefcounts(trieStore(s.db))
+	tr := trie.NewTrieR(trieStore(s.db))
+	refcountsEnabled := tr.IsRefcountsEnabled()
 	lo.Must0(s.db.IterateKeys(keyBlockByTrieRootNoTrieRoot(), func(key kvstore.Key) bool {
 		trieRoot := trie.Hash(key[1:])
 		var n uint32
-		if refcounts != nil {
-			n = refcounts.GetNode(trieRoot)
+		if refcountsEnabled {
+			n = tr.GetNodeRefcount(trieRoot)
 			if n == 0 {
 				panic(fmt.Sprintf("trie root %s has refcount 0", trieRoot))
 			}
@@ -409,7 +410,7 @@ func (s *store) CheckIntegrity(w io.Writer) {
 	}
 
 	// check PrefixTrie
-	trie.DebugDump(trieStore(s.db), trieRoots, w)
+	tr.DebugDump(trieRoots, w)
 
 	fmt.Fprint(w, "[end store::CheckIntegrity]\n")
 }

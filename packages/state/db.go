@@ -107,15 +107,15 @@ func (db *storeDB) trieDraft(root trie.Hash) (*trie.Draft, error) {
 }
 
 func (db *storeDB) initTrie(refcountsEnabled bool) (trie.Hash, error) {
-	return trie.InitRoot(trieStore(db), refcountsEnabled)
+	return trie.NewTrieRW(trieStore(db)).InitRoot(refcountsEnabled)
 }
 
-func (db *storeDB) trieReader(root trie.Hash) (*trie.Reader, error) {
+func (db *storeDB) trieReader(root trie.Hash) (*trie.TrieRFromRoot, error) {
 	return trieReader(trieStore(db), root)
 }
 
-func trieReader(trieStore trie.KVStore, root trie.Hash) (*trie.Reader, error) {
-	tr := trie.NewReader(trieStore, root)
+func trieReader(trieStore trie.KVStore, root trie.Hash) (*trie.TrieRFromRoot, error) {
+	tr := trie.NewTrieRFromRoot(trieStore, root)
 	if err := tr.VerifyRoot(); err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (db *storeDB) restoreSnapshot(root trie.Hash, r io.Reader, refcountsEnabled
 	}
 	db.saveBlock(block)
 
-	err = trie.RestoreSnapshot(r, trieStore(db), refcountsEnabled)
+	err = trie.NewTrieRW(trieStore(db)).RestoreSnapshot(r, refcountsEnabled)
 	if err != nil {
 		return err
 	}

@@ -193,3 +193,7 @@ func (n *NodeData) Write(w io.Writer) error {
 	}
 	return ww.Err
 }
+
+func (n *NodeData) CommitsToExternalValue() bool {
+	return n.Terminal != nil && !n.Terminal.IsValue
+}

@@ -15,19 +15,16 @@ type PruneStats struct {
 
 // Prune decrements the refcount of the trie root and all its children,
 // and then deletes all nodes and values that have a refcount of 0.
-func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
-	enabled, refcounts := NewRefcounts(store)
-	if !enabled {
+func (tr *TrieRW) Prune(trieRoot Hash) (PruneStats, error) {
+	if !tr.IsRefcountsEnabled() {
 		return PruneStats{}, errors.New("refcounts disabled, cannot prune trie")
 	}
-
-	tr := NewReader(store, trieRoot)
 
 	touchedNodes := make(map[Hash]uint32)
 	touchedValues := make(map[string]uint32)
 
 	// decrement refcounts
-	tr.IterateNodesWithRefcounts(refcounts, func(nodeKey []byte, n *NodeData, depth int, nr, vr uint32) IterateNodesAction {
+	NewTrieRFromRoot(tr.store, trieRoot).IterateNodesWithRefcounts(func(nodeKey []byte, n *NodeData, depth int, nr, vr uint32) IterateNodesAction {
 		nodeRefcount := lo.ValueOr(touchedNodes, n.Commitment, nr)
 		if nodeRefcount == 0 {
 			// node already deleted
@@ -35,7 +32,7 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 		}
 		nodeRefcount--
 		touchedNodes[n.Commitment] = nodeRefcount
-		if nodeRefcount == 0 && n.Terminal != nil && !n.Terminal.IsValue {
+		if nodeRefcount == 0 && n.CommitsToExternalValue() {
 			valueBytes := string(n.Terminal.Bytes())
 			valueRefcount := lo.ValueOr(touchedValues, valueBytes, vr)
 			if valueRefcount > 0 {
@@ -51,21 +48,19 @@ func Prune(store KVStore, trieRoot Hash) (PruneStats, error) {
 	})
 
 	// write modified refcounts and delete nodes/values with refcount 0
-	triePartition := makeWriterPartition(store, partitionTrieNodes)
 	stats := PruneStats{}
 	for hash, n := range touchedNodes {
-		refcounts.SetNode(hash, n)
+		tr.setNodeRefcount(hash, n)
 		if n == 0 {
-			triePartition.Del(hash[:])
+			tr.store.Del(dbKeyNodeData(hash))
 			stats.DeletedNodes++
 		}
 	}
-	valuePartition := makeWriterPartition(store, partitionValues)
 	for valueBytes, n := range touchedValues {
 		t := lo.Must(rwutil.ReadFromBytes([]byte(valueBytes), &Tcommitment{}))
-		refcounts.SetValue(t.Data, n)
+		tr.setValueRefcount(t.Data, n)
 		if n == 0 {
-			valuePartition.Del([]byte(valueBytes))
+			tr.store.Del(dbKeyValue([]byte(valueBytes)))
 			stats.DeletedValues++
 		}
 	}
