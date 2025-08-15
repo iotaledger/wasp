@@ -59,10 +59,10 @@ func NewAlphanetSignerWithFunds(t *testing.T, seed []byte, index int) cryptolib.
 	return newSignerWithFunds(t, seed, index, iotaconn.AlphanetFaucetURL)
 }
 
-func newSignerWithFunds(t *testing.T, seed []byte, index int, faucetUrl string) cryptolib.Signer {
+func newSignerWithFunds(t *testing.T, seed []byte, index int, faucetURL string) cryptolib.Signer {
 	seed[0] += byte(index)
 	kp := cryptolib.KeyPairFromSeed(cryptolib.Seed(seed))
-	err := iotaclient.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), faucetUrl)
+	err := iotaclient.RequestFundsFromFaucet(context.Background(), kp.Address().AsIotaAddress(), faucetURL)
 	require.NoError(t, err)
 	return kp
 }

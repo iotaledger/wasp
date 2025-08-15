@@ -506,6 +506,7 @@ func NewAssetsBagWithPackageID(
 		},
 	)
 }
+
 func assetsBagPlaceCoinAmountWithGasCoin(
 	client *iscmoveclient.Client,
 	signer cryptolib.Signer,

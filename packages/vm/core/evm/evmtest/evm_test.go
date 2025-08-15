@@ -1724,9 +1724,7 @@ func TestEVMEventOnFailedL1Deposit(t *testing.T) {
 	_, estimatedReceipt, err := env.Chain.EstimateGasOnLedger(callParams, issuerWallet)
 	require.NoError(t, err)
 
-	_ = estimatedReceipt
-	// callParams.WithMaxAffordableGasBudget()
-	callParams.WithGasBudget(uint64(estimatedReceipt.GasBudget) - 100)
+	callParams.WithGasBudget(estimatedReceipt.GasBudget - 100)
 
 	_, err = env.Chain.PostRequestSync(callParams, issuerWallet)
 	require.Error(t, err)
