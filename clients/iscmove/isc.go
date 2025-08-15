@@ -139,8 +139,8 @@ type Message struct {
 }
 
 type Assets struct {
-	Coins   CoinBalances     `bcs:"optional"`
-	Objects ObjectCollection `bcs:"optional"`
+	Coins   CoinBalances
+	Objects ObjectCollection
 }
 
 type (
