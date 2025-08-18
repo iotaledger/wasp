@@ -49,7 +49,6 @@ type stateManagerGPA struct {
 var _ gpa.GPA = &stateManagerGPA{}
 
 func New(
-
 	loadedSnapshotStateIndex uint32,
 	nr utils.NodeRandomiser,
 	wal gpautils.BlockWAL,

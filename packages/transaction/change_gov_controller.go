@@ -7,7 +7,6 @@ import (
 )
 
 func NewChangeGovControllerTx(
-
 	newGovController iotago.Address,
 	// utxos iotago.OutputSet,
 	wallet cryptolib.Signer,

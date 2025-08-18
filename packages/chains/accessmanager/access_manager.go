@@ -46,8 +46,7 @@ type reqChainAccessNodes struct {
 	accessNodes []*cryptolib.PublicKey
 }
 
-type reqChainDismissed struct {
-}
+type reqChainDismissed struct{}
 
 var _ AccessMgr = &accessMgrImpl{}
 
