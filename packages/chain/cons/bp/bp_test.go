@@ -27,6 +27,7 @@ func TestOffLedgerOrdering(t *testing.T) {
 	nodeIDs := gpa.MakeTestNodeIDs(1)
 	//
 	// Produce an anchor.
+	chainID := isc.ChainIDFromObjectID(*iotatest.RandomObjectRef().ObjectID)
 	anchor0 := isctest.RandomStateAnchor()
 
 	// Create some requests.
@@ -34,10 +35,10 @@ func TestOffLedgerOrdering(t *testing.T) {
 	contract := governance.Contract.Hname()
 	entryPoint := governance.FuncAddCandidateNode.Hname()
 	gasBudget := gas.LimitsDefault.MaxGasPerRequest
-	r0 := isc.NewOffLedgerRequest(isc.NewMessage(contract, entryPoint, nil), 0, gasBudget).Sign(senderKP)
-	r1 := isc.NewOffLedgerRequest(isc.NewMessage(contract, entryPoint, nil), 1, gasBudget).Sign(senderKP)
-	r2 := isc.NewOffLedgerRequest(isc.NewMessage(contract, entryPoint, nil), 2, gasBudget).Sign(senderKP)
-	r3 := isc.NewOffLedgerRequest(isc.NewMessage(contract, entryPoint, nil), 3, gasBudget).Sign(senderKP)
+	r0 := isc.NewOffLedgerRequest(chainID, isc.NewMessage(contract, entryPoint, nil), 0, gasBudget).Sign(senderKP)
+	r1 := isc.NewOffLedgerRequest(chainID, isc.NewMessage(contract, entryPoint, nil), 1, gasBudget).Sign(senderKP)
+	r2 := isc.NewOffLedgerRequest(chainID, isc.NewMessage(contract, entryPoint, nil), 2, gasBudget).Sign(senderKP)
+	r3 := isc.NewOffLedgerRequest(chainID, isc.NewMessage(contract, entryPoint, nil), 3, gasBudget).Sign(senderKP)
 	rs := []isc.Request{r3, r1, r0, r2} // Out of order.
 	//
 	// Construct the batch proposal, and aggregate it.

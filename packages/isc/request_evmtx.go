@@ -17,20 +17,22 @@ import (
 
 // evmOffLedgerTxRequest is used to wrap an EVM tx
 type evmOffLedgerTxRequest struct {
-	tx     *types.Transaction      `bcs:"export"`
-	sender *EthereumAddressAgentID // not serialized
+	chainID ChainID                 `bcs:"export"`
+	tx      *types.Transaction      `bcs:"export"`
+	sender  *EthereumAddressAgentID // not serialized
 }
 
 var _ OffLedgerRequest = &evmOffLedgerTxRequest{}
 
-func NewEVMOffLedgerTxRequest(tx *types.Transaction) (OffLedgerRequest, error) {
+func NewEVMOffLedgerTxRequest(chainID ChainID, tx *types.Transaction) (OffLedgerRequest, error) {
 	sender, err := evmutil.GetSender(tx)
 	if err != nil {
 		return nil, err
 	}
 	return &evmOffLedgerTxRequest{
-		tx:     tx,
-		sender: NewEthereumAddressAgentID(sender),
+		chainID: chainID,
+		tx:      tx,
+		sender:  NewEthereumAddressAgentID(sender),
 	}, nil
 }
 
@@ -63,6 +65,10 @@ func (req *evmOffLedgerTxRequest) Message() Message {
 		Hn(evmnames.FuncSendTransaction),
 		NewCallArguments(bcs.MustMarshal(req.tx)),
 	)
+}
+
+func (req *evmOffLedgerTxRequest) ChainID() ChainID {
+	return req.chainID
 }
 
 func (req *evmOffLedgerTxRequest) GasBudget() (gas uint64, isEVM bool) {

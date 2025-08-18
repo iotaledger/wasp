@@ -77,6 +77,11 @@ func (s *SandboxBase) GetCoinInfo(coinType coin.Type) (*parameters.IotaCoinInfo,
 	return s.Ctx.GetCoinInfo(coinType)
 }
 
+func (s *SandboxBase) ChainID() isc.ChainID {
+	s.Ctx.GasBurn(gas.BurnCodeGetContext)
+	return s.Ctx.ChainID()
+}
+
 func (s *SandboxBase) ChainAdmin() isc.AgentID {
 	s.Ctx.GasBurn(gas.BurnCodeGetContext)
 	return s.Ctx.ChainAdmin()

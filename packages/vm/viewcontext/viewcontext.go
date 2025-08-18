@@ -31,6 +31,7 @@ import (
 type ViewContext struct {
 	processors            *processors.Config
 	stateReader           state.State
+	chainID               isc.ChainID
 	log                   log.Logger
 	chainInfo             *isc.ChainInfo
 	gasBurnLog            *gas.BurnLog
@@ -44,7 +45,7 @@ type ViewContext struct {
 var _ execution.WaspCallContext = &ViewContext{}
 
 func New(
-
+	chainID isc.ChainID,
 	stateReader state.State,
 	processors *processors.Config,
 	log log.Logger,
@@ -53,6 +54,7 @@ func New(
 	return &ViewContext{
 		processors:            processors,
 		stateReader:           stateReader,
+		chainID:               chainID,
 		log:                   log,
 		gasBurnLoggingEnabled: gasBurnLoggingEnabled,
 		schemaVersion:         stateReader.SchemaVersion(),
@@ -148,6 +150,10 @@ func (ctx *ViewContext) Call(msg isc.Message, _ *isc.Assets) isc.CallArguments {
 
 func (ctx *ViewContext) ChainInfo() *isc.ChainInfo {
 	return ctx.chainInfo
+}
+
+func (ctx *ViewContext) ChainID() isc.ChainID {
+	return ctx.chainID
 }
 
 func (ctx *ViewContext) ChainAdmin() isc.AgentID {

@@ -26,6 +26,7 @@ func TestMissingRequests(t *testing.T) {
 
 	chain, err := clu.DeployChain(clu.Config.AllNodes(), cmt, threshold, addr)
 	require.NoError(t, err)
+	chainID := chain.ChainID
 
 	chEnv := newChainEnv(t, clu, chain)
 
@@ -37,7 +38,7 @@ func TestMissingRequests(t *testing.T) {
 
 	// TODO: Validate offleder logic
 	// send off-ledger request to all nodes except #3
-	req := isc.NewOffLedgerRequest(inccounter.FuncIncCounter.Message(nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
+	req := isc.NewOffLedgerRequest(chainID, inccounter.FuncIncCounter.Message(nil), 0, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
 	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		Request: cryptolib.EncodeHex(req.Bytes()),
@@ -46,7 +47,7 @@ func TestMissingRequests(t *testing.T) {
 
 	//------
 	// send a dummy request to node #3, so that it proposes a batch and the consensus hang is broken
-	req2 := isc.NewOffLedgerRequest(isc.NewMessageFromNames("foo", "bar"), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
+	req2 := isc.NewOffLedgerRequest(chainID, isc.NewMessageFromNames("foo", "bar"), 1, gas.LimitsDefault.MaxGasPerRequest).Sign(userWallet)
 
 	_, err = clu.WaspClient(0).RequestsAPI.OffLedger(context.Background()).OffLedgerRequest(apiclient.OffLedgerRequest{
 		Request: cryptolib.EncodeHex(req2.Bytes()),

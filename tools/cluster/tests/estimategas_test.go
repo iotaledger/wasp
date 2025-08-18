@@ -66,6 +66,7 @@ func (e *ChainEnv) testEstimateGasOffLedger(t *testing.T) {
 	e.DepositFunds(10*isc.Million, keyPair)
 
 	estimationReq := isc.NewOffLedgerRequest(
+		e.Chain.ChainID,
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		0,
 		1*isc.Million,

@@ -25,7 +25,7 @@ func TestOffLedger(t *testing.T) {
 	userWallet, userAddress := env.NewKeyPairWithFunds(env.NewSeedFromIndex(0))
 	chain.DepositBaseTokensToL2(env.L1BaseTokens(userAddress)/10, userWallet)
 
-	req := isc.NewOffLedgerRequest(accounts.FuncDeposit.Message(), 0, math.MaxUint64)
+	req := isc.NewOffLedgerRequest(chain.ID(), accounts.FuncDeposit.Message(), 0, math.MaxUint64)
 
 	altReq := isc.NewImpersonatedOffLedgerRequest(req.(*isc.OffLedgerRequestDataEssence)).
 		WithSenderAddress(userWallet.Address())

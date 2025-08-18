@@ -16,19 +16,19 @@ import (
 func DummyOffledgerRequest() isc.OffLedgerRequest {
 	contract := isc.Hn("somecontract")
 	entrypoint := isc.Hn("someentrypoint")
-	req := isc.NewOffLedgerRequest(isc.NewMessage(contract, entrypoint), 0, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(contract, entrypoint), 0, gas.LimitsDefault.MaxGasPerRequest)
 	keys, _ := testkey.GenKeyAddr()
 	return req.Sign(keys)
 }
 
-func DummyOffledgerRequestForAccount(nonce uint64, kp *cryptolib.KeyPair) isc.OffLedgerRequest {
+func DummyOffledgerRequestForAccount(chainID isc.ChainID, nonce uint64, kp *cryptolib.KeyPair) isc.OffLedgerRequest {
 	contract := isc.Hn("somecontract")
 	entrypoint := isc.Hn("someentrypoint")
-	req := isc.NewOffLedgerRequest(isc.NewMessage(contract, entrypoint), nonce, gas.LimitsDefault.MaxGasPerRequest)
+	req := isc.NewOffLedgerRequest(chainID, isc.NewMessage(contract, entrypoint), nonce, gas.LimitsDefault.MaxGasPerRequest)
 	return req.Sign(kp)
 }
 
-func DummyEVMRequest(gasPrice *big.Int) isc.OffLedgerRequest {
+func DummyEVMRequest(chainID isc.ChainID, gasPrice *big.Int) isc.OffLedgerRequest {
 	key, err := crypto.GenerateKey()
 	if err != nil {
 		panic(err)
@@ -44,7 +44,7 @@ func DummyEVMRequest(gasPrice *big.Int) isc.OffLedgerRequest {
 			Data:     []byte{},
 		})
 
-	req, err := isc.NewEVMOffLedgerTxRequest(tx)
+	req, err := isc.NewEVMOffLedgerTxRequest(chainID, tx)
 	if err != nil {
 		panic(err)
 	}

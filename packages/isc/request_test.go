@@ -14,6 +14,7 @@ import (
 	"github.com/iotaledger/wasp/v2/packages/cryptolib"
 	"github.com/iotaledger/wasp/v2/packages/hashing"
 	"github.com/iotaledger/wasp/v2/packages/isc"
+	"github.com/iotaledger/wasp/v2/packages/isc/isctest"
 	"github.com/iotaledger/wasp/v2/packages/solo"
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 	"github.com/iotaledger/wasp/v2/packages/vm/core/accounts"
@@ -23,7 +24,7 @@ import (
 func TestImpersonatedOffLedgerRequest(t *testing.T) {
 	requestFrom := cryptolib.NewRandomAddress()
 
-	req := isc.NewOffLedgerRequest(isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0).
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0).
 		WithAllowance(isc.NewAssets(1074)).
 		WithNonce(1074).
 		WithGasBudget(1074)
@@ -38,7 +39,7 @@ func TestImpersonatedOffLedgerRequest(t *testing.T) {
 
 func TestRequestToJSONObject(t *testing.T) {
 	pk, addr := solo.NewEthereumAccount()
-	req, err := isc.NewEVMOffLedgerTxRequest(types.MustSignNewTx(pk, types.NewEIP155Signer(big.NewInt(int64(1074))),
+	req, err := isc.NewEVMOffLedgerTxRequest(isc.EmptyChainID(), types.MustSignNewTx(pk, types.NewEIP155Signer(big.NewInt(int64(1074))),
 		&types.LegacyTx{
 			Nonce:    0,
 			To:       &addr,
@@ -55,6 +56,7 @@ func TestRequestToJSONObject(t *testing.T) {
 
 	keyPair := cryptolib.NewKeyPair()
 	tx2 := isc.NewOffLedgerRequest(
+		isc.EmptyChainID(),
 		accounts.FuncTransferAllowanceTo.Message(isc.NewAddressAgentID(cryptolib.NewEmptyAddress())),
 		0,
 		1*isc.Million,
@@ -66,7 +68,7 @@ func TestRequestToJSONObject(t *testing.T) {
 	require.NotNil(t, obj2.SenderAccount)
 
 	requestFrom := cryptolib.NewRandomAddress()
-	req3 := isc.NewOffLedgerRequest(isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0)
+	req3 := isc.NewOffLedgerRequest(isc.EmptyChainID(), isc.NewMessage(isc.HnameNil, isc.HnameNil), 0, 0)
 
 	impRequest := isc.NewImpersonatedOffLedgerRequest(req3.(*isc.OffLedgerRequestDataEssence)).
 		WithSenderAddress(requestFrom)
@@ -82,13 +84,13 @@ func TestRequestToJSONObject(t *testing.T) {
 
 func TestRequestDataSerialization(t *testing.T) {
 	t.Run("off ledger", func(t *testing.T) {
-		req := isc.NewOffLedgerRequest(isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.NewKeyPair())
+		req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.NewKeyPair())
 		bcs.TestCodec(t, isc.Request(req))
 		rwutil.BytesTest(t, isc.Request(req), func(data []byte) (isc.Request, error) {
 			return bcs.Unmarshal[isc.Request](data)
 		})
 
-		req = isc.NewOffLedgerRequest(isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.TestKeyPair)
+		req = isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14), 1337, 100).Sign(cryptolib.TestKeyPair)
 		bcs.TestCodecAndHash(t, isc.Request(req), "94051c6b730a")
 	})
 
@@ -134,18 +136,18 @@ func TestRequestDataSerialization(t *testing.T) {
 }
 
 func TestRequestIDSerialization(t *testing.T) {
-	req := isc.NewOffLedgerRequest(isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	requestID := req.ID()
 	bcs.TestCodec(t, requestID)
 	rwutil.StringTest(t, requestID, isc.RequestIDFromString)
 
-	req = isc.NewOffLedgerRequest(isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.TestKeyPair)
+	req = isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.TestKeyPair)
 	requestID = req.ID()
 	bcs.TestCodecAndHash(t, requestID, "16ff060b83fc")
 }
 
 func TestRequestRefSerialization(t *testing.T) {
-	req := isc.NewOffLedgerRequest(isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
+	req := isc.NewOffLedgerRequest(isctest.RandomChainID(), isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.NewKeyPair())
 	reqRef0 := &isc.RequestRef{
 		ID:   req.ID(),
 		Hash: hashing.PseudoRandomHash(nil),
@@ -158,7 +160,7 @@ func TestRequestRefSerialization(t *testing.T) {
 
 	bcs.TestCodec(t, reqRef0)
 
-	req = isc.NewOffLedgerRequest(isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.TestKeyPair)
+	req = isc.NewOffLedgerRequest(isctest.TestChainID, isc.NewMessage(3, 14, isc.NewCallArguments()), 1337, 200).Sign(cryptolib.TestKeyPair)
 	bcs.TestCodecAndHash(t, &isc.RequestRef{
 		ID:   req.ID(),
 		Hash: hashing.TestHash,

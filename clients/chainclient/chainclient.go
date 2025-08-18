@@ -189,7 +189,7 @@ func (c *Client) PostOffLedgerRequest(
 		}
 		par.Nonce = nonce
 	}
-	req := isc.NewOffLedgerRequest(msg, par.Nonce, par.GetL2GasBudget())
+	req := isc.NewOffLedgerRequest(c.ChainID, msg, par.Nonce, par.GetL2GasBudget())
 	req.WithAllowance(par.Allowance)
 	req.WithNonce(par.Nonce)
 	signed := req.Sign(c.KeyPair)
