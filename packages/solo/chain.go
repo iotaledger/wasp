@@ -286,11 +286,14 @@ func (ch *Chain) L1L2Funds(addr *cryptolib.Address) *L1L2CoinBalances {
 }
 
 func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, depositorSeed []byte, baseTokens ...coin.Value) {
+	now := time.Now()
 	seed := cryptolib.SeedFromBytes(depositorSeed)
 	walletKey, walletAddr := ch.Env.NewKeyPair(&seed)
 	if ch.Env.L1BaseTokens(walletAddr) == 0 {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
+
+	fmt.Printf("L1 Faucet request took %s\n ", time.Since(now))
 
 	var amount coin.Value
 	if len(baseTokens) > 0 {
@@ -300,6 +303,7 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 	}
 
 	iterTimes := amount / 5000000000000
+	fmt.Printf("Iteration times for %s: %d\n", agentID.String(), iterTimes)
 	for i := 0; i < int(iterTimes)+2; i++ {
 		ch.Env.GetFundsFromFaucet(walletAddr)
 	}
@@ -313,6 +317,7 @@ func (ch *Chain) GetL2FundsFromFaucetWithDepositor(agentID isc.AgentID, deposito
 		walletKey,
 	)
 	require.NoError(ch.Env.T, err)
+	fmt.Printf("Total GetL2Funds took: %s\n", time.Since(now))
 }
 
 func (ch *Chain) GetL2FundsFromFaucet(agentID isc.AgentID, baseTokens ...coin.Value) {

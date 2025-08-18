@@ -67,7 +67,7 @@ func (e *EngineService) validateRequests(requests [][]byte) error {
 	return nil
 }
 
-func (api *EngineService) responseInvalid(err error, latestValid *types.Header) engine.PayloadStatusV1 {
+func (e *EngineService) responseInvalid(err error, latestValid *types.Header, blockHash common.Hash) engine.PayloadStatusV1 {
 	var currentHash *common.Hash
 	if latestValid != nil {
 		if latestValid.Difficulty.BitLen() != 0 {
@@ -75,8 +75,7 @@ func (api *EngineService) responseInvalid(err error, latestValid *types.Header) 
 			currentHash = &common.Hash{}
 		} else {
 			// Otherwise set latest valid hash to parent hash
-			h := latestValid.Hash()
-			currentHash = &h
+			currentHash = &blockHash
 		}
 	}
 	errorMsg := err.Error()
@@ -153,7 +152,7 @@ func (e *EngineService) waitForTransactionConfirmation(transactions []*types.Tra
 	return blockHashes[0], nil
 }
 
-func (e *EngineService) EnqueueTransactions(block *types.Block) (*engine.PayloadStatusV1, error) {
+func (e *EngineService) EnqueueTransactions(block *types.Block, blockHash common.Hash) (*engine.PayloadStatusV1, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var errors []error
@@ -179,14 +178,14 @@ func (e *EngineService) EnqueueTransactions(block *types.Block) (*engine.Payload
 
 	// Check if any errors occurred
 	if len(errors) > 0 {
-		res := e.responseInvalid(errors[0], nil)
+		res := e.responseInvalid(errors[0], nil, block.Hash())
 		return &res, nil
 	}
 
 	// Wait for transaction confirmation with 30s timeout
 	blockHash, err := e.waitForTransactionConfirmation(transactions, 30*time.Second)
 	if err != nil {
-		res := e.responseInvalid(err, nil)
+		res := e.responseInvalid(err, nil, blockHash)
 		return &res, nil
 	}
 
@@ -200,33 +199,10 @@ func (e *EngineService) EnqueueTransactions(block *types.Block) (*engine.Payload
 	}, nil
 }
 
-func (e *EngineService) NewPayloadV4(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, executionRequests []hexutil.Bytes) (engine.PayloadStatusV1, error) {
-	if params.Withdrawals == nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil withdrawals post-shanghai"))
-	}
-	if params.ExcessBlobGas == nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil excessBlobGas post-cancun"))
-	}
-	if params.BlobGasUsed == nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil blobGasUsed post-cancun"))
-	}
-	if versionedHashes == nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil versionedHashes post-cancun"))
-	}
-	if beaconRoot == nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil beaconRoot post-cancun"))
-	}
-	if executionRequests == nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil executionRequests post-prague"))
-	}
-
-	requests := e.convertRequests(executionRequests)
-	if err := e.validateRequests(requests); err != nil {
-		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(err)
-	}
-
+func (e *EngineService) newPayload(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, requests [][]byte) (engine.PayloadStatusV1, error) {
 	log.Trace("Engine API request received", "method", "NewPayload", "number", params.Number, "hash", params.BlockHash)
 	block, err := engine.ExecutableDataToBlock(params, versionedHashes, beaconRoot, requests)
+	fmt.Printf("ExecutableDataBlock  err: %v\n", err)
 
 	if err != nil {
 		bgu := "nil"
@@ -258,13 +234,13 @@ func (e *EngineService) NewPayloadV4(params engine.ExecutableData, versionedHash
 			"len(requests)", len(requests),
 			"error", err)
 
-		return e.responseInvalid(err, nil), nil
+		return e.responseInvalid(err, nil, params.BlockHash), nil
 	}
+	fmt.Printf("BlockByHash requests\n")
 
-	if block := e.evmChain.BlockByHash(params.BlockHash); block != nil {
+	if block := e.evmChain.BlockByHash(block.Hash()); block != nil {
 		log.Warn("Ignoring already known beacon payload", "number", params.Number, "hash", params.BlockHash, "age", common.PrettyAge(time.Unix(int64(block.Time()), 0)))
-		hash := block.Hash()
-		return engine.PayloadStatusV1{Status: engine.VALID, LatestValidHash: &hash}, nil
+		return engine.PayloadStatusV1{Status: engine.VALID, LatestValidHash: &params.BlockHash}, nil
 	}
 
 	// For reference: NewPayload would validate the hash here by looking into the Tipsets which we don't have, as we don't use Ethereums consensus.
@@ -287,9 +263,12 @@ func (e *EngineService) NewPayloadV4(params engine.ExecutableData, versionedHash
 			return api.delayPayloadImport(block), nil
 		}
 	*/
+	fmt.Printf("Before Parent\n")
 
 	parent := e.evmChain.BlockByHash(block.ParentHash())
 	if parent == nil {
+		fmt.Printf("Parent nil\n")
+
 		return engine.PayloadStatusV1{
 			Status:          engine.INVALID,
 			LatestValidHash: &common.Hash{},
@@ -299,7 +278,7 @@ func (e *EngineService) NewPayloadV4(params engine.ExecutableData, versionedHash
 
 	if block.Time() <= parent.Time() {
 		log.Warn("Invalid timestamp", "parent", block.Time(), "block", block.Time())
-		return e.responseInvalid(errors.New("invalid timestamp"), parent.Header()), nil
+		return e.responseInvalid(errors.New("invalid timestamp"), block.Header(), params.BlockHash), nil
 	}
 
 	// Additional Consensus related parts left out
@@ -320,10 +299,109 @@ func (e *EngineService) NewPayloadV4(params engine.ExecutableData, versionedHash
 	*/
 	log.Trace("Inserting block without sethead", "hash", block.Hash(), "number", block.Number())
 
-	if res, _ := e.EnqueueTransactions(block); res != nil {
+	if res, _ := e.EnqueueTransactions(block, params.BlockHash); res != nil {
 		return *res, nil
 	}
 
-	hash := block.Hash()
-	return engine.PayloadStatusV1{Status: engine.VALID, Witness: nil, LatestValidHash: &hash}, nil
+	return engine.PayloadStatusV1{Status: engine.VALID, Witness: nil, LatestValidHash: &params.BlockHash}, nil
+}
+
+func (e *EngineService) NewPayloadV1(params engine.ExecutableData) (engine.PayloadStatusV1, error) {
+	if params.Withdrawals != nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("withdrawals not supported in V1"))
+	}
+	return e.newPayload(params, nil, nil, nil)
+}
+
+func (e *EngineService) NewPayloadV2(params engine.ExecutableData) (engine.PayloadStatusV1, error) {
+	if params.ExcessBlobGas != nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("non-nil excessBlobGas pre-cancun"))
+	}
+	if params.BlobGasUsed != nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("non-nil blobGasUsed pre-cancun"))
+	}
+	return e.newPayload(params, nil, nil, nil)
+}
+
+func (e *EngineService) NewPayloadV3(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash) (engine.PayloadStatusV1, error) {
+	if params.Withdrawals == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil withdrawals post-shanghai"))
+	}
+	if params.ExcessBlobGas == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil excessBlobGas post-cancun"))
+	}
+	if params.BlobGasUsed == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil blobGasUsed post-cancun"))
+	}
+
+	if versionedHashes == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil versionedHashes post-cancun"))
+	}
+	if beaconRoot == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil beaconRoot post-cancun"))
+	}
+
+	/*
+		if api.eth.BlockChain().Config().LatestFork(params.Timestamp) != forks.Cancun {
+			return engine.PayloadStatusV1{Status: engine.INVALID}, engine.UnsupportedFork.With(errors.New("newPayloadV3 must only be called for cancun payloads"))
+		}*/
+
+	return e.newPayload(params, versionedHashes, beaconRoot, nil)
+}
+
+func (e *EngineService) NewPayloadV4(params engine.ExecutableData, versionedHashes []common.Hash, beaconRoot *common.Hash, executionRequests []hexutil.Bytes) (engine.PayloadStatusV1, error) {
+	if params.Withdrawals == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil withdrawals post-shanghai"))
+	}
+	if params.ExcessBlobGas == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil excessBlobGas post-cancun"))
+	}
+	if params.BlobGasUsed == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil blobGasUsed post-cancun"))
+	}
+
+	if versionedHashes == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil versionedHashes post-cancun"))
+	}
+	if beaconRoot == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil beaconRoot post-cancun"))
+	}
+	if executionRequests == nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(errors.New("nil executionRequests post-prague"))
+	}
+
+	requests := e.convertRequests(executionRequests)
+	if err := e.validateRequests(requests); err != nil {
+		return engine.PayloadStatusV1{Status: engine.INVALID}, engine.InvalidParams.With(err)
+	}
+
+	return e.newPayload(params, versionedHashes, beaconRoot, requests)
+}
+
+func (e *EngineService) forkchoiceUpdated(update engine.ForkchoiceStateV1, payloadAttributes *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+	if payloadAttributes != nil {
+		if payloadAttributes.Withdrawals != nil || payloadAttributes.BeaconRoot != nil {
+			return engine.STATUS_INVALID, engine.InvalidParams.With(errors.New("withdrawals and beacon root not supported in V1"))
+		}
+	}
+	return engine.ForkChoiceResponse{
+		PayloadStatus: engine.PayloadStatusV1{Status: engine.VALID, LatestValidHash: &update.HeadBlockHash},
+		PayloadID:     nil,
+	}, nil
+}
+
+func (e *EngineService) ForkchoiceUpdatedV1(update engine.ForkchoiceStateV1, payloadAttributes *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+	return e.forkchoiceUpdated(update, payloadAttributes)
+}
+
+func (e *EngineService) ForkchoiceUpdatedV2(update engine.ForkchoiceStateV1, payloadAttributes *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+	return e.forkchoiceUpdated(update, payloadAttributes)
+}
+
+func (e *EngineService) ForkchoiceUpdatedV3(update engine.ForkchoiceStateV1, payloadAttributes *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+	return e.forkchoiceUpdated(update, payloadAttributes)
+}
+
+func (e *EngineService) ForkchoiceUpdatedV4(update engine.ForkchoiceStateV1, payloadAttributes *engine.PayloadAttributes) (engine.ForkChoiceResponse, error) {
+	return e.forkchoiceUpdated(update, payloadAttributes)
 }

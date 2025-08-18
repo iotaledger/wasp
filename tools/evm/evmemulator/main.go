@@ -96,6 +96,7 @@ Note: chain data is stored in-memory and will be lost upon termination.
 		string(cli.EnumNodeLaunchModeStandalone),
 		"How to launch the L1 node: 'standalone' (start container) or 'docker-compose' (wait for external service)",
 	)
+	cmd.PersistentFlags().StringVar(&cli.RemoteHost, "remote-host", "http://localhost", "remote host")
 	cmd.PersistentFlags().StringVar(
 		&cli.GenesisJsonPath,
 		"genesis",
@@ -112,7 +113,7 @@ func start(cmd *cobra.Command, args []string) {
 	if cli.NodeLaunchMode == string(cli.EnumNodeLaunchModeStandalone) {
 		cancel = l1starter.TestLocal()
 	} else if cli.NodeLaunchMode == string(cli.EnumNodeLaunchModeDockerCompose) {
-		cancel = l1starter.TestLocalExternal()
+		cancel = l1starter.TestExternal(cli.RemoteHost)
 	}
 	defer cancel()
 
@@ -143,8 +144,13 @@ func start(cmd *cobra.Command, args []string) {
 		err = e.ListenAndServe()
 		log.Check(err)
 	}()
-	log.Printf("starting JSONRPC server on %s...\n", ":8551")
-	e := server.StartEngineMockServer("0.0.0.0:8551")
+
+	engineAPI, err := jsonrpc.NewEngineAPI(chain.EVM(), jsonrpc.NewAccountManager(accounts),
+		metrics.NewChainWebAPIMetricsProvider().CreateForChain(chain.ChainID),
+		jsonrpc.ParametersDefault())
+
+	log.Printf("starting Engine JSONRPC server on %s...\n", cli.ListenAddress)
+	e := server.StartServer(engineAPI, ":8551")
 	err = e.ListenAndServe()
 	log.Check(err)
 }

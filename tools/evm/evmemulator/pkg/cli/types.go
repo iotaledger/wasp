@@ -3,6 +3,7 @@ package cli
 var ListenAddress string
 var GenesisJsonPath string
 var NodeLaunchMode string
+var RemoteHost string
 
 type TNodeLaunchMode string
 
