@@ -53,7 +53,7 @@ func OnLedgerFromMoveRequest(request *iscmove.RefWithObject[iscmove.Request], an
 	}, nil
 }
 
-func FakeEstimateOnLedger(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (OnLedgerRequest, error) {
+func ReconstructOnLedgerRequest(dryRunRes *iotajsonrpc.DryRunTransactionBlockResponse) (OnLedgerRequest, error) {
 	assets, request, sender, err := DecodeDryRunTransaction(dryRunRes)
 	if err != nil {
 		return nil, err

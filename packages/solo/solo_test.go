@@ -110,7 +110,7 @@ func TestDryRunForRequest(t *testing.T) {
 	require.NoError(t, err)
 	dryRunRes2, err = bcs.Unmarshal[iotajsonrpc.DryRunTransactionBlockResponse](b)
 	require.NoError(t, err)
-	estimateGasL1, err := ch.EstimateGasL1(&dryRunRes2)
+	estimateGasL1, err := ch.EstimateOnLedgerRequest(&dryRunRes2)
 	require.NoError(t, err)
 	require.Nil(t, estimateGasL1.Receipt.Error)
 	require.Greater(t, estimateGasL1.Receipt.GasBurned, uint64(0))

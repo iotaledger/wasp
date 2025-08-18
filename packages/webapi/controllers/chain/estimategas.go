@@ -73,7 +73,7 @@ func (c *Controller) estimateGasOnLedger(e echo.Context) error {
 		))
 	}
 
-	req, err := isc.FakeEstimateOnLedger(dryRunResponse)
+	req, err := isc.ReconstructOnLedgerRequest(dryRunResponse)
 	if err != nil {
 		return fmt.Errorf("cant generate fake request: %s", err)
 	}
