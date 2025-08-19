@@ -8,7 +8,7 @@ import (
 func (tr *TrieRFromRoot) Get(key []byte) []byte {
 	unpackedTriePath := unpackBytes(key)
 	var terminal *Tcommitment
-	tr.R.traversePath(tr.Root, unpackedTriePath, func(n *NodeData, _ []byte, ending pathEndingCode) {
+	tr.traversePath(unpackedTriePath, func(n *NodeData, _ []byte, ending pathEndingCode) {
 		if ending == endingTerminal && n.Terminal != nil {
 			terminal = n.Terminal
 		}
@@ -23,7 +23,7 @@ func (tr *TrieRFromRoot) Get(key []byte) []byte {
 func (tr *TrieRFromRoot) Has(key []byte) bool {
 	unpackedTriePath := unpackBytes(key)
 	found := false
-	tr.R.traversePath(tr.Root, unpackedTriePath, func(n *NodeData, p []byte, ending pathEndingCode) {
+	tr.traversePath(unpackedTriePath, func(n *NodeData, p []byte, ending pathEndingCode) {
 		if ending == endingTerminal && n.Terminal != nil {
 			found = true
 		}
@@ -47,7 +47,7 @@ func (tr *TrieRFromRoot) iteratePrefix(f func(k []byte, v []byte) bool, prefix [
 	var root *Hash
 	var triePath []byte
 	unpackedPrefix := unpackBytes(prefix)
-	tr.R.traversePath(tr.Root, unpackedPrefix, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
+	tr.traversePath(unpackedPrefix, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
 		if bytes.HasPrefix(concat(trieKey, n.PathExtension), unpackedPrefix) {
 			root = &n.Commitment
 			triePath = trieKey
@@ -121,7 +121,7 @@ func (tr *TrieRFromRoot) IterateNodesWithRefcounts(fun IterateNodesWithRefcounts
 	nodeRefcount := tr.R.GetNodeRefcount(root.Commitment)
 	valueRefcount := uint32(0)
 	if root.CommitsToExternalValue() {
-		valueRefcount = tr.R.GetValueRefcount(root.Terminal.Data)
+		valueRefcount = tr.R.GetValueRefcount(root.Terminal)
 	}
 	tr.R.iterateNodesWithRefcounts(0, root, nil, nodeRefcount, valueRefcount, fun)
 }

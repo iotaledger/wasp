@@ -31,7 +31,7 @@ func NewTrieR(store KVReader) *TrieR {
 
 func NewTrieRFromRoot(store KVReader, root Hash) *TrieRFromRoot {
 	return &TrieRFromRoot{
-		R:    NewTrieR(store),
+		R:    NewTrieR(makeCachedKVReader(store)),
 		Root: root,
 	}
 }
@@ -68,34 +68,27 @@ func (tr *TrieRFromRoot) VerifyRoot() error {
 }
 
 // DebugDump prints the structure of the trie to w, for debugging purposes.
-func (tr *TrieRFromRoot) DebugDump(w io.Writer, nodeCounts map[Hash]uint32, valueCounts map[string]uint32) {
+func (tr *TrieRFromRoot) DebugDump(w io.Writer, refcounts *Refcounts) {
 	tr.IterateNodes(func(path []byte, n *NodeData, depth int) IterateNodesAction {
-		nodeCount := nodeCounts[n.Commitment]
-		nodeCount++
-		nodeCounts[n.Commitment] = nodeCount
-
+		nodeRefcount := refcounts.incNode(n.Commitment)
 		key := "[]"
 		if len(path) > 0 {
 			key = fmt.Sprintf("[%d]", path[len(path)-1])
 		}
 		indent := strings.Repeat(" ", depth*4)
-		fmt.Fprintf(w, "%s %v %s (seen: %d)\n", indent, key, n, nodeCount)
-
-		if nodeCount > 1 {
+		fmt.Fprintf(w, "%s %v %s (seen: %d)\n", indent, key, n, nodeRefcount)
+		if nodeRefcount > 1 {
 			return IterateSkipSubtree
 		}
 		if n.CommitsToExternalValue() {
-			valueCount := valueCounts[string(n.Terminal.Data)]
-			valueCount++
-			valueCounts[string(n.Terminal.Data)] = valueCount
-
+			valueRefcount := refcounts.incValue(n.Terminal)
 			fmt.Fprintf(
 				w,
 				"%s     [v: %x -> %q] (seen: %d)\n",
 				indent,
 				n.Terminal.Data,
 				ellipsis(tr.R.fetchValueOfTerminal(n.Terminal), 20),
-				valueCount,
+				valueRefcount,
 			)
 		}
 		return IterateContinue
@@ -115,25 +108,24 @@ func ellipsis(b []byte, maxLen int) string {
 // DebugDump prints the structure of the whole DB to w, for debugging
 // purposes. It also verifies the refcounts, and panics if there is a mismatch.
 func (tr *TrieR) DebugDump(roots []Hash, w io.Writer) {
-	nodeCounts := make(map[Hash]uint32)
-	valueCounts := make(map[string]uint32)
+	refcounts := NewRefcounts()
 
 	fmt.Fprintf(w, "[trie store]\n")
 	for _, root := range roots {
-		NewTrieRFromRoot(tr.store, root).DebugDump(w, nodeCounts, valueCounts)
+		NewTrieRFromRoot(tr.store, root).DebugDump(w, refcounts)
 	}
 
 	if !tr.IsRefcountsEnabled() {
 		fmt.Fprint(w, "[node refcounts disabled]\n")
 		return
 	}
-	nodeCounts2, valueCounts2 := tr.DebugDumpRefcounts(w)
-	if !maps.Equal(nodeCounts, nodeCounts2) {
-		showDiff(w, nodeCounts, nodeCounts2, func(h Hash) string { return h.String() })
+	refcounts2 := tr.DebugDumpRefcounts(w)
+	if !maps.Equal(refcounts.Nodes, refcounts2.Nodes) {
+		showDiff(w, refcounts.Nodes, refcounts2.Nodes, func(h Hash) string { return h.String() })
 		panic("inconsistency: node counts do not match")
 	}
-	if !maps.Equal(valueCounts, valueCounts2) {
-		showDiff(w, valueCounts, valueCounts2, func(s string) string { return hex.EncodeToString([]byte(s)) })
+	if !maps.Equal(refcounts.Values, refcounts2.Values) {
+		showDiff(w, refcounts.Values, refcounts2.Values, func(s string) string { return hex.EncodeToString([]byte(s)) })
 		panic("inconsistency: value counts do not match")
 	}
 }

@@ -1,7 +1,6 @@
 package trie
 
-//----------------------------------------------------------------------------
-// generic abstraction interfaces of key/value storage
+// generic abstraction interfaces of the underlying key/value storage
 
 // KVReader is a key/value reader
 type KVReader interface {

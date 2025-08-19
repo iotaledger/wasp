@@ -3,8 +3,6 @@ package trie
 import (
 	"io"
 
-	"github.com/samber/lo"
-
 	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
@@ -84,29 +82,25 @@ func (tr *TrieRW) RestoreSnapshot(r io.Reader, refcountsEnabled bool) error {
 	}
 
 	if refcountsEnabled {
-		touchedNodes := make(map[Hash]uint32)
-		touchedValues := make(map[string]uint32)
+		touchedRefcounts := NewRefcounts()
 		NewTrieRFromRoot(tr.store, *trieRoot).IterateNodesWithRefcounts(func(nodeKey []byte, n *NodeData, depth int, nodeRefcount, valueRefcount uint32) IterateNodesAction {
-			nodeRefcount = lo.ValueOr(touchedNodes, n.Commitment, nodeRefcount)
-			nodeRefcount++
-			touchedNodes[n.Commitment] = nodeRefcount
+			touchedRefcounts.setNodeIfAbsent(n.Commitment, nodeRefcount)
+			nodeRefcount = touchedRefcounts.incNode(n.Commitment)
 			if nodeRefcount > 1 {
 				return IterateSkipSubtree
 			}
 			if n.CommitsToExternalValue() {
-				valueBytes := string(n.Terminal.Bytes())
-				valueRefcount = lo.ValueOr(touchedValues, valueBytes, valueRefcount)
-				valueRefcount++
-				touchedValues[valueBytes] = valueRefcount
+				touchedRefcounts.setValueIfAbsent(n.Terminal, valueRefcount)
+				touchedRefcounts.incValue(n.Terminal)
 			}
 			return IterateContinue
 		})
-		for hash, nodeRefcount := range touchedNodes {
+		for hash, nodeRefcount := range touchedRefcounts.Nodes {
 			tr.setNodeRefcount(hash, nodeRefcount)
 		}
-		for valueBytes, valueRefcount := range touchedValues {
-			t := lo.Must(rwutil.ReadFromBytes([]byte(valueBytes), &Tcommitment{}))
-			tr.setValueRefcount(t.Data, valueRefcount)
+		for terminalData, valueRefcount := range touchedRefcounts.Values {
+			t := &Tcommitment{Data: []byte(terminalData), IsValue: false}
+			tr.setValueRefcount(t, valueRefcount)
 		}
 	}
 	return nil

@@ -29,8 +29,8 @@ func (e pathEndingCode) String() string {
 	}
 }
 
-func (tr *TrieR) traversePath(root Hash, target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
-	n, found := tr.fetchNodeData(root)
+func (tr *TrieRFromRoot) traversePath(target []byte, fun func(*NodeData, []byte, pathEndingCode)) {
+	n, found := tr.R.fetchNodeData(tr.Root)
 	if !found {
 		return
 	}
@@ -55,7 +55,7 @@ func (tr *TrieR) traversePath(root Hash, target []byte, fun func(*NodeData, []by
 				return
 			}
 			childIndex := target[len(pathPlusExtension)]
-			child, childTrieKey := tr.fetchChild(n, childIndex, path)
+			child, childTrieKey := tr.R.fetchChild(n, childIndex, path)
 			if child == nil {
 				fun(n, childTrieKey, endingExtend)
 				return

@@ -69,7 +69,7 @@ type pathElement struct {
 func (tr *TrieRFromRoot) nodePath(triePath []byte) ([]*pathElement, pathEndingCode) {
 	ret := make([]*pathElement, 0)
 	var endingCode pathEndingCode
-	tr.R.traversePath(tr.Root, triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
+	tr.traversePath(triePath, func(n *NodeData, trieKey []byte, ending pathEndingCode) {
 		elem := &pathElement{
 			NodeData: n,
 		}

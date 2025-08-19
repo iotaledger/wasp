@@ -58,10 +58,10 @@ func (c *cachedKVReader) Has(key []byte) bool {
 
 func (c *cachedKVReader) Iterate(prefix []byte, f func(k []byte, v []byte) bool) {
 	// TODO: how to make use of the cache?
-	c.Iterate(prefix, f)
+	c.r.Iterate(prefix, f)
 }
 
 func (c *cachedKVReader) IterateKeys(prefix []byte, f func(k []byte) bool) {
 	// TODO: how to make use of the cache?
-	c.IterateKeys(prefix, f)
+	c.r.IterateKeys(prefix, f)
 }

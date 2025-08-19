@@ -18,26 +18,18 @@ func dbKeyNodeData(nodeCommitment Hash) []byte {
 	return append([]byte{partitionTrieNodes}, nodeCommitment.Bytes()...)
 }
 
-func dbKeyValue(terminalBytes []byte) []byte {
-	return append([]byte{partitionValues}, terminalBytes...)
-}
-
 func dbKeyNodeRefcount(nodeCommitment []byte) []byte {
 	return append([]byte{partitionRefcountNodes}, nodeCommitment...)
 }
 
-func dbKeyValueRefcount(terminalData []byte) []byte {
-	return append([]byte{partitionRefcountValues}, terminalData...)
+func (t *Tcommitment) dbKeyValue() []byte {
+	assertf(!t.IsValue, "dbKeyValue called on non-external value")
+	return append([]byte{partitionValues}, t.Bytes()...)
 }
 
-func (terminal *Tcommitment) dbKeyValue() []byte {
-	assertf(!terminal.IsValue, "dbKeyValue called on non-external value")
-	return dbKeyValue(terminal.Bytes())
-}
-
-func (terminal *Tcommitment) dbKeyValueRefcount() []byte {
-	assertf(!terminal.IsValue, "dbKeyValueRefcount called on non-external value")
-	return dbKeyValueRefcount(terminal.Data)
+func (t *Tcommitment) dbKeyValueRefcount() []byte {
+	assertf(!t.IsValue, "dbKeyValueRefcount called on non-external value")
+	return append([]byte{partitionRefcountValues}, t.Data...)
 }
 
 func (n *NodeData) dbKey() []byte {
@@ -155,12 +147,6 @@ func (tr TrieR) fetchChildrenNodeDataWithRefcounts(n *NodeData) [NumChildren]Nod
 			valueRefcount: valueRefcount,
 		}
 	}
-	return ret
-}
-
-func (tr *TrieR) mustFetchNodeData(nodeCommitment Hash) *NodeData {
-	ret, ok := tr.fetchNodeData(nodeCommitment)
-	assertf(ok, "NodeStore::MustFetchNodeData: cannot find node data: commitment: '%s'", nodeCommitment.String())
 	return ret
 }
 

@@ -2,10 +2,6 @@ package trie
 
 import (
 	"errors"
-
-	"github.com/samber/lo"
-
-	"github.com/iotaledger/wasp/v2/packages/util/rwutil"
 )
 
 type PruneStats struct {
@@ -20,23 +16,20 @@ func (tr *TrieRW) Prune(trieRoot Hash) (PruneStats, error) {
 		return PruneStats{}, errors.New("refcounts disabled, cannot prune trie")
 	}
 
-	touchedNodes := make(map[Hash]uint32)
-	touchedValues := make(map[string]uint32)
+	touchedRefcounts := NewRefcounts()
 
 	// decrement refcounts
 	NewTrieRFromRoot(tr.store, trieRoot).IterateNodesWithRefcounts(func(nodeKey []byte, n *NodeData, depth int, nr, vr uint32) IterateNodesAction {
-		nodeRefcount := lo.ValueOr(touchedNodes, n.Commitment, nr)
+		nodeRefcount := touchedRefcounts.setNodeIfAbsent(n.Commitment, nr)
 		if nodeRefcount == 0 {
 			// node already deleted
 			return IterateSkipSubtree
 		}
-		nodeRefcount--
-		touchedNodes[n.Commitment] = nodeRefcount
+		nodeRefcount = touchedRefcounts.decNode(n.Commitment)
 		if nodeRefcount == 0 && n.CommitsToExternalValue() {
-			valueBytes := string(n.Terminal.Bytes())
-			valueRefcount := lo.ValueOr(touchedValues, valueBytes, vr)
+			valueRefcount := touchedRefcounts.setValueIfAbsent(n.Terminal, vr)
 			if valueRefcount > 0 {
-				touchedValues[valueBytes] = valueRefcount - 1
+				touchedRefcounts.decValue(n.Terminal)
 			}
 		}
 		if nodeRefcount == 0 {
@@ -49,18 +42,18 @@ func (tr *TrieRW) Prune(trieRoot Hash) (PruneStats, error) {
 
 	// write modified refcounts and delete nodes/values with refcount 0
 	stats := PruneStats{}
-	for hash, n := range touchedNodes {
+	for hash, n := range touchedRefcounts.Nodes {
 		tr.setNodeRefcount(hash, n)
 		if n == 0 {
 			tr.store.Del(dbKeyNodeData(hash))
 			stats.DeletedNodes++
 		}
 	}
-	for valueBytes, n := range touchedValues {
-		t := lo.Must(rwutil.ReadFromBytes([]byte(valueBytes), &Tcommitment{}))
-		tr.setValueRefcount(t.Data, n)
+	for terminalData, n := range touchedRefcounts.Values {
+		t := &Tcommitment{Data: []byte(terminalData), IsValue: false}
+		tr.setValueRefcount(t, n)
 		if n == 0 {
-			tr.store.Del(dbKeyValue([]byte(valueBytes)))
+			tr.store.Del(t.dbKeyValue())
 			stats.DeletedValues++
 		}
 	}

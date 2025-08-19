@@ -491,7 +491,8 @@ func TestRefcounts(t *testing.T) {
 		require.Equal(t, n, tr.GetNodeRefcount(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
 	}
 	checkValue := func(v string, n uint32) {
-		require.Equal(t, n, tr.GetValueRefcount(lo.Must(hex.DecodeString(v))))
+		terminal := &trie.Tcommitment{IsValue: false, Data: lo.Must(hex.DecodeString(v))}
+		require.Equal(t, n, tr.GetValueRefcount(terminal))
 	}
 
 	tr.DebugDump([]trie.Hash{root0, root1}, io.Discard)
@@ -557,7 +558,8 @@ func TestTrieDAGEdgeCase(t *testing.T) {
 		require.Equal(t, n, tr.GetNodeRefcount(lo.Must(trie.HashFromBytes(lo.Must(hex.DecodeString(h))))))
 	}
 	checkValue := func(v string, n uint32) {
-		require.Equal(t, n, tr.GetValueRefcount(lo.Must(hex.DecodeString(v))))
+		terminal := &trie.Tcommitment{IsValue: false, Data: lo.Must(hex.DecodeString(v))}
+		require.Equal(t, n, tr.GetValueRefcount(terminal))
 	}
 
 	trie.NewTrieR(store).DebugDump([]trie.Hash{root0, root1}, io.Discard)
