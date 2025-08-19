@@ -210,14 +210,18 @@ func (f *ChainFeed) consumeRequestEvents(
 			fmt.Printf("EventBCS: %s\n", hexutil.Encode(ev.EventData))
 
 			var grpcEvent iotaconn_grpc.IotaRpcEvent
-			fmt.Println(ev)
 			err := iotaclient.UnmarshalBCS(ev.EventData, &grpcEvent)
 			if err != nil {
-				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
+				f.log.LogErrorf("consumeRequestEvents: cannot decode IotaRpcEvent BCS: %s", err)
 				continue
 			}
 
 			var reqEvent iscmove.RequestEvent
+			err = iotaclient.UnmarshalBCS(grpcEvent.Bcs, &reqEvent)
+			if err != nil {
+				f.log.LogErrorf("consumeRequestEvents: cannot decode RequestEvent BCS: %s", err)
+				continue
+			}
 
 			reqWithObj, err := f.httpClient.GetRequestFromObjectID(ctx, &reqEvent.RequestID)
 			if err != nil {
